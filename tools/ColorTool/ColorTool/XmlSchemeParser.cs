@@ -4,6 +4,7 @@
 //
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
@@ -46,15 +47,15 @@ namespace ColorTool
                 Debug.Assert(c.NextSibling != null, "c.NextSibling != null");
                 if (c.InnerText == RED_KEY)
                 {
-                    r = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
+                    r = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                 }
                 else if (c.InnerText == GREEN_KEY)
                 {
-                    g = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
+                    g = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                 }
                 else if (c.InnerText == BLUE_KEY)
                 {
-                    b = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
+                    b = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                 }
             }
             if (r < 0 || g < 0 || b < 0)
