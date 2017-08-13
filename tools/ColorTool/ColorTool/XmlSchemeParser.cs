@@ -3,6 +3,7 @@
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
 using System;
+using System.Diagnostics;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
@@ -41,24 +42,19 @@ namespace ColorTool
 
             foreach (XmlNode c in components.ChildNodes)
             {
-                if (c.Name == "key")
+                if (c.Name != "key") continue;
+                Debug.Assert(c.NextSibling != null, "c.NextSibling != null");
+                if (c.InnerText == RED_KEY)
                 {
-                    if (c.InnerText == RED_KEY)
-                    {
-                        r = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
-                    }
-                    else if (c.InnerText == GREEN_KEY)
-                    {
-                        g = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
-                    }
-                    else if (c.InnerText == BLUE_KEY)
-                    {
-                        b = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
-                    }
-                    else
-                    {
-                        continue;
-                    }
+                    r = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
+                }
+                else if (c.InnerText == GREEN_KEY)
+                {
+                    g = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
+                }
+                else if (c.InnerText == BLUE_KEY)
+                {
+                    b = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText));
                 }
             }
             if (r < 0 || g < 0 || b < 0)
