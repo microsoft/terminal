@@ -170,6 +170,10 @@ namespace ColorTool
 
             }
             Console.Write("\n");
+
+            // Reset foreground and background colors
+            Console.ForegroundColor = currentForeground;
+            Console.BackgroundColor = currentBackground;
         }
 
         static bool SetProperties(uint[] colorTable)
