@@ -89,6 +89,11 @@ namespace ColorTool
             Console.WriteLine(Resources.Usage);
         }
 
+        static void OutputUsage()
+        {
+            Console.WriteLine(Resources.OutputUsage);
+        }
+
         static void Version()
         {
             //System.Reflection.Assembly.GetEntryAssembly();
@@ -196,6 +201,7 @@ namespace ColorTool
             }
             return success;
         }
+
         static bool SetDefaults(uint[] colorTable)
         {
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
@@ -208,6 +214,37 @@ namespace ColorTool
             return true;
         }
 
+        static bool ExportCurrentAsIni(string outputPath)
+        {
+            CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
+            int STD_OUTPUT_HANDLE = -11;
+            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
+            if (success)
+            {
+                using (System.IO.StreamWriter file = new System.IO.StreamWriter(outputPath))
+                {
+                    file.WriteLine("[table]");
+                    for (int i = 0; i < 16; i++)
+                    {
+                        string line = IniSchemeParser.COLOR_NAMES[i];
+                        line += " = ";
+                        uint color = csbiex.ColorTable[i];
+                        uint r = color & (0x000000ff);
+                        uint g = (color & (0x0000ff00)) >> 8;
+                        uint b = (color & (0x00ff0000)) >> 16;
+                        line += r + "," + g + "," + b;
+                        file.WriteLine(line);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("Failed to get conosle information.");
+            }
+            return success;
+        }
+
 
         static void Main(string[] args)
         {
@@ -216,9 +253,9 @@ namespace ColorTool
                 Usage();
                 return;
             }
-
-            foreach (string arg in args)
+            for (int i = 0; i < args.Length; i++)
             {
+                string arg = args[i];
                 switch (arg)
                 {
                     case "-c":
@@ -246,6 +283,17 @@ namespace ColorTool
                     case "-v":
                     case "--version":
                         Version();
+                        return;
+                    case "-o":
+                    case "--output":
+                        if (i+1 < args.Length)
+                        {
+                            ExportCurrentAsIni(args[i + 1]);
+                        }
+                        else
+                        {
+                            OutputUsage();
+                        }
                         return;
                     default:
                         break;
