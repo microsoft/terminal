@@ -80,7 +80,7 @@ namespace ColorTool
             DARK_WHITE
         };
 
-        static bool quiteMode = false;
+        static bool quietMode = false;
         static bool setDefaults = false;
         static bool setProperties = true;
 
@@ -189,7 +189,7 @@ namespace ColorTool
             }
             if (success)
             {
-                if (!quiteMode)
+                if (!quietMode)
                 {
                     PrintTable();
                 }
@@ -227,7 +227,7 @@ namespace ColorTool
                         return;
                     case "-q":
                     case "--quiet":
-                        quiteMode = true;
+                        quietMode = true;
                         break;
                     case "-d":
                     case "--defaults":
