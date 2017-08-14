@@ -2,6 +2,10 @@
 
 rem Add path to MSBuild Binaries
 set MSBUILD=()
+for /f "usebackq tokens=*" %%f in (`where.exe msbuild.exe 2^>nul`) do (
+    set MSBUILD="%%~ff"
+    goto :FOUND_MSBUILD
+)
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe" (
     set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
     goto :FOUND_MSBUILD
