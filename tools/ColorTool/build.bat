@@ -22,6 +22,10 @@ if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bi
     set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
     goto :FOUND_MSBUILD
 )
+if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe" (
+    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\BuildTools\MSBuild\15.0\Bin\MSBuild.exe"
+    goto :FOUND_MSBUILD
+)
 if exist "%ProgramFiles(x86)%\MSBuild\14.0\bin" (
     set MSBUILD="%ProgramFiles(x86)%\MSBuild\14.0\bin\msbuild.exe"
     goto :FOUND_MSBUILD
@@ -34,7 +38,7 @@ if exist "%ProgramFiles%\MSBuild\14.0\bin" (
 if %MSBUILD%==() (
     echo "I couldn't find MSBuild on your PC. Make sure it's installed somewhere, and if it's not in the above if statements (in build.bat), add it."
     goto :EXIT
-) 
+)
 :FOUND_MSBUILD
 set _MSBUILD_TARGET=Build
 set _MSBUILD_CONFIG=Debug
@@ -51,7 +55,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-%MSBUILD% %~dp0ColorTool.sln /t:%_MSBUILD_TARGET% /m /nr:true /p:Configuration=%_MSBUILD_CONFIG% 
+%MSBUILD% %~dp0ColorTool.sln /t:%_MSBUILD_TARGET% /m /nr:true /p:Configuration=%_MSBUILD_CONFIG%
 
 if (%ERRORLEVEL%) == (0) (
     echo.
