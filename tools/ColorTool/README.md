@@ -2,7 +2,7 @@
 
 ```
 Usage:
-    colortool.exe [options] <schemename>;
+    colortool.exe [options] <schemename>
 ColorTool is a utility for helping to set the color palette of the Windows Console.
 By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
 This does NOT save the properties automatically. For that, you'll need to open the properties sheet and hit "Ok".
@@ -13,6 +13,7 @@ Arguments:
                   If that fails, it will look for it as an .ini file color scheme.
 Options:
     -?, --help     : Display this help message
+    -c, --current  : Print the color table for the currently applied scheme
     -q, --quiet    : Don't print the color table after applying
     -d, --defaults : Apply the scheme to only the defaults in the registry
     -b, --both     : Apply the scheme to both the current console and the defaults.
