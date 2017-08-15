@@ -9,6 +9,6 @@ rem     All of the previously viewed tables will display the current scheme's co
 
 for %%i in (schemes\*) do (
     echo %%i
-    ct.exe "%%i"
+    .\colortool.exe "%%i"
     pause
 )
