@@ -141,7 +141,7 @@ ColorTool is a utility for helping to set the color palette of the Windows Conso
 By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
 This does NOT save the properties automatically. For that, you'll need to open the properties sheet and hit "Ok".
 Included should be a `schemes/` directory with a selection of schemes of both formats for examples.
-Feel free to add your own prefered scheme to that directory.
+Feel free to add your own preferred scheme to that directory.
 Arguments:
     &lt;schemename&gt;: The name of a color scheme. ct will try to first load it as an .itermcolors color scheme.
                   If that fails, it will look for it as an .ini file color scheme.

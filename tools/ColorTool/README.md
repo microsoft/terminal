@@ -7,7 +7,7 @@ ColorTool is a utility for helping to set the color palette of the Windows Conso
 By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
 This does NOT save the properties automatically. For that, you'll need to open the properties sheet and hit "Ok".
 Included should be a `schemes/` directory with a selection of schemes of both formats for examples.
-Feel free to add your own prefered scheme to that directory.
+Feel free to add your own preferred scheme to that directory.
 Arguments:
     <schemename>: The name of a color scheme. ct will try to first load it as an .itermcolors color scheme.
                   If that fails, it will look for it as an .ini file color scheme.
@@ -32,13 +32,13 @@ Options:
 
 ## Adding Schemes
 
-  You can also add color schemes to the colortool easily. Take any existing scheme in `.itemcolors` format, and paste it in the `schemes/` directory.
+  You can also add color schemes to the colortool easily. Take any existing scheme in `.itermcolors` format, and paste it in the `schemes/` directory.
 
-  I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to chose from, and previews.
+  I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to choose from, and previews.
 
 ## Building
 
-  Either build with Visual Studio, or use the included `build.bat` from the commandline to try and auto-detect your msbuild version.
+  Either build with Visual Studio, or use the included `build.bat` from the command line to try and auto-detect your msbuild version.
 
 ## Contributing
 
