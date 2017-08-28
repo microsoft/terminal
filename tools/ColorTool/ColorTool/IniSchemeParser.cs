@@ -16,7 +16,7 @@ namespace ColorTool
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
-        // These are in Windows Color table order - BRG, not RGB. 
+        // These are in Windows Color table order - BRG, not RGB.
         static string[] COLOR_NAMES = {
             "DARK_BLACK",
             "DARK_BLUE",
@@ -36,6 +36,8 @@ namespace ColorTool
             "BRIGHT_WHITE"
         };
 
+        public string Name => "INI File Parser";
+
         static uint ParseHex(string arg)
         {
             System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
@@ -44,11 +46,12 @@ namespace ColorTool
 
         static uint ParseRgb(string arg)
         {
-            int[] components = { 0, 0, 0};
+            int[] components = { 0, 0, 0 };
             string[] args = arg.Split(',');
             if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
             if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
-            for (int i = 0; i < args.Length; i++){
+            for (int i = 0; i < args.Length; i++)
+            {
                 components[i] = Int32.Parse(args[i]);
             }
 

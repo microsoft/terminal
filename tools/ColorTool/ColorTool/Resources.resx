@@ -151,7 +151,10 @@ Options:
     -q, --quiet    : Don't print the color table after applying
     -d, --defaults : Apply the scheme to only the defaults in the registry
     -b, --both     : Apply the scheme to both the current console and the defaults.
-    -v, --version  : Display the version number</value>
+    -v, --version  : Display the version number
+
+Available importers:
+  {0}</value>
   </data>
   <data name="WroteToDefaults" xml:space="preserve">
     <value>Wrote selected scheme to the defaults.</value>

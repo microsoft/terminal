@@ -3,10 +3,12 @@
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
 
-using System;
-using static ColorTool.ConsoleAPI;
 using Microsoft.Win32;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using static ColorTool.ConsoleAPI;
 
 namespace ColorTool
 {
@@ -86,7 +88,8 @@ namespace ColorTool
 
         static void Usage()
         {
-            Console.WriteLine(Resources.Usage);
+            Console.WriteLine(Resources.Usage,
+                string.Join($"{Environment.NewLine}  ", GetParsers().Select(p => p.Name)));
         }
 
         static void Version()
@@ -136,7 +139,7 @@ namespace ColorTool
                 "46m",
                 "47m"
             };
-            
+
             Console.Write("\t");
             for (int bg = 0; bg < BGs.Length; bg++)
             {
@@ -259,8 +262,7 @@ namespace ColorTool
             string schemeName = args[args.Length - 1];
 
             uint[] colorTable = null;
-            ISchemeParser[] parsers = { new XmlSchemeParser(), new IniSchemeParser() };
-            foreach (var parser in parsers)
+            foreach (var parser in GetParsers())
             {
                 uint[] table = parser.ParseScheme(schemeName);
                 if (table != null)
@@ -286,5 +288,11 @@ namespace ColorTool
             }
         }
 
+        private static IEnumerable<ISchemeParser> GetParsers()
+        {
+            return typeof(Program).Assembly.GetTypes()
+                .Where(t => !t.IsAbstract && typeof(ISchemeParser).IsAssignableFrom(t))
+                .Select(t => (ISchemeParser)Activator.CreateInstance(t));
+        }
     }
 }
