@@ -2,7 +2,7 @@ This bug-tracker is monitored by Windows Console development team and other tech
 
 If you have a feature request, please post to [the UserVoice](https://wpdev.uservoice.com/forums/266908).  
 
-> **Important: When reporting BSODs or security issues, DO NOT attach memory dumps, logs, or traces to Github issues**. Instead, send dumps/traces to secure@microsoft.com, referencing the GitHub bug number.
+> **Important: When reporting BSODs or security issues, DO NOT attach memory dumps, logs, or traces to Github issues**. Instead, send dumps/traces to secure@microsoft.com, referencing this GitHub issue.
 
 Please use this form and describe your issue, concisely but precisely, with as much detail as possible
 
