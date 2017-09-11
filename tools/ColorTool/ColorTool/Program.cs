@@ -4,9 +4,13 @@
 //
 
 using System;
+using System.Drawing;
+using System.IO;
+using System.Linq;
 using static ColorTool.ConsoleAPI;
 using Microsoft.Win32;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace ColorTool
 {
@@ -176,6 +180,54 @@ namespace ColorTool
             Console.BackgroundColor = currentBackground;
         }
 
+        static void PrintSchemes()
+        {
+            if (Directory.Exists("./schemes"))
+            {
+                IntPtr handle = GetStdHandle(-11);
+                GetConsoleMode(handle, out var mode);
+                SetConsoleMode(handle, mode | 0x4);
+
+                int consoleWidth = Console.WindowWidth;
+                string fgText = " gYw ";
+                foreach (string schemeName in Directory.GetFiles("./schemes/").Select(Path.GetFileName))
+                {
+                    uint[] colorTable = GetSchemeUints(schemeName);
+                    if (colorTable != null)
+                    {
+                        string colors = string.Empty;
+                        for (var index = 0; index < 8; index++)
+                        {
+                            uint t = colorTable[index];
+                            var color = UIntToColor(t);
+                            // Set the background color to the color in the scheme, plus some text to show how it looks
+                            colors += $"\x1b[48;2;{color.R};{color.G};{color.B}m{fgText}";
+                        }
+                        // Align scheme colors right, or on newline if it doesn't fit
+                        int schemeTextLength = fgText.Length * 8;
+                        int bufferLength = consoleWidth - (schemeName.Length + schemeTextLength);
+
+                        string bufferString = bufferLength >= 0
+                            ? new string(' ', bufferLength)
+                            : "\n" + new string(' ', consoleWidth - schemeTextLength);
+
+                        string outputString = schemeName + bufferString + colors;
+                        Console.WriteLine(outputString);
+                        Console.ResetColor();
+                    }
+                }
+            }
+        }
+
+        private static Color UIntToColor(uint color)
+        {
+            byte a = (byte)(color >> 24);
+            byte r = (byte)(color >> 16);
+            byte g = (byte)(color >> 8);
+            byte b = (byte)(color >> 0);
+            return Color.FromArgb(a, r, g, b);
+        }
+
         static bool SetProperties(uint[] colorTable)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
@@ -251,6 +303,10 @@ namespace ColorTool
                     case "--version":
                         Version();
                         return;
+                    case "-s":
+                    case "--schemes":
+                        PrintSchemes();
+                        return;
                     default:
                         break;
                 }
@@ -258,17 +314,7 @@ namespace ColorTool
 
             string schemeName = args[args.Length - 1];
 
-            uint[] colorTable = null;
-            ISchemeParser[] parsers = { new XmlSchemeParser(), new IniSchemeParser() };
-            foreach (var parser in parsers)
-            {
-                uint[] table = parser.ParseScheme(schemeName);
-                if (table != null)
-                {
-                    colorTable = table;
-                    break;
-                }
-            }
+            uint[] colorTable = GetSchemeUints(schemeName);
 
             if (colorTable == null)
             {
@@ -286,5 +332,18 @@ namespace ColorTool
             }
         }
 
+        private static uint[] GetSchemeUints(string schemeName)
+        {
+            ISchemeParser[] parsers = {new XmlSchemeParser(), new IniSchemeParser()};
+            foreach (var parser in parsers)
+            {
+                uint[] table = parser.ParseScheme(schemeName);
+                if (table != null)
+                {
+                    return table;
+                }
+            }
+            return null;
+        }
     }
 }

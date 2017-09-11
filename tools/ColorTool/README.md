@@ -17,6 +17,7 @@ Options:
     -q, --quiet    : Don't print the color table after applying
     -d, --defaults : Apply the scheme to only the defaults in the registry
     -b, --both     : Apply the scheme to both the current console and the defaults.
+    -s, --schemes  : Display all available schemes
     -v, --version  : Display the version number
 ```
 
