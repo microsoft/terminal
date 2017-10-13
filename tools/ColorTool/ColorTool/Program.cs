@@ -83,6 +83,7 @@ namespace ColorTool
         static bool quietMode = false;
         static bool setDefaults = false;
         static bool setProperties = true;
+        static bool setUnixStyle = false;
 
         static void Usage()
         {
@@ -200,6 +201,47 @@ namespace ColorTool
             }
             return success;
         }
+
+        static int[] VT_INDICIES = {
+            0, // DARK_BLACK
+            4, // DARK_BLUE
+            2, // DARK_GREEN
+            6, // DARK_CYAN
+            1, // DARK_RED
+            5, // DARK_MAGENTA
+            3, // DARK_YELLOW
+            7, // DARK_WHITE
+            8+0, // BRIGHT_BLACK
+            8+4, // BRIGHT_BLUE
+            8+2, // BRIGHT_GREEN
+            8+6, // BRIGHT_CYAN
+            8+1, // BRIGHT_RED
+            8+5, // BRIGHT_MAGENTA
+            8+3, // BRIGHT_YELLOW
+            8+7,// BRIGHT_WHITE
+        };
+
+        static bool SetPropertiesWithVt(uint[] colorTable)
+        {
+            Console.WriteLine("Setting colors using VT Sequences");
+            int STD_OUTPUT_HANDLE = -11;
+            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr whatever = hOut;
+            uint dwWritten = 0;
+            for(int i = 0; i < 16; i++)
+            {
+                int vtIndex = VT_INDICIES[i];
+                uint rgb = colorTable[i];
+                string s = "\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb) + "/"+ Gvalue(rgb) + "/"+ Bvalue(rgb) + "\x7";
+                string printable = "\\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb).ToString("X") + "/"+ Gvalue(rgb).ToString("X") + "/"+ Bvalue(rgb).ToString("X") + "\x7";
+                Console.WriteLine(s);
+                Console.WriteLine(printable);
+                // WriteConsole(hOut, s, (uint)s.Length, out dwWritten, whatever);
+                // WriteConsole(hOut, printable, (uint)printable.Length, out dwWritten, whatever);
+            }
+            return true;
+        }
+
         static bool SetDefaults(uint[] colorTable)
         {
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
@@ -251,6 +293,11 @@ namespace ColorTool
                     case "--version":
                         Version();
                         return;
+                    case "-x":
+                    case "--xterm":
+                        setUnixStyle = true;
+                        setProperties = true;
+                        break;
                     default:
                         break;
                 }
@@ -282,7 +329,15 @@ namespace ColorTool
             }
             if (setProperties)
             {
-                SetProperties(colorTable);
+                if (setUnixStyle)
+                {
+                    SetPropertiesWithVt(colorTable);
+                }
+                else
+                {
+                    SetProperties(colorTable);
+                    
+                }
             }
         }
 

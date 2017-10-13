@@ -56,11 +56,32 @@ namespace ColorTool
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool WriteConsole(
+            IntPtr hConsoleOutput,
+            string lpBuffer,
+            uint nNumberOfCharsToWrite,
+            out uint lpNumberOfCharsWritten,
+            IntPtr lpReserved
+            );
         ////////////////////////////////////////////////////////////////////////
 
         public static uint RGB(int r, int g, int b)
         {
             return (uint)r + (((uint)g) << 8) + (((uint)b) << 16);
+        }
+        public static uint Rvalue(uint rgb)
+        {
+            return rgb & 0x000000ff;
+        }
+        public static uint Gvalue(uint rgb)
+        {
+            return rgb & 0x0000ff00 >> 8;
+        }
+        public static uint Bvalue(uint rgb)
+        {
+            return (rgb & 0x00ff0000) >> 16;
         }
 
         public const int COLOR_TABLE_SIZE = 16;
