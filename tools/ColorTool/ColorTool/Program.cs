@@ -80,6 +80,26 @@ namespace ColorTool
             DARK_WHITE
         };
 
+        // Use a Console index in to get a VT index out.
+        static int[] VT_INDICIES = {
+            0, // DARK_BLACK
+            4, // DARK_BLUE
+            2, // DARK_GREEN
+            6, // DARK_CYAN
+            1, // DARK_RED
+            5, // DARK_MAGENTA
+            3, // DARK_YELLOW
+            7, // DARK_WHITE
+            8+0, // BRIGHT_BLACK
+            8+4, // BRIGHT_BLUE
+            8+2, // BRIGHT_GREEN
+            8+6, // BRIGHT_CYAN
+            8+1, // BRIGHT_RED
+            8+5, // BRIGHT_MAGENTA
+            8+3, // BRIGHT_YELLOW
+            8+7,// BRIGHT_WHITE
+        };
+
         static bool quietMode = false;
         static bool setDefaults = false;
         static bool setProperties = true;
@@ -99,6 +119,84 @@ namespace ColorTool
             Console.WriteLine("colortool v" + ver);
         }
 
+        static void PrintTable()
+        {
+            ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
+            // Save the current background and foreground colors.
+            ConsoleColor currentBackground = Console.BackgroundColor;
+            ConsoleColor currentForeground = Console.ForegroundColor;
+            string test = "  gYw  ";
+            string[] FGs = {
+                "m",
+                "1m",
+                "30m",
+                "1;30m",
+                "31m",
+                "1;31m",
+                "32m",
+                "1;32m",
+                "33m",
+                "1;33m",
+                "34m",
+                "1;34m",
+                "35m",
+                "1;35m",
+                "36m",
+                "1;36m",
+                "37m",
+                "1;37m"
+            };
+            string[] BGs = {
+                "m",
+                "40m",
+                "41m",
+                "42m",
+                "43m",
+                "44m",
+                "45m",
+                "46m",
+                "47m"
+            };
+            
+            Console.Write("\t");
+            for (int bg = 0; bg < BGs.Length; bg++)
+            {
+                if (bg > 0) Console.Write(" ");
+                Console.Write("  ");
+                Console.Write(bg == 0 ? "   " : BGs[bg]);
+                Console.Write("  ");
+            }
+            Console.WriteLine();
+
+            for (int fg = 0; fg < FGs.Length; fg++)
+            {
+                Console.ForegroundColor = currentForeground;
+                Console.BackgroundColor = currentBackground;
+
+                if (fg >= 0) Console.Write(FGs[fg] + "\t");
+
+                if (fg == 0) Console.ForegroundColor = currentForeground;
+                else Console.ForegroundColor = colors[outputFgs[fg - 1]];
+
+                for (int bg = 0; bg < BGs.Length; bg++)
+                {
+                    if (bg > 0) Console.Write(" ");
+                    if (bg == 0)
+                        Console.BackgroundColor = currentBackground;
+                    else Console.BackgroundColor = colors[saneBgs[bg - 1]];
+                    Console.Write(test);
+                    Console.BackgroundColor = currentBackground;
+                }
+                Console.Write("\n");
+
+            }
+            Console.Write("\n");
+
+            // Reset foreground and background colors
+            Console.ForegroundColor = currentForeground;
+            Console.BackgroundColor = currentBackground;
+        }
+        
         static void PrintTable()
         {
             ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
@@ -202,42 +300,22 @@ namespace ColorTool
             return success;
         }
 
-        static int[] VT_INDICIES = {
-            0, // DARK_BLACK
-            4, // DARK_BLUE
-            2, // DARK_GREEN
-            6, // DARK_CYAN
-            1, // DARK_RED
-            5, // DARK_MAGENTA
-            3, // DARK_YELLOW
-            7, // DARK_WHITE
-            8+0, // BRIGHT_BLACK
-            8+4, // BRIGHT_BLUE
-            8+2, // BRIGHT_GREEN
-            8+6, // BRIGHT_CYAN
-            8+1, // BRIGHT_RED
-            8+5, // BRIGHT_MAGENTA
-            8+3, // BRIGHT_YELLOW
-            8+7,// BRIGHT_WHITE
-        };
-
         static bool SetPropertiesWithVt(uint[] colorTable)
         {
-            Console.WriteLine("Setting colors using VT Sequences");
             int STD_OUTPUT_HANDLE = -11;
             IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
             IntPtr whatever = hOut;
-            uint dwWritten = 0;
+            // uint dwWritten = 0;
             for(int i = 0; i < 16; i++)
             {
                 int vtIndex = VT_INDICIES[i];
                 uint rgb = colorTable[i];
-                string s = "\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb) + "/"+ Gvalue(rgb) + "/"+ Bvalue(rgb) + "\x7";
-                string printable = "\\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb).ToString("X") + "/"+ Gvalue(rgb).ToString("X") + "/"+ Bvalue(rgb).ToString("X") + "\x7";
-                Console.WriteLine(s);
-                Console.WriteLine(printable);
-                // WriteConsole(hOut, s, (uint)s.Length, out dwWritten, whatever);
-                // WriteConsole(hOut, printable, (uint)printable.Length, out dwWritten, whatever);
+                string s = "\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb).ToString("X") + "/"+ Gvalue(rgb).ToString("X") + "/"+ Bvalue(rgb).ToString("X") + "\x7";
+                Console.Write(s);
+            }
+            if (!quietMode)
+            {
+                PrintTableWithVt();
             }
             return true;
         }

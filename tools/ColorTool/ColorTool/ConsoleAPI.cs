@@ -77,7 +77,7 @@ namespace ColorTool
         }
         public static uint Gvalue(uint rgb)
         {
-            return rgb & 0x0000ff00 >> 8;
+            return (rgb & 0x0000ff00) >> 8;
         }
         public static uint Bvalue(uint rgb)
         {

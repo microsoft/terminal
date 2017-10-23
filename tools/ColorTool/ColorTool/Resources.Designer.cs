@@ -99,6 +99,24 @@ namespace ColorTool {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to \x1b]4;{0};rgb:{1}/{2}/{3}\x7.
+        /// </summary>
+        public static string OSCFormat {
+            get {
+                return ResourceManager.GetString("OSCFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to \x1b]4;{0};rgb:{1}/{2}/{3}\x7.
+        /// </summary>
+        public static string OSCFormat2 {
+            get {
+                return ResourceManager.GetString("OSCFormat2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not find or load &quot;{0}&quot;.
         /// </summary>
         public static string SchemeNotFound {
@@ -114,7 +132,7 @@ namespace ColorTool {
         ///By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
         ///This does NOT save the properties automatically. For that, you&apos;ll need to open the properties sheet and hit &quot;Ok&quot;.
         ///Included should be a `schemes/` directory with a selection of schemes of both formats for examples.
-        ///Feel free to add your own prefered scheme to that direc [rest of string was truncated]&quot;;.
+        ///Feel free to add your own preferred scheme to that dire [rest of string was truncated]&quot;;.
         /// </summary>
         public static string Usage {
             get {
