@@ -19,7 +19,7 @@ namespace ColorTool {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -95,24 +95,6 @@ namespace ColorTool {
         public static string InvalidNumberOfColors {
             get {
                 return ResourceManager.GetString("InvalidNumberOfColors", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to \x1b]4;{0};rgb:{1}/{2}/{3}\x7.
-        /// </summary>
-        public static string OSCFormat {
-            get {
-                return ResourceManager.GetString("OSCFormat", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to \x1b]4;{0};rgb:{1}/{2}/{3}\x7.
-        /// </summary>
-        public static string OSCFormat2 {
-            get {
-                return ResourceManager.GetString("OSCFormat2", resourceCulture);
             }
         }
         

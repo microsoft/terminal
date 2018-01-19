@@ -112,8 +112,6 @@ namespace ColorTool
 
         static void Version()
         {
-            //System.Reflection.Assembly.GetEntryAssembly();
-            //AssemblyName.GetAssemblyName(@"c:\path\to\file.dll").Version;
             string exePath = System.Reflection.Assembly.GetEntryAssembly().Location;
             Version ver = AssemblyName.GetAssemblyName(exePath).Version;
             Console.WriteLine("colortool v" + ver);
@@ -197,12 +195,9 @@ namespace ColorTool
             Console.BackgroundColor = currentBackground;
         }
         
-        static void PrintTable()
+        static void PrintTableWithVt()
         {
-            ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
             // Save the current background and foreground colors.
-            ConsoleColor currentBackground = Console.BackgroundColor;
-            ConsoleColor currentForeground = Console.ForegroundColor;
             string test = "  gYw  ";
             string[] FGs = {
                 "m",
@@ -248,22 +243,39 @@ namespace ColorTool
 
             for (int fg = 0; fg < FGs.Length; fg++)
             {
-                Console.ForegroundColor = currentForeground;
-                Console.BackgroundColor = currentBackground;
+                Console.Write("\x1b[m");
 
-                if (fg >= 0) Console.Write(FGs[fg] + "\t");
+                if (fg >= 0)
+                {
+                    Console.Write(FGs[fg] + "\t");
+                }
 
-                if (fg == 0) Console.ForegroundColor = currentForeground;
-                else Console.ForegroundColor = colors[outputFgs[fg - 1]];
+                if (fg == 0)
+                {
+                    Console.Write("\x1b[39m");
+                }
+                else
+                {
+                    Console.Write("\x1b[" + FGs[fg]);
+                }
 
                 for (int bg = 0; bg < BGs.Length; bg++)
                 {
-                    if (bg > 0) Console.Write(" ");
+                    if (bg > 0)
+                    {
+                        Console.Write(" ");
+                    }
                     if (bg == 0)
-                        Console.BackgroundColor = currentBackground;
-                    else Console.BackgroundColor = colors[saneBgs[bg - 1]];
+                    {
+                        Console.Write("\x1b[49m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[" +BGs[bg]);
+                    }
+
                     Console.Write(test);
-                    Console.BackgroundColor = currentBackground;
+                    Console.Write("\x1b[49m");
                 }
                 Console.Write("\n");
 
@@ -271,8 +283,7 @@ namespace ColorTool
             Console.Write("\n");
 
             // Reset foreground and background colors
-            Console.ForegroundColor = currentForeground;
-            Console.BackgroundColor = currentBackground;
+            Console.Write("\x1b[m");
         }
 
         static bool SetProperties(uint[] colorTable)
@@ -305,7 +316,6 @@ namespace ColorTool
             int STD_OUTPUT_HANDLE = -11;
             IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
             IntPtr whatever = hOut;
-            // uint dwWritten = 0;
             for(int i = 0; i < 16; i++)
             {
                 int vtIndex = VT_INDICIES[i];

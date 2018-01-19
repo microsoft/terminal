@@ -157,10 +157,4 @@ Options:
   <data name="WroteToDefaults" xml:space="preserve">
     <value>Wrote selected scheme to the defaults.</value>
   </data>
-  <data name="OSCFormat" xml:space="preserve">
-    <value>\x1b]4;{0};rgb:{1}/{2}/{3}\x7</value>
-  </data>
-  <data name="OSCFormat2" xml:space="preserve">
-    <value>\x1b]4;{0};rgb:{1}/{2}/{3}\x7</value>
-  </data>
 </root>
