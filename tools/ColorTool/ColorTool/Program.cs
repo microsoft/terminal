@@ -315,8 +315,17 @@ namespace ColorTool
         {
             int STD_OUTPUT_HANDLE = -11;
             IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            IntPtr whatever = hOut;
-            for(int i = 0; i < 16; i++)
+            uint originalMode;
+            uint requestedMode;
+            bool succeeded = GetConsoleMode(hOut, out originalMode);
+            if (succeeded)
+            {
+                requestedMode = originalMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(hOut, requestedMode);
+
+            }
+
+            for (int i = 0; i < 16; i++)
             {
                 int vtIndex = VT_INDICIES[i];
                 uint rgb = colorTable[i];
@@ -327,6 +336,12 @@ namespace ColorTool
             {
                 PrintTableWithVt();
             }
+
+            if (succeeded)
+            {
+                SetConsoleMode(hOut, originalMode);
+            }
+
             return true;
         }
 
