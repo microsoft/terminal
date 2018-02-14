@@ -32,7 +32,7 @@ namespace ColorTool
             public uint cbSize;
             public COORD dwSize;
             public COORD dwCursorPosition;
-            public short wAttributes;
+            public ushort wAttributes;
             public SMALL_RECT srWindow;
             public COORD dwMaximumWindowSize;
 
@@ -56,6 +56,7 @@ namespace ColorTool
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
+
         ////////////////////////////////////////////////////////////////////////
 
         public static uint RGB(int r, int g, int b)

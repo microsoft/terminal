@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ColorScheme.cs" />
     <Compile Include="ConsoleAPI.cs" />
     <Compile Include="IniSchemeParser.cs" />
     <Compile Include="ISchemeParser.cs" />

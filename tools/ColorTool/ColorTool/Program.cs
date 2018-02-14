@@ -176,7 +176,7 @@ namespace ColorTool
             Console.BackgroundColor = currentBackground;
         }
 
-        static bool SetProperties(uint[] colorTable)
+        static bool SetProperties(ColorScheme colorScheme)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
             int STD_OUTPUT_HANDLE = -11;
@@ -187,7 +187,13 @@ namespace ColorTool
                 csbiex.srWindow.Bottom++;
                 for (int i = 0; i < 16; i++)
                 {
-                    csbiex.ColorTable[i] = colorTable[i];
+                    csbiex.ColorTable[i] = colorScheme.colorTable[i];
+                }
+                if(colorScheme.background != null && colorScheme.foreground != null)
+                {
+                    int fgidx = colorScheme.CalculateIndex(colorScheme.foreground.Value);
+                    int bgidx = colorScheme.CalculateIndex(colorScheme.background.Value);
+                    csbiex.wAttributes = (ushort)(fgidx | (bgidx << 4));
                 }
                 SetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             }
@@ -200,18 +206,19 @@ namespace ColorTool
             }
             return success;
         }
-        static bool SetDefaults(uint[] colorTable)
+
+        static bool SetDefaults(ColorScheme colorScheme)
         {
+            //TODO
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
-            for (int i = 0; i < colorTable.Length; i++)
+            for (int i = 0; i < colorScheme.colorTable.Length; i++)
             {
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
-                consoleKey.SetValue(valueName, colorTable[i], RegistryValueKind.DWord);
+                consoleKey.SetValue(valueName, colorScheme.colorTable[i], RegistryValueKind.DWord);
             }
             Console.WriteLine(Resources.WroteToDefaults);
             return true;
         }
-
 
         static void Main(string[] args)
         {
@@ -258,19 +265,19 @@ namespace ColorTool
 
             string schemeName = args[args.Length - 1];
 
-            uint[] colorTable = null;
+            ColorScheme colorScheme = null;
             ISchemeParser[] parsers = { new XmlSchemeParser(), new IniSchemeParser() };
             foreach (var parser in parsers)
             {
-                uint[] table = parser.ParseScheme(schemeName);
-                if (table != null)
+                var scheme = parser.ParseScheme(schemeName);
+                if (scheme != null)
                 {
-                    colorTable = table;
+                    colorScheme = scheme;
                     break;
                 }
             }
 
-            if (colorTable == null)
+            if (colorScheme == null)
             {
                 Console.WriteLine(string.Format(Resources.SchemeNotFound, schemeName));
                 return;
@@ -278,11 +285,11 @@ namespace ColorTool
 
             if (setDefaults)
             {
-                SetDefaults(colorTable);
+                SetDefaults(colorScheme);
             }
             if (setProperties)
             {
-                SetProperties(colorTable);
+                SetProperties(colorScheme);
             }
         }
 
