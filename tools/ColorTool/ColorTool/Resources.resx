@@ -146,12 +146,13 @@ Arguments:
     &lt;schemename&gt;: The name of a color scheme. ct will try to first load it as an .itermcolors color scheme.
                   If that fails, it will look for it as an .ini file color scheme.
 Options:
-    -?, --help     : Display this help message
-    -c, --current  : Print the color table for the currently applied scheme
-    -q, --quiet    : Don't print the color table after applying
-    -d, --defaults : Apply the scheme to only the defaults in the registry
-    -b, --both     : Apply the scheme to both the current console and the defaults.
-    -v, --version  : Display the version number</value>
+    -?, --help       : Display this help message
+    -c, --current    : Print the color table for the currently applied scheme
+    -q, --quiet      : Don't print the color table after applying
+    -d, --defaults   : Apply the scheme to only the defaults in the registry
+    -b, --both       : Apply the scheme to both the current console and the defaults
+    -p, --powershell : Modify the scheme for the PowerShell console
+    -v, --version    : Display the version number</value>
   </data>
   <data name="WroteToDefaults" xml:space="preserve">
     <value>Wrote selected scheme to the defaults.</value>

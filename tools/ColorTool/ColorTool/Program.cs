@@ -83,6 +83,7 @@ namespace ColorTool
         static bool quietMode = false;
         static bool setDefaults = false;
         static bool setProperties = true;
+        static bool powershell = false;
 
         static void Usage()
         {
@@ -243,6 +244,10 @@ namespace ColorTool
                         setDefaults = true;
                         setProperties = true;
                         break;
+                    case "-p":
+                    case "--powershell":
+                        powershell = true;
+                        break;
                     case "-?":
                     case "--help":
                         Usage();
@@ -252,6 +257,7 @@ namespace ColorTool
                         Version();
                         return;
                     default:
+                        Console.WriteLine("Skipping unsupported parameter: " + arg);
                         break;
                 }
             }
@@ -274,6 +280,12 @@ namespace ColorTool
             {
                 Console.WriteLine(string.Format(Resources.SchemeNotFound, schemeName));
                 return;
+            }
+
+            if (powershell)
+            {
+                // PowerShell console windows use the DARK_MAGENTA color slot for the background
+                colorTable[DARK_MAGENTA] = colorTable[DARK_BLACK];
             }
 
             if (setDefaults)
