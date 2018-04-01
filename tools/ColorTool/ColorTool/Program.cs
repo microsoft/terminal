@@ -257,6 +257,7 @@ namespace ColorTool
                         Version();
                         return;
                     default:
+                        Console.WriteLine("Skipping unsupported parameter: " + arg);
                         break;
                 }
             }
