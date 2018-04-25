@@ -56,6 +56,12 @@ namespace ColorTool
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleScreenBufferInfoEx(IntPtr ConsoleOutput, ref CONSOLE_SCREEN_BUFFER_INFO_EX ConsoleScreenBufferInfoEx);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetConsoleMode(IntPtr handle, out int mode);
         ////////////////////////////////////////////////////////////////////////
 
         public static uint RGB(int r, int g, int b)

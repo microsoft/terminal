@@ -123,7 +123,7 @@ namespace ColorTool {
         ///By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
         ///This does NOT save the properties automatically. For that, you&apos;ll need to open the properties sheet and hit &quot;Ok&quot;.
         ///Included should be a `schemes/` directory with a selection of schemes of both formats for examples.
-        ///Feel free to add your own preferred scheme to that dire [rest of string was truncated]&quot;;.
+        ///Feel free to add your own preferred scheme to that directory. [rest of string was truncated]&quot;;.
         /// </summary>
         public static string Usage {
             get {

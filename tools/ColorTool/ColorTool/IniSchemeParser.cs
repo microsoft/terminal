@@ -107,7 +107,7 @@ namespace ColorTool
             return null;
         }
 
-        public uint[] ParseScheme(string schemeName)
+        public uint[] ParseScheme(string schemeName, bool reportErrors = true)
         {
             bool success = true;
 
@@ -127,7 +127,10 @@ namespace ColorTool
                 if (tableStrings[i].Length <= 0)
                 {
                     success = false;
-                    Console.WriteLine(string.Format(Resources.IniParseError, filename, name, tableStrings[i]));
+                    if (reportErrors)
+                    {
+                        Console.WriteLine(string.Format(Resources.IniParseError, filename, name, tableStrings[i]));
+                    }
                     break;
                 }
             }
@@ -144,7 +147,10 @@ namespace ColorTool
                 }
                 catch (Exception /*e*/)
                 {
-                    Console.WriteLine(string.Format(Resources.IniLoadError, filename));
+                    if (reportErrors)
+                    {
+                        Console.WriteLine(string.Format(Resources.IniLoadError, filename));
+                    }
 
                     colorTable = null;
                 }
