@@ -34,6 +34,8 @@ namespace ColorTool
         static string GREEN_KEY = "Green Component";
         static string BLUE_KEY = "Blue Component";
 
+        public string Name => "iTerm Parser";
+
         static bool parseRgbFromXml(XmlNode components, ref uint rgb)
         {
             int r = -1;
