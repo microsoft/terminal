@@ -240,7 +240,7 @@ namespace ColorTool
             }
             else
             {
-                Console.WriteLine("Failed to get conosle information.");
+                Console.WriteLine("Failed to get console information.");
             }
             return success;
         }
