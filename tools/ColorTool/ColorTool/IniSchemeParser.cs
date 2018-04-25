@@ -17,7 +17,7 @@ namespace ColorTool
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
         // These are in Windows Color table order - BRG, not RGB. 
-        static string[] COLOR_NAMES = {
+        public static string[] COLOR_NAMES = {
             "DARK_BLACK",
             "DARK_BLUE",
             "DARK_GREEN",

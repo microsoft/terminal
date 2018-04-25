@@ -99,6 +99,15 @@ namespace ColorTool {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Usage: colortool -o &lt;filename&gt;.
+        /// </summary>
+        public static string OutputUsage {
+            get {
+                return ResourceManager.GetString("OutputUsage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Could not find or load &quot;{0}&quot;.
         /// </summary>
         public static string SchemeNotFound {
