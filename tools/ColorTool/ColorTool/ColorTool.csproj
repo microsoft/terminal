@@ -5,5 +5,4 @@
     <TargetFramework>net46</TargetFramework>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
-
 </Project>
