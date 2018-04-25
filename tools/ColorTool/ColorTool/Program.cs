@@ -199,13 +199,13 @@ namespace ColorTool
                 string fgText = " gYw ";
                 foreach (string schemeName in Directory.GetFiles("./schemes/").Select(Path.GetFileName))
                 {
-                    uint[] colorTable = GetSchemeUints(schemeName, false);
-                    if (colorTable != null)
+                    ColorScheme colorScheme = GetScheme(schemeName, false);
+                    if (colorScheme != null)
                     {
                         string colors = string.Empty;
                         for (var index = 0; index < 8; index++)
                         {
-                            uint t = colorTable[index];
+                            uint t = colorScheme.colorTable[index];
                             var color = UIntToColor(t);
                             // Set the background color to the color in the scheme, plus some text to show how it looks
                             colors += $"\x1b[48;2;{color.R};{color.G};{color.B}m{fgText}";
@@ -235,7 +235,7 @@ namespace ColorTool
             return Color.FromArgb(a, r, g, b);
         }
 
-        static bool SetProperties(uint[] colorTable)
+        static bool SetProperties(ColorScheme colorScheme)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
             int STD_OUTPUT_HANDLE = -11;
@@ -246,7 +246,13 @@ namespace ColorTool
                 csbiex.srWindow.Bottom++;
                 for (int i = 0; i < 16; i++)
                 {
-                    csbiex.ColorTable[i] = colorTable[i];
+                    csbiex.ColorTable[i] = colorScheme.colorTable[i];
+                }
+                if(colorScheme.background != null && colorScheme.foreground != null)
+                {
+                    int fgidx = colorScheme.CalculateIndex(colorScheme.foreground.Value);
+                    int bgidx = colorScheme.CalculateIndex(colorScheme.background.Value);
+                    csbiex.wAttributes = (ushort)(fgidx | (bgidx << 4));
                 }
                 SetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             }
@@ -260,13 +266,14 @@ namespace ColorTool
             return success;
         }
 
-        static bool SetDefaults(uint[] colorTable)
+        static bool SetDefaults(ColorScheme colorScheme)
         {
+            //TODO
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
-            for (int i = 0; i < colorTable.Length; i++)
+            for (int i = 0; i < colorScheme.colorTable.Length; i++)
             {
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
-                consoleKey.SetValue(valueName, colorTable[i], RegistryValueKind.DWord);
+                consoleKey.SetValue(valueName, colorScheme.colorTable[i], RegistryValueKind.DWord);
             }
             Console.WriteLine(Resources.WroteToDefaults);
             return true;
@@ -302,7 +309,6 @@ namespace ColorTool
             }
             return success;
         }
-
 
         static void Main(string[] args)
         {
@@ -364,9 +370,9 @@ namespace ColorTool
 
             string schemeName = args[args.Length - 1];
 
-            uint[] colorTable = GetSchemeUints(schemeName);
+            ColorScheme colorScheme = GetScheme(schemeName);
 
-            if (colorTable == null)
+            if (colorScheme == null)
             {
                 Console.WriteLine(string.Format(Resources.SchemeNotFound, schemeName));
                 return;
@@ -374,11 +380,11 @@ namespace ColorTool
 
             if (setDefaults)
             {
-                SetDefaults(colorTable);
+                SetDefaults(colorScheme);
             }
             if (setProperties)
             {
-                SetProperties(colorTable);
+                SetProperties(colorScheme);
             }
         }
 
@@ -389,14 +395,14 @@ namespace ColorTool
                 .Select(t => (ISchemeParser)Activator.CreateInstance(t));
         }
                 
-        private static uint[] GetSchemeUints(string schemeName, bool reportErrors = true)
+        private static ColorScheme GetScheme(string schemeName, bool reportErrors = true)
         {
             foreach (var parser in GetParsers())
             {
-                uint[] table = parser.ParseScheme(schemeName, reportErrors);
-                if (table != null)
+                ColorScheme scheme = parser.ParseScheme(schemeName, reportErrors);
+                if (scheme != null)
                 {
-                    return table;
+                    return scheme;
                 }
             }
             return null;

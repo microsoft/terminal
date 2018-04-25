@@ -4,6 +4,8 @@
 //
 using System;
 using System.Globalization;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
@@ -30,6 +32,8 @@ namespace ColorTool
             "Ansi 11 Color", // BRIGHT_YELLOW
             "Ansi 15 Color" // BRIGHT_WHITE
         };
+        static string FG_KEY = "Foreground Color";
+        static string BG_KEY = "Background Color";
         static string RED_KEY = "Red Component";
         static string GREEN_KEY = "Green Component";
         static string BLUE_KEY = "Blue Component";
@@ -123,7 +127,7 @@ namespace ColorTool
         }
 
 
-        public uint[] ParseScheme(string schemeName, bool reportErrors = true)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
         {
             XmlDocument xmlDoc = loadXmlScheme(schemeName); // Create an XML document object
             if (xmlDoc == null) return null;
@@ -131,39 +135,20 @@ namespace ColorTool
             XmlNodeList children = root.ChildNodes;
 
             uint[] colorTable = new uint[COLOR_TABLE_SIZE];
+            uint? fgColor = null, bgColor = null;
             int colorsFound = 0;
             bool success = false;
-            foreach (XmlNode tableEntry in children)
+            foreach (var tableEntry in children.OfType<XmlNode>().Where(_ => _.Name == "key"))
             {
-                if (tableEntry.Name == "key")
-                {
-                    int index = -1;
-                    for (int i = 0; i < COLOR_TABLE_SIZE; i++)
-                    {
-                        if (PLIST_COLOR_NAMES[i] == tableEntry.InnerText)
-                        {
-                            index = i;
-                            break;
-                        }
-                    }
-                    if (index == -1)
-                    {
-                        continue;
-                    }
-                    uint rgb = 0; ;
-                    XmlNode components = tableEntry.NextSibling;
-                    success = parseRgbFromXml(components, ref rgb);
-                    if (!success)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        colorTable[index] = rgb;
-                        colorsFound++;
-                    }
-                }
-
+                uint rgb = 0;
+                int index = -1;
+                XmlNode components = tableEntry.NextSibling;
+                success = parseRgbFromXml(components, ref rgb);
+                if (!success) { break; }
+                else if (tableEntry.InnerText == FG_KEY) { fgColor = rgb; }
+                else if (tableEntry.InnerText == BG_KEY) { bgColor = rgb; }
+                else if (-1 != (index = Array.IndexOf(PLIST_COLOR_NAMES, tableEntry.InnerText)))
+                { colorTable[index] = rgb; colorsFound++; }
             }
             if (colorsFound < COLOR_TABLE_SIZE)
             {
@@ -177,8 +162,8 @@ namespace ColorTool
             {
                 return null;
             }
-            return colorTable;
 
+            return new ColorScheme { colorTable = colorTable, foreground = fgColor, background = bgColor };
         }
     }
 }

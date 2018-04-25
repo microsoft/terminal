@@ -107,7 +107,7 @@ namespace ColorTool
             return null;
         }
 
-        public uint[] ParseScheme(string schemeName, bool reportErrors = true)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
         {
             bool success = true;
 
@@ -156,7 +156,14 @@ namespace ColorTool
                 }
             }
 
-            return colorTable;
+            if (colorTable != null)
+            {
+                return new ColorScheme { colorTable = colorTable };
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }
