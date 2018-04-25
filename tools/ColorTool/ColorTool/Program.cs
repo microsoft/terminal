@@ -199,7 +199,7 @@ namespace ColorTool
                 string fgText = " gYw ";
                 foreach (string schemeName in Directory.GetFiles("./schemes/").Select(Path.GetFileName))
                 {
-                    uint[] colorTable = GetSchemeUints(schemeName);
+                    uint[] colorTable = GetSchemeUints(schemeName, false);
                     if (colorTable != null)
                     {
                         string colors = string.Empty;
@@ -389,11 +389,11 @@ namespace ColorTool
                 .Select(t => (ISchemeParser)Activator.CreateInstance(t));
         }
                 
-        private static uint[] GetSchemeUints(string schemeName)
+        private static uint[] GetSchemeUints(string schemeName, bool reportErrors = true)
         {
             foreach (var parser in GetParsers())
             {
-                uint[] table = parser.ParseScheme(schemeName);
+                uint[] table = parser.ParseScheme(schemeName, reportErrors);
                 if (table != null)
                 {
                     return table;

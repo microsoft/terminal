@@ -123,7 +123,7 @@ namespace ColorTool
         }
 
 
-        public uint[] ParseScheme(string schemeName)
+        public uint[] ParseScheme(string schemeName, bool reportErrors = true)
         {
             XmlDocument xmlDoc = loadXmlScheme(schemeName); // Create an XML document object
             if (xmlDoc == null) return null;
@@ -167,7 +167,10 @@ namespace ColorTool
             }
             if (colorsFound < COLOR_TABLE_SIZE)
             {
-                Console.WriteLine(Resources.InvalidNumberOfColors);
+                if (reportErrors)
+                {
+                    Console.WriteLine(Resources.InvalidNumberOfColors);
+                }
                 success = false;
             }
             if (!success)

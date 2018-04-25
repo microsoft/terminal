@@ -9,6 +9,6 @@ namespace ColorTool
     {
         string Name { get; }
 
-        uint[] ParseScheme(string schemeName);
+        uint[] ParseScheme(string schemeName, bool reportErrors = true);
     }
 }
