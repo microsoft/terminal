@@ -189,7 +189,9 @@ namespace ColorTool
 
         static void PrintSchemes()
         {
-            if (Directory.Exists("./schemes"))
+            var schemeDirectory = new FileInfo(new Uri(Assembly.GetEntryAssembly().GetName().CodeBase).AbsolutePath).Directory.FullName + "/schemes"; 
+
+            if (Directory.Exists(schemeDirectory))
             {
                 IntPtr handle = GetStdHandle(-11);
                 GetConsoleMode(handle, out var mode);
@@ -197,7 +199,7 @@ namespace ColorTool
 
                 int consoleWidth = Console.WindowWidth;
                 string fgText = " gYw ";
-                foreach (string schemeName in Directory.GetFiles("./schemes/").Select(Path.GetFileName))
+                foreach (string schemeName in Directory.GetFiles(schemeDirectory).Select(Path.GetFileName))
                 {
                     ColorScheme colorScheme = GetScheme(schemeName, false);
                     if (colorScheme != null)
