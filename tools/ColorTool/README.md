@@ -37,6 +37,10 @@ Options:
 
   I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to choose from, and previews.
 
+## Installing 
+
+Just [https://github.com/Microsoft/console/releases](download the latest colortool release) and extract the zip file. 
+
 ## Building
 
   Either build with Visual Studio, or use the included `build.bat` from the command line to try and auto-detect your msbuild version.
