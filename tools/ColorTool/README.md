@@ -1,4 +1,6 @@
-# ColorTool - colortool.exe
+# ColorTool 
+
+ColorTool makes it easy to change the Windows console to your desired scheme. Includes support for iTerm themes!
 
 ```
 Usage:
@@ -41,7 +43,7 @@ Options:
 
 ## Installing 
 
-Just [https://github.com/Microsoft/console/releases](download the latest colortool release) and extract the zip file. 
+Just [download the latest colortool release](https://github.com/Microsoft/console/releases) and extract the zip file. 
 
 ## Building
 
