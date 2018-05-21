@@ -39,7 +39,7 @@ Options:
 
   I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to choose from, and previews.
   
-  You can also easily visually edit `.itermcolors` color schemes using [terminal.sexy](https://terminal.sexy. Use the **Import** and **Export** tabs with `iTerm2` as the format.
+  You can also easily visually edit `.itermcolors` color schemes using [terminal.sexy](https://terminal.sexy). Use the **Import** and **Export** tabs with `iTerm2` as the format.
 
 ## Installing 
 
