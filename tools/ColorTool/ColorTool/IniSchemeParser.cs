@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using static ColorTool.ConsoleAPI;
@@ -70,41 +71,9 @@ namespace ColorTool
             }
         }
 
-        // TODO: Abstract the locating of a scheme into a function the implementation can call into
-        //      Both parsers duplicate the searching, they should just pass in their extension and
-        //      a callback for initally validating the file
         static string FindIniScheme(string schemeName)
         {
-            string exeDir = System.IO.Directory.GetParent(System.Reflection.Assembly.GetEntryAssembly().Location).FullName;
-            string filename = schemeName + ".ini";
-            string exeSchemes = exeDir + "/schemes/";
-            string cwd = "./";
-            string cwdSchemes = "./schemes/";
-            // Search order, for argument "name", where 'exe' is the dir of the exe.
-            //  1. ./name
-            //  2. ./name.ini
-            //  3. ./schemes/name
-            //  4. ./schemes/name.ini
-            //  5. exe/schemes/name
-            //  6. exe/schemes/name.ini
-            //  7. name (as an absolute path)
-            string[] paths = {
-                cwd + schemeName,
-                cwd + filename,
-                cwdSchemes + schemeName,
-                cwdSchemes + filename,
-                exeSchemes + schemeName,
-                exeSchemes + filename,
-                schemeName,
-            };
-            foreach (string path in paths)
-            {
-                if (File.Exists(path))
-                {
-                    return path;
-                }
-            }
-            return null;
+            return Scheme.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
         }
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)

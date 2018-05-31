@@ -4,6 +4,7 @@
 //
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Xml;
@@ -81,49 +82,20 @@ namespace ColorTool
         static XmlDocument loadXmlScheme(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument(); // Create an XML document object
-            string exeDir = System.IO.Directory.GetParent(System.Reflection.Assembly.GetEntryAssembly().Location).FullName;
-            bool found = false;
-            string filename = schemeName + ".itermcolors";
-            string exeSchemes = exeDir + "/schemes/";
-            string cwd = "./";
-            string cwdSchemes = "./schemes/";
-            // Search order, for argument "name", where 'exe' is the dir of the exe.
-            //  1. ./name
-            //  2. ./name.itermcolors
-            //  3. ./schemes/name
-            //  4. ./schemes/name.itermcolors
-            //  5. exe/schemes/name
-            //  6. exe/schemes/name.itermcolors
-            //  7. name (as an absolute path)
-            string[] paths = {
-                cwd + schemeName,
-                cwd + filename,
-                cwdSchemes + schemeName,
-                cwdSchemes + filename,
-                exeSchemes + schemeName,
-                exeSchemes + filename,
-                schemeName,
-            };
-            foreach (string path in paths)
+            foreach (string path in Scheme.GetSearchPaths(schemeName, ".itermcolors")
+                                          .Where(File.Exists))
             {
                 try
                 {
                     xmlDoc.Load(path);
-                    found = true;
-                    break;
+                    return xmlDoc;
                 }
-                catch (Exception /*e*/)
-                {
-                    // We can either fail to find the file,
-                    //   or fail to parse the XML here.
-                }
+                catch (XmlException /*e*/) { /* failed to parse */ }
+                catch (IOException /*e*/) { /* failed to find */ }
+                catch (UnauthorizedAccessException /*e*/) { /* unauthorized */ }
             }
 
-            if (!found)
-            {
-                return null;
-            }
-            return xmlDoc;
+            return null;
         }
 
 
