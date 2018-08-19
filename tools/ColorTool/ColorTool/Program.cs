@@ -230,11 +230,10 @@ namespace ColorTool
 
         private static Color UIntToColor(uint color)
         {
-            byte a = (byte)(color >> 24);
-            byte r = (byte)(color >> 16);
+            byte r = (byte)(color >> 0);
             byte g = (byte)(color >> 8);
-            byte b = (byte)(color >> 0);
-            return Color.FromArgb(a, r, g, b);
+            byte b = (byte)(color >> 16);
+            return Color.FromArgb(r, g, b);
         }
 
         static bool SetProperties(ColorScheme colorScheme)
