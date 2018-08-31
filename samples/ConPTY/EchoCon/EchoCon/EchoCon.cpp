@@ -7,52 +7,50 @@
 #include <process.h>
 #include <wchar.h>
 
+// Forward declarations
 void __cdecl PipeListener(LPVOID);
-HRESULT InitializeStartupInfoAttachedToConPTY(STARTUPINFOEX*, HPCON);
+HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX*, HPCON);
 COORD GetConsoleSize(HANDLE);
 
 int main()
 {
-    TCHAR szCommand[] = L"ping localhost";
-    HRESULT hr = S_OK;
-    HANDLE hPipeIn = 0;
-    HANDLE hPipeOut = 0;
-    HANDLE hPipePTYIn = 0;
-    HANDLE hPipePTYOut = 0;
-    HPCON hPC = 0;
+    wchar_t szCommand[] = L"ping localhost";
+    HRESULT hr{ S_OK };
+    HANDLE hPipeIn{ INVALID_HANDLE_VALUE };
+    HANDLE hPipeOut{ INVALID_HANDLE_VALUE };
+    HANDLE hPipePTYIn{ INVALID_HANDLE_VALUE };
+    HANDLE hPipePTYOut{ INVALID_HANDLE_VALUE };
+    HPCON hPC{ INVALID_HANDLE_VALUE };
 
     PROCESS_INFORMATION piClient{};
     STARTUPINFOEX startupInfo{};
 
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-    DWORD consoleMode = 0;
+    HANDLE hConsole = { GetStdHandle(STD_OUTPUT_HANDLE) };
+    DWORD consoleMode{};
 
+    // Enable VT Processing
     GetConsoleMode(hConsole, &consoleMode);
     hr = SetConsoleMode(hConsole, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         ? S_OK
         : GetLastError();
-
     if (S_OK == hr)
     {
-        COORD consoleSize = GetConsoleSize(hConsole);
-
         // Create the pipes to which the ConPTY will connect
         if (CreatePipe(&hPipePTYIn, &hPipeOut, NULL, 0) &&
             CreatePipe(&hPipeIn, &hPipePTYOut, NULL, 0))
         {
             // Create & start thread to listen to the incoming pipe
             // NB: Using CRT-safe _beginthread() rather than CreateThread()
-            DWORD pipeListenerThreadId = 0;
-            HANDLE hPipeListenerThread = (HANDLE)_beginthread(
-                PipeListener,           // Thread function
-                0,                      // Default stack
-                hPipeIn);               // Thread arg
-        
-            // Create ConPTY
+            DWORD pipeListenerThreadId{};
+            HANDLE hPipeListenerThread{ 
+                reinterpret_cast<HANDLE>(_beginthread(PipeListener, 0, hPipeIn)) };
+
+            // Create appropriately sized ConPTY
+            COORD consoleSize{ GetConsoleSize(hConsole) };
             hr = CreatePseudoConsole(consoleSize, hPipePTYIn, hPipePTYOut, 0, &hPC);
 
             // Initialize the necessary startup info struct        
-            if (S_OK == InitializeStartupInfoAttachedToConPTY(&startupInfo, hPC))
+            if (S_OK == InitializeStartupInfoAttachedToPseudoConsole(&startupInfo, hPC))
             {
                 // Launch ping to echo some text back via the pipe
                 hr = CreateProcess(
@@ -95,20 +93,20 @@ int main()
             }
             else
             {
-                _tprintf_s(L"Error: Failed to initialize StartupInfo attached to ConPTY [0x%x]", 
+                wprintf_s(L"Error: Failed to initialize StartupInfo attached to ConPTY [0x%x]",
                     GetLastError());
             }
         }
         else
         {
-            _tprintf_s(L"Error: Failed to create pipes");
+            wprintf_s(L"Error: Failed to create pipes");
         }
 
         // Clean-up the pipes
-        if (hPipePTYOut) CloseHandle(hPipePTYOut);
-        if (hPipePTYIn) CloseHandle(hPipePTYIn);
-        if (hPipeOut) CloseHandle(hPipeOut);
-        if (hPipeIn) CloseHandle(hPipeIn);
+        if (hPipePTYOut != INVALID_HANDLE_VALUE) CloseHandle(hPipePTYOut);
+        if (hPipePTYIn != INVALID_HANDLE_VALUE) CloseHandle(hPipePTYIn);
+        if (hPipeOut != INVALID_HANDLE_VALUE) CloseHandle(hPipeOut);
+        if (hPipeIn != INVALID_HANDLE_VALUE) CloseHandle(hPipeIn);
 
         // Restore console to its original mode.
         hr = SetConsoleMode(hConsole, consoleMode)
@@ -121,44 +119,35 @@ int main()
 
 void __cdecl PipeListener(LPVOID pipe)
 {
-    HANDLE hPipe = (HANDLE)(HANDLE*)pipe;
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE hPipe{ pipe };
+    HANDLE hConsole{ GetStdHandle(STD_OUTPUT_HANDLE) };
 
-    DWORD dwBytesWritten = 0;
-    const DWORD BUFF_SIZE = 512;
-    char* pszBuffer = (char*)malloc(BUFF_SIZE);
-    if (pszBuffer)
+    const DWORD BUFF_SIZE{ 512 };
+    char pszBuffer[BUFF_SIZE]{};
+
+    DWORD dwBytesWritten{};
+    DWORD dwBytesRead{};
+    BOOL fRead{ FALSE };
+    do
     {
-        memset(pszBuffer, 0, BUFF_SIZE);
+        // Read from the pipe
+        fRead = ReadFile(hPipe, pszBuffer, BUFF_SIZE, &dwBytesRead, NULL);
 
-        DWORD dwBytesRead = -1;
-        BOOL fRead = FALSE;
-        do
-        {
-            // Read from the pipe
-            fRead = ReadFile(hPipe, pszBuffer, BUFF_SIZE, &dwBytesRead, NULL);
+        // Write received text to the Console
+        WriteFile(hConsole, pszBuffer, dwBytesRead, &dwBytesWritten, NULL);
 
-            // Write received text to the Console
-            WriteFile(hConsole, pszBuffer, dwBytesRead, &dwBytesWritten, NULL);
-
-        } while (fRead && dwBytesRead >= 0);
-
-        free(pszBuffer);
-
-        // Automatically cleans-up
-        _endthread();
-    }
+    } while (fRead && dwBytesRead >= 0);
 }
 
 // Initializes the specified startup info struct with the required properties and
 // updates its thread attribute list with the specified ConPTY handle
-HRESULT InitializeStartupInfoAttachedToConPTY(STARTUPINFOEX* pStartupInfo, HPCON hPC)
+HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX* pStartupInfo, HPCON hPC)
 {
-    HRESULT hr = E_UNEXPECTED;
+    HRESULT hr{ E_UNEXPECTED };
 
     if (pStartupInfo)
     {
-        SIZE_T size = 0;
+        size_t size{};
 
         pStartupInfo->StartupInfo.cb = sizeof(STARTUPINFOEX);
 
@@ -166,13 +155,14 @@ HRESULT InitializeStartupInfoAttachedToConPTY(STARTUPINFOEX* pStartupInfo, HPCON
         InitializeProcThreadAttributeList(NULL, 1, 0, &size);
 
         // Allocate a thread attribute list of the correct size
-        pStartupInfo->lpAttributeList = (LPPROC_THREAD_ATTRIBUTE_LIST)malloc((size_t)size);
+        pStartupInfo->lpAttributeList = 
+            reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(malloc(size));
 
         // Initialize thread attribute list
-        if (pStartupInfo->lpAttributeList 
+        if (pStartupInfo->lpAttributeList
             && InitializeProcThreadAttributeList(pStartupInfo->lpAttributeList, 1, 0, &size))
         {
-            // Set thread attribute list's Pseudo Console to the specified ConPTY
+            // Set Pseudo Console attribute
             hr = UpdateProcThreadAttribute(
                 pStartupInfo->lpAttributeList,
                 0,
@@ -196,7 +186,7 @@ COORD GetConsoleSize(HANDLE hStdOut)
 {
     COORD size = { 0, 0 };
 
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    CONSOLE_SCREEN_BUFFER_INFO csbi{};
     if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
     {
         size.X = csbi.srWindow.Right - csbi.srWindow.Left + 1;
