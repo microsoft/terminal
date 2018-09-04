@@ -2,10 +2,10 @@
 This is a very simple sample application that illustrates how to use the new Win32 Pseudo Console 
 (ConPTY) by:
 
-* Creating an input and an output pipe
-* Calling `CreatePseudoConsole()` to create a ConPTY instance attached to the other end of the pipes
-* Spawning an instance of `ping.exe` connected to the ConPTY
-* Running a thread that listens for output from ping.exe, writing received text to the Console
+1. Creating an input and an output pipe
+1. Calling `CreatePseudoConsole()` to create a ConPTY instance attached to the other end of the pipes
+1. Spawning an instance of `ping.exe` connected to the ConPTY
+1. Running a thread that listens for output from ping.exe, writing received text to the Console
 
 # Pre-Requirements
 To build and run this sample, you must install:
@@ -17,7 +17,6 @@ Once successfully built, running EchoCon should clear the screen and display the
 echo command:
 
 ```
-
 Pinging Rincewind [::1] with 32 bytes of data:
 Reply from ::1: time<1ms
 Reply from ::1: time<1ms
