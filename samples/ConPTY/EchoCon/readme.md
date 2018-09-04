@@ -9,8 +9,8 @@ This is a very simple sample application that illustrates how to use the new Win
 
 # Pre-Requirements
 To build and run this sample, you must install:
-1. Windows 10 Insider build 17733 or later
-1. [Latest Windows 10 Insider SDK](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
+* Windows 10 Insider build 17733 or later
+* [Latest Windows 10 Insider SDK](https://www.microsoft.com/en-us/software-download/windowsinsiderpreviewSDK)
 
 # Running the sample
 Once successfully built, running EchoCon should clear the screen and display the results of the 

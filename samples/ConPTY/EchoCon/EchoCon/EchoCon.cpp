@@ -1,64 +1,53 @@
-// EchoCon.cpp : Entry point for the EchoCon sample application.
-//
+// EchoCon.cpp : Entry point for the EchoCon Pseudo-Consle sample application.
+// Copyright © 2018, Microsoft
 
 #include "stdafx.h"
 #include <Windows.h>
-#include <conio.h>
 #include <process.h>
-#include <wchar.h>
 
 // Forward declarations
-void __cdecl PipeListener(LPVOID);
+HRESULT CreateConPTY(HPCON*, HANDLE*, HANDLE*);
 HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX*, HPCON);
-COORD GetConsoleSize(HANDLE);
+void __cdecl PipeListener(LPVOID);
 
 int main()
 {
     wchar_t szCommand[] = L"ping localhost";
-    HRESULT hr{ S_OK };
-    HANDLE hPipeIn{ INVALID_HANDLE_VALUE };
-    HANDLE hPipeOut{ INVALID_HANDLE_VALUE };
-    HANDLE hPipePTYIn{ INVALID_HANDLE_VALUE };
-    HANDLE hPipePTYOut{ INVALID_HANDLE_VALUE };
-    HPCON hPC{ INVALID_HANDLE_VALUE };
-
-    PROCESS_INFORMATION piClient{};
-    STARTUPINFOEX startupInfo{};
-
+    HRESULT hr{ E_UNEXPECTED };
     HANDLE hConsole = { GetStdHandle(STD_OUTPUT_HANDLE) };
-    DWORD consoleMode{};
 
-    // Enable VT Processing
+    // Enable Console VT Processing
+    DWORD consoleMode{};
     GetConsoleMode(hConsole, &consoleMode);
     hr = SetConsoleMode(hConsole, consoleMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING)
         ? S_OK
         : GetLastError();
     if (S_OK == hr)
     {
-        // Create the pipes to which the ConPTY will connect
-        if (CreatePipe(&hPipePTYIn, &hPipeOut, NULL, 0) &&
-            CreatePipe(&hPipeIn, &hPipePTYOut, NULL, 0))
+        HPCON hPC{ INVALID_HANDLE_VALUE };
+
+        //  Create the Pseudo Console and pipes to it
+        HANDLE hPipeIn{ INVALID_HANDLE_VALUE };
+        HANDLE hPipeOut{ INVALID_HANDLE_VALUE };
+        hr = CreateConPTY(&hPC, &hPipeIn, &hPipeOut);
+        if (S_OK == hr)
         {
             // Create & start thread to listen to the incoming pipe
-            // NB: Using CRT-safe _beginthread() rather than CreateThread()
-            DWORD pipeListenerThreadId{};
-            HANDLE hPipeListenerThread{ 
-                reinterpret_cast<HANDLE>(_beginthread(PipeListener, 0, hPipeIn)) };
-
-            // Create appropriately sized ConPTY
-            COORD consoleSize{ GetConsoleSize(hConsole) };
-            hr = CreatePseudoConsole(consoleSize, hPipePTYIn, hPipePTYOut, 0, &hPC);
+            // Note: Using CRT-safe _beginthread() rather than CreateThread()
+            HANDLE hPipeListenerThread{ reinterpret_cast<HANDLE>(_beginthread(PipeListener, 0, hPipeIn)) };
 
             // Initialize the necessary startup info struct        
+            STARTUPINFOEX startupInfo{};
             if (S_OK == InitializeStartupInfoAttachedToPseudoConsole(&startupInfo, hPC))
             {
-                // Launch ping to echo some text back via the pipe
+                // Launch ping to emit some text back via the pipe
+                PROCESS_INFORMATION piClient{};
                 hr = CreateProcess(
                     NULL,                           // No module name - use Command Line
                     szCommand,                      // Command Line
                     NULL,                           // Process handle not inheritable
                     NULL,                           // Thread handle not inheritable
-                    TRUE,                           // Inherit handles
+                    FALSE,                          // Inherit handles
                     EXTENDED_STARTUPINFO_PRESENT,   // Creation flags
                     NULL,                           // Use parent's environment block
                     NULL,                           // Use parent's starting directory 
@@ -69,7 +58,7 @@ int main()
 
                 if (S_OK == hr)
                 {
-                    // Wait until ping completes
+                    // Wait up to 10s for ping process to complete
                     WaitForSingleObject(piClient.hThread, 10 * 1000);
 
                     // Allow listening thread to catch-up with final output!
@@ -77,10 +66,8 @@ int main()
                 }
 
                 // --- CLOSEDOWN ---
-                // Close ConPTY - this will terminate client process if running
-                ClosePseudoConsole(hPC);
 
-                // Now safe to clean-up client process info process & thread
+                // Now safe to clean-up client app's process-info & thread
                 CloseHandle(piClient.hThread);
                 CloseHandle(piClient.hProcess);
 
@@ -91,52 +78,50 @@ int main()
                     free(startupInfo.lpAttributeList);
                 }
             }
-            else
-            {
-                wprintf_s(L"Error: Failed to initialize StartupInfo attached to ConPTY [0x%x]",
-                    GetLastError());
-            }
-        }
-        else
-        {
-            wprintf_s(L"Error: Failed to create pipes");
-        }
 
-        // Clean-up the pipes
-        if (hPipePTYOut != INVALID_HANDLE_VALUE) CloseHandle(hPipePTYOut);
-        if (hPipePTYIn != INVALID_HANDLE_VALUE) CloseHandle(hPipePTYIn);
-        if (hPipeOut != INVALID_HANDLE_VALUE) CloseHandle(hPipeOut);
-        if (hPipeIn != INVALID_HANDLE_VALUE) CloseHandle(hPipeIn);
+            // Close ConPTY - this will terminate client process if running
+            ClosePseudoConsole(hPC);
 
-        // Restore console to its original mode.
-        hr = SetConsoleMode(hConsole, consoleMode)
-            ? S_OK
-            : GetLastError();
+            // Clean-up the pipes
+            if (INVALID_HANDLE_VALUE != hPipeOut) CloseHandle(hPipeOut);
+            if (INVALID_HANDLE_VALUE != hPipeIn) CloseHandle(hPipeIn);
+        }
     }
 
-    return hr == S_OK;
+    return S_OK == hr ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-void __cdecl PipeListener(LPVOID pipe)
+HRESULT CreateConPTY(HPCON* phPC, HANDLE* phPipeIn, HANDLE* phPipeOut)
 {
-    HANDLE hPipe{ pipe };
-    HANDLE hConsole{ GetStdHandle(STD_OUTPUT_HANDLE) };
+    HRESULT hr{ E_UNEXPECTED };
+    HANDLE hPipePTYIn{ INVALID_HANDLE_VALUE };
+    HANDLE hPipePTYOut{ INVALID_HANDLE_VALUE };
 
-    const DWORD BUFF_SIZE{ 512 };
-    char pszBuffer[BUFF_SIZE]{};
-
-    DWORD dwBytesWritten{};
-    DWORD dwBytesRead{};
-    BOOL fRead{ FALSE };
-    do
+    // Create the pipes to which the ConPTY will connect
+    if (CreatePipe(&hPipePTYIn, phPipeOut, NULL, 0) &&
+        CreatePipe(phPipeIn, &hPipePTYOut, NULL, 0))
     {
-        // Read from the pipe
-        fRead = ReadFile(hPipe, pszBuffer, BUFF_SIZE, &dwBytesRead, NULL);
+        // Determine required size of Pseudo Console
+        COORD consoleSize{};
+        CONSOLE_SCREEN_BUFFER_INFO csbi{};
+        HANDLE hConsole{ GetStdHandle(STD_OUTPUT_HANDLE) };
+        if (GetConsoleScreenBufferInfo(hConsole, &csbi))
+        {
+            consoleSize.X = csbi.srWindow.Right - csbi.srWindow.Left + 1;
+            consoleSize.Y = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
+        }
 
-        // Write received text to the Console
-        WriteFile(hConsole, pszBuffer, dwBytesRead, &dwBytesWritten, NULL);
+        // Create the Pseudo Console of the required size, attached to the PTY-end of the pipes
+        hr = CreatePseudoConsole(consoleSize, hPipePTYIn, hPipePTYOut, 0, phPC);
 
-    } while (fRead && dwBytesRead >= 0);
+        // Note: We can close the handles to the PTY-end of the pipes here
+        // because the handles are dup'ed into the ConHost and will be released
+        // when the ConPTY is destroyed.
+        if (INVALID_HANDLE_VALUE != hPipePTYOut) CloseHandle(hPipePTYOut);
+        if (INVALID_HANDLE_VALUE != hPipePTYIn) CloseHandle(hPipePTYIn);
+    }
+
+    return hr;
 }
 
 // Initializes the specified startup info struct with the required properties and
@@ -147,20 +132,20 @@ HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX* pStartupInfo
 
     if (pStartupInfo)
     {
-        size_t size{};
+        size_t attrListSize{};
 
         pStartupInfo->StartupInfo.cb = sizeof(STARTUPINFOEX);
 
         // Get the size of the thread attribute list.
-        InitializeProcThreadAttributeList(NULL, 1, 0, &size);
+        InitializeProcThreadAttributeList(NULL, 1, 0, &attrListSize);
 
         // Allocate a thread attribute list of the correct size
-        pStartupInfo->lpAttributeList = 
-            reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(malloc(size));
+        pStartupInfo->lpAttributeList =
+            reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(malloc(attrListSize));
 
         // Initialize thread attribute list
         if (pStartupInfo->lpAttributeList
-            && InitializeProcThreadAttributeList(pStartupInfo->lpAttributeList, 1, 0, &size))
+            && InitializeProcThreadAttributeList(pStartupInfo->lpAttributeList, 1, 0, &attrListSize))
         {
             // Set Pseudo Console attribute
             hr = UpdateProcThreadAttribute(
@@ -182,16 +167,26 @@ HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX* pStartupInfo
     return hr;
 }
 
-COORD GetConsoleSize(HANDLE hStdOut)
+void __cdecl PipeListener(LPVOID pipe)
 {
-    COORD size = { 0, 0 };
+    HANDLE hPipe{ pipe };
+    HANDLE hConsole{ GetStdHandle(STD_OUTPUT_HANDLE) };
 
-    CONSOLE_SCREEN_BUFFER_INFO csbi{};
-    if (GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi))
+    const DWORD BUFF_SIZE{ 512 };
+    char szBuffer[BUFF_SIZE]{};
+
+    DWORD dwBytesWritten{};
+    DWORD dwBytesRead{};
+    BOOL fRead{ FALSE };
+    do
     {
-        size.X = csbi.srWindow.Right - csbi.srWindow.Left + 1;
-        size.Y = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
-    }
+        // Read from the pipe
+        fRead = ReadFile(hPipe, szBuffer, BUFF_SIZE, &dwBytesRead, NULL);
 
-    return size;
+        // Write received text to the Console
+        // Note: Write to the Console using WriteFile(hConsole...), not printf()/puts() to
+        // prevent partially-read VT sequences from corrupting output
+        WriteFile(hConsole, szBuffer, dwBytesRead, &dwBytesWritten, NULL);
+
+    } while (fRead && dwBytesRead >= 0);
 }
