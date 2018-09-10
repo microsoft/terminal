@@ -72,11 +72,8 @@ int main()
                 CloseHandle(piClient.hProcess);
 
                 // Cleanup attribute list
-                if (startupInfo.lpAttributeList)
-                {
-                    DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
-                    free(startupInfo.lpAttributeList);
-                }
+                DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
+                free(startupInfo.lpAttributeList);
             }
 
             // Close ConPTY - this will terminate client process if running
