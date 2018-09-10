@@ -6,13 +6,13 @@
 #include <process.h>
 
 // Forward declarations
-HRESULT CreateConPTY(HPCON*, HANDLE*, HANDLE*);
+HRESULT CreatePseudoConsoleAndPipes(HPCON*, HANDLE*, HANDLE*);
 HRESULT InitializeStartupInfoAttachedToPseudoConsole(STARTUPINFOEX*, HPCON);
 void __cdecl PipeListener(LPVOID);
 
 int main()
 {
-    wchar_t szCommand[] = L"ping localhost";
+    wchar_t szCommand[]{ L"ping localhost" };
     HRESULT hr{ E_UNEXPECTED };
     HANDLE hConsole = { GetStdHandle(STD_OUTPUT_HANDLE) };
 
@@ -29,7 +29,7 @@ int main()
         //  Create the Pseudo Console and pipes to it
         HANDLE hPipeIn{ INVALID_HANDLE_VALUE };
         HANDLE hPipeOut{ INVALID_HANDLE_VALUE };
-        hr = CreateConPTY(&hPC, &hPipeIn, &hPipeOut);
+        hr = CreatePseudoConsoleAndPipes(&hPC, &hPipeIn, &hPipeOut);
         if (S_OK == hr)
         {
             // Create & start thread to listen to the incoming pipe
@@ -91,7 +91,7 @@ int main()
     return S_OK == hr ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
-HRESULT CreateConPTY(HPCON* phPC, HANDLE* phPipeIn, HANDLE* phPipeOut)
+HRESULT CreatePseudoConsoleAndPipes(HPCON* phPC, HANDLE* phPipeIn, HANDLE* phPipeOut)
 {
     HRESULT hr{ E_UNEXPECTED };
     HANDLE hPipePTYIn{ INVALID_HANDLE_VALUE };
