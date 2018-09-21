@@ -13,8 +13,8 @@ namespace MiniTerm
     /// </remarks>
     internal sealed class PseudoConsolePipe : IDisposable
     {
-        public SafeFileHandle ReadSide;
-        public SafeFileHandle WriteSide;
+        public readonly SafeFileHandle ReadSide;
+        public readonly SafeFileHandle WriteSide;
 
         public PseudoConsolePipe()
         {

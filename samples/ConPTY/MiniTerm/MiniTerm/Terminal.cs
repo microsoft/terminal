@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using static MiniTerm.Native.ConsoleApi;
 
@@ -49,17 +50,16 @@ namespace MiniTerm
             using (var inputPipe = new PseudoConsolePipe())
             using (var outputPipe = new PseudoConsolePipe())
             using (var pseudoConsole = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, (short)Console.WindowWidth, (short)Console.WindowHeight))
-            using (var process = Process.Start(command, PseudoConsole.PseudoConsoleThreadAttribute, pseudoConsole.Handle))
+            using (var process = ProcessFactory.Start(command, PseudoConsole.PseudoConsoleThreadAttribute, pseudoConsole.Handle))
             {
-                // set up a background task to copy all pseudoconsole output to stdout
+                // copy all pseudoconsole output to stdout
                 Task.Run(() => CopyPipeToOutput(outputPipe.ReadSide));
-
+                // prompt for stdin input and send the result to the pseudoconsole
+                Task.Run(() => CopyInputToPipe(inputPipe.WriteSide));
                 // free resources in case the console is ungracefully closed (e.g. by the 'x' in the window titlebar)
                 OnClose(() => DisposeResources(process, pseudoConsole, outputPipe, inputPipe));
 
-                // prompt for stdin input and send the result to the pipe.
-                // blocks until the user types "exit"
-                CopyInputToPipe(inputPipe.WriteSide);
+                WaitForExit(process).WaitOne(Timeout.Infinite);
             }
         }
 
@@ -75,25 +75,11 @@ namespace MiniTerm
                 writer.AutoFlush = true;
                 writer.WriteLine(@"cd \");
 
-                StringBuilder buffer = new StringBuilder();
                 while (true)
                 {
                     // send input character-by-character to the pipe
                     char key = Console.ReadKey(intercept: true).KeyChar;
                     writer.Write(key);
-
-                    // stop the input loop if 'exit' was sent
-                    // TODO: if we have nested cmd.exe process, this will kill all of them which is wrong.
-                    // could we somehow detect when the top-level cmd.exe process has ended and remove this logic?
-                    buffer.Append(key);
-                    if (key == '\r')
-                    {
-                        if (buffer.ToString() == ExitCommand)
-                        {
-                            break;
-                        }
-                        buffer.Clear();
-                    }
                 }
             }
         }
@@ -122,6 +108,15 @@ namespace MiniTerm
                 pseudoConsoleOutput.CopyTo(terminalOutput);
             }
         }
+
+        /// <summary>
+        /// Get an AutoResetEvent that signals when the process exits
+        /// </summary>
+        private static AutoResetEvent WaitForExit(ProcessFactory.Process process) =>
+            new AutoResetEvent(false)
+            {
+                SafeWaitHandle = new SafeWaitHandle(process.ProcessInfo.hProcess, false)
+            };
 
         /// <summary>
         /// Set a callback for when the terminal is closed (e.g. via the "X" window decoration button).
