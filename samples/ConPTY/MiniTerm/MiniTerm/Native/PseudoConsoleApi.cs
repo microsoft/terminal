@@ -22,9 +22,6 @@ namespace MiniTerm.Native
         internal static extern int CreatePseudoConsole(COORD size, SafeFileHandle hInput, SafeFileHandle hOutput, uint dwFlags, out IntPtr phPC);
 
         [DllImport("kernel32.dll", SetLastError = true)]
-        internal static extern int CreatePseudoConsole(COORD size, IntPtr hInput, IntPtr hOutput, uint dwFlags, out IntPtr phPC);
-
-        [DllImport("kernel32.dll", SetLastError = true)]
         internal static extern int ResizePseudoConsole(IntPtr hPC, COORD size);
 
         [DllImport("kernel32.dll", SetLastError = true)]

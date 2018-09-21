@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using static MiniTerm.Native.ProcessApi;
+using static MiniTerm.Native.PseudoConsoleApi;
 
 namespace MiniTerm
 {
@@ -15,7 +16,7 @@ namespace MiniTerm
         /// <summary>
         /// Start and configure a process. The return value should be considered opaque, and eventually disposed.
         /// </summary>
-        internal static ProcessResources Start(IntPtr hPC, string command, IntPtr attributes)
+        internal static ProcessResources Start(string command, IntPtr attributes, IntPtr hPC)
         {
             var startupInfo = ConfigureProcessThread(hPC, attributes);
             var processInfo = RunProcess(ref startupInfo, "cmd.exe");
@@ -93,26 +94,6 @@ namespace MiniTerm
             return pInfo;
         }
 
-        private static void CleanUp(STARTUPINFOEX startupInfo, PROCESS_INFORMATION processInfo)
-        {
-            // Free the attribute list
-            if (startupInfo.lpAttributeList != IntPtr.Zero)
-            {
-                DeleteProcThreadAttributeList(startupInfo.lpAttributeList);
-                Marshal.FreeHGlobal(startupInfo.lpAttributeList);
-            }
-
-            // Close process and thread handles
-            if (processInfo.hProcess != IntPtr.Zero)
-            {
-                CloseHandle(processInfo.hProcess);
-            }
-            if (processInfo.hThread != IntPtr.Zero)
-            {
-                CloseHandle(processInfo.hThread);
-            }
-        }
-
         internal sealed class ProcessResources : IDisposable
         {
             public ProcessResources(STARTUPINFOEX startupInfo, PROCESS_INFORMATION processInfo)
@@ -124,10 +105,58 @@ namespace MiniTerm
             STARTUPINFOEX StartupInfo { get; }
             PROCESS_INFORMATION ProcessInfo { get; }
 
+            #region IDisposable Support
+
+            private bool disposedValue = false; // To detect redundant calls
+
+            void Dispose(bool disposing)
+            {
+                if (!disposedValue)
+                {
+                    if (disposing)
+                    {
+                        // dispose managed state (managed objects).
+                    }
+
+                    // dispose unmanaged state
+
+                    // Free the attribute list
+                    if (StartupInfo.lpAttributeList != IntPtr.Zero)
+                    {
+                        DeleteProcThreadAttributeList(StartupInfo.lpAttributeList);
+                        Marshal.FreeHGlobal(StartupInfo.lpAttributeList);
+                    }
+
+                    // Close process and thread handles
+                    if (ProcessInfo.hProcess != IntPtr.Zero)
+                    {
+                        CloseHandle(ProcessInfo.hProcess);
+                    }
+                    if (ProcessInfo.hThread != IntPtr.Zero)
+                    {
+                        CloseHandle(ProcessInfo.hThread);
+                    }
+
+                    disposedValue = true;
+                }
+            }
+
+            ~ProcessResources()
+            {
+                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(false);
+            }
+
+            // This code added to correctly implement the disposable pattern.
             public void Dispose()
             {
-                CleanUp(StartupInfo, ProcessInfo);
+                // Do not change this code. Put cleanup code in Dispose(bool disposing) above.
+                Dispose(true);
+                // use the following line if the finalizer is overridden above.
+                GC.SuppressFinalize(this);
             }
+
+            #endregion
         }
     }
 }

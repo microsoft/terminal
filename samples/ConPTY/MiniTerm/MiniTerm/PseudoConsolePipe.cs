@@ -24,10 +24,23 @@ namespace MiniTerm
             }
         }
 
+        #region IDisposable
+
+        void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                ReadSide?.Dispose();
+                WriteSide?.Dispose();
+            }
+        }
+
         public void Dispose()
         {
-            ReadSide.Dispose();
-            WriteSide.Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+
+        #endregion
     }
 }

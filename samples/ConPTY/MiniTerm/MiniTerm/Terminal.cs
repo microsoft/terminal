@@ -26,14 +26,14 @@ namespace MiniTerm
         /// </summary>
         private static void EnableVirtualTerminalSequenceProcessing()
         {
-            var iStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (!GetConsoleMode(iStdOut, out uint outConsoleMode))
+            var hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (!GetConsoleMode(hStdOut, out uint outConsoleMode))
             {
                 throw new InvalidOperationException("Could not get console mode");
             }
 
             outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-            if (!SetConsoleMode(iStdOut, outConsoleMode))
+            if (!SetConsoleMode(hStdOut, outConsoleMode))
             {
                 throw new InvalidOperationException("Could not enable virtual terminal processing");
             }
@@ -48,8 +48,8 @@ namespace MiniTerm
         {
             using (var inputPipe = new PseudoConsolePipe())
             using (var outputPipe = new PseudoConsolePipe())
-            using (var pseudoConsole = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, Console.WindowWidth, Console.WindowHeight))
-            using (var process = Process.Start(pseudoConsole.Handle, command, PseudoConsole.PseudoConsoleThreadAttribute))
+            using (var pseudoConsole = PseudoConsole.Create(inputPipe.ReadSide, outputPipe.WriteSide, (short)Console.WindowWidth, (short)Console.WindowHeight))
+            using (var process = Process.Start(command, PseudoConsole.PseudoConsoleThreadAttribute, pseudoConsole.Handle))
             {
                 // set up a background task to copy all pseudoconsole output to stdout
                 Task.Run(() => CopyPipeToOutput(outputPipe.ReadSide));
