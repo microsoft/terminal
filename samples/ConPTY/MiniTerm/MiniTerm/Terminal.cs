@@ -112,10 +112,10 @@ namespace MiniTerm
         /// <summary>
         /// Get an AutoResetEvent that signals when the process exits
         /// </summary>
-        private static AutoResetEvent WaitForExit(ProcessFactory.Process process) =>
+        private static AutoResetEvent WaitForExit(Process process) =>
             new AutoResetEvent(false)
             {
-                SafeWaitHandle = new SafeWaitHandle(process.ProcessInfo.hProcess, false)
+                SafeWaitHandle = new SafeWaitHandle(process.ProcessInfo.hProcess, ownsHandle: false)
             };
 
         /// <summary>

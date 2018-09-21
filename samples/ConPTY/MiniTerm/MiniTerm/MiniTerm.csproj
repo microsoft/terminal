@@ -45,7 +45,8 @@
     <Compile Include="Native\ConsoleApi.cs" />
     <Compile Include="Native\ProcessApi.cs" />
     <Compile Include="Native\PseudoConsoleApi.cs" />
-    <Compile Include="Process.cs" />
+    <Compile Include="Processes\Process.cs" />
+    <Compile Include="Processes\ProcessFactory.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PseudoConsole.cs" />
