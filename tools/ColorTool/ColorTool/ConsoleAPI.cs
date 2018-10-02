@@ -89,19 +89,7 @@ namespace ColorTool
         {
             return (uint)r + (((uint)g) << 8) + (((uint)b) << 16);
         }
-        public static uint Rvalue(uint rgb)
-        {
-            return rgb & 0x000000ff;
-        }
-        public static uint Gvalue(uint rgb)
-        {
-            return (rgb & 0x0000ff00) >> 8;
-        }
-        public static uint Bvalue(uint rgb)
-        {
-            return (rgb & 0x00ff0000) >> 16;
-        }
-
+        
         public const int COLOR_TABLE_SIZE = 16;
     }
 }
