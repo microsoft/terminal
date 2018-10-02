@@ -433,20 +433,28 @@ namespace ColorTool
             bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             if (success)
             {
-                using (System.IO.StreamWriter file = new System.IO.StreamWriter(outputPath))
+                try
                 {
-                    file.WriteLine("[table]");
-                    for (int i = 0; i < 16; i++)
+                    // StreamWriter can fail for a variety of file system reasons so catch exceptions and print message.
+                    using (System.IO.StreamWriter file = new System.IO.StreamWriter(outputPath))
                     {
-                        string line = IniSchemeParser.COLOR_NAMES[i];
-                        line += " = ";
-                        uint color = csbiex.ColorTable[i];
-                        uint r = color & (0x000000ff);
-                        uint g = (color & (0x0000ff00)) >> 8;
-                        uint b = (color & (0x00ff0000)) >> 16;
-                        line += r + "," + g + "," + b;
-                        file.WriteLine(line);
+                        file.WriteLine("[table]");
+                        for (int i = 0; i < 16; i++)
+                        {
+                            string line = IniSchemeParser.COLOR_NAMES[i];
+                            line += " = ";
+                            uint color = csbiex.ColorTable[i];
+                            uint r = color & (0x000000ff);
+                            uint g = (color & (0x0000ff00)) >> 8;
+                            uint b = (color & (0x00ff0000)) >> 16;
+                            line += r + "," + g + "," + b;
+                            file.WriteLine(line);
+                        }
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
             }
             else
