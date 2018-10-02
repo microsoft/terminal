@@ -4,6 +4,9 @@
 //
 using System;
 using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
@@ -30,9 +33,13 @@ namespace ColorTool
             "Ansi 11 Color", // BRIGHT_YELLOW
             "Ansi 15 Color" // BRIGHT_WHITE
         };
+        static string FG_KEY = "Foreground Color";
+        static string BG_KEY = "Background Color";
         static string RED_KEY = "Red Component";
         static string GREEN_KEY = "Green Component";
         static string BLUE_KEY = "Blue Component";
+
+        public string Name => "iTerm Parser";
 
         static bool parseRgbFromXml(XmlNode components, ref uint rgb)
         {
@@ -75,53 +82,24 @@ namespace ColorTool
         static XmlDocument loadXmlScheme(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument(); // Create an XML document object
-            string exeDir = System.IO.Directory.GetParent(System.Reflection.Assembly.GetEntryAssembly().Location).FullName;
-            bool found = false;
-            string filename = schemeName + ".itermcolors";
-            string exeSchemes = exeDir + "/schemes/";
-            string cwd = "./";
-            string cwdSchemes = "./schemes/";
-            // Search order, for argument "name", where 'exe' is the dir of the exe.
-            //  1. ./name
-            //  2. ./name.itermcolors
-            //  3. ./schemes/name
-            //  4. ./schemes/name.itermcolors
-            //  5. exe/schemes/name
-            //  6. exe/schemes/name.itermcolors
-            //  7. name (as an absolute path)
-            string[] paths = {
-                cwd + schemeName,
-                cwd + filename,
-                cwdSchemes + schemeName,
-                cwdSchemes + filename,
-                exeSchemes + schemeName,
-                exeSchemes + filename,
-                schemeName,
-            };
-            foreach (string path in paths)
+            foreach (string path in Scheme.GetSearchPaths(schemeName, ".itermcolors")
+                                          .Where(File.Exists))
             {
                 try
                 {
                     xmlDoc.Load(path);
-                    found = true;
-                    break;
+                    return xmlDoc;
                 }
-                catch (Exception /*e*/)
-                {
-                    // We can either fail to find the file,
-                    //   or fail to parse the XML here.
-                }
+                catch (XmlException /*e*/) { /* failed to parse */ }
+                catch (IOException /*e*/) { /* failed to find */ }
+                catch (UnauthorizedAccessException /*e*/) { /* unauthorized */ }
             }
 
-            if (!found)
-            {
-                return null;
-            }
-            return xmlDoc;
+            return null;
         }
 
 
-        public uint[] ParseScheme(string schemeName)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
         {
             XmlDocument xmlDoc = loadXmlScheme(schemeName); // Create an XML document object
             if (xmlDoc == null) return null;
@@ -129,51 +107,35 @@ namespace ColorTool
             XmlNodeList children = root.ChildNodes;
 
             uint[] colorTable = new uint[COLOR_TABLE_SIZE];
+            uint? fgColor = null, bgColor = null;
             int colorsFound = 0;
             bool success = false;
-            foreach (XmlNode tableEntry in children)
+            foreach (var tableEntry in children.OfType<XmlNode>().Where(_ => _.Name == "key"))
             {
-                if (tableEntry.Name == "key")
-                {
-                    int index = -1;
-                    for (int i = 0; i < COLOR_TABLE_SIZE; i++)
-                    {
-                        if (PLIST_COLOR_NAMES[i] == tableEntry.InnerText)
-                        {
-                            index = i;
-                            break;
-                        }
-                    }
-                    if (index == -1)
-                    {
-                        continue;
-                    }
-                    uint rgb = 0; ;
-                    XmlNode components = tableEntry.NextSibling;
-                    success = parseRgbFromXml(components, ref rgb);
-                    if (!success)
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        colorTable[index] = rgb;
-                        colorsFound++;
-                    }
-                }
-
+                uint rgb = 0;
+                int index = -1;
+                XmlNode components = tableEntry.NextSibling;
+                success = parseRgbFromXml(components, ref rgb);
+                if (!success) { break; }
+                else if (tableEntry.InnerText == FG_KEY) { fgColor = rgb; }
+                else if (tableEntry.InnerText == BG_KEY) { bgColor = rgb; }
+                else if (-1 != (index = Array.IndexOf(PLIST_COLOR_NAMES, tableEntry.InnerText)))
+                { colorTable[index] = rgb; colorsFound++; }
             }
             if (colorsFound < COLOR_TABLE_SIZE)
             {
-                Console.WriteLine(Resources.InvalidNumberOfColors);
+                if (reportErrors)
+                {
+                    Console.WriteLine(Resources.InvalidNumberOfColors);
+                }
                 success = false;
             }
             if (!success)
             {
                 return null;
             }
-            return colorTable;
 
+            return new ColorScheme { colorTable = colorTable, foreground = fgColor, background = bgColor };
         }
     }
 }

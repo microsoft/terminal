@@ -42,7 +42,7 @@ namespace ColorTool
             public uint cbSize;
             public COORD dwSize;
             public COORD dwCursorPosition;
-            public short wAttributes;
+            public ushort wAttributes;
             public SMALL_RECT srWindow;
             public COORD dwMaximumWindowSize;
 

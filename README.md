@@ -6,6 +6,8 @@ This repo is monitored by the Windows Console engineering team, and provides a b
 
 The Windows Console engineering team greatly appreciate issues containing concise, detailed issues containing repro-steps, and screenshots where appropriate :)
 
+We also appreciate not +1-ing issues with no additional or actionable information. Please use a reaction to show your support of an existing comment on the thread and/or subscribe to notifications using the button in the sidebar in lieu of providing a low-value comment.
+
 ### Code of Conduct
 This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact opencode@microsoft.com with any additional questions or comments.
 

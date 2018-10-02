@@ -1,4 +1,6 @@
-# ColorTool - colortool.exe
+# ColorTool 
+
+ColorTool makes it easy to change the Windows console to your desired scheme. Includes support for iTerm themes!
 
 ```
 Usage:
@@ -17,6 +19,7 @@ Options:
     -q, --quiet    : Don't print the color table after applying
     -d, --defaults : Apply the scheme to only the defaults in the registry
     -b, --both     : Apply the scheme to both the current console and the defaults.
+    -s, --schemes  : Display all available schemes
     -v, --version  : Display the version number
 ```
 
@@ -35,6 +38,12 @@ Options:
   You can also add color schemes to the colortool easily. Take any existing scheme in `.itermcolors` format, and paste it in the `schemes/` directory.
 
   I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to choose from, and previews.
+  
+  You can also easily visually edit `.itermcolors` color schemes using [terminal.sexy](https://terminal.sexy). Use the **Import** and **Export** tabs with `iTerm2` as the format.
+
+## Installing 
+
+Just [download the latest colortool release](https://github.com/Microsoft/console/releases) and extract the zip file. 
 
 ## Building
 

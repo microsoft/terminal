@@ -131,6 +131,9 @@
   <data name="InvalidNumberOfColors" xml:space="preserve">
     <value>Invalid scheme - did not find 16 colors</value>
   </data>
+  <data name="OutputUsage" xml:space="preserve">
+    <value>Usage: colortool -o &lt;filename&gt;</value>
+  </data>
   <data name="SchemeNotFound" xml:space="preserve">
     <value>Could not find or load "{0}"</value>
   </data>
@@ -153,7 +156,12 @@ Options:
     -b, --both     : Apply the scheme to both the current console and the defaults.
     -x, --xterm    : Set the colors using VT sequences. Used for setting the colors in WSL.
                      Only works in Windows versions &gt;= 17048.
-    -v, --version  : Display the version number</value>
+    -s, --schemes  : Displays all available schemes
+    -v, --version  : Display the version number
+    -o, --output &lt;filename&gt; : output the current color table to an file (in .ini format)
+
+Available importers:
+  {0}</value>
   </data>
   <data name="WroteToDefaults" xml:space="preserve">
     <value>Wrote selected scheme to the defaults.</value>

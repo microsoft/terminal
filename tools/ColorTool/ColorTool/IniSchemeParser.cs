@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
 using static ColorTool.ConsoleAPI;
@@ -16,8 +17,8 @@ namespace ColorTool
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
-        // These are in Windows Color table order - BRG, not RGB. 
-        static string[] COLOR_NAMES = {
+        // These are in Windows Color table order - BRG, not RGB.
+        public static string[] COLOR_NAMES = {
             "DARK_BLACK",
             "DARK_BLUE",
             "DARK_GREEN",
@@ -36,6 +37,8 @@ namespace ColorTool
             "BRIGHT_WHITE"
         };
 
+        public string Name => "INI File Parser";
+
         static uint ParseHex(string arg)
         {
             System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
@@ -44,11 +47,12 @@ namespace ColorTool
 
         static uint ParseRgb(string arg)
         {
-            int[] components = { 0, 0, 0};
+            int[] components = { 0, 0, 0 };
             string[] args = arg.Split(',');
             if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
             if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
-            for (int i = 0; i < args.Length; i++){
+            for (int i = 0; i < args.Length; i++)
+            {
                 components[i] = Int32.Parse(args[i]);
             }
 
@@ -67,44 +71,12 @@ namespace ColorTool
             }
         }
 
-        // TODO: Abstract the locating of a scheme into a function the implementation can call into
-        //      Both parsers duplicate the searching, they should just pass in their extension and
-        //      a callback for initally validating the file
         static string FindIniScheme(string schemeName)
         {
-            string exeDir = System.IO.Directory.GetParent(System.Reflection.Assembly.GetEntryAssembly().Location).FullName;
-            string filename = schemeName + ".ini";
-            string exeSchemes = exeDir + "/schemes/";
-            string cwd = "./";
-            string cwdSchemes = "./schemes/";
-            // Search order, for argument "name", where 'exe' is the dir of the exe.
-            //  1. ./name
-            //  2. ./name.ini
-            //  3. ./schemes/name
-            //  4. ./schemes/name.ini
-            //  5. exe/schemes/name
-            //  6. exe/schemes/name.ini
-            //  7. name (as an absolute path)
-            string[] paths = {
-                cwd + schemeName,
-                cwd + filename,
-                cwdSchemes + schemeName,
-                cwdSchemes + filename,
-                exeSchemes + schemeName,
-                exeSchemes + filename,
-                schemeName,
-            };
-            foreach (string path in paths)
-            {
-                if (File.Exists(path))
-                {
-                    return path;
-                }
-            }
-            return null;
+            return Scheme.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
         }
 
-        public uint[] ParseScheme(string schemeName)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
         {
             bool success = true;
 
@@ -124,7 +96,10 @@ namespace ColorTool
                 if (tableStrings[i].Length <= 0)
                 {
                     success = false;
-                    Console.WriteLine(string.Format(Resources.IniParseError, filename, name, tableStrings[i]));
+                    if (reportErrors)
+                    {
+                        Console.WriteLine(string.Format(Resources.IniParseError, filename, name, tableStrings[i]));
+                    }
                     break;
                 }
             }
@@ -141,13 +116,23 @@ namespace ColorTool
                 }
                 catch (Exception /*e*/)
                 {
-                    Console.WriteLine(string.Format(Resources.IniLoadError, filename));
+                    if (reportErrors)
+                    {
+                        Console.WriteLine(string.Format(Resources.IniLoadError, filename));
+                    }
 
                     colorTable = null;
                 }
             }
 
-            return colorTable;
+            if (colorTable != null)
+            {
+                return new ColorScheme { colorTable = colorTable };
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

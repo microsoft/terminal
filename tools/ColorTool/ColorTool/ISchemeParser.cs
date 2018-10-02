@@ -7,6 +7,8 @@ namespace ColorTool
 {
     interface ISchemeParser
     {
-        uint[] ParseScheme(string schemeName);
+        string Name { get; }
+
+        ColorScheme ParseScheme(string schemeName, bool reportErrors = true);
     }
 }
