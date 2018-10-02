@@ -297,13 +297,18 @@ namespace ColorTool
             Console.Write("\x1b[m");
         }
 
+        private static IntPtr GetStdOutputHandle()
+        {
+            return GetStdHandle(STD_OUTPUT_HANDLE);
+        }
+
         static void PrintSchemes()
         {
             var schemeDirectory = new FileInfo(new Uri(Assembly.GetEntryAssembly().GetName().CodeBase).AbsolutePath).Directory.FullName + "/schemes"; 
 
             if (Directory.Exists(schemeDirectory))
             {
-                IntPtr handle = GetStdHandle(-11);
+                IntPtr handle = GetStdOutputHandle();
                 GetConsoleMode(handle, out var mode);
                 SetConsoleMode(handle, mode | 0x4);
 
@@ -349,8 +354,7 @@ namespace ColorTool
         static bool SetProperties(ColorScheme colorScheme)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
-            int STD_OUTPUT_HANDLE = -11;
-            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr hOut = GetStdOutputHandle();
             bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             if (success)
             {
@@ -379,8 +383,7 @@ namespace ColorTool
 
         static bool SetPropertiesWithVt(ColorScheme colorScheme)
         {
-            int STD_OUTPUT_HANDLE = -11;
-            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr hOut = GetStdOutputHandle();
             uint originalMode;
             uint requestedMode;
             bool succeeded = GetConsoleMode(hOut, out originalMode);
@@ -394,8 +397,8 @@ namespace ColorTool
             for (int i = 0; i < colorScheme.colorTable.Length; i++)
             {
                 int vtIndex = VT_INDICIES[i];
-                uint rgb = colorScheme.colorTable[i];
-                string s = "\x1b]4;" + vtIndex + ";rgb:" + Rvalue(rgb).ToString("X") + "/"+ Gvalue(rgb).ToString("X") + "/"+ Bvalue(rgb).ToString("X") + "\x7";
+                Color color = UIntToColor(colorScheme.colorTable[i]);
+                string s = $"\x1b]4;{vtIndex};rgb:{color.R:X}/{color.G:X}/{color.B:X}\x7";
                 Console.Write(s);
             }
             if (!quietMode)
@@ -426,8 +429,7 @@ namespace ColorTool
         static bool ExportCurrentAsIni(string outputPath)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
-            int STD_OUTPUT_HANDLE = -11;
-            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr hOut = GetStdOutputHandle();
             bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             if (success)
             {
@@ -540,7 +542,6 @@ namespace ColorTool
                 else
                 {
                     SetProperties(colorScheme);
-                    
                 }
             }
         }

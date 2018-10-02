@@ -58,6 +58,8 @@ namespace ColorTool
             }
         }
 
+        public static int STD_OUTPUT_HANDLE = -11;
+
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int nStdHandle);
 
@@ -76,10 +78,10 @@ namespace ColorTool
             IntPtr lpReserved
             );
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
 
-        [DllImport("kernel32.dll")]
+        [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
         ////////////////////////////////////////////////////////////////////////
 
