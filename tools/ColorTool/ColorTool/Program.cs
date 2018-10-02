@@ -85,9 +85,30 @@ namespace ColorTool
             DARK_WHITE
         };
 
+        // Use a Console index in to get a VT index out.
+        static int[] VT_INDICIES = {
+            0, // DARK_BLACK
+            4, // DARK_BLUE
+            2, // DARK_GREEN
+            6, // DARK_CYAN
+            1, // DARK_RED
+            5, // DARK_MAGENTA
+            3, // DARK_YELLOW
+            7, // DARK_WHITE
+            8+0, // BRIGHT_BLACK
+            8+4, // BRIGHT_BLUE
+            8+2, // BRIGHT_GREEN
+            8+6, // BRIGHT_CYAN
+            8+1, // BRIGHT_RED
+            8+5, // BRIGHT_MAGENTA
+            8+3, // BRIGHT_YELLOW
+            8+7,// BRIGHT_WHITE
+        };
+
         static bool quietMode = false;
         static bool setDefaults = false;
         static bool setProperties = true;
+        static bool setUnixStyle = false;
 
         static void Usage()
         {
@@ -102,8 +123,6 @@ namespace ColorTool
 
         static void Version()
         {
-            //System.Reflection.Assembly.GetEntryAssembly();
-            //AssemblyName.GetAssemblyName(@"c:\path\to\file.dll").Version;
             string exePath = System.Reflection.Assembly.GetEntryAssembly().Location;
             Version ver = AssemblyName.GetAssemblyName(exePath).Version;
             Console.WriteLine("colortool v" + ver);
@@ -186,6 +205,102 @@ namespace ColorTool
             Console.ForegroundColor = currentForeground;
             Console.BackgroundColor = currentBackground;
         }
+        
+        static void PrintTableWithVt()
+        {
+            // Save the current background and foreground colors.
+            string test = "  gYw  ";
+            string[] FGs = {
+                "m",
+                "1m",
+                "30m",
+                "1;30m",
+                "31m",
+                "1;31m",
+                "32m",
+                "1;32m",
+                "33m",
+                "1;33m",
+                "34m",
+                "1;34m",
+                "35m",
+                "1;35m",
+                "36m",
+                "1;36m",
+                "37m",
+                "1;37m"
+            };
+            string[] BGs = {
+                "m",
+                "40m",
+                "41m",
+                "42m",
+                "43m",
+                "44m",
+                "45m",
+                "46m",
+                "47m"
+            };
+            
+            Console.Write("\t");
+            for (int bg = 0; bg < BGs.Length; bg++)
+            {
+                if (bg > 0) Console.Write(" ");
+                Console.Write("  ");
+                Console.Write(bg == 0 ? "   " : BGs[bg]);
+                Console.Write("  ");
+            }
+            Console.WriteLine();
+
+            for (int fg = 0; fg < FGs.Length; fg++)
+            {
+                Console.Write("\x1b[m");
+
+                if (fg >= 0)
+                {
+                    Console.Write(FGs[fg] + "\t");
+                }
+
+                if (fg == 0)
+                {
+                    Console.Write("\x1b[39m");
+                }
+                else
+                {
+                    Console.Write("\x1b[" + FGs[fg]);
+                }
+
+                for (int bg = 0; bg < BGs.Length; bg++)
+                {
+                    if (bg > 0)
+                    {
+                        Console.Write(" ");
+                    }
+                    if (bg == 0)
+                    {
+                        Console.Write("\x1b[49m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[" +BGs[bg]);
+                    }
+
+                    Console.Write(test);
+                    Console.Write("\x1b[49m");
+                }
+                Console.Write("\n");
+
+            }
+            Console.Write("\n");
+
+            // Reset foreground and background colors
+            Console.Write("\x1b[m");
+        }
+
+        private static IntPtr GetStdOutputHandle()
+        {
+            return GetStdHandle(STD_OUTPUT_HANDLE);
+        }
 
         static void PrintSchemes()
         {
@@ -193,7 +308,7 @@ namespace ColorTool
 
             if (Directory.Exists(schemeDirectory))
             {
-                IntPtr handle = GetStdHandle(-11);
+                IntPtr handle = GetStdOutputHandle();
                 GetConsoleMode(handle, out var mode);
                 SetConsoleMode(handle, mode | 0x4);
 
@@ -239,8 +354,7 @@ namespace ColorTool
         static bool SetProperties(ColorScheme colorScheme)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
-            int STD_OUTPUT_HANDLE = -11;
-            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr hOut = GetStdOutputHandle();
             bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             if (success)
             {
@@ -267,6 +381,38 @@ namespace ColorTool
             return success;
         }
 
+        static bool SetPropertiesWithVt(ColorScheme colorScheme)
+        {
+            IntPtr hOut = GetStdOutputHandle();
+            uint originalMode;
+            uint requestedMode;
+            bool succeeded = GetConsoleMode(hOut, out originalMode);
+            if (succeeded)
+            {
+                requestedMode = originalMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(hOut, requestedMode);
+
+            }
+
+            for (int i = 0; i < colorScheme.colorTable.Length; i++)
+            {
+                int vtIndex = VT_INDICIES[i];
+                Color color = UIntToColor(colorScheme.colorTable[i]);
+                string s = $"\x1b]4;{vtIndex};rgb:{color.R:X}/{color.G:X}/{color.B:X}\x7";
+                Console.Write(s);
+            }
+            if (!quietMode)
+            {
+                PrintTableWithVt();
+            }
+
+            if (succeeded)
+            {
+                SetConsoleMode(hOut, originalMode);
+            }
+
+            return true;
+        }
         static bool SetDefaults(ColorScheme colorScheme)
         {
             //TODO
@@ -283,8 +429,7 @@ namespace ColorTool
         static bool ExportCurrentAsIni(string outputPath)
         {
             CONSOLE_SCREEN_BUFFER_INFO_EX csbiex = CONSOLE_SCREEN_BUFFER_INFO_EX.Create();
-            int STD_OUTPUT_HANDLE = -11;
-            IntPtr hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+            IntPtr hOut = GetStdOutputHandle();
             bool success = GetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             if (success)
             {
@@ -349,6 +494,11 @@ namespace ColorTool
                     case "--version":
                         Version();
                         return;
+                    case "-x":
+                    case "--xterm":
+                        setUnixStyle = true;
+                        setProperties = true;
+                        break;
                     case "-o":
                     case "--output":
                         if (i+1 < args.Length)
@@ -385,7 +535,14 @@ namespace ColorTool
             }
             if (setProperties)
             {
-                SetProperties(colorScheme);
+                if (setUnixStyle)
+                {
+                    SetPropertiesWithVt(colorScheme);
+                }
+                else
+                {
+                    SetProperties(colorScheme);
+                }
             }
         }
 
