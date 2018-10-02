@@ -123,9 +123,9 @@ namespace ColorTool
 
         static void Version()
         {
-            string exePath = System.Reflection.Assembly.GetEntryAssembly().Location;
-            Version ver = AssemblyName.GetAssemblyName(exePath).Version;
-            Console.WriteLine("colortool v" + ver);
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+            Console.WriteLine($"colortool v{info.FileVersion}");
         }
 
         static void PrintTable()
