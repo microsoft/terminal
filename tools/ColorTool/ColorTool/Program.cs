@@ -304,7 +304,7 @@ namespace ColorTool
 
         static void PrintSchemes()
         {
-            var schemeDirectory = new FileInfo(new Uri(Assembly.GetEntryAssembly().GetName().CodeBase).AbsolutePath).Directory.FullName + "/schemes"; 
+            var schemeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schemes\\");
 
             if (Directory.Exists(schemeDirectory))
             {
@@ -341,6 +341,12 @@ namespace ColorTool
                     }
                 }
             }
+        }
+
+        static void PrintSchemesDirectory()
+        {
+            string schemeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schemes\\");
+            Console.WriteLine(schemeDirectory);
         }
 
         private static Color UIntToColor(uint color)
@@ -501,6 +507,10 @@ namespace ColorTool
                     case "-v":
                     case "--version":
                         Version();
+                        return;
+                    case "-l":
+                    case "--location":
+                        PrintSchemesDirectory();
                         return;
                     case "-x":
                     case "--xterm":
