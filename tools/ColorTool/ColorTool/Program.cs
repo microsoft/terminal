@@ -304,7 +304,7 @@ namespace ColorTool
 
         static void PrintSchemes()
         {
-            var schemeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schemes\\");
+            var schemeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schemes");
 
             if (Directory.Exists(schemeDirectory))
             {
