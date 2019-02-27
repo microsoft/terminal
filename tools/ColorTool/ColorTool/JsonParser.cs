@@ -60,7 +60,7 @@ namespace ColorTool
             return null;
         }
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             XmlDocument xmlDoc = loadJsonFile(schemeName);
             if (xmlDoc == null) return null;

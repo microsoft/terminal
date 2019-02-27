@@ -76,7 +76,7 @@ namespace ColorTool
             return Scheme.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
         }
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             bool success = true;
 

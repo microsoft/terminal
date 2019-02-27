@@ -106,6 +106,7 @@ namespace ColorTool
         };
 
         static bool quietMode = false;
+        static bool reportErrors = false;
         static bool setDefaults = false;
         static bool setProperties = true;
         static bool setUnixStyle = false;
@@ -480,6 +481,10 @@ namespace ColorTool
                     case "--current":
                         PrintTable();
                         return;
+                    case "-e":
+                    case "--errors":
+                        reportErrors = true;
+                        break;
                     case "-q":
                     case "--quiet":
                         quietMode = true;
@@ -529,7 +534,7 @@ namespace ColorTool
 
             string schemeName = args[args.Length - 1];
 
-            ColorScheme colorScheme = GetScheme(schemeName);
+            ColorScheme colorScheme = GetScheme(schemeName, reportErrors);
 
             if (colorScheme == null)
             {
@@ -561,7 +566,7 @@ namespace ColorTool
                 .Select(t => (ISchemeParser)Activator.CreateInstance(t));
         }
                 
-        private static ColorScheme GetScheme(string schemeName, bool reportErrors = true)
+        private static ColorScheme GetScheme(string schemeName, bool reportErrors = false)
         {
             foreach (var parser in GetParsers())
             {
