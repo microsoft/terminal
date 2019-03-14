@@ -1,0 +1,30 @@
+parameters:
+  configuration: 'Release'
+  platform: ''
+  additionalBuildArguments: ''
+
+jobs:
+- job: Build${{ parameters.platform }}
+  displayName: Build ${{ parameters.platform }}
+  variables:
+    BuildConfiguration: ${{ parameters.configuration }}
+    BuildPlatform: ${{ parameters.platform }}
+
+  pool:
+    name: Package ES Lab E
+    demands:
+    - msbuild
+    - visualstudio
+    - vstest
+
+  steps:
+  - task: PkgESSetupBuild@10
+    displayName: 'Package ES - Setup Build'
+    inputs:
+      useDfs: false
+      productName: WindowsTerminal
+      disableOutputRedirect: true
+
+  - template: build-console-steps.yml
+    parameters:
+      additionalBuildArguments: '/p:XesUseOneStoreVersioning=true;XesBaseYearForStoreVersion=$(baseYearForVersioning)'

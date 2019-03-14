@@ -11,7 +11,8 @@
     "/packages/",
     "/ipch/",
     "/dep/",
-    "/.vs/"
+    "/.vs/",
+    "/build/"
   ],
   "SuffixFilters": [
     ".dbb",
