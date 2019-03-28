@@ -159,6 +159,7 @@ Options:
     -x, --xterm    : Set the colors using VT sequences. Used for setting the colors in WSL.
                      Only works in Windows versions &gt;= 17048.
     -s, --schemes  : Displays all available schemes
+    -l, --location : Displays the full path to the schemes directory
     -v, --version  : Display the version number
     -o, --output &lt;filename&gt; : output the current color table to an file (in .ini format)
 
