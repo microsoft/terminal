@@ -141,17 +141,19 @@
     <value>Usage:
     colortool.exe [options] &lt;schemename&gt;
 ColorTool is a utility for helping to set the color palette of the Windows Console.
-By default, applies the colors in the specified .itermcolors or .ini file to the current console window.
+By default, applies the colors in the specified .itermcolors, .json or .ini file to the current console window.
 This does NOT save the properties automatically. For that, you'll need to open the properties sheet and hit "Ok".
 Included should be a `schemes/` directory with a selection of schemes of both formats for examples.
 Feel free to add your own preferred scheme to that directory.
 Arguments:
-    &lt;schemename&gt;: The name of a color scheme. ct will try to first load it as an .itermcolors color scheme.
-                  If that fails, it will look for it as an .ini file color scheme.
+    &lt;schemename&gt;: The name of a color scheme. ct will try to first load it as an .ini file color scheme
+                  If that fails, it will look for it as a .json file color scheme
+                  If that fails, it will look for it as an .itermcolors file color scheme.
 Options:
     -?, --help     : Display this help message
     -c, --current  : Print the color table for the currently applied scheme
     -q, --quiet    : Don't print the color table after applying
+    -e, --errors   : Report scheme parsing errors on the console
     -d, --defaults : Apply the scheme to only the defaults in the registry
     -b, --both     : Apply the scheme to both the current console and the defaults.
     -x, --xterm    : Set the colors using VT sequences. Used for setting the colors in WSL.

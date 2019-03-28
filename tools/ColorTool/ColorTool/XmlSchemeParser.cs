@@ -99,7 +99,7 @@ namespace ColorTool
         }
 
 
-        public ColorScheme ParseScheme(string schemeName, bool reportErrors = true)
+        public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
             XmlDocument xmlDoc = loadXmlScheme(schemeName); // Create an XML document object
             if (xmlDoc == null) return null;
