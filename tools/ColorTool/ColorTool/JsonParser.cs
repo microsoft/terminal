@@ -77,6 +77,26 @@ namespace ColorTool
                     colorTable[i] = ParseColor(node.InnerText);
                 }
 
+
+                uint? popupForeground = null;
+                uint? popupBackground = null;
+
+                var popupNode = children.OfType<XmlNode>().Where(n => n.Name == "popup_colors").SingleOrDefault();
+                if (popupNode != null)
+                {
+                    var parts = popupNode.InnerText.Split(',');
+                    if (parts.Length == 2)
+                    {
+                        var foregroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[0]);
+                        var backgroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[1]);
+                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            popupForeground = colorTable[foregroundIndex];
+                            popupBackground = colorTable[backgroundIndex];
+                        }
+                    }
+                }
+
                 uint? screenForeground = null;
                 uint? screenBackground = null;
 
@@ -96,7 +116,7 @@ namespace ColorTool
                     }
                 }
 
-                return new ColorScheme { colorTable = colorTable, background = screenBackground, foreground = screenForeground };
+                return new ColorScheme { colorTable = colorTable, background = screenBackground, foreground = screenForeground, popupBackground = popupBackground, popupForeground = popupForeground };
             }
             catch (Exception /*e*/)
             {
