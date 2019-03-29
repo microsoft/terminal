@@ -14,6 +14,9 @@ namespace ColorTool
         public uint? foreground = null;
         public uint? background = null;
 
+        public uint? popupForeground = null;
+        public uint? popupBackground = null;
+
         public int CalculateIndex(uint value) =>
             colorTable.Select((color, idx) => Tuple.Create(color, idx))
                       .OrderBy(Difference(value))

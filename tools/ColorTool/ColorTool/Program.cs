@@ -370,11 +370,17 @@ namespace ColorTool
                 {
                     csbiex.ColorTable[i] = colorScheme.colorTable[i];
                 }
-                if(colorScheme.background != null && colorScheme.foreground != null)
+                if (colorScheme.background != null && colorScheme.foreground != null)
                 {
                     int fgidx = colorScheme.CalculateIndex(colorScheme.foreground.Value);
                     int bgidx = colorScheme.CalculateIndex(colorScheme.background.Value);
                     csbiex.wAttributes = (ushort)(fgidx | (bgidx << 4));
+                }
+                if (colorScheme.popupBackground != null && colorScheme.popupForeground != null)
+                {
+                    int fgidx = colorScheme.CalculateIndex(colorScheme.popupForeground.Value);
+                    int bgidx = colorScheme.CalculateIndex(colorScheme.popupBackground.Value);
+                    csbiex.wPopupAttributes = (ushort)(fgidx | (bgidx << 4));
                 }
                 SetConsoleScreenBufferInfoEx(hOut, ref csbiex);
             }
