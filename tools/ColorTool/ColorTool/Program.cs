@@ -206,7 +206,7 @@ namespace ColorTool
             Console.ForegroundColor = currentForeground;
             Console.BackgroundColor = currentBackground;
         }
-        
+
         static void PrintTableWithVt()
         {
             // Save the current background and foreground colors.
@@ -242,7 +242,7 @@ namespace ColorTool
                 "46m",
                 "47m"
             };
-            
+
             Console.Write("\t");
             for (int bg = 0; bg < BGs.Length; bg++)
             {
@@ -283,7 +283,7 @@ namespace ColorTool
                     }
                     else
                     {
-                        Console.Write("\x1b[" +BGs[bg]);
+                        Console.Write("\x1b[" + BGs[bg]);
                     }
 
                     Console.Write(test);
@@ -463,6 +463,20 @@ namespace ColorTool
                             line += r + "," + g + "," + b;
                             file.WriteLine(line);
                         }
+
+                        file.WriteLine();
+                        file.WriteLine("[screen]");
+                        var forgroundIndex = csbiex.wAttributes & 0xF;
+                        var backgroundIndex = csbiex.wAttributes >> 4;
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.COLOR_NAMES[forgroundIndex]}");
+                        file.WriteLine($"BACKGROUND = {IniSchemeParser.COLOR_NAMES[backgroundIndex]}");
+
+                        file.WriteLine();
+                        file.WriteLine("[popup]");
+                        forgroundIndex = csbiex.wPopupAttributes & 0xF;
+                        backgroundIndex = csbiex.wPopupAttributes >> 4;
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.COLOR_NAMES[forgroundIndex]}");
+                        file.WriteLine($"BACKGROUND = {IniSchemeParser.COLOR_NAMES[backgroundIndex]}");
                     }
                 }
                 catch (Exception ex)
@@ -530,7 +544,7 @@ namespace ColorTool
                         break;
                     case "-o":
                     case "--output":
-                        if (i+1 < args.Length)
+                        if (i + 1 < args.Length)
                         {
                             ExportCurrentAsIni(args[i + 1]);
                         }
@@ -581,7 +595,7 @@ namespace ColorTool
                 .Where(t => !t.IsAbstract && typeof(ISchemeParser).IsAssignableFrom(t))
                 .Select(t => (ISchemeParser)Activator.CreateInstance(t));
         }
-                
+
         private static ColorScheme GetScheme(string schemeName, bool reportErrors = false)
         {
             foreach (var parser in GetParsers())
@@ -593,6 +607,6 @@ namespace ColorTool
                 }
             }
             return null;
-       }
+        }
     }
 }
