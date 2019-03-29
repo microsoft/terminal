@@ -123,16 +123,22 @@ namespace ColorTool
                     {
                         var forgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(forground);
                         var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
-                        popupForgroundColor = colorTable[forgroundIndex];
-                        popupBackgroundColor = colorTable[backgroundIndex];
+                        if (forgroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            popupForgroundColor = colorTable[forgroundIndex];
+                            popupBackgroundColor = colorTable[backgroundIndex];
+                        }
                     }
 
                     if (ReadAttributes("screen", out forground, out background))
                     {
                         var forgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(forground);
                         var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
-                        forgroundColor = colorTable[forgroundIndex];
-                        backgroundColor = colorTable[backgroundIndex];
+                        if (forgroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            forgroundColor = colorTable[forgroundIndex];
+                            backgroundColor = colorTable[backgroundIndex];
+                        }
                     }
                 }
                 catch (Exception /*e*/)
