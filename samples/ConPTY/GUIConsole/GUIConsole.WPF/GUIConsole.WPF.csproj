@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{FD2109FE-F78A-4E31-8317-11D1B66B69AF}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <RootNamespace>GUIConsole.WPF</RootNamespace>
-    <AssemblyName>GUIConsole.WPF</AssemblyName>
+    <RootNamespace>GUIConsole.Wpf</RootNamespace>
+    <AssemblyName>GUIConsole.Wpf</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>

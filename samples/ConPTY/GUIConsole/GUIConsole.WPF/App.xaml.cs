@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Wpfsh
+namespace GUIConsole.Wpf
 {
     /// <summary>
     /// Interaction logic for App.xaml

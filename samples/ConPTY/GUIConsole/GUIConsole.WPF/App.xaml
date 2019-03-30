@@ -1,7 +1,6 @@
-﻿<Application x:Class="Wpfsh.App"
+﻿<Application x:Class="GUIConsole.Wpf.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:Wpfsh"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          
