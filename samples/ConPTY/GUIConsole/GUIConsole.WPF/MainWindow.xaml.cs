@@ -6,14 +6,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
-using Wpfsh.Native;
 
 namespace Wpfsh
-{    
+{
     public partial class MainWindow : Window
     {
-        private Terminal _terminal;        
+        private Terminal _terminal;
 
         public MainWindow()
         {
@@ -22,9 +20,6 @@ namespace Wpfsh
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            // Set acrylic blur on the main Window, for fun.
-            Composition.SetAcrylicBlur(this, new Color { A = 128, B = 200, G = 100, R = 0 });
-
             // Start up the console, and point it to cmd.exe.
             _terminal = new Terminal();
             Task.Run(() => _terminal.Start("cmd.exe"));
@@ -35,6 +30,8 @@ namespace Wpfsh
         {
             // Start a long-lived thread for the "read console" task, so that we don't use a standard thread pool thread.
             Task.Factory.StartNew(() => CopyConsoleToWindow(), TaskCreationOptions.LongRunning);
+
+            Dispatcher.Invoke(() => { TitleBarTitle.Text = "GUIConsole - cmd.exe"; });
         }
 
         private void CopyConsoleToWindow()

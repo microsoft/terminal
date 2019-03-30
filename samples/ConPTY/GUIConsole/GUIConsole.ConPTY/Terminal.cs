@@ -35,7 +35,7 @@ namespace GUIConsole.ConPTY
             // So first, we check to see if this process has a console.
             if (GetConsoleWindow() == IntPtr.Zero)
             {
-                // If it doesn't ask Windows to allocate one to it for us.
+                // If it doesn't, ask Windows to allocate one to it for us.
                 bool createConsoleSuccess = AllocConsole();
                 if (!createConsoleSuccess)
                 {
