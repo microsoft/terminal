@@ -35,7 +35,7 @@ Options:
 
 ## Adding Schemes
 
-  You can also add color schemes to the colortool easily. Take any existing scheme in `.itermcolors` format, and paste it in the `schemes/` directory.
+  You can also add color schemes to the colortool easily. Take any existing scheme in `.itermcolors` format, and paste it in the `schemes/` directory. Or just cd into a directory containing `*.itermcolors` files before running the colortool.
 
   I recommend the excellent [iTerm2-Color-Schemes](https://github.com/mbadolato/iTerm2-Color-Schemes) repo, which has TONS of schemes to choose from, and previews.
   
