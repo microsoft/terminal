@@ -135,7 +135,8 @@ namespace ColorTool
                 return null;
             }
 
-            return new ColorScheme { colorTable = colorTable, foreground = fgColor, background = bgColor };
+            var consoleAttributes = new ConsoleAttributes { foreground = fgColor, background = bgColor };
+            return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
         }
     }
 }

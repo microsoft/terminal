@@ -9,6 +9,7 @@ using System.Text;
 using System.Runtime.InteropServices;
 using static ColorTool.ConsoleAPI;
 using System.IO;
+using System.Collections.Generic;
 
 namespace ColorTool
 {
@@ -85,6 +86,10 @@ namespace ColorTool
 
             string[] tableStrings = new string[COLOR_TABLE_SIZE];
             uint[] colorTable = null;
+            uint? foregroundColor = null;
+            uint? backgroundColor = null;
+            uint? popupForegroundColor = null;
+            uint? popupBackgroundColor = null;
 
             for (int i = 0; i < COLOR_TABLE_SIZE; i++)
             {
@@ -113,6 +118,28 @@ namespace ColorTool
                     {
                         colorTable[i] = ParseColor(tableStrings[i]);
                     }
+
+                    if (ReadAttributes("popup", out var foreground, out var background))
+                    {
+                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            popupForegroundColor = colorTable[foregroundIndex];
+                            popupBackgroundColor = colorTable[backgroundIndex];
+                        }
+                    }
+
+                    if (ReadAttributes("screen", out foreground, out background))
+                    {
+                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            foregroundColor = colorTable[foregroundIndex];
+                            backgroundColor = colorTable[backgroundIndex];
+                        }
+                    }
                 }
                 catch (Exception /*e*/)
                 {
@@ -127,11 +154,33 @@ namespace ColorTool
 
             if (colorTable != null)
             {
-                return new ColorScheme { colorTable = colorTable };
+                var consoleAttributes = new ConsoleAttributes { background = backgroundColor, foreground = foregroundColor, popupBackground = popupBackgroundColor, popupForeground = popupForegroundColor };
+                return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
             }
             else
             {
                 return null;
+            }
+
+            bool ReadAttributes(string section, out string foreground, out string background)
+            {
+                foreground = null;
+                background = null;
+
+                StringBuilder buffer = new StringBuilder(512);
+                GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
+                foreground = buffer.ToString();
+                if (!COLOR_NAMES.Contains(foreground))
+                    return false;
+
+
+                buffer = new StringBuilder(512);
+                GetPrivateProfileString(section, "BACKGROUND", null, buffer, 512, filename);
+                background = buffer.ToString();
+                if (!COLOR_NAMES.Contains(background))
+                    return false;
+
+                return true;
             }
         }
     }
