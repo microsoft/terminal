@@ -154,7 +154,8 @@ namespace ColorTool
 
             if (colorTable != null)
             {
-                return new ColorScheme { colorTable = colorTable, consoleAttributes = new ConsoleAttributes { background = backgroundColor, foreground = foregroundColor, popupBackground = popupBackgroundColor, popupForeground = popupForegroundColor } };
+                var consoleAttributes = new ConsoleAttributes { background = backgroundColor, foreground = foregroundColor, popupBackground = popupBackgroundColor, popupForeground = popupForegroundColor };
+                return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
             }
             else
             {
