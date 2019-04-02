@@ -76,7 +76,27 @@ namespace ColorTool
                     var node = children.OfType<XmlNode>().Where(n => n.Name == name).Single();
                     colorTable[i] = ParseColor(node.InnerText);
                 }
-                return new ColorScheme { colorTable = colorTable };
+
+                uint? screenForeground = null;
+                uint? screenBackground = null;
+
+                var screenNode = children.OfType<XmlNode>().Where(n => n.Name == "screen_colors").SingleOrDefault();
+                if (screenNode != null)
+                {
+                    var parts = screenNode.InnerText.Split(',');
+                    if (parts.Length == 2)
+                    {
+                        var foregroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[0]);
+                        var backgroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[1]);
+                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        {
+                            screenForeground = colorTable[foregroundIndex];
+                            screenBackground = colorTable[backgroundIndex];
+                        }
+                    }
+                }
+
+                return new ColorScheme { colorTable = colorTable, background = screenBackground, foreground = screenForeground };
             }
             catch (Exception /*e*/)
             {
