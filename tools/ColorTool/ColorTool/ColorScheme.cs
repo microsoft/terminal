@@ -11,11 +11,8 @@ namespace ColorTool
     public class ColorScheme
     {
         public uint[] colorTable = null;
-        public uint? foreground = null;
-        public uint? background = null;
+        public ConsoleAttributes consoleAttributes;
 
-        public uint? popupForeground = null;
-        public uint? popupBackground = null;
 
         public int CalculateIndex(uint value) =>
             colorTable.Select((color, idx) => Tuple.Create(color, idx))
@@ -83,14 +80,14 @@ namespace ColorTool
                 _dump($"Color[{i}]", colorTable[i]);
             }
 
-            if (foreground != null)
+            if (consoleAttributes.foreground != null)
             {
-                _dump("FG       ", foreground.Value);
+                _dump("FG       ", consoleAttributes.foreground.Value);
             }
 
-            if (background != null)
+            if (consoleAttributes.background != null)
             {
-                _dump("BG       ", background.Value);
+                _dump("BG       ", consoleAttributes.background.Value);
             }
         }
     }

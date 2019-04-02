@@ -116,7 +116,7 @@ namespace ColorTool
                     }
                 }
 
-                return new ColorScheme { colorTable = colorTable, background = screenBackground, foreground = screenForeground, popupBackground = popupBackground, popupForeground = popupForeground };
+                return new ColorScheme { colorTable = colorTable, consoleAttributes = new ConsoleAttributes { background = screenBackground, foreground = screenForeground, popupBackground = popupBackground, popupForeground = popupForeground } };
             }
             catch (Exception /*e*/)
             {
