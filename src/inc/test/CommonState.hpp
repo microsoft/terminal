@@ -27,6 +27,7 @@ unit testing projects in the codebase without a bunch of overhead.
 #include "../host/inputReadHandleData.h"
 #include "../buffer/out/CharRow.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
+#include "../host/cookedRead.hpp"
 
 class CommonState
 {
@@ -124,6 +125,8 @@ public:
 
     void PrepareCookedReadData()
     {
+        // TODO
+        /*
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
                                               m_readHandle.get(),
@@ -135,6 +138,7 @@ public:
                                               L"",
                                               {});
         gci.SetCookedReadData(readData);
+        */
     }
 
     void CleanupCookedReadData()

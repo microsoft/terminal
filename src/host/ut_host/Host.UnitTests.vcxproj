@@ -7,19 +7,23 @@
     <ClCompile Include="AttrRowTests.cpp" />
     <ClCompile Include="ClipboardTests.cpp" />
     <ClCompile Include="ConsoleArgumentsTests.cpp" />
-    <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="CodepointWidthDetectorTests.cpp" />
+
+    <!-- TODO
+    <ClCompile Include="CommandLineTests.cpp" />
     <ClCompile Include="CommandListPopupTests.cpp" />
     <ClCompile Include="CommandNumberPopupTests.cpp" />
     <ClCompile Include="CopyFromCharPopupTests.cpp" />
     <ClCompile Include="CopyToCharPopupTests.cpp" />
+    <ClCompile Include="SelectionTests.cpp" />
+    -->
+
     <ClCompile Include="DbcsTests.cpp" />
     <ClCompile Include="HistoryTests.cpp" />
     <ClCompile Include="InitTests.cpp" />
     <ClCompile Include="OutputCellIteratorTests.cpp" />
     <ClCompile Include="ScreenBufferTests.cpp" />
     <ClCompile Include="SearchTests.cpp" />
-    <ClCompile Include="SelectionTests.cpp" />
     <ClCompile Include="TextBufferIteratorTests.cpp" />
     <ClCompile Include="TextBufferTests.cpp" />
     <ClCompile Include="TitleTests.cpp" />

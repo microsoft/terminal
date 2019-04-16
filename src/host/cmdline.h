@@ -62,6 +62,7 @@ Notes:
 #include "alias.h"
 #include "readDataCooked.hpp"
 #include "popup.h"
+#include "cookedRead.hpp"
 
 
 class CommandLine

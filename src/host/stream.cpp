@@ -17,6 +17,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+#include "cookedRead.hpp"
+
 #pragma hdrstop
 
 // Routine Description:
@@ -445,7 +447,7 @@ static NTSTATUS _ReadPendingInput(InputBuffer& inputBuffer,
 // - bytesRead - on output, the number of bytes read into pwchBuffer
 // - controlKeyState - set by a cooked read
 // - initialData - text of initial data found in the read message
-// - ctrlWakeupMask - used by COOKED_READ_DATA
+// - ctrlWakeupMask - used by COOKED_READ_DATA to trigger an early return of reading if masked key is pressed
 // - readHandleState - input read handle data associated with this read operation
 // - exeName - name of the exe requesting the read
 // - unicode - true if read should be unicode, false otherwise
@@ -461,10 +463,10 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                               gsl::span<char> buffer,
                               size_t& bytesRead,
                               DWORD& controlKeyState,
-                              const std::string_view initialData,
+                              const std::string_view /*initialData*/,
                               const DWORD ctrlWakeupMask,
                               INPUT_READ_HANDLE_DATA& readHandleState,
-                              const std::wstring_view exeName,
+                              const std::wstring_view /*exeName*/,
                               const bool unicode,
                               std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
@@ -476,18 +478,17 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
 
     try
     {
-        auto cookedReadData = std::make_unique<COOKED_READ_DATA>(&inputBuffer, // pInputBuffer
-                                                                 &readHandleState, // pInputReadHandleData
-                                                                 screenInfo, // pScreenInfo
-                                                                 buffer.size_bytes(), // UserBufferSize
-                                                                 reinterpret_cast<wchar_t*>(buffer.data()), // UserBuffer
-                                                                 ctrlWakeupMask, // CtrlWakeupMask
-                                                                 pCommandHistory, // CommandHistory
-                                                                 exeName, // exe name
-                                                                 initialData);
-
+        // TODO hook up other arguments to CookedRead
+        auto cookedReadData = std::make_unique<CookedRead>(&inputBuffer,
+                                                           &readHandleState,
+                                                           screenInfo,
+                                                           pCommandHistory,
+                                                           reinterpret_cast<wchar_t*>(buffer.data()),
+                                                           buffer.size_bytes() / sizeof(wchar_t),
+                                                           ctrlWakeupMask);
         gci.SetCookedReadData(cookedReadData.get());
-        bytesRead = buffer.size_bytes(); // This parameter on the way in is the size to read, on the way out, it will be updated to what is actually read.
+        // bytesRead on the way in is the size to read, on the way out, it will be updated to what is actually read.
+        bytesRead = buffer.size_bytes();
         if (CONSOLE_STATUS_WAIT == cookedReadData->Read(unicode, bytesRead, controlKeyState))
         {
             // memory will be cleaned up by wait queue
@@ -497,6 +498,7 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
         {
             gci.SetCookedReadData(nullptr);
         }
+
     }
     CATCH_RETURN();
 

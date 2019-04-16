@@ -15,6 +15,7 @@
 #include "..\..\host\server.h"
 #include "..\..\host\scrolling.hpp"
 #include "..\..\host\telemetry.hpp"
+#include "..\..\host\cookedRead.hpp"
 
 #include "..\inc\ServiceLocator.hpp"
 

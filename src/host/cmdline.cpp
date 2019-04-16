@@ -131,6 +131,9 @@ CommandLine& CommandLine::Instance()
 
 bool CommandLine::IsEditLineEmpty() const
 {
+    // TODO
+    return false;
+    /*
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (!gci.HasPendingCookedRead())
@@ -148,26 +151,34 @@ bool CommandLine::IsEditLineEmpty() const
     {
         return false;
     }
+    */
 }
 
 void CommandLine::Hide(const bool fUpdateFields)
 {
+    // TODO
+    fUpdateFields;
+    /*
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
         DeleteCommandLine(gci.CookedReadData(), fUpdateFields);
     }
+    */
     _isVisible = false;
 }
 
 void CommandLine::Show()
 {
     _isVisible = true;
+    return;
+    /*
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
         RedrawCommandLine(gci.CookedReadData());
     }
+    */
 }
 
 // Routine Description:

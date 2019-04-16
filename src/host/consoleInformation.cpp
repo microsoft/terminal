@@ -163,17 +163,17 @@ bool CONSOLE_INFORMATION::HasPendingCookedRead() const noexcept
     return _cookedReadData != nullptr;
 }
 
-const COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() const noexcept
+const CookedRead& CONSOLE_INFORMATION::CookedReadData() const noexcept
 {
     return *_cookedReadData;
 }
 
-COOKED_READ_DATA& CONSOLE_INFORMATION::CookedReadData() noexcept
+CookedRead& CONSOLE_INFORMATION::CookedReadData() noexcept
 {
     return *_cookedReadData;
 }
 
-void CONSOLE_INFORMATION::SetCookedReadData(COOKED_READ_DATA* readData) noexcept
+void CONSOLE_INFORMATION::SetCookedReadData(CookedRead* readData) noexcept
 {
     _cookedReadData = readData;
 }

@@ -11,6 +11,7 @@
     <ClCompile Include="..\ConsoleArguments.cpp" />
     <ClCompile Include="..\CursorBlinker.cpp" />
     <ClCompile Include="..\readDataCooked.cpp" />
+    <ClCompile Include="..\cookedRead.cpp" />
     <ClCompile Include="..\conareainfo.cpp" />
     <ClCompile Include="..\conimeinfo.cpp" />
     <ClCompile Include="..\consoleInformation.cpp" />
@@ -96,6 +97,7 @@
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\readData.hpp" />
     <ClInclude Include="..\readDataCooked.hpp" />
+    <ClInclude Include="..\cookedRead.hpp" />
     <ClInclude Include="..\rectreadDataDirect.hpp" />
     <ClInclude Include="..\readDataRaw.hpp" />
     <ClInclude Include="..\registry.hpp" />
