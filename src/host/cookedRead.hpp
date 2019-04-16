@@ -39,12 +39,17 @@ public:
     size_t VisibleCharCount() const;
 
 private:
+    enum class ReadState
+    {
+        Ready,
+        Wait,
+        Error,
+        GotChar,
+        Complete
+    };
 
-    [[nodiscard]]
-    NTSTATUS _readCharInputLoop(const bool isUnicode) noexcept;
 
     bool _isTailSurrogatePair() const;
-    bool _processInput();
     bool _isCtrlWakeupMaskTriggered(const wchar_t wch) const noexcept;
 
     bool _insertMode;
@@ -57,4 +62,13 @@ private:
     COORD _promptStartLocation;
     CommandHistory* const _pCommandHistory; // non-ownership pointer
     const ULONG _ctrlWakeupMask;
+    ReadState _state;
+    NTSTATUS _status;
+
+
+    void _readChar();
+    void _process();
+    void _error();
+    void _wait();
+    void _complete(size_t& numBytes);
 };

@@ -27,7 +27,8 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
     _cchUserBuffer{ cchUserBuffer },
     _ctrlWakeupMask{ ctrlWakeupMask },
     _pCommandHistory{ pCommandHistory },
-    _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() }
+    _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
+    _state{ ReadState::Ready }
 {
     _prompt.reserve(256);
     _promptStartLocation = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
@@ -162,76 +163,81 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
 
     controlKeyState = 0;
 
-    NTSTATUS Status = _readCharInputLoop(isUnicode);
-
-    // if the read was completed (status != wait), free the cooked read
-    // data.  also, close the temporary output handle that was opened to
-    // echo the characters read.
-    // TODO
-    /*
-    if (Status != CONSOLE_STATUS_WAIT)
+    while(true)
     {
-        Status = _handlePostCharInputLoop(isUnicode, numBytes, controlKeyState);
-    }
-    */
-
-    numBytes = _prompt.size() * sizeof(wchar_t);
-    return Status;
-}
-
-[[nodiscard]]
-NTSTATUS CookedRead::_readCharInputLoop(const bool isUnicode) noexcept
-{
-    // TODO
-    isUnicode;
-
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    while (true)
-    {
-        wchar_t wch = UNICODE_NULL;
-
-        Status = GetChar(_pInputBuffer,
-                         &wch,
-                         true,
-                         nullptr,
-                         nullptr,
-                         nullptr);
-
-        if (!NT_SUCCESS(Status))
+        switch(_state)
         {
-            if (Status != CONSOLE_STATUS_WAIT)
-            {
-                Erase();
-            }
-            break;
-        }
-
-        _prompt.push_back(wch);
-
-        if (!Utf16Parser::IsLeadingSurrogate(wch))
-        {
-            if (_processInput())
-            {
-                Status = STATUS_SUCCESS;
+            case ReadState::Ready:
+                _readChar();
                 break;
-            }
+            case ReadState::GotChar:
+                _process();
+                break;
+            case ReadState::Wait:
+                _wait();
+                return _status;
+            case ReadState::Complete:
+                _complete(numBytes);
+                return _status;
+            case ReadState::Error:
+                _error();
+                return _status;
         }
     }
-
-
-
-    return Status;
 }
 
-bool CookedRead::_isTailSurrogatePair() const
+void CookedRead::_wait()
 {
-    return (_prompt.size() >= 2 &&
-            Utf16Parser::IsTrailingSurrogate(_prompt.back()) &&
-            Utf16Parser::IsLeadingSurrogate(*(_prompt.crbegin() + 1)));
+    _status = CONSOLE_STATUS_WAIT;
+    _state = ReadState::Ready;
 }
 
-bool CookedRead::_processInput()
+void CookedRead::_error()
+{
+    Erase();
+    _state = ReadState::Ready;
+}
+
+void CookedRead::_complete(size_t& numBytes)
+{
+    numBytes = _prompt.size() * sizeof(wchar_t);
+    _status = STATUS_SUCCESS;
+    _state = ReadState::Ready;
+}
+
+void CookedRead::_readChar()
+{
+    wchar_t wch = UNICODE_NULL;
+    _status = GetChar(_pInputBuffer,
+                      &wch,
+                      true,
+                      nullptr,
+                      nullptr,
+                      nullptr);
+
+    if (_status == CONSOLE_STATUS_WAIT)
+    {
+        _state = ReadState::Wait;
+    }
+    else if (NT_SUCCESS(_status))
+    {
+        _prompt.push_back(wch);
+        if (Utf16Parser::IsLeadingSurrogate(wch))
+        {
+            _state = ReadState::Ready;
+        }
+        else
+        {
+            _state = ReadState::GotChar;
+        }
+    }
+    else
+    {
+        _state = ReadState::Error;
+    }
+}
+
+void CookedRead::_process()
 {
     if (_prompt.back() == UNICODE_CARRIAGERETURN)
     {
@@ -241,28 +247,31 @@ bool CookedRead::_processInput()
     LOG_IF_FAILED(_screenInfo.SetCursorPosition(_promptStartLocation, true));
     size_t bytesToWrite = _prompt.size() * sizeof(wchar_t);
     short scrollY = 0;
-    NTSTATUS Status = WriteCharsLegacy(_screenInfo,
-                                       _prompt.c_str(),
-                                       _prompt.c_str(),
-                                       _prompt.c_str(),
-                                       &bytesToWrite,
-                                       nullptr,
-                                       _promptStartLocation.X,
-                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                       &scrollY);
-
-    Status;
+    _status = WriteCharsLegacy(_screenInfo,
+                               _prompt.c_str(),
+                               _prompt.c_str(),
+                               _prompt.c_str(),
+                               &bytesToWrite,
+                               nullptr,
+                               _promptStartLocation.X,
+                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                               &scrollY);
 
     std::copy_n(_prompt.begin(), _prompt.size(), _userBuffer);
 
     if (_prompt.back() == UNICODE_LINEFEED)
     {
-        return true;
+        _state = ReadState::Complete;
     }
     else
     {
-        return false;
+        _state = ReadState::Ready;
     }
+}
 
-
+bool CookedRead::_isTailSurrogatePair() const
+{
+    return (_prompt.size() >= 2 &&
+            Utf16Parser::IsTrailingSurrogate(_prompt.back()) &&
+            Utf16Parser::IsLeadingSurrogate(*(_prompt.crbegin() + 1)));
 }
