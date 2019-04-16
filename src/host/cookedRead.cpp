@@ -28,7 +28,9 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
     _ctrlWakeupMask{ ctrlWakeupMask },
     _pCommandHistory{ pCommandHistory },
     _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
-    _state{ ReadState::Ready }
+    _state{ ReadState::Ready },
+    _status{ STATUS_SUCCESS },
+    _insertionIndex{ 0 }
 {
     _prompt.reserve(256);
     _promptStartLocation = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
@@ -54,6 +56,24 @@ size_t CookedRead::VisibleCharCount() const
     return std::count_if(_prompt.begin(),
                          _prompt.end(),
                          [](const wchar_t& wch){ return !Utf16Parser::IsTrailingSurrogate(wch); });
+}
+
+void CookedRead::MoveCursorLeft()
+{
+    COORD cursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    if (_insertionIndex >= 2 &&
+        Utf16Parser::IsTrailingSurrogate(_prompt.at(_insertionIndex - 1)) &&
+        Utf16Parser::IsLeadingSurrogate(_prompt.at(_insertionIndex - 2)))
+    {
+        _insertionIndex -= 2;
+        cursorPosition.X -= 2;
+    }
+    else if (_insertionIndex > 0)
+    {
+        --_insertionIndex;
+        --cursorPosition.X;
+    }
+    _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
 }
 
 bool CookedRead::_isCtrlWakeupMaskTriggered(const wchar_t wch) const noexcept
@@ -152,6 +172,16 @@ bool CookedRead::Notify(const WaitTerminationReason TerminationReason,
     }
 }
 
+// Routine Description:
+// - Reads characters from user input
+// Arguments:
+// - isUnicode -
+// - numBytes -
+// - controlKeyState -
+// Return Value:
+// - STATUS_SUCCESS if read is finished
+// - CONSOLE_STATUS_WAIT if need to wait for more input
+// - other status code otherwise
 [[nodiscard]]
 NTSTATUS CookedRead::Read(const bool isUnicode,
                           size_t& numBytes,
@@ -162,16 +192,17 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
 
 
     controlKeyState = 0;
+    std::deque<wchar_t> unprocessedChars;
 
     while(true)
     {
         switch(_state)
         {
             case ReadState::Ready:
-                _readChar();
+                _readChar(unprocessedChars);
                 break;
             case ReadState::GotChar:
-                _process();
+                _process(unprocessedChars);
                 break;
             case ReadState::Wait:
                 _wait();
@@ -186,26 +217,47 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
     }
 }
 
+// Routine Description:
+// - executes wait state
 void CookedRead::_wait()
 {
     _status = CONSOLE_STATUS_WAIT;
     _state = ReadState::Ready;
 }
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 void CookedRead::_error()
 {
     Erase();
     _state = ReadState::Ready;
 }
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 void CookedRead::_complete(size_t& numBytes)
 {
+    std::copy_n(_prompt.begin(), _prompt.size(), _userBuffer);
     numBytes = _prompt.size() * sizeof(wchar_t);
     _status = STATUS_SUCCESS;
     _state = ReadState::Ready;
 }
 
-void CookedRead::_readChar()
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
+void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 {
     wchar_t wch = UNICODE_NULL;
     _status = GetChar(_pInputBuffer,
@@ -221,7 +273,9 @@ void CookedRead::_readChar()
     }
     else if (NT_SUCCESS(_status))
     {
-        _prompt.push_back(wch);
+        // insert char
+        unprocessedChars.push_back(wch);
+
         if (Utf16Parser::IsLeadingSurrogate(wch))
         {
             _state = ReadState::Ready;
@@ -237,13 +291,37 @@ void CookedRead::_readChar()
     }
 }
 
-void CookedRead::_process()
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
+void CookedRead::_writeToPrompt(std::deque<wchar_t>& unprocessedChars)
 {
-    if (_prompt.back() == UNICODE_CARRIAGERETURN)
+    if (unprocessedChars.back() == EXTKEY_ERASE_PREV_WORD || unprocessedChars.back() == UNICODE_BACKSPACE2)
     {
-        _prompt.push_back(UNICODE_LINEFEED);
+        unprocessedChars.back() = UNICODE_BACKSPACE;
+    }
+    else if (unprocessedChars.back() == UNICODE_CARRIAGERETURN)
+    {
+        unprocessedChars.push_back(UNICODE_LINEFEED);
     }
 
+    while (!unprocessedChars.empty())
+    {
+        _prompt.insert(_insertionIndex, 1, unprocessedChars.front());
+        unprocessedChars.pop_front();
+        ++_insertionIndex;
+    }
+}
+
+// Routine Description:
+// - writes the entire prompt data to the screen
+// Arguments:
+// - resetCursor - true if we need to manually adjust the cursor
+void CookedRead::_writeToScreen(const bool resetCursor)
+{
     LOG_IF_FAILED(_screenInfo.SetCursorPosition(_promptStartLocation, true));
     size_t bytesToWrite = _prompt.size() * sizeof(wchar_t);
     short scrollY = 0;
@@ -257,9 +335,46 @@ void CookedRead::_process()
                                WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                &scrollY);
 
-    std::copy_n(_prompt.begin(), _prompt.size(), _userBuffer);
+    // move the cursor to the correct insert location
+    if (resetCursor)
+    {
+        // TODO this doesn't tak into account any Y direction changes and also doesn't factor in
+        // CJK characters that are wide for a single wchar
+        COORD blah = _promptStartLocation;
+        blah.X += static_cast<short>(_insertionIndex);
+        LOG_IF_FAILED(_screenInfo.SetCursorPosition(blah, true));
+    }
+}
 
-    if (_prompt.back() == UNICODE_LINEFEED)
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
+void CookedRead::_process(std::deque<wchar_t>& unprocessedChars)
+{
+    FAIL_FAST_IF(unprocessedChars.empty());
+
+    const bool enterPressed = unprocessedChars.back() == UNICODE_CARRIAGERETURN;
+
+    // carriage return needs to be written at the end of the prompt in order to send all text correctly
+    if (enterPressed)
+    {
+        _insertionIndex = _prompt.size();
+    }
+
+    _writeToPrompt(unprocessedChars);
+
+    if (_isCtrlWakeupMaskTriggered(_prompt.back()))
+    {
+        _state = ReadState::Complete;
+        return;
+    }
+
+    _writeToScreen(!enterPressed);
+
+    if (enterPressed)
     {
         _state = ReadState::Complete;
     }
@@ -269,6 +384,12 @@ void CookedRead::_process()
     }
 }
 
+// Routine Description:
+// -
+// Arguments:
+// -
+// Return Value:
+// -
 bool CookedRead::_isTailSurrogatePair() const
 {
     return (_prompt.size() >= 2 &&

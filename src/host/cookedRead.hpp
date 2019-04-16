@@ -38,6 +38,8 @@ public:
     COORD PromptStartLocation() const noexcept;
     size_t VisibleCharCount() const;
 
+    void MoveCursorLeft();
+
 private:
     enum class ReadState
     {
@@ -64,11 +66,16 @@ private:
     const ULONG _ctrlWakeupMask;
     ReadState _state;
     NTSTATUS _status;
+    size_t _insertionIndex;
 
 
-    void _readChar();
-    void _process();
+    void _readChar(std::deque<wchar_t>& unprocessedChars);
+    void _process(std::deque<wchar_t>& unprocessedChars);
     void _error();
     void _wait();
     void _complete(size_t& numBytes);
+
+    void _writeToPrompt(std::deque<wchar_t>& unprocessedChars);
+    void _writeToScreen(const bool resetCursor);
+
 };
