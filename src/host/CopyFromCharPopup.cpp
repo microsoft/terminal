@@ -20,8 +20,9 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]]
-NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CopyFromCharPopup::Process(CookedRead& cookedReadData) noexcept
 {
+    /*
     // get user input
     WCHAR Char = UNICODE_NULL;
     bool PopupKeys = false;
@@ -55,6 +56,9 @@ NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
             CommandLine::Instance().DeleteFromRightOfCursor(cookedReadData);
         }
     }
+    return CONSOLE_STATUS_WAIT_NO_BLOCK;
+    */
+    cookedReadData;
     return CONSOLE_STATUS_WAIT_NO_BLOCK;
 }
 

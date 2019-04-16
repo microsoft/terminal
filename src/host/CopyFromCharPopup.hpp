@@ -23,7 +23,7 @@ public:
     CopyFromCharPopup(SCREEN_INFORMATION& screenInfo);
 
     [[nodiscard]]
-    NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
+    NTSTATUS Process(CookedRead& cookedReadData) noexcept override;
 
 protected:
     void _DrawContent() override;

@@ -60,8 +60,9 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
 }
 
 [[nodiscard]]
-NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept
+NTSTATUS CommandListPopup::_handlePopupKeys(CookedRead& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept
 {
+    /*
     try
     {
         short Index = 0;
@@ -132,6 +133,11 @@ NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, co
     }
     CATCH_LOG();
     return STATUS_SUCCESS;
+    */
+    cookedReadData;
+    wch;
+    modifiers;
+    return STATUS_SUCCESS;
 }
 
 void CommandListPopup::_setBottomIndex()
@@ -147,8 +153,9 @@ void CommandListPopup::_setBottomIndex()
 }
 
 [[nodiscard]]
-NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CommandListPopup::_deleteSelection(CookedRead& cookedReadData) noexcept
 {
+    /*
     try
     {
         auto& history = cookedReadData.History();
@@ -170,6 +177,10 @@ NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) no
     }
     CATCH_LOG();
     return STATUS_SUCCESS;
+    */
+
+    cookedReadData;
+    return STATUS_SUCCESS;
 }
 
 // Routine Description:
@@ -177,7 +188,7 @@ NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) no
 // Arguments:
 // - cookedReadData - the read wait object to operate upon
 [[nodiscard]]
-NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CommandListPopup::_swapUp(CookedRead& cookedReadData) noexcept
 {
     try
     {
@@ -200,7 +211,7 @@ NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
 // Arguments:
 // - cookedReadData - the read wait object to operate upon
 [[nodiscard]]
-NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CommandListPopup::_swapDown(CookedRead& cookedReadData) noexcept
 {
     try
     {
@@ -218,8 +229,9 @@ NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
     return STATUS_SUCCESS;
 }
 
-void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
+void CommandListPopup::_handleReturn(CookedRead& cookedReadData)
 {
+    /*
     short Index = 0;
     NTSTATUS Status = STATUS_SUCCESS;
     DWORD LineCount = 1;
@@ -266,9 +278,11 @@ void CommandListPopup::_handleReturn(COOKED_READ_DATA& cookedReadData)
     }
 
     cookedReadData.SetReportedByteCount(NumBytes);
+    */
+    cookedReadData;
 }
 
-void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cookedReadData, const wchar_t wch)
+void CommandListPopup::_cycleSelectionToMatchingCommands(CookedRead& cookedReadData, const wchar_t wch)
 {
     short Index = 0;
     if (cookedReadData.History().FindMatchingCommand({ &wch, 1 },
@@ -286,8 +300,9 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cooke
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]]
-NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CommandListPopup::Process(CookedRead& cookedReadData) noexcept
 {
+    /*
     NTSTATUS Status = STATUS_SUCCESS;
 
     for (;;)
@@ -321,6 +336,9 @@ NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
             _cycleSelectionToMatchingCommands(cookedReadData, wch);
         }
     }
+    */
+    cookedReadData;
+    return CONSOLE_STATUS_READ_COMPLETE;
 }
 
 void CommandListPopup::_DrawContent()

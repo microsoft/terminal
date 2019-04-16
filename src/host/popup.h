@@ -20,7 +20,7 @@ Revision History:
 
 #pragma once
 
-#include "readDataCooked.hpp"
+#include "cookedRead.hpp"
 #include "screenInfo.hpp"
 #include "readDataCooked.hpp"
 
@@ -34,12 +34,12 @@ class Popup
 {
 public:
 
-    using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, DWORD&, wchar_t&)>;
+    using UserInputFunction = std::function<NTSTATUS(CookedRead&, bool&, DWORD&, wchar_t&)>;
 
     Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
     virtual ~Popup();
     [[nodiscard]]
-    virtual NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept = 0;
+    virtual NTSTATUS Process(CookedRead& cookedReadData) noexcept = 0;
 
     void Draw();
 
@@ -66,7 +66,7 @@ protected:
     friend class CommandListPopupTests;
 #endif
 
-    NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept;
+    NTSTATUS _getUserInput(CookedRead& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept;
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
 
@@ -81,7 +81,7 @@ private:
 
     void _DrawBorder();
 
-    static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+    static NTSTATUS _getUserInputInternal(CookedRead& cookedReadData,
                                           bool& popupKey,
                                           DWORD& modifiers,
                                           wchar_t& wch) noexcept;

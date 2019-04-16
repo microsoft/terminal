@@ -60,7 +60,6 @@ Notes:
 
 #include "history.h"
 #include "alias.h"
-#include "readDataCooked.hpp"
 #include "popup.h"
 #include "cookedRead.hpp"
 
@@ -78,12 +77,12 @@ public:
     bool IsVisible() const noexcept;
 
     [[nodiscard]]
-    NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
+    NTSTATUS ProcessCommandLine(CookedRead& cookedReadData,
                                 _In_ WCHAR wch,
                                 const DWORD dwKeyState);
 
     [[nodiscard]]
-    HRESULT StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData);
+    HRESULT StartCommandNumberPopup(CookedRead& cookedReadData);
 
     bool HasPopup() const noexcept;
     Popup& GetPopup();
@@ -96,8 +95,8 @@ public:
     void EndCurrentPopup();
     void EndAllPopups();
 
-    void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+    void DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept;
+    COORD DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept;
 protected:
     CommandLine();
 
@@ -106,26 +105,26 @@ protected:
     CommandLine& operator=(CommandLine const&) = delete;
 
     [[nodiscard]]
-    NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData);
+    NTSTATUS CommandLine::_startCommandListPopup(CookedRead& cookedReadData);
     [[nodiscard]]
-    NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);
+    NTSTATUS CommandLine::_startCopyFromCharPopup(CookedRead& cookedReadData);
     [[nodiscard]]
-    NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData);
+    NTSTATUS CommandLine::_startCopyToCharPopup(CookedRead& cookedReadData);
 
-    void _processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);
-    void _setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData);
-    void _setPromptToNewestCommand(COOKED_READ_DATA& cookedReadData);
-    COORD _deletePromptBeforeCursor(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorToEndOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorToStartOfPrompt(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorLeft(COOKED_READ_DATA& cookedReadData);
-    COORD _moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept;
-    void _insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept;
-    void _deleteCommandHistory(COOKED_READ_DATA& cookedReadData) noexcept;
-    void _fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept;
-    COORD _cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
+    void _processHistoryCycling(CookedRead& cookedReadData, const CommandHistory::SearchDirection searchDirection);
+    void _setPromptToOldestCommand(CookedRead& cookedReadData);
+    void _setPromptToNewestCommand(CookedRead& cookedReadData);
+    COORD _deletePromptBeforeCursor(CookedRead& cookedReadData) noexcept;
+    COORD _moveCursorToEndOfPrompt(CookedRead& cookedReadData) noexcept;
+    COORD _moveCursorToStartOfPrompt(CookedRead& cookedReadData) noexcept;
+    COORD _moveCursorLeftByWord(CookedRead& cookedReadData) noexcept;
+    COORD _moveCursorLeft(CookedRead& cookedReadData);
+    COORD _moveCursorRightByWord(CookedRead& cookedReadData) noexcept;
+    COORD _moveCursorRight(CookedRead& cookedReadData) noexcept;
+    void _insertCtrlZ(CookedRead& cookedReadData) noexcept;
+    void _deleteCommandHistory(CookedRead& cookedReadData) noexcept;
+    void _fillPromptWithPreviousCommandFragment(CookedRead& cookedReadData) noexcept;
+    COORD _cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadData);
 
 
 #ifdef UNIT_TESTING
@@ -140,9 +139,9 @@ private:
 };
 
 
-void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateFields);
+void DeleteCommandLine(CookedRead& cookedReadData, const bool fUpdateFields);
 
-void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
+void RedrawCommandLine(CookedRead& cookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
@@ -167,4 +166,4 @@ HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 
-void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index);
+void SetCurrentCommandLine(CookedRead& cookedReadData, _In_ SHORT Index);

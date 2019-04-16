@@ -41,6 +41,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <functional>
+#include <numeric>
 
 // WIL
 

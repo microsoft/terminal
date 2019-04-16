@@ -22,8 +22,9 @@ CopyToCharPopup::CopyToCharPopup(SCREEN_INFORMATION& screenInfo) :
 // - cookedReadData - the read data to operate on
 // - LastCommand - the most recent command run
 // - wch - the wchar to copy up to
-void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch)
+void CopyToCharPopup::_copyToChar(CookedRead& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch)
 {
+    /*
     // make sure that there it is possible to copy any found text over
     if (cookedReadData.InsertionPoint() >= LastCommand.size())
     {
@@ -43,6 +44,11 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
     const auto endIt = location;
 
     cookedReadData.Write({ &*startIt, gsl::narrow<size_t>(std::distance(startIt, endIt)) });
+    */
+
+    cookedReadData;
+    LastCommand;
+    wch;
 }
 
 // Routine Description:
@@ -51,8 +57,9 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]]
-NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CopyToCharPopup::Process(CookedRead& cookedReadData) noexcept
 {
+    /*
     wchar_t wch = UNICODE_NULL;
     bool popupKey = false;
     DWORD modifiers = 0;
@@ -76,6 +83,9 @@ NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
         _copyToChar(cookedReadData, lastCommand, wch);
     }
 
+    return CONSOLE_STATUS_WAIT_NO_BLOCK;
+    */
+    cookedReadData;
     return CONSOLE_STATUS_WAIT_NO_BLOCK;
 }
 

@@ -23,10 +23,10 @@ public:
     CopyToCharPopup(SCREEN_INFORMATION& screenInfo);
 
     [[nodiscard]]
-    NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
+    NTSTATUS Process(CookedRead& cookedReadData) noexcept override;
 protected:
     void _DrawContent() override;
 
 private:
-    void _copyToChar(COOKED_READ_DATA& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch);
+    void _copyToChar(CookedRead& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch);
 };

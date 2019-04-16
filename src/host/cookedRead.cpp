@@ -10,6 +10,7 @@
 #include "stream.h"
 #include "_stream.h"
 #include "../types/inc/Utf16Parser.hpp"
+#include "../types/inc/GlyphWidth.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 
@@ -30,10 +31,29 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
     _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
     _state{ ReadState::Ready },
     _status{ STATUS_SUCCESS },
-    _insertionIndex{ 0 }
+    _insertionIndex{ 0 },
+    _commandLineEditingKeys{ false },
+    _keyState{ 0 },
+    _commandKeyChar{ UNICODE_NULL },
+    _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) }
 {
     _prompt.reserve(256);
     _promptStartLocation = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+}
+
+SCREEN_INFORMATION& CookedRead::ScreenInfo()
+{
+    return _screenInfo;
+}
+
+bool CookedRead::HasHistory() const noexcept
+{
+    return _pCommandHistory != nullptr;
+}
+
+CommandHistory& CookedRead::History() noexcept
+{
+    return *_pCommandHistory;
 }
 
 void CookedRead::Erase()
@@ -41,9 +61,19 @@ void CookedRead::Erase()
     _prompt.erase();
 }
 
+bool CookedRead::IsInsertMode() const noexcept
+{
+    return _insertMode;
+}
+
 void CookedRead::SetInsertMode(const bool mode) noexcept
 {
     _insertMode = mode;
+}
+
+bool CookedRead::IsEchoInput() const noexcept
+{
+    return _echoInput;
 }
 
 COORD CookedRead::PromptStartLocation() const noexcept
@@ -58,22 +88,40 @@ size_t CookedRead::VisibleCharCount() const
                          [](const wchar_t& wch){ return !Utf16Parser::IsTrailingSurrogate(wch); });
 }
 
-void CookedRead::MoveCursorLeft()
+size_t CookedRead::MoveInsertionIndexLeft()
 {
-    COORD cursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    std::wstring_view glyph;
+    bool moved = false;
+
+    // move the insertion index left by one codepoint
     if (_insertionIndex >= 2 &&
-        Utf16Parser::IsTrailingSurrogate(_prompt.at(_insertionIndex - 1)) &&
-        Utf16Parser::IsLeadingSurrogate(_prompt.at(_insertionIndex - 2)))
+        _isSurrogatePairAt(_insertionIndex - 2))
     {
         _insertionIndex -= 2;
-        cursorPosition.X -= 2;
+        glyph = { &_prompt.at(_insertionIndex), 2 };
+        moved = true;
     }
     else if (_insertionIndex > 0)
     {
         --_insertionIndex;
-        --cursorPosition.X;
+        glyph = { &_prompt.at(_insertionIndex), 1 };
+        moved = true;
     }
-    _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
+
+    // calculate how many cells the cursor was moved by the insertion index move
+    size_t cellsMoved = 0;
+    if (moved)
+    {
+        if (IsGlyphFullWidth(glyph))
+        {
+            cellsMoved = 2;
+        }
+        else
+        {
+            cellsMoved = 1;
+        }
+    }
+    return cellsMoved;
 }
 
 bool CookedRead::_isCtrlWakeupMaskTriggered(const wchar_t wch) const noexcept
@@ -213,7 +261,38 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
             case ReadState::Error:
                 _error();
                 return _status;
+            case ReadState::CommandKey:
+                _commandKey();
+                break;
         }
+    }
+}
+
+void CookedRead::_commandKey()
+{
+    _status = CommandLine::Instance().ProcessCommandLine(*this, _commandKeyChar, _keyState);
+    // TODO check this, it means that a popup was completed but should that mean we should go to the Ready
+    // or Complete state?
+    if (_status == CONSOLE_STATUS_READ_COMPLETE)
+    {
+        _state = ReadState::Ready;
+    }
+    else if (_status == CONSOLE_STATUS_WAIT_NO_BLOCK)
+    {
+        _status = CONSOLE_STATUS_WAIT;
+        _state = ReadState::Wait;
+    }
+    else if (_status == CONSOLE_STATUS_WAIT)
+    {
+        _state = ReadState::Wait;
+    }
+    else if (NT_SUCCESS(_status))
+    {
+        _state = ReadState::Ready;
+    }
+    else
+    {
+        _state = ReadState::Error;
     }
 }
 
@@ -260,12 +339,15 @@ void CookedRead::_complete(size_t& numBytes)
 void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 {
     wchar_t wch = UNICODE_NULL;
+    _commandLineEditingKeys = false;
+    _keyState = 0;
+
     _status = GetChar(_pInputBuffer,
                       &wch,
                       true,
                       nullptr,
-                      nullptr,
-                      nullptr);
+                      &_commandLineEditingKeys,
+                      &_keyState);
 
     if (_status == CONSOLE_STATUS_WAIT)
     {
@@ -273,6 +355,13 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
     }
     else if (NT_SUCCESS(_status))
     {
+        if (_commandLineEditingKeys)
+        {
+            _commandKeyChar = wch;
+            _state = ReadState::CommandKey;
+            return;
+        }
+
         // insert char
         unprocessedChars.push_back(wch);
 
@@ -338,12 +427,37 @@ void CookedRead::_writeToScreen(const bool resetCursor)
     // move the cursor to the correct insert location
     if (resetCursor)
     {
-        // TODO this doesn't tak into account any Y direction changes and also doesn't factor in
-        // CJK characters that are wide for a single wchar
-        COORD blah = _promptStartLocation;
-        blah.X += static_cast<short>(_insertionIndex);
-        LOG_IF_FAILED(_screenInfo.SetCursorPosition(blah, true));
+        COORD cursorPosition = _promptStartLocation;
+        cursorPosition.X += gsl::narrow<short>(_calculatePromptCellLength(false));
+        _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
+        FAIL_FAST_IF_NTSTATUS_FAILED(_status);
     }
+}
+
+// Routine Description:
+// - calculates how many cells the prompt should take up
+// Arguments:
+// - wholePrompt - true if the whole prompt text should be calculated. if false, then
+// cell length is calculated only up to the insertion index of the prompt.
+// Return Value:
+// - the number of cells that text data in the prompt should use.
+size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
+{
+    const size_t stopIndex = wholePrompt ? _prompt.size() : _insertionIndex;
+    size_t count = 0;
+    for (size_t i = 0; i < stopIndex; ++i)
+    {
+        // check for a potential surrogate pair
+        if (i + 1 < stopIndex && _isSurrogatePairAt(i))
+        {
+            count += IsGlyphFullWidth({ &_prompt.at(i), 2 }) ? 2 : 1;
+        }
+        else
+        {
+            count += IsGlyphFullWidth(_prompt.at(i)) ? 2 : 1;
+        }
+    }
+    return count;
 }
 
 // Routine Description:
@@ -395,4 +509,11 @@ bool CookedRead::_isTailSurrogatePair() const
     return (_prompt.size() >= 2 &&
             Utf16Parser::IsTrailingSurrogate(_prompt.back()) &&
             Utf16Parser::IsLeadingSurrogate(*(_prompt.crbegin() + 1)));
+}
+
+bool CookedRead::_isSurrogatePairAt(const size_t index) const
+{
+    THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, index + 1 >= _prompt.size());
+    return (Utf16Parser::IsTrailingSurrogate(_prompt.at(index)) &&
+            Utf16Parser::IsLeadingSurrogate((_prompt.at(index + 1))));
 }
