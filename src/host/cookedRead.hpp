@@ -42,6 +42,7 @@ public:
     size_t VisibleCharCount() const;
 
     size_t MoveInsertionIndexLeft();
+    size_t MoveInsertionIndexRight();
 
     SCREEN_INFORMATION& ScreenInfo();
 
@@ -72,7 +73,9 @@ private:
     size_t _cchUserBuffer;
 
     SCREEN_INFORMATION& _screenInfo;
+    // storage for the prompt text data
     std::wstring _prompt;
+    // the location of where the interactive portion of the prompt starts
     COORD _promptStartLocation;
     CommandHistory* const _pCommandHistory; // non-ownership pointer
     // mask of control keys that if pressed will end the cooked read early
@@ -82,6 +85,7 @@ private:
     NTSTATUS _status;
     // index of _prompt for character insertion
     size_t _insertionIndex;
+
     // used for special command line keys
     bool _commandLineEditingKeys;
     DWORD _keyState;
@@ -91,7 +95,7 @@ private:
 
 
     void _readChar(std::deque<wchar_t>& unprocessedChars);
-    void _process(std::deque<wchar_t>& unprocessedChars);
+    void _processChars(std::deque<wchar_t>& unprocessedChars);
     void _error();
     void _wait();
     void _complete(size_t& numBytes);

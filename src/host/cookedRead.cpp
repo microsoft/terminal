@@ -81,49 +81,109 @@ COORD CookedRead::PromptStartLocation() const noexcept
     return _promptStartLocation;
 }
 
+// Routine Description:
+// - counts the number of visible characters in the prompt
+// Return Value:
+// - the number of visible characters in the prompt (counts surrogate pairs as one character)
 size_t CookedRead::VisibleCharCount() const
 {
-    return std::count_if(_prompt.begin(),
-                         _prompt.end(),
-                         [](const wchar_t& wch){ return !Utf16Parser::IsTrailingSurrogate(wch); });
+    size_t count = 0;
+    for (size_t i = 0; i < _prompt.size(); ++i)
+    {
+        if (i + 1 < _prompt.size() && _isSurrogatePairAt(i))
+        {
+            // need to increment i in order to jump past surrogate pair
+            ++i;
+        }
+        ++count;
+    }
+    return count;
 }
 
+// Routine Description:
+// - moves the insertion index one codepoint to the left if possible
+// Return Value:
+// - returns the number of cells that the move operation passed over
 size_t CookedRead::MoveInsertionIndexLeft()
 {
-    std::wstring_view glyph;
-    bool moved = false;
+    // check if there's anything to the left to
+    if (_insertionIndex == 0)
+    {
+        return 0;
+    }
 
     // move the insertion index left by one codepoint
+    std::wstring_view glyph;
     if (_insertionIndex >= 2 &&
         _isSurrogatePairAt(_insertionIndex - 2))
     {
         _insertionIndex -= 2;
         glyph = { &_prompt.at(_insertionIndex), 2 };
-        moved = true;
     }
-    else if (_insertionIndex > 0)
+    else
     {
         --_insertionIndex;
         glyph = { &_prompt.at(_insertionIndex), 1 };
-        moved = true;
     }
 
     // calculate how many cells the cursor was moved by the insertion index move
     size_t cellsMoved = 0;
-    if (moved)
+    if (IsGlyphFullWidth(glyph))
     {
-        if (IsGlyphFullWidth(glyph))
-        {
-            cellsMoved = 2;
-        }
-        else
-        {
-            cellsMoved = 1;
-        }
+        cellsMoved = 2;
+    }
+    else
+    {
+        cellsMoved = 1;
     }
     return cellsMoved;
 }
 
+// Routine Description:
+// - moves the insertion index one codepoint to the right if possible
+// Return Value:
+// - returns the number of cells that the move operation passed over
+size_t CookedRead::MoveInsertionIndexRight()
+{
+    // check if there's anything to move to the right to
+    if (_insertionIndex >= _prompt.size())
+    {
+        return 0;
+    }
+
+    // move the insertion index right by one codepoint
+    std::wstring_view glyph;
+    if (_insertionIndex + 1 < _prompt.size() &&
+        _isSurrogatePairAt(_insertionIndex))
+    {
+        glyph = { &_prompt.at(_insertionIndex), 2 };
+        _insertionIndex += 2;
+    }
+    else
+    {
+        glyph = { &_prompt.at(_insertionIndex), 1 };
+        ++_insertionIndex;
+    }
+
+    // calculate how many cells the cursor was moved by the insertion index move
+    size_t cellsMoved = 0;
+    if (IsGlyphFullWidth(glyph))
+    {
+        cellsMoved = 2;
+    }
+    else
+    {
+        cellsMoved = 1;
+    }
+    return cellsMoved;
+}
+
+// Routine Description:
+// - checks if wch matches up with the control character masking for early data return
+// Arguments:
+// - wch - the wchar to check
+// Return Value:
+// - true if wch is part of the the control character mask, false otherwise
 bool CookedRead::_isCtrlWakeupMaskTriggered(const wchar_t wch) const noexcept
 {
     // can't use wil flag set macros here because they require a static scope for the flag
@@ -223,22 +283,18 @@ bool CookedRead::Notify(const WaitTerminationReason TerminationReason,
 // Routine Description:
 // - Reads characters from user input
 // Arguments:
-// - isUnicode -
-// - numBytes -
-// - controlKeyState -
+// - isUnicode - TODO
+// - numBytes - TODO
+// - controlKeyState - TODO
 // Return Value:
 // - STATUS_SUCCESS if read is finished
 // - CONSOLE_STATUS_WAIT if need to wait for more input
 // - other status code otherwise
 [[nodiscard]]
-NTSTATUS CookedRead::Read(const bool isUnicode,
+NTSTATUS CookedRead::Read(const bool /*isUnicode*/,
                           size_t& numBytes,
                           ULONG& controlKeyState) noexcept
 {
-    // TODO
-    isUnicode;
-
-
     controlKeyState = 0;
     std::deque<wchar_t> unprocessedChars;
 
@@ -250,7 +306,7 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
                 _readChar(unprocessedChars);
                 break;
             case ReadState::GotChar:
-                _process(unprocessedChars);
+                _processChars(unprocessedChars);
                 break;
             case ReadState::Wait:
                 _wait();
@@ -268,6 +324,8 @@ NTSTATUS CookedRead::Read(const bool isUnicode,
     }
 }
 
+// Routine Description:
+// - handles a command line editing key
 void CookedRead::_commandKey()
 {
     _status = CommandLine::Instance().ProcessCommandLine(*this, _commandKeyChar, _keyState);
@@ -305,11 +363,7 @@ void CookedRead::_wait()
 }
 
 // Routine Description:
-// -
-// Arguments:
-// -
-// Return Value:
-// -
+// - executes error state
 void CookedRead::_error()
 {
     Erase();
@@ -317,11 +371,9 @@ void CookedRead::_error()
 }
 
 // Routine Description:
-// -
+// - executes Complete state. copies pompt data to the user buffer.
 // Arguments:
-// -
-// Return Value:
-// -
+// - numBytes - the number of bytes that were copied to the user buffer
 void CookedRead::_complete(size_t& numBytes)
 {
     std::copy_n(_prompt.begin(), _prompt.size(), _userBuffer);
@@ -331,17 +383,16 @@ void CookedRead::_complete(size_t& numBytes)
 }
 
 // Routine Description:
-// -
+// - reads a character from the input buffer
 // Arguments:
-// -
-// Return Value:
-// -
+// - unprocessedChars - any newly read characters will be appended here
 void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 {
     wchar_t wch = UNICODE_NULL;
     _commandLineEditingKeys = false;
     _keyState = 0;
 
+    // get a char from the input buffer
     _status = GetChar(_pInputBuffer,
                       &wch,
                       true,
@@ -367,6 +418,7 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 
         if (Utf16Parser::IsLeadingSurrogate(wch))
         {
+            // a leading surrogate can't be processed by iteslf so try to read another wchar
             _state = ReadState::Ready;
         }
         else
@@ -381,11 +433,9 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 }
 
 // Routine Description:
-// -
+// - performs some character transformations and stores the text to the prompt
 // Arguments:
-// -
-// Return Value:
-// -
+// - unprocessedChars - the chars that need to be written to the prompt
 void CookedRead::_writeToPrompt(std::deque<wchar_t>& unprocessedChars)
 {
     if (unprocessedChars.back() == EXTKEY_ERASE_PREV_WORD || unprocessedChars.back() == UNICODE_BACKSPACE2)
@@ -451,6 +501,8 @@ size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
         if (i + 1 < stopIndex && _isSurrogatePairAt(i))
         {
             count += IsGlyphFullWidth({ &_prompt.at(i), 2 }) ? 2 : 1;
+            // we found a surrogate pair so jump over it
+            ++i;
         }
         else
         {
@@ -461,12 +513,10 @@ size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
 }
 
 // Routine Description:
-// -
+// - processes any character data read. updates prompt and screen.
 // Arguments:
-// -
-// Return Value:
-// -
-void CookedRead::_process(std::deque<wchar_t>& unprocessedChars)
+// - unprocessedChars - character data to process. must not be empty
+void CookedRead::_processChars(std::deque<wchar_t>& unprocessedChars)
 {
     FAIL_FAST_IF(unprocessedChars.empty());
 
@@ -478,14 +528,17 @@ void CookedRead::_process(std::deque<wchar_t>& unprocessedChars)
         _insertionIndex = _prompt.size();
     }
 
+    // store character data
     _writeToPrompt(unprocessedChars);
 
+    // check for control character masking
     if (_isCtrlWakeupMaskTriggered(_prompt.back()))
     {
         _state = ReadState::Complete;
         return;
     }
 
+    // update prompt shown on the screen
     _writeToScreen(!enterPressed);
 
     if (enterPressed)
@@ -499,11 +552,9 @@ void CookedRead::_process(std::deque<wchar_t>& unprocessedChars)
 }
 
 // Routine Description:
-// -
-// Arguments:
-// -
+// - checks if the last codepoint in the prompt storage is a UTF16 surrogate pair
 // Return Value:
-// -
+// - true if the last codeponit in the prompt is a surrogate UTF16 pair
 bool CookedRead::_isTailSurrogatePair() const
 {
     return (_prompt.size() >= 2 &&
@@ -511,9 +562,18 @@ bool CookedRead::_isTailSurrogatePair() const
             Utf16Parser::IsLeadingSurrogate(*(_prompt.crbegin() + 1)));
 }
 
+// Routine Description:
+// - checks if there is a UTF16 pair that starts at index
+// Arguments:
+// - index - the index of the start of the search for a surrogate pair
+// Return Value:
+// - true if there is a proper surrogate pair starting at index
+// Note:
+// - will refuse to walk beyond bounds of prompt, make sure that a surrogate pair at index is within the
+// bounds of the prompt storage
 bool CookedRead::_isSurrogatePairAt(const size_t index) const
 {
     THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, index + 1 >= _prompt.size());
-    return (Utf16Parser::IsTrailingSurrogate(_prompt.at(index)) &&
-            Utf16Parser::IsLeadingSurrogate((_prompt.at(index + 1))));
+    return (Utf16Parser::IsLeadingSurrogate(_prompt.at(index)) &&
+            Utf16Parser::IsTrailingSurrogate((_prompt.at(index + 1))));
 }
