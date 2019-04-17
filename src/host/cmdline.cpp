@@ -707,84 +707,11 @@ COORD CommandLine::_moveCursorToStartOfPrompt(CookedRead& cookedReadData) noexce
 // - New cursor position
 COORD CommandLine::_moveCursorLeftByWord(CookedRead& cookedReadData) noexcept
 {
-    /*
-    PWCHAR LastWord;
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    if (cookedReadData.BufferCurrentPtr() != cookedReadData.BufferStartPtr())
-    {
-        // A bit better word skipping.
-        LastWord = cookedReadData.BufferCurrentPtr() - 1;
-        if (LastWord != cookedReadData.BufferStartPtr())
-        {
-            if (*LastWord == L' ')
-            {
-                // Skip spaces, until the non-space character is found.
-                while (--LastWord != cookedReadData.BufferStartPtr())
-                {
-                    FAIL_FAST_IF(!(LastWord > cookedReadData.BufferStartPtr()));
-                    if (*LastWord != L' ')
-                    {
-                        break;
-                    }
-                }
-            }
-            if (LastWord != cookedReadData.BufferStartPtr())
-            {
-                if (IsWordDelim(*LastWord))
-                {
-                    // Skip WORD_DELIMs until space or non WORD_DELIM is found.
-                    while (--LastWord != cookedReadData.BufferStartPtr())
-                    {
-                        FAIL_FAST_IF(!(LastWord > cookedReadData.BufferStartPtr()));
-                        if (*LastWord == L' ' || !IsWordDelim(*LastWord))
-                        {
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    // Skip the regular words
-                    while (--LastWord != cookedReadData.BufferStartPtr())
-                    {
-                        FAIL_FAST_IF(!(LastWord > cookedReadData.BufferStartPtr()));
-                        if (IsWordDelim(*LastWord))
-                        {
-                            break;
-                        }
-                    }
-                }
-            }
-            FAIL_FAST_IF(!(LastWord >= cookedReadData.BufferStartPtr()));
-            if (LastWord != cookedReadData.BufferStartPtr())
-            {
-
-                // LastWord is currently pointing to the last character
-                // of the previous word, unless it backed up to the beginning
-                // of the buffer.
-                // Let's increment LastWord so that it points to the expeced
-                // insertion point.
-                ++LastWord;
-            }
-            cookedReadData.SetBufferCurrentPtr(LastWord);
-        }
-        cookedReadData.InsertionPoint() = (ULONG)(cookedReadData.BufferCurrentPtr() - cookedReadData.BufferStartPtr());
-        cursorPosition = cookedReadData.OriginalCursorPosition();
-        cursorPosition.X = (SHORT)(cursorPosition.X +
-                                    RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                                cookedReadData.BufferStartPtr(),
-                                                                cookedReadData.InsertionPoint()));
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
-        if (CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 1,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
-        {
-            cursorPosition.X++;
-        }
-    }
+    const size_t cellsMoved = cookedReadData.MoveInsertionIndexLeftByWord();
+    // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
+    cursorPosition.X -= gsl::narrow<short>(cellsMoved);
     return cursorPosition;
-    */
-    return cookedReadData.PromptStartLocation();
 }
 
 // Routine Description:

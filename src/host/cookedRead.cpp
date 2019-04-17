@@ -238,6 +238,32 @@ size_t CookedRead::MoveInsertionIndexToEnd()
 }
 
 // Routine Description:
+// - moves insertion index to the left by a word
+// Return Value:
+// - the number of cells that the insertion point has moved by
+size_t CookedRead::MoveInsertionIndexLeftByWord()
+{
+    if (_insertionIndex == 0)
+    {
+        return 0;
+    }
+
+    size_t cellsMoved = 0;
+    // move through any word delimiters to the left
+    while (_insertionIndex > 0 && IsWordDelim(_prompt.at(_insertionIndex - 1)))
+    {
+        cellsMoved += MoveInsertionIndexLeft();
+    }
+    // move through word to next word delimiter
+    while (_insertionIndex > 0 && !IsWordDelim(_prompt.at(_insertionIndex - 1)))
+    {
+        cellsMoved += MoveInsertionIndexLeft();
+    }
+
+    return cellsMoved;
+}
+
+// Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:
 // - wch - the wchar to check
@@ -470,8 +496,8 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
     _status = GetChar(_pInputBuffer,
                       &wch,
                       true,
-                      nullptr,
                       &_commandLineEditingKeys,
+                      nullptr,
                       &_keyState);
 
     if (_status == CONSOLE_STATUS_WAIT)

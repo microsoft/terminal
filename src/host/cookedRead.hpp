@@ -45,6 +45,7 @@ public:
     size_t MoveInsertionIndexRight();
     void MoveInsertionIndexToStart() noexcept;
     size_t MoveInsertionIndexToEnd();
+    size_t MoveInsertionIndexLeftByWord();
 
     SCREEN_INFORMATION& ScreenInfo();
 
