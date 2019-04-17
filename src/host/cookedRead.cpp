@@ -87,10 +87,21 @@ COORD CookedRead::PromptStartLocation() const noexcept
 // - the number of visible characters in the prompt (counts surrogate pairs as one character)
 size_t CookedRead::VisibleCharCount() const
 {
+    return _visibleCharCountOf({ _prompt.c_str(), _prompt.size() });
+}
+
+// Routine Description:
+// - counts the number of visible characters in wstrView
+// Arugments:
+// - wstrView - the text to count the visible characters of
+// Return Value:
+// - the number of visible characters in the string view (counts surrogate pairs as one character)
+size_t CookedRead::_visibleCharCountOf(const std::wstring_view wstrView)
+{
     size_t count = 0;
-    for (size_t i = 0; i < _prompt.size(); ++i)
+    for (size_t i = 0; i < wstrView.size(); ++i)
     {
-        if (i + 1 < _prompt.size() && _isSurrogatePairAt(i))
+        if (i + 1 < wstrView.size() && _isSurrogatePairAt(wstrView, i))
         {
             // need to increment i in order to jump past surrogate pair
             ++i;
@@ -145,10 +156,39 @@ size_t CookedRead::MoveInsertionIndexLeft()
 // - returns the number of cells that the move operation passed over
 size_t CookedRead::MoveInsertionIndexRight()
 {
-    // check if there's anything to move to the right to
+    // check if we're at the far right side of the prompt text for character insertion from last command in
+    // the history
     if (_insertionIndex >= _prompt.size())
     {
-        return 0;
+        // if we have any command history, grab the nth next character from the previous command and write it
+        // to the buffer, then move over it
+        if (_pCommandHistory)
+        {
+            const std::wstring_view lastCommand = _pCommandHistory->GetLastCommand();
+            const size_t lastCommandCodepointCount = _visibleCharCountOf(lastCommand);
+            const size_t currentCommandCodepointCount = VisibleCharCount();
+            if (lastCommandCodepointCount > currentCommandCodepointCount)
+            {
+                const std::vector<std::vector<wchar_t>> parsedLastCommand = Utf16Parser::Parse(lastCommand);
+                const std::vector<wchar_t>& glyph = parsedLastCommand.at(currentCommandCodepointCount);
+                for (const wchar_t wch : glyph)
+                {
+                    // don't bother adjusting the insertion index here, it will be handled below
+                    _prompt.push_back(wch);
+                    _writeToScreen(true);
+                }
+            }
+            else
+            {
+                // no history data to copy, so we can't move to the right
+                return 0;
+            }
+        }
+        else
+        {
+            // no history data to copy, so we can't move to the right
+            return 0;
+        }
     }
 
     // move the insertion index right by one codepoint
@@ -376,6 +416,19 @@ void CookedRead::_error()
 // - numBytes - the number of bytes that were copied to the user buffer
 void CookedRead::_complete(size_t& numBytes)
 {
+    // store to history if enter was pressed
+    if (_pCommandHistory)
+    {
+        auto findIt = std::find(_prompt.cbegin(), _prompt.cend(), UNICODE_CARRIAGERETURN);
+        if (findIt != _prompt.cend())
+        {
+            auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+            LOG_IF_FAILED(_pCommandHistory->Add({ _prompt.c_str(), _prompt.size() },
+                                                WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+        }
+    }
+
+
     std::copy_n(_prompt.begin(), _prompt.size(), _userBuffer);
     numBytes = _prompt.size() * sizeof(wchar_t);
     _status = STATUS_SUCCESS;
@@ -563,7 +616,7 @@ bool CookedRead::_isTailSurrogatePair() const
 }
 
 // Routine Description:
-// - checks if there is a UTF16 pair that starts at index
+// - checks if there is a UTF16 pair that starts at index in the prompt storage
 // Arguments:
 // - index - the index of the start of the search for a surrogate pair
 // Return Value:
@@ -573,7 +626,22 @@ bool CookedRead::_isTailSurrogatePair() const
 // bounds of the prompt storage
 bool CookedRead::_isSurrogatePairAt(const size_t index) const
 {
-    THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, index + 1 >= _prompt.size());
-    return (Utf16Parser::IsLeadingSurrogate(_prompt.at(index)) &&
-            Utf16Parser::IsTrailingSurrogate((_prompt.at(index + 1))));
+    return _isSurrogatePairAt({ _prompt.c_str(), _prompt.size() }, index);
+}
+
+// Routine Description:
+// - checks if there is a UTF16 pair that starts at index
+// Arguments:
+// - wstrView - the text to search in
+// - index - the index of the start of the search for a surrogate pair
+// Return Value:
+// - true if there is a proper surrogate pair starting at index
+// Note:
+// - will refuse to walk beyond bounds of wstrView, make sure that a surrogate pair at index is within the
+// bounds of the view
+bool CookedRead::_isSurrogatePairAt(const std::wstring_view wstrView, const size_t index)
+{
+    THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, index + 1 >= wstrView.size());
+    return (Utf16Parser::IsLeadingSurrogate(wstrView.at(index)) &&
+            Utf16Parser::IsTrailingSurrogate(wstrView.at(index + 1)));
 }

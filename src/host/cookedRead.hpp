@@ -60,6 +60,8 @@ private:
         CommandKey // the user pressed a command editing key
     };
 
+    static bool _isSurrogatePairAt(const std::wstring_view wstrView, const size_t index);
+    static size_t _visibleCharCountOf(const std::wstring_view wstrView);
 
     bool _isTailSurrogatePair() const;
     bool _isSurrogatePairAt(const size_t index) const;

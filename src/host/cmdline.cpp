@@ -905,73 +905,11 @@ COORD CommandLine::_moveCursorRightByWord(CookedRead& cookedReadData) noexcept
 // - The new cursor position
 COORD CommandLine::_moveCursorRight(CookedRead& cookedReadData) noexcept
 {
-    return cookedReadData.PromptStartLocation();
-    /*
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
-    // If not at the end of the line, move cursor position right.
-    if (cookedReadData.InsertionPoint() < (cookedReadData.BytesRead() / sizeof(WCHAR)))
-    {
-        cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-        cursorPosition.X = (SHORT)(cursorPosition.X +
-                                    RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                            cookedReadData.BufferStartPtr(),
-                                                            cookedReadData.InsertionPoint()));
-        if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
-                                cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 2,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X,
-                                cookedReadData.OriginalCursorPosition().X,
-                                true))
-        {
-            if (cursorPosition.X == (sScreenBufferSizeX - 1))
-                cursorPosition.X++;
-        }
-
-        cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferCurrentPtr() + 1);
-        cookedReadData.InsertionPoint()++;
-    }
-    // if at the end of the line, copy a character from the same position in the last command
-    else if (cookedReadData.HasHistory())
-    {
-        size_t NumSpaces;
-        const auto LastCommand = cookedReadData.History().GetLastCommand();
-        if (!LastCommand.empty() && LastCommand.size() > cookedReadData.InsertionPoint())
-        {
-            *cookedReadData.BufferCurrentPtr() = LastCommand[cookedReadData.InsertionPoint()];
-            cookedReadData.BytesRead() += sizeof(WCHAR);
-            cookedReadData.InsertionPoint()++;
-            if (cookedReadData.IsEchoInput())
-            {
-                short ScrollY = 0;
-                size_t CharsToWrite = sizeof(WCHAR);
-                FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                              cookedReadData.BufferStartPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              &CharsToWrite,
-                                                              &NumSpaces,
-                                                              cookedReadData.OriginalCursorPosition().X,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                              &ScrollY));
-                cookedReadData.OriginalCursorPosition().Y += ScrollY;
-                cookedReadData.VisibleCharCount() += NumSpaces;
-                // update reported cursor position
-                if (ScrollY != 0)
-                {
-                    cursorPosition.X = 0;
-                    cursorPosition.Y += ScrollY;
-                }
-                else
-                {
-                    cursorPosition.X += 1;
-                }
-            }
-            cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferCurrentPtr() + 1);
-        }
-    }
+    const size_t cellsMoved = cookedReadData.MoveInsertionIndexRight();
+    // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
+    cursorPosition.X += gsl::narrow<short>(cellsMoved);
     return cursorPosition;
-    */
 }
 
 // Routine Description:
