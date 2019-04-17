@@ -43,6 +43,8 @@ public:
 
     size_t MoveInsertionIndexLeft();
     size_t MoveInsertionIndexRight();
+    void MoveInsertionIndexToStart() noexcept;
+    size_t MoveInsertionIndexToEnd();
 
     SCREEN_INFORMATION& ScreenInfo();
 

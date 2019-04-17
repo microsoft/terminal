@@ -680,26 +680,11 @@ COORD CommandLine::_deletePromptBeforeCursor(CookedRead& cookedReadData) noexcep
 // - The new cursor position
 COORD CommandLine::_moveCursorToEndOfPrompt(CookedRead& cookedReadData) noexcept
 {
-    /*
-    cookedReadData.InsertionPoint() = cookedReadData.BytesRead() / sizeof(WCHAR);
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + cookedReadData.InsertionPoint());
-    COORD cursorPosition{ 0, 0 };
-    cursorPosition.X = (SHORT)(cookedReadData.OriginalCursorPosition().X + cookedReadData.VisibleCharCount());
-    cursorPosition.Y = cookedReadData.OriginalCursorPosition().Y;
-
-    const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
-    if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
-                            cookedReadData.BufferStartPtr(),
-                            cookedReadData.InsertionPoint(),
-                            sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X,
-                            cookedReadData.OriginalCursorPosition().X,
-                            true))
-    {
-        cursorPosition.X++;
-    }
+    COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
+    const size_t cellsMoved = cookedReadData.MoveInsertionIndexToEnd();
+    // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
+    cursorPosition.X += gsl::narrow<short>(cellsMoved);
     return cursorPosition;
-    */
-    return cookedReadData.PromptStartLocation();
 }
 
 // Routine Description:
@@ -710,11 +695,7 @@ COORD CommandLine::_moveCursorToEndOfPrompt(CookedRead& cookedReadData) noexcept
 // - The new cursor position
 COORD CommandLine::_moveCursorToStartOfPrompt(CookedRead& cookedReadData) noexcept
 {
-    /*
-    cookedReadData.InsertionPoint() = 0;
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr());
-    return cookedReadData.OriginalCursorPosition();
-    */
+    cookedReadData.MoveInsertionIndexToStart();
     return cookedReadData.PromptStartLocation();
 }
 

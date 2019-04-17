@@ -219,6 +219,25 @@ size_t CookedRead::MoveInsertionIndexRight()
 }
 
 // Routine Description:
+// - moves insertion index to the beginning of the prompt
+void CookedRead::MoveInsertionIndexToStart() noexcept
+{
+    _insertionIndex = 0;
+}
+
+// Routine Description:
+// - moves insertion index to the end of the prompt
+// Return Value:
+// - the number of cells that the insertion point has moved by
+size_t CookedRead::MoveInsertionIndexToEnd()
+{
+    const size_t leftCells = _calculatePromptCellLength(false);
+    const size_t allCells = _calculatePromptCellLength(true);
+    _insertionIndex = _prompt.size();
+    return allCells - leftCells;
+}
+
+// Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:
 // - wch - the wchar to check
@@ -522,6 +541,7 @@ void CookedRead::_writeToScreen(const bool resetCursor)
     _status = WriteCharsLegacy(_screenInfo,
                                _prompt.c_str(),
                                _prompt.c_str(),
+
                                _prompt.c_str(),
                                &bytesToWrite,
                                nullptr,
