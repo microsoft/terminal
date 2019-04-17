@@ -175,8 +175,8 @@ size_t CookedRead::MoveInsertionIndexRight()
                 {
                     // don't bother adjusting the insertion index here, it will be handled below
                     _prompt.push_back(wch);
-                    _writeToScreen(true);
                 }
+                _writeToScreen(true);
             }
             else
             {
@@ -422,8 +422,10 @@ void CookedRead::_complete(size_t& numBytes)
         auto findIt = std::find(_prompt.cbegin(), _prompt.cend(), UNICODE_CARRIAGERETURN);
         if (findIt != _prompt.cend())
         {
+            // commands are stored without the /r/n so don't use the full prompt
+            const size_t length = std::distance(_prompt.cbegin(), findIt);
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            LOG_IF_FAILED(_pCommandHistory->Add({ _prompt.c_str(), _prompt.size() },
+            LOG_IF_FAILED(_pCommandHistory->Add({ _prompt.c_str(), length },
                                                 WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
         }
     }
