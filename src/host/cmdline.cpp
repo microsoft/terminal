@@ -489,23 +489,7 @@ void CommandLine::_setPromptToNewestCommand(CookedRead& cookedReadData)
 // - cookedReadData - The cooked read data to operate on
 void CommandLine::DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept
 {
-    /*
-    DeleteCommandLine(cookedReadData, false);
-    cookedReadData.BytesRead() = cookedReadData.InsertionPoint() * sizeof(WCHAR);
-    if (cookedReadData.IsEchoInput())
-    {
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      &cookedReadData.BytesRead(),
-                                                      &cookedReadData.VisibleCharCount(),
-                                                      cookedReadData.OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                      nullptr));
-    }
-    */
-    cookedReadData;
+    cookedReadData.DeletePromptAfterCursor();
 }
 
 // Routine Description:
@@ -516,27 +500,11 @@ void CommandLine::DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept
 // - The new cursor position
 COORD CommandLine::_deletePromptBeforeCursor(CookedRead& cookedReadData) noexcept
 {
-    /*
-    DeleteCommandLine(cookedReadData, false);
-    cookedReadData.BytesRead() -= cookedReadData.InsertionPoint() * sizeof(WCHAR);
-    cookedReadData.InsertionPoint() = 0;
-    memmove(cookedReadData.BufferStartPtr(), cookedReadData.BufferCurrentPtr(), cookedReadData.BytesRead());
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr());
-    if (cookedReadData.IsEchoInput())
-    {
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      &cookedReadData.BytesRead(),
-                                                      &cookedReadData.VisibleCharCount(),
-                                                      cookedReadData.OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                      nullptr));
-    }
-    return cookedReadData.OriginalCursorPosition();
-    */
-    return cookedReadData.PromptStartLocation();
+    COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
+    const size_t cellsMoved = cookedReadData.DeletePromptBeforeCursor();
+    // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
+    cursorPosition.X -= gsl::narrow<short>(cellsMoved);
+    return cursorPosition;
 }
 
 // Routine Description:

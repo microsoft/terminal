@@ -325,6 +325,30 @@ void CookedRead::SetPromptToNewestCommand()
     }
 }
 
+
+// Routine Description:
+// - deletes all text to the left of the insertion index
+// Return Value:
+// - number of cells that the insertion point has moved by
+size_t CookedRead::DeletePromptBeforeCursor()
+{
+    _clearPromptCells();
+    const size_t cellsMoved = _insertionIndex;
+    _prompt.erase(0, _insertionIndex);
+    _insertionIndex = 0;
+    _writeToScreen(true);
+    return cellsMoved;
+}
+
+// Routine Description:
+// - deletes all text to the right of the insertion index
+void CookedRead::DeletePromptAfterCursor()
+{
+    _clearPromptCells();
+    _prompt.resize(_insertionIndex);
+    _writeToScreen(true);
+}
+
 // Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:

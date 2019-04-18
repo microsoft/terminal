@@ -53,6 +53,9 @@ public:
     void SetPromptToOldestCommand();
     void SetPromptToNewestCommand();
 
+    size_t DeletePromptBeforeCursor();
+    void DeletePromptAfterCursor();
+
     void InsertCtrlZ();
 
     SCREEN_INFORMATION& ScreenInfo();
