@@ -131,9 +131,6 @@ CommandLine& CommandLine::Instance()
 
 bool CommandLine::IsEditLineEmpty() const
 {
-    // TODO
-    return false;
-    /*
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     if (!gci.HasPendingCookedRead())
@@ -151,34 +148,26 @@ bool CommandLine::IsEditLineEmpty() const
     {
         return false;
     }
-    */
 }
 
 void CommandLine::Hide(const bool fUpdateFields)
 {
-    // TODO
-    fUpdateFields;
-    /*
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
         DeleteCommandLine(gci.CookedReadData(), fUpdateFields);
     }
-    */
     _isVisible = false;
 }
 
 void CommandLine::Show()
 {
     _isVisible = true;
-    return;
-    /*
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (!IsEditLineEmpty())
     {
         RedrawCommandLine(gci.CookedReadData());
     }
-    */
 }
 
 // Routine Description:
@@ -234,85 +223,19 @@ void CommandLine::EndAllPopups()
 
 void DeleteCommandLine(CookedRead& cookedReadData, const bool fUpdateFields)
 {
-    /*
-    size_t CharsToWrite = cookedReadData.VisibleCharCount();
-    COORD coordOriginalCursor = cookedReadData.OriginalCursorPosition();
-    const COORD coordBufferSize = cookedReadData.ScreenInfo().GetBufferSize().Dimensions();
-
-    // catch the case where the current command has scrolled off the top of the screen.
-    if (coordOriginalCursor.Y < 0)
-    {
-        CharsToWrite += coordBufferSize.X * coordOriginalCursor.Y;
-        CharsToWrite += cookedReadData.OriginalCursorPosition().X;   // account for prompt
-        cookedReadData.OriginalCursorPosition().X = 0;
-        cookedReadData.OriginalCursorPosition().Y = 0;
-        coordOriginalCursor.X = 0;
-        coordOriginalCursor.Y = 0;
-    }
-
-    if (!CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                            CharsToWrite,
-                            coordBufferSize.X - cookedReadData.OriginalCursorPosition().X))
-    {
-        CharsToWrite++;
-    }
-
-    try
-    {
-        cookedReadData.ScreenInfo().Write(OutputCellIterator(UNICODE_SPACE, CharsToWrite), coordOriginalCursor);
-    }
-    CATCH_LOG();
-
     if (fUpdateFields)
     {
         cookedReadData.Erase();
     }
-
-    LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cookedReadData.OriginalCursorPosition(), true));
-    */
-    cookedReadData;
-    fUpdateFields;
+    else
+    {
+        cookedReadData.Hide();
+    }
 }
 
 void RedrawCommandLine(CookedRead& cookedReadData)
 {
-    /*
-    if (cookedReadData.IsEchoInput())
-    {
-        // Draw the command line
-        cookedReadData.OriginalCursorPosition() = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-
-        SHORT ScrollY = 0;
-#pragma prefast(suppress:28931, "Status is not unused. It's used in debug assertions.")
-        NTSTATUS Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                           cookedReadData.BufferStartPtr(),
-                                           cookedReadData.BufferStartPtr(),
-                                           cookedReadData.BufferStartPtr(),
-                                           &cookedReadData.BytesRead(),
-                                           &cookedReadData.VisibleCharCount(),
-                                           cookedReadData.OriginalCursorPosition().X,
-                                           WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                           &ScrollY);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-
-        cookedReadData.OriginalCursorPosition().Y += ScrollY;
-
-        // Move the cursor back to the right position
-        COORD CursorPosition = cookedReadData.OriginalCursorPosition();
-        CursorPosition.X += (SHORT)RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                               cookedReadData.BufferStartPtr(),
-                                                               cookedReadData.InsertionPoint());
-        if (CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                               cookedReadData.InsertionPoint(),
-                               cookedReadData.ScreenInfo().GetBufferSize().Width() - cookedReadData.OriginalCursorPosition().X))
-        {
-            CursorPosition.X++;
-        }
-        Status = AdjustCursorPosition(cookedReadData.ScreenInfo(), CursorPosition, TRUE, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(Status);
-    }
-    */
-    cookedReadData;
+    cookedReadData.Show();
 }
 
 // Routine Description:
@@ -765,31 +688,7 @@ COORD CommandLine::_moveCursorRight(CookedRead& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 void CommandLine::_insertCtrlZ(CookedRead& cookedReadData) noexcept
 {
-    cookedReadData;
-    /*
-    size_t NumSpaces = 0;
-
-    *cookedReadData.BufferCurrentPtr() = (WCHAR)0x1a;  // ctrl-z
-    cookedReadData.BytesRead() += sizeof(WCHAR);
-    cookedReadData.InsertionPoint()++;
-    if (cookedReadData.IsEchoInput())
-    {
-        short ScrollY = 0;
-        size_t CharsToWrite = sizeof(WCHAR);
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                     cookedReadData.BufferStartPtr(),
-                                                     cookedReadData.BufferCurrentPtr(),
-                                                     cookedReadData.BufferCurrentPtr(),
-                                                     &CharsToWrite,
-                                                     &NumSpaces,
-                                                     cookedReadData.OriginalCursorPosition().X,
-                                                     WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                     &ScrollY));
-        cookedReadData.OriginalCursorPosition().Y += ScrollY;
-        cookedReadData.VisibleCharCount() += NumSpaces;
-    }
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferCurrentPtr() + 1);
-    */
+    cookedReadData.InsertCtrlZ();
 }
 
 // Routine Description:

@@ -58,7 +58,10 @@ CommandHistory& CookedRead::History() noexcept
 
 void CookedRead::Erase()
 {
+    _clearPromptCells();
     _prompt.erase();
+    _insertionIndex = 0;
+    _writeToScreen(true);
 }
 
 bool CookedRead::IsInsertMode() const noexcept
@@ -395,6 +398,25 @@ bool CookedRead::Notify(const WaitTerminationReason TerminationReason,
     }
 }
 
+void CookedRead::Hide()
+{
+    _clearPromptCells();
+}
+
+void CookedRead::Show()
+{
+    _writeToScreen(true);
+}
+
+// Routine Description:
+// - inserts a ctrl+z character into the prompt at the insertion index
+void CookedRead::InsertCtrlZ()
+{
+    std::deque<wchar_t> chars = { UNICODE_CTRL_Z };
+    _writeToPrompt(chars);
+    _writeToScreen(true);
+}
+
 // Routine Description:
 // - Reads characters from user input
 // Arguments:
@@ -615,7 +637,6 @@ void CookedRead::_clearPromptCells()
     _status = WriteCharsLegacy(_screenInfo,
                                spaces.c_str(),
                                spaces.c_str(),
-
                                spaces.c_str(),
                                &bytesToWrite,
                                nullptr,
@@ -697,7 +718,6 @@ void CookedRead::_writeToScreen(const bool resetCursor)
     _status = WriteCharsLegacy(_screenInfo,
                                _prompt.c_str(),
                                _prompt.c_str(),
-
                                _prompt.c_str(),
                                &bytesToWrite,
                                nullptr,

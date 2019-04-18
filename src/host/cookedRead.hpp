@@ -31,6 +31,8 @@ public:
                   ULONG& controlKeyState) noexcept;
 
     void Erase();
+    void Hide();
+    void Show();
 
 
     bool IsInsertMode() const noexcept;
@@ -47,6 +49,8 @@ public:
     size_t MoveInsertionIndexToEnd();
     size_t MoveInsertionIndexLeftByWord();
     size_t MoveInsertionIndexRightByWord();
+
+    void InsertCtrlZ();
 
     SCREEN_INFORMATION& ScreenInfo();
 
