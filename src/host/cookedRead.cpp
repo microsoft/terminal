@@ -118,7 +118,7 @@ size_t CookedRead::_visibleCharCountOf(const std::wstring_view wstrView)
 size_t CookedRead::MoveInsertionIndexLeft()
 {
     // check if there's anything to the left to
-    if (_insertionIndex == 0)
+    if (_isInsertionIndexAtPromptBegin())
     {
         return 0;
     }
@@ -152,13 +152,14 @@ size_t CookedRead::MoveInsertionIndexLeft()
 
 // Routine Description:
 // - moves the insertion index one codepoint to the right if possible
+// right beyond the end of the current prompt text
 // Return Value:
 // - returns the number of cells that the move operation passed over
 size_t CookedRead::MoveInsertionIndexRight()
 {
     // check if we're at the far right side of the prompt text for character insertion from last command in
     // the history
-    if (_insertionIndex >= _prompt.size())
+    if (_isInsertionIndexAtPromptEnd())
     {
         // if we have any command history, grab the nth next character from the previous command and write it
         // to the buffer, then move over it
@@ -243,21 +244,50 @@ size_t CookedRead::MoveInsertionIndexToEnd()
 // - the number of cells that the insertion point has moved by
 size_t CookedRead::MoveInsertionIndexLeftByWord()
 {
-    if (_insertionIndex == 0)
+    if (_isInsertionIndexAtPromptBegin())
     {
         return 0;
     }
 
     size_t cellsMoved = 0;
     // move through any word delimiters to the left
-    while (_insertionIndex > 0 && IsWordDelim(_prompt.at(_insertionIndex - 1)))
+    while (!_isInsertionIndexAtPromptBegin() && IsWordDelim(_prompt.at(_insertionIndex - 1)))
     {
         cellsMoved += MoveInsertionIndexLeft();
     }
     // move through word to next word delimiter
-    while (_insertionIndex > 0 && !IsWordDelim(_prompt.at(_insertionIndex - 1)))
+    while (!_isInsertionIndexAtPromptBegin() && !IsWordDelim(_prompt.at(_insertionIndex - 1)))
     {
         cellsMoved += MoveInsertionIndexLeft();
+    }
+
+    return cellsMoved;
+}
+
+// Routine Description:
+// - moves insertion index to the right by a word
+// Return Value:
+// - the number of cells that the insertion point has moved by
+size_t CookedRead::MoveInsertionIndexRightByWord()
+{
+    if (_isInsertionIndexAtPromptEnd())
+    {
+        return 0;
+    }
+
+    size_t cellsMoved = 0;
+    if (!IsWordDelim(_prompt.at(_insertionIndex)))
+    {
+        // move through a word until we come to the first word delimiter
+        while (!_isInsertionIndexAtPromptEnd() && !IsWordDelim(_prompt.at(_insertionIndex)))
+        {
+            cellsMoved += MoveInsertionIndexRight();
+        }
+    }
+    // move through word delimiters until we encounter a char that isn't one
+    while (!_isInsertionIndexAtPromptEnd() && IsWordDelim(_prompt.at(_insertionIndex)))
+    {
+        cellsMoved += MoveInsertionIndexRight();
     }
 
     return cellsMoved;
@@ -692,4 +722,23 @@ bool CookedRead::_isSurrogatePairAt(const std::wstring_view wstrView, const size
     THROW_HR_IF(E_NOT_SUFFICIENT_BUFFER, index + 1 >= wstrView.size());
     return (Utf16Parser::IsLeadingSurrogate(wstrView.at(index)) &&
             Utf16Parser::IsTrailingSurrogate(wstrView.at(index + 1)));
+}
+
+// Routine Description:
+// - checks if insertion index is at the far left end of the prompt
+// Return Value:
+// - true if insertion index is at the beginning of the prompt, false otherwise
+bool CookedRead::_isInsertionIndexAtPromptBegin()
+{
+    return _insertionIndex == 0;
+}
+
+// Routine Description:
+// - checks if insertion index is at the far right end of the prompt
+// Return Value:
+// - true if insertion index is at the end of the prompt, false otherwise
+bool CookedRead::_isInsertionIndexAtPromptEnd()
+{
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
+    return _insertionIndex == _prompt.size();
 }

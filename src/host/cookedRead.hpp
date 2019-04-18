@@ -46,6 +46,7 @@ public:
     void MoveInsertionIndexToStart() noexcept;
     size_t MoveInsertionIndexToEnd();
     size_t MoveInsertionIndexLeftByWord();
+    size_t MoveInsertionIndexRightByWord();
 
     SCREEN_INFORMATION& ScreenInfo();
 
@@ -110,4 +111,7 @@ private:
     void _writeToScreen(const bool resetCursor);
 
     size_t _calculatePromptCellLength(const bool wholePrompt) const;
+
+    bool _isInsertionIndexAtPromptBegin();
+    bool _isInsertionIndexAtPromptEnd();
 };

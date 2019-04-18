@@ -737,72 +737,11 @@ COORD CommandLine::_moveCursorLeft(CookedRead& cookedReadData)
 // - The new cursor position
 COORD CommandLine::_moveCursorRightByWord(CookedRead& cookedReadData) noexcept
 {
-    return cookedReadData.PromptStartLocation();
-    /*
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    if (cookedReadData.InsertionPoint() < (cookedReadData.BytesRead() / sizeof(WCHAR)))
-    {
-        PWCHAR NextWord = cookedReadData.BufferCurrentPtr();
-
-        // A bit better word skipping.
-        PWCHAR BufLast = cookedReadData.BufferStartPtr() + cookedReadData.BytesRead() / sizeof(WCHAR);
-
-        FAIL_FAST_IF(!(NextWord < BufLast));
-        if (*NextWord == L' ')
-        {
-            // If the current character is space, skip to the next non-space character.
-            while (NextWord < BufLast)
-            {
-                if (*NextWord != L' ')
-                {
-                    break;
-                }
-                ++NextWord;
-            }
-        }
-        else
-        {
-            // Skip the body part.
-            bool fStartFromDelim = IsWordDelim(*NextWord);
-
-            while (++NextWord < BufLast)
-            {
-                if (fStartFromDelim != IsWordDelim(*NextWord))
-                {
-                    break;
-                }
-            }
-
-            // Skip the space block.
-            if (NextWord < BufLast && *NextWord == L' ')
-            {
-                while (++NextWord < BufLast)
-                {
-                    if (*NextWord != L' ')
-                    {
-                        break;
-                    }
-                }
-            }
-        }
-
-        cookedReadData.SetBufferCurrentPtr(NextWord);
-        cookedReadData.InsertionPoint() = (ULONG)(cookedReadData.BufferCurrentPtr() - cookedReadData.BufferStartPtr());
-        cursorPosition = cookedReadData.OriginalCursorPosition();
-        cursorPosition.X = (SHORT)(cursorPosition.X +
-                                   RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                               cookedReadData.BufferStartPtr(),
-                                                               cookedReadData.InsertionPoint()));
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
-        if (CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 1,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
-        {
-            cursorPosition.X++;
-        }
-    }
+    const size_t cellsMoved = cookedReadData.MoveInsertionIndexRightByWord();
+    // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
+    cursorPosition.X += gsl::narrow<short>(cellsMoved);
     return cursorPosition;
-    */
 }
 
 // Routine Description:
