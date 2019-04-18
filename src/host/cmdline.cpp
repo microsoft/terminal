@@ -469,35 +469,7 @@ void CommandLine::_processHistoryCycling(CookedRead& cookedReadData,
 // - May throw exceptions
 void CommandLine::_setPromptToOldestCommand(CookedRead& cookedReadData)
 {
-    /*
-    if (cookedReadData.HasHistory() && cookedReadData.History().GetNumberOfCommands())
-    {
-        DeleteCommandLine(cookedReadData, true);
-        const short commandNumber = 0;
-        THROW_IF_FAILED(cookedReadData.History().RetrieveNth(commandNumber,
-                                                             cookedReadData.SpanWholeBuffer(),
-                                                             cookedReadData.BytesRead()));
-        FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
-        if (cookedReadData.IsEchoInput())
-        {
-            short ScrollY = 0;
-            FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                          cookedReadData.BufferStartPtr(),
-                                                          cookedReadData.BufferCurrentPtr(),
-                                                          cookedReadData.BufferCurrentPtr(),
-                                                          &cookedReadData.BytesRead(),
-                                                          &cookedReadData.VisibleCharCount(),
-                                                          cookedReadData.OriginalCursorPosition().X,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                          &ScrollY));
-            cookedReadData.OriginalCursorPosition().Y += ScrollY;
-        }
-        size_t CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
-        cookedReadData.InsertionPoint() = CharsToWrite;
-        cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CharsToWrite);
-    }
-    */
-    cookedReadData;
+    cookedReadData.SetPromptToOldestCommand();
 }
 
 // Routine Description:
@@ -697,14 +669,11 @@ void CommandLine::_insertCtrlZ(CookedRead& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 void CommandLine::_deleteCommandHistory(CookedRead& cookedReadData) noexcept
 {
-    /*
     if (cookedReadData.HasHistory())
     {
         cookedReadData.History().Empty();
         cookedReadData.History().Flags |= CLE_ALLOCATED;
     }
-    */
-    cookedReadData;
 }
 
 // Routine Description:

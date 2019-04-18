@@ -297,6 +297,20 @@ size_t CookedRead::MoveInsertionIndexRightByWord()
 }
 
 // Routine Description:
+// - sets prompt to the oldest command in the command history
+void CookedRead::SetPromptToOldestCommand()
+{
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        const std::wstring_view command = _pCommandHistory->GetNth(0);
+        Erase();
+        _prompt = command;
+        _insertionIndex = _prompt.size();
+        _writeToScreen(true);
+    }
+}
+
+// Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:
 // - wch - the wchar to check

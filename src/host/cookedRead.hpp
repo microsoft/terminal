@@ -50,6 +50,8 @@ public:
     size_t MoveInsertionIndexLeftByWord();
     size_t MoveInsertionIndexRightByWord();
 
+    void SetPromptToOldestCommand();
+
     void InsertCtrlZ();
 
     SCREEN_INFORMATION& ScreenInfo();
