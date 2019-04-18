@@ -719,58 +719,9 @@ COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadDa
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD CommandLine::DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept
+void CommandLine::DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept
 {
-    return cookedReadData.PromptStartLocation();
-    /*
-    // save cursor position
-    COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-
-    if (!cookedReadData.AtEol())
-    {
-        // Delete commandline.
-#pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
-        DeleteCommandLine(cookedReadData, false);
-
-        // Delete char.
-        cookedReadData.BytesRead() -= sizeof(WCHAR);
-        memmove(cookedReadData.BufferCurrentPtr(),
-                cookedReadData.BufferCurrentPtr() + 1,
-                cookedReadData.BytesRead() - (cookedReadData.InsertionPoint() * sizeof(WCHAR)));
-
-        {
-            PWCHAR buf = (PWCHAR)((PBYTE)cookedReadData.BufferStartPtr() + cookedReadData.BytesRead());
-            *buf = (WCHAR)' ';
-        }
-
-        // Write commandline.
-        if (cookedReadData.IsEchoInput())
-        {
-            FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                          cookedReadData.BufferStartPtr(),
-                                                          cookedReadData.BufferStartPtr(),
-                                                          cookedReadData.BufferStartPtr(),
-                                                          &cookedReadData.BytesRead(),
-                                                          &cookedReadData.VisibleCharCount(),
-                                                          cookedReadData.OriginalCursorPosition().X,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                          nullptr));
-        }
-
-        // restore cursor position
-        const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
-        if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
-                                cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 1,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X,
-                                cookedReadData.OriginalCursorPosition().X,
-                                true))
-        {
-            cursorPosition.X++;
-        }
-    }
-    return cursorPosition;
-    */
+    cookedReadData.DeleteFromRightOfCursor();
 }
 
 // TODO: [MSFT:4586207] Clean up this mess -- needs helpers. http://osgvsowi/4586207
@@ -980,8 +931,7 @@ NTSTATUS CommandLine::ProcessCommandLine(CookedRead& cookedReadData,
         cookedReadData.ScreenInfo().SetCursorDBMode(cookedReadData.IsInsertMode() != gci.GetInsertMode());
         break;
     case VK_DELETE:
-        cursorPosition = DeleteFromRightOfCursor(cookedReadData);
-        UpdateCursorPosition = true;
+        DeleteFromRightOfCursor(cookedReadData);
         break;
     default:
         FAIL_FAST_HR(E_NOTIMPL);

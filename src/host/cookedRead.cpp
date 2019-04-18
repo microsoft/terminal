@@ -350,6 +350,31 @@ void CookedRead::DeletePromptAfterCursor()
 }
 
 // Routine Description:
+// - deletes codepoint to the right of the insertion index
+void CookedRead::DeleteFromRightOfCursor()
+{
+    if (_isInsertionIndexAtPromptEnd())
+    {
+        return;
+    }
+
+    _clearPromptCells();
+
+    // delete codepoint to the right of the insertion index
+    if (_insertionIndex + 1 < _prompt.size() &&
+        _isSurrogatePairAt(_insertionIndex))
+    {
+        _prompt.erase(_insertionIndex, 2);
+    }
+    else
+    {
+        _prompt.erase(_insertionIndex, 1);
+    }
+
+    _writeToScreen(true);
+}
+
+// Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:
 // - wch - the wchar to check

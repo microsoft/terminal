@@ -55,6 +55,7 @@ public:
 
     size_t DeletePromptBeforeCursor();
     void DeletePromptAfterCursor();
+    void DeleteFromRightOfCursor();
 
     void InsertCtrlZ();
 

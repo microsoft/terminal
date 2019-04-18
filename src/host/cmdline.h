@@ -96,7 +96,7 @@ public:
     void EndAllPopups();
 
     void DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept;
-    COORD DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept;
+    void DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept;
 protected:
     CommandLine();
 
