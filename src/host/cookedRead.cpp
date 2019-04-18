@@ -563,6 +563,74 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
 }
 
 // Routine Description:
+// - processes any character data read. updates prompt and screen.
+// Arguments:
+// - unprocessedChars - character data to process. must not be empty
+void CookedRead::_processChars(std::deque<wchar_t>& unprocessedChars)
+{
+    FAIL_FAST_IF(unprocessedChars.empty());
+
+    _clearPromptCells();
+
+    const bool enterPressed = unprocessedChars.back() == UNICODE_CARRIAGERETURN;
+
+    // carriage return needs to be written at the end of the prompt in order to send all text correctly
+    if (enterPressed)
+    {
+        _insertionIndex = _prompt.size();
+    }
+
+    // store character data
+    _writeToPrompt(unprocessedChars);
+
+    // check for control character masking
+    if (!_prompt.empty() && _isCtrlWakeupMaskTriggered(_prompt.back()))
+    {
+        _state = ReadState::Complete;
+        return;
+    }
+
+    // update prompt shown on the screen
+    _writeToScreen(!enterPressed);
+
+    if (enterPressed)
+    {
+        _state = ReadState::Complete;
+    }
+    else
+    {
+        _state = ReadState::Ready;
+    }
+}
+
+// Routine Description:
+// - overwrites prompt cells with spaces
+void CookedRead::_clearPromptCells()
+{
+    std::wstring spaces(_calculatePromptCellLength(true), UNICODE_SPACE);
+
+    LOG_IF_FAILED(_screenInfo.SetCursorPosition(_promptStartLocation, true));
+    size_t bytesToWrite = spaces.size() * sizeof(wchar_t);
+    short scrollY = 0;
+    _status = WriteCharsLegacy(_screenInfo,
+                               spaces.c_str(),
+                               spaces.c_str(),
+
+                               spaces.c_str(),
+                               &bytesToWrite,
+                               nullptr,
+                               _promptStartLocation.X,
+                               WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                               &scrollY);
+
+    // move the cursor to the correct insert location
+    COORD cursorPosition = _promptStartLocation;
+    cursorPosition.X += gsl::narrow<short>(_calculatePromptCellLength(false));
+    _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
+    FAIL_FAST_IF_NTSTATUS_FAILED(_status);
+}
+
+// Routine Description:
 // - performs some character transformations and stores the text to the prompt
 // Arguments:
 // - unprocessedChars - the chars that need to be written to the prompt
@@ -579,10 +647,42 @@ void CookedRead::_writeToPrompt(std::deque<wchar_t>& unprocessedChars)
 
     while (!unprocessedChars.empty())
     {
-        _prompt.insert(_insertionIndex, 1, unprocessedChars.front());
+        const wchar_t wch = unprocessedChars.front();
         unprocessedChars.pop_front();
-        ++_insertionIndex;
+
+        if (wch == UNICODE_BACKSPACE)
+        {
+            _backspace();
+        }
+        else
+        {
+            _prompt.insert(_insertionIndex, 1, wch);
+            ++_insertionIndex;
+        }
     }
+}
+
+// Routine Description:
+// - handles a backspace character, deleting a codepoint from the left of the insertion point
+void CookedRead::_backspace()
+{
+    // if at the beginning there's nothing to delete
+    if (_isInsertionIndexAtPromptBegin())
+    {
+        return;
+    }
+
+    // check if there's a surrogate pair to delete
+    if (_insertionIndex >= 2 && _isSurrogatePairAt(_insertionIndex - 2))
+    {
+        _insertionIndex -= 2;
+        _prompt.erase(_insertionIndex, 2);
+        return;
+    }
+
+    // there isn't a surrogate pair to the left, delete a single char
+    --_insertionIndex;
+    _prompt.erase(_insertionIndex, 1);
 }
 
 // Routine Description:
@@ -612,73 +712,6 @@ void CookedRead::_writeToScreen(const bool resetCursor)
         cursorPosition.X += gsl::narrow<short>(_calculatePromptCellLength(false));
         _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
         FAIL_FAST_IF_NTSTATUS_FAILED(_status);
-    }
-}
-
-// Routine Description:
-// - calculates how many cells the prompt should take up
-// Arguments:
-// - wholePrompt - true if the whole prompt text should be calculated. if false, then
-// cell length is calculated only up to the insertion index of the prompt.
-// Return Value:
-// - the number of cells that text data in the prompt should use.
-size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
-{
-    const size_t stopIndex = wholePrompt ? _prompt.size() : _insertionIndex;
-    size_t count = 0;
-    for (size_t i = 0; i < stopIndex; ++i)
-    {
-        // check for a potential surrogate pair
-        if (i + 1 < stopIndex && _isSurrogatePairAt(i))
-        {
-            count += IsGlyphFullWidth({ &_prompt.at(i), 2 }) ? 2 : 1;
-            // we found a surrogate pair so jump over it
-            ++i;
-        }
-        else
-        {
-            count += IsGlyphFullWidth(_prompt.at(i)) ? 2 : 1;
-        }
-    }
-    return count;
-}
-
-// Routine Description:
-// - processes any character data read. updates prompt and screen.
-// Arguments:
-// - unprocessedChars - character data to process. must not be empty
-void CookedRead::_processChars(std::deque<wchar_t>& unprocessedChars)
-{
-    FAIL_FAST_IF(unprocessedChars.empty());
-
-    const bool enterPressed = unprocessedChars.back() == UNICODE_CARRIAGERETURN;
-
-    // carriage return needs to be written at the end of the prompt in order to send all text correctly
-    if (enterPressed)
-    {
-        _insertionIndex = _prompt.size();
-    }
-
-    // store character data
-    _writeToPrompt(unprocessedChars);
-
-    // check for control character masking
-    if (_isCtrlWakeupMaskTriggered(_prompt.back()))
-    {
-        _state = ReadState::Complete;
-        return;
-    }
-
-    // update prompt shown on the screen
-    _writeToScreen(!enterPressed);
-
-    if (enterPressed)
-    {
-        _state = ReadState::Complete;
-    }
-    else
-    {
-        _state = ReadState::Ready;
     }
 }
 
@@ -741,4 +774,32 @@ bool CookedRead::_isInsertionIndexAtPromptEnd()
 {
     FAIL_FAST_IF(_insertionIndex > _prompt.size());
     return _insertionIndex == _prompt.size();
+}
+
+// Routine Description:
+// - calculates how many cells the prompt should take up
+// Arguments:
+// - wholePrompt - true if the whole prompt text should be calculated. if false, then
+// cell length is calculated only up to the insertion index of the prompt.
+// Return Value:
+// - the number of cells that text data in the prompt should use.
+size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
+{
+    const size_t stopIndex = wholePrompt ? _prompt.size() : _insertionIndex;
+    size_t count = 0;
+    for (size_t i = 0; i < stopIndex; ++i)
+    {
+        // check for a potential surrogate pair
+        if (i + 1 < stopIndex && _isSurrogatePairAt(i))
+        {
+            count += IsGlyphFullWidth({ &_prompt.at(i), 2 }) ? 2 : 1;
+            // we found a surrogate pair so jump over it
+            ++i;
+        }
+        else
+        {
+            count += IsGlyphFullWidth(_prompt.at(i)) ? 2 : 1;
+        }
+    }
+    return count;
 }

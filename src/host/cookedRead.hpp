@@ -107,6 +107,8 @@ private:
     void _complete(size_t& numBytes);
     void _commandKey();
 
+    void _backspace();
+    void _clearPromptCells();
     void _writeToPrompt(std::deque<wchar_t>& unprocessedChars);
     void _writeToScreen(const bool resetCursor);
 
