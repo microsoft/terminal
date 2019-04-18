@@ -51,6 +51,7 @@ public:
     size_t MoveInsertionIndexRightByWord();
 
     void SetPromptToOldestCommand();
+    void SetPromptToNewestCommand();
 
     void InsertCtrlZ();
 

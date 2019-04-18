@@ -311,6 +311,21 @@ void CookedRead::SetPromptToOldestCommand()
 }
 
 // Routine Description:
+// - sets prompt to the newest command in the command history
+void CookedRead::SetPromptToNewestCommand()
+{
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        const short commandNumber = static_cast<short>(_pCommandHistory->GetNumberOfCommands() - 1);
+        const std::wstring_view command = _pCommandHistory->GetNth(commandNumber);
+        Erase();
+        _prompt = command;
+        _insertionIndex = _prompt.size();
+        _writeToScreen(true);
+    }
+}
+
+// Routine Description:
 // - checks if wch matches up with the control character masking for early data return
 // Arguments:
 // - wch - the wchar to check

@@ -480,35 +480,7 @@ void CommandLine::_setPromptToOldestCommand(CookedRead& cookedReadData)
 // - May throw exceptions
 void CommandLine::_setPromptToNewestCommand(CookedRead& cookedReadData)
 {
-    /*
-    DeleteCommandLine(cookedReadData, true);
-    if (cookedReadData.HasHistory() && cookedReadData.History().GetNumberOfCommands())
-    {
-        const short commandNumber = (SHORT)(cookedReadData.History().GetNumberOfCommands() - 1);
-        THROW_IF_FAILED(cookedReadData.History().RetrieveNth(commandNumber,
-                                                             cookedReadData.SpanWholeBuffer(),
-                                                             cookedReadData.BytesRead()));
-        FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
-        if (cookedReadData.IsEchoInput())
-        {
-            short ScrollY = 0;
-            FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                          cookedReadData.BufferStartPtr(),
-                                                          cookedReadData.BufferCurrentPtr(),
-                                                          cookedReadData.BufferCurrentPtr(),
-                                                          &cookedReadData.BytesRead(),
-                                                          &cookedReadData.VisibleCharCount(),
-                                                          cookedReadData.OriginalCursorPosition().X,
-                                                          WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                          &ScrollY));
-            cookedReadData.OriginalCursorPosition().Y += ScrollY;
-        }
-        size_t CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
-        cookedReadData.InsertionPoint() = CharsToWrite;
-        cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CharsToWrite);
-    }
-    */
-    cookedReadData;
+    cookedReadData.SetPromptToNewestCommand();
 }
 
 // Routine Description:
