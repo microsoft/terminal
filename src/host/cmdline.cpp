@@ -415,7 +415,6 @@ HRESULT CommandLine::StartCommandNumberPopup(CookedRead& cookedReadData)
 void CommandLine::_processHistoryCycling(CookedRead& cookedReadData,
                                          const CommandHistory::SearchDirection searchDirection)
 {
-    /*
     // for doskey compatibility, buffer isn't circular. don't do anything if attempting
     // to cycle history past the bounds of the history buffer
     if (!cookedReadData.HasHistory())
@@ -433,32 +432,7 @@ void CommandLine::_processHistoryCycling(CookedRead& cookedReadData,
         return;
     }
 
-    DeleteCommandLine(cookedReadData, true);
-    THROW_IF_FAILED(cookedReadData.History().Retrieve(searchDirection,
-                                                      cookedReadData.SpanWholeBuffer(),
-                                                      cookedReadData.BytesRead()));
-    FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
-    if (cookedReadData.IsEchoInput())
-    {
-        short ScrollY = 0;
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferCurrentPtr(),
-                                                      cookedReadData.BufferCurrentPtr(),
-                                                      &cookedReadData.BytesRead(),
-                                                      &cookedReadData.VisibleCharCount(),
-                                                      cookedReadData.OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                      &ScrollY));
-        cookedReadData.OriginalCursorPosition().Y += ScrollY;
-    }
-    const size_t CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
-    cookedReadData.InsertionPoint() = CharsToWrite;
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CharsToWrite);
-    */
-    cookedReadData;
-    searchDirection;
-    return;
+    cookedReadData.SetPromptToCommand(searchDirection);
 }
 
 // Routine Description:
@@ -489,7 +463,7 @@ void CommandLine::_setPromptToNewestCommand(CookedRead& cookedReadData)
 // - cookedReadData - The cooked read data to operate on
 void CommandLine::DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept
 {
-    cookedReadData.DeletePromptAfterCursor();
+    cookedReadData.DeletePromptAfterInsertionIndex();
 }
 
 // Routine Description:
@@ -501,7 +475,7 @@ void CommandLine::DeletePromptAfterCursor(CookedRead& cookedReadData) noexcept
 COORD CommandLine::_deletePromptBeforeCursor(CookedRead& cookedReadData) noexcept
 {
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    const size_t cellsMoved = cookedReadData.DeletePromptBeforeCursor();
+    const size_t cellsMoved = cookedReadData.DeletePromptBeforeInsertionIndex();
     // the cursor is adjusted to be within the bounds of the screen later, don't need to worry about it here
     cursorPosition.X -= gsl::narrow<short>(cellsMoved);
     return cursorPosition;
@@ -721,7 +695,7 @@ COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadDa
 // - The new cursor position
 void CommandLine::DeleteFromRightOfCursor(CookedRead& cookedReadData) noexcept
 {
-    cookedReadData.DeleteFromRightOfCursor();
+    cookedReadData.DeleteFromRightOfInsertionIndex();
 }
 
 // TODO: [MSFT:4586207] Clean up this mess -- needs helpers. http://osgvsowi/4586207

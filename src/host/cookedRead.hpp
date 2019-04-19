@@ -52,10 +52,12 @@ public:
 
     void SetPromptToOldestCommand();
     void SetPromptToNewestCommand();
+    void SetPromptToCommand(const size_t index);
+    void SetPromptToCommand(const CommandHistory::SearchDirection searchDirection);
 
-    size_t DeletePromptBeforeCursor();
-    void DeletePromptAfterCursor();
-    void DeleteFromRightOfCursor();
+    size_t DeletePromptBeforeInsertionIndex();
+    void DeletePromptAfterInsertionIndex();
+    void DeleteFromRightOfInsertionIndex();
 
     void InsertCtrlZ();
 

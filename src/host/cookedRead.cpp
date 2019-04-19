@@ -300,14 +300,7 @@ size_t CookedRead::MoveInsertionIndexRightByWord()
 // - sets prompt to the oldest command in the command history
 void CookedRead::SetPromptToOldestCommand()
 {
-    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
-    {
-        const std::wstring_view command = _pCommandHistory->GetNth(0);
-        Erase();
-        _prompt = command;
-        _insertionIndex = _prompt.size();
-        _writeToScreen(true);
-    }
+    SetPromptToCommand(0);
 }
 
 // Routine Description:
@@ -317,7 +310,19 @@ void CookedRead::SetPromptToNewestCommand()
     if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
     {
         const short commandNumber = static_cast<short>(_pCommandHistory->GetNumberOfCommands() - 1);
-        const std::wstring_view command = _pCommandHistory->GetNth(commandNumber);
+        SetPromptToCommand(gsl::narrow<size_t>(commandNumber));
+    }
+}
+
+// Routine Description:
+// - sets prompt to the command in the command history at index
+// Arguments:
+// - index - the command index to set the prompt to
+void CookedRead::SetPromptToCommand(const size_t index)
+{
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        const std::wstring_view command = _pCommandHistory->GetNth(static_cast<short>(index));
         Erase();
         _prompt = command;
         _insertionIndex = _prompt.size();
@@ -325,12 +330,35 @@ void CookedRead::SetPromptToNewestCommand()
     }
 }
 
+// Routine Description:
+// - sets prompt to the next command in the direction searched
+// Arguments:
+// - searchDirection - the direction to get the command to write into the prompt from
+void CookedRead::SetPromptToCommand(const CommandHistory::SearchDirection searchDirection)
+{
+
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        // we're using an arbitarily large buffer to temporarily store the command in
+        const size_t cchBuffer = 512;
+        wchar_t buffer[cchBuffer];
+        gsl::span<wchar_t> span{ &buffer[0], cchBuffer };
+        size_t bytes = cchBuffer * sizeof(wchar_t);
+        THROW_IF_FAILED(_pCommandHistory->Retrieve(searchDirection, span, bytes));
+
+        Erase();
+        _prompt = std::wstring(&buffer[0], bytes / sizeof(wchar_t));
+        _insertionIndex = _prompt.size();
+        _writeToScreen(true);
+
+    }
+}
 
 // Routine Description:
 // - deletes all text to the left of the insertion index
 // Return Value:
 // - number of cells that the insertion point has moved by
-size_t CookedRead::DeletePromptBeforeCursor()
+size_t CookedRead::DeletePromptBeforeInsertionIndex()
 {
     _clearPromptCells();
     const size_t cellsMoved = _insertionIndex;
@@ -342,7 +370,7 @@ size_t CookedRead::DeletePromptBeforeCursor()
 
 // Routine Description:
 // - deletes all text to the right of the insertion index
-void CookedRead::DeletePromptAfterCursor()
+void CookedRead::DeletePromptAfterInsertionIndex()
 {
     _clearPromptCells();
     _prompt.resize(_insertionIndex);
@@ -351,7 +379,7 @@ void CookedRead::DeletePromptAfterCursor()
 
 // Routine Description:
 // - deletes codepoint to the right of the insertion index
-void CookedRead::DeleteFromRightOfCursor()
+void CookedRead::DeleteFromRightOfInsertionIndex()
 {
     if (_isInsertionIndexAtPromptEnd())
     {
