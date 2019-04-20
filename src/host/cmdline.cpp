@@ -570,40 +570,7 @@ void CommandLine::_deleteCommandHistory(CookedRead& cookedReadData) noexcept
 // - cookedReadData - The cooked read data to operate on
 void CommandLine::_fillPromptWithPreviousCommandFragment(CookedRead& cookedReadData) noexcept
 {
-    /*
-    if (cookedReadData.HasHistory())
-    {
-        size_t NumSpaces, cchCount;
-
-        const auto LastCommand = cookedReadData.History().GetLastCommand();
-        if (!LastCommand.empty() && LastCommand.size() > cookedReadData.InsertionPoint())
-        {
-            cchCount = LastCommand.size() - cookedReadData.InsertionPoint();
-            const auto bufferSpan = cookedReadData.SpanAtPointer();
-            std::copy_n(LastCommand.cbegin() + cookedReadData.InsertionPoint(), cchCount, bufferSpan.begin());
-            cookedReadData.InsertionPoint() += cchCount;
-            cchCount *= sizeof(WCHAR);
-            cookedReadData.BytesRead() = std::max(LastCommand.size() * sizeof(wchar_t), cookedReadData.BytesRead());
-            if (cookedReadData.IsEchoInput())
-            {
-                short ScrollY = 0;
-                FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                              cookedReadData.BufferStartPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              &cchCount,
-                                                              &NumSpaces,
-                                                              cookedReadData.OriginalCursorPosition().X,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                              &ScrollY));
-                cookedReadData.OriginalCursorPosition().Y += ScrollY;
-                cookedReadData.VisibleCharCount() += NumSpaces;
-            }
-            cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferCurrentPtr() + cchCount / sizeof(WCHAR));
-        }
-    }
-    */
-    cookedReadData;
+    cookedReadData.FillPromptWithPreviousCommandFragment();
 }
 
 // Routine Description:

@@ -55,6 +55,7 @@ public:
     void SetPromptToCommand(const size_t index);
     void SetPromptToCommand(const CommandHistory::SearchDirection searchDirection);
     void SetPromptToMatchingHistoryCommand();
+    void FillPromptWithPreviousCommandFragment();
 
     size_t DeletePromptBeforeInsertionIndex();
     void DeletePromptAfterInsertionIndex();

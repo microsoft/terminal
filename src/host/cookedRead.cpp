@@ -377,6 +377,34 @@ void CookedRead::SetPromptToMatchingHistoryCommand()
 }
 
 // Routine Description:
+// - fills prompt with characters from the last command in the history
+void CookedRead::FillPromptWithPreviousCommandFragment()
+{
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        const size_t leftChars = _visibleCharCountOf({ _prompt.c_str(), _insertionIndex });
+        const std::wstring_view lastCommand = _pCommandHistory->GetLastCommand();
+        const size_t lastCommandChars = _visibleCharCountOf(lastCommand);
+        if (lastCommandChars > leftChars)
+        {
+            // fill prompt with chars from last command
+            const std::vector<std::vector<wchar_t>> parsedLastCommand = Utf16Parser::Parse(lastCommand);
+            auto it = parsedLastCommand.cbegin() + leftChars;
+            while (it != parsedLastCommand.cend())
+            {
+                const std::vector<wchar_t>& glyph = *it;
+                for (const wchar_t wch : glyph)
+                {
+                    _prompt.push_back(wch);
+                }
+                ++it;
+            }
+            _writeToScreen(false);
+        }
+    }
+}
+
+// Routine Description:
 // - deletes all text to the left of the insertion index
 // Return Value:
 // - number of cells that the insertion point has moved by
