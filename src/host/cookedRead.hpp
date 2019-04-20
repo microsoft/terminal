@@ -54,6 +54,7 @@ public:
     void SetPromptToNewestCommand();
     void SetPromptToCommand(const size_t index);
     void SetPromptToCommand(const CommandHistory::SearchDirection searchDirection);
+    void SetPromptToMatchingHistoryCommand();
 
     size_t DeletePromptBeforeInsertionIndex();
     void DeletePromptAfterInsertionIndex();
@@ -129,4 +130,6 @@ private:
 
     bool _isInsertionIndexAtPromptBegin();
     bool _isInsertionIndexAtPromptEnd();
+
+    void _adjustCursorToInsertionIndex();
 };

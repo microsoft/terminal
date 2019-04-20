@@ -342,7 +342,7 @@ void CookedRead::SetPromptToCommand(const CommandHistory::SearchDirection search
         // we're using an arbitarily large buffer to temporarily store the command in
         const size_t cchBuffer = 512;
         wchar_t buffer[cchBuffer];
-        gsl::span<wchar_t> span{ &buffer[0], cchBuffer };
+        gsl::span<wchar_t> span{ &buffer[0], static_cast<std::ptrdiff_t>(cchBuffer) };
         size_t bytes = cchBuffer * sizeof(wchar_t);
         THROW_IF_FAILED(_pCommandHistory->Retrieve(searchDirection, span, bytes));
 
@@ -351,6 +351,28 @@ void CookedRead::SetPromptToCommand(const CommandHistory::SearchDirection search
         _insertionIndex = _prompt.size();
         _writeToScreen(true);
 
+    }
+}
+
+// Routine Description:
+// - searches the command history for a command that matches the text to the left of the insertion index and
+// fills the prompt with the command text
+void CookedRead::SetPromptToMatchingHistoryCommand()
+{
+    if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
+    {
+        short index = 0;
+        if (_pCommandHistory->FindMatchingCommand({ _prompt.c_str(), _insertionIndex },
+                                                   _pCommandHistory->LastDisplayed,
+                                                   index,
+                                                   CommandHistory::MatchOptions::None))
+        {
+            const size_t oldInsertionIndex = _insertionIndex;
+            SetPromptToCommand(index);
+            _pCommandHistory->LastDisplayed = index;
+            _insertionIndex = oldInsertionIndex;
+            _adjustCursorToInsertionIndex();
+        }
     }
 }
 
@@ -834,10 +856,7 @@ void CookedRead::_writeToScreen(const bool resetCursor)
     // move the cursor to the correct insert location
     if (resetCursor)
     {
-        COORD cursorPosition = _promptStartLocation;
-        cursorPosition.X += gsl::narrow<short>(_calculatePromptCellLength(false));
-        _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
-        FAIL_FAST_IF_NTSTATUS_FAILED(_status);
+        _adjustCursorToInsertionIndex();
     }
 }
 
@@ -928,4 +947,14 @@ size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
         }
     }
     return count;
+}
+
+// Routine Description:
+// - moves the cursor to be at the cell that corresponds with the text pointed at by the insertion index
+void CookedRead::_adjustCursorToInsertionIndex()
+{
+    COORD cursorPosition = _promptStartLocation;
+    cursorPosition.X += gsl::narrow<short>(_calculatePromptCellLength(false));
+    _status = AdjustCursorPosition(_screenInfo, cursorPosition, true, nullptr);
+    FAIL_FAST_IF_NTSTATUS_FAILED(_status);
 }

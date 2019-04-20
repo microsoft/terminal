@@ -124,7 +124,7 @@ protected:
     void _insertCtrlZ(CookedRead& cookedReadData) noexcept;
     void _deleteCommandHistory(CookedRead& cookedReadData) noexcept;
     void _fillPromptWithPreviousCommandFragment(CookedRead& cookedReadData) noexcept;
-    COORD _cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadData);
+    void _cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadData);
 
 
 #ifdef UNIT_TESTING

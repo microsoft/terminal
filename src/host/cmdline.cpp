@@ -242,33 +242,7 @@ void RedrawCommandLine(CookedRead& cookedReadData)
 // - This routine copies the commandline specified by Index into the cooked read buffer
 void SetCurrentCommandLine(CookedRead& cookedReadData, _In_ SHORT Index) // index, not command number
 {
-    /*
-    DeleteCommandLine(cookedReadData, TRUE);
-    FAIL_FAST_IF_FAILED(cookedReadData.History().RetrieveNth(Index,
-                                                             cookedReadData.SpanWholeBuffer(),
-                                                             cookedReadData.BytesRead()));
-    FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
-    if (cookedReadData.IsEchoInput())
-    {
-        SHORT ScrollY = 0;
-        FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                      cookedReadData.BufferStartPtr(),
-                                                      cookedReadData.BufferCurrentPtr(),
-                                                      cookedReadData.BufferCurrentPtr(),
-                                                      &cookedReadData.BytesRead(),
-                                                      &cookedReadData.VisibleCharCount(),
-                                                      cookedReadData.OriginalCursorPosition().X,
-                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                      &ScrollY));
-        cookedReadData.OriginalCursorPosition().Y += ScrollY;
-    }
-
-    size_t const CharsToWrite = cookedReadData.BytesRead() / sizeof(WCHAR);
-    cookedReadData.InsertionPoint() = CharsToWrite;
-    cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CharsToWrite);
-    */
-    cookedReadData;
-    Index;
+    cookedReadData.SetPromptToCommand(gsl::narrow<size_t>(Index));
 }
 
 // Routine Description:
@@ -638,53 +612,9 @@ void CommandLine::_fillPromptWithPreviousCommandFragment(CookedRead& cookedReadD
 // - cookedReadData - The cooked read data to operate on
 // Return Value:
 // - The new cursor position
-COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadData)
+void CommandLine::_cycleMatchingCommandHistoryToPrompt(CookedRead& cookedReadData)
 {
-    /*
-    COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
-    if (cookedReadData.HasHistory())
-    {
-        SHORT index;
-        if (cookedReadData.History().FindMatchingCommand({ cookedReadData.BufferStartPtr(), cookedReadData.InsertionPoint() },
-                                                            cookedReadData.History().LastDisplayed,
-                                                            index,
-                                                            CommandHistory::MatchOptions::None))
-        {
-            SHORT CurrentPos;
-
-            // save cursor position
-            CurrentPos = (SHORT)cookedReadData.InsertionPoint();
-
-            DeleteCommandLine(cookedReadData, true);
-            THROW_IF_FAILED(cookedReadData.History().RetrieveNth((SHORT)index,
-                                                                 cookedReadData.SpanWholeBuffer(),
-                                                                 cookedReadData.BytesRead()));
-            FAIL_FAST_IF(!(cookedReadData.BufferStartPtr() == cookedReadData.BufferCurrentPtr()));
-            if (cookedReadData.IsEchoInput())
-            {
-                short ScrollY = 0;
-                FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                              cookedReadData.BufferStartPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              cookedReadData.BufferCurrentPtr(),
-                                                              &cookedReadData.BytesRead(),
-                                                              &cookedReadData.VisibleCharCount(),
-                                                              cookedReadData.OriginalCursorPosition().X,
-                                                              WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                              &ScrollY));
-                cookedReadData.OriginalCursorPosition().Y += ScrollY;
-                cursorPosition.Y += ScrollY;
-            }
-
-            // restore cursor position
-            cookedReadData.SetBufferCurrentPtr(cookedReadData.BufferStartPtr() + CurrentPos);
-            cookedReadData.InsertionPoint() = CurrentPos;
-            FAIL_FAST_IF_NTSTATUS_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cursorPosition, true));
-        }
-    }
-    return cursorPosition;
-    */
-    return cookedReadData.PromptStartLocation();
+    cookedReadData.SetPromptToMatchingHistoryCommand();
 }
 
 // Routine Description:
@@ -872,8 +802,7 @@ NTSTATUS CommandLine::ProcessCommandLine(CookedRead& cookedReadData,
     case VK_F8:
         try
         {
-            cursorPosition = _cycleMatchingCommandHistoryToPrompt(cookedReadData);
-            UpdateCursorPosition = true;
+            _cycleMatchingCommandHistoryToPrompt(cookedReadData);
         }
         catch (...)
         {
