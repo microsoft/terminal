@@ -2,15 +2,15 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
-namespace Nivot.Terminal
+namespace Samples.Terminal
 {
     /// <summary>
-    /// Implements a circular buffer.
+    /// Implements a bounded queue that won't block on overflow; instead the oldest item is discarded.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public class ConcurrentCircularQueue<T> : ConcurrentQueue<T>
+    public class ConcurrentBoundedQueue<T> : ConcurrentQueue<T>
     {
-        public ConcurrentCircularQueue(int capacity)
+        public ConcurrentBoundedQueue(int capacity)
         {
             Capacity = GetAlignedCapacity(capacity);
         }
@@ -20,7 +20,7 @@ namespace Nivot.Terminal
         /// </summary>
         /// <param name="collection"></param>
         /// <param name="capacity"></param>
-        public ConcurrentCircularQueue(IEnumerable<T> collection, int capacity) : base(collection)
+        public ConcurrentBoundedQueue(IEnumerable<T> collection, int capacity) : base(collection)
         {
             Capacity = GetAlignedCapacity(capacity);
         }
@@ -40,6 +40,7 @@ namespace Nivot.Terminal
 
         public new void Enqueue(T item)
         {
+            // if we're about to overflow, dump oldest item
             if (Count >= Capacity)
             {
                 lock (this)

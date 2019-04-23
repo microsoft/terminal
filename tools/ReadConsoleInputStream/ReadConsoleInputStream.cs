@@ -5,7 +5,7 @@ using System.IO;
 
 using Vanara.PInvoke;
 
-namespace Nivot.Terminal
+namespace Samples.Terminal
 {
     /// <summary>
     /// Provides a Stream-oriented view over the console's input buffer key events
@@ -93,61 +93,65 @@ namespace Nivot.Terminal
                 var records = new Kernel32.INPUT_RECORD[BufferSize];
 
                 // begin input loop
-                waitForInput:
-
-                var readSuccess = Kernel32.ReadConsoleInput(_handle, records, 256, out var recordsRead);
-                Debug.WriteLine("Read {0} input record(s)", recordsRead);
-
-                if (readSuccess && recordsRead > 0)
+                do
                 {
-                    for (var index = 0; index < recordsRead; index++)
+                    var readSuccess = Kernel32.ReadConsoleInput(_handle, records, BufferSize, out var recordsRead);
+                    Debug.WriteLine("Read {0} input record(s)", recordsRead);
+
+                    // some of the arithmetic here is deliberately more explicit than it needs to be 
+                    // in order to show how 16-bit unicode WCHARs are packed into the buffer. The console
+                    // subsystem is one of the last bastions of UCS-2, so until UTF-16 is fully adopted
+                    // the two-byte character assumptions below will hold. 
+                    if (readSuccess && recordsRead > 0)
                     {
-                        var record = records[index];
-
-                        if (record.EventType == Kernel32.EVENT_TYPE.KEY_EVENT)
+                        for (var index = 0; index < recordsRead; index++)
                         {
-                            // skip key up events - if not, every key will be duped in the stream
-                            if (record.Event.KeyEvent.bKeyDown == false) continue;
+                            var record = records[index];
 
-                            // pack ucs-2/utf-16le/unicode chars into position in our byte[] buffer.
-                            var glyph = (ushort) record.Event.KeyEvent.uChar;
-
-                            var lsb = (byte) (glyph & 0xFFu);
-                            var msb = (byte) ((glyph >> 8) & 0xFFu);
-
-                            // ensure we accommodate key repeat counts
-                            for (var n = 0; n < record.Event.KeyEvent.wRepeatCount; n++)
+                            if (record.EventType == Kernel32.EVENT_TYPE.KEY_EVENT)
                             {
-                                buffer[offset + charsRead * BytesPerWChar] = lsb;
-                                buffer[offset + charsRead * BytesPerWChar + 1] = msb;
+                                // skip key up events - if not, every key will be duped in the stream
+                                if (record.Event.KeyEvent.bKeyDown == false) continue;
 
-                                charsRead++;
+                                // pack ucs-2/utf-16le/unicode chars into position in our byte[] buffer.
+                                var glyph = (ushort) record.Event.KeyEvent.uChar;
+
+                                var lsb = (byte) (glyph & 0xFFu);
+                                var msb = (byte) ((glyph >> 8) & 0xFFu);
+
+                                // ensure we accommodate key repeat counts
+                                for (var n = 0; n < record.Event.KeyEvent.wRepeatCount; n++)
+                                {
+                                    buffer[offset + charsRead * BytesPerWChar] = lsb;
+                                    buffer[offset + charsRead * BytesPerWChar + 1] = msb;
+
+                                    charsRead++;
+                                }
+                            }
+                            else
+                            {
+                                // ignore focus events; not doing so makes debugging absolutely hilarious
+                                // when breakpoints repeatedly cause focus events to occur as your view toggles
+                                // between IDE and console.
+                                if (record.EventType != Kernel32.EVENT_TYPE.FOCUS_EVENT)
+                                {
+                                    // I assume success adding records - this is not so critical
+                                    // if it is critical to you, loop on this with a miniscule delay
+                                    _nonKeyEvents.TryAdd(record);
+                                }
                             }
                         }
-                        else
-                        {
-                            // ignore focus events (not doing so makes debugging absolutely hilarious)
-                            if (record.EventType != Kernel32.EVENT_TYPE.FOCUS_EVENT)
-                            {
-                                // I assume success adding records - this is not so critical
-                                // if it is critical to you, loop on this with a miniscule delay
-                                _nonKeyEvents.TryAdd(record);
-                            }
-                        }
+                        bytesRead = charsRead * BytesPerWChar;
+                    }
+                    else
+                    {
+                        Debug.Assert(bytesRead == 0, "bytesRead == 0");
                     }
 
-                    bytesRead = charsRead * BytesPerWChar;
-
-                    // we should continue to block if no chars read (KEY_EVENT)
-                    // even though non-key events were dispatched
-                    if (bytesRead == 0) goto waitForInput;
-                }
-                else
-                {
-                    Debug.Assert(bytesRead == 0, "bytesRead == 0");
-                }
-
+                } while (bytesRead == 0);
+                
                 Debug.WriteLine("Read {0} character(s)", charsRead);
+
                 ret = Win32Error.ERROR_SUCCESS;
             }
 

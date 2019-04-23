@@ -39,14 +39,18 @@ using System.Threading.Tasks;
 using Pipelines.Sockets.Unofficial;
 using Vanara.PInvoke;
 
-namespace Nivot.Terminal
+namespace Samples.Terminal
 {
     internal class Program
     {
         private static async Task Main(string[] args)
         {
             // run for 90 seconds
-            const int timeout = 90000;
+            var timeout = TimeSpan.FromSeconds(90);
+
+            // in reality this will likely never be reached, but it is useful to guard against
+            // conditions where the queue isn't drained, or not drained fast enough. 
+            const int maxNonKeyEventRetention = 128;
 
             var source = new CancellationTokenSource(timeout);
             var token = source.Token;
@@ -55,25 +59,17 @@ namespace Nivot.Terminal
             if (!Kernel32.GetConsoleMode(handle, out Kernel32.CONSOLE_INPUT_MODE mode))
                 throw NativeMethods.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
 
-            // enable VT sequences so cursor movement etc is encapsulated in the stream
             mode |= Kernel32.CONSOLE_INPUT_MODE.ENABLE_WINDOW_INPUT;
             mode |= Kernel32.CONSOLE_INPUT_MODE.ENABLE_VIRTUAL_TERMINAL_INPUT;
             mode &= ~Kernel32.CONSOLE_INPUT_MODE.ENABLE_ECHO_INPUT;
             mode &= ~Kernel32.CONSOLE_INPUT_MODE.ENABLE_LINE_INPUT;
 
             if (!Kernel32.SetConsoleMode(handle, mode))
-                throw NativeMethods.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
+                throw NativeMethods.GetExceptionForLastWin32Error();
 
-            // set utf-8 cp
-            if (!Kernel32.SetConsoleCP(65001))
-                throw NativeMethods.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
-
-            if (!Kernel32.SetConsoleOutputCP(65001))
-                throw NativeMethods.GetExceptionForWin32Error(Marshal.GetLastWin32Error());
-
-            // base our provider/consumer on a circular buffer to keep memory usage under control
+            // base our provider/consumer on a bounded queue to keep memory usage under control
             var events = new BlockingCollection<Kernel32.INPUT_RECORD>(
-                new ConcurrentCircularQueue<Kernel32.INPUT_RECORD>(256));
+                new ConcurrentBoundedQueue<Kernel32.INPUT_RECORD>(maxNonKeyEventRetention));
 
             // Task that will consume non-key events asynchronously
             var consumeEvents = Task.Run(() =>
@@ -124,7 +120,7 @@ namespace Nivot.Terminal
 
                     while (sequence.TryGet(ref segment, out var mem))
                     {
-                        // decode back from unicode (2 bytes per char)
+                        // decode back from unicode
                         var datum = Encoding.Unicode.GetString(mem.Span);
                         Console.Write(datum);
                     }
