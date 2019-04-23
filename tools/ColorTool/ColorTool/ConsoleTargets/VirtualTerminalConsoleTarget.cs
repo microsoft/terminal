@@ -4,6 +4,7 @@
 //
 
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using static ColorTool.ConsoleAPI;
 
@@ -15,7 +16,8 @@ namespace ColorTool.ConsoleTargets
     class VirtualTerminalConsoleTarget : IConsoleTarget
     {
         // Use a Console index in to get a VT index out.
-        static readonly int[] VT_INDICIES = {
+        public static readonly IReadOnlyList<int> VT_INDICIES = new[]
+        {
             0, // DARK_BLACK
             4, // DARK_BLUE
             2, // DARK_GREEN
@@ -31,7 +33,7 @@ namespace ColorTool.ConsoleTargets
             8+1, // BRIGHT_RED
             8+5, // BRIGHT_MAGENTA
             8+3, // BRIGHT_YELLOW
-            8+7,// BRIGHT_WHITE
+            8+7, // BRIGHT_WHITE
         };
 
         public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
@@ -46,7 +48,7 @@ namespace ColorTool.ConsoleTargets
                 SetConsoleMode(hOut, requestedMode);
             }
 
-            for (int i = 0; i < colorScheme.colorTable.Length; i++)
+            for (int i = 0; i < colorScheme.ColorTable.Length; i++)
             {
                 int vtIndex = VT_INDICIES[i];
                 Color color = colorScheme[i];

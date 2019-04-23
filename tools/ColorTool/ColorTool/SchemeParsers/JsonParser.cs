@@ -15,7 +15,8 @@ namespace ColorTool.SchemeParsers
 {
     class JsonParser : ISchemeParser
     {
-        static string[] CONCFG_COLOR_NAMES = {
+        private static IReadOnlyList<string> CONCFG_COLOR_NAMES = new[]
+        {
             "black",        // DARK_BLACK
             "dark_blue",    // DARK_BLUE
             "dark_green",   // DARK_GREEN
@@ -34,34 +35,7 @@ namespace ColorTool.SchemeParsers
             "white"         // BRIGHT_WHITE
         };
 
-        public string Name => "concfg Parser";
-
-        static uint ParseColor(string arg)
-        {
-            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
-            return RGB(col.R, col.G, col.B);
-        }
-
-        static XmlDocument loadJsonFile(string schemeName)
-        {
-            XmlDocument xmlDoc = new XmlDocument();
-            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".json")
-                              .Where(File.Exists))
-            {
-                try
-                {
-                    var data = File.ReadAllBytes(path);
-                    var reader = JsonReaderWriterFactory.CreateJsonReader(data, System.Xml.XmlDictionaryReaderQuotas.Max);
-                    xmlDoc.Load(reader);
-                    return xmlDoc;
-                }
-                catch (XmlException /*e*/) { /* failed to parse */ }
-                catch (IOException /*e*/) { /* failed to find */ }
-                catch (UnauthorizedAccessException /*e*/) { /* unauthorized */ }
-            }
-
-            return null;
-        }
+        public string Name { get; } = "concfg Parser";
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
@@ -119,18 +93,45 @@ namespace ColorTool.SchemeParsers
                     }
                 }
 
-                var consoleAttributes = new ConsoleAttributes { background = screenBackground, foreground = screenForeground, popupBackground = popupBackground, popupForeground = popupForeground };
-                return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
+                var consoleAttributes = new ConsoleAttributes(screenBackground, screenForeground, popupBackground, popupForeground);
+                return new ColorScheme(colorTable, consoleAttributes);
             }
             catch (Exception /*e*/)
             {
                 if (reportErrors)
                 {
-                    Console.WriteLine("failes to load json scheme");
+                    Console.WriteLine("failed to load json scheme");
                 }
 
                 return null;
             }
+        }
+
+        private static uint ParseColor(string arg)
+        {
+            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
+            return RGB(col.R, col.G, col.B);
+        }
+
+        private static XmlDocument loadJsonFile(string schemeName)
+        {
+            XmlDocument xmlDoc = new XmlDocument();
+            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".json")
+                              .Where(File.Exists))
+            {
+                try
+                {
+                    var data = File.ReadAllBytes(path);
+                    var reader = JsonReaderWriterFactory.CreateJsonReader(data, System.Xml.XmlDictionaryReaderQuotas.Max);
+                    xmlDoc.Load(reader);
+                    return xmlDoc;
+                }
+                catch (XmlException /*e*/) { /* failed to parse */ }
+                catch (IOException /*e*/) { /* failed to find */ }
+                catch (UnauthorizedAccessException /*e*/) { /* unauthorized */ }
+            }
+
+            return null;
         }
     }
 }

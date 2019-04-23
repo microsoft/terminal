@@ -17,10 +17,10 @@ namespace ColorTool.ConsoleTargets
         {
             //TODO
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
-            for (int i = 0; i < colorScheme.colorTable.Length; i++)
+            for (int i = 0; i < colorScheme.ColorTable.Length; i++)
             {
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
-                consoleKey.SetValue(valueName, colorScheme.colorTable[i], RegistryValueKind.DWord);
+                consoleKey.SetValue(valueName, colorScheme.ColorTable[i], RegistryValueKind.DWord);
             }
             Console.WriteLine(Resources.WroteToDefaults);
         }

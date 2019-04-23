@@ -19,7 +19,8 @@ namespace ColorTool.SchemeParsers
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
         // These are in Windows Color table order - BRG, not RGB.
-        public static string[] COLOR_NAMES = {
+        internal static readonly IReadOnlyList<string> COLOR_NAMES = new[]
+        {
             "DARK_BLACK",
             "DARK_BLUE",
             "DARK_GREEN",
@@ -38,44 +39,7 @@ namespace ColorTool.SchemeParsers
             "BRIGHT_WHITE"
         };
 
-        public string Name => "INI File Parser";
-
-        static uint ParseHex(string arg)
-        {
-            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
-            return RGB(col.R, col.G, col.B);
-        }
-
-        static uint ParseRgb(string arg)
-        {
-            int[] components = { 0, 0, 0 };
-            string[] args = arg.Split(',');
-            if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
-            if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
-            for (int i = 0; i < args.Length; i++)
-            {
-                components[i] = Int32.Parse(args[i]);
-            }
-
-            return RGB(components[0], components[1], components[2]);
-        }
-
-        static uint ParseColor(string arg)
-        {
-            if (arg[0] == '#')
-            {
-                return ParseHex(arg.Substring(1));
-            }
-            else
-            {
-                return ParseRgb(arg);
-            }
-        }
-
-        static string FindIniScheme(string schemeName)
-        {
-            return SchemeManager.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
-        }
+        public string Name { get; } = "INI File Parser";
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
@@ -154,8 +118,8 @@ namespace ColorTool.SchemeParsers
 
             if (colorTable != null)
             {
-                var consoleAttributes = new ConsoleAttributes { background = backgroundColor, foreground = foregroundColor, popupBackground = popupBackgroundColor, popupForeground = popupForegroundColor };
-                return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
+                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
+                return new ColorScheme(colorTable, consoleAttributes);
             }
             else
             {
@@ -182,6 +146,43 @@ namespace ColorTool.SchemeParsers
 
                 return true;
             }
+        }
+
+        private static uint ParseHex(string arg)
+        {
+            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
+            return RGB(col.R, col.G, col.B);
+        }
+
+        private static uint ParseRgb(string arg)
+        {
+            int[] components = { 0, 0, 0 };
+            string[] args = arg.Split(',');
+            if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
+            if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
+            for (int i = 0; i < args.Length; i++)
+            {
+                components[i] = Int32.Parse(args[i]);
+            }
+
+            return RGB(components[0], components[1], components[2]);
+        }
+
+        private static uint ParseColor(string arg)
+        {
+            if (arg[0] == '#')
+            {
+                return ParseHex(arg.Substring(1));
+            }
+            else
+            {
+                return ParseRgb(arg);
+            }
+        }
+
+        private static string FindIniScheme(string schemeName)
+        {
+            return SchemeManager.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
         }
     }
 }

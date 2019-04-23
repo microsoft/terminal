@@ -9,12 +9,21 @@ using System.Linq;
 
 namespace ColorTool
 {
+    /// <summary>
+    /// Represents a colorscheme that can be applied to a console.
+    /// </summary>
     public class ColorScheme
     {
-        public uint[] colorTable = null;
-        public ConsoleAttributes consoleAttributes;
+        public ColorScheme(uint[] colorTable, ConsoleAttributes consoleAttributes)
+        {
+            ColorTable = colorTable;
+            ConsoleAttributes = consoleAttributes;
+        }
 
-        public Color this[int index] => UIntToColor(colorTable[index]);
+        public uint[] ColorTable { get; }
+        public ConsoleAttributes ConsoleAttributes { get; }
+
+        public Color this[int index] => UIntToColor(ColorTable[index]);
 
         private static Color UIntToColor(uint color)
         {
@@ -25,7 +34,7 @@ namespace ColorTool
         }
 
         public int CalculateIndex(uint value) =>
-            colorTable.Select((color, idx) => Tuple.Create(color, idx))
+            ColorTable.Select((color, idx) => Tuple.Create(color, idx))
                       .OrderBy(Difference(value))
                       .First().Item2;
 
@@ -87,17 +96,17 @@ namespace ColorTool
 
             for (int i = 0; i < 16; ++i)
             {
-                _dump($"Color[{i}]", colorTable[i]);
+                _dump($"Color[{i}]", ColorTable[i]);
             }
 
-            if (consoleAttributes.foreground != null)
+            if (ConsoleAttributes.Foreground != null)
             {
-                _dump("FG       ", consoleAttributes.foreground.Value);
+                _dump("FG       ", ConsoleAttributes.Foreground.Value);
             }
 
-            if (consoleAttributes.background != null)
+            if (ConsoleAttributes.Background != null)
             {
-                _dump("BG       ", consoleAttributes.background.Value);
+                _dump("BG       ", ConsoleAttributes.Background.Value);
             }
         }
     }

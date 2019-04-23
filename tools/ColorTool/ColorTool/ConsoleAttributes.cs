@@ -5,12 +5,19 @@
 
 namespace ColorTool
 {
-    public struct ConsoleAttributes
+    public readonly struct ConsoleAttributes
     {
-        public uint? foreground;
-        public uint? background;
+        public ConsoleAttributes(uint? background, uint? foreground, uint? popupBackground, uint? popupForeground)
+        {
+            Background = background;
+            Foreground = foreground;
+            PopupBackground = popupBackground;
+            PopupForeground = popupForeground;
+        }
 
-        public uint? popupForeground;
-        public uint? popupBackground;
+        public uint? Foreground { get; }
+        public uint? Background { get; }
+        public uint? PopupForeground { get; }
+        public uint? PopupBackground { get; }
     }
 }

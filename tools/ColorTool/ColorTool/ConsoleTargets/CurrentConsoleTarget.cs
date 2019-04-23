@@ -26,18 +26,18 @@ namespace ColorTool.ConsoleTargets
             csbiex.srWindow.Bottom++;
             for (int i = 0; i < 16; i++)
             {
-                csbiex.ColorTable[i] = colorScheme.colorTable[i];
+                csbiex.ColorTable[i] = colorScheme.ColorTable[i];
             }
-            if (colorScheme.consoleAttributes.background != null && colorScheme.consoleAttributes.foreground != null)
+            if (colorScheme.ConsoleAttributes.Background != null && colorScheme.ConsoleAttributes.Foreground != null)
             {
-                int fgidx = colorScheme.CalculateIndex(colorScheme.consoleAttributes.foreground.Value);
-                int bgidx = colorScheme.CalculateIndex(colorScheme.consoleAttributes.background.Value);
+                int fgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.Foreground.Value);
+                int bgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.Background.Value);
                 csbiex.wAttributes = (ushort)(fgidx | (bgidx << 4));
             }
-            if (colorScheme.consoleAttributes.popupBackground != null && colorScheme.consoleAttributes.popupForeground != null)
+            if (colorScheme.ConsoleAttributes.PopupBackground != null && colorScheme.ConsoleAttributes.PopupForeground != null)
             {
-                int fgidx = colorScheme.CalculateIndex(colorScheme.consoleAttributes.popupForeground.Value);
-                int bgidx = colorScheme.CalculateIndex(colorScheme.consoleAttributes.popupBackground.Value);
+                int fgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.PopupForeground.Value);
+                int bgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.PopupBackground.Value);
                 csbiex.wPopupAttributes = (ushort)(fgidx | (bgidx << 4));
             }
             SetConsoleScreenBufferInfoEx(hOut, ref csbiex);
