@@ -146,4 +146,6 @@
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
   </Target>
+
+  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
 </Project>
