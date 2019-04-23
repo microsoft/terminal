@@ -6,6 +6,7 @@
 using ColorTool.ConsoleTargets;
 using ColorTool.SchemeWriters;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ColorTool
@@ -117,19 +118,31 @@ namespace ColorTool
                 return;
             }
 
+            foreach (var target in GetConsoleTargets())
+            {
+                target.ApplyColorScheme(colorScheme, quietMode);
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerable of consoles that we want to apply the colorscheme to.
+        /// The contents of this enumerable depends on the user's provided command line flags.
+        /// </summary>
+        public static IEnumerable<IConsoleTarget> GetConsoleTargets()
+        {
             if (setDefaults)
             {
-                new DefaultConsoleTarget().ApplyColorScheme(colorScheme, quietMode);
+                yield return new DefaultConsoleTarget();
             }
             if (setProperties)
             {
                 if (setUnixStyle)
                 {
-                    new VirtualTerminalConsoleTarget().ApplyColorScheme(colorScheme, quietMode);
+                    yield return new VirtualTerminalConsoleTarget();
                 }
                 else
                 {
-                    new CurrentConsoleTarget().ApplyColorScheme(colorScheme, quietMode);
+                    yield return new CurrentConsoleTarget();
                 }
             }
         }

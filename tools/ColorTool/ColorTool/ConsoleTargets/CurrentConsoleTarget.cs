@@ -28,17 +28,13 @@ namespace ColorTool.ConsoleTargets
             {
                 csbiex.ColorTable[i] = colorScheme.ColorTable[i];
             }
-            if (colorScheme.ConsoleAttributes.Background != null && colorScheme.ConsoleAttributes.Foreground != null)
+            if(colorScheme.ScreenColorAttributes is ushort wAttrs)
             {
-                int fgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.Foreground.Value);
-                int bgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.Background.Value);
-                csbiex.wAttributes = (ushort)(fgidx | (bgidx << 4));
+                csbiex.wAttributes = wAttrs;
             }
-            if (colorScheme.ConsoleAttributes.PopupBackground != null && colorScheme.ConsoleAttributes.PopupForeground != null)
+            if(colorScheme.PopupColorAttributes is ushort wPopupAttrs)
             {
-                int fgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.PopupForeground.Value);
-                int bgidx = colorScheme.CalculateIndex(colorScheme.ConsoleAttributes.PopupBackground.Value);
-                csbiex.wPopupAttributes = (ushort)(fgidx | (bgidx << 4));
+                csbiex.wPopupAttributes = wPopupAttrs;
             }
             SetConsoleScreenBufferInfoEx(hOut, ref csbiex);
 

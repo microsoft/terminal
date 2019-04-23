@@ -23,6 +23,18 @@ namespace ColorTool
         public uint[] ColorTable { get; }
         public ConsoleAttributes ConsoleAttributes { get; }
 
+        public ushort? ScreenColorAttributes =>
+            CalculateBackgroundForegroundAttributes(
+                this.ConsoleAttributes.Background,
+                this.ConsoleAttributes.Foreground
+            );
+
+        public ushort? PopupColorAttributes =>
+            CalculateBackgroundForegroundAttributes(
+                this.ConsoleAttributes.PopupBackground,
+                this.ConsoleAttributes.PopupForeground
+            );
+
         public Color this[int index] => UIntToColor(ColorTable[index]);
 
         private static Color UIntToColor(uint color)
@@ -31,6 +43,18 @@ namespace ColorTool
             byte g = (byte)(color >> 8);
             byte b = (byte)(color >> 16);
             return Color.FromArgb(r, g, b);
+        }
+
+        private ushort? CalculateBackgroundForegroundAttributes(uint? background, uint? foreground)
+        {
+            if(!(background.HasValue && foreground.HasValue))
+            {
+                return null;
+            }
+            int fgidx = this.CalculateIndex(foreground.Value);
+            int bgidx = this.CalculateIndex(background.Value);
+            var attributes = (ushort)(fgidx | (bgidx << 4));
+            return attributes;
         }
 
         public int CalculateIndex(uint value) =>
@@ -54,9 +78,6 @@ namespace ColorTool
             var rbar = (rgb1[0] + rgb1[0]) / 2.0;
             return Math.Sqrt(dist[0] * (2 + rbar / 256.0) + dist[1] * 4 + dist[2] * (2 + (255 - rbar) / 256.0));
         }
-
-        private static double Distance(uint[] c1c, uint[] c2c)
-            => Math.Sqrt(c1c.Zip(c2c, (a, b) => Math.Pow((int)a - (int)b, 2)).Sum());
 
         internal static uint[] RGB(uint c) => new[] { c & 0xFF, (c >> 8) & 0xFF, (c >> 16) & 0xFF };
 
