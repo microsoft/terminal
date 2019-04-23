@@ -15,11 +15,6 @@ namespace Samples.Terminal
             Capacity = GetAlignedCapacity(capacity);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="collection"></param>
-        /// <param name="capacity"></param>
         public ConcurrentBoundedQueue(IEnumerable<T> collection, int capacity) : base(collection)
         {
             Capacity = GetAlignedCapacity(capacity);
