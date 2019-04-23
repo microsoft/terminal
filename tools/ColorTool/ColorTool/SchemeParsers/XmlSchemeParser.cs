@@ -40,8 +40,12 @@ namespace ColorTool.SchemeParsers
         private const string RED_KEY = "Red Component";
         private const string GREEN_KEY = "Green Component";
         private const string BLUE_KEY = "Blue Component";
+        private const string FileExtension = ".itermcolors";
 
         public string Name { get; } = "iTerm Parser";
+
+        public bool CanParse(string schemeName) => 
+            string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
@@ -123,7 +127,7 @@ namespace ColorTool.SchemeParsers
         private static XmlDocument LoadXmlScheme(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument(); // Create an XML document object
-            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".itermcolors")
+            foreach (string path in SchemeManager.GetSearchPaths(schemeName, FileExtension)
                                           .Where(File.Exists))
             {
                 try

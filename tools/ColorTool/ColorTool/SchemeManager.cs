@@ -91,15 +91,10 @@ namespace ColorTool
 
         public static ColorScheme GetScheme(string schemeName, bool reportErrors = false)
         {
-            foreach (var parser in GetParsers())
-            {
-                ColorScheme scheme = parser.ParseScheme(schemeName, reportErrors);
-                if (scheme != null)
-                {
-                    return scheme;
-                }
-            }
-            return null;
+            return GetParsers()
+                .Where(parser => parser.CanParse(schemeName))
+                .Select(parser => parser.ParseScheme(schemeName, reportErrors))
+                .FirstOrDefault();
         }
 
         public static IEnumerable<ISchemeParser> GetParsers()

@@ -15,6 +15,7 @@ namespace ColorTool.SchemeParsers
 {
     class JsonParser : ISchemeParser
     {
+        private const string FileExtension = ".json";
         private static IReadOnlyList<string> CONCFG_COLOR_NAMES = new[]
         {
             "black",        // DARK_BLACK
@@ -37,9 +38,12 @@ namespace ColorTool.SchemeParsers
 
         public string Name { get; } = "concfg Parser";
 
+        public bool CanParse(string schemeName) => 
+            string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
+
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
-            XmlDocument xmlDoc = loadJsonFile(schemeName);
+            XmlDocument xmlDoc = LoadJsonFile(schemeName);
             if (xmlDoc == null) return null;
 
             try
@@ -113,10 +117,10 @@ namespace ColorTool.SchemeParsers
             return RGB(col.R, col.G, col.B);
         }
 
-        private static XmlDocument loadJsonFile(string schemeName)
+        private static XmlDocument LoadJsonFile(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument();
-            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".json")
+            foreach (string path in SchemeManager.GetSearchPaths(schemeName, FileExtension)
                               .Where(File.Exists))
             {
                 try

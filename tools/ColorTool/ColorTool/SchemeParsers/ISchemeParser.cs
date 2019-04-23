@@ -8,7 +8,7 @@ namespace ColorTool.SchemeParsers
     interface ISchemeParser
     {
         string Name { get; }
-
+        bool CanParse(string schemeName);
         ColorScheme ParseScheme(string schemeName, bool reportErrors = false);
     }
 }
