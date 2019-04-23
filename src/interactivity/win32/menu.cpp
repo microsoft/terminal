@@ -299,6 +299,10 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     {
         delete[] allocatedLinkTitle;
     }
+    if (StateInfo.VersionString != nullptr)
+    {
+        delete[] StateInfo.VersionString;
+    }
 }
 
 [[nodiscard]]
@@ -384,6 +388,47 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     pStateInfo->DefaultBackground = gci.GetDefaultBackgroundColor();
 
     pStateInfo->TerminalScrolling = gci.IsTerminalScrolling();
+
+
+    {
+        HMODULE hSelf = GetModuleHandle(nullptr);
+        WCHAR moduleFilename[MAX_PATH];
+        GetModuleFileNameW(hSelf, &moduleFilename[0], MAX_PATH);
+        DWORD versionLength = GetFileVersionInfoSizeExW(0, moduleFilename, 0);
+        VS_FIXEDFILEINFO* vinfo{nullptr};
+        LPWSTR vi{nullptr};
+        if (versionLength > 0)
+        {
+            void* versionData = new uint8_t[versionLength];
+
+            if (GetFileVersionInfoExW(0, moduleFilename, 0, versionLength, versionData))
+            {
+                UINT vsize;
+                VerQueryValueW(versionData, L"\\", (LPVOID*)&vinfo, &vsize);
+                VerQueryValueW(versionData, L"\\StringFileInfo\\040904e4\\FileVersion", (LPVOID*)&vi, &vsize);
+                //wcscpy_s(pStateInfo->VersionString, 1024, L"1.0.0-get-rekt-son");
+
+            }
+        }
+
+        pStateInfo->VersionString = new(std::nothrow) wchar_t[1024]{UNICODE_NULL};
+
+        if (nullptr != vinfo)
+        {
+            WORD maj, min, rev, bui;
+            maj = (vinfo->dwFileVersionMS & 0xFFFF0000) >> 16;
+            min = (vinfo->dwFileVersionMS & 0x0000FFFF);
+            rev = (vinfo->dwFileVersionLS & 0xFFFF0000) >> 16;
+            bui = (vinfo->dwFileVersionLS & 0x0000FFFF);
+            StringCchPrintfW(pStateInfo->VersionString, 1024, L"Version %s (%d.%d.%d.%d)",
+                            vi ? vi : L"UNKNOWN", maj, min, rev, bui);
+        }
+        else
+        {
+            StringCchPrintfW(pStateInfo->VersionString, 1024, L"Unknown Version (get rekt scrub)!");
+        }
+    }
+
     // end console v2 properties
     return S_OK;
 }

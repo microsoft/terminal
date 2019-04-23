@@ -475,6 +475,45 @@ UINT CALLBACK PropSheetPageProc(_In_ HWND hWnd, _In_ UINT uMsg, _Inout_ LPPROPSH
     return 1;
 }
 
+INT_PTR WINAPI VersionDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM /*wParam*/, const LPARAM lParam)
+{
+    static bool fHaveInitialized = false;
+
+    switch (wMsg) {
+        case WM_INITDIALOG:
+            SetDlgItemTextW(hDlg, IDD_VERSION_STRING, gpStateInfo->VersionString);
+            fHaveInitialized = true;
+            return TRUE;
+        case WM_NOTIFY:
+        {
+            const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
+            switch (pshn->hdr.code) {
+                case PSN_APPLY:
+                    EndDlgPage(hDlg, !pshn->lParam);
+                    return TRUE;
+                case PSN_KILLACTIVE:
+                {
+                    // Fake the dialog proc into thinking the edit control just
+                    // lost focus so it'll update properly
+                    int item = GetDlgCtrlID(GetFocus());
+                    if (item)
+                    {
+                        SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                    }
+                    return TRUE;
+                }
+            }
+        }
+        case WM_VSCROLL:
+            // Fake the dialog proc into thinking the edit control just
+            // lost focus so it'll update properly
+            SendMessage(hDlg, WM_COMMAND, MAKELONG((GetDlgCtrlID((HWND)lParam) - 1), EN_KILLFOCUS), 0);
+            return TRUE;
+    }
+
+    return false;
+}
+
 BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const size_t cPsps, const BOOL fRegisterCallbacks)
 {
     BOOL fRet = (cPsps == NUMBER_OF_PAGES);
@@ -488,6 +527,9 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         PROPSHEETPAGE* const pLayoutPage = &(pPsp[LAYOUT_PAGE_INDEX]);
         PROPSHEETPAGE* const pColorsPage = &(pPsp[COLORS_PAGE_INDEX]);
         PROPSHEETPAGE* const pTerminalPage = &(pPsp[TERMINAL_PAGE_INDEX]);
+#ifdef EXTERNAL_BUILD
+        PROPSHEETPAGE* const pVersionPage = &(pPsp[VERSION_PAGE_INDEX]);
+#endif
 
         pOptionsPage->dwSize      = sizeof(PROPSHEETPAGE);
         pOptionsPage->hInstance   = ghInstance;
@@ -532,6 +574,15 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
             pTerminalPage->lParam      = TERMINAL_PAGE_INDEX;
             pTerminalPage->dwFlags     = PSP_DEFAULT;
         }
+
+#ifdef EXTERNAL_BUILD
+        pVersionPage->dwSize = sizeof(PROPSHEETPAGE);
+        pVersionPage->hInstance   = ghInstance;
+        pVersionPage->pszTemplate = MAKEINTRESOURCE(DID_VERSION);
+        pVersionPage->pfnDlgProc  = VersionDlgProc;
+        pVersionPage->lParam      = VERSION_PAGE_INDEX;
+        pVersionPage->dwFlags     = PSP_DEFAULT;
+#endif
 
         // Register callbacks if requested (used for file property sheet purposes)
         if (fRegisterCallbacks)

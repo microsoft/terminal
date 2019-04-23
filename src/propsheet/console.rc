@@ -620,6 +620,22 @@ BEGIN
                     IDD_HELP_TERMINAL, "SysLink", WS_TABSTOP, 10, 225, 200, 10
 END
 
+#ifdef EXTERNAL_BUILD
+// This is the template for the version dialog
+DID_VERSION DIALOG  0, 0, 245, 226
+CAPTION " Version "
+STYLE WS_VISIBLE | WS_CAPTION | WS_CHILD | DS_MODALFRAME
+FONT 8,"MS Shell Dlg"
+BEGIN
+
+    // GROUPBOX text, id, x, y, width, height [, style [, extended-style]]
+    // CONTROL text, id, class, style, x, y, width, height [, extended-style]
+
+    LTEXT           "You will, I am certain, be wondering what this tab does.\nI wonder the same!",
+                    IDD_VERSION_STRING, 10, 10, 225, 206, WS_TABSTOP
+END
+#endif
+
 
 //
 //  Strings

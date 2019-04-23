@@ -12,10 +12,47 @@
 #include <windows.h>
 #include "resource.h"
 
-#ifndef EXTERNAL_BUILD
 #include "conhost.rcv"
+#ifndef EXTERNAL_BUILD
 #include <ntverp.h>
 #include <common.ver>
+#else
+//////////
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION     1, 0, 0, 2019
+PRODUCTVERSION  1, 0, 0, 2019
+FILEFLAGSMASK   VS_FFI_FILEFLAGSMASK
+FILEOS          VOS__WINDOWS32
+FILETYPE        VFT_DLL
+FILESUBTYPE     VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904E4"
+        BEGIN
+            VALUE "FileDescription",  VER_FILEDESCRIPTION_STR
+            VALUE "FileVersion",      "1.0.0-20190111-APPX dev/main-07d84ed8+dirty\0"
+            VALUE "InternalName",     VER_INTERNALNAME_STR
+            VALUE "OriginalFilename", "OpenConsole.exe"
+            VALUE "ProductName",      "Confans"
+            VALUE "ProductVersion",   "1.0.0-20190111-APPX\0"
+        END
+    END
+
+    BLOCK "VarFileInfo"
+    BEGIN
+        /* The following line should only be modified for localized versions.     */
+        /* It consists of any number of WORD,WORD pairs, with each pair           */
+        /* describing a language,codepage combination supported by the file.      */
+        /*                                                                        */
+        /* For example, a file might have values "0x409,1252" indicating that it  */
+        /* supports English language (0x409) in the Windows ANSI codepage (1252). */
+
+        VALUE "Translation", 0x409, 1252
+
+    END
+END
+//////////
 #endif
 
 IDI_APPICON             ICON    "..\\..\\..\\res\\console.ico"

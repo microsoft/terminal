@@ -586,6 +586,8 @@ typedef struct _CONSOLE_STATE_INFO {
     COLORREF DefaultForeground;
     COLORREF DefaultBackground;
     BOOL TerminalScrolling;
+
+    LPWSTR VersionString;
     /* END V2 CONSOLE_STATE_INFO */
 
 } CONSOLE_STATE_INFO, *PCONSOLE_STATE_INFO;

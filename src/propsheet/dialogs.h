@@ -157,6 +157,11 @@ Revision History:
 #define IDD_TERMINAL_CURSOR_BLUE            631
 #define IDD_HELP_TERMINAL                   632
 
+#ifdef EXTERNAL_BUILD
+#define DID_VERSION                         700
+#define IDD_VERSION_STRING                  701
+#endif
+
 #define BM_TRUETYPE_ICON            1000
 
 
