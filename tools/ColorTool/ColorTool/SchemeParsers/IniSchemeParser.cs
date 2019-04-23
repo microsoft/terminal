@@ -1,5 +1,5 @@
 ﻿//
-//    Copyright (C) Microsoft.  All rights reserved.
+// Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
 
@@ -7,11 +7,11 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
-using static ColorTool.ConsoleAPI;
 using System.IO;
 using System.Collections.Generic;
+using static ColorTool.ConsoleAPI;
 
-namespace ColorTool
+namespace ColorTool.SchemeParsers
 {
     class IniSchemeParser : ISchemeParser
     {
@@ -74,7 +74,7 @@ namespace ColorTool
 
         static string FindIniScheme(string schemeName)
         {
-            return Scheme.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
+            return SchemeManager.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
         }
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)

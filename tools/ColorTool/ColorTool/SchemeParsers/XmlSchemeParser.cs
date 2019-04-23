@@ -1,16 +1,16 @@
 ﻿//
-//    Copyright (C) Microsoft.  All rights reserved.
+// Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
+
 using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
-namespace ColorTool
+namespace ColorTool.SchemeParsers
 {
     class XmlSchemeParser : ISchemeParser
     {
@@ -82,7 +82,7 @@ namespace ColorTool
         static XmlDocument loadXmlScheme(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument(); // Create an XML document object
-            foreach (string path in Scheme.GetSearchPaths(schemeName, ".itermcolors")
+            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".itermcolors")
                                           .Where(File.Exists))
             {
                 try

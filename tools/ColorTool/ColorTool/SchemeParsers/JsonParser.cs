@@ -1,14 +1,17 @@
-﻿using System;
+﻿//
+// Copyright (C) Microsoft.  All rights reserved.
+// Licensed under the terms described in the LICENSE file in the root of this project.
+//
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization.Json;
-using System.Text;
-using System.Threading.Tasks;
 using System.Xml;
 using static ColorTool.ConsoleAPI;
 
-namespace ColorTool
+namespace ColorTool.SchemeParsers
 {
     class JsonParser : ISchemeParser
     {
@@ -42,7 +45,7 @@ namespace ColorTool
         static XmlDocument loadJsonFile(string schemeName)
         {
             XmlDocument xmlDoc = new XmlDocument();
-            foreach (string path in Scheme.GetSearchPaths(schemeName, ".json")
+            foreach (string path in SchemeManager.GetSearchPaths(schemeName, ".json")
                               .Where(File.Exists))
             {
                 try
