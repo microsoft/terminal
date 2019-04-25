@@ -4,8 +4,7 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>latest</LangVersion>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <RootNamespace>Nivot.Terminal</RootNamespace>
+    <RootNamespace>Samples.Terminal</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
