@@ -454,7 +454,7 @@ const bool Terminal::IsSelectionActive() const noexcept
 // Method Description:
 // - Record the position of the beginning of a selection
 // Arguments:
-// - position: the (x,y) coordinate on the visible viewport
+// - position: the (x,y) coordinate on the visible viewport (including padding)
 void Terminal::SetSelectionAnchor(const COORD position)
 {
     _selectionAnchor = position;
@@ -473,7 +473,7 @@ void Terminal::SetSelectionAnchor(const COORD position)
 // Method Description:
 // - Record the position of the end of a selection
 // Arguments:
-// - position: the (x,y) coordinate on the visible viewport
+// - position: the (x,y) coordinate on the visible viewport (including padding)
 void Terminal::SetEndSelectionPosition(const COORD position)
 {
     _endSelectionPosition = position;
