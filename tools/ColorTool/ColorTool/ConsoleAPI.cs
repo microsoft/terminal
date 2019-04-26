@@ -8,9 +8,11 @@ using System.Runtime.InteropServices;
 
 namespace ColorTool
 {
-    class ConsoleAPI
+    static class ConsoleAPI
     {
-        ////////////////////////////////////////////////////////////////////////
+        private const int StdOutputHandle = -11;
+        public const int ColorTableSize = 16;
+
         [StructLayout(LayoutKind.Sequential)]
         public struct COORD
         {
@@ -58,10 +60,7 @@ namespace ColorTool
             }
         }
 
-        public static int STD_OUTPUT_HANDLE = -11;
-
-
-        public static IntPtr GetStdOutputHandle() => GetStdHandle(STD_OUTPUT_HANDLE);
+        public static IntPtr GetStdOutputHandle() => GetStdHandle(StdOutputHandle);
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int nStdHandle);
@@ -86,13 +85,10 @@ namespace ColorTool
 
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
-        ////////////////////////////////////////////////////////////////////////
 
         public static uint RGB(int r, int g, int b)
         {
             return (uint)r + (((uint)g) << 8) + (((uint)b) << 16);
         }
-        
-        public const int COLOR_TABLE_SIZE = 16;
     }
 }

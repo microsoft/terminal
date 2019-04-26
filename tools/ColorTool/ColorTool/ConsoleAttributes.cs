@@ -5,6 +5,9 @@
 
 namespace ColorTool
 {
+    /// <summary>
+    /// Keeps track of the color table indices for the background/foreground in a colorscheme.
+    /// </summary>
     public readonly struct ConsoleAttributes
     {
         public ConsoleAttributes(uint? background, uint? foreground, uint? popupBackground, uint? popupForeground)

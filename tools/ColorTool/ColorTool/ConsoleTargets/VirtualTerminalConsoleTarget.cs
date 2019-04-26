@@ -16,24 +16,24 @@ namespace ColorTool.ConsoleTargets
     class VirtualTerminalConsoleTarget : IConsoleTarget
     {
         // Use a Console index in to get a VT index out.
-        public static readonly IReadOnlyList<int> VT_INDICIES = new[]
+        public static readonly IReadOnlyList<int> VirtualTerminalIndices = new[]
         {
-            0, // DARK_BLACK
-            4, // DARK_BLUE
-            2, // DARK_GREEN
-            6, // DARK_CYAN
-            1, // DARK_RED
-            5, // DARK_MAGENTA
-            3, // DARK_YELLOW
-            7, // DARK_WHITE
-            8+0, // BRIGHT_BLACK
-            8+4, // BRIGHT_BLUE
-            8+2, // BRIGHT_GREEN
-            8+6, // BRIGHT_CYAN
-            8+1, // BRIGHT_RED
-            8+5, // BRIGHT_MAGENTA
-            8+3, // BRIGHT_YELLOW
-            8+7, // BRIGHT_WHITE
+            0, // Dark Black
+            4, // Dark Blue
+            2, // Dark Green
+            6, // Dark Cyan
+            1, // Dark Red
+            5, // Dark Magenta
+            3, // Dark Yellow
+            7, // Dark White
+            8+0, // Bright Black
+            8+4, // Bright Blue
+            8+2, // Bright Green
+            8+6, // Bright Cyan
+            8+1, // Bright Red
+            8+5, // Bright Magenta
+            8+3, // Bright Yellow
+            8+7, // Bright White
         };
 
         public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
@@ -50,7 +50,7 @@ namespace ColorTool.ConsoleTargets
 
             for (int i = 0; i < colorScheme.ColorTable.Length; i++)
             {
-                int vtIndex = VT_INDICIES[i];
+                int vtIndex = VirtualTerminalIndices[i];
                 Color color = colorScheme[i];
                 string s = $"\x1b]4;{vtIndex};rgb:{color.R:X}/{color.G:X}/{color.B:X}\x7";
                 Console.Write(s);

@@ -21,7 +21,7 @@ namespace ColorTool.SchemeParsers
         private const string FileExtension = ".ini";
 
         // These are in Windows Color table order - BRG, not RGB.
-        internal static readonly IReadOnlyList<string> COLOR_NAMES = new[]
+        internal static readonly IReadOnlyList<string> ColorNames = new[]
         {
             "DARK_BLACK",
             "DARK_BLUE",
@@ -53,16 +53,16 @@ namespace ColorTool.SchemeParsers
             string filename = FindIniScheme(schemeName);
             if (filename == null) return null;
 
-            string[] tableStrings = new string[COLOR_TABLE_SIZE];
+            string[] tableStrings = new string[ColorTableSize];
             uint[] colorTable = null;
             uint? foregroundColor = null;
             uint? backgroundColor = null;
             uint? popupForegroundColor = null;
             uint? popupBackgroundColor = null;
 
-            for (int i = 0; i < COLOR_TABLE_SIZE; i++)
+            for (int i = 0; i < ColorTableSize; i++)
             {
-                string name = COLOR_NAMES[i];
+                string name = ColorNames[i];
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString("table", name, null, buffer, 512, filename);
 
@@ -82,16 +82,16 @@ namespace ColorTool.SchemeParsers
             {
                 try
                 {
-                    colorTable = new uint[COLOR_TABLE_SIZE];
-                    for (int i = 0; i < COLOR_TABLE_SIZE; i++)
+                    colorTable = new uint[ColorTableSize];
+                    for (int i = 0; i < ColorTableSize; i++)
                     {
                         colorTable[i] = ParseColor(tableStrings[i]);
                     }
 
                     if (ReadAttributes("popup", out var foreground, out var background))
                     {
-                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
-                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             popupForegroundColor = colorTable[foregroundIndex];
@@ -101,8 +101,8 @@ namespace ColorTool.SchemeParsers
 
                     if (ReadAttributes("screen", out foreground, out background))
                     {
-                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
-                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             foregroundColor = colorTable[foregroundIndex];
@@ -139,14 +139,14 @@ namespace ColorTool.SchemeParsers
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
                 foreground = buffer.ToString();
-                if (!COLOR_NAMES.Contains(foreground))
+                if (!ColorNames.Contains(foreground))
                     return false;
 
 
                 buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "BACKGROUND", null, buffer, 512, filename);
                 background = buffer.ToString();
-                if (!COLOR_NAMES.Contains(background))
+                if (!ColorNames.Contains(background))
                     return false;
 
                 return true;

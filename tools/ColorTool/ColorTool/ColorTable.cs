@@ -11,50 +11,62 @@ namespace ColorTool
     /// <summary>
     /// Displays the color table that demonstrates the current colorscheme.
     /// </summary>
-    class ColorTable
+    static class ColorTable
     {
-        const int DARK_BLACK = 0;
-        const int DARK_BLUE = 1;
-        const int DARK_GREEN = 2;
-        const int DARK_CYAN = 3;
-        const int DARK_RED = 4;
-        const int DARK_MAGENTA = 5;
-        const int DARK_YELLOW = 6;
-        const int DARK_WHITE = 7;
-        const int BRIGHT_BLACK = 8;
-        const int BRIGHT_BLUE = 9;
-        const int BRIGHT_GREEN = 10;
-        const int BRIGHT_CYAN = 11;
-        const int BRIGHT_RED = 12;
-        const int BRIGHT_MAGENTA = 13;
-        const int BRIGHT_YELLOW = 14;
-        const int BRIGHT_WHITE = 15;
+        private const int DarkBlack = 0;
+        private const int DarkBlue = 1;
+        private const int DarkGreen = 2;
+        private const int DarkCyan = 3;
+        private const int DarkRed = 4;
+        private const int DarkMagenta = 5;
+        private const int DarkYellow = 6;
+        private const int DarkWhite = 7;
+        private const int BrightBlack = 8;
+        private const int BrightBlue = 9;
+        private const int BrightGreen = 10;
+        private const int BrightCyan = 11;
+        private const int BrightRed = 12;
+        private const int BrightMagenta = 13;
+        private const int BrightYellow = 14;
+        private const int BrightWhite = 15;
 
         // This is the order of colors when output by the table.
-        private static readonly IReadOnlyList<int> outputFgs = new[]
+        private static readonly IReadOnlyList<int> Foregrounds = new[]
         {
-            BRIGHT_WHITE,
-            DARK_BLACK,
-            BRIGHT_BLACK,
-            DARK_RED,
-            BRIGHT_RED,
-            DARK_GREEN,
-            BRIGHT_GREEN,
-            DARK_YELLOW,
-            BRIGHT_YELLOW,
-            DARK_BLUE,
-            BRIGHT_BLUE,
-            DARK_MAGENTA,
-            BRIGHT_MAGENTA,
-            DARK_CYAN,
-            BRIGHT_CYAN,
-            DARK_WHITE,
-            BRIGHT_WHITE
+            BrightWhite,
+            DarkBlack,
+            BrightBlack,
+            DarkRed,
+            BrightRed,
+            DarkGreen,
+            BrightGreen,
+            DarkYellow,
+            BrightYellow,
+            DarkBlue,
+            BrightBlue,
+            DarkMagenta,
+            BrightMagenta,
+            DarkCyan,
+            BrightCyan,
+            DarkWhite,
+            BrightWhite
+        };
+
+        private static readonly IReadOnlyList<int> Backgrounds = new[]
+        {
+            DarkBlack,
+            DarkRed,
+            DarkGreen,
+            DarkYellow,
+            DarkBlue,
+            DarkMagenta,
+            DarkCyan,
+            DarkWhite
         };
 
         private const string TestText = "  gYw  ";
 
-        private static readonly IReadOnlyList<string> FGs = new[]
+        private static readonly IReadOnlyList<string> AnsiForegroundSequences = new[]
         {
             "m",
             "1m",
@@ -76,7 +88,7 @@ namespace ColorTool
             "1;37m"
         };
 
-        private static readonly IReadOnlyList<string> BGs = new[]
+        private static readonly IReadOnlyList<string> AnsiBackgroundSequences = new[]
         {
             "m",
             "40m",
@@ -89,18 +101,6 @@ namespace ColorTool
             "47m"
         };
 
-        private static readonly IReadOnlyList<int> saneBgs = new[]
-        {
-            DARK_BLACK,
-            DARK_RED,
-            DARK_GREEN,
-            DARK_YELLOW,
-            DARK_BLUE,
-            DARK_MAGENTA,
-            DARK_CYAN,
-            DARK_WHITE
-        };
-
         public static void PrintTable()
         {
             ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
@@ -109,36 +109,35 @@ namespace ColorTool
             ConsoleColor currentForeground = Console.ForegroundColor;
 
             Console.Write("\t");
-            for (int bg = 0; bg < BGs.Count; bg++)
+            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
             {
                 if (bg > 0) Console.Write(" ");
                 Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : BGs[bg]);
+                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
                 Console.Write("  ");
             }
             Console.WriteLine();
 
-            for (int fg = 0; fg < FGs.Count; fg++)
+            for (int fg = 0; fg < AnsiForegroundSequences.Count; fg++)
             {
                 Console.ForegroundColor = currentForeground;
                 Console.BackgroundColor = currentBackground;
 
-                if (fg >= 0) Console.Write(FGs[fg] + "\t");
+                if (fg >= 0) Console.Write(AnsiForegroundSequences[fg] + "\t");
 
                 if (fg == 0) Console.ForegroundColor = currentForeground;
-                else Console.ForegroundColor = colors[outputFgs[fg - 1]];
+                else Console.ForegroundColor = colors[Foregrounds[fg - 1]];
 
-                for (int bg = 0; bg < BGs.Count; bg++)
+                for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
                 {
                     if (bg > 0) Console.Write(" ");
                     if (bg == 0)
                         Console.BackgroundColor = currentBackground;
-                    else Console.BackgroundColor = colors[saneBgs[bg - 1]];
+                    else Console.BackgroundColor = colors[Backgrounds[bg - 1]];
                     Console.Write(TestText);
                     Console.BackgroundColor = currentBackground;
                 }
                 Console.Write("\n");
-
             }
             Console.Write("\n");
 
@@ -150,22 +149,22 @@ namespace ColorTool
         public static void PrintTableWithVt()
         {
             Console.Write("\t");
-            for (int bg = 0; bg < BGs.Count; bg++)
+            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
             {
                 if (bg > 0) Console.Write(" ");
                 Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : BGs[bg]);
+                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
                 Console.Write("  ");
             }
             Console.WriteLine();
 
-            for (int fg = 0; fg < FGs.Count; fg++)
+            for (int fg = 0; fg < AnsiForegroundSequences.Count; fg++)
             {
                 Console.Write("\x1b[m");
 
                 if (fg >= 0)
                 {
-                    Console.Write(FGs[fg] + "\t");
+                    Console.Write(AnsiForegroundSequences[fg] + "\t");
                 }
 
                 if (fg == 0)
@@ -174,10 +173,10 @@ namespace ColorTool
                 }
                 else
                 {
-                    Console.Write("\x1b[" + FGs[fg]);
+                    Console.Write("\x1b[" + AnsiForegroundSequences[fg]);
                 }
 
-                for (int bg = 0; bg < BGs.Count; bg++)
+                for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
                 {
                     if (bg > 0)
                     {
@@ -189,14 +188,13 @@ namespace ColorTool
                     }
                     else
                     {
-                        Console.Write("\x1b[" + BGs[bg]);
+                        Console.Write("\x1b[" + AnsiBackgroundSequences[bg]);
                     }
 
                     Console.Write(TestText);
                     Console.Write("\x1b[49m");
                 }
                 Console.Write("\n");
-
             }
             Console.Write("\n");
 

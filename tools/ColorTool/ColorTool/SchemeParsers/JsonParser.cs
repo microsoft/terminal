@@ -16,24 +16,24 @@ namespace ColorTool.SchemeParsers
     class JsonParser : ISchemeParser
     {
         private const string FileExtension = ".json";
-        private static IReadOnlyList<string> CONCFG_COLOR_NAMES = new[]
+        private static readonly IReadOnlyList<string> ConcfgColorNames = new[]
         {
-            "black",        // DARK_BLACK
-            "dark_blue",    // DARK_BLUE
-            "dark_green",   // DARK_GREEN
-            "dark_cyan",    // DARK_CYAN
-            "dark_red",     // DARK_RED
-            "dark_magenta", // DARK_MAGENTA
-            "dark_yellow",  // DARK_YELLOW
-            "gray",         // DARK_WHITE
-            "dark_gray",    // BRIGHT_BLACK
-            "blue",         // BRIGHT_BLUE
-            "green",        // BRIGHT_GREEN
-            "cyan",         // BRIGHT_CYAN
-            "red",          // BRIGHT_RED
-            "magenta",      // BRIGHT_MAGENTA
-            "yellow",       // BRIGHT_YELLOW
-            "white"         // BRIGHT_WHITE
+            "black",        // Dark Black
+            "dark_blue",    // Dark Blue
+            "dark_green",   // Dark Green
+            "dark_cyan",    // Dark Cyan
+            "dark_red",     // Dark Red
+            "dark_magenta", // Dark Magenta
+            "dark_yellow",  // Dark Yellow
+            "gray",         // Dark White
+            "dark_gray",    // Bright Black
+            "blue",         // Bright Blue
+            "green",        // Bright Green
+            "cyan",         // Bright Cyan
+            "red",          // Bright Red
+            "magenta",      // Bright Magenta
+            "yellow",       // Bright Yellow
+            "white"         // Bright White
         };
 
         public string Name { get; } = "concfg Parser";
@@ -50,10 +50,10 @@ namespace ColorTool.SchemeParsers
             {
                 XmlNode root = xmlDoc.DocumentElement;
                 XmlNodeList children = root.ChildNodes;
-                uint[] colorTable = new uint[COLOR_TABLE_SIZE]; ;
-                for (int i = 0; i < COLOR_TABLE_SIZE; i++)
+                uint[] colorTable = new uint[ColorTableSize]; ;
+                for (int i = 0; i < ColorTableSize; i++)
                 {
-                    string name = CONCFG_COLOR_NAMES[i];
+                    string name = ConcfgColorNames[i];
                     var node = children.OfType<XmlNode>().Where(n => n.Name == name).Single();
                     colorTable[i] = ParseColor(node.InnerText);
                 }
@@ -68,8 +68,8 @@ namespace ColorTool.SchemeParsers
                     var parts = popupNode.InnerText.Split(',');
                     if (parts.Length == 2)
                     {
-                        var foregroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[0]);
-                        var backgroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[1]);
+                        var foregroundIndex = (ConcfgColorNames as IList<string>).IndexOf(parts[0]);
+                        var backgroundIndex = (ConcfgColorNames as IList<string>).IndexOf(parts[1]);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             popupForeground = colorTable[foregroundIndex];
@@ -87,8 +87,8 @@ namespace ColorTool.SchemeParsers
                     var parts = screenNode.InnerText.Split(',');
                     if (parts.Length == 2)
                     {
-                        var foregroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[0]);
-                        var backgroundIndex = (CONCFG_COLOR_NAMES as IList<string>).IndexOf(parts[1]);
+                        var foregroundIndex = (ConcfgColorNames as IList<string>).IndexOf(parts[0]);
+                        var backgroundIndex = (ConcfgColorNames as IList<string>).IndexOf(parts[1]);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             screenForeground = colorTable[foregroundIndex];

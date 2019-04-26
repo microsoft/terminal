@@ -26,7 +26,7 @@ namespace ColorTool.SchemeWriters
                         file.WriteLine("[table]");
                         for (int i = 0; i < 16; i++)
                         {
-                            string line = IniSchemeParser.COLOR_NAMES[i];
+                            string line = IniSchemeParser.ColorNames[i];
                             line += " = ";
                             uint color = csbiex.ColorTable[i];
                             uint r = color & (0x000000ff);
@@ -40,15 +40,15 @@ namespace ColorTool.SchemeWriters
                         file.WriteLine("[screen]");
                         var forgroundIndex = csbiex.wAttributes & 0xF;
                         var backgroundIndex = csbiex.wAttributes >> 4;
-                        file.WriteLine($"FOREGROUND = {IniSchemeParser.COLOR_NAMES[forgroundIndex]}");
-                        file.WriteLine($"BACKGROUND = {IniSchemeParser.COLOR_NAMES[backgroundIndex]}");
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[forgroundIndex]}");
+                        file.WriteLine($"BACKGROUND = {IniSchemeParser.ColorNames[backgroundIndex]}");
 
                         file.WriteLine();
                         file.WriteLine("[popup]");
                         forgroundIndex = csbiex.wPopupAttributes & 0xF;
                         backgroundIndex = csbiex.wPopupAttributes >> 4;
-                        file.WriteLine($"FOREGROUND = {IniSchemeParser.COLOR_NAMES[forgroundIndex]}");
-                        file.WriteLine($"BACKGROUND = {IniSchemeParser.COLOR_NAMES[backgroundIndex]}");
+                        file.WriteLine($"FOREGROUND = {IniSchemeParser.ColorNames[forgroundIndex]}");
+                        file.WriteLine($"BACKGROUND = {IniSchemeParser.ColorNames[backgroundIndex]}");
                     }
                 }
                 catch (Exception ex)

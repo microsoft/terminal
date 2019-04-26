@@ -11,33 +11,15 @@ using System.Linq;
 
 namespace ColorTool
 {
-    class Program
+    static class Program
     {
-        static bool quietMode = false;
-        static bool reportErrors = false;
-        static bool setDefaults = false;
-        static bool setProperties = true;
-        static bool setUnixStyle = false;
+        private static bool quietMode = false;
+        private static bool reportErrors = false;
+        private static bool setDefaults = false;
+        private static bool setProperties = true;
+        private static bool setUnixStyle = false;
 
-        static void Usage()
-        {
-            Console.WriteLine(Resources.Usage,
-                string.Join($"{Environment.NewLine}  ", SchemeManager.GetParsers().Select(p => p.Name)));
-        }
-
-        static void OutputUsage()
-        {
-            Console.WriteLine(Resources.OutputUsage);
-        }
-
-        static void Version()
-        {
-            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
-            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
-            Console.WriteLine($"colortool v{info.FileVersion}");
-        }
-
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length < 1)
             {
@@ -124,11 +106,29 @@ namespace ColorTool
             }
         }
 
+        private static void Usage()
+        {
+            Console.WriteLine(Resources.Usage,
+                string.Join($"{Environment.NewLine}  ", SchemeManager.GetParsers().Select(p => p.Name)));
+        }
+
+        private static void OutputUsage()
+        {
+            Console.WriteLine(Resources.OutputUsage);
+        }
+
+        private static void Version()
+        {
+            var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+            var info = System.Diagnostics.FileVersionInfo.GetVersionInfo(assembly.Location);
+            Console.WriteLine($"colortool v{info.FileVersion}");
+        }
+
         /// <summary>
         /// Returns an enumerable of consoles that we want to apply the colorscheme to.
         /// The contents of this enumerable depends on the user's provided command line flags.
         /// </summary>
-        public static IEnumerable<IConsoleTarget> GetConsoleTargets()
+        private static IEnumerable<IConsoleTarget> GetConsoleTargets()
         {
             if (setDefaults)
             {

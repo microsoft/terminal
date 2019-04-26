@@ -16,30 +16,31 @@ namespace ColorTool.SchemeParsers
     class XmlSchemeParser : ISchemeParser
     {
         // In Windows Color Table order
-        private static readonly string[] PLIST_COLOR_NAMES =
+        private static readonly string[] PListColorNames =
         {
-            "Ansi 0 Color",  // DARK_BLACK
-            "Ansi 4 Color",  // DARK_BLUE
-            "Ansi 2 Color",  // DARK_GREEN
-            "Ansi 6 Color",  // DARK_CYAN
-            "Ansi 1 Color",  // DARK_RED
-            "Ansi 5 Color",  // DARK_MAGENTA
-            "Ansi 3 Color",  // DARK_YELLOW
-            "Ansi 7 Color",  // DARK_WHITE
-            "Ansi 8 Color",  // BRIGHT_BLACK
-            "Ansi 12 Color", // BRIGHT_BLUE
-            "Ansi 10 Color", // BRIGHT_GREEN
-            "Ansi 14 Color", // BRIGHT_CYAN
-            "Ansi 9 Color",  // BRIGHT_RED
-            "Ansi 13 Color", // BRIGHT_MAGENTA
-            "Ansi 11 Color", // BRIGHT_YELLOW
-            "Ansi 15 Color"  // BRIGHT_WHITE
+            "Ansi 0 Color",  // Dark Black
+            "Ansi 4 Color",  // Dark Blue
+            "Ansi 2 Color",  // Dark Green
+            "Ansi 6 Color",  // Dark Cyan
+            "Ansi 1 Color",  // Dark Red
+            "Ansi 5 Color",  // Dark Magenta
+            "Ansi 3 Color",  // Dark Yellow
+            "Ansi 7 Color",  // Dark White
+            "Ansi 8 Color",  // Bright Black
+            "Ansi 12 Color", // Bright Blue
+            "Ansi 10 Color", // Bright Green
+            "Ansi 14 Color", // Bright Cyan
+            "Ansi 9 Color",  // Bright Red
+            "Ansi 13 Color", // Bright Magenta
+            "Ansi 11 Color", // Bright Yellow
+            "Ansi 15 Color"  // Bright White
         };
-        private const string FG_KEY = "Foreground Color";
-        private const string BG_KEY = "Background Color";
-        private const string RED_KEY = "Red Component";
-        private const string GREEN_KEY = "Green Component";
-        private const string BLUE_KEY = "Blue Component";
+
+        private const string ForegroundKey = "Foreground Color";
+        private const string BackgroundKey = "Background Color";
+        private const string RedKey = "Red Component";
+        private const string GreenKey = "Green Component";
+        private const string BlueKey = "Blue Component";
         private const string FileExtension = ".itermcolors";
 
         public string Name { get; } = "iTerm Parser";
@@ -54,7 +55,7 @@ namespace ColorTool.SchemeParsers
             XmlNode root = xmlDoc.GetElementsByTagName("dict")[0];
             XmlNodeList children = root.ChildNodes;
 
-            uint[] colorTable = new uint[COLOR_TABLE_SIZE];
+            uint[] colorTable = new uint[ColorTableSize];
             uint? fgColor = null, bgColor = null;
             int colorsFound = 0;
             bool success = false;
@@ -65,12 +66,12 @@ namespace ColorTool.SchemeParsers
                 XmlNode components = tableEntry.NextSibling;
                 success = ParseRgbFromXml(components, ref rgb);
                 if (!success) { break; }
-                else if (tableEntry.InnerText == FG_KEY) { fgColor = rgb; }
-                else if (tableEntry.InnerText == BG_KEY) { bgColor = rgb; }
-                else if (-1 != (index = Array.IndexOf(PLIST_COLOR_NAMES, tableEntry.InnerText)))
+                else if (tableEntry.InnerText == ForegroundKey) { fgColor = rgb; }
+                else if (tableEntry.InnerText == BackgroundKey) { bgColor = rgb; }
+                else if (-1 != (index = Array.IndexOf(PListColorNames, tableEntry.InnerText)))
                 { colorTable[index] = rgb; colorsFound++; }
             }
-            if (colorsFound < COLOR_TABLE_SIZE)
+            if (colorsFound < ColorTableSize)
             {
                 if (reportErrors)
                 {
@@ -97,15 +98,15 @@ namespace ColorTool.SchemeParsers
             {
                 if (c.Name == "key")
                 {
-                    if (c.InnerText == RED_KEY)
+                    if (c.InnerText == RedKey)
                     {
                         r = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                     }
-                    else if (c.InnerText == GREEN_KEY)
+                    else if (c.InnerText == GreenKey)
                     {
                         g = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                     }
-                    else if (c.InnerText == BLUE_KEY)
+                    else if (c.InnerText == BlueKey)
                     {
                         b = (int)(255 * Convert.ToDouble(c.NextSibling.InnerText, CultureInfo.InvariantCulture));
                     }

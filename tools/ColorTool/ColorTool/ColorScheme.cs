@@ -63,12 +63,12 @@ namespace ColorTool
                       .First().Item2;
 
         private static Func<Tuple<uint, int>, double> Difference(uint c1) =>
-        // heuristic 1: nearest neighbor in RGB space
-        // tup => Distance(RGB(c1), RGB(tup.Item1));
-        // heuristic 2: nearest neighbor in RGB space
-        // tup => Distance(HSV(c1), HSV(tup.Item1));
-        // heuristic 3: weighted RGB L2 distance
-           tup => WeightedRGBSimilarity(c1, tup.Item1);
+            // heuristic 1: nearest neighbor in RGB space
+            // tup => Distance(RGB(c1), RGB(tup.Item1));
+            // heuristic 2: nearest neighbor in RGB space
+            // tup => Distance(HSV(c1), HSV(tup.Item1));
+            // heuristic 3: weighted RGB L2 distance
+            tup => WeightedRGBSimilarity(c1, tup.Item1);
 
         private static double WeightedRGBSimilarity(uint c1, uint c2)
         {

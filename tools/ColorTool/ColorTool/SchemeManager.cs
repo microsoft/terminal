@@ -48,7 +48,6 @@ namespace ColorTool
             Console.WriteLine(schemeDirectory);
         }
 
-
         public static void PrintSchemes()
         {
             var schemeDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "schemes");
