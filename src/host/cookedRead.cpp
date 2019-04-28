@@ -17,7 +17,7 @@
 CookedRead::CookedRead(InputBuffer* const pInputBuffer,
                        INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                        SCREEN_INFORMATION& screenInfo,
-                       CommandHistory* const pCommandHistory,
+                       CommandHistory* pCommandHistory,
                        wchar_t* userBuffer,
                        const size_t cchUserBuffer,
                        const ULONG ctrlWakeupMask
@@ -35,10 +35,12 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
     _commandLineEditingKeys{ false },
     _keyState{ 0 },
     _commandKeyChar{ UNICODE_NULL },
-    _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) }
+    _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
+    _bufferedInput{}
 {
     _prompt.reserve(256);
     _promptStartLocation = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    _beforePopupCursorPosition = _promptStartLocation;
 }
 
 SCREEN_INFORMATION& CookedRead::ScreenInfo()
@@ -84,6 +86,59 @@ COORD CookedRead::PromptStartLocation() const noexcept
     return _promptStartLocation;
 }
 
+COORD CookedRead::BeforePopupCursorPosition() const noexcept
+{
+    return _beforePopupCursorPosition;
+}
+
+void CookedRead::BufferInput(const wchar_t wch)
+{
+    _bufferedInput.push_back(wch);
+}
+
+std::wstring_view CookedRead::Prompt()
+{
+    return { &_prompt.at(0), _prompt.size() };
+}
+
+std::wstring_view CookedRead::PromptFromInsertionIndex()
+{
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
+    return { &_prompt.at(_insertionIndex), _prompt.size() - _insertionIndex };
+}
+
+size_t CookedRead::InsertionIndex() const noexcept
+{
+    return _insertionIndex;
+}
+
+// Routine Description:
+// - overwrites the text in the prompt, starting at the insertion index
+// Arguments:
+// - startIt - starting iterator of the text to copy
+// - endIt - ending it of the text to copy
+void CookedRead::Overwrite(const std::wstring_view::const_iterator startIt, const std::wstring_view::const_iterator endIt)
+{
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
+    // TODO this needs to support emojis, both in the prompt and in the text to write
+    auto it = startIt;
+    while (it != endIt)
+    {
+        if (_insertionIndex < _prompt.size())
+        {
+            _prompt.at(_insertionIndex) = *it;
+        }
+        else
+        {
+            _prompt.push_back(*it);
+        }
+        ++_insertionIndex;
+        ++it;
+    }
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
+    _writeToScreen(true);
+}
+
 // Routine Description:
 // - counts the number of visible characters in the prompt
 // Return Value:
@@ -95,7 +150,7 @@ size_t CookedRead::VisibleCharCount() const
 
 // Routine Description:
 // - counts the number of visible characters in wstrView
-// Arugments:
+// Arguments:
 // - wstrView - the text to count the visible characters of
 // Return Value:
 // - the number of visible characters in the string view (counts surrogate pairs as one character)
@@ -160,6 +215,7 @@ size_t CookedRead::MoveInsertionIndexLeft()
 // - returns the number of cells that the move operation passed over
 size_t CookedRead::MoveInsertionIndexRight()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     // check if we're at the far right side of the prompt text for character insertion from last command in
     // the history
     if (_isInsertionIndexAtPromptEnd())
@@ -219,6 +275,7 @@ size_t CookedRead::MoveInsertionIndexRight()
     {
         cellsMoved = 1;
     }
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     return cellsMoved;
 }
 
@@ -273,6 +330,7 @@ size_t CookedRead::MoveInsertionIndexLeftByWord()
 // - the number of cells that the insertion point has moved by
 size_t CookedRead::MoveInsertionIndexRightByWord()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     if (_isInsertionIndexAtPromptEnd())
     {
         return 0;
@@ -320,9 +378,12 @@ void CookedRead::SetPromptToNewestCommand()
 // - index - the command index to set the prompt to
 void CookedRead::SetPromptToCommand(const size_t index)
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
     {
         const std::wstring_view command = _pCommandHistory->GetNth(static_cast<short>(index));
+        // update the history's last displayde since we're setting it to the prompt
+        _pCommandHistory->LastDisplayed = static_cast<short>(index);
         Erase();
         _prompt = command;
         _insertionIndex = _prompt.size();
@@ -336,6 +397,7 @@ void CookedRead::SetPromptToCommand(const size_t index)
 // - searchDirection - the direction to get the command to write into the prompt from
 void CookedRead::SetPromptToCommand(const CommandHistory::SearchDirection searchDirection)
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
 
     if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
     {
@@ -359,6 +421,7 @@ void CookedRead::SetPromptToCommand(const CommandHistory::SearchDirection search
 // fills the prompt with the command text
 void CookedRead::SetPromptToMatchingHistoryCommand()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
     {
         short index = 0;
@@ -380,6 +443,7 @@ void CookedRead::SetPromptToMatchingHistoryCommand()
 // - fills prompt with characters from the last command in the history
 void CookedRead::FillPromptWithPreviousCommandFragment()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     if (_pCommandHistory && _pCommandHistory->GetNumberOfCommands() > 0)
     {
         const size_t leftChars = _visibleCharCountOf({ _prompt.c_str(), _insertionIndex });
@@ -410,6 +474,7 @@ void CookedRead::FillPromptWithPreviousCommandFragment()
 // - number of cells that the insertion point has moved by
 size_t CookedRead::DeletePromptBeforeInsertionIndex()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     _clearPromptCells();
     const size_t cellsMoved = _insertionIndex;
     _prompt.erase(0, _insertionIndex);
@@ -431,6 +496,7 @@ void CookedRead::DeletePromptAfterInsertionIndex()
 // - deletes codepoint to the right of the insertion index
 void CookedRead::DeleteFromRightOfInsertionIndex()
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     if (_isInsertionIndexAtPromptEnd())
     {
         return;
@@ -449,6 +515,7 @@ void CookedRead::DeleteFromRightOfInsertionIndex()
         _prompt.erase(_insertionIndex, 1);
     }
 
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     _writeToScreen(true);
 }
 
@@ -613,7 +680,32 @@ NTSTATUS CookedRead::Read(const bool /*isUnicode*/,
             case ReadState::CommandKey:
                 _commandKey();
                 break;
+            case ReadState::Popup:
+                _popup();
+                return _status;
+                break;
         }
+    }
+}
+
+void CookedRead::_popup()
+{
+    auto& commandLine = CommandLine::Instance();
+    FAIL_FAST_IF(!commandLine.HasPopup());
+
+    _status = commandLine.GetPopup().Process(*this);
+    if (_status == CONSOLE_STATUS_READ_COMPLETE ||
+        _status != CONSOLE_STATUS_WAIT && _status != CONSOLE_STATUS_WAIT_NO_BLOCK)
+    {
+        auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        gci.SetCookedReadData(nullptr);
+        _status = S_OK; // uhh, this should be an NTSTATUS
+        _state = ReadState::Complete;
+    }
+    else if (_status == CONSOLE_STATUS_WAIT_NO_BLOCK)
+    {
+        _status = CONSOLE_STATUS_WAIT;
+        _state = ReadState::Ready;
     }
 }
 
@@ -621,6 +713,9 @@ NTSTATUS CookedRead::Read(const bool /*isUnicode*/,
 // - handles a command line editing key
 void CookedRead::_commandKey()
 {
+    // the command line might start a popup so save the current cursor position just in case
+    _beforePopupCursorPosition = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
+
     _status = CommandLine::Instance().ProcessCommandLine(*this, _commandKeyChar, _keyState);
     // TODO check this, it means that a popup was completed but should that mean we should go to the Ready
     // or Complete state?
@@ -635,7 +730,14 @@ void CookedRead::_commandKey()
     }
     else if (_status == CONSOLE_STATUS_WAIT)
     {
-        _state = ReadState::Wait;
+        if (CommandLine::Instance().HasPopup())
+        {
+            _state = ReadState::Popup;
+        }
+        else
+        {
+            _state = ReadState::Wait;
+        }
     }
     else if (NT_SUCCESS(_status))
     {
@@ -700,13 +802,22 @@ void CookedRead::_readChar(std::deque<wchar_t>& unprocessedChars)
     _commandLineEditingKeys = false;
     _keyState = 0;
 
-    // get a char from the input buffer
-    _status = GetChar(_pInputBuffer,
-                      &wch,
-                      true,
-                      &_commandLineEditingKeys,
-                      nullptr,
-                      &_keyState);
+    if (!_bufferedInput.empty())
+    {
+        wch = _bufferedInput.front();
+        _bufferedInput.pop_front();
+        _status = STATUS_SUCCESS;
+    }
+    else
+    {
+        // get a char from the input buffer
+        _status = GetChar(_pInputBuffer,
+                        &wch,
+                        true,
+                        &_commandLineEditingKeys,
+                        nullptr,
+                        &_keyState);
+    }
 
     if (_status == CONSOLE_STATUS_WAIT)
     {
@@ -837,6 +948,7 @@ void CookedRead::_writeToPrompt(std::deque<wchar_t>& unprocessedChars)
             ++_insertionIndex;
         }
     }
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
 }
 
 // Routine Description:
@@ -958,6 +1070,7 @@ bool CookedRead::_isInsertionIndexAtPromptEnd()
 // - the number of cells that text data in the prompt should use.
 size_t CookedRead::_calculatePromptCellLength(const bool wholePrompt) const
 {
+    FAIL_FAST_IF(_insertionIndex > _prompt.size());
     const size_t stopIndex = wholePrompt ? _prompt.size() : _insertionIndex;
     size_t count = 0;
     for (size_t i = 0; i < stopIndex; ++i)

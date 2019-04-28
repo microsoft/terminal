@@ -22,7 +22,6 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 [[nodiscard]]
 NTSTATUS CopyFromCharPopup::Process(CookedRead& cookedReadData) noexcept
 {
-    /*
     // get user input
     WCHAR Char = UNICODE_NULL;
     bool PopupKeys = false;
@@ -40,7 +39,7 @@ NTSTATUS CopyFromCharPopup::Process(CookedRead& cookedReadData) noexcept
         return CONSOLE_STATUS_WAIT_NO_BLOCK;
     }
 
-    const auto span = cookedReadData.SpanAtPointer();
+    const auto span = cookedReadData.PromptFromInsertionIndex();
     const auto foundLocation = std::find(std::next(span.begin()), span.end(), Char);
     if (foundLocation == span.end())
     {
@@ -56,9 +55,6 @@ NTSTATUS CopyFromCharPopup::Process(CookedRead& cookedReadData) noexcept
             CommandLine::Instance().DeleteFromRightOfCursor(cookedReadData);
         }
     }
-    return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    */
-    cookedReadData;
     return CONSOLE_STATUS_WAIT_NO_BLOCK;
 }
 

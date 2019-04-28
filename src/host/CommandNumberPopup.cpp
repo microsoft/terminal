@@ -29,7 +29,6 @@ CommandNumberPopup::CommandNumberPopup(SCREEN_INFORMATION& screenInfo) :
 // - wch - digit to handle
 void CommandNumberPopup::_handleNumber(CookedRead& cookedReadData, const wchar_t wch) noexcept
 {
-    /*
     if (_userInput.size() < COMMAND_NUMBER_LENGTH)
     {
         size_t CharsToWrite = sizeof(wchar_t);
@@ -42,7 +41,7 @@ void CommandNumberPopup::_handleNumber(CookedRead& cookedReadData, const wchar_t
                                                       &wch,
                                                       &CharsToWrite,
                                                       &NumSpaces,
-                                                      cookedReadData.OriginalCursorPosition().X,
+                                                      cookedReadData.PromptStartLocation().X,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
@@ -52,9 +51,6 @@ void CommandNumberPopup::_handleNumber(CookedRead& cookedReadData, const wchar_t
         }
         CATCH_LOG();
     }
-    */
-    cookedReadData;
-    wch;
 }
 
 // Routine Description:
@@ -63,7 +59,6 @@ void CommandNumberPopup::_handleNumber(CookedRead& cookedReadData, const wchar_t
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleBackspace(CookedRead& cookedReadData) noexcept
 {
-    /*
     if (_userInput.size() > 0)
     {
         size_t CharsToWrite = sizeof(WCHAR);
@@ -77,14 +72,12 @@ void CommandNumberPopup::_handleBackspace(CookedRead& cookedReadData) noexcept
                                                       &backspace,
                                                       &CharsToWrite,
                                                       &NumSpaces,
-                                                      cookedReadData.OriginalCursorPosition().X,
+                                                      cookedReadData.PromptStartLocation().X,
                                                       WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                                       nullptr));
         cookedReadData.ScreenInfo().SetAttributes(realAttributes);
         _pop();
     }
-    */
-    cookedReadData;
 }
 
 // Routine Description:
@@ -93,16 +86,13 @@ void CommandNumberPopup::_handleBackspace(CookedRead& cookedReadData) noexcept
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleEscape(CookedRead& cookedReadData) noexcept
 {
-    /*
     CommandLine::Instance().EndAllPopups();
 
     // Note that cookedReadData's OriginalCursorPosition is the position before ANY text was entered on the edit line.
     // We want to use the position before the cursor was moved for this popup handler specifically, which may
     // be *anywhere* in the edit line and will be synchronized with the pointers in the cookedReadData
     // structure (BufPtr, etc.)
-    LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cookedReadData.BeforeDialogCursorPosition(), TRUE));
-    */
-    cookedReadData;
+    LOG_IF_FAILED(cookedReadData.ScreenInfo().SetCursorPosition(cookedReadData.BeforePopupCursorPosition(), TRUE));
 }
 
 // Routine Description:
@@ -111,14 +101,11 @@ void CommandNumberPopup::_handleEscape(CookedRead& cookedReadData) noexcept
 // - cookedReadData - read data to operate on
 void CommandNumberPopup::_handleReturn(CookedRead& cookedReadData) noexcept
 {
-    /*
     const short commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
                                                              cookedReadData.History().GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);
-    */
-    cookedReadData;
 }
 
 // Routine Description:
@@ -129,7 +116,6 @@ void CommandNumberPopup::_handleReturn(CookedRead& cookedReadData) noexcept
 [[nodiscard]]
 NTSTATUS CommandNumberPopup::Process(CookedRead& cookedReadData) noexcept
 {
-    /*
     NTSTATUS Status = STATUS_SUCCESS;
     WCHAR wch = UNICODE_NULL;
     bool popupKeys = false;
@@ -162,9 +148,6 @@ NTSTATUS CommandNumberPopup::Process(CookedRead& cookedReadData) noexcept
             break;
         }
     }
-    return CONSOLE_STATUS_WAIT_NO_BLOCK;
-    */
-    cookedReadData;
     return CONSOLE_STATUS_WAIT_NO_BLOCK;
 }
 

@@ -72,24 +72,10 @@ class CommandListPopupTests
         return true;
     }
 
-    void InitReadData(COOKED_READ_DATA& cookedReadData,
-                      wchar_t* const pBuffer,
-                      const size_t cchBuffer,
-                      const size_t cursorPosition)
-    {
-        cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._bufPtr = pBuffer + cursorPosition;
-        cookedReadData._backupLimit = pBuffer;
-        cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._bytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._currentPosition = cursorPosition;
-        cookedReadData.VisibleCharCount() = cursorPosition;
-    }
-
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             modifiers = 0;
@@ -105,19 +91,14 @@ class CommandListPopupTests
 
         // prepare cookedReadData
         const std::wstring testString = L"hello world";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, testString);
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
-        // the buffer should not be changed
-        const std::wstring resultString(buffer, buffer + testString.size());
-        VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
+        // the prompt should not be changed
+        VERIFY_ARE_EQUAL(testString, cookedReadData._prompt);
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
@@ -126,7 +107,7 @@ class CommandListPopupTests
     TEST_METHOD(UpMovesSelection)
     {
         // function to simulate user pressing up arrow
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -150,11 +131,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         const short commandNumberBefore = popup._currentCommand;
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -165,7 +144,7 @@ class CommandListPopupTests
     TEST_METHOD(DownMovesSelection)
     {
         // function to simulate user pressing down arrow
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -191,11 +170,9 @@ class CommandListPopupTests
         popup._currentCommand = 0;
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         const short commandNumberBefore = popup._currentCommand;
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -206,7 +183,7 @@ class CommandListPopupTests
     TEST_METHOD(EndMovesSelectionToEnd)
     {
         // function to simulate user pressing end key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -232,11 +209,9 @@ class CommandListPopupTests
         popup._currentCommand = 0;
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved to the bottom line
@@ -246,7 +221,7 @@ class CommandListPopupTests
     TEST_METHOD(HomeMovesSelectionToStart)
     {
         // function to simulate user pressing home key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -270,11 +245,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved to the bottom line
@@ -284,7 +257,7 @@ class CommandListPopupTests
     TEST_METHOD(PageUpMovesSelection)
     {
         // function to simulate user pressing page up key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -308,11 +281,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved up a page
@@ -322,7 +293,7 @@ class CommandListPopupTests
     TEST_METHOD(PageDownMovesSelection)
     {
         // function to simulate user pressing page down key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -348,11 +319,9 @@ class CommandListPopupTests
         popup._currentCommand = 0;
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // selection should have moved up a page
@@ -362,7 +331,7 @@ class CommandListPopupTests
     TEST_METHOD(SideArrowsFillsPrompt)
     {
         // function to simulate user pressing right arrow key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             wch = VK_RIGHT;
             popupKey = true;
@@ -379,23 +348,21 @@ class CommandListPopupTests
         popup._currentCommand = 0;
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         // prompt should have history item in prompt
         const std::wstring_view historyItem = m_pHistory->GetLastCommand();
-        const std::wstring_view resultText{ buffer, historyItem.size() };
+        const std::wstring_view resultText{ cookedReadData._prompt.c_str(), cookedReadData._prompt.size() };
         VERIFY_ARE_EQUAL(historyItem, resultText);
     }
 
     TEST_METHOD(CanLaunchCommandNumberPopup)
     {
         // function to simulate user pressing F9
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             wch = VK_F9;
             popupKey = true;
@@ -410,11 +377,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         auto& commandLine = CommandLine::Instance();
         VERIFY_IS_FALSE(commandLine.HasPopup());
@@ -428,7 +393,7 @@ class CommandListPopupTests
     TEST_METHOD(CanDeleteFromCommandHistory)
     {
         // function to simulate user pressing the delete key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -452,11 +417,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         const size_t startHistorySize = m_pHistory->GetNumberOfCommands();
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -466,7 +429,7 @@ class CommandListPopupTests
     TEST_METHOD(CanReorderHistoryUp)
     {
         // function to simulate user pressing shift + up arrow
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static bool firstTime = true;
             if (firstTime)
@@ -491,11 +454,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(m_pHistory->GetLastCommand(), L"here is my spout");
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
@@ -506,7 +467,7 @@ class CommandListPopupTests
     TEST_METHOD(CanReorderHistoryDown)
     {
         // function to simulate user pressing the up arrow, then shift + down arrow, then escape
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static unsigned int count = 0;
             if (count == 0)
@@ -536,11 +497,9 @@ class CommandListPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-        cookedReadData._commandHistory = m_pHistory;
+        PopupTestHelper::InitReadData(cookedReadData, L"");
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(m_pHistory->GetLastCommand(), L"here is my spout");
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));

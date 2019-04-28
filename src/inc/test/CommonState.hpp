@@ -125,20 +125,15 @@ public:
 
     void PrepareCookedReadData()
     {
-        // TODO
-        /*
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
+        auto* readData = new CookedRead(gci.pInputBuffer,
                                               m_readHandle.get(),
                                               gci.GetActiveOutputBuffer(),
-                                              0,
+                                              nullptr,
                                               nullptr,
                                               0,
-                                              nullptr,
-                                              L"",
-                                              {});
+                                              0);
         gci.SetCookedReadData(readData);
-        */
     }
 
     void CleanupCookedReadData()

@@ -57,6 +57,7 @@ class CopyToCharPopupTests
     {
         CommandHistory::s_Free((HANDLE)0);
         m_pHistory = nullptr;
+        CommandHistory::s_ClearHistoryListStorage();
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
         m_state->CleanupGlobalInputBuffer();
@@ -67,7 +68,7 @@ class CopyToCharPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
@@ -82,20 +83,15 @@ class CopyToCharPopupTests
 
         // prepare cookedReadData
         const std::wstring testString = L"hello world";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, testString);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should not be changed
-        const std::wstring resultString(buffer, buffer + testString.size());
-        VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(testString, cookedReadData._prompt);
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
@@ -104,7 +100,7 @@ class CopyToCharPopupTests
     TEST_METHOD(NothingHappensWhenCharNotFound)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L'x';
@@ -118,24 +114,20 @@ class CopyToCharPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should not be changed
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, 0u);
+        VERIFY_IS_TRUE(cookedReadData._prompt.empty());
     }
 
     TEST_METHOD(CanCopyToEmptyPrompt)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L's';
@@ -149,31 +141,21 @@ class CopyToCharPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0u);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         const std::wstring expectedText = L"here i";
 
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedText.size());
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, expectedText.size() * sizeof(wchar_t));
-
-        // make sure that the text matches
-        const std::wstring resultText(buffer, buffer + expectedText.size());
-        VERIFY_ARE_EQUAL(resultText, expectedText);
-        // make sure that more wasn't copied
-        VERIFY_ARE_EQUAL(buffer[expectedText.size()], UNICODE_SPACE);
+        VERIFY_ARE_EQUAL(expectedText, cookedReadData._prompt);
     }
 
     TEST_METHOD(WontCopyTextBeforeCursor)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = L's';
@@ -187,37 +169,27 @@ class CopyToCharPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData with a string longer than the previous history
-        const std::wstring testString = L"Whose woods there are I think I know.";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
+        const std::wstring testString = L"Whose woods these are I think I know.";
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, testString);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
-        const wchar_t* const expectedBufPtr = cookedReadData._bufPtr;
-        const size_t expectedBytesRead = cookedReadData._bytesRead;
+        const auto beforeText = cookedReadData._prompt;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // nothing should have changed
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufPtr);
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, expectedBytesRead);
-        const std::wstring resultText(buffer, buffer + testString.size());
-        VERIFY_ARE_EQUAL(resultText, testString);
-        // make sure that more wasn't copied
-        VERIFY_ARE_EQUAL(buffer[testString.size()], UNICODE_SPACE);
-
+        VERIFY_ARE_EQUAL(beforeText, cookedReadData._prompt);
     }
 
     TEST_METHOD(CanMergeLine)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
-            wch = L's';
+            wch = L' ';
             modifiers = 0;
             return STATUS_SUCCESS;
         };
@@ -229,21 +201,15 @@ class CopyToCharPopupTests
 
         // prepare cookedReadData with a string longer than the previous history
         const std::wstring testString = L"fear ";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, testString);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         const std::wstring expectedText = L"fear is";
-        const std::wstring resultText(buffer, buffer + testString.size());
-        VERIFY_ARE_EQUAL(resultText, testString);
-        // make sure that more wasn't copied
-        VERIFY_ARE_EQUAL(buffer[expectedText.size()], UNICODE_SPACE);
+        VERIFY_ARE_EQUAL(expectedText, cookedReadData._prompt);
     }
 
 };

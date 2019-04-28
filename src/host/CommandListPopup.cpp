@@ -62,7 +62,6 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
 [[nodiscard]]
 NTSTATUS CommandListPopup::_handlePopupKeys(CookedRead& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept
 {
-    /*
     try
     {
         short Index = 0;
@@ -133,11 +132,6 @@ NTSTATUS CommandListPopup::_handlePopupKeys(CookedRead& cookedReadData, const wc
     }
     CATCH_LOG();
     return STATUS_SUCCESS;
-    */
-    cookedReadData;
-    wch;
-    modifiers;
-    return STATUS_SUCCESS;
 }
 
 void CommandListPopup::_setBottomIndex()
@@ -155,7 +149,6 @@ void CommandListPopup::_setBottomIndex()
 [[nodiscard]]
 NTSTATUS CommandListPopup::_deleteSelection(CookedRead& cookedReadData) noexcept
 {
-    /*
     try
     {
         auto& history = cookedReadData.History();
@@ -176,10 +169,6 @@ NTSTATUS CommandListPopup::_deleteSelection(CookedRead& cookedReadData) noexcept
         _drawList();
     }
     CATCH_LOG();
-    return STATUS_SUCCESS;
-    */
-
-    cookedReadData;
     return STATUS_SUCCESS;
 }
 
@@ -231,55 +220,10 @@ NTSTATUS CommandListPopup::_swapDown(CookedRead& cookedReadData) noexcept
 
 void CommandListPopup::_handleReturn(CookedRead& cookedReadData)
 {
-    /*
-    short Index = 0;
-    NTSTATUS Status = STATUS_SUCCESS;
-    DWORD LineCount = 1;
-    Index = _currentCommand;
+    const short index = _currentCommand;
     CommandLine::Instance().EndCurrentPopup();
-    SetCurrentCommandLine(cookedReadData, (SHORT)Index);
-    cookedReadData.ProcessInput(UNICODE_CARRIAGERETURN, 0, Status);
-    // complete read
-    if (cookedReadData.IsEchoInput())
-    {
-        // check for alias
-        cookedReadData.ProcessAliases(LineCount);
-    }
-
-    Status = STATUS_SUCCESS;
-    size_t NumBytes;
-    if (cookedReadData.BytesRead() > cookedReadData.UserBufferSize() || LineCount > 1)
-    {
-        if (LineCount > 1)
-        {
-            const wchar_t* Tmp;
-            for (Tmp = cookedReadData.BufferStartPtr(); *Tmp != UNICODE_LINEFEED; Tmp++)
-            {
-                FAIL_FAST_IF(!(Tmp < (cookedReadData.BufferStartPtr() + cookedReadData.BytesRead())));
-            }
-            NumBytes = (Tmp - cookedReadData.BufferStartPtr() + 1) * sizeof(*Tmp);
-        }
-        else
-        {
-            NumBytes = cookedReadData.UserBufferSize();
-        }
-
-        // Copy what we can fit into the user buffer
-        const size_t bytesWritten = cookedReadData.SavePromptToUserBuffer(NumBytes / sizeof(wchar_t));
-
-        // Store all of the remaining as pending until the next read operation.
-        cookedReadData.SavePendingInput(NumBytes / sizeof(wchar_t), LineCount > 1);
-        NumBytes = bytesWritten;
-    }
-    else
-    {
-        NumBytes = cookedReadData.BytesRead();
-        NumBytes = cookedReadData.SavePromptToUserBuffer(NumBytes / sizeof(wchar_t));
-    }
-
-    cookedReadData.SetReportedByteCount(NumBytes);
-    */
-    cookedReadData;
+    SetCurrentCommandLine(cookedReadData, index);
+    cookedReadData.BufferInput(UNICODE_CARRIAGERETURN);
 }
 
 void CommandListPopup::_cycleSelectionToMatchingCommands(CookedRead& cookedReadData, const wchar_t wch)
@@ -302,7 +246,6 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(CookedRead& cookedReadD
 [[nodiscard]]
 NTSTATUS CommandListPopup::Process(CookedRead& cookedReadData) noexcept
 {
-    /*
     NTSTATUS Status = STATUS_SUCCESS;
 
     for (;;)
@@ -336,9 +279,6 @@ NTSTATUS CommandListPopup::Process(CookedRead& cookedReadData) noexcept
             _cycleSelectionToMatchingCommands(cookedReadData, wch);
         }
     }
-    */
-    cookedReadData;
-    return CONSOLE_STATUS_READ_COMPLETE;
 }
 
 void CommandListPopup::_DrawContent()

@@ -253,7 +253,6 @@ void SetCurrentCommandLine(CookedRead& cookedReadData, _In_ SHORT Index) // inde
 [[nodiscard]]
 NTSTATUS CommandLine::_startCommandListPopup(CookedRead& cookedReadData)
 {
-    /*
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands())
     {
@@ -270,9 +269,6 @@ NTSTATUS CommandLine::_startCommandListPopup(CookedRead& cookedReadData)
     {
         return S_FALSE;
     }
-    */
-    cookedReadData;
-    return S_FALSE;
 }
 
 // Routine Description:
@@ -283,7 +279,6 @@ NTSTATUS CommandLine::_startCommandListPopup(CookedRead& cookedReadData)
 [[nodiscard]]
 NTSTATUS CommandLine::_startCopyFromCharPopup(CookedRead& cookedReadData)
 {
-    /*
     // Delete the current command from cursor position to the
     // letter specified by the user. The user is prompted via
     // popup to enter a character.
@@ -301,9 +296,6 @@ NTSTATUS CommandLine::_startCopyFromCharPopup(CookedRead& cookedReadData)
     {
         return S_FALSE;
     }
-    */
-    cookedReadData;
-    return S_FALSE;
 }
 
 // Routine Description:
@@ -315,7 +307,6 @@ NTSTATUS CommandLine::_startCopyFromCharPopup(CookedRead& cookedReadData)
 [[nodiscard]]
 NTSTATUS CommandLine::_startCopyToCharPopup(CookedRead& cookedReadData)
 {
-    /*
     // copy the previous command to the current command, up to but
     // not including the character specified by the user.  the user
     // is prompted via popup to enter a character.
@@ -333,9 +324,6 @@ NTSTATUS CommandLine::_startCopyToCharPopup(CookedRead& cookedReadData)
     {
         return S_FALSE;
     }
-    */
-    cookedReadData;
-    return S_FALSE;
 }
 
 // Routine Description:
@@ -347,7 +335,6 @@ NTSTATUS CommandLine::_startCopyToCharPopup(CookedRead& cookedReadData)
 [[nodiscard]]
 HRESULT CommandLine::StartCommandNumberPopup(CookedRead& cookedReadData)
 {
-    /*
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands() &&
         cookedReadData.ScreenInfo().GetBufferSize().Width() >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
@@ -358,7 +345,7 @@ HRESULT CommandLine::StartCommandNumberPopup(CookedRead& cookedReadData)
             popup.Draw();
 
             // Save the original cursor position in case the user cancels out of the dialog
-            cookedReadData.BeforeDialogCursorPosition() = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
+            //cookedReadData.BeforeDialogCursorPosition() = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
 
             // Move the cursor into the dialog so the user can type multiple characters for the command number
             const COORD CursorPosition = popup.GetCursorPosition();
@@ -373,9 +360,6 @@ HRESULT CommandLine::StartCommandNumberPopup(CookedRead& cookedReadData)
     {
         return S_FALSE;
     }
-    */
-    cookedReadData;
-    return S_FALSE;
 }
 
 // Routine Description:
@@ -759,6 +743,7 @@ NTSTATUS CommandLine::ProcessCommandLine(CookedRead& cookedReadData,
         if (!ctrlPressed && !altPressed)
         {
             Status = _startCommandListPopup(cookedReadData);
+            return Status;
         }
         else if (altPressed)
         {

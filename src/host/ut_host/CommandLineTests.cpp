@@ -49,6 +49,7 @@ class CommandLineTests
         {
             return false;
         }
+        VERIFY_ARE_EQUAL(m_pHistory->GetNumberOfCommands(), 0u);
         return true;
     }
 
@@ -56,6 +57,7 @@ class CommandLineTests
     {
         CommandHistory::s_Free((HANDLE)0);
         m_pHistory = nullptr;
+        CommandHistory::s_ClearHistoryListStorage();
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
         m_state->CleanupGlobalInputBuffer();
@@ -63,53 +65,37 @@ class CommandLineTests
         return true;
     }
 
-    void VerifyPromptText(COOKED_READ_DATA& cookedReadData, const std::wstring wstr)
+    void VerifyPromptText(CookedRead& cookedReadData, const std::wstring wstr)
     {
-        const auto span = cookedReadData.SpanWholeBuffer();
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, wstr.size() * sizeof(wchar_t));
-        for (size_t i = 0; i < wstr.size(); ++i)
-        {
-            VERIFY_ARE_EQUAL(span.at(i), wstr.at(i));
-        }
+        const auto prompt = cookedReadData.Prompt();
+        VERIFY_ARE_EQUAL(prompt, wstr);
     }
 
-    void InitCookedReadData(COOKED_READ_DATA& cookedReadData,
+    void InitCookedReadData(CookedRead& cookedReadData,
                             CommandHistory* pHistory,
-                            wchar_t* pBuffer,
-                            const size_t cchBuffer)
+                            const std::wstring prompt)
     {
-        cookedReadData._commandHistory = pHistory;
-        cookedReadData._userBuffer = pBuffer;
-        cookedReadData._userBufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._backupLimit = pBuffer;
-        cookedReadData._bufPtr = pBuffer;
-        cookedReadData._exeName = L"cmd.exe";
-        cookedReadData.OriginalCursorPosition() = { 0, 0 };
+        cookedReadData._pCommandHistory = pHistory;
+        cookedReadData._prompt = prompt;
+        cookedReadData._promptStartLocation = { 0, 0 };
+        cookedReadData._insertionIndex = 0;
     }
 
-    void SetPrompt(COOKED_READ_DATA& cookedReadData, const std::wstring text)
+    void SetPrompt(CookedRead& cookedReadData, const std::wstring text)
     {
-        std::copy(text.begin(), text.end(), cookedReadData._backupLimit);
-        cookedReadData._bytesRead = text.size() * sizeof(wchar_t);
-        cookedReadData._currentPosition = text.size();
-        cookedReadData._bufPtr += text.size();
-        cookedReadData._visibleCharCount = text.size();
+        cookedReadData._prompt = text;
+        cookedReadData._insertionIndex = cookedReadData._prompt.size();
     }
 
-    void MoveCursor(COOKED_READ_DATA& cookedReadData, const size_t column)
+    void MoveCursor(CookedRead& cookedReadData, const size_t column)
     {
-        cookedReadData._currentPosition = column;
-        cookedReadData._bufPtr = cookedReadData._backupLimit + column;
+        cookedReadData._insertionIndex = column;
     }
 
     TEST_METHOD(CanCycleCommandHistory)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 1", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
@@ -118,7 +104,7 @@ class CommandLineTests
         auto& commandLine = CommandLine::Instance();
         commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Next);
         // should not have anything on the prompt
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, 0u);
+        VERIFY_IS_TRUE(cookedReadData._prompt.empty());
 
         // go back one history item
         commandLine._processHistoryCycling(cookedReadData, CommandHistory::SearchDirection::Previous);
@@ -152,11 +138,8 @@ class CommandLineTests
 
     TEST_METHOD(CanSetPromptToOldestHistory)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 1", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
@@ -174,11 +157,8 @@ class CommandLineTests
 
     TEST_METHOD(CanSetPromptToNewestHistory)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 1", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
@@ -196,11 +176,8 @@ class CommandLineTests
 
     TEST_METHOD(CanDeletePromptAfterCursor)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
@@ -215,11 +192,8 @@ class CommandLineTests
 
     TEST_METHOD(CanDeletePromptBeforeCursor)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
@@ -229,111 +203,95 @@ class CommandLineTests
         MoveCursor(cookedReadData, 5);
         auto& commandLine = CommandLine::Instance();
         const COORD cursorPos = commandLine._deletePromptBeforeCursor(cookedReadData);
-        cookedReadData._currentPosition = cursorPos.X;
+        //cookedReadData._currentPosition = cursorPos.X;
         VerifyPromptText(cookedReadData, L"word blah");
     }
 
     TEST_METHOD(CanMoveCursorToEndOfPrompt)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
         VerifyPromptText(cookedReadData, expected);
 
         // make sure the cursor is not at the start of the prompt
-        VERIFY_ARE_NOT_EQUAL(cookedReadData._currentPosition, 0u);
-        VERIFY_ARE_NOT_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_NOT_EQUAL(cookedReadData._insertionIndex, 0u);
 
         // save current position for later checking
-        const auto expectedCursorPos = cookedReadData._currentPosition;
-        const auto expectedBufferPos = cookedReadData._bufPtr;
+        const auto expectedCursorPos = cookedReadData._insertionIndex;
 
         MoveCursor(cookedReadData, 0);
 
         auto& commandLine = CommandLine::Instance();
         const COORD cursorPos = commandLine._moveCursorToEndOfPrompt(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<short>(expectedCursorPos));
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedCursorPos);
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufferPos);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, expectedCursorPos);
 
     }
 
     TEST_METHOD(CanMoveCursorToStartOfPrompt)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
         VerifyPromptText(cookedReadData, expected);
 
         // make sure the cursor is not at the start of the prompt
-        VERIFY_ARE_NOT_EQUAL(cookedReadData._currentPosition, 0u);
-        VERIFY_ARE_NOT_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_NOT_EQUAL(cookedReadData._insertionIndex, 0u);
+        VERIFY_IS_FALSE(cookedReadData._prompt.empty());
 
         auto& commandLine = CommandLine::Instance();
         const COORD cursorPos = commandLine._moveCursorToStartOfPrompt(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, 0u);
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, 0u);
     }
 
     TEST_METHOD(CanMoveCursorLeftByWord)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
-        auto expected = L"test word blah";
+        const std::wstring expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
         VerifyPromptText(cookedReadData, expected);
 
         auto& commandLine = CommandLine::Instance();
+        cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().SetPosition({ gsl::narrow<short>(expected.size()), 0 });
         // cursor position at beginning of "blah"
         short expectedPos = 10;
         COORD cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, gsl::narrow<size_t>(expectedPos));
 
         // move again
+        cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().SetPosition({ expectedPos, 0 });
         expectedPos = 5; // before "word"
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, gsl::narrow<size_t>(expectedPos));
 
         // move again
+        cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().SetPosition({ expectedPos, 0 });
         expectedPos = 0; // before "test"
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, gsl::narrow<size_t>(expectedPos));
 
         // try to move again, nothing should happen
+        cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().SetPosition({ expectedPos, 0 });
         cursorPos = commandLine._moveCursorLeftByWord(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, expectedPos);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, gsl::narrow<size_t>(expectedPos));
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit + expectedPos);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, gsl::narrow<size_t>(expectedPos));
     }
 
     TEST_METHOD(CanMoveCursorLeft)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         const std::wstring expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
@@ -344,28 +302,23 @@ class CommandLineTests
         for (auto it = expected.crbegin(); it != expected.crend(); ++it)
         {
             const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
-            VERIFY_ARE_EQUAL(*cookedReadData._bufPtr, *it);
+            VERIFY_ARE_EQUAL(cookedReadData._prompt.at(cookedReadData._insertionIndex), *it);
         }
         // should now be at the start of the prompt
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, 0u);
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, 0u);
 
         // try to move left a final time, nothing should change
         const COORD cursorPos = commandLine._moveCursorLeft(cookedReadData);
         VERIFY_ARE_EQUAL(cursorPos.X, 0);
-        VERIFY_ARE_EQUAL(cookedReadData._currentPosition, 0u);
-        VERIFY_ARE_EQUAL(cookedReadData._bufPtr, cookedReadData._backupLimit);
+        VERIFY_ARE_EQUAL(cookedReadData._insertionIndex, 0u);
     }
 
     /*
       // TODO MSFT:11285829 tcome back and turn these on once the system cursor isn't needed
     TEST_METHOD(CanMoveCursorRightByWord)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto expected = L"test word blah";
         SetPrompt(cookedReadData, expected);
@@ -398,11 +351,8 @@ class CommandLineTests
 
     TEST_METHOD(CanInsertCtrlZ)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, nullptr, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, nullptr, L"");
 
         auto& commandLine = CommandLine::Instance();
         commandLine._insertCtrlZ(cookedReadData);
@@ -411,11 +361,8 @@ class CommandLineTests
 
     TEST_METHOD(CanDeleteCommandHistory)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 1", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"echo 2", false));
@@ -428,11 +375,8 @@ class CommandLineTests
 
     TEST_METHOD(CanFillPromptWithPreviousCommandFragment)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"I'm a little teapot", false));
         SetPrompt(cookedReadData, L"short and stout");
@@ -444,11 +388,8 @@ class CommandLineTests
 
     TEST_METHOD(CanCycleMatchingCommandHistory)
     {
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
-
         auto& cookedReadData = ServiceLocator::LocateGlobals().getConsoleInformation().CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         VERIFY_SUCCEEDED(m_pHistory->Add(L"I'm a little teapot", false));
         VERIFY_SUCCEEDED(m_pHistory->Add(L"short and stout", false));
@@ -472,12 +413,10 @@ class CommandLineTests
     TEST_METHOD(CmdlineCtrlHomeFullwidthChars)
     {
         Log::Comment(L"Set up buffers, create cooked read data, get screen information.");
-        auto buffer = std::make_unique<wchar_t[]>(PROMPT_SIZE);
-        VERIFY_IS_NOT_NULL(buffer.get());
         auto& consoleInfo = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto& screenInfo = consoleInfo.GetActiveOutputBuffer();
         auto& cookedReadData = consoleInfo.CookedReadData();
-        InitCookedReadData(cookedReadData, m_pHistory, buffer.get(), PROMPT_SIZE);
+        InitCookedReadData(cookedReadData, m_pHistory, L"");
 
         Log::Comment(L"Create Japanese text string and calculate the distance we expect the cursor to move.");
         const std::wstring text(L"\x30ab\x30ac\x30ad\x30ae\x30af"); // katakana KA GA KI GI KU
@@ -490,8 +429,13 @@ class CommandLineTests
         }
 
         Log::Comment(L"Write the text into the buffer using the cooked read structures as if it came off of someone's input.");
-        const auto written = cookedReadData.Write(text);
-        VERIFY_ARE_EQUAL(text.length(), written);
+        for (const auto& wch : text)
+        {
+            cookedReadData.BufferInput(wch);
+        }
+        size_t numBytes = 0;
+        ULONG ctrlKeyState = 0;
+        VERIFY_ARE_EQUAL(cookedReadData.Read(true, numBytes, ctrlKeyState), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT));
 
         Log::Comment(L"Retrieve the position of the cursor after insertion and check that it moved as far as we expected.");
         const auto cursorAfter = screenInfo.GetTextBuffer().GetCursor().GetPosition();

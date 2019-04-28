@@ -12,7 +12,7 @@ public:
     CookedRead(InputBuffer* const pInputBuffer,
                INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                SCREEN_INFORMATION& screenInfo,
-               CommandHistory* const pCommandHistory,
+               CommandHistory* pCommandHistory,
                wchar_t* userBuffer,
                const size_t cchUserBuffer,
                const ULONG ctrlWakeupMask
@@ -41,6 +41,7 @@ public:
     bool IsEchoInput() const noexcept;
 
     COORD PromptStartLocation() const noexcept;
+    COORD BeforePopupCursorPosition() const noexcept;
     size_t VisibleCharCount() const;
 
     size_t MoveInsertionIndexLeft();
@@ -57,6 +58,8 @@ public:
     void SetPromptToMatchingHistoryCommand();
     void FillPromptWithPreviousCommandFragment();
 
+    void Overwrite(const std::wstring_view::const_iterator startIt, const std::wstring_view::const_iterator endIt);
+
     size_t DeletePromptBeforeInsertionIndex();
     void DeletePromptAfterInsertionIndex();
     void DeleteFromRightOfInsertionIndex();
@@ -68,6 +71,13 @@ public:
     CommandHistory& History() noexcept;
     bool HasHistory() const noexcept;
 
+    void BufferInput(const wchar_t wch);
+
+    std::wstring_view Prompt();
+    std::wstring_view PromptFromInsertionIndex();
+
+    size_t InsertionIndex() const noexcept;
+
 private:
     enum class ReadState
     {
@@ -76,7 +86,8 @@ private:
         Error, // something went wrong
         GotChar, // read a character from the user
         Complete, // the prompt has been completed (user pressed enter)
-        CommandKey // the user pressed a command editing key
+        CommandKey, // the user pressed a command editing key
+        Popup
     };
 
     static bool _isSurrogatePairAt(const std::wstring_view wstrView, const size_t index);
@@ -98,7 +109,9 @@ private:
     std::wstring _prompt;
     // the location of where the interactive portion of the prompt starts
     COORD _promptStartLocation;
-    CommandHistory* const _pCommandHistory; // non-ownership pointer
+    // the location of the cursor before a popup is launched
+    COORD _beforePopupCursorPosition;
+    CommandHistory* _pCommandHistory; // non-ownership pointer
     // mask of control keys that if pressed will end the cooked read early
     const ULONG _ctrlWakeupMask;
     // current state of the CookedRead
@@ -114,6 +127,8 @@ private:
 
     bool _echoInput;
 
+    std::deque<wchar_t> _bufferedInput;
+
 
     void _readChar(std::deque<wchar_t>& unprocessedChars);
     void _processChars(std::deque<wchar_t>& unprocessedChars);
@@ -121,6 +136,7 @@ private:
     void _wait();
     void _complete(size_t& numBytes);
     void _commandKey();
+    void _popup();
 
     void _backspace();
     void _clearPromptCells();
@@ -133,4 +149,20 @@ private:
     bool _isInsertionIndexAtPromptEnd();
 
     void _adjustCursorToInsertionIndex();
+
+#if UNIT_TESTING
+    friend class CommandLineTests;
+    friend class CopyFromCharPopupTests;
+    friend class CopyToCharPopupTests;
+    friend class CommandNumberPopupTests;
+    friend class CommandListPopupTests;
+    friend class PopupTestHelper;
+
+public:
+    inline void SetPromptStartLocation(const COORD location)
+    {
+        _promptStartLocation = location;
+    }
+
+#endif
 };
