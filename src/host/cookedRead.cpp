@@ -20,7 +20,8 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
                        CommandHistory* pCommandHistory,
                        wchar_t* userBuffer,
                        const size_t cchUserBuffer,
-                       const ULONG ctrlWakeupMask
+                       const ULONG ctrlWakeupMask,
+                       const std::wstring_view exeName
 ) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
@@ -36,7 +37,8 @@ CookedRead::CookedRead(InputBuffer* const pInputBuffer,
     _keyState{ 0 },
     _commandKeyChar{ UNICODE_NULL },
     _echoInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_ECHO_INPUT) },
-    _bufferedInput{}
+    _bufferedInput{},
+    _exeName{ exeName }
 {
     _prompt.reserve(256);
     _promptStartLocation = _screenInfo.GetTextBuffer().GetCursor().GetPosition();
@@ -782,6 +784,15 @@ void CookedRead::_complete(size_t& numBytes)
             auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             LOG_IF_FAILED(_pCommandHistory->Add({ _prompt.c_str(), length },
                                                 WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+        }
+
+        // process aliases
+        size_t lineCount = 0;
+        const std::wstring processedPrompt = Alias::s_MatchAndCopyAlias(_prompt, _exeName, lineCount);
+        if (!processedPrompt.empty())
+        {
+            _prompt = std::move(processedPrompt);
+            _insertionIndex = _prompt.size();
         }
     }
 

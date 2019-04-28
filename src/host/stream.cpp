@@ -466,7 +466,7 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                               const std::string_view /*initialData*/,
                               const DWORD ctrlWakeupMask,
                               INPUT_READ_HANDLE_DATA& readHandleState,
-                              const std::wstring_view /*exeName*/,
+                              const std::wstring_view exeName,
                               const bool unicode,
                               std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
@@ -485,7 +485,8 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
                                                            pCommandHistory,
                                                            reinterpret_cast<wchar_t*>(buffer.data()),
                                                            buffer.size_bytes() / sizeof(wchar_t),
-                                                           ctrlWakeupMask);
+                                                           ctrlWakeupMask,
+                                                           exeName);
         gci.SetCookedReadData(cookedReadData.get());
         // bytesRead on the way in is the size to read, on the way out, it will be updated to what is actually read.
         bytesRead = buffer.size_bytes();

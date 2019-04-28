@@ -15,7 +15,8 @@ public:
                CommandHistory* pCommandHistory,
                wchar_t* userBuffer,
                const size_t cchUserBuffer,
-               const ULONG ctrlWakeupMask
+               const ULONG ctrlWakeupMask,
+               const std::wstring_view exeName
         );
 
     bool Notify(const WaitTerminationReason TerminationReason,
@@ -128,6 +129,9 @@ private:
     bool _echoInput;
 
     std::deque<wchar_t> _bufferedInput;
+
+    // name of the application that requested the read. used for alias transformation.
+    std::wstring _exeName;
 
 
     void _readChar(std::deque<wchar_t>& unprocessedChars);

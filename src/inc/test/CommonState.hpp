@@ -127,12 +127,13 @@ public:
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new CookedRead(gci.pInputBuffer,
-                                              m_readHandle.get(),
-                                              gci.GetActiveOutputBuffer(),
-                                              nullptr,
-                                              nullptr,
-                                              0,
-                                              0);
+                                        m_readHandle.get(),
+                                        gci.GetActiveOutputBuffer(),
+                                        nullptr,
+                                        nullptr,
+                                        0,
+                                        0,
+                                        {});
         gci.SetCookedReadData(readData);
     }
 
