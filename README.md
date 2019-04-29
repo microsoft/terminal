@@ -19,6 +19,7 @@ You'll also find assorted Console tools, samples, including the following:
 * [ColorTool](https://github.com/Microsoft/Console/tree/master/tools/ColorTool) - A tool for changing the color scheme of the Windows console.
 * [EchoCon](https://github.com/Microsoft/console/tree/master/samples/ConPTY/EchoCon) - A C++ sample application that illustrates how to use the new Win32 Pseudo Console (ConPTY).
 * [MiniTerm](https://github.com/Microsoft/console/tree/master/samples/ConPTY/MiniTerm) - A C# sample terminal that illustrates how to use ConPTY.
+* [ReadConsoleInputStream](https://github.com/Microsoft/console/tree/master/samples/ReadConsoleInputStream) - A C# sample console application that shows how to use the console APIs to stream stdin while asynchronously watching for console events (buffer size, viewport size, mouse input etc.)
 
 ### Tool Build Status
 
