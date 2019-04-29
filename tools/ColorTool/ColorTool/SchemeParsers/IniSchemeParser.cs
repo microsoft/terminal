@@ -1,5 +1,5 @@
 ﻿//
-//    Copyright (C) Microsoft.  All rights reserved.
+// Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
 
@@ -7,19 +7,22 @@ using System;
 using System.Linq;
 using System.Text;
 using System.Runtime.InteropServices;
-using static ColorTool.ConsoleAPI;
 using System.IO;
 using System.Collections.Generic;
+using static ColorTool.ConsoleAPI;
 
-namespace ColorTool
+namespace ColorTool.SchemeParsers
 {
     class IniSchemeParser : ISchemeParser
     {
         [DllImport("kernel32")]
         private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
 
+        private const string FileExtension = ".ini";
+
         // These are in Windows Color table order - BRG, not RGB.
-        public static string[] COLOR_NAMES = {
+        internal static readonly IReadOnlyList<string> ColorNames = new[]
+        {
             "DARK_BLACK",
             "DARK_BLUE",
             "DARK_GREEN",
@@ -38,44 +41,10 @@ namespace ColorTool
             "BRIGHT_WHITE"
         };
 
-        public string Name => "INI File Parser";
+        public string Name { get; } = "INI File Parser";
 
-        static uint ParseHex(string arg)
-        {
-            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
-            return RGB(col.R, col.G, col.B);
-        }
-
-        static uint ParseRgb(string arg)
-        {
-            int[] components = { 0, 0, 0 };
-            string[] args = arg.Split(',');
-            if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
-            if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
-            for (int i = 0; i < args.Length; i++)
-            {
-                components[i] = Int32.Parse(args[i]);
-            }
-
-            return RGB(components[0], components[1], components[2]);
-        }
-
-        static uint ParseColor(string arg)
-        {
-            if (arg[0] == '#')
-            {
-                return ParseHex(arg.Substring(1));
-            }
-            else
-            {
-                return ParseRgb(arg);
-            }
-        }
-
-        static string FindIniScheme(string schemeName)
-        {
-            return Scheme.GetSearchPaths(schemeName, ".ini").FirstOrDefault(File.Exists);
-        }
+        public bool CanParse(string schemeName) => 
+            string.Equals(Path.GetExtension(schemeName), FileExtension, StringComparison.OrdinalIgnoreCase);
 
         public ColorScheme ParseScheme(string schemeName, bool reportErrors = false)
         {
@@ -84,16 +53,16 @@ namespace ColorTool
             string filename = FindIniScheme(schemeName);
             if (filename == null) return null;
 
-            string[] tableStrings = new string[COLOR_TABLE_SIZE];
+            string[] tableStrings = new string[ColorTableSize];
             uint[] colorTable = null;
             uint? foregroundColor = null;
             uint? backgroundColor = null;
             uint? popupForegroundColor = null;
             uint? popupBackgroundColor = null;
 
-            for (int i = 0; i < COLOR_TABLE_SIZE; i++)
+            for (int i = 0; i < ColorTableSize; i++)
             {
-                string name = COLOR_NAMES[i];
+                string name = ColorNames[i];
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString("table", name, null, buffer, 512, filename);
 
@@ -113,16 +82,16 @@ namespace ColorTool
             {
                 try
                 {
-                    colorTable = new uint[COLOR_TABLE_SIZE];
-                    for (int i = 0; i < COLOR_TABLE_SIZE; i++)
+                    colorTable = new uint[ColorTableSize];
+                    for (int i = 0; i < ColorTableSize; i++)
                     {
                         colorTable[i] = ParseColor(tableStrings[i]);
                     }
 
                     if (ReadAttributes("popup", out var foreground, out var background))
                     {
-                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
-                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             popupForegroundColor = colorTable[foregroundIndex];
@@ -132,8 +101,8 @@ namespace ColorTool
 
                     if (ReadAttributes("screen", out foreground, out background))
                     {
-                        var foregroundIndex = (COLOR_NAMES as IList<string>).IndexOf(foreground);
-                        var backgroundIndex = (COLOR_NAMES as IList<string>).IndexOf(background);
+                        var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
+                        var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
                         if (foregroundIndex != -1 && backgroundIndex != -1)
                         {
                             foregroundColor = colorTable[foregroundIndex];
@@ -154,8 +123,8 @@ namespace ColorTool
 
             if (colorTable != null)
             {
-                var consoleAttributes = new ConsoleAttributes { background = backgroundColor, foreground = foregroundColor, popupBackground = popupBackgroundColor, popupForeground = popupForegroundColor };
-                return new ColorScheme { colorTable = colorTable, consoleAttributes = consoleAttributes };
+                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
+                return new ColorScheme(colorTable, consoleAttributes);
             }
             else
             {
@@ -170,18 +139,55 @@ namespace ColorTool
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
                 foreground = buffer.ToString();
-                if (!COLOR_NAMES.Contains(foreground))
+                if (!ColorNames.Contains(foreground))
                     return false;
 
 
                 buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "BACKGROUND", null, buffer, 512, filename);
                 background = buffer.ToString();
-                if (!COLOR_NAMES.Contains(background))
+                if (!ColorNames.Contains(background))
                     return false;
 
                 return true;
             }
+        }
+
+        private static uint ParseHex(string arg)
+        {
+            System.Drawing.Color col = System.Drawing.ColorTranslator.FromHtml(arg);
+            return RGB(col.R, col.G, col.B);
+        }
+
+        private static uint ParseRgb(string arg)
+        {
+            int[] components = { 0, 0, 0 };
+            string[] args = arg.Split(',');
+            if (args.Length != components.Length) throw new Exception("Invalid color format \"" + arg + "\"");
+            if (args.Length != 3) throw new Exception("Invalid color format \"" + arg + "\"");
+            for (int i = 0; i < args.Length; i++)
+            {
+                components[i] = Int32.Parse(args[i]);
+            }
+
+            return RGB(components[0], components[1], components[2]);
+        }
+
+        private static uint ParseColor(string arg)
+        {
+            if (arg[0] == '#')
+            {
+                return ParseHex(arg.Substring(1));
+            }
+            else
+            {
+                return ParseRgb(arg);
+            }
+        }
+
+        private static string FindIniScheme(string schemeName)
+        {
+            return SchemeManager.GetSearchPaths(schemeName, FileExtension).FirstOrDefault(File.Exists);
         }
     }
 }
