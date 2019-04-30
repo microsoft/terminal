@@ -116,6 +116,7 @@ public:
     void SetCursorVisible(const bool isVisible) noexcept;
 
     #pragma region TextSelection
+    // These methods are defined in TerminalSelection.cpp
     const bool IsSelectionActive() const noexcept;
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
@@ -185,6 +186,11 @@ public:
 
     void _NotifyScrollEvent();
 
+    #pragma region TextSelection
+    // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const;
+    void _ExpandWideGlyphSelection_Left(SHORT& x_pos, const SHORT y_pos) const noexcept;
+    void _ExpandWideGlyphSelection_Right(SHORT& x_pos, const SHORT y_pos) const noexcept;
+    #pragma endregion
 };
 
