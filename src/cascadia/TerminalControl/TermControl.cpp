@@ -1201,14 +1201,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - the corresponding viewport terminal position for the given Point parameter
     const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
-        COORD terminalPosition = {};
-        
         // Exclude padding from cursor position calculation
-        THROW_IF_FAILED(ShortSub(cursorPosition.X, static_cast<SHORT>(_root.Padding().Left), &terminalPosition.X));
-        THROW_IF_FAILED(ShortSub(cursorPosition.Y, static_cast<SHORT>(_root.Padding().Top), &terminalPosition.Y));
+        COORD terminalPosition =
+        {
+            static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
+            static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
+        };
+        
+        const auto fontSize = _actualFont.GetSize();
+        WI_ASSERT(fontSize.X != 0);
+        WI_ASSERT(fontSize.Y != 0);
         
         // Normalize to terminal coordinates by using font size
-        const auto fontSize = _actualFont.GetSize();
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;
 
