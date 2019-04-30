@@ -51,8 +51,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
             selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
         }
 
-        _ExpandWideGlyphSelection_Left(selectionRow.Left, row);
-        _ExpandWideGlyphSelection_Right(selectionRow.Right, row);
+        selectionRow.Left = _ExpandWideGlyphSelection_Left(selectionRow.Left, row);
+        selectionRow.Right = _ExpandWideGlyphSelection_Right(selectionRow.Right, row);
 
         selectionArea.emplace_back(selectionRow);
     }
@@ -64,47 +64,49 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
-// - updates "position" to the proper value, if necessary
-void Terminal::_ExpandWideGlyphSelection_Left(SHORT& x_pos, const SHORT y_pos) const noexcept
+// - updated x position to encapsulate the wide glyph
+const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT x_pos, const SHORT y_pos) const noexcept
 {
+    // don't change the value if at/outside the boundary
+    if (x_pos <= 0 || x_pos >= _buffer->GetSize().RightInclusive())
+    {
+        return x_pos;
+    }
+
     COORD position{x_pos, y_pos};
     const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
     if (attr.IsTrailing())
     {
-        // try to move off by highlighting the lead half too.
-        bool fSuccess = _mutableViewport.DecrementInBounds(position);
-
-        // if that fails, move off to the next character
-        if (!fSuccess)
-        {
-            _mutableViewport.IncrementInBounds(position);
-        }
+        // move off by highlighting the lead half too.
+        // alters position.X
+        _mutableViewport.DecrementInBounds(position);
     }
-    x_pos = position.X;
+    return position.X;
 }
 
 // Method Description:
-// - Expands the selection left-wards to cover a wide glyph, if necessary
+// - Expands the selection right-wards to cover a wide glyph, if necessary
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
-// - updates "position" to the proper value, if necessary
-void Terminal::_ExpandWideGlyphSelection_Right(SHORT& x_pos, const SHORT y_pos) const noexcept
+// - updated x position to encapsulate the wide glyph
+const SHORT Terminal::_ExpandWideGlyphSelection_Right(const SHORT x_pos, const SHORT y_pos) const noexcept
 {
+    // don't change the value if at/outside the boundary
+    if (x_pos <= 0 || x_pos >= _buffer->GetSize().RightInclusive())
+    {
+        return x_pos;
+    }
+
     COORD position{ x_pos, y_pos };
     const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
     if (attr.IsLeading())
     {
-        // try to move off by highlighting the lead half too.
-        bool fSuccess = _mutableViewport.IncrementInBounds(position);
-
-        // if that fails, move off to the next character
-        if (!fSuccess)
-        {
-            _mutableViewport.DecrementInBounds(position);
-        }
+        // move off by highlighting the trailing half too.
+        // alters position.X
+        _mutableViewport.IncrementInBounds(position);
     }
-    x_pos = position.X;
+    return position.X;
 }
 
 // Method Description:
