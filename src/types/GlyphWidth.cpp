@@ -37,3 +37,14 @@ void SetGlyphWidthFallback(std::function<bool(const std::wstring_view)> pfnFallb
 {
     widthDetector.SetFallbackMethod(pfnFallback);
 }
+
+// Function Description:
+// - Forwards notification about font changing to glyph width detector
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void NotifyGlyphWidthFontChanged()
+{
+    widthDetector.NotifyFontChanged();
+}

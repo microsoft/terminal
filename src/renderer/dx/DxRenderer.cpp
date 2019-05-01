@@ -1317,14 +1317,28 @@ HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 // Routine Description:
 // - Currently unused by this renderer.
 // Arguments:
-// - glyph - <unused>
-// - pResult - Filled with false.
+// - glyph - The glyph run to process for column width.
+// - pResult - True if it should take two columns. False if it should take one.
 // Return Value:
-// - S_OK
+// - S_OK or relevant DirectWrite error.
 [[nodiscard]]
-HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
+HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
-    *pResult = false;
+    Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+
+    // Create the text layout
+    CustomTextLayout layout(_dwriteFactory.Get(),
+        _dwriteTextAnalyzer.Get(),
+        _dwriteTextFormat.Get(),
+        _dwriteFontFace.Get(),
+        { &cluster, 1 },
+        _glyphCell.cx);
+
+    UINT32 columns = 0;
+    RETURN_IF_FAILED(layout.GetColumns(&columns));
+
+    *pResult = columns != 1;
+    
     return S_OK;
 }
 

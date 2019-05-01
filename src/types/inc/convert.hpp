@@ -45,6 +45,6 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeKeyboardEvents(const wchar_t wch
 
 std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, const unsigned int codepage);
 
-CodepointWidth GetCharWidth(const wchar_t wch) noexcept;
+CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept;
 
 wchar_t Utf16ToUcs2(const std::wstring_view charData);

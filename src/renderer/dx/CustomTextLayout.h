@@ -29,6 +29,9 @@ namespace Microsoft::Console::Render
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width);
 
+        [[nodiscard]]
+        HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
+
         // IDWriteTextLayout methods (but we don't actually want to implement them all, so just this one matching the existing interface)
         [[nodiscard]]
         HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
@@ -87,7 +90,7 @@ namespace Microsoft::Console::Render
                 script(),
                 isNumberSubstituted(),
                 isSideways(),
-                font{ nullptr },
+                fontFace{ nullptr },
                 fontScale{ 1.0 }
             { }
 
@@ -99,7 +102,7 @@ namespace Microsoft::Console::Render
             UINT8 bidiLevel;
             bool isNumberSubstituted;
             bool isSideways;
-            ::Microsoft::WRL::ComPtr<IDWriteFont> font;
+            ::Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
             FLOAT fontScale;
 
             inline bool ContainsTextPosition(UINT32 desiredTextPosition) const
@@ -141,6 +144,10 @@ namespace Microsoft::Console::Render
         HRESULT _ShapeGlyphRuns() noexcept;
         [[nodiscard]]
         HRESULT _ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept;
+        [[nodiscard]]
+        HRESULT _CorrectGlyphRuns() noexcept;
+        [[nodiscard]]
+        HRESULT _CorrectGlyphRun(const UINT32 runIndex) noexcept;
         [[nodiscard]]
         HRESULT _DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                IDWriteTextRenderer* renderer,

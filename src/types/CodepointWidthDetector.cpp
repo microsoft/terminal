@@ -43,15 +43,13 @@ CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) c
 // - true if wch is wide
 bool CodepointWidthDetector::IsWide(const wchar_t wch) const noexcept
 {
-    const auto width = GetCharWidth(wch);
-    if (width == CodepointWidth::Invalid)
+    try
     {
-        return _lookupIsWide({ &wch, 1 });
+        return IsWide({ &wch, 1 });
     }
-    else
-    {
-        return width == CodepointWidth::Wide;
-    }
+    CATCH_LOG();
+
+    return true;
 }
 
 // Routine Description:
@@ -65,11 +63,28 @@ bool CodepointWidthDetector::IsWide(const std::wstring_view glyph) const
     THROW_HR_IF(E_INVALIDARG, glyph.empty());
     if (glyph.size() == 1)
     {
-        const auto width = GetCharWidth(glyph.front());
+        // We first attempt to look at our custom quick lookup table of char width preferences.
+        const auto width = GetQuickCharWidth(glyph.front());
+
+        // If it's invalid, the quick width had no opinion, so go to the lookup table.
         if (width == CodepointWidth::Invalid)
         {
             return _lookupIsWide(glyph);
         }
+        // If it's ambiguous, the quick width wanted us to ask the font directly, try that if we can.
+        // If not, go to the lookup table.
+        else if (width == CodepointWidth::Ambiguous)
+        {
+            if (_hasFallback)
+            {
+                return _checkFallbackViaCache(glyph);
+            }
+            else
+            {
+                return _lookupIsWide(glyph);
+            }
+        }
+        // Otherwise, return Wide as True and Narrow as False.
         else
         {
             return width == CodepointWidth::Wide;
@@ -89,20 +104,55 @@ bool CodepointWidthDetector::IsWide(const std::wstring_view glyph) const
 // - true if codepoint is wide or if it can't be confirmed to be narrow
 bool CodepointWidthDetector::_lookupIsWide(const std::wstring_view glyph) const noexcept
 {
-    const CodepointWidth width = GetWidth(glyph);
-    if (width == CodepointWidth::Ambiguous)
+    try
     {
-        if (_hasFallback)
+        // Use our generated table to try to lookup the width based on the Unicode standard.
+        const CodepointWidth width = GetWidth(glyph);
+
+        // If it's ambiguous, then ask the font if we can.
+        if (width == CodepointWidth::Ambiguous)
         {
-            return _pfnFallbackMethod(glyph);
+            if (_hasFallback)
+            {
+                return _checkFallbackViaCache(glyph);
+            }
         }
+        // If it's not ambiguous, it should say wide or narrow. Turn that into True = Wide or False = Narrow.
+        else
+        {
+            return width == CodepointWidth::Wide;
+        }
+    }
+    CATCH_LOG();
+
+    // If we got this far, we couldn't figure it out.
+    // It's better to be too wide than too narrow.
+    return true;
+}
+
+// Routine Description:
+// - Checks the fallback function but caches the results until the font changes
+//   because the lookup function is usually very expensive and will return the same results
+//   for the same inputs.
+// Arguments:
+// - glyph - the utf16 encoded codepoint to check width of
+// - true if codepoint is wide or false if it is narrow
+bool CodepointWidthDetector::_checkFallbackViaCache(const std::wstring_view glyph) const
+{
+    const std::wstring findMe{ glyph };
+
+    // TODO: Cache needs to be emptied when font changes.
+    auto it = _fallbackCache.find(findMe);
+    if (it == _fallbackCache.end())
+    {
+        auto result = _pfnFallbackMethod(glyph);
+        _fallbackCache.insert_or_assign(findMe, result);
+        return result;
     }
     else
     {
-        return width == CodepointWidth::Wide;
+        return it->second;
     }
-    // better to be too wide than too narrow
-    return true;
 }
 
 // Routine Description:
@@ -144,6 +194,19 @@ void CodepointWidthDetector::SetFallbackMethod(std::function<bool(const std::wst
 {
     _pfnFallbackMethod = pfnFallback;
     _hasFallback = true;
+}
+
+// Method Description:
+// - Resets the internal ambiguous character width cache mechanism
+//   since it will be different when the font changes and we should
+//   re-query the new font for that information.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CodepointWidthDetector::NotifyFontChanged() const noexcept
+{
+    _fallbackCache.clear();
 }
 
 void CodepointWidthDetector::_populateUnicodeSearchMap()

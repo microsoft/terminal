@@ -50,6 +50,27 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 }
 
 // Routine Description:
+// - Figures out how many columns this layout should take. This will use the analyze step only.
+// Arguments:
+// - columns - The number of columns the layout should consume when done.
+// Return Value:
+// - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
+[[nodiscard]]
+HRESULT STDMETHODCALLTYPE CustomTextLayout::GetColumns(_Out_ UINT32* columns)
+{
+    *columns = 0;
+
+    RETURN_IF_FAILED(_AnalyzeRuns());
+    RETURN_IF_FAILED(_ShapeGlyphRuns());
+
+    const auto totalAdvance = std::accumulate(_glyphAdvances.cbegin(), _glyphAdvances.cend(), 0.0f);
+    
+    *columns = static_cast<UINT32>(ceil(totalAdvance / _width));
+
+    return S_OK;
+}
+
+// Routine Description:
 // - Implements a drawing interface similarly to the default IDWriteTextLayout which will
 //   take the string from construction, analyze it for complexity, shape up the glyphs,
 //   and then draw the final product to the given renderer at the point and pass along
@@ -72,6 +93,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
 {
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
+    RETURN_IF_FAILED(_CorrectGlyphRuns());
     RETURN_IF_FAILED(_DrawGlyphRuns(clientDrawingContext, renderer, { originX, originY }));
 
     return S_OK;
@@ -116,6 +138,15 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 
         // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
         RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+
+        // Ensure that a font face is attached to every run
+        for (auto& run : _runs)
+        {
+            if (!run.fontFace)
+            {
+                run.fontFace = _font;
+            }
+        }
 
         // Resequence the resulting runs in order before returning to caller.
         size_t totalRuns = _runs.size();
@@ -195,13 +226,13 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 {
     try
     {
-       // Shapes a single run of text into glyphs.
-       // Alternately, you could iteratively interleave shaping and line
-       // breaking to reduce the number glyphs held onto at once. It's simpler
-       // for this demostration to just do shaping and line breaking as two
-       // separate processes, but realize that this does have the consequence that
-       // certain advanced fonts containing line specific features (like Gabriola)
-       // will shape as if the line is not broken.
+        // Shapes a single run of text into glyphs.
+        // Alternately, you could iteratively interleave shaping and line
+        // breaking to reduce the number glyphs held onto at once. It's simpler
+        // for this demostration to just do shaping and line breaking as two
+        // separate processes, but realize that this does have the consequence that
+        // certain advanced fonts containing line specific features (like Gabriola)
+        // will shape as if the line is not broken.
 
         Run& run = _runs.at(runIndex);
         UINT32 textStart = run.textStart;
@@ -215,17 +246,6 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         if (textLength == 0)
         {
             return S_FALSE; // Nothing to do..
-        }
-
-        // Get the font for this run
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-        if (run.font)
-        {
-            RETURN_IF_FAILED(run.font->CreateFontFace(&face));
-        }
-        else
-        {
-            face = _font;
         }
 
         // Allocate space for shaping to fill with glyphs and other information,
@@ -255,7 +275,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
             hr = _analyzer->GetGlyphs(
                 &_text[textStart],
                 textLength,
-                face.Get(),
+                run.fontFace.Get(),
                 run.isSideways,         // isSideways,
                 WI_IsFlagSet(run.bidiLevel, 1),    // isRightToLeft
                 &run.script,
@@ -306,7 +326,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
             &_glyphIndices[glyphStart],
             &glyphProps[0],
             actualGlyphCount,
-            face.Get(),
+            run.fontFace.Get(),
             fontSize,
             run.isSideways,
             (run.bidiLevel & 1),    // isRightToLeft
@@ -321,69 +341,108 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 
         RETURN_IF_FAILED(hr);
 
-        // If we need to detect font fallback, we can do it this way:
-        // if (!_font->Equals(face.Get()))
+        // Set the final glyph count of this run and advance the starting glyph.
+        run.glyphCount = actualGlyphCount;
+        glyphStart += actualGlyphCount;
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+// Routine Description:
+// - Adjusts the glyph information from shaping to fit the layout pattern required
+//   for our renderer.
+//   This is effectively a loop of _CorrectGlyphRun. See it for details.
+// Arguments:
+// - <none> - Uses internal state
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]]
+HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
+{
+    try
+    {
+        // Correct each run separately. This is needed whenever script, locale,
+        // or reading direction changes.
+        for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
+        {
+            LOG_IF_FAILED(_CorrectGlyphRun(runIndex));
+        }
+    }
+    CATCH_RETURN();
+    return S_OK;
+}
+
+// Routine Description:
+// - Adjusts the advances for each glyph in the run so it fits within a fixed-column count of cells.
+// Arguments:
+// - runIndex - The ID number of the internal runs array to use while shaping
+// Return Value:
+// - S_OK or suitable DirectWrite or STL error code
+[[nodiscard]]
+HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
+{
+    try
+    {
+        Run& run = _runs.at(runIndex);
+
+        if (run.textLength == 0)
+        {
+            return S_FALSE; // Nothing to do..
+        }
 
         // We're going to walk through and check for advances that don't match the space that we expect to give out.
+
+        DWRITE_FONT_METRICS1 metrics;
+        run.fontFace->GetMetrics(&metrics);
+
+        // Walk through advances and space out characters that are too small to consume their box.
+        for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
         {
-            IDWriteFontFace1* face1;
-            RETURN_IF_FAILED(face.Get()->QueryInterface(&face1));
+            // Advance is how wide in pixels the glyph is
+            auto& advance = _glyphAdvances[i];
 
-            DWRITE_FONT_METRICS1 metrics;
-            face1->GetMetrics(&metrics);
+            // Offsets is how far to move the origin (in pixels) from where it is
+            auto& offset = _glyphOffsets[i];
 
-            // Walk through advances and space out characters that are too small to consume their box.
-            for (auto i = glyphStart; i < (glyphStart + actualGlyphCount); i++)
+            // Get how many columns we expected the glyph to have and mutiply into pixels.
+            const auto columns = _textClusterColumns[i];
+            const auto advanceExpected = static_cast<float>(columns * _width);
+
+            // If what we expect is bigger than what we have... pad it out.
+            if (advanceExpected > advance)
             {
-                // Advance is how wide in pixels the glyph is
-                auto& advance = _glyphAdvances[i];
+                // Get the amount of space we have leftover.
+                const auto diff = advanceExpected - advance;
 
-                // Offsets is how far to move the origin (in pixels) from where it is
-                auto& offset = _glyphOffsets[i];
+                // Move the X offset (pixels to the right from the left edge) by half the excess space
+                // so half of it will be left of the glyph and the other half on the right.
+                offset.advanceOffset += diff / 2;
 
-                // Get how many columns we expected the glyph to have and mutiply into pixels.
-                const auto columns = _textClusterColumns[i];
-                const auto advanceExpected = static_cast<float>(columns * _width);
+                // Set the advance to the perfect width we want.
+                advance = advanceExpected;
+            }
+            // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
+            else if (advanceExpected < advance)
+            {
+                // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
+                // height proportional to the width that we desire.
+                INT32 advanceInDesignUnits;
+                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices[i], &advanceInDesignUnits));
 
-                // If what we expect is bigger than what we have... pad it out.
-                if (advanceExpected > advance)
-                {
-                    // Get the amount of space we have leftover.
-                    const auto diff = advanceExpected - advance;
+                // When things are drawn, we want the font size (as specified in the base font in the original format)
+                // to be scaled by some factor.
+                // i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
+                // the width (and height) of the glyph will shrink to fit the monospace cell box.
 
-                    // Move the X offset (pixels to the right from the left edge) by half the excess space
-                    // so half of it will be left of the glyph and the other half on the right.
-                    offset.advanceOffset += diff / 2;
+                // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
+                // and was advised by the DirectWrite team. 
+                const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
+                const auto fontSizeWant = advanceExpected / widthAdvance;
+                run.fontScale = fontSizeWant / _format->GetFontSize();
 
-                    // Set the advance to the perfect width we want.
-                    advance = advanceExpected;
-                }
-                // If what we expect is smaller than what we have... rescale the font size to get a smaller glyph to fit.
-                else if (advanceExpected < advance)
-                {
-                    // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
-                    // height proportional to the width that we desire.
-                    INT32 advanceInDesignUnits;
-                    RETURN_IF_FAILED(face1->GetDesignGlyphAdvances(1, &_glyphIndices[i], &advanceInDesignUnits));
-
-                    DWRITE_GLYPH_METRICS glyphMetrics;
-                    RETURN_IF_FAILED(face1->GetDesignGlyphMetrics(&_glyphIndices[i], 1, &glyphMetrics));
-
-
-                    // When things are drawn, we want the font size (as specified in the base font in the original format)
-                    // to be scaled by some factor.
-                    // i.e. if the original font size was 16, we might want to draw this glyph with a 15.2 size font so
-                    // the width (and height) of the glyph will shrink to fit the monospace cell box.
-
-                    // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
-                    // and was advised by the DirectWrite team. 
-                    const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
-                    const auto fontSizeWant = advanceExpected / widthAdvance;
-                    run.fontScale = fontSizeWant / fontSizeFormat;
-
-                    // Set the advance to the perfect width that we want.
-                    advance = advanceExpected;
-                }
+                // Set the advance to the perfect width that we want.
+                advance = advanceExpected;
             }
         }
 
@@ -398,14 +457,11 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         //              0.0f
         //    );
         //}
-
-        // Set the final glyph count of this run and advance the starting glyph.
-        run.glyphCount = actualGlyphCount;
-        glyphStart += actualGlyphCount;
     }
     CATCH_RETURN();
     return S_OK;
 }
+
 
 // Routine Description:
 // - Takes the analyzed and shaped textual information from the layout process and
@@ -434,24 +490,12 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
             // Get the run
             Run& run = _runs.at(runIndex);
 
-            // Get the font face from the font metadata provided by the fallback analysis
-            ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-            if (run.font)
-            {
-                RETURN_IF_FAILED(run.font->CreateFontFace(&face));
-            }
-            else
-            {
-                face = _font;
-            }
-            
-
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
             DWRITE_GLYPH_RUN glyphRun = { 0 };
             glyphRun.bidiLevel = run.bidiLevel;
             glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
-            glyphRun.fontFace = face.Get();
+            glyphRun.fontFace = run.fontFace.Get();
             glyphRun.glyphAdvances = _glyphAdvances.data() + run.glyphStart;
             glyphRun.glyphCount = run.glyphCount;
             glyphRun.glyphIndices = _glyphIndices.data() + run.glyphStart;
@@ -467,12 +511,12 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 
             // Try to draw it
             RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
-                                                   mutableOrigin.x,
-                                                   mutableOrigin.y,
-                                                   DWRITE_MEASURING_MODE_NATURAL,
-                                                   &glyphRun,
-                                                   &glyphRunDescription,
-                                                   nullptr));
+                                                    mutableOrigin.x,
+                                                    mutableOrigin.y,
+                                                    DWRITE_MEASURING_MODE_NATURAL,
+                                                    &glyphRun,
+                                                    &glyphRunDescription,
+                                                    nullptr));
 
             // Shift origin to the right for the next run based on the amount of space consumed.
             mutableOrigin.x = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
@@ -826,7 +870,22 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
         while (textLength > 0)
         {
             auto& run = _FetchNextRun(textLength);
-            run.font = font;
+
+            if (font != nullptr)
+            {
+                // Get font face from font metadata
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+                RETURN_IF_FAILED(font->CreateFontFace(&face));
+
+                // QI for Face5 interface from base face interface, store into run
+                RETURN_IF_FAILED(face.As(&run.fontFace));
+            }
+            else
+            {
+                run.fontFace = _font;
+            }
+
+            // Store the font scale as well.
             run.fontScale = scale;
         }
     }
@@ -890,7 +949,7 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 // - <none> - Updates internal state
 void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 {
-    
+
 
     if (_runIndex < _runs.size()
         && _runs[_runIndex].ContainsTextPosition(textPosition))
@@ -912,7 +971,7 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 // - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-    
+
     UINT32 runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)

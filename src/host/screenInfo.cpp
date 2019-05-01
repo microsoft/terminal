@@ -545,6 +545,8 @@ void SCREEN_INFORMATION::RefreshFontWithRenderer()
                 ->TriggerFontChange(ServiceLocator::LocateGlobals().dpi,
                                     GetDesiredFont(),
                                     GetCurrentFont());
+
+            NotifyGlyphWidthFontChanged();
         }
     }
 }

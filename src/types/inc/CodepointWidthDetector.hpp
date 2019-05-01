@@ -107,6 +107,7 @@ public:
     bool IsWide(const std::wstring_view glyph) const;
     bool IsWide(const wchar_t wch) const noexcept;
     void SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback);
+    void NotifyFontChanged() const noexcept;
 
 #ifdef UNIT_TESTING
     friend class CodepointWidthDetectorTests;
@@ -114,9 +115,11 @@ public:
 
 private:
     bool _lookupIsWide(const std::wstring_view glyph) const noexcept;
+    bool _checkFallbackViaCache(const std::wstring_view glyph) const;
     unsigned int _extractCodepoint(const std::wstring_view glyph) const noexcept;
     void _populateUnicodeSearchMap();
 
+    mutable std::map<std::wstring, bool> _fallbackCache;
     std::map<UnicodeRange, CodepointWidth, UnicodeRangeCompare> _map;
     std::function<bool(std::wstring_view)> _pfnFallbackMethod;
     bool _hasFallback = false;

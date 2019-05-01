@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include "..\..\types\inc\GlyphWidth.hpp"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -293,6 +294,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
         _renderer->AddRenderEngine(dxEngine.get());
+
+        // Set up the renderer to be used to calculate the width of a glyph,
+        //      should we be unable to figure out it's width another way.
+        auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
+        SetGlyphWidthFallback(pfn);
 
         // Initialize our font with the renderer
         // We don't have to care about DPI. We'll get a change message immediately if it's not 96

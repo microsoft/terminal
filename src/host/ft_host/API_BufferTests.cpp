@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+extern "C" IMAGE_DOS_HEADER __ImageBase;
+
 // This class is intended to test boundary conditions for:
 // SetConsoleActiveScreenBuffer
 class BufferTests
@@ -23,6 +25,8 @@ class BufferTests
     END_TEST_METHOD()
     
     TEST_METHOD(ScrollLargeBufferPerformance);
+
+    TEST_METHOD(ChafaGifPerformance);
 };
 
 void BufferTests::TestSetConsoleActiveScreenBufferInvalid()
@@ -144,3 +148,66 @@ void BufferTests::ScrollLargeBufferPerformance()
     Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta/count));
 }
 
+void BufferTests::ChafaGifPerformance()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
+    END_TEST_METHOD_PROPERTIES()
+
+    const auto Out = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    CONSOLE_SCREEN_BUFFER_INFO Info;
+    GetConsoleScreenBufferInfo(Out, &Info);
+
+    // We need a large buffer
+    Info.dwSize.Y = 9999;
+    SetConsoleScreenBufferSize(Out, Info.dwSize);
+
+    SetConsoleCursorPosition(Out, { 0});
+
+    DWORD Mode = 0;
+    GetConsoleMode(Out, &Mode);
+    Mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    SetConsoleMode(Out, Mode);
+
+    SetConsoleOutputCP(CP_UTF8);
+
+    // Taken from: https://blog.kowalczyk.info/article/zy/Embedding-binary-resources-on-Windows.html
+    HGLOBAL     res_handle = NULL;
+    HRSRC       res;
+    char *      res_data;
+    DWORD       res_size;
+    
+    // NOTE: providing g_hInstance is important, NULL might not work
+    HMODULE hModule = (HMODULE)&__ImageBase;
+
+    res = FindResource(hModule, MAKEINTRESOURCE(CHAFA_CONTENT), RT_RCDATA);
+    if (!res)
+    {
+        VERIFY_FAIL(L"Couldn't find resource.");
+        return;
+    }
+    res_handle = LoadResource(hModule, res);
+    if (!res_handle)
+    {
+        VERIFY_FAIL(L"Couldn't load resource.");
+        return;
+    }
+    res_data = (char*)LockResource(res_handle);
+    res_size = SizeofResource(hModule, res);
+    /* you can now use the resource data */
+
+    Log::Comment(L"Working. Please wait...");
+    const auto now = std::chrono::steady_clock::now();
+
+    DWORD count = 0;
+    for (DWORD pos = 0; pos < res_size; pos += 1000)
+    {
+        DWORD written = 0;
+        WriteConsoleA(Out, res_data + pos, min(1000, res_size-pos), &written, nullptr);
+        count++;
+    }
+
+    const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count();
+    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta / count));
+}

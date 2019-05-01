@@ -30,11 +30,15 @@
     <ClInclude Include="Common.hpp" />
     <ClInclude Include="OneCoreDelay.hpp" />
     <ClInclude Include="precomp.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\types\lib\types.vcxproj">
       <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Host.Tests.Feature.rc" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{8CDB8850-7484-4EC7-B45B-181F85B2EE54}</ProjectGuid>

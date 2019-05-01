@@ -32,3 +32,5 @@ using namespace WEX::TestExecution;
 
 // Include our common helpers
 #include "common.hpp"
+
+#include "resource.h"

@@ -12,6 +12,8 @@ using namespace WEX::Logging;
 
 static const std::wstring emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
 
+static const std::wstring ambiguous = L"\x414"; // U+0414 cyrillic capital de
+
 // codepoint and utf16 encoded string
 static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData =
 {
@@ -34,7 +36,7 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(CodepointWidthDetectDefersMapPopulation)
     {
-        const CodepointWidthDetector widthDetector;
+        CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector._map.empty());
         widthDetector.IsWide(UNICODE_SPACE);
         VERIFY_IS_TRUE(widthDetector._map.empty());
@@ -45,13 +47,13 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(CanLookUpEmoji)
     {
-        const CodepointWidthDetector widthDetector;
+        CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector.IsWide(emoji));
     }
 
     TEST_METHOD(TestUnicodeRangeCompare)
     {
-        const CodepointWidthDetector::UnicodeRangeCompare compare;
+        CodepointWidthDetector::UnicodeRangeCompare compare;
         // test comparing 2 search terms
         CodepointWidthDetector::UnicodeRange a{ 0x10 };
         CodepointWidthDetector::UnicodeRange b{ 0x15 };
@@ -60,7 +62,7 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(CanExtractCodepoint)
     {
-        const CodepointWidthDetector widthDetector;
+        CodepointWidthDetector widthDetector;
         for (const auto& data : testData)
         {
             const auto& expected = std::get<0>(data);
@@ -72,7 +74,7 @@ class CodepointWidthDetectorTests
 
     TEST_METHOD(CanGetWidths)
     {
-        const CodepointWidthDetector widthDetector;
+        CodepointWidthDetector widthDetector;
         for (const auto& data : testData)
         {
             const auto& expected = std::get<2>(data);
@@ -80,6 +82,43 @@ class CodepointWidthDetectorTests
             const auto result = widthDetector.GetWidth({ wstr.c_str(), wstr.size() });
             VERIFY_ARE_EQUAL(result, expected);
         }
+    }
+
+    static bool FallbackMethod(const std::wstring_view glyph)
+    {
+        if (glyph.size() < 1)
+        {
+            return false;
+        }
+        else
+        {
+            return (glyph.at(0) % 2) == 1;
+        }
+    }
+
+    TEST_METHOD(AmbiguousCache)
+    {
+        // Set up a detector with fallback.
+        CodepointWidthDetector widthDetector;
+        widthDetector.SetFallbackMethod(std::bind(&FallbackMethod, std::placeholders::_1));
+
+        // Ensure fallback cache is empty.
+        VERIFY_ARE_EQUAL(0u, widthDetector._fallbackCache.size());
+
+        // Lookup ambiguous width character.
+        widthDetector.IsWide(ambiguous);
+
+        // Cache should hold it.
+        VERIFY_ARE_EQUAL(1u, widthDetector._fallbackCache.size());
+
+        // Cached item should match what we expect
+        const auto it = widthDetector._fallbackCache.begin();
+        VERIFY_ARE_EQUAL(ambiguous, it->first);
+        VERIFY_ARE_EQUAL(FallbackMethod(ambiguous), it->second);
+
+        // Cache should empty when font changes.
+        widthDetector.NotifyFontChanged();
+        VERIFY_ARE_EQUAL(0u, widthDetector._fallbackCache.size());
     }
 
 };
