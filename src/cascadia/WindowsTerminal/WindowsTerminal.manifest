@@ -27,8 +27,9 @@
     <activatableClass name="Microsoft.Terminal.Settings.TerminalSettings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
   <file name="TerminalApp.dll" hashalg="SHA1">
-    <activatableClass name="Microsoft.Terminal.TerminalApp.AppKeyBindings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
-    <activatableClass name="Microsoft.Terminal.TerminalApp.TermApp" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="TerminalApp.App" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="TerminalApp.AppKeyBindings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="TerminalApp.XamlmetaDataProvider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
   <file name="TerminalConnection.dll" hashalg="SHA1">
     <activatableClass name="Microsoft.Terminal.TerminalConnection.ConhostConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
@@ -125,5 +126,8 @@
     <activatableClass name="Microsoft.UI.Xaml.Media.RevealBackgroundBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
     <activatableClass name="Microsoft.UI.Xaml.Media.RevealBorderBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
     <activatableClass name="Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="Microsoft.UI.Xaml.Markup.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.UI.Xaml.Markup.XamlApplication" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
 </assembly>
