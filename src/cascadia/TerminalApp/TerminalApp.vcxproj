@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <PropertyGroup>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
+    <ProjectName>TerminalApp</ProjectName>
+    <RootNamespace>TerminalApp</RootNamespace>
+  </PropertyGroup>
+
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <!-- HERE BE DRAGONS:
+      For any types that use XAML information, if their .idl, .cpp, and .h
+      aren't all marked DependentUpon the corresponding .xaml file,
+      XamlTypeInfo.g.h won't pick it up correctly.
+    -->
+    <ApplicationDefinition Include="App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <!-- When we add other user controls, they should go in here as so: -->
+  <!-- <ItemGroup>
+    <Page Include="MyUserControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup> -->
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="Tab.h" />
+    <ClInclude Include="ColorScheme.h" />
+    <ClInclude Include="GlobalAppSettings.h" />
+    <ClInclude Include="Profile.h" />
+    <ClInclude Include="CascadiaSettings.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="AppKeyBindings.h">
+      <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="App.h">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="Tab.cpp" />
+    <ClCompile Include="ColorScheme.cpp" />
+    <ClCompile Include="GlobalAppSettings.cpp" />
+    <ClCompile Include="Profile.cpp" />
+    <ClCompile Include="CascadiaSettings.cpp" />
+    <ClCompile Include="CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="AppKeyBindings.cpp">
+      <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
+      <DependentUpon>App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <Midl Include="App.idl">
+      <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="AppKeyBindings.idl" />
+  </ItemGroup>
+
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="TerminalApp.def" />
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
+      <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
+    </ProjectReference>
+
+    <!-- This is needed to be able to reference the XamlApplication type. -->
+    <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
+      <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+    </ProjectReference>
+
+  </ItemGroup>
+  <PropertyGroup>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+</Project>

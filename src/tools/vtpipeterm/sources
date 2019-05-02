@@ -1,0 +1,34 @@
+MSC_WARNING_LEVEL=/W4 /WX
+
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
+
+TARGETNAME=vtpipeterm
+TARGETTYPE=PROGRAM
+
+UMTYPE=console
+UMENTRY=wmain
+
+TEST_CODE=1
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
+
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
+
+C_DEFINES=-DUNICODE -D__INSIDE_WINDOWS
+
+TARGETLIBS=\
+    $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib
+
+SOURCES=main.cpp  \
+        VtConsole.cpp \
+        res.rc \
+
+TARGET_DESTINATION=retail
+
+INCLUDES= \
+    $(INCLUDES);                                           \
+    $(OBJ_PATH)\$(O);                                      \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L)

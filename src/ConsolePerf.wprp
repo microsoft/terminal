@@ -1,0 +1,105 @@
+<WindowsPerformanceRecorder Version="1.0" Comments="Test" Company="Microsoft Corporation" Copyright="Microsoft Corporation">
+	<Profiles>
+		<SystemCollector Id="SystemCollector_ConsolePerfSystemCollectorInFileLarge">
+			<BufferSize Value="1024"/>
+			<Buffers Value="100"/>
+		</SystemCollector>
+        <!-- Leave this system provider alone. It's for environmental statistics by the plugin only -->
+         <SystemProvider Id="SystemProvider_Winperf_Environment_Light">
+            <Keywords Operation="Add">
+                <Keyword Value="CpuConfig"/>
+            </Keywords>
+        </SystemProvider>
+        <!-- This one is our system provider to customize as we see fit. -->
+		<SystemProvider Id="SystemProvider_ConsolePerf_Verbose" Base="SystemProvider_Base">
+			<Keywords Operation="Add">
+            <!-- Add additional kernel system collection here if we decide we need it for the regions of interest file -->
+				<Keyword Value="CSwitch"/>
+                <Keyword Value="MemoryInfo"/>
+                <Keyword Value="MemoryInfoWS"/>
+                <Keyword Value="VirtualAllocation"/>
+			</Keywords>
+		</SystemProvider>
+        <!-- Then add all the event providers we might possibly need. The first batch up here is boilerplate ones -->
+		<EventProvider Id="EventProvider-Microsoft.OSGENG.Testing.TaefEngine" Name="70d27130-f2f3-4365-b790-d31223254ef4"/>
+		<EventProvider Id="EventProvider-Microsoft-Windows-TestExecution" Name="Microsoft-Windows-TestExecution"/>
+		<EventProvider Id="EventProvider-Microsoft.Windows.TestExecution.WexLogger" Name="40c4df8b-00a9-5159-62bc-9bbc5ee78a29"/>
+		<EventProvider Id="EventProvider-Microsoft-Windows-WinPerf" Name="7dba59f2-a1ff-40f0-b9f1-34b7531e9580"/>
+		<EventProvider Id="EventProvider-Microsoft.Windows.WinPerf" Name="BE6F04EA-3488-4543-8082-24843EAEC303"/>
+        <EventProvider Id="EventProvider-Census" Name="262CDE7A-5C84-46CF-9420-94963791EF69"/>
+        <!-- These providers are relevant to specific Regions of Interest -->
+        <EventProvider Id="EventProvider-Microsoft-Windows-Kernel-Memory" Name="Microsoft-Windows-Kernel-Memory"/>
+        <EventProvider Id="EventProvider_Microsoft-Windows-Kernel-Power" Name="331c3b3a-2005-44c2-ac5e-77220c37d6b4" NonPagedMemory="true">
+            <Keywords>
+                <Keyword Value="0x8000000000000000" />
+            </Keywords>
+            <CaptureStateOnSave>
+                <Keyword Value="0x80"/>
+            </CaptureStateOnSave>
+        </EventProvider>
+        <!-- Add console providers here -->
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.Launcher" Name="770aa552-671a-5e97-579b-151709ec0dbd"/>
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.Host" Name="fe1ff234-1f09-50a8-d38d-c44fab43e818"/>
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.Server" Name="1A541C01-589A-496E-85A7-A9E02170166D"/>
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.VirtualTerminal.Parser" Name="c9ba2a84-d3ca-5e19-2bd6-776a0910cb9d"/>
+        <EventProvider Id="EventProvider-Microsoft.Windows.Console.Render.VtEngine" Name="c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d"/>
+        <!-- Now define some profiles. We'll call them by ID when collecting. Also, the Base is where it is inheriting from and is a .wprpi file built... -->
+        <!-- ... into WPR automatically. Go look in the WPR install directory or in the documentation to find it. -->
+		<Profile Id="ConsolePerf.Verbose.File" Base="GeneralProfile.Light.File" LoggingMode="File" Name="ConsolePerfProfile" DetailLevel="Verbose" Description="Console Performance default profile">
+			<Collectors Operation="Add">
+				<SystemCollectorId Value="SystemCollector_ConsolePerfSystemCollectorInFileLarge">
+                    <!-- You don't have to change anything here when system keywords are added above. -->
+                    <!-- Kernel collection is a bit more unified than user collection of events. -->
+					<SystemProviderId Value="SystemProvider_ConsolePerf_Verbose"/>
+				</SystemCollectorId>
+				<EventCollectorId Value="EventCollector_WPREventCollectorInFile">
+					<EventProviders Operation="Add">
+                        <!-- Anything we need to collect for our perf test has to be referenced again here. -->
+						<EventProviderId Value="EventProvider-Microsoft.OSGENG.Testing.TaefEngine"/>
+						<EventProviderId Value="EventProvider-Microsoft-Windows-TestExecution"/>
+						<EventProviderId Value="EventProvider-Microsoft.Windows.TestExecution.WexLogger"/>
+						<EventProviderId Value="EventProvider-Microsoft-Windows-WinPerf"/>
+						<EventProviderId Value="EventProvider-Microsoft.Windows.WinPerf"/>
+                        <EventProviderId Value="EventProvider-Microsoft-Windows-Kernel-Memory"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Launcher"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Host"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Server"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.VirtualTerminal.Parser"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.Console.Render.VtEngine"/>
+					</EventProviders>
+				</EventCollectorId>
+			</Collectors>
+		</Profile>
+        <!-- Leave everything below here alone. They're needed for WinPerf to collect environmental census information -->
+         <Profile Id="WinPerfEnvironment.Light.File" Base="" LoggingMode="File" Name="WinPerfEnvironment" DetailLevel="Light" Description="WinPerf environment profile">
+            <Collectors Operation="Add">
+                <SystemCollectorId Value="SystemCollector_WPRSystemCollectorInFile">
+                    <SystemProviderId Value="SystemProvider_Winperf_Environment_Light" />
+                </SystemCollectorId>
+                <EventCollectorId Value="EventCollector_WPREventCollectorInFile">
+                    <EventProviders Operation="Add">
+                        <EventProviderId Value="EventProvider-Census"/>
+                        <EventProviderId Value="EventProvider_Microsoft-Windows-Kernel-Power"/>
+                        <EventProviderId Value="EventProvider-Microsoft.OSGENG.Testing.TaefEngine"/>
+                        <EventProviderId Value="EventProvider-Microsoft-Windows-TestExecution"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.TestExecution.WexLogger"/>
+                        <EventProviderId Value="EventProvider-Microsoft-Windows-WinPerf"/>
+                        <EventProviderId Value="EventProvider-Microsoft.Windows.WinPerf"/>
+                    </EventProviders>
+                </EventCollectorId>
+            </Collectors>
+        </Profile>
+        <Profile Id="WinPerfEnvironment.Light.Memory" Base="WinPerfEnvironment.Light.File" LoggingMode="Memory" Name="WinPerfEnvironment" DetailLevel="Light" Description="WinPerf environment profile">
+            <Collectors Operation="Add">
+                <SystemCollectorId Value="SystemCollector_WPRSystemCollectorInFile">
+                    <BufferSize Value="1024"/>
+                    <Buffers Value="5" PercentageOfTotalMemory="true"/>
+                </SystemCollectorId>
+                <EventCollectorId Value="EventCollector_WPREventCollectorInFile">
+                    <BufferSize Value="1024"/>
+                    <Buffers Value="3" PercentageOfTotalMemory="true"/>
+                </EventCollectorId>
+            </Collectors>
+        </Profile>
+    </Profiles>
+</WindowsPerformanceRecorder>

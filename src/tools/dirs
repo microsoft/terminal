@@ -1,0 +1,4 @@
+DIRS=nihilist \
+     vtapp \
+     vtpipeterm \
+     integrity \

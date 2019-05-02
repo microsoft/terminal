@@ -1,0 +1,38 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IKeyBindings.idl";
+import "ICoreSettings.idl";
+
+namespace Microsoft.Terminal.Settings
+{
+    enum ScrollbarState
+    {
+        Visible = 0,
+        Hidden
+    };
+
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ITerminalSettings interface, and any additional settings
+    //      for specifically the control.
+    interface IControlSettings requires Microsoft.Terminal.Settings.ICoreSettings
+    {
+        Boolean UseAcrylic;
+        Boolean CloseOnExit;
+        Double TintOpacity;
+        ScrollbarState ScrollState; 
+
+        String FontFace;
+        Int32 FontSize;
+        String Padding;
+
+        IKeyBindings KeyBindings;
+
+        String Commandline;
+        String StartingDirectory;
+        String EnvironmentVariables;
+
+    };
+}

@@ -1,0 +1,21 @@
+TARGETTYPE=TESTLIST
+
+TEST_CODE=1
+
+TESTLIST_SOURCES=\
+    Microsoft.Console.Tests.testlist \
+    Microsoft.Console.Tests.DesktopOnly.testlist \
+    Microsoft.Console.TestLab.Desktop.testlist \
+    Microsoft.Console.TestLab.OneCoreUap.testlist \
+    Microsoft.Console.TestLab.Performance.testlist \
+
+TESTLIST_REFERENCE_DIRS=\
+    $(OBJ_PATH)\..\interactivity\win32\ut_interactivity_win32\$O \
+    $(OBJ_PATH)\..\host\ut_host\$O \
+    $(OBJ_PATH)\..\buffer\out\ut_textbuffer\$O \
+    $(OBJ_PATH)\..\host\ft_host\$O \
+    $(OBJ_PATH)\..\host\ft_integrity\$O \
+    $(OBJ_PATH)\..\host\ft_uia\$O \
+    $(OBJ_PATH)\..\terminal\adapter\ut_adapter\$O \
+    $(OBJ_PATH)\..\terminal\parser\ut_parser\$O \
+    $(ONECORE_PRIVATE_PATH)\minkernel\lib\$(TARGET_DIRECTORY)\testmetadata\console \

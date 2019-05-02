@@ -1,0 +1,58 @@
+!include ..\project.inc
+
+# -------------------------------------
+# Windows Console
+# - Console Text Services Framework
+# -------------------------------------
+
+# This module allows the Windows Console to interact with
+# the "Text Services Framework" which provides Input Method Editors (IMEs).
+# This is leveraged to allow the console to interact appropriately with
+# Chinese, Japanese, and Korean languages which pop-up overlays to help
+# insert the appropriate characters based on a series of keystrokes.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConTSF
+TARGETTYPE              = LIBRARY
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DWIN32 -DNT
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# Defines IME and Codepage support
+W32_SB                  = 1
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+PRECOMPILED_PCH         = precomp.pch
+PRECOMPILED_OBJ         = precomp.obj
+
+SOURCES = \
+    contsf.cpp \
+    ConsoleTSF.cpp \
+    TfConvArea.cpp \
+    TfCatUtil.cpp \
+    TfDispAttr.cpp \
+    TfEditses.cpp \
+    TfTxtevCb.cpp \
+
+INCLUDES = \
+    ..\inc; \
+    $(ONECORE_PRIV_SDK_INC_PATH); \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
+    $(SDK_INC_PATH)\atl30; \

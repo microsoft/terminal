@@ -1,0 +1,2 @@
+$(OBJ_PATH)\$O\$(TARGETNAME).res: $(O_MANIFESTS)
+

@@ -1,0 +1,13 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include <windows.h>
+#include <ntverp.h>
+
+#define VER_FILETYPE    VFT_UNKNOWN
+#define VER_FILESUBTYPE VFT2_UNKNOWN
+#define VER_FILEDESCRIPTION_STR     ___TARGETNAME
+#define VER_INTERNALNAME_STR        ___TARGETNAME
+#define VER_ORIGINALFILENAME_STR    ___TARGETNAME
+
+#include "common.ver"

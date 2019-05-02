@@ -1,0 +1,32 @@
+
+# How to build Openconsole
+
+Openconsole can be built with Visual Studio or from the command line. There are build scripts for both cmd and powershell in /tools.
+
+## Building with cmd
+
+The cmd scripts are set up to emulate a portion of the OS razzle build environment. razzle.cmd is the first script that should be run. bcz.cmd will build clean and bz.cmd should build incrementally.
+
+There are also scripts for running the tests:
+- runut.cmd - run the unit tests
+- runft.cmd - run the feature tests
+- runuia.cmd - run the UIA tests
+
+## Build with Powershell
+
+Openconsole.psm1 should be loaded with `Import-Module`. From there `Set-MsbuildDevEnvironment` will set up environment variables required to build. There are a few exported functions (look at their documentation for further details):
+
+- Invoke-OpenConsolebuild - builds the solution. Can be passed msbuild arguments.
+- Invoke-OpenConsoleTests - runs the various tests. Will run the unit tests by default.
+- Start-OpenConsole - starts Openconsole.exe from the output directory. x64 is run by default.
+- Debug-OpenConsole - starts Openconsole.exe and attaches it to the default debugger. x64 is run by default.
+
+## Configuration Types
+
+Openconsole has three configuration types:
+
+- Debug
+- Release
+- AuditMode
+
+AuditMode is an experimental mode that enables some additional static analyis from CppCoreCheck.

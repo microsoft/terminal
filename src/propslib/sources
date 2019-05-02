@@ -1,0 +1,48 @@
+!include ..\project.inc
+
+# -------------------------------------
+# Windows Console
+# - Console Properties Library
+# -------------------------------------
+
+# This module defines a layer to access user configurable properties
+# or "preferences" that will be stored in a user's registry or embedded within
+# the LNK shortcut file that they used to start the console.
+# It also loads some system configuration information from the registry.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConProps
+TARGETTYPE              = LIBRARY
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DNT -DWIN32
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# Defines IME and Codepage support
+W32_SB                  = 1
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+
+SOURCES = \
+    ShortcutSerialization.cpp \
+    RegistrySerialization.cpp \
+    TrueTypeFontList.cpp \
+
+INCLUDES = \
+    ..\inc; \

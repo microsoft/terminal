@@ -1,0 +1,16 @@
+!include ..\sources.inc
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConRenderVt.Unittest
+TARGETTYPE              = LIBRARY
+
+TEST_CODE               = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING

@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemGroup>
+    <ClCompile Include="..\CodepointWidthDetector.cpp" />
+    <ClCompile Include="..\convert.cpp" />
+    <ClCompile Include="..\GlyphWidth.cpp" />
+    <ClCompile Include="..\MouseEvent.cpp" />
+    <ClCompile Include="..\FocusEvent.cpp" />
+    <ClCompile Include="..\IInputEvent.cpp" />
+    <ClCompile Include="..\KeyEvent.cpp" />
+    <ClCompile Include="..\MenuEvent.cpp" />
+    <ClCompile Include="..\ModifierKeyState.cpp" />
+    <ClCompile Include="..\Utf16Parser.cpp" />
+    <ClCompile Include="..\Viewport.cpp" />
+    <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
+    <ClInclude Include="..\inc\convert.hpp" />
+    <ClInclude Include="..\inc\GlyphWidth.hpp" />
+    <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\Viewport.hpp" />
+    <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\utils.hpp" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820263}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>types</RootNamespace>
+    <ProjectName>Types</ProjectName>
+    <TargetName>ConTypes</TargetName>
+  </PropertyGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.lib.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+</Project>

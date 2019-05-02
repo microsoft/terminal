@@ -1,0 +1,71 @@
+# -------------------------------------
+# Windows Console
+# - Console Virtual Terminal Parser Fuzzer
+# -------------------------------------
+
+# This program will generate fuzz input for the parsing engine
+# and is to be used in conjunction with the fuzz wrapper tool.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = VTCommandFuzzer
+TARGETTYPE              = PROGRAM
+UMTYPE                  = console
+UMENTRY                 = wmain
+TARGET_DESTINATION      = UnitTests
+DLLDEF                  =
+
+TEST_CODE               = 1
+
+# -------------------------------------
+# CRT Configuration
+# -------------------------------------
+
+USE_UNICRT              = 1
+USE_MSVCRT              = 1
+
+USE_STL                 = 1
+STL_VER                 = STL_VER_CURRENT
+USE_NATIVE_EH           = 1
+
+BUILD_FOR_CORESYSTEM    = 1
+ATL_VER                 = 70
+USE_STATIC_ATL          = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+UNICODE                 = 1
+C_DEFINES               = $(C_DEFINES) -DUNICODE -D_UNICODE
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL       = /W4 /WX
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+PRECOMPILED_CXX         =   1
+PRECOMPILED_INCLUDE     =   stdafx.h
+
+SOURCES = \
+    VTCommandFuzzer.cpp \
+
+
+
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \

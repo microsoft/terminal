@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RuleSet Name="Console Rules" Description="These rules enforce static analysis on console code." ToolsVersion="15.0">
+  <Include Path="cppcorecheckrules.ruleset" Action="Default" />
+</RuleSet>

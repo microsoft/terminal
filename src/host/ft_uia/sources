@@ -1,0 +1,59 @@
+TARGETNAME                         =   Microsoft.Console.Host.UIAutomationTests
+TARGETTYPE                         =   DYNLINK
+TARGET_DESTINATION                 =   UnitTests
+
+UNIVERSAL_TEST                     =   1
+
+# The following lines are required to force PASS2 to occur, which is when the universal test testmd/spkg is generated
+!IF 0
+SPKG_SOURCES=
+!ENDIF
+
+MANAGED_CODE                       =   1
+TEST_CODE                          =   1
+URT_VER                            =   4.5
+
+USER_CS_FLAGS                      =   $(USER_CS_FLAGS) /define:__INSIDE_WINDOWS
+
+SOURCES                            =   \
+                                       Properties\AssemblyInfo.cs \
+                                       Common\AutoHelpers.cs \
+                                       Common\CheckBoxMeta.cs \
+                                       Common\Globals.cs \
+                                       Common\NativeMethods.cs \
+                                       Common\RegistryHelper.cs \
+                                       Common\ShortcutHelper.cs \
+                                       Common\SliderMeta.cs \
+                                       Common\VersionSelector.cs \
+                                       Elements\CmdApp.cs \
+                                       Elements\ColorsTab.cs \
+                                       Elements\FontTab.cs \
+                                       Elements\LayoutTab.cs \
+                                       Elements\OptionsTab.cs \
+                                       Elements\PropertiesDialog.cs \
+                                       Elements\TabBase.cs \
+                                       Elements\Tabs.cs \
+                                       Elements\ViewportArea.cs \
+                                       Elements\WinEventSystem.cs \
+                                       ExperimentalTabTests.cs \
+                                       Init.cs \
+                                       MiscTests.cs \
+                                       MouseWheelTests.cs \
+                                       SelectionApiTests.cs \
+                                       VirtualTerminalTests.cs \
+                                       WinEventTests.cs \
+
+
+REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Core.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Data.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Drawing.metadata_dll; \
+                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.common.managed.metadata_dll; \
+                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\wex.logger.interop.metadata_dll; \
+                                       $(ONECORESDKTOOLS_INTERNAL_REF_PATH_L)\wextest\cue\te.managed.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\appium-dotnet-driver.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\castle.core.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\newtonsoft.json.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\webdriver.metadata_dll; \
+                                       $(ONECORESDKTOOLS_PRIVATE_REF_PATH_L)\WinAppDriver\webdriver.support.metadata_dll;
+

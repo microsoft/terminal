@@ -1,0 +1,57 @@
+!include ..\..\..\project.inc
+
+# -------------------------------------
+# Windows Console
+# - Console Virtual Terminal Parser Fuzz Wrapper
+# -------------------------------------
+
+# This program wraps the Virtual Terminal Parser lib in a simple
+# console application that can be used for fuzz testing purposes.
+# It will simply read in text in a variety of formats and inject the text
+# into the parsing engine.
+# It is expected that this binary is monitored during its runtime for
+# various security concerns (overruns, heap issues, etc.)
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConTerm.Parser.FuzzWrapper
+TARGETTYPE              = PROGRAM
+UMTYPE                  = console
+UMENTRY                 = wmain
+TARGET_DESTINATION      = UnitTests
+DLLDEF                  =
+
+TEST_CODE               = 1
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DINLINE_TEST_METHOD_MARKUP -DUNIT_TESTING
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         =   1
+PRECOMPILED_INCLUDE     =   precomp.h
+
+SOURCES = \
+    main.cpp \
+    echoDispatch.cpp \
+
+INCLUDES = \
+    $(INCLUDES); \
+
+TARGETLIBS = \
+    $(TARGETLIBS) \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \

@@ -1,0 +1,30 @@
+MSC_WARNING_LEVEL=/W4 /WX
+
+USER_C_FLAGS = $(USER_C_FLAGS) /std:c++17
+
+TARGETNAME=nihilist
+TARGETTYPE=PROGRAM
+
+UMTYPE=console
+UMENTRY=wmain
+
+TEST_CODE=1
+USE_MSVCRT=1
+USE_UNICRT=1
+
+C_DEFINES=-DUNICODE
+
+TARGETLIBS=\
+        $(MINCORE_SDK_LIB_PATH)\mincore.lib \
+
+SOURCES=main.cpp  \
+        res.rc \
+
+TARGET_DESTINATION=unittests
+
+INCLUDES= \
+    $(INCLUDES);                                           \
+    $(OBJ_PATH)\$(O);                                      \
+    $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L)
+
+SPKG_SOURCES = A LegacyTestPackage entry in product.pbxproj is now required for each pkg.xml file to build packages. This exact string triggers PASS2, do not alter it.
