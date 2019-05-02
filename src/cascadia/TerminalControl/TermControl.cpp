@@ -1209,8 +1209,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
         
         const auto fontSize = _actualFont.GetSize();
-        WI_ASSERT(fontSize.X != 0);
-        WI_ASSERT(fontSize.Y != 0);
+        FAIL_FAST_IF(fontSize.X == 0);
+        FAIL_FAST_IF(fontSize.Y == 0);
         
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
