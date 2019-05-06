@@ -70,6 +70,8 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
   - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
+  
+  - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
   - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 
