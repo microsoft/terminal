@@ -31,35 +31,7 @@ namespace GUIConsole.ConPTY
 
         public Terminal()
         {
-            // By default, UI applications don't have a console associated with them.
-            // So first, we check to see if this process has a console.
-            if (GetConsoleWindow() == IntPtr.Zero)
-            {
-                // If it doesn't, ask Windows to allocate one to it for us.
-                bool createConsoleSuccess = AllocConsole();
-                if (!createConsoleSuccess)
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not allocate console for this process.");
-                }
-            }
 
-            // And enable VT processing for our process's console.
-            EnableVirtualTerminalSequenceProcessing();
-        }        
-        
-        private void EnableVirtualTerminalSequenceProcessing()
-        {
-            SafeFileHandle screenBuffer = GetConsoleScreenBuffer();
-            if (!GetConsoleMode(screenBuffer, out uint outConsoleMode))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not get console mode.");
-            }
-            outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-
-            if (!SetConsoleMode(screenBuffer, outConsoleMode))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not enable virtual terminal processing.");
-            }
         }
 
         /// <summary>
@@ -124,14 +96,14 @@ namespace GUIConsole.ConPTY
         {
             SetConsoleCtrlHandler(eventType =>
             {
-                if(eventType == CtrlTypes.CTRL_CLOSE_EVENT)
+                if (eventType == CtrlTypes.CTRL_CLOSE_EVENT)
                 {
                     handler();
                 }
                 return false;
             }, true);
         }
-        
+
         private void DisposeResources(params IDisposable[] disposables)
         {
             foreach (var disposable in disposables)
@@ -158,7 +130,7 @@ namespace GUIConsole.ConPTY
                 IntPtr.Zero);
 
             if (file == new IntPtr(-1))
-            {                
+            {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not get console screen buffer.");
             }
 
