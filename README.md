@@ -4,7 +4,7 @@ Welcome\! This repository contains the source code for:
   - The Windows console host (`conhost.exe`)
   - Components shared between the two projects
   - [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
-  - [Sample projects](https://github.com/Microsoft/console/tree/master/samples) that show how to consume the Windows Console APIs
+  - [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
 
 ### Build Status
 
