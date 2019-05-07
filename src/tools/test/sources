@@ -1,0 +1,36 @@
+MSC_WARNING_LEVEL=/W4 /WX
+!include $(NTMAKEENV)\system_defaultmk.inc
+!include $(WINCORE_PATH)\core.inc
+SOURCES_USED=$(WINCORE_PATH)\core.inc
+
+TARGETNAME=conhost.test
+TARGETTYPE=PROGRAM
+
+UMTYPE=console
+UMENTRY=wmain
+
+TEST_CODE=1
+USE_MSVCRT=1
+
+C_DEFINES=-DUNICODE
+
+TARGETLIBS=\
+        $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
+        $(MINCORE_SDK_LIB_PATH)\mincore.lib \
+        $(MINCORE_SDK_LIB_PATH)\mincore_legacy.lib \
+        $(SDK_LIB_PATH)\ole32.lib       \
+        $(SDK_LIB_PATH)\uuid.lib        \
+        $(SDK_LIB_PATH)\propsys.lib \
+
+SOURCES=main.cpp  \
+        res.rc \
+
+TARGET_DESTINATION=retail
+
+PRECOMPILED_CXX=1
+PRECOMPILED_INCLUDE=precomp.h
+PRECOMPILED_PCH=precomp.pch
+PRECOMPILED_OBJ=precomp.obj
+
+INCLUDES= \
+    $(INCLUDES);$(OBJ_PATH)\$(O);$(MINWIN_PRIV_SDK_INC_PATH)

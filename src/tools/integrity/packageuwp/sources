@@ -1,0 +1,11 @@
+TARGETTYPE=APPX
+TARGETNAME=ConsoleIntegrityUWP
+TARGET_DESTINATION=UnitTests
+CODE_SIGN_EKU=CS
+
+TEST_CODE=1
+
+SOURCES=\
+    ConsoleUWP.appxsources
+
+SPKG_SOURCES = A LegacyTestPackage entry in product.pbxproj is now required for each pkg.xml file to build packages. This exact string triggers PASS2, do not alter it.

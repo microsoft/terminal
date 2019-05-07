@@ -1,0 +1,71 @@
+!if 0
+Copyright (c) Microsoft Corporation.  All rights reserved.
+!endif
+
+TARGETNAME=Microsoft.Console.Host.IntegrityTests
+TARGETTYPE=DYNLINK
+TARGET_DESTINATION=UnitTests
+
+TEST_CODE=1
+UNIVERSAL_TEST = 1
+
+DLLDEF=
+
+USE_NATIVE_EH=1
+USE_MSVCRT=1
+USE_UNICRT=1
+USE_CX=1
+CONSUME_WINRT=1
+
+USE_STL=1
+STL_VER=STL_VER_CURRENT
+USE_STLDLL=1
+
+C_DEFINES=$(C_DEFINES) -DUNICODE -D_UNICODE
+C_DEFINES=$(C_DEFINES)\
+    /AI$(ONECOREBASE_INTERNAL_REF_PATH_L)\AppModel\Test\Common
+
+PRECOMPILED_INCLUDE=precomp.hpp
+PRECOMPILED_CXX=1
+
+INCLUDES=\
+    $(INCLUDES); \
+    $(COM_INC_PATH); \
+    $(ONECOREBASE_INTERNAL_INC_PATH_L)\appmodel\test\common; \
+    $(ONECOREREDIST_INTERNAL_INC_PATH_L)\TAEF; \
+    $(ONECORE_PRIV_SDK_INC_PATH); \
+    $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
+
+TARGETLIBS=\
+    $(TARGETLIBS) \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
+    $(ONECOREREDIST_INTERNAL_LIB_PATH_L)\TAEF\Wex.Common.lib \
+    $(ONECOREREDIST_INTERNAL_LIB_PATH_L)\TAEF\Wex.Logger.lib \
+    $(ONECORESDKTOOLS_INTERNAL_LIB_PATH_L)\WexTest\Cue\Te.Common.lib \
+    $(ONECOREBASE_INTERNAL_LIB_PATH_L)\appmodel\test\common\microsoft.onecoreuap.test.appmodel.lib \
+
+SOURCES=\
+    IntegrityTest.cpp
+
+VARIABLE_OVERRIDES=$(VARIABLE_OVERRIDES);OBJ_PATH=$(OBJ_PATH)
+
+!if 0
+This is used to control the arch loaded into the testmd.definition
+!endif
+!if "$(_BUILDARCH)" == "amd64"
+UNIVERSAL_TEST_MACROS=CoffeeArch=x64
+!else
+UNIVERSAL_TEST_MACROS=CoffeeArch=$(_BUILDARCH)
+!endif
+
+!if 0
+This is used to adjust the source of the VCLibs package
+!endif
+!if "$(_BUILDARCH)" == "x86"
+UNIVERSAL_TEST_MACROS=$(UNIVERSAL_TEST_MACROS);CoffeeDir=i386
+!else
+UNIVERSAL_TEST_MACROS=$(UNIVERSAL_TEST_MACROS);CoffeeDir=$(_BUILDARCH)
+!endif
+
+
+

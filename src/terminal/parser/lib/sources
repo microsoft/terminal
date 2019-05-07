@@ -1,0 +1,8 @@
+!include ..\sources.inc
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = ConTermParser
+TARGETTYPE              = LIBRARY

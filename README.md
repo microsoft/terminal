@@ -1,27 +1,117 @@
-# Welcome to the official Windows Console issues & samples repo! 
+Welcome\! This repository contains the source code for:
 
-## Issues
+  - Windows Terminal
+  - The Windows console host (`conhost.exe`)
+  - Components shared between the two projects
+  - [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
+  - [Sample projects](https://github.com/Microsoft/console/tree/master/samples) that show how to consume the Windows Console APIs
 
-This repo is monitored by the Windows Console engineering team, and provides a best-effort, informal support option for the community. Your patience is appreciated! 
-
-The Windows Console engineering team greatly appreciate issues containing concise, detailed issues containing repro-steps, and screenshots where appropriate :)
-
-We also appreciate not +1-ing issues with no additional or actionable information. Please use a reaction to show your support of an existing comment on the thread and/or subscribe to notifications using the button in the sidebar in lieu of providing a low-value comment.
-
-### Code of Conduct
-This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact opencode@microsoft.com with any additional questions or comments.
-
-In addition, the team reserve the right to actively manage issues, closing duplicates or resolved issues, etc., and would appreciate it if you would avoid creating duplicates of existing items by searching issues _before_ filing a new issue.
-
-## Tools & Samples
-You'll also find assorted Console tools, samples, including the following: 
-
-* [ColorTool](https://github.com/Microsoft/Console/tree/master/tools/ColorTool) - A tool for changing the color scheme of the Windows console.
-* [EchoCon](https://github.com/Microsoft/console/tree/master/samples/ConPTY/EchoCon) - A C++ sample application that illustrates how to use the new Win32 Pseudo Console (ConPTY).
-* [MiniTerm](https://github.com/Microsoft/console/tree/master/samples/ConPTY/MiniTerm) - A C# sample terminal that illustrates how to use ConPTY.
-
-### Tool Build Status
+### Build Status
 
 Project|Build Status
 ---|---
-tools/ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
+OpenConsole|_none yet_
+ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
+
+# Terminal & Console Overview
+
+Please take a few minutes to review the overview below before diving into the code:
+
+## Windows Terminal
+
+Windows Terminal is a new, modern, feature-rich, productive terminal application for command-line users. It includes many of the features most frequently requested by the Windows command-line community including support for tabs, rich text, globalization, configurability, theming & styling, and more.
+
+The Terminal will also need to meet our goals and measures to ensure it remains fast, and efficient, and doesn't consume vast amounts of memory or power.
+
+## The Windows console host
+
+The Windows console host, `conhost.exe`, is Windows' original command-line user experience. It implements Windows' command-line infrastructure, and is responsible for hosting the Windows Console API, input engine, rendering engine, and user preferences. The console host code in this repository is the actual source from which the `conhost.exe` in Windows itself is built.
+
+Console's primary goal is to remain backwards-compatible with existing console subsystem applications.
+
+Since assuming ownership of the Windows command-line in 2014, the team has added several new features to the Console, including window transparency, line-based selection, support for [ANSI / Virtual Terminal sequences](https://en.wikipedia.org/wiki/ANSI_escape_code), [24-bit color](https://devblogs.microsoft.com/commandline/24-bit-color-in-the-windows-console/), a [Pseudoconsole ("ConPTY")](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/), and more.
+
+However, because the Console's primary goal is to maintain backward compatibility, we've been unable to add many of the features the community has been asking for, and which we've been wanting to add for the last several years--like tabs!
+
+These limitations led us to create the new Windows Terminal.
+
+## Shared Components
+
+While overhauling the Console, we've modernized its codebase considerably. We've cleanly separated logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [WIL](https://github.com/Microsoft/wil) header library.
+
+This overhaul work resulted in the creation of several key components that would be useful for any terminal implementation on Windows, including a new DirectWrite-based text layout and rendering engine, a text buffer capable of storing both UTF-16 and UTF-8, and a VT parser/emitter.
+
+## Building a new terminal
+
+When we started building the new terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by sticking with C++ and sharing the aforementioned modernized components, placing them atop the modern Windows application platform and UI framework.
+
+Further, we realized that this would allow us to build the terminal's renderer and input stack as a reusable Windows UI control that others can incorporate into their applications.
+
+# Getting Started
+
+## Contributing
+
+We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
+
+We ask that **before you start work on a feature that you would like to contribute, <span class="underline">please file an issue</span> describing your proposed change**: We will be happy to work with you to figure out the best approach, provide guidance and mentorship throughout feature development, and help avoid any wasted or duplicate effort.
+
+> 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
+
+> ⚠ **Note**: the Command-Line Team are actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
+
+## Communicating with the Team
+
+The easiest way to communicate with the team is via GitHub issues. Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before you do**.
+
+Please help us keep this repository clean, inclusive, and fun\! We will not tolerate any abusive, rude, disrespectful or inappropriate. Read our [Code of Conduct](https://opensource.microsoft.com/codeofconduct/) for more details.
+
+If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
+
+  - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
+
+  - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
+  
+  - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
+
+  - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+
+# Developer Guidance
+
+## Building the Code
+
+This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for some of its dependencies. To make sure submodules are restored or updated, be sure to run the following prior to building:
+
+```shell
+git submodule update --init --recursive
+```
+
+OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line:
+
+```shell
+nuget restore OpenConsole.sln
+msbuild OpenConsole.sln
+```
+
+We've provided a set of convenience scripts in the **/tools** directory to help automate the process of building and running tests.
+
+## Coding Guidance
+
+Please review these brief docs below relating to our coding standards etc.
+
+> 👉 If you find something missing from these docs, feel free to contribute to any of our documentation files anywhere in the repository (or make some new ones\!)
+
+This is a work in progress as we learn what we'll need to provide people in order to be effective contributors to our project.
+
+  - [Coding Style](https://github.com/Microsoft/Terminal/blob/master/doc/STYLE.md)
+  - [Code Organization](https://github.com/Microsoft/Terminal/blob/master/doc/ORGANIZATION.md)
+  - [Exceptions in our legacy codebase](https://github.com/Microsoft/Terminal/blob/master/doc/EXCEPTIONS.md)
+  - [Helpful smart pointers and macros for interfacing with Windows in WIL](https://github.com/Microsoft/Terminal/blob/master/doc/WIL.md)
+
+# Code of Conduct
+
+This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code].
+For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
+
+[conduct-code]: https://opensource.microsoft.com/codeofconduct/
+[conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
+[conduct-email]: mailto:opencode@microsoft.com

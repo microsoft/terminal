@@ -1,0 +1,70 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    enum ShortcutAction
+    {
+        CopyText = 0,
+        PasteText,
+        NewTab,
+        NewTabProfile0,
+        NewTabProfile1,
+        NewTabProfile2,
+        NewTabProfile3,
+        NewTabProfile4,
+        NewTabProfile5,
+        NewTabProfile6,
+        NewTabProfile7,
+        NewTabProfile8,
+        NewTabProfile9,
+        NewWindow,
+        CloseWindow,
+        CloseTab,
+        SwitchToTab,
+        NextTab,
+        PrevTab,
+        IncreaseFontSize,
+        DecreaseFontSize,
+        ScrollUp,
+        ScrollDown
+    };
+
+    delegate void CopyTextEventArgs();
+    delegate void PasteTextEventArgs();
+    delegate void NewTabEventArgs();
+    delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
+    delegate void NewWindowEventArgs();
+    delegate void CloseWindowEventArgs();
+    delegate void CloseTabEventArgs();
+    delegate void SwitchToTabEventArgs();
+    delegate void NextTabEventArgs();
+    delegate void PrevTabEventArgs();
+    delegate void IncreaseFontSizeEventArgs();
+    delegate void DecreaseFontSizeEventArgs();
+    delegate void ScrollUpEventArgs();
+    delegate void ScrollDownEventArgs();
+
+    [default_interface]
+    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    {
+        AppKeyBindings();
+
+        void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+
+        event CopyTextEventArgs CopyText;
+        event PasteTextEventArgs PasteText;
+        event NewTabEventArgs NewTab;
+        event NewTabWithProfileEventArgs NewTabWithProfile;
+        event NewWindowEventArgs NewWindow;
+        event CloseWindowEventArgs CloseWindow;
+        event CloseTabEventArgs CloseTab;
+        event SwitchToTabEventArgs SwitchToTab;
+        event NextTabEventArgs NextTab;
+        event PrevTabEventArgs PrevTab;
+        event IncreaseFontSizeEventArgs IncreaseFontSize;
+        event DecreaseFontSizeEventArgs DecreaseFontSize;
+        event ScrollUpEventArgs ScrollUp;
+        event ScrollDownEventArgs ScrollDown;
+    }
+}

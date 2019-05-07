@@ -1,0 +1,10 @@
+
+<tests>
+  <test name="host" type="unit" binary="Conhost.Unit.Tests.dll" />
+  <test name="textbuffer" type="unit" binary="TextBuffer.Unittests.dll" />
+  <test name="interactivityWin32" type="unit" binary="Conhost.Interactivity.Win32.Unit.Tests.dll" />
+  <test name="terminal" type="unit" binary="ConParser.Unit.Tests.dll" />
+  <test name="adapter" type="unit" binary="ConAdapter.Unit.Tests.dll" />
+  <test name="feature" type="ft" binary="Conhost.Feature.Tests.dll" />
+  <test name="uia" type="ft" binary="Conhost.UIA.Tests.dll" />
+</tests>

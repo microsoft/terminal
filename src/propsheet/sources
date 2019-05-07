@@ -1,0 +1,109 @@
+!include ..\project.inc
+
+# -------------------------------------
+# Windows Console
+# - Console Property Sheet
+# -------------------------------------
+
+# This module draws the Properties or Defaults page that allows
+# the user to configure their settings in a running console session.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = console
+TARGETTYPE              = DYNLINK
+TARGETEXT               = dll
+UMTYPE                  = windows
+TARGET_DESTINATION      = retail
+DLLENTRY                = _DllMainCRTStartup
+
+# -------------------------------------
+# Preprocessor Settings
+# -------------------------------------
+
+C_DEFINES               = $(C_DEFINES) -DISOLATION_AWARE_ENABLED -DWIN32 -D_WIN32 -DSTRICT_CONST -DNT
+
+# -------------------------------------
+# Compiler Settings
+# -------------------------------------
+
+MSC_WARNING_LEVEL       = /W3 /WX
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+# Code in the OneCore depot automatically excludes default Win32 libraries.
+
+# Defines IME and Codepage support
+W32_SB                  = 1
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+PRECOMPILED_CXX         = 1
+PRECOMPILED_INCLUDE     = precomp.h
+PRECOMPILED_PCH         = precomp.pch
+PRECOMPILED_OBJ         = precomp.obj
+
+SOURCES = \
+    dll.cpp              \
+    util.cpp             \
+    console.cpp          \
+    globals.cpp          \
+    fontdlg.cpp          \
+    OptionsPage.cpp      \
+    ColorsPage.cpp       \
+    ColorControl.cpp     \
+    ColorsPage.cpp       \
+    LayoutPage.cpp       \
+    TerminalPage.cpp     \
+    init.cpp             \
+    misc.cpp             \
+    preview.cpp          \
+    registry.cpp         \
+    dbcs.cpp             \
+    strid.mc             \
+    PropSheetHandler.cpp \
+    console.rc
+
+INCLUDES = \
+    $(INCLUDES); \
+    $(ONECOREBASE_PRIVATE_WIL_INC_PATH_L); \
+    ..\inc; \
+    ..\host; \
+
+TARGETLIBS = \
+    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
+    $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
+    $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-dc-create-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-draw-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-gdi-font-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-dialogbox-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-draw-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-keyboard-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-gui-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-misc-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-ntuser-window-l1.lib\
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-gdi-object-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-cursor-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-dc-access-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-syscolors-l1.lib \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-rtcore-ntuser-sysparams-l1.lib\
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-shell-shell32-l1.lib \
+    $(ONECOREWINDOWS_INTERNAL_LIB_PATH_L)\ext-ms-win-gdi-internal-desktop-l1-1-1.lib \
+    $(WINCORE_OBJ_PATH)\console\open\src\propslib\$(O)\conprops.lib \
+
+# -------------------------------------
+# Side-by-side Manifesting
+# -------------------------------------
+
+SXS_APPLICATION_MANIFEST = WindowsShell.Manifest
+SXS_MANIFEST_SOURCE = .

@@ -1,0 +1,41 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.TerminalControl
+{
+    delegate void TitleChangedEventArgs(String newTitle);
+    delegate void ConnectionClosedEventArgs();
+    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
+    delegate void CopyToClipboardEventArgs(String copiedData);
+
+    runtimeclass PasteFromClipboardEventArgs
+    {
+        void HandleClipboardData(String data);
+    }
+
+    [default_interface]
+    runtimeclass TermControl
+    {
+        TermControl();
+        TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
+
+        static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
+
+        Windows.UI.Xaml.UIElement GetRoot();
+        Windows.UI.Xaml.Controls.UserControl GetControl();
+        void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
+
+        event TitleChangedEventArgs TitleChanged;
+        event ConnectionClosedEventArgs ConnectionClosed;
+        event CopyToClipboardEventArgs CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
+
+        String Title { get; };
+        void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+        void Close();
+
+        void ScrollViewport(Int32 viewTop);
+        Int32 GetScrollOffset();
+        event ScrollPositionChangedEventArgs ScrollPositionChanged;
+    }
+}

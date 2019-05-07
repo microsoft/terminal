@@ -1,0 +1,25 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings
+{
+    [flags]
+    enum KeyModifiers
+    {
+        None = 0x0000,
+        Alt = 0x0001,
+        Ctrl = 0x0002,
+        Shift = 0x0004
+    };
+
+    [default_interface]
+    runtimeclass KeyChord
+    {
+        KeyChord();
+        KeyChord(KeyModifiers modifiers, Int32 vkey);
+        KeyChord(Boolean ctrl, Boolean alt, Boolean shift, Int32 vkey);
+
+        KeyModifiers Modifiers;
+        Int32 Vkey;
+    }
+}

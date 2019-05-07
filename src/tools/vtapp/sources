@@ -1,0 +1,21 @@
+TARGETNAME                         =   VtApp
+TARGETTYPE                         =   PROGRAM
+UMTYPE                             =   console
+TARGET_DESTINATION                 =   UnitTests
+
+MANAGED_CODE                       =   1
+TEST_CODE                          =   1
+URT_VER                            =   4.5
+
+USER_CS_FLAGS                      =   $(USER_CS_FLAGS) /define:__INSIDE_WINDOWS
+
+SOURCES                            =   \
+                                       Program.cs \
+                                       Program2.cs \
+
+REFERENCES                         =   $(CLR_REF_PATH)\System.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Core.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Data.metadata_dll; \
+                                       $(CLR_REF_PATH)\System.Drawing.metadata_dll; \
+
+SPKG_SOURCES = A LegacyTestPackage entry in product.pbxproj is now required for each pkg.xml file to build packages. This exact string triggers PASS2, do not alter it.

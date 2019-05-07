@@ -1,0 +1,4 @@
+DIRS=\
+     base \
+     win32 \
+     onecore \

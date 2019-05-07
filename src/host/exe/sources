@@ -1,0 +1,58 @@
+!include ..\sources.inc
+# -------------------------------------
+# Windows Console 
+# - Console Host Core
+# -------------------------------------
+
+# This program provides the entry-point
+# for when the Windows OS loader attempts to start a Win32 Console-type
+# application that does not already have console handles attached.
+# It will attempt to resolve the correct module for the OS platform and configuration
+# and then pass control to that module for runtime services.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = conhost
+TARGETTYPE              = PROGRAM
+UMTYPE                  = windows
+UMENTRY                 = wwinmain
+TARGET_DESTINATION      = retail
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+SOURCES = \
+    $(SOURCES) \
+    ..\exemain.cpp \
+    ..\res.rc \
+
+# -------------------------------------
+# Side-by-side Manifesting
+# -------------------------------------
+
+SYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00 = $(SYSTEM_COMPATIBLE_ASSEMBLY_VERSION).0.0
+SXS_MANIFEST_DEFINES = \
+    $(SXS_MANIFEST_DEFINES) \
+    -DSYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00_A="\"$(SYSTEM_COMPATIBLE_ASSEMBLY_VERSION_00)\"" \
+
+SXS_ASSEMBLY_NAME       = Microsoft.Console.Host.Core
+SXS_ASSEMBLY_LANGUAGE_INDEPENDENT = 1
+SXS_MANIFEST            = conhost.exe.Manifest
+SXS_MANIFEST_IN_RESOURCES = 1
+SXS_NO_BINPLACE         = 1
+
+CMI_USE_VERSION_XML     = 1
+
+O_MANIFESTS= \
+    $(OBJ_PATH)\$(O)\SystemDefault.man \
+    conhost.man
+
+INCLUDES= \
+    $(INCLUDES); \
+    $(OBJ_PATH)\$(O); \
+
+NTTARGETFILE0=\
+    $(O_MANIFESTS)

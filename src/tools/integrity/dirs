@@ -1,0 +1,4 @@
+DIRS=exeuwp \
+     exewin32 \
+     lib \
+     packageuwp \

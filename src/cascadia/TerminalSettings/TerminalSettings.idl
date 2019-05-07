@@ -1,0 +1,24 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "ICoreSettings.idl";
+import "IControlSettings.idl";
+
+namespace Microsoft.Terminal.Settings
+{
+    // Class Description:
+    // TerminalSettings encapsulates all settings that control the
+    //      TermControl's behavior. In these settings there is both the entirety
+    //      of the Core ICoreSettings properties and the IControlSettings
+    //      properties. It's the Profile's responsibility to build this from
+    //      settings it contains, in combination with the global settings.
+    // The TerminalControl will pull settings it requires from this object,
+    //      and pass along the Core properties to the terminal core.
+    [default_interface]
+    runtimeclass TerminalSettings : ICoreSettings,
+                                    IControlSettings
+    {
+        TerminalSettings();
+    };
+
+}

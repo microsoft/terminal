@@ -1,0 +1,96 @@
+﻿<?xml version='1.0' encoding='utf-8' standalone='yes'?>
+<assembly
+    xmlns="urn:schemas-microsoft-com:asm.v3"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    manifestVersion="1.0"
+    >
+  <assemblyIdentity
+      buildType="$(build.buildType)"
+      language="neutral"
+      name="Microsoft-OneCore-Console-Host-PropSheet"
+      processorArchitecture="$(build.arch)"
+      publicKeyToken="$(Build.WindowsPublicKeyToken)"
+      version="$(build.version)"
+      versionScope="nonSxS"
+      />
+  <dependency
+      buildFilter="not build.isWow"
+      discoverable="false"
+      optional="false"
+      resourceType="Resources"
+      >
+    <dependentAssembly>
+      <assemblyIdentity
+          buildType="$(build.buildType)"
+          language="*"
+          name="Microsoft-OneCore-Console-Host-PropSheet.Resources"
+          processorArchitecture="$(build.arch)"
+          publicKeyToken="$(Build.WindowsPublicKeyToken)"
+          version="$(build.version)"
+          />
+    </dependentAssembly>
+  </dependency>
+  <file
+      destinationPath="$(runtime.system32)\"
+      importPath="$(build.nttree)\"
+      name="console.dll"
+      sourceName="console.dll"
+      sourcePath=".\"
+      />
+  <registryKeys>
+    <!-- COM registration -->
+    <registryKey keyName="HKEY_CLASSES_ROOT\CLSID\{D2942F8E-478E-41D3-870A-35A16238F4EE}\">
+      <registryValue
+          value="Console Shortcut Property Sheet Handler"
+          valueType="REG_SZ"
+          />
+      <securityDescriptor name="WRP_REGKEY_DEFAULT_SDDL"/>
+    </registryKey>
+    <registryKey keyName="HKEY_CLASSES_ROOT\CLSID\{D2942F8E-478E-41D3-870A-35A16238F4EE}\InprocServer32\">
+      <registryValue
+          value="%SystemRoot%\System32\console.dll"
+          valueType="REG_EXPAND_SZ"
+          />
+      <registryValue
+          name="ThreadingModel"
+          value="Both"
+          valueType="REG_SZ"
+          />
+    </registryKey>
+    <!-- Shell registration -->
+    <registryKey keyName="HKEY_CLASSES_ROOT\lnkfile\shellex\PropertySheetHandlers\Console\">
+      <registryValue
+          value="{D2942F8E-478E-41D3-870A-35A16238F4EE}"
+          valueType="REG_SZ"
+          />
+      <securityDescriptor name="WRP_REGKEY_DEFAULT_SDDL"/>
+    </registryKey>
+  </registryKeys>
+  <localization>
+    <resources culture="en-US">
+      <stringTable>
+        <string
+            id="description"
+            value="Manifest for console.dll"
+            />
+        <string
+            id="displayName"
+            value="console.dll"
+            />
+      </stringTable>
+    </resources>
+  </localization>
+  <trustInfo>
+    <security>
+      <accessControl>
+        <securityDescriptorDefinitions>
+          <securityDescriptorDefinition
+              name="WRP_REGKEY_DEFAULT_SDDL"
+              sddl="$(build.wrpRegKeySddl)"
+              />
+        </securityDescriptorDefinitions>
+      </accessControl>
+    </security>
+  </trustInfo>
+</assembly>

@@ -1,0 +1,31 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#pragma once
+namespace Microsoft::Terminal::Core
+{
+    class ITerminalApi
+    {
+    public:
+        virtual ~ITerminalApi() {}
+        virtual bool PrintString(std::wstring_view stringView) = 0;
+        virtual bool ExecuteChar(wchar_t wch) = 0;
+
+        virtual bool SetTextToDefaults(bool foreground, bool background) = 0;
+        virtual bool SetTextForegroundIndex(BYTE colorIndex) = 0;
+        virtual bool SetTextBackgroundIndex(BYTE colorIndex) = 0;
+        virtual bool SetTextRgbColor(COLORREF color, bool foreground) = 0;
+        virtual bool BoldText(bool boldOn) = 0;
+        virtual bool UnderlineText(bool underlineOn) = 0;
+        virtual bool ReverseText(bool reversed) = 0;
+
+        virtual bool SetCursorPosition(short x, short y) = 0;
+        virtual COORD GetCursorPosition() = 0;
+
+        virtual bool EraseCharacters(const unsigned int numChars) = 0;
+
+        virtual bool SetWindowTitle(std::wstring_view title) = 0;
+
+        virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) = 0;
+    };
+}

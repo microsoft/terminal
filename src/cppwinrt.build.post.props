@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- By default, binplace our output under the bin/ directory in the root of
+       the project. The other non-cppwinrt projects are binplaced there as well.
+       However, Cascadia projects want to be built into an appx, and the wapproj
+       that consumes them will complain if you do this. So they'll set
+       NoOutputRedirection before including this props file.
+  -->
+  <PropertyGroup Condition="'$(NoOutputRedirection)'!='true'">
+    <OutputPath>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutputPath>
+    <OutDir>$(OpenConsoleDir)\bin\$(Platform)\$(Configuration)\$(ProjectName)\</OutDir>
+    <IntDir>$(OpenConsoleDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+
+  <!-- For Cascadia projects, we want to copy the output dll up a directory
+       from where it was binplaced.
+       e.g. TerminalApp.vcxproj builds OpenConsole/x64/Debug/TerminalApp/TerminalApp.dll
+       this should be copied to OpenConsole/x64/Debug/TerminalApp.dll
+       Otherwise, the wapproj won't be able to find it properly.
+       Additionally, the wapproj expects the x86 version to not include the
+       platform in the path, go figure.
+       A project can request to not do this step by setting DontCopyOutput to true.
+  -->
+  <ItemDefinitionGroup Condition="'$(NoOutputRedirection)'=='true' And '$(ConfigurationType)'=='DynamicLibrary' And '$(DontCopyOutput)'!='true'">
+    <PostBuildEvent Condition="'$(Platform)'!='Win32'">
+      <Command>
+        echo OutDir=$(OutDir)
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+    <PostBuildEvent Condition="'$(Platform)'=='Win32'">
+      <Command>
+        echo OutDir=$(OutDir)
+        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Configuration)\$(ProjectName).dll )
+        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb )
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+
+
+  <!--
+    For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
+    directory on it's own, it just assumes it exists.
+
+    Also make the directory w/o the platform, because the x86 build in CI will
+    try to place the pri files into
+    C:\BA\3126\s\Release\$(ProjectName)\$(ProjectName).pri (for example)
+  -->
+  <ItemDefinitionGroup Condition="'$(Platform)'!='Win32'">
+    <PreBuildEvent>
+      <Command>
+        if not exist $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
+    <PreBuildEvent>
+      <Command>
+        if not exist $(OpenConsoleDir)$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)\$(Configuration)\$(ProjectName)
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+  </Target>
+</Project>

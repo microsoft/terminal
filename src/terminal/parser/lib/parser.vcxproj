@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)src\common.build.pre.props"/>
+  <!-- ONLY ADD CLOSED-SOURCE FILES HERE, OPEN-SOURCE FILES GO IN parser-common.vcxproj -->
+  <Import Project="$(SolutionDir)src\terminal\parser\lib\parser-common.vcxproj" />
+  <ItemGroup>
+    <ClCompile Include="..\InputStateMachineEngine.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\InputStateMachineEngine.hpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3AE13314-1939-4DFA-9C14-38CA0834050C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>parser</RootNamespace>
+    <ProjectName>TerminalParser</ProjectName>
+    <TargetName>ConTermParser</TargetName>
+  </PropertyGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.lib.props"/>
+  <Import Project="$(SolutionDir)src\common.build.post.props"/>
+</Project>

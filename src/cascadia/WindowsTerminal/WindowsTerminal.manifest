@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <maxversiontested Id="10.0.18295.0"/>
+    </application>
+  </compatibility>
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+      <longPathAware xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">true</longPathAware>
+    </windowsSettings>
+  </application>
+  <!--
+    This manifest makes launching the exe directly via unpackaged winrt possible.
+    The exe can quickly be tested with `openterm` from a razzle window.
+    The more official way of testing however is to use the CascadiaPackage appx.
+    Whenever you add new cppwinrt classes, make sure to add them here.
+    If you need help with the syntax, the generated AppxManifest.xml should have
+    the classes and files all listed in it.
+    
+    TODO MSFT#21300206: Switch to automatically generating these.
+  -->
+  <file name="TerminalSettings.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.Terminal.Settings.KeyChord" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.Terminal.Settings.TerminalSettings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="TerminalApp.dll" hashalg="SHA1">
+    <activatableClass name="TerminalApp.App" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="TerminalApp.AppKeyBindings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="TerminalApp.XamlmetaDataProvider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="TerminalConnection.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.Terminal.TerminalConnection.ConhostConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.Terminal.TerminalConnection.EchoConnection" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="TerminalControl.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.Terminal.TerminalControl.TermControl" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="Microsoft.UI.Xaml.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.UI.Xaml.Controls.IconSource" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.BitmapIconSource" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ColorPicker" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.CommandBarFlyout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.DropDownButton" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ElementAnimator" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ElementFactory" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ElementFactoryGetArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ElementFactoryRecycleArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Layout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.VirtualizingLayout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.FlowLayout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.FlowLayoutState" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.FontIconSource" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.IndexPath" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ItemsRepeater" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ItemsRepeaterScrollHost" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ItemsSourceView" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.LayoutContext" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.LayoutPanel" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.MenuBar" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.MenuBarItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.MenuBarItemFlyout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationView" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewItemBase" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewItemHeader" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewItemInvokedEventArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewItemSeparator" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewList" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NavigationViewTemplateSettings" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NonVirtualizingLayout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.NonVirtualizingLayoutContext" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ParallaxView" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.PathIconSource" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.PersonPicture" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ColorPickerSlider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ColorSpectrum" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.CommandBarFlyoutCommandBar" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.NavigationViewItemPresenter" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.RadioButtonsListView" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.RadioButtonsListViewItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.SnapPointBase" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollSnapPointBase" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.RepeatedScrollSnapPoint" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ZoomSnapPointBase" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.RepeatedZoomSnapPoint" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollControllerInteractionRequestedEventArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollControllerScrollByRequestedEventArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollControllerScrollFromRequestedEventArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollControllerScrollToRequestedEventArgs" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ScrollSnapPoint" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.Scroller" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.Primitives.ZoomSnapPoint" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RadioButtons" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RadioMenuFlyoutItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RatingControl" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RatingItemInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RatingItemFontInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RatingItemImageInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RecyclePool" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RecyclingElementFactory" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RefreshContainer" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RefreshVisualizer" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.RevealListViewItemPresenter" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ScrollOptions" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ScrollViewer" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SelectionModel" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SplitButton" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.StackLayout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.StackLayoutState" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SwipeControl" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SwipeItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SwipeItems" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.SymbolIconSource" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.TabView" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.TabViewItem" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.UniformGridLayout" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.UniformGridLayoutState" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.VirtualizingLayoutContext" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.XamlControlsResources" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Controls.ZoomOptions" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Media.AcrylicBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Media.RevealBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Media.RevealBackgroundBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.Media.RevealBorderBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+    <activatableClass name="Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+  <file name="Microsoft.UI.Xaml.Markup.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.UI.Xaml.Markup.XamlApplication" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  </file>
+</assembly>

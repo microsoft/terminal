@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemGroup>
+    <ClCompile Include="..\AttrRow.cpp" />
+    <ClCompile Include="..\AttrRowIterator.cpp" />
+    <ClCompile Include="..\cursor.cpp" />
+    <ClCompile Include="..\OutputCell.cpp" />
+    <ClCompile Include="..\OutputCellIterator.cpp" />
+    <ClCompile Include="..\OutputCellRect.cpp" />
+    <ClCompile Include="..\OutputCellView.cpp" />
+    <ClCompile Include="..\Row.cpp" />
+    <ClCompile Include="..\RowCellIterator.cpp" />
+    <ClCompile Include="..\TextColor.cpp" />
+    <ClCompile Include="..\TextAttribute.cpp" />
+    <ClCompile Include="..\TextAttributeRun.cpp" />
+    <ClCompile Include="..\textBuffer.cpp" />
+    <ClCompile Include="..\textBufferCellIterator.cpp" />
+    <ClCompile Include="..\textBufferTextIterator.cpp" />
+    <ClCompile Include="..\CharRow.cpp" />
+    <ClCompile Include="..\CharRowCell.cpp" />
+    <ClCompile Include="..\CharRowCellReference.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\UnicodeStorage.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\AttrRow.hpp" />
+    <ClInclude Include="..\AttrRowIterator.hpp" />
+    <ClInclude Include="..\cursor.h" />
+    <ClInclude Include="..\DbcsAttribute.hpp" />
+    <ClInclude Include="..\ICharRow.hpp" />
+    <ClInclude Include="..\OutputCell.hpp" />
+    <ClInclude Include="..\OutputCellIterator.hpp" />
+    <ClInclude Include="..\OutputCellRect.hpp" />
+    <ClInclude Include="..\OutputCellView.hpp" />
+    <ClInclude Include="..\Row.hpp" />
+    <ClInclude Include="..\RowCellIterator.hpp" />
+    <ClInclude Include="..\TextColor.h" />
+    <ClInclude Include="..\TextAttribute.h" />
+    <ClInclude Include="..\TextAttributeRun.h" />
+    <ClInclude Include="..\textBuffer.hpp" />
+    <ClInclude Include="..\textBufferCellIterator.hpp" />
+    <ClInclude Include="..\textBufferTextIterator.hpp" />
+    <ClInclude Include="..\CharRow.hpp" />
+    <ClInclude Include="..\CharRowCell.hpp" />
+    <ClInclude Include="..\CharRowCellReference.hpp" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\UnicodeStorage.hpp" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ProjectGuid>{0CF235BD-2DA0-407E-90EE-C467E8BBC714}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>bufferout</RootNamespace>
+    <ProjectName>BufferOut</ProjectName>
+    <TargetName>ConBufferOut</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\dep;$(SolutionDir)\dep\Console;$(SolutionDir)\dep\Win32K;$(SolutionDir)\dep\AppModel;$(SolutionDir)\dep\MinCore;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.lib.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+</Project>
