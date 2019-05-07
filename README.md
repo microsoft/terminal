@@ -57,6 +57,7 @@ Further, we realized that this would allow us to build the terminal's renderer a
 * You will need to install both the following packages in VS:
   - "Desktop Development with C++"
   - "Universal Windows Platform Development"
+  - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
 * You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
 
 ## Contributing
