@@ -61,7 +61,7 @@ Otherwise, you'll need to wait until Mid-June for an official preview build to d
 
 Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
 
-Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by default. In the future, the UI will be more drastically different, but for now, the defaults are _supposed_ to look like the console defaults.
+Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
 
 ## I tried running WindowsTerminal.exe and it crashes!
 
