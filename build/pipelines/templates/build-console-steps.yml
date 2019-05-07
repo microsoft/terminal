@@ -3,6 +3,7 @@ parameters:
 
 steps:
 - checkout: self
+  submodules: true
   clean: true
 
 - task: NuGetToolInstaller@0
