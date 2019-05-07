@@ -63,7 +63,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 The easiest way to communicate with the team is via GitHub issues. Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before you do**.
 
-Please help us keep this repository clean, inclusive, and fun\! We will not tolerate any abusive, rude, disrespectful or inappropriate. Read our [Code of Conduct](https://opensource.microsoft.com/codeofconduct/) for more details.
+Please help us keep this repository clean, inclusive, and fun\! We will not tolerate any abusive, rude, disrespectful or inappropriate behaviour. Read our [Code of Conduct](https://opensource.microsoft.com/codeofconduct/) for more details.
 
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
