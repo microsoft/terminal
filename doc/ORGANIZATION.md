@@ -41,7 +41,7 @@
 	* `/src/renderer` – Refactored extraction of all activities related to rendering the text in the buffers onto the screen
 		* `/src/renderer/base` – Base interface layer providing non-engine-specific rendering things like choosing the data from the console buffer, deciding how to lay out or transform that data, then dispatching commands to a specific final display engine
 		* `/src/renderer/gdi` – The GDI implementation of rendering to the screen. Takes commands to “draw a line” or “fill the background” or “select a region” from the base and turns them into GDI calls to the screen. Extracted from original console host code.
-		* `/src/renderer/inc – Interface definitions for all renderer communication
+		* `/src/renderer/inc` – Interface definitions for all renderer communication
 	* `/src/terminal` – Virtual terminal support for the console. This is the sequences that are found in-band with other text on STDIN/STDOUT that command the display to do things. This is the *nix way of controlling a console.
 		* `/src/terminal/parser` – This contains a state machine and sorting engine for feeding in individual characters from STDOUT or STDIN and decoding them into the appropriate verbs that should be performed
 		* `/src/terminal/adapter` – This converts the verbs from the interface into calls on the console API. It doesn’t actually call through the API (for performance reasons since it lives inside the same binary), but it tries to remain as close to an API call as possible. There are some private extensions to the API for behaviors that didn’t exist before this was written that we’ve not made public. We don’t know if we will yet or force people to use VT to get at them.
