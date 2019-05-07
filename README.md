@@ -49,6 +49,17 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 # Getting Started
 
+## Prerequisites
+
+* You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
+* You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
+* You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
+* You will need to install both the following packages in VS:
+  - "Desktop Development with C++"
+  - "Universal Windows Platform Development"
+  - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
+* You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
+
 ## Contributing
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
