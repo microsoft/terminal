@@ -47,6 +47,27 @@ When we started building the new terminal application, we explored and evaluated
 
 Further, we realized that this would allow us to build the terminal's renderer and input stack as a reusable Windows UI control that others can incorporate into their applications.
 
+# FAQ
+
+## Where can I download Windows Terminal?
+
+### There are no binaries to download quite yet. 
+
+The Windows Terminal is in the _very early_ alpha stage, and not ready for the general public quite yet. If you want to jump in early, you can try building it yourself from source. 
+
+Otherwise, you'll need to wait until Mid-June for an official preview build to drop.
+
+## I built and ran the new Terminal, but it looks just like the old console! What gives?
+
+Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
+
+Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
+
+## I tried running WindowsTerminal.exe and it crashes!
+
+* Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Preview) app.
+* Make sure you're on the right version of Windows. You'll need to be on Insider's builds, or wait for the 1903 release, as the Windows Terminal **REQUIRES** features from the latest Windows release.
+
 # Getting Started
 
 ## Prerequisites
