@@ -710,7 +710,7 @@ namespace winrt::TerminalApp::implementation
         // we clamp the values to the range [0, tabCount) while still supporting moving
         // leftward from 0 to tabCount - 1.
         _SetFocusedTabIndex(
-            (tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount
+            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
         );
     }
 
