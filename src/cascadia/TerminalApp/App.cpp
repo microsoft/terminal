@@ -6,6 +6,7 @@
 #include <shellapi.h>
 #include <filesystem>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
+#include <winrt/Windows.ApplicationModel.Resources.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -166,6 +167,47 @@ namespace winrt::TerminalApp::implementation
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
 
         _OpenNewTab(std::nullopt);
+
+        // _root.Loaded([this](auto&&, auto&&) {
+        //     if (FAILED(_settingsLoadedResult))
+        //     {
+        //         Controls::ContentDialog dialog;
+
+        //         dialog.Title(winrt::box_value(L"Failed to parse settings"));
+        //         dialog.Content(winrt::box_value(L"Failed to parse settings asdfa"));
+        //         dialog.CloseButtonText(L"Ok");
+
+        //         // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
+        //         _root.Children().Append(dialog);
+        //         dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+
+        //     }
+        // });
+
+        //auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        //l.GetString(L"InitialJsonParse.Text");
+
+
+        _root.Loaded([this](auto&&, auto&&) {
+            if (FAILED(_settingsLoadedResult))
+            {
+                
+                // Windows::ApplicationModel::Resources::ResourceLoader loader{};
+                auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+                auto s = l.GetString(L"InitialJsonParse.Text");
+                auto bar = l.GetStringForUri(L"InitialJsonParse");
+                auto foo = l.GetString(L"Foo");
+
+                Controls::ContentDialog dialog;
+                dialog.Title(winrt::box_value(L"Failed to parse settings"));
+                // dialog.Content(winrt::box_value(L"Failed to parse settings asdfa"));
+                dialog.Content(winrt::box_value(s));
+                dialog.CloseButtonText(L"Ok");
+                // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
+                _root.Children().Append(dialog);
+                dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+            }
+        });
     }
 
     // Method Description:
@@ -340,7 +382,42 @@ namespace winrt::TerminalApp::implementation
     //      happening during startup, it'll need to happen on a background thread.
     void App::LoadSettings()
     {
-        _settings = CascadiaSettings::LoadAll();
+        bool successfullyLoadedSettings = false;
+        HRESULT hr = E_FAIL;
+        // TODO: Try this.
+        try
+        {
+            auto newSettings = CascadiaSettings::LoadAll();
+            _settings = std::move(newSettings);
+            successfullyLoadedSettings = true;
+            hr = S_OK;
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            hr = e.code();
+            LOG_HR(hr);
+        }
+        catch (...)
+        {
+            // TODO can this ever be hit? or will it always be a winrt::hresult_error?
+            LOG_HR(wil::ResultFromCaughtException());
+        }
+
+        _settingsLoadedResult = hr;
+
+        if (!successfullyLoadedSettings)
+        {
+            // If it fails,
+            //  - use Default settings,
+            //  - don't persist them.
+            //  - Set a flag saying that we should display the loading error.
+            //      * Settings could not be loaded from file - temporarily using
+            //        default settings. Check for syntax errors, including trailing
+            //        commas.
+            _settings = std::make_unique<CascadiaSettings>();
+            _settings->CreateDefaults();
+
+        }
 
         _HookupKeyBindings(_settings->GetKeybindings());
 
@@ -403,7 +480,16 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void App::_ReloadSettings()
     {
+        // TODO: Try this.
         _settings = CascadiaSettings::LoadAll();
+        // If it fails,
+        //  - don't change the settings (and don't actually apply the new settings)
+        //  - don't persist them.
+        //  - display a loading error
+        //      * Settings could not be reloaded from file. Check for syntax
+        //        errors, including trailing commas.
+
+
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
         _HookupKeyBindings(_settings->GetKeybindings());

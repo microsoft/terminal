@@ -47,12 +47,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        JsonValue root{ nullptr };
-        bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
+        JsonObject root{ nullptr };
+        // bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
+        root = JsonObject::Parse(actualData); bool parsedSuccessfully = true;
         // TODO:MSFT:20737698 - Display an error if we failed to parse settings
         if (parsedSuccessfully)
         {
-            JsonObject obj = root.GetObjectW();
+            JsonObject obj = root;//.GetObjectW();
             resultPtr = FromJson(obj);
 
             //  Update profile only if it has changed.
@@ -77,7 +78,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     else
     {
         resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->_CreateDefaults();
+        resultPtr->CreateDefaults();
 
         // The settings file does not exist.  Let's commit one.
         resultPtr->SaveAll();

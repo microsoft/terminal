@@ -64,6 +64,8 @@ namespace winrt::TerminalApp::implementation
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
+        HRESULT _settingsLoadedResult = S_OK;
+
         bool _loadedInitialSettings;
 
         wil::unique_folder_change_reader_nothrow _reader;
