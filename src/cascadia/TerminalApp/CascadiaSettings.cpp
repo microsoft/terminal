@@ -45,22 +45,22 @@ ColorScheme _CreateOneHalfDarkScheme()
                                     RGB( 40,  44,  52) };
     auto& oneHalfDarkTable = oneHalfDarkScheme.GetTable();
     auto oneHalfDarkSpan = gsl::span<COLORREF>(&oneHalfDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    oneHalfDarkTable[0]  = RGB( 40,  44,  52); // dark black
-    oneHalfDarkTable[1]  = RGB( 97, 175, 239); // dark blue
+    oneHalfDarkTable[0]  = RGB( 40,  44,  52); // black
+    oneHalfDarkTable[1]  = RGB(224, 108, 117); // dark red
     oneHalfDarkTable[2]  = RGB(152, 195, 121); // dark green
-    oneHalfDarkTable[3]  = RGB( 86, 181, 193); // dark cyan
-    oneHalfDarkTable[4]  = RGB(224, 108, 117); // dark red
-    oneHalfDarkTable[5]  = RGB( 86, 182, 194); // dark magenta
-    oneHalfDarkTable[6]  = RGB(229, 192, 123); // dark yellow
+    oneHalfDarkTable[3]  = RGB(229, 192, 123); // dark yellow
+    oneHalfDarkTable[4]  = RGB( 97, 175, 239); // dark blue
+    oneHalfDarkTable[5]  = RGB(198, 120, 221); // dark magenta
+    oneHalfDarkTable[6]  = RGB( 86, 182, 194); // dark cyan
     oneHalfDarkTable[7]  = RGB(220, 223, 228); // gray
-    oneHalfDarkTable[8]  = RGB( 40,  44,  52); // black
-    oneHalfDarkTable[9]  = RGB( 97, 175, 239); // blue
-    oneHalfDarkTable[10]  = RGB(152, 195, 121); // green
-    oneHalfDarkTable[11]  = RGB( 86, 181, 193); // cyan
-    oneHalfDarkTable[12]  = RGB(224, 108, 117); // red
-    oneHalfDarkTable[13]  = RGB( 86, 182, 194); // magenta
-    oneHalfDarkTable[14]  = RGB(229, 192, 123); // yellow
-    oneHalfDarkTable[15]  = RGB(220, 223, 228); // white
+    oneHalfDarkTable[8]  = RGB( 40,  44,  52); // dark gray
+    oneHalfDarkTable[9]  = RGB(224, 108, 117); // red
+    oneHalfDarkTable[10] = RGB(152, 195, 121); // green
+    oneHalfDarkTable[11] = RGB(229, 192, 123); // yellow
+    oneHalfDarkTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
+	oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
+	oneHalfDarkTable[15] = RGB(220, 223, 228); // white
     Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
 
     return oneHalfDarkScheme;
@@ -73,22 +73,22 @@ ColorScheme _CreateOneHalfLightScheme()
                                     RGB( 56,  58,  66) };
     auto& oneHalfLightTable = oneHalfLightScheme.GetTable();
     auto oneHalfLightSpan = gsl::span<COLORREF>(&oneHalfLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    oneHalfLightTable[0]  = RGB( 56,  58,  66); // dark black
-    oneHalfLightTable[1]  = RGB(  1, 132, 188); // dark blue
+    oneHalfLightTable[0]  = RGB( 56,  58,  66); // black
+    oneHalfLightTable[1]  = RGB(228,  86,  73); // dark red
     oneHalfLightTable[2]  = RGB( 80, 161,  79); // dark green
-    oneHalfLightTable[3]  = RGB(  9, 151, 179); // dark cyan
-    oneHalfLightTable[4]  = RGB(228,  86,  73); // dark red
+    oneHalfLightTable[3]  = RGB(193, 132,   1); // dark yellow
+    oneHalfLightTable[4]  = RGB(  1, 132, 188); // dark blue
     oneHalfLightTable[5]  = RGB(166,  38, 164); // dark magenta
-    oneHalfLightTable[6]  = RGB(193, 132,   1); // dark yellow
+    oneHalfLightTable[6]  = RGB(  9, 151, 179); // dark cyan
     oneHalfLightTable[7]  = RGB(250, 250, 250); // gray
-    oneHalfLightTable[8]  = RGB( 56,  58,  66); // black
-    oneHalfLightTable[9]  = RGB(  1, 132, 188); // blue
-    oneHalfLightTable[10]  = RGB( 80, 161,  79); // green
-    oneHalfLightTable[11]  = RGB(  9, 151, 179); // cyan
-    oneHalfLightTable[12]  = RGB(228,  86,  73); // red
-    oneHalfLightTable[13]  = RGB(166,  38, 164); // magenta
-    oneHalfLightTable[14]  = RGB(193, 132,   1); // yellow
-    oneHalfLightTable[15]  = RGB(250, 250, 250); // white
+    oneHalfLightTable[8]  = RGB( 56,  58,  66); // dark gray
+    oneHalfLightTable[9]  = RGB(228,  86,  73); // red
+    oneHalfLightTable[10] = RGB( 80, 161,  79); // green
+    oneHalfLightTable[11] = RGB(193, 132,   1); // yellow
+    oneHalfLightTable[12] = RGB(  1, 132, 188); // blue
+    oneHalfLightTable[13] = RGB(166,  38, 164); // magenta
+    oneHalfLightTable[14] = RGB(  9, 151, 179); // cyan
+    oneHalfLightTable[15] = RGB(250, 250, 250); // white
     Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
 
     return oneHalfLightScheme;
