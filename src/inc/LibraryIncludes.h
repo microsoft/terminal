@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <atomic>
 #include <deque>
+#include <functional>
 #include <list>
 #include <memory>
 #include <map>
