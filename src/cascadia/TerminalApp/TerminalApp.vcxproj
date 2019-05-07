@@ -97,6 +97,9 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj">
+      <Project>{ca5cad1a-d7ec-4107-b7c6-79cb77ae2907}</Project>
+    </ProjectReference>
 
     <!-- This is needed to be able to reference the XamlApplication type. -->
     <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
