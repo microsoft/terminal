@@ -38,9 +38,64 @@ ColorScheme _CreateCampbellScheme()
     return campbellScheme;
 }
 
+ColorScheme _CreateOneHalfDarkScheme()
+{
+    ColorScheme oneHalfDarkScheme { L"One Half Dark",
+                                    RGB(220, 223, 228),
+                                    RGB( 40,  44,  52) };
+    auto& oneHalfDarkTable = oneHalfDarkScheme.GetTable();
+    auto oneHalfDarkSpan = gsl::span<COLORREF>(&oneHalfDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfDarkTable[0]  = RGB( 40,  44,  52); // dark black
+    oneHalfDarkTable[1]  = RGB( 97, 175, 239); // dark blue
+    oneHalfDarkTable[2]  = RGB(152, 195, 121); // dark green
+    oneHalfDarkTable[3]  = RGB( 86, 181, 193); // dark cyan
+    oneHalfDarkTable[4]  = RGB(224, 108, 117); // dark red
+    oneHalfDarkTable[5]  = RGB( 86, 182, 194); // dark magenta
+    oneHalfDarkTable[6]  = RGB(229, 192, 123); // dark yellow
+    oneHalfDarkTable[7]  = RGB(220, 223, 228); // gray
+    oneHalfDarkTable[8]  = RGB( 40,  44,  52); // black
+    oneHalfDarkTable[9]  = RGB( 97, 175, 239); // blue
+    oneHalfDarkTable[10]  = RGB(152, 195, 121); // green
+    oneHalfDarkTable[11]  = RGB( 86, 181, 193); // cyan
+    oneHalfDarkTable[12]  = RGB(224, 108, 117); // red
+    oneHalfDarkTable[13]  = RGB( 86, 182, 194); // magenta
+    oneHalfDarkTable[14]  = RGB(229, 192, 123); // yellow
+    oneHalfDarkTable[15]  = RGB(220, 223, 228); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
+
+    return oneHalfDarkScheme;
+}
+
+ColorScheme _CreateOneHalfLightScheme()
+{
+    ColorScheme oneHalfLightScheme { L"One Half Light",
+                                    RGB(250, 250, 250),
+                                    RGB( 56,  58,  66) };
+    auto& oneHalfLightTable = oneHalfLightScheme.GetTable();
+    auto oneHalfLightSpan = gsl::span<COLORREF>(&oneHalfLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfLightTable[0]  = RGB( 56,  58,  66); // dark black
+    oneHalfLightTable[1]  = RGB(  1, 132, 188); // dark blue
+    oneHalfLightTable[2]  = RGB( 80, 161,  79); // dark green
+    oneHalfLightTable[3]  = RGB(  9, 151, 179); // dark cyan
+    oneHalfLightTable[4]  = RGB(228,  86,  73); // dark red
+    oneHalfLightTable[5]  = RGB(166,  38, 164); // dark magenta
+    oneHalfLightTable[6]  = RGB(193, 132,   1); // dark yellow
+    oneHalfLightTable[7]  = RGB(250, 250, 250); // gray
+    oneHalfLightTable[8]  = RGB( 56,  58,  66); // black
+    oneHalfLightTable[9]  = RGB(  1, 132, 188); // blue
+    oneHalfLightTable[10]  = RGB( 80, 161,  79); // green
+    oneHalfLightTable[11]  = RGB(  9, 151, 179); // cyan
+    oneHalfLightTable[12]  = RGB(228,  86,  73); // red
+    oneHalfLightTable[13]  = RGB(166,  38, 164); // magenta
+    oneHalfLightTable[14]  = RGB(193, 132,   1); // yellow
+    oneHalfLightTable[15]  = RGB(250, 250, 250); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
+
+    return oneHalfLightScheme;
+}
+
 ColorScheme _CreateSolarizedDarkScheme()
 {
-
     ColorScheme solarizedDarkScheme { L"Solarized Dark",
                                       RGB(253, 246, 227),
                                       RGB(  7, 54,  66) };
@@ -97,8 +152,8 @@ ColorScheme _CreateSolarizedLightScheme()
 
 // Method Description:
 // - Create the set of schemes to use as the default schemes. Currently creates
-//      three default color schemes - Campbell (the new cmd color scheme),
-//      Solarized Dark and Solarized Light.
+//      five default color schemes - Campbell (the new cmd color scheme),
+//      One Half Dark, One Half Light, Solarized Dark, and Solarized Light.
 // Arguments:
 // - <none>
 // Return Value:
@@ -106,6 +161,8 @@ ColorScheme _CreateSolarizedLightScheme()
 void CascadiaSettings::_CreateDefaultSchemes()
 {
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfDarkScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfLightScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
 }
