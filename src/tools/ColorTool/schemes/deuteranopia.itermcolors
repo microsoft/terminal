@@ -31,7 +31,7 @@
 	have been altered from a conventional red and green to values that will instead show a more 
 	noticeable difference, since red and green are most frequently used in the Console for
 	'success' or 'error'. This scheme was designed using a tool called Color Oracle which can 
-	be found here: http://colororacle.cartography.ch/
+	be found here: https://colororacle.org/
 -->
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
