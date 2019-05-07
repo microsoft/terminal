@@ -352,7 +352,7 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     }
     if (json.HasKey(CURSORHEIGHT_KEY))
     {
-        result._cursorHeight = json.GetNamedNumber(CURSORHEIGHT_KEY);
+        result._cursorHeight = static_cast<uint32_t>(json.GetNamedNumber(CURSORHEIGHT_KEY));
     }
     if (json.HasKey(CURSORSHAPE_KEY))
     {
