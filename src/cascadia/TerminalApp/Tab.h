@@ -4,6 +4,7 @@
 #pragma once
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include "Pane.h"
 
 class Tab
 {
@@ -13,19 +14,23 @@ public:
     ~Tab();
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
+    winrt::Windows::UI::Xaml::UIElement GetRootElement();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
 
     bool IsFocused();
     void SetFocused(bool focused);
 
-    GUID GetProfile() const noexcept;
+    // GUID GetProfile() const noexcept;
 
-    void Scroll(int delta);
+    // void Scroll(int delta);
 
 private:
-    winrt::Microsoft::Terminal::TerminalControl::TermControl _control;
+
+    std::shared_ptr<Pane> _rootPane;
+
+    // winrt::Microsoft::Terminal::TerminalControl::TermControl _control;
     bool _focused;
-    GUID _profile;
+    // GUID _profile;
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem;
 
     void _MakeTabViewItem();

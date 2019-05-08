@@ -417,20 +417,21 @@ namespace winrt::TerminalApp::implementation
 
             for (auto &tab : _tabs)
             {
-                const auto term = tab->GetTerminalControl();
-                const GUID tabProfile = tab->GetProfile();
+                // TODO
+                // const auto term = tab->GetTerminalControl();
+                // const GUID tabProfile = tab->GetProfile();
 
-                if (profileGuid == tabProfile)
-                {
-                    term.UpdateSettings(settings);
+                // if (profileGuid == tabProfile)
+                // {
+                //     term.UpdateSettings(settings);
 
-                    // Update the icons of the tabs with this profile open.
-                    auto tabViewItem = tab->GetTabViewItem();
-                    tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem]() {
-                        // _GetIconFromProfile has to run on the main thread
-                        tabViewItem.Icon(App::_GetIconFromProfile(profile));
-                    });
-                }
+                //     // Update the icons of the tabs with this profile open.
+                //     auto tabViewItem = tab->GetTabViewItem();
+                //     tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem]() {
+                //         // _GetIconFromProfile has to run on the main thread
+                //         tabViewItem.Icon(App::_GetIconFromProfile(profile));
+                //     });
+                // }
             }
         }
 
@@ -597,17 +598,18 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
-        // Add an event handler when the terminal's title changes. When the
-        // title changes, we'll bubble it up to listeners of our own title
-        // changed event, so they can handle it.
-        newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
-            // Only bubble the change if this tab is the focused tab.
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                newTab->IsFocused())
-            {
-                _titleChangeHandlers(newTitle);
-            }
-        });
+        // TODO:
+        // // Add an event handler when the terminal's title changes. When the
+        // // title changes, we'll bubble it up to listeners of our own title
+        // // changed event, so they can handle it.
+        // newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
+        //     // Only bubble the change if this tab is the focused tab.
+        //     if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+        //         newTab->IsFocused())
+        //     {
+        //         _titleChangeHandlers(newTitle);
+        //     }
+        // });
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -620,22 +622,23 @@ namespace winrt::TerminalApp::implementation
             tabViewItem.Icon(_GetIconFromProfile(*profile));
         }
 
-        // Add an event handler when the terminal's connection is closed.
-        newTab->GetTerminalControl().ConnectionClosed([=]() {
-            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
-                const GUID tabProfile = newTab->GetProfile();
-                // Don't just capture this pointer, because the profile might
-                // get destroyed before this is called (case in point -
-                // reloading settings)
-                const auto* const p = _settings->FindProfile(tabProfile);
+        // TODO:
+        // // Add an event handler when the terminal's connection is closed.
+        // newTab->GetTerminalControl().ConnectionClosed([=]() {
+        //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
+        //         const GUID tabProfile = newTab->GetProfile();
+        //         // Don't just capture this pointer, because the profile might
+        //         // get destroyed before this is called (case in point -
+        //         // reloading settings)
+        //         const auto* const p = _settings->FindProfile(tabProfile);
 
-                // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
-                if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
-                {
-                    _RemoveTabViewItem(tabViewItem);
-                }
-            });
-        });
+        //         // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+        //         if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
+        //         {
+        //             _RemoveTabViewItem(tabViewItem);
+        //         }
+        //     });
+        // });
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
@@ -682,8 +685,12 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     void App::_DoScroll(int delta)
     {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        _tabs[focusedTabIndex]->Scroll(delta);
+        // TODO:
+        // int focusedTabIndex = _GetFocusedTabIndex();
+        // _tabs[focusedTabIndex]->Scroll(delta);
+
+        // Maybe something like:
+        // _GetFocusedControl()._Scroll(delta);
     }
 
     // Method Description:
@@ -693,10 +700,12 @@ namespace winrt::TerminalApp::implementation
     //    and get text to appear on separate lines.
     void App::_CopyText(const bool trimTrailingWhitespace)
     {
-        const int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        // const int focusedTabIndex = _GetFocusedTabIndex();
+        // std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
 
-        const auto control = focusedTab->GetTerminalControl();
+        // const auto control = focusedTab->GetTerminalControl();
+
+        const auto control = _GetFocusedControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
 
@@ -736,10 +745,12 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 auto tab = _tabs.at(selectedIndex);
-                auto control = tab->GetTerminalControl().GetControl();
+                auto term = tab->GetFocusedTerminalControl();
+                auto control = term.GetControl();
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(control);
+                // _tabContent.Children().Append(control);
+                _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
                 _titleChangeHandlers(GetTitle());
@@ -796,8 +807,9 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    auto tab = _tabs.at(selectedIndex);
-                    return tab->GetTerminalControl().Title();
+                    return _GetFocusedControl().Title();
+                    // auto tab = _tabs.at(selectedIndex);
+                    // return tab->GetTerminalControl().Title();
                 }
                 CATCH_LOG();
             }
@@ -868,6 +880,13 @@ namespace winrt::TerminalApp::implementation
         {
             return { nullptr };
         }
+    }
+
+    winrt::Microsoft::Terminal::TerminalControl::TermControl App::_GetFocusedControl()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+        return focusedTab->GetFocusedTerminalControl();
     }
 
     // -------------------------------- WinRT Events ---------------------------------

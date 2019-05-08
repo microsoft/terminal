@@ -106,6 +106,8 @@ namespace winrt::TerminalApp::implementation
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
+
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
     };
 }
 
