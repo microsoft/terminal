@@ -466,7 +466,10 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     }
     // tracing
     ApiMsgCompare apiMsg;
-    apiMsg.OtherId = other->GetId();
+	if (other)
+	{
+		apiMsg.OtherId = other->GetId();
+	}    
     apiMsg.Equal = !!*pRetVal;
     Tracing::s_TraceUia(this, ApiCall::Compare, &apiMsg);
 
@@ -964,7 +967,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     }
 
     ApiMsgMoveEndpointByRange apiMsg;
-    apiMsg.OriginalEnd = _start;
+    apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
     apiMsg.Endpoint = endpoint;
     apiMsg.TargetEndpoint = targetEndpoint;
