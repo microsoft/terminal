@@ -74,13 +74,17 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
-* You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
-* You will need to install both the following packages in VS ("Workloads" tab in Visual Studio Installer) :
-  - "Desktop Development with C++" (Workload)
-  - "Universal Windows Platform Development" (Workload)
-    - Specifically ensure "C++ (v141) Universal Windows Platform Tools" is installed (it may not have been by above alone) (Individual Components)
-  - If you're running VS2019, you'll also need to install the "MSVC v141 - VS 2017 C++ (x86 and x64) build tools" and "C++ ATL for v141 build tools (x86 and x64)" (Individual Components)
-* You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
+* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
+* You must install the following Workloads via the VS Installer:
+  - Desktop Development with C++
+    - If you're running VS2019, you'll also need to install the following Individual Components: 
+      - MSVC v141 - VS 2017 C++ (x86 and x64) build tools
+      - C++ ATL for v141 build tools (x86 and x64)
+  - Universal Windows Platform Development
+    - Also install the following Individual Component:
+      - C++ (v141) Universal Windows Platform Tools
+
+* You must also enable Developer Mode in the Windows Settings app to locally install and run the Terminal app.
 
 ## Contributing
 
