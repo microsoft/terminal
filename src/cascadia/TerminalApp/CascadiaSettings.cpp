@@ -107,7 +107,6 @@ void CascadiaSettings::_CreateDefaultSchemes()
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
-
 }
 
 // Method Description:
@@ -123,6 +122,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     Profile cmdProfile{};
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
+    cmdProfile.SetStartingDirectory(L"%HOMEDRIVE%%HOMEPATH%");
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
@@ -143,6 +143,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
+    powershellProfile.SetStartingDirectory(L"%HOMEDRIVE%%HOMEPATH%");
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
