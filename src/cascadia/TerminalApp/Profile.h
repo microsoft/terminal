@@ -40,6 +40,7 @@ public:
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
+    void SetStartingDirectory(std::wstring startingDirectory) noexcept;
     void SetName(std::wstring name) noexcept;
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
