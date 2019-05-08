@@ -3,6 +3,7 @@
 rem Open Console build environment setup
 rem Adds msbuild to your path, and adds the open\tools directory as well
 rem This recreates what it's like to be an actual windows developer!
+rem Copyright 2019 Microsoft
 
 rem skip the setup if we're already ready.
 if not "%OpenConBuild%" == "" goto :END
