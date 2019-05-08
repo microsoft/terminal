@@ -76,9 +76,10 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
 * You will need to install both the following packages in VS:
-  - "Desktop Development with C++"
-  - "Universal Windows Platform Development"
-  - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
+  - "Desktop Development with C++" (Workload)
+  - "Universal Windows Platform Development" (Workload)
+    - Specifically ensure "C++ (v141) Universal Windows Platform Tools" is installed (it may not have been by above alone) (Individual Components)
+  - If you're running VS2019, you'll also need to install the "MSVC v141 - VS 2017 C++ (x86 and x64) build tools" and "C++ ATL for v141 build tools (x86 and x64)" (Individual Components)
 * You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
 
 ## Contributing
