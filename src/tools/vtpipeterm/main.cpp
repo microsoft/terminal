@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include <windows.h>
@@ -392,16 +392,16 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
         switch(lang)
         {
             case TEST_LANG_CYRILLIC:
-                str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
+                str = u8"Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
                 break;
             case TEST_LANG_CHINESE:
-                str = "側経意責家方家閉討店暖育田庁載社転線宇。";
+                str = u8"側経意責家方家閉討店暖育田庁載社転線宇。";
                 break;
             case TEST_LANG_JAPANESE:
-                str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
+                str = u8"旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
                 break;
             case TEST_LANG_KOREAN:
-                str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
+                str = u8"국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
                 break;
             case TEST_LANG_GOOD_POUND:
                 str = "\xc2\xa3"; // UTF-8 £
