@@ -123,13 +123,19 @@
   <data name="AppName" xml:space="preserve">
     <value>Windows Terminal (Preview)</value>
   </data>
-  <data name="Foo" xml:space="preserve">
-    <value>Bar</value>
-  </data>
-  <data name="InitialJsonParse.Text" xml:space="preserve">
+  <data name="InitialJsonParseErrorText" xml:space="preserve">
     <value>Settings could not be loaded from file - temporarily using the default settings. Check for syntax errors, including trailing commas.</value>
   </data>
-  <data name="InitialJsonParse.Title" xml:space="preserve">
+  <data name="InitialJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to load settings</value>
+  </data>
+  <data name="Ok" xml:space="preserve">
+    <value>Ok</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.</value>
+  </data>
+  <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
+    <value>Failed to reload settings</value>
   </data>
 </root>

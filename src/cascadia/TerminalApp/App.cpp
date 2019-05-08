@@ -43,7 +43,9 @@ namespace winrt::TerminalApp::implementation
         base_type(parentProvider),
         _settings{  },
         _tabs{  },
-        _loadedInitialSettings{ false }
+        _loadedInitialSettings{ false },
+        _settingsLoadedResult{ S_OK },
+        _dialogLock{}
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -168,46 +170,58 @@ namespace winrt::TerminalApp::implementation
 
         _OpenNewTab(std::nullopt);
 
-        // _root.Loaded([this](auto&&, auto&&) {
-        //     if (FAILED(_settingsLoadedResult))
-        //     {
-        //         Controls::ContentDialog dialog;
+        _root.Loaded({ this, &App::_OnLoaded });
+    }
 
-        //         dialog.Title(winrt::box_value(L"Failed to parse settings"));
-        //         dialog.Content(winrt::box_value(L"Failed to parse settings asdfa"));
-        //         dialog.CloseButtonText(L"Ok");
+    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& textKey)
+    {
+        // DON'T release this lock in a wil::scope_exit. The scope_exit will get
+        // called when we await, which is not what we want.
+        auto gotLock = _dialogLock.try_lock();
+        if (!gotLock)
+        {
+            // Another dialog is visible.
+            return;
+        }
 
-        //         // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
-        //         _root.Children().Append(dialog);
-        //         dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        auto title = l.GetString(titleKey);
+        auto message = l.GetString(textKey);
+        auto buttonText = l.GetString(L"Ok");
 
-        //     }
-        // });
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(message));
+        dialog.CloseButtonText(buttonText);
 
-        //auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        //l.GetString(L"InitialJsonParse.Text");
+        // This doesn't work.
+        // dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
 
+        // auto res = Resources();
+        // IInspectable key = winrt::box_value(L"BackgroundContentDialogThemeStyle");
+        // if (res.HasKey(key))
+        // {
+        //     IInspectable g = res.Lookup(key);
+        //     winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
+        //     dialog.Style(style);
+        // }
 
-        _root.Loaded([this](auto&&, auto&&) {
-            if (FAILED(_settingsLoadedResult))
-            {
-                
-                // Windows::ApplicationModel::Resources::ResourceLoader loader{};
-                auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-                auto s = l.GetString(L"InitialJsonParse.Text");
-                auto bar = l.GetStringForUri(L"InitialJsonParse");
-                auto foo = l.GetString(L"Foo");
+        // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
+        _root.Children().Append(dialog);
+        Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
-                Controls::ContentDialog dialog;
-                dialog.Title(winrt::box_value(L"Failed to parse settings"));
-                // dialog.Content(winrt::box_value(L"Failed to parse settings asdfa"));
-                dialog.Content(winrt::box_value(s));
-                dialog.CloseButtonText(L"Ok");
-                // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
-                _root.Children().Append(dialog);
-                dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
-            }
-        });
+        // After the dialog is dismissed, release the dialog lock so another can be shown.
+        _dialogLock.unlock();
+    }
+
+    void App::_OnLoaded(const IInspectable& sender, const RoutedEventArgs& eventArgs)
+    {
+        if (FAILED(_settingsLoadedResult))
+        {
+            const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
+            const winrt::hstring textKey = L"InitialJsonParseErrorText";
+            _ShowOkDialog(titleKey, textKey);
+        }
     }
 
     // Method Description:
@@ -382,20 +396,18 @@ namespace winrt::TerminalApp::implementation
     //      happening during startup, it'll need to happen on a background thread.
     void App::LoadSettings()
     {
-        bool successfullyLoadedSettings = false;
-        HRESULT hr = E_FAIL;
+        _settingsLoadedResult = E_FAIL;
         // TODO: Try this.
         try
         {
             auto newSettings = CascadiaSettings::LoadAll();
             _settings = std::move(newSettings);
-            successfullyLoadedSettings = true;
-            hr = S_OK;
+            _settingsLoadedResult = S_OK;
         }
         catch (const winrt::hresult_error& e)
         {
-            hr = e.code();
-            LOG_HR(hr);
+            _settingsLoadedResult = e.code();
+            LOG_HR(_settingsLoadedResult);
         }
         catch (...)
         {
@@ -403,9 +415,7 @@ namespace winrt::TerminalApp::implementation
             LOG_HR(wil::ResultFromCaughtException());
         }
 
-        _settingsLoadedResult = hr;
-
-        if (!successfullyLoadedSettings)
+        if (FAILED(_settingsLoadedResult))
         {
             // If it fails,
             //  - use Default settings,
@@ -416,7 +426,6 @@ namespace winrt::TerminalApp::implementation
             //        commas.
             _settings = std::make_unique<CascadiaSettings>();
             _settings->CreateDefaults();
-
         }
 
         _HookupKeyBindings(_settings->GetKeybindings());
@@ -481,14 +490,38 @@ namespace winrt::TerminalApp::implementation
     void App::_ReloadSettings()
     {
         // TODO: Try this.
-        _settings = CascadiaSettings::LoadAll();
         // If it fails,
         //  - don't change the settings (and don't actually apply the new settings)
         //  - don't persist them.
         //  - display a loading error
-        //      * Settings could not be reloaded from file. Check for syntax
-        //        errors, including trailing commas.
+        _settingsLoadedResult = E_FAIL;
+        try
+        {
+            auto newSettings = CascadiaSettings::LoadAll(false);
+            _settings = std::move(newSettings);
+            _settingsLoadedResult = S_OK;
+        }
+        catch (const winrt::hresult_error& e)
+        {
+            _settingsLoadedResult = e.code();
+            LOG_HR(_settingsLoadedResult);
+        }
+        catch (...)
+        {
+            // TODO can this ever be hit? or will it always be a winrt::hresult_error?
+            LOG_HR(wil::ResultFromCaughtException());
+        }
 
+        if (FAILED(_settingsLoadedResult))
+        {
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
+                const winrt::hstring textKey = L"ReloadJsonParseErrorText";
+                _ShowOkDialog(titleKey, textKey);
+            });
+
+            return;
+        }
 
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.

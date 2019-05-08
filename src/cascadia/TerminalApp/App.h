@@ -64,14 +64,17 @@ namespace winrt::TerminalApp::implementation
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
-        HRESULT _settingsLoadedResult = S_OK;
+        HRESULT _settingsLoadedResult;
 
         bool _loadedInitialSettings;
+        std::shared_mutex _dialogLock;
 
         wil::unique_folder_change_reader_nothrow _reader;
 
         void _Create();
         void _CreateNewTabFlyout();
+
+        fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& textKey);
 
         void _LoadSettings();
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
@@ -98,6 +101,7 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
 
+        void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);

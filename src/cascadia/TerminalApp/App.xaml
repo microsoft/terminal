@@ -28,6 +28,9 @@
                     <Style x:Name="BackgroundGridThemeStyle" TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
+                    <Style x:Name="BackgroundContentDialogThemeStyle" TargetType="ContentDialog">
+                        <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+                    </Style>
 
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
