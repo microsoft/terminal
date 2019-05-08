@@ -7,7 +7,7 @@ Module Name:
 
 Abstract:
 - This is the implementation of the client VT input state machine engine.
-    This generates InpueEvents from a stream of VT sequences emmited by a
+    This generates InputEvents from a stream of VT sequences emitted by a
     client "terminal" application.
 
 Author(s):
@@ -92,7 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         enum Ss3ActionCodes : wchar_t
         {
-            // The "Cursor Keys" are sometimes sent as a Ss3 in "application mode"
+            // The "Cursor Keys" are sometimes sent as a SS3 in "application mode"
             //  But for now we'll only accept them as Normal Mode sequences, as CSI's.
             // ArrowUp = L'A',
             // ArrowDown = L'B',
