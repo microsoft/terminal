@@ -375,7 +375,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // In the scenario where the user has turned off the OS setting to automatically hide scollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
             // achieve the intended effect.
-			_scrollBar.Visibility(Visibility::Collapsed);
+            _scrollBar.Visibility(Visibility::Collapsed);
         }
         else
         {
@@ -1042,12 +1042,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         float width = gsl::narrow<float>(cols * fFontWidth);
 
         // Reserve additional space if scrollbar is intended to be visible
-		if (settings.ScrollState() == ScrollbarState::Visible)
-		{
-			width += scrollbarSize;
-		}
+        if (settings.ScrollState() == ScrollbarState::Visible)
+        {
+            width += scrollbarSize;
+        }
 
-		const float height = gsl::narrow<float>(rows * fFontHeight);
+        const float height = gsl::narrow<float>(rows * fFontHeight);
 
         return { width, height };
     }
