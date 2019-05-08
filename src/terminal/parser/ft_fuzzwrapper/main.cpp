@@ -70,7 +70,8 @@ int __cdecl wmain(int argc, wchar_t* argv[])
             fGotChar = GetChar(&wch);
         }
 
-        if (hFile != NULL) {
+        if (hFile != NULL)
+        {
             fclose(hFile);
         }
         wprintf(L"Done.\r\n");
