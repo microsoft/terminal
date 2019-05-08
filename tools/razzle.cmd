@@ -38,7 +38,7 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Cur
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
+    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin" (
@@ -46,7 +46,7 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\msbuild.exe"
+    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\msbuild.exe"
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin" (
@@ -54,7 +54,7 @@ if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Cu
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe"
+    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe"
     goto :FOUND_MSBUILD
 )
 if exist "%ProgramFiles(x86)%\MSBuild\14.0\bin" (
