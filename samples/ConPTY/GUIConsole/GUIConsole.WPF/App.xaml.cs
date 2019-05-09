@@ -9,7 +9,7 @@ namespace GUIConsole.Wpf
     {
         public App()
         {
-            
+
         }
     }
 }

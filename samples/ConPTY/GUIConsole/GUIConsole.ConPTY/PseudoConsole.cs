@@ -25,8 +25,8 @@ namespace GUIConsole.ConPTY
                 new COORD { X = (short)width, Y = (short)height },
                 inputReadSide, outputWriteSide,
                 0, out IntPtr hPC);
-            if(createResult != 0)
-            {                             
+            if (createResult != 0)
+            {
                 throw new Win32Exception(createResult, "Could not create psuedo console.");
             }
             return new PseudoConsole(hPC);
