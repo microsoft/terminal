@@ -10,7 +10,7 @@ Welcome\! This repository contains the source code for:
 
 Project|Build Status
 ---|---
-Terminal|![](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)
+Terminal|[![Build Status](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)](https://dev.azure.com/ms/Terminal/_build?definitionId=136)
 ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
 
 # Terminal & Console Overview
@@ -75,7 +75,7 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
-* You will need to install both the following packages in VS:
+* You will need to install both the following packages in VS ("Workloads" tab in Visual Studio Installer) :
   - "Desktop Development with C++"
   - "Universal Windows Platform Development"
   - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
@@ -89,7 +89,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 > 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
 
-> ⚠ **Note**: the Command-Line Team are actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
+> ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
 
 ## Communicating with the Team
 
@@ -102,7 +102,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
   - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-  
+
   - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
   - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
@@ -124,7 +124,7 @@ nuget restore OpenConsole.sln
 msbuild OpenConsole.sln
 ```
 
-We've provided a set of convenience scripts in the **/tools** directory to help automate the process of building and running tests.
+We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
 
 ## Coding Guidance
 

@@ -6,7 +6,7 @@
 ## Abstract
 It should be possible to configure the terminal so that it doesn't send certain keystrokes as input to the terminal, and instead triggers certain actions. Examples of these actions could be copy/pasting text, opening a new tab, or changing the font size.
 
-This spec describes a mechanism by which we could provide a common implementation of handling keyboard shortcuts like these. This common implementation could then be leveraged and extended by the UX implementation as to handle certain callbacks in the UX layer. For example, The TerminalCore doesn't have a concept of what a tab is, but the keymap abstraction could raise an event such that a WPF app could implement creating a new tab in it's idomatic way, and UWP could implement them in their own way.
+This spec describes a mechanism by which we could provide a common implementation of handling keyboard shortcuts like these. This common implementation could then be leveraged and extended by the UX implementation as to handle certain callbacks in the UX layer. For example, The TerminalCore doesn't have a concept of what a tab is, but the keymap abstraction could raise an event such that a WPF app could implement creating a new tab in its idomatic way, and UWP could implement them in their own way.
 
 ## Terminology
 * **Key Chord**: This is any possible keystroke that a user can input
@@ -28,7 +28,7 @@ This spec describes a mechanism by which we could provide a common implementatio
 
 When the UX frontend is created, it should instantiate a `IKeyBindings` object with the keybindings mapped as it would like.
 
-When it's creating it's platform-dependent terminal component, it can pass the `IKeyBindings` object to that component. The component will then be able to pass that object to the terminal instance.
+When it's creating its platform-dependent terminal component, it can pass the `IKeyBindings` object to that component. The component will then be able to pass that object to the terminal instance.
 
 When the terminal component calls `ITerminalInput.SendKeyEvent(uint vkey, KeyModifiers modifiers)`, the terminal will use `IKeyBindings.TryKeyChord` to see if there are any bound actions to that input. If there are, the `IKeyBindings` implementation will either handle the event by interacting with the `ITerminalInput`, or it'll invoke an event that's been registered by the frontend
 
@@ -66,7 +66,7 @@ partial class Terminal
 ```
 ### Project Cascadia Sample
 
-Below is an example of how the Project Cascadia application might implement it's
+Below is an example of how the Project Cascadia application might implement its
   keybindings.
 
 ```csharp
@@ -105,4 +105,4 @@ class KeyBindings : IKeyBindings
 How does Copy/paste play into this?
 
 When Input is written to the terminal, and it tries the copy keybinding, what happens?
-The Keybindings are global to the frontend, not local to the terminal. Copy/Paste events should also be delegates that get raised, and the frontend can then determine what to do with them. It'll probably query it's active/focused Terminal Component, then Get the `ITerminalInput` from that component, and use that to CopyText / PasteText from the Terminal as needed.
+The Keybindings are global to the frontend, not local to the terminal. Copy/Paste events should also be delegates that get raised, and the frontend can then determine what to do with them. It'll probably query its active/focused Terminal Component, then Get the `ITerminalInput` from that component, and use that to CopyText / PasteText from the Terminal as needed.
