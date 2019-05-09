@@ -230,15 +230,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TermControl::~TermControl()
     {
         _closing = true;
-        // Don't let anyone else do something to the buffer.
-        auto lock = _terminal->LockForWriting();
+        if (_initializedTerminal)
+        {
+            // Don't let anyone else do something to the buffer.
+            auto lock = _terminal->LockForWriting();
+        }
 
         if (_connection != nullptr)
         {
             _connection.Close();
         }
 
-        _renderer->TriggerTeardown();
+        if (_renderer != nullptr)
+        {
+            _renderer->TriggerTeardown();
+        }
 
         _swapChainPanel = nullptr;
         _root = nullptr;

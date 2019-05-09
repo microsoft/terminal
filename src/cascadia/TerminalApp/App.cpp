@@ -329,6 +329,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
+        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
     }
 
     // Method Description:
@@ -685,12 +687,8 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     void App::_DoScroll(int delta)
     {
-        // TODO:
-        // int focusedTabIndex = _GetFocusedTabIndex();
-        // _tabs[focusedTabIndex]->Scroll(delta);
-
-        // Maybe something like:
-        // _GetFocusedControl()._Scroll(delta);
+        int focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->Scroll(delta);
     }
 
     // Method Description:
@@ -888,6 +886,33 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
         return focusedTab->GetFocusedTerminalControl();
     }
+
+    void App::_SplitVertical(std::optional<GUID> profileGuid)
+    {
+        const GUID realGuid = profileGuid ? profileGuid.value() :
+                                            _settings->GlobalSettings().GetDefaultProfile();
+        auto controlSettings = _settings->MakeSettings(realGuid);
+        TermControl newControl{ controlSettings };
+
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+
+        return focusedTab->SplitVertical(realGuid, newControl);
+    }
+
+    void App::_SplitHorizontal(std::optional<GUID> profileGuid)
+    {
+        const GUID realGuid = profileGuid ? profileGuid.value() :
+                                            _settings->GlobalSettings().GetDefaultProfile();
+        auto controlSettings = _settings->MakeSettings(realGuid);
+        TermControl newControl{ controlSettings };
+
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+
+        return focusedTab->SplitHorizontal(realGuid, newControl);
+    }
+
 
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.

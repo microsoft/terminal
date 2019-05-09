@@ -24,6 +24,8 @@ namespace TerminalApp
         SwitchToTab,
         NextTab,
         PrevTab,
+        SplitVertical,
+        SplitHorizontal,
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
@@ -40,6 +42,8 @@ namespace TerminalApp
     delegate void SwitchToTabEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
+    delegate void SplitVerticalEventArgs();
+    delegate void SplitHorizontalEventArgs();
     delegate void IncreaseFontSizeEventArgs();
     delegate void DecreaseFontSizeEventArgs();
     delegate void ScrollUpEventArgs();
@@ -62,6 +66,8 @@ namespace TerminalApp
         event SwitchToTabEventArgs SwitchToTab;
         event NextTabEventArgs NextTab;
         event PrevTabEventArgs PrevTab;
+        event SplitVerticalEventArgs SplitVertical;
+        event SplitHorizontalEventArgs SplitHorizontal;
         event IncreaseFontSizeEventArgs IncreaseFontSize;
         event DecreaseFontSizeEventArgs DecreaseFontSize;
         event ScrollUpEventArgs ScrollUp;

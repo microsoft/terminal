@@ -15,7 +15,6 @@ Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermContro
     _firstChild{ nullptr },
     _secondChild{ nullptr }
 {
-    // _MakeTabViewItem();
     _root = Controls::Grid{};
     _root.Children().Append(_control.GetControl());
 }
@@ -24,21 +23,7 @@ Pane::~Pane()
 {
 }
 
-// void Pane::_MakeTabViewItem()
-// {
-//     _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
-//     const auto title = _control.Title();
-
-//     _tabViewItem.Header(title);
-
-//     _control.TitleChanged([=](auto newTitle){
-//         _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-//             _tabViewItem.Header(newTitle);
-//         });
-//     });
-// }
-
-winrt::Windows::UI::Xaml::UIElement Pane::GetRootElement()
+winrt::Windows::UI::Xaml::Controls::Grid Pane::GetRootElement()
 {
     return _root;
 }
@@ -76,29 +61,95 @@ void Pane::SetFocused(bool focused)
     }
 }
 
-// GUID Pane::GetProfile() const noexcept
-// {
-//     return _profile;
-// }
-
 void Pane::_Focus()
 {
-    _focused = true;
-    _control.GetControl().Focus(FocusState::Programmatic);
+    // _focused = true;
+    // _control.GetControl().Focus(FocusState::Programmatic);
 }
 
-// // Method Description:
-// // - Move the viewport of the terminal up or down a number of lines. Negative
-// //      values of `delta` will move the view up, and positive values will move
-// //      the viewport down.
-// // Arguments:
-// // - delta: a number of lines to move the viewport relative to the current viewport.
-// // Return Value:
-// // - <none>
-// void Pane::Scroll(int delta)
-// {
-//     _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-//         const auto currentOffset = _control.GetScrollOffset();
-//         _control.ScrollViewport(currentOffset + delta);
-//     });
-// }
+void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    _splitState = SplitState::Horizontal;
+
+    // Create two columns in this grid.
+    auto separatorColDef = Controls::ColumnDefinition();
+    separatorColDef.Width(GridLengthHelper::Auto());
+
+    _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+    _root.ColumnDefinitions().Append(separatorColDef);
+    _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+
+    _root.Children().Clear();
+
+    // Create two new Panes
+    //   Move our control, guid into the first one.
+    //   Move the new guid, control into the second.
+    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _profile = std::nullopt;
+    _control = { nullptr };
+    _secondChild = std::make_shared<Pane>(profile, control);
+
+    // add the first pane to row 0
+    _root.Children().Append(_firstChild->GetRootElement());
+    Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
+
+    _separatorRoot = Controls::Grid{};
+    _separatorRoot.Width(8);
+    // NaN is the special value XAML uses for "Auto" sizing.
+    _separatorRoot.Height(NAN);
+    _root.Children().Append(_separatorRoot);
+    Controls::Grid::SetColumn(_separatorRoot, 1);
+
+    // add the second pane to row 1
+    _root.Children().Append(_secondChild->GetRootElement());
+    Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
+}
+
+void Pane::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
+{
+    if (!_IsLeaf())
+    {
+        return;
+    }
+    _splitState = SplitState::Vertical;
+
+    // Create two rows in this grid.
+
+    auto separatorRowDef = Controls::RowDefinition();
+    separatorRowDef.Height(GridLengthHelper::Auto());
+
+    _root.RowDefinitions().Append(Controls::RowDefinition{});
+    _root.RowDefinitions().Append(separatorRowDef);
+    _root.RowDefinitions().Append(Controls::RowDefinition{});
+
+    _root.Children().Clear();
+
+    // Create two new Panes
+    //   Move our control, guid into the first one.
+    //   Move the new guid, control into the second.
+    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _profile = std::nullopt;
+    _control = { nullptr };
+    _secondChild = std::make_shared<Pane>(profile, control);
+
+
+    // add the first pane to row 0
+    _root.Children().Append(_firstChild->GetRootElement());
+    Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
+
+    _separatorRoot = Controls::Grid{};
+    _separatorRoot.Height(8);
+    // NaN is the special value XAML uses for "Auto" sizing.
+    _separatorRoot.Width(NAN);
+    _root.Children().Append(_separatorRoot);
+    Controls::Grid::SetRow(_separatorRoot, 1);
+
+    // add the second pane to row 1
+    _root.Children().Append(_secondChild->GetRootElement());
+    Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
+
+}

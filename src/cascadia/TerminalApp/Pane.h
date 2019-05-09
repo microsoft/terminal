@@ -24,20 +24,20 @@ public:
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     // winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
-    winrt::Windows::UI::Xaml::UIElement GetRootElement();
+    winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool IsFocused() const noexcept;
     void SetFocused(bool focused);
 
     // GUID GetProfile() const noexcept;
 
-    // void SplitHorizontally(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    // void SplitVertically(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
-    // void Scroll(int delta);
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
 
     std::shared_ptr<Pane> _firstChild;

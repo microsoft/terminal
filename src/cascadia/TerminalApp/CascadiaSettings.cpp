@@ -182,6 +182,13 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                                KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                          VK_TAB });
 
+    keyBindings.SetKeyBinding(ShortcutAction::SplitVertical,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_OEM_PLUS }); // For any country/region, the '+' key
+    keyBindings.SetKeyBinding(ShortcutAction::SplitHorizontal,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_OEM_MINUS }); // For any country/region, the '-' key
+
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
