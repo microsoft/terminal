@@ -1,9 +1,7 @@
 ﻿using GUIConsole.ConPTY.Processes;
 using Microsoft.Win32.SafeHandles;
 using System;
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 using static GUIConsole.ConPTY.Native.ConsoleApi;
 
@@ -110,31 +108,6 @@ namespace GUIConsole.ConPTY
             {
                 disposable.Dispose();
             }
-        }
-
-        /// <summary>
-        /// A helper method that opens a handle on the console's screen buffer, which will allow us to get its output,
-        /// even if STDOUT has been redirected (which Visual Studio does by default).
-        /// </summary>
-        /// <returns>A file handle to the console's screen buffer.</returns>
-        /// <remarks>This is described in more detail here: https://docs.microsoft.com/en-us/windows/console/console-handles </remarks>
-        private SafeFileHandle GetConsoleScreenBuffer()
-        {
-            IntPtr file = CreateFileW(
-                ConsoleOutPseudoFilename,
-                GENERIC_WRITE | GENERIC_READ,
-                FILE_SHARE_WRITE,
-                IntPtr.Zero,
-                OPEN_EXISTING,
-                FILE_ATTRIBUTE_NORMAL,
-                IntPtr.Zero);
-
-            if (file == new IntPtr(-1))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not get console screen buffer.");
-            }
-
-            return new SafeFileHandle(file, true);
         }
     }
 }
