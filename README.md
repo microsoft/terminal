@@ -121,7 +121,7 @@ OpenConsole.sln may be built from within Visual Studio or from the command-line 
 
 ```shell
 .\tools\razzle.cmd
-msbuild
+bcz
 ```
 
 We've provided a set of convenience scripts in the **/tools** directory to help automate the process of building and running tests.
