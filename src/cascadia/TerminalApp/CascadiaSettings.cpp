@@ -59,8 +59,8 @@ ColorScheme _CreateOneHalfDarkScheme()
     oneHalfDarkTable[11] = RGB(229, 192, 123); // yellow
     oneHalfDarkTable[12] = RGB( 97, 175, 239); // blue
     oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
-	oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
-	oneHalfDarkTable[15] = RGB(220, 223, 228); // white
+    oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
+    oneHalfDarkTable[15] = RGB(220, 223, 228); // white
     Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
 
     return oneHalfDarkScheme;
@@ -448,7 +448,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     do
     {
         result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), static_cast<DWORD>(result.size()));
+        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
     } while (requiredSize != result.size());
 
     // Trim the terminating null character
