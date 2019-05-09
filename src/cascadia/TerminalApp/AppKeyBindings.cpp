@@ -121,6 +121,9 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SwitchToTab8:
                 _SwitchToTabHandlers(8);
                 return true;
+            case ShortcutAction::SwitchToTab9:
+                _SwitchToTabHandlers(9);
+                return true;
         }
         return false;
     }
