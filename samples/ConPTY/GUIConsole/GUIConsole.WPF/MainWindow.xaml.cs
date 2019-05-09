@@ -22,7 +22,7 @@ namespace GUIConsole.Wpf
         {
             // Start up the console, and point it to cmd.exe.
             _terminal = new Terminal();
-            Task.Run(() => _terminal.Start("pwsh.exe"));
+            Task.Run(() => _terminal.Start("powershell.exe"));
             _terminal.OutputReady += Terminal_OutputReady;
         }
 
@@ -31,7 +31,7 @@ namespace GUIConsole.Wpf
             // Start a long-lived thread for the "read console" task, so that we don't use a standard thread pool thread.
             Task.Factory.StartNew(() => CopyConsoleToWindow(), TaskCreationOptions.LongRunning);
 
-            Dispatcher.Invoke(() => { TitleBarTitle.Text = "GUIConsole - pwsh.exe"; });
+            Dispatcher.Invoke(() => { TitleBarTitle.Text = "GUIConsole - powershell.exe"; });
         }
 
         private void CopyConsoleToWindow()
