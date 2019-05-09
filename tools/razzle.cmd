@@ -1,5 +1,7 @@
 @echo off
 
+echo Setting up dev environment...
+
 rem Open Console build environment setup
 rem Adds msbuild to your path, and adds the open\tools directory as well
 rem This recreates what it's like to be an actual windows developer!
@@ -19,16 +21,30 @@ rem Add nuget to PATH
 set PATH=%PATH%%OPENCON%\dep\nuget;
 
 rem Run nuget restore so you can use vswhere
-nuget restore %OPENCON%
+nuget restore %OPENCON% -Verbosity quiet
 
 rem Find vswhere
 rem from https://github.com/microsoft/vs-setup-samples/blob/master/tools/vswhere.cmd
-for /f "usebackq delims=" %%I in (`dir /b /aD /o-N /s "%~dp0..\packages\vswhere*"`) do (
-    for /f "usebackq delims=" %%J in (`where /r "%%I" vswhere.exe 2^>nul`) do set VSWHERE=%%J
+for /f "usebackq delims=" %%I in (`dir /b /aD /o-N /s "%~dp0..\packages\vswhere*" 2^>nul`) do (
+    for /f "usebackq delims=" %%J in (`where /r "%%I" vswhere.exe 2^>nul`) do (
+        set VSWHERE=%%J
+    )
+)
+
+if not defined VSWHERE (
+    echo Could not find vswhere on your machine. Please set the VSWHERE variable to the location of vswhere.exe and run razzle again.
+    goto :EXIT
 )
 
 rem Add path to MSBuild Binaries
-for /f "usebackq tokens=*" %%i in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe`) do set MSBUILD=%%i
+for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+    set MSBUILD=%%B
+)
+
+if not defined MSBUILD (
+    echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
+    goto :EXIT
+)
 
 set PATH=%PATH%"%MSBUILD%\..";
 
