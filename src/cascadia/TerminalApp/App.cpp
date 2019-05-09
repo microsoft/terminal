@@ -671,6 +671,7 @@ namespace winrt::TerminalApp::implementation
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
             _tabs.erase(_tabs.begin() + focusedTabIndex);
+            _UpdateTabView();
         }
     }
 
