@@ -73,6 +73,7 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 ## Prerequisites
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
+  - You will need to register and setup Windows Insider Program on your device to get access to the latest builds.
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
 * You will need to install both the following packages in VS ("Workloads" tab in Visual Studio Installer) :
