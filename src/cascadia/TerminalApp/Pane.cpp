@@ -51,6 +51,16 @@ bool Pane::_IsLeaf() const noexcept
     return _splitState == SplitState::None;
 }
 
+bool Pane::_HasFocusedChild() const noexcept
+{
+    const bool controlFocused = _control != nullptr &&
+                                _control.GetControl().FocusState() != FocusState::Unfocused;
+    const bool firstFocused = _firstChild != nullptr && _firstChild->_HasFocusedChild();
+    const bool secondFocused = _secondChild != nullptr && _secondChild->_HasFocusedChild();
+
+    return controlFocused || firstFocused || secondFocused;
+}
+
 void Pane::SetFocused(bool focused)
 {
     _focused = focused;
@@ -71,9 +81,18 @@ void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalContr
 {
     if (!_IsLeaf())
     {
+        if (_firstChild->_HasFocusedChild())
+        {
+            _firstChild->SplitVertical(profile, control);
+        }
+        else if (_secondChild->_HasFocusedChild())
+        {
+            _secondChild->SplitVertical(profile, control);
+        }
+
         return;
     }
-    _splitState = SplitState::Horizontal;
+    _splitState = SplitState::Vertical;
 
     // Create two columns in this grid.
     auto separatorColDef = Controls::ColumnDefinition();
@@ -113,9 +132,18 @@ void Pane::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalCon
 {
     if (!_IsLeaf())
     {
+        if (_firstChild->_HasFocusedChild())
+        {
+            _firstChild->SplitHorizontal(profile, control);
+        }
+        else if (_secondChild->_HasFocusedChild())
+        {
+            _secondChild->SplitHorizontal(profile, control);
+        }
+
         return;
     }
-    _splitState = SplitState::Vertical;
+    _splitState = SplitState::Horizontal;
 
     // Create two rows in this grid.
 

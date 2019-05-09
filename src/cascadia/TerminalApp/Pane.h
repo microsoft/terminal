@@ -52,4 +52,5 @@ private:
     void _Focus();
 
     bool _IsLeaf() const noexcept;
+    bool _HasFocusedChild() const noexcept;
 };
