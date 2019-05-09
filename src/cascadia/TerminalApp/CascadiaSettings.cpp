@@ -122,7 +122,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     Profile defaultProfile{};
     defaultProfile.SetFontFace(L"Consolas");
     defaultProfile.SetCommandline(L"cmd.exe");
-    defaultProfile.SetStartingDirectory(L"%HOMEDRIVE%%HOMEPATH%");
+    defaultProfile.SetStartingDirectory(L"%USERPROFILE%");
     defaultProfile.SetColorScheme({ L"Campbell" });
     defaultProfile.SetAcrylicOpacity(0.75);
     defaultProfile.SetUseAcrylic(true);
@@ -145,7 +145,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
-    powershellProfile.SetStartingDirectory(L"%HOMEDRIVE%%HOMEPATH%");
+    powershellProfile.SetStartingDirectory(L"%USERPROFILE%");
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
