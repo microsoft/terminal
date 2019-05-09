@@ -501,6 +501,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (!handled)
         {
             _terminal->ClearSelection();
+            _renderer->TriggerSelection();
             // If the terminal translated the key, mark the event as handled.
             // This will prevent the system from trying to get the character out
             // of it and sending us a CharacterRecieved event.
