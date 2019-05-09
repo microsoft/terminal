@@ -325,11 +325,11 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
         {
             LOG_LAST_ERROR();
             _currentState = _State::Error;
-		}
-		else 
-		{
-			_currentState = _State::Finished;
-		}
+        }
+        else 
+        {
+            _currentState = _State::Finished;
+        }
     }
     return bufferSize;
 }

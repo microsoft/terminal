@@ -466,10 +466,10 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     }
     // tracing
     ApiMsgCompare apiMsg;
-	if (other)
-	{
-		apiMsg.OtherId = other->GetId();
-	}    
+    if (other)
+    {
+        apiMsg.OtherId = other->GetId();
+    }
     apiMsg.Equal = !!*pRetVal;
     Tracing::s_TraceUia(this, ApiCall::Compare, &apiMsg);
 
