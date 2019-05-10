@@ -8,8 +8,10 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::StartScreen;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -138,6 +140,7 @@ namespace winrt::TerminalApp::implementation
 
         // Populate the new tab button's flyout with entries for each profile
         _CreateNewTabFlyout();
+        _CreateJumplist();
 
         _tabRow.Children().Append(_tabView);
         _tabRow.Children().Append(_newTabButton);
@@ -268,6 +271,43 @@ namespace winrt::TerminalApp::implementation
         }
 
         _newTabButton.Flyout(newTabFlyout);
+    }
+
+    // Method Description:
+    // - Builds the taskbar jumplist and populates it with the user's profiles. Clicking
+    //   the jumplist items will open a new tab associated with the clicked profile.
+    // Arguments:
+    // - None
+    // Return Value:
+    // - None
+    IAsyncAction App::_CreateJumplist()
+    {
+        // It doesn't seem unreasonable to assume that Terminal will only
+        // run on platforms that support jump lists, but always better safe
+        // than sorry
+        if (JumpList::IsSupported())
+        {
+            auto jumplist = co_await JumpList::LoadCurrentAsync();
+            jumplist.SystemGroupKind(JumpListSystemGroupKind::None);
+            jumplist.Items().Clear();
+
+            for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+            {
+                const auto &profile = _settings->GetProfiles()[profileIndex];
+
+                auto jumplistItem = JumpListItem::CreateWithArguments(to_hstring(profile.GetGuid()), profile.GetName());
+                jumplistItem.GroupName(L"Profiles");
+
+                if (profile.HasIcon())
+                {
+                    jumplistItem.Logo(Uri(profile.GetIconPath()));
+                }
+
+                jumplist.Items().Append(jumplistItem);
+            }
+
+            co_await jumplist.SaveAsync();
+        }
     }
 
     // Function Description:

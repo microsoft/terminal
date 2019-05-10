@@ -70,6 +70,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Create();
         void _CreateNewTabFlyout();
+        Windows::Foundation::IAsyncAction _CreateJumplist();
 
         void _LoadSettings();
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
