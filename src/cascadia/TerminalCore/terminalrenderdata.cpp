@@ -70,6 +70,12 @@ bool Terminal::IsCursorOn() const noexcept
     return cursor.IsOn();
 }
 
+void Terminal::SetCursorVisible(const bool isVisible) noexcept
+{
+    auto& cursor = _buffer->GetCursor();
+    cursor.SetIsVisible(isVisible);
+}
+
 ULONG Terminal::GetCursorPixelWidth() const noexcept
 {
     return 1;

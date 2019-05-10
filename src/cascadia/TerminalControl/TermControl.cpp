@@ -410,6 +410,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
+        // Set up blinking cursor
+        DispatcherTimer cursorTimer;
+        cursorTimer.Interval(std::chrono::milliseconds(500));
+        auto registrationtoken = cursorTimer.Tick({ this, &TermControl::_BlinkCursor });
+
+        _controlRoot.GotFocus([cursorTimer](auto&, auto&) {
+            // Start blinking the cursor when the window is focused.
+            cursorTimer.Start();
+        });
+
+        _controlRoot.LostFocus([this, cursorTimer](auto&, auto&) {
+            // Stop blinking the cursor when the window goes out of focus,
+            // and hide it.
+            cursorTimer.Stop();
+            _terminal->SetCursorVisible(false);
+        });
+
+        _controlRoot.KeyDown([this, cursorTimer](auto&, auto&) {
+            // Manually show the cursor when a key is pressed. Restarting
+            // the timer prevents flickering.
+            _terminal->SetCursorVisible(true);
+            cursorTimer.Start();
+        });
+
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
@@ -851,6 +875,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
         THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
         _renderer->TriggerRedrawAll();
+    }
+
+    // Method Description:
+    // - Toggle the cursor on and off when called by the cursor blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
+        Windows::Foundation::IInspectable const& /* e */)
+    {
+        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
     // Method Description:
