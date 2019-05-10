@@ -173,6 +173,9 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                                KeyChord{ KeyModifiers::Ctrl,
                                          static_cast<int>('W') });
+    keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         static_cast<int>('S') });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
                                KeyChord{ KeyModifiers::Ctrl,

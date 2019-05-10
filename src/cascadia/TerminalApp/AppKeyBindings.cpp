@@ -38,6 +38,9 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::NewTab:
                 _NewTabHandlers();
                 return true;
+            case ShortcutAction::OpenSettings:
+                _OpenSettingsHandlers();
+                return true;
 
             case ShortcutAction::NewTabProfile0:
                 _NewTabWithProfileHandlers(0);
@@ -112,6 +115,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
+    DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
 
 
 }

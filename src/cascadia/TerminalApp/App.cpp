@@ -329,6 +329,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.OpenSettings([this]() { _OpenSettings(); });
     }
 
     // Method Description:
@@ -655,6 +656,11 @@ namespace winrt::TerminalApp::implementation
     int App::_GetFocusedTabIndex() const
     {
         return _tabView.SelectedIndex();
+    }
+
+    void App::_OpenSettings()
+    {
+        LaunchSettings();
     }
 
     // Method Description:
