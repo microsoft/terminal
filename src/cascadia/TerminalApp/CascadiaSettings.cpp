@@ -120,15 +120,13 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile defaultProfile{};
-    defaultProfile.SetFontFace(L"Consolas");
-    defaultProfile.SetCommandline(L"cmd.exe");
-    defaultProfile.SetColorScheme({ L"Campbell" });
-    defaultProfile.SetAcrylicOpacity(0.75);
-    defaultProfile.SetUseAcrylic(true);
-    defaultProfile.SetName(L"cmd");
-
-    _globals.SetDefaultProfile(defaultProfile.GetGuid());
+    Profile cmdProfile{};
+    cmdProfile.SetFontFace(L"Consolas");
+    cmdProfile.SetCommandline(L"cmd.exe");
+    cmdProfile.SetColorScheme({ L"Campbell" });
+    cmdProfile.SetAcrylicOpacity(0.75);
+    cmdProfile.SetUseAcrylic(true);
+    cmdProfile.SetName(L"cmd");
 
     Profile powershellProfile{};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
@@ -150,8 +148,10 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
-    _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
+    _profiles.emplace_back(cmdProfile);
+    
+    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
