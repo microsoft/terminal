@@ -1,0 +1,20 @@
+image: Visual Studio 2017
+
+# Enable build_script below
+build: Script
+
+build_script:
+  - git submodule update --init --recursive
+  - nuget restore OpenConsole.sln
+  - msbuild OpenConsole.sln /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - dir
+
+deploy:
+  release: terminal-v$(appveyor_build_version)
+  provider: GitHub
+  auth_token:
+    secure: SKpt/2S61XnJOaA6+Pg5+/g9WOAV1OzQiQmUtRTfieSadyc355HCkVG5vPJ1OEBT
+  artifact: /.*\.nupkg/
+  #on:
+  #  branch: master                 # release from master branch only
+  #  APPVEYOR_REPO_TAG: true        # deploy on tag push only
