@@ -361,11 +361,10 @@ bool TerminalInput::_TranslateDefaultMapping(const KeyEvent& keyEvent,
                                              const size_t cKeyMapping) const
 {
     const TerminalInput::_TermKeyMap* pMatchingMapping;
-    bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
+    const bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
     if (fSuccess)
     {
         _SendInputSequence(pMatchingMapping->pwszSequence);
-        fSuccess = true;
     }
     return fSuccess;
 }
