@@ -883,7 +883,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - sender: not used
     // - e: not used
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
-        Windows::Foundation::IInspectable const& /* e */)
+                                   Windows::Foundation::IInspectable const& /* e */)
     {
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
