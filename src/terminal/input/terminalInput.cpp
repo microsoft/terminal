@@ -25,11 +25,6 @@ TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<
     _pfnWriteEvents = pfn;
 }
 
-TerminalInput::~TerminalInput()
-{
-
-}
-
 // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-PC-Style-Function-Keys
 //    For the source for these tables.
 // Also refer to the values in terminfo for kcub1, kcud1, kcuf1, kcuu1, kend, khome.
