@@ -26,7 +26,7 @@ CascadiaSettings::~CascadiaSettings()
 
 ColorScheme _CreateCampbellScheme()
 {
-    ColorScheme campbellScheme{ L"Campbell",
+    ColorScheme campbellScheme { L"Campbell",
                                  RGB(242, 242, 242),
                                  RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
@@ -40,22 +40,22 @@ ColorScheme _CreateCampbellScheme()
 ColorScheme _CreateSolarizedDarkScheme()
 {
 
-    ColorScheme solarizedDarkScheme{ L"Solarized Dark",
+    ColorScheme solarizedDarkScheme { L"Solarized Dark",
                                       RGB(253, 246, 227),
-                                      RGB(7, 54,  66) };
+                                      RGB(  7, 54,  66) };
     auto& solarizedDarkTable = solarizedDarkScheme.GetTable();
     auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    solarizedDarkTable[0] = RGB(7, 54, 66);
-    solarizedDarkTable[1] = RGB(211, 1, 2);
-    solarizedDarkTable[2] = RGB(133, 153, 0);
-    solarizedDarkTable[3] = RGB(181, 137, 0);
-    solarizedDarkTable[4] = RGB(38, 139, 210);
-    solarizedDarkTable[5] = RGB(211, 54, 130);
-    solarizedDarkTable[6] = RGB(42, 161, 152);
-    solarizedDarkTable[7] = RGB(238, 232, 213);
-    solarizedDarkTable[8] = RGB(0, 43, 54);
-    solarizedDarkTable[9] = RGB(203, 75, 22);
-    solarizedDarkTable[10] = RGB(88, 110, 117);
+    solarizedDarkTable[0]  = RGB(  7, 54, 66);
+    solarizedDarkTable[1]  = RGB(211, 1, 2);
+    solarizedDarkTable[2]  = RGB(133, 153, 0);
+    solarizedDarkTable[3]  = RGB(181, 137, 0);
+    solarizedDarkTable[4]  = RGB( 38, 139, 210);
+    solarizedDarkTable[5]  = RGB(211, 54, 130);
+    solarizedDarkTable[6]  = RGB( 42, 161, 152);
+    solarizedDarkTable[7]  = RGB(238, 232, 213);
+    solarizedDarkTable[8]  = RGB(  0, 43, 54);
+    solarizedDarkTable[9]  = RGB(203, 75, 22);
+    solarizedDarkTable[10] = RGB( 88, 110, 117);
     solarizedDarkTable[11] = RGB(101, 123, 131);
     solarizedDarkTable[12] = RGB(131, 148, 150);
     solarizedDarkTable[13] = RGB(108, 113, 196);
@@ -68,22 +68,22 @@ ColorScheme _CreateSolarizedDarkScheme()
 
 ColorScheme _CreateSolarizedLightScheme()
 {
-    ColorScheme solarizedLightScheme{ L"Solarized Light",
-                                       RGB(7, 54,  66),
+    ColorScheme solarizedLightScheme { L"Solarized Light",
+                                       RGB(  7, 54,  66),
                                        RGB(253, 246, 227) };
     auto& solarizedLightTable = solarizedLightScheme.GetTable();
     auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    solarizedLightTable[0] = RGB(7, 54, 66);
-    solarizedLightTable[1] = RGB(211, 1, 2);
-    solarizedLightTable[2] = RGB(133, 153, 0);
-    solarizedLightTable[3] = RGB(181, 137, 0);
-    solarizedLightTable[4] = RGB(38, 139, 210);
-    solarizedLightTable[5] = RGB(211, 54, 130);
-    solarizedLightTable[6] = RGB(42, 161, 152);
-    solarizedLightTable[7] = RGB(238, 232, 213);
-    solarizedLightTable[8] = RGB(0, 43, 54);
-    solarizedLightTable[9] = RGB(203, 75, 22);
-    solarizedLightTable[10] = RGB(88, 110, 117);
+    solarizedLightTable[0]  = RGB(  7, 54, 66);
+    solarizedLightTable[1]  = RGB(211, 1, 2);
+    solarizedLightTable[2]  = RGB(133, 153, 0);
+    solarizedLightTable[3]  = RGB(181, 137, 0);
+    solarizedLightTable[4]  = RGB( 38, 139, 210);
+    solarizedLightTable[5]  = RGB(211, 54, 130);
+    solarizedLightTable[6]  = RGB( 42, 161, 152);
+    solarizedLightTable[7]  = RGB(238, 232, 213);
+    solarizedLightTable[8]  = RGB(  0, 43, 54);
+    solarizedLightTable[9]  = RGB(203, 75, 22);
+    solarizedLightTable[10] = RGB( 88, 110, 117);
     solarizedLightTable[11] = RGB(101, 123, 131);
     solarizedLightTable[12] = RGB(131, 148, 150);
     solarizedLightTable[13] = RGB(108, 113, 196);
@@ -120,15 +120,13 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile defaultProfile{};
-    defaultProfile.SetFontFace(L"Consolas");
-    defaultProfile.SetCommandline(L"cmd.exe");
-    defaultProfile.SetColorScheme({ L"Campbell" });
-    defaultProfile.SetAcrylicOpacity(0.75);
-    defaultProfile.SetUseAcrylic(true);
-    defaultProfile.SetName(L"cmd");
-
-    _globals.SetDefaultProfile(defaultProfile.GetGuid());
+    Profile cmdProfile{};
+    cmdProfile.SetFontFace(L"Consolas");
+    cmdProfile.SetCommandline(L"cmd.exe");
+    cmdProfile.SetColorScheme({ L"Campbell" });
+    cmdProfile.SetAcrylicOpacity(0.75);
+    cmdProfile.SetUseAcrylic(true);
+    cmdProfile.SetName(L"cmd");
 
     Profile powershellProfile{};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
@@ -150,76 +148,10 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
-    _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
-
-    // Add all WSL distros from: HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\[guid]\DistributionName
-    Profile WSLDistro{};
-    HKEY hLXSSKey;
-    // Should I use RegOpenCurrentUser to access the uncached profile?
-    // https://docs.microsoft.com/en-us/windows/desktop/api/winreg/nf-winreg-regopencurrentuser#remarks
-    if (RegOpenKeyExW(HKEY_CURRENT_USER,
-        TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Lxss"),
-        0, KEY_READ, &hLXSSKey) == ERROR_SUCCESS)
-    {
-        DWORD RegResult = 0;
-
-        std::filesystem::path AppsDirectory = ExpandEnvironmentVariableString(L"%ProgramFiles%");
-        AppsDirectory /= "WindowsApps";
-        std::filesystem::path WSLCommandLine = L"";
-
-        wchar_t WSLKey[MAX_PATH] = L"";
-        DWORD WSLKey_Length = MAX_PATH;
-
-        wchar_t DistributionName[MAX_PATH] = L"";
-        DWORD DistributionName_Length = MAX_PATH;
-
-        wchar_t PackageFamilyName[MAX_PATH] = L"";
-        DWORD PackageFamilyName_Length = MAX_PATH;
-        DWORD subKeys = 0;
-        DWORD LargestKeySize = 0;
-        RegResult = RegQueryInfoKeyW(hLXSSKey, NULL, NULL, NULL,
-            &subKeys, &LargestKeySize, NULL, NULL, NULL, NULL, NULL, NULL);
-        for (int i = 0;
-            RegEnumKeyExW(hLXSSKey, i, WSLKey, &WSLKey_Length, NULL, NULL, NULL, NULL) == ERROR_SUCCESS;
-            i++)
-        {
-            WSLKey_Length = LargestKeySize;
-            DistributionName_Length = MAX_PATH;
-            PackageFamilyName_Length = MAX_PATH;
-            if (RegGetValueW(hLXSSKey, WSLKey, L"DistributionName", RRF_RT_REG_SZ, NULL,
-                DistributionName, &DistributionName_Length) == ERROR_SUCCESS
-                && RegGetValueW(hLXSSKey, WSLKey, L"PackageFamilyName", RRF_RT_REG_SZ, NULL,
-                    PackageFamilyName, &PackageFamilyName_Length) == ERROR_SUCCESS) {
-                WSLCommandLine = AppsDirectory;
-                std::wstring PFNString = PackageFamilyName;
-
-                for (auto& file : std::filesystem::directory_iterator(WSLCommandLine)) {
-                    // The PackageFamilyName is split and has version information placed in the middle
-                    // when creating the ProgramFiles directory.  I chose to only compare the last section.
-                    std::wstring PFNSubString = PFNString.substr(PFNString.find(L"_"));
-                    std::wstring FileString = file.path().wstring();
-                    if (FileString.find(PFNSubString) != std::wstring::npos) {
-                        WSLCommandLine = file.path();
-
-                        for (auto& file : std::filesystem::directory_iterator(WSLCommandLine)) {
-                            if (file.path().extension() == ".exe") {
-                                std::wstring WSLPrefix = L"WSL/";
-                                WSLPrefix.append(DistributionName);
-                                WSLDistro.SetCommandline(file.path());
-                                WSLDistro.SetName(WSLPrefix);
-                                WSLDistro.SetColorScheme({ L"Campbell" });
-                                _profiles.emplace_back(WSLDistro);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    RegCloseKey(hLXSSKey);
+    _profiles.emplace_back(cmdProfile);
+    
+    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
@@ -235,91 +167,91 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     // TODO:MSFT:20700157 read our settings from some source, and configure
     //      keychord,action pairings from that file
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-        KeyChord{ KeyModifiers::Ctrl,
-                  static_cast<int>('T') });
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         static_cast<int>('T') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-        KeyChord{ KeyModifiers::Ctrl,
-                  static_cast<int>('W') });
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         static_cast<int>('W') });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
-        KeyChord{ KeyModifiers::Ctrl,
-                  VK_TAB });
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         VK_TAB });
 
     keyBindings.SetKeyBinding(ShortcutAction::PrevTab,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  VK_TAB });
+                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                         VK_TAB });
 
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('1') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('1') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile1,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('2') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('2') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile2,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('3') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('3') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile3,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('4') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('4') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile4,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('5') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('5') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile5,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('6') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('6') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile6,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('7') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('7') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile7,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('8') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('8') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('9') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('9') });
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  static_cast<int>('0') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('0') });
 
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  VK_PRIOR });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
-        KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                  VK_NEXT });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_NEXT });
 
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('1') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('1') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('2') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('2') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('3') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('3') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('4') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('4') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('5') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('5') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('6') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('6') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('7') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('7') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('8') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('8') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('9') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('9') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
-        KeyChord{ KeyModifiers::Alt,
-                  static_cast<int>('0') });
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('0') });
 }
 
 // Method Description:
@@ -445,26 +377,6 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileE
 }
 
 // Function Description:
-// - Returns true if the user has installed a default WSL distro.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// - A ref of a path that receives the result of wsl.exe's full path.
-// Return Value:
-// - true or false.
-bool CascadiaSettings::_IsWSLInstalled(std::wstring_view windirEnv, std::filesystem::path& cmdline)
-{
-    std::filesystem::path wslPath = ExpandEnvironmentVariableString(windirEnv.data());
-    wslPath /= L"System32";
-    wslPath /= L"wsl.exe";
-    if (std::filesystem::exists(wslPath))
-    {
-        cmdline = wslPath;
-        return true;
-    }
-    return false;
-}
-
-// Function Description:
 // - Get a environment variable string.
 // Arguments:
 // - A string that contains an environment-variable string in the form: %variableName%.
@@ -481,6 +393,6 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     } while (requiredSize != result.size());
 
     // Trim the terminating null character
-    result.resize(requiredSize - 1);
+    result.resize(requiredSize-1);
     return result;
 }
