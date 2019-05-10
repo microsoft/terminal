@@ -43,7 +43,7 @@ if (%_LAST_BUILD_CONF%) == (Debug) (
     echo Building Appx...
 )
 
-set _BUILD_CMDLINE=%MSBUILD% %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
+set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
 
 echo %_BUILD_CMDLINE%
 %_BUILD_CMDLINE%
