@@ -148,6 +148,74 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
+    // Add all WSL distros from: HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss\[guid]\DistributionName
+    Profile WSLDistro{};
+    HKEY hLXSSKey;
+    // Should I use RegOpenCurrentUser to access the uncached profile?
+    // https://docs.microsoft.com/en-us/windows/desktop/api/winreg/nf-winreg-regopencurrentuser#remarks
+    if (RegOpenKeyExW(HKEY_CURRENT_USER,
+        TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Lxss"),
+        0, KEY_READ, &hLXSSKey) == ERROR_SUCCESS)
+    {
+        DWORD RegResult = 0;
+
+        std::filesystem::path AppsDirectory = ExpandEnvironmentVariableString(L"%ProgramFiles%");
+        AppsDirectory /= "WindowsApps";
+        std::filesystem::path WSLCommandLine = L"";
+
+        wchar_t WSLKey[MAX_PATH] = L"";
+        DWORD WSLKey_Length = MAX_PATH;
+
+        wchar_t DistributionName[MAX_PATH] = L"";
+        DWORD DistributionName_Length = MAX_PATH;
+
+        wchar_t PackageFamilyName[MAX_PATH] = L"";
+        DWORD PackageFamilyName_Length = MAX_PATH;
+        DWORD subKeys = 0;
+        DWORD LargestKeySize = 0;
+        RegResult = RegQueryInfoKeyW(hLXSSKey, NULL, NULL, NULL,
+            &subKeys, &LargestKeySize, NULL, NULL, NULL, NULL, NULL, NULL);
+        for (int i = 0;
+            RegEnumKeyExW(hLXSSKey, i, WSLKey, &WSLKey_Length, NULL, NULL, NULL, NULL) == ERROR_SUCCESS;
+            i++)
+        {
+            WSLKey_Length = LargestKeySize;
+            DistributionName_Length = MAX_PATH;
+            PackageFamilyName_Length = MAX_PATH;
+            if (RegGetValueW(hLXSSKey, WSLKey, L"DistributionName", RRF_RT_REG_SZ, NULL,
+                DistributionName, &DistributionName_Length) == ERROR_SUCCESS
+                && RegGetValueW(hLXSSKey, WSLKey, L"PackageFamilyName", RRF_RT_REG_SZ, NULL,
+                    PackageFamilyName, &PackageFamilyName_Length) == ERROR_SUCCESS) {
+                WSLCommandLine = AppsDirectory;
+                std::wstring PFNString = PackageFamilyName;
+
+                for (auto& file : std::filesystem::directory_iterator(WSLCommandLine)) {
+                    // The PackageFamilyName is split and has version information placed in the middle
+                    // when creating the ProgramFiles directory.  I chose to only compare the last section.
+                    std::wstring PFNSubString = PFNString.substr(PFNString.find(L"_"));
+                    std::wstring FileString = file.path().wstring();
+                    if (FileString.find(PFNSubString) != std::wstring::npos) {
+                        WSLCommandLine = file.path();
+
+                        for (auto& file : std::filesystem::directory_iterator(WSLCommandLine)) {
+                            if (file.path().extension() == ".exe") {
+                                std::wstring WSLPrefix = L"WSL/";
+                                WSLPrefix.append(DistributionName);
+                                WSLDistro.SetCommandline(file.path());
+                                WSLDistro.SetName(WSLPrefix);
+                                WSLDistro.SetColorScheme({ L"Campbell" });
+                                _profiles.emplace_back(WSLDistro);
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    RegCloseKey(hLXSSKey);
+
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
     
