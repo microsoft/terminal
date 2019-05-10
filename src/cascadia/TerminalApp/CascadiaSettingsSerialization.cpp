@@ -137,6 +137,9 @@ JsonObject CascadiaSettings::ToJson() const
     jsonObject.Insert(PROFILES_KEY, profilesArray);
     jsonObject.Insert(SCHEMES_KEY, schemesArray);
 
+    jsonObject.Insert(KEYBINDINGS_KEY,
+                      _globals.GetKeybindings().ToJson());
+
     return jsonObject;
 }
 

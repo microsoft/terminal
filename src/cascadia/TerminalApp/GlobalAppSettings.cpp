@@ -153,6 +153,9 @@ JsonObject GlobalAppSettings::ToJson() const
                           JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
     }
 
+    // We'll add the keybindings later in CascadiaSettings, because if we do it
+    // here, they'll appear before the profiles.
+
     return jsonObject;
 }
 
