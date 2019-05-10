@@ -121,8 +121,10 @@ OpenConsole.sln may be built from within Visual Studio or from the command-line 
 
 ```shell
 nuget restore OpenConsole.sln
-msbuild OpenConsole.sln
+msbuild OpenConsole.sln /p:Platform=x64
 ```
+
+(Replace "x64" with another platform if desired.)
 
 We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
 
