@@ -120,7 +120,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-     Profile cmdProfile{};
+    Profile cmdProfile{};
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
     cmdProfile.SetColorScheme({ L"Campbell" });
