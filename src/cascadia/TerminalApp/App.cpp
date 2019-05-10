@@ -576,6 +576,9 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
         TermControl term{ settings };
 
+        // TODO" All these event handles we hook up to the termControl, we need
+        // to put it intp a single method that the Split* methods use too.
+
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard([=](auto copiedData) {
@@ -612,6 +615,12 @@ namespace winrt::TerminalApp::implementation
         //         _titleChangeHandlers(newTitle);
         //     }
         // });
+
+        term.GetControl().GotFocus([newTab](auto&&, auto&&)
+        {
+            newTab->CheckFocus();
+        });
+
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -897,6 +906,11 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
+        newControl.GetControl().GotFocus([focusedTab](auto&&, auto&&)
+        {
+            focusedTab->CheckFocus();
+        });
+
         return focusedTab->SplitVertical(realGuid, newControl);
     }
 
@@ -909,6 +923,11 @@ namespace winrt::TerminalApp::implementation
 
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
+
+        newControl.GetControl().GotFocus([focusedTab](auto&&, auto&&)
+        {
+            focusedTab->CheckFocus();
+        });
 
         return focusedTab->SplitHorizontal(realGuid, newControl);
     }

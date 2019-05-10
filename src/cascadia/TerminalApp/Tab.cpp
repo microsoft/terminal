@@ -12,7 +12,7 @@ Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl 
     _tabViewItem{ nullptr },
     _rootPane{ nullptr }
 {
-    _rootPane = std::make_shared<Pane>(profile, control);
+    _rootPane = std::make_shared<Pane>(profile, control, true);
     _MakeTabViewItem();
 }
 
@@ -81,7 +81,18 @@ void Tab::_Focus()
 {
     _focused = true;
     // _control.GetControl().Focus(FocusState::Programmatic);
-    _rootPane->SetFocused(true);
+    // _rootPane->SetFocused(true);
+    auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
+    if (lastFocusedControl)
+    {
+        lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
+    }
+}
+
+
+void Tab::CheckFocus()
+{
+    _rootPane->CheckFocus();
 }
 
 // Method Description:

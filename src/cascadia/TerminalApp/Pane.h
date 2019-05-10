@@ -18,16 +18,17 @@ public:
         Horizontal = 2
     };
 
-    Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused = false);
     ~Pane();
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     // winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
-    bool IsFocused() const noexcept;
-    void SetFocused(bool focused);
+    bool WasLastFocused() const noexcept;
+    void CheckFocus();
 
     // GUID GetProfile() const noexcept;
 
@@ -44,12 +45,8 @@ private:
     std::shared_ptr<Pane> _secondChild;
     SplitState _splitState;
 
-    bool _focused;
+    bool _lastFocused;
     std::optional<GUID> _profile;
-    // winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem;
-
-    void _MakeTabViewItem();
-    void _Focus();
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

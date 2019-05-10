@@ -24,6 +24,8 @@ public:
     void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
+    void CheckFocus();
+
 private:
 
     std::shared_ptr<Pane> _rootPane;

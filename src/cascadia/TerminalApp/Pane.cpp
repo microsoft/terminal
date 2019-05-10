@@ -7,9 +7,9 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 
-Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
+Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused) :
     _control{ control },
-    _focused{ false },
+    _lastFocused{ lastFocused },
     _profile{ profile },
     _splitState{ SplitState::None },
     _firstChild{ nullptr },
@@ -41,9 +41,27 @@ winrt::Microsoft::Terminal::TerminalControl::TermControl Pane::GetFocusedTermina
     }
 }
 
-bool Pane::IsFocused() const noexcept
+winrt::Microsoft::Terminal::TerminalControl::TermControl Pane::GetLastFocusedTerminalControl()
 {
-    return _focused;
+    if (_IsLeaf())
+    {
+        return _lastFocused ? _control : nullptr;
+    }
+    else
+    {
+        auto firstFocused = _firstChild->GetLastFocusedTerminalControl();
+        if (firstFocused != nullptr)
+        {
+            return firstFocused;
+        }
+        auto secondFocused = _secondChild->GetLastFocusedTerminalControl();
+        return secondFocused;
+    }
+}
+
+bool Pane::WasLastFocused() const noexcept
+{
+    return _lastFocused;
 }
 
 bool Pane::_IsLeaf() const noexcept
@@ -61,20 +79,21 @@ bool Pane::_HasFocusedChild() const noexcept
     return controlFocused || firstFocused || secondFocused;
 }
 
-void Pane::SetFocused(bool focused)
+void Pane::CheckFocus()
 {
-    _focused = focused;
-
-    if (_focused)
+    if (_IsLeaf())
     {
-        _Focus();
-    }
-}
+        const bool controlFocused = _control != nullptr &&
+                                    _control.GetControl().FocusState() != FocusState::Unfocused;
 
-void Pane::_Focus()
-{
-    // _focused = true;
-    // _control.GetControl().Focus(FocusState::Programmatic);
+        _lastFocused = controlFocused;
+    }
+    else
+    {
+        _lastFocused = false;
+        _firstChild->CheckFocus();
+        _secondChild->CheckFocus();
+    }
 }
 
 void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
@@ -126,6 +145,9 @@ void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalContr
     // add the second pane to row 1
     _root.Children().Append(_secondChild->GetRootElement());
     Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
+
+
+    _lastFocused = false;
 }
 
 void Pane::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
@@ -180,4 +202,5 @@ void Pane::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalCon
     _root.Children().Append(_secondChild->GetRootElement());
     Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
 
+    _lastFocused = false;
 }
