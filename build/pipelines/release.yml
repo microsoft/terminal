@@ -19,13 +19,16 @@ jobs:
   - template: ./templates/build-console-int.yml
     parameters:
       platform: x64
+      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
 
   - template: ./templates/build-console-int.yml
     parameters:
       platform: x86
+      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
 
   - template: ./templates/build-console-int.yml
     parameters:
       platform: arm64
+      additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
 
   - template: ./templates/release-sign-and-bundle.yml
