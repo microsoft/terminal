@@ -120,8 +120,8 @@ git submodule update --init --recursive
 OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line:
 
 ```shell
-nuget restore OpenConsole.sln
-msbuild OpenConsole.sln
+.\tools\razzle.cmd
+bcz
 ```
 
 We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.

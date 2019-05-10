@@ -960,7 +960,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
 
         _terminal->ClearSelection();
-        _renderer->TriggerSelection();
 
         // send data up for clipboard
         _clipboardCopyHandlers(copiedData);

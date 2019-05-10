@@ -329,6 +329,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
     }
 
@@ -719,6 +720,16 @@ namespace winrt::TerminalApp::implementation
         _SetFocusedTabIndex(
             static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
         );
+    }
+
+    // Method Description:
+    // - Sets focus to the desired tab.
+    void App::_SelectTab(const int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        {
+            _SetFocusedTabIndex(tabIndex);
+        }
     }
 
     // Method Description:

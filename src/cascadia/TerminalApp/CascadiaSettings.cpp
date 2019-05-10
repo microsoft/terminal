@@ -224,6 +224,37 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_NEXT });
+
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('1') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('2') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('3') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('4') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('5') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('6') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('7') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('8') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('9') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('0') });
 }
 
 // Method Description:
