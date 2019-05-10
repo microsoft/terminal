@@ -220,17 +220,12 @@ const size_t TerminalInput::GetKeyMappingLength(const KeyEvent& keyEvent) const
 
 const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& keyEvent) const
 {
-    const TerminalInput::_TermKeyMap* mapping = nullptr;
-
     if (keyEvent.IsCursorKey())
     {
-        mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
-    else
-    {
-        mapping = (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
-    }
-    return mapping;
+   
+	return (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
 }
 
 // Routine Description:
