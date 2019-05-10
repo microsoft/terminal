@@ -210,16 +210,12 @@ void TerminalInput::ChangeCursorKeysMode(const bool fApplicationMode)
 
 const size_t TerminalInput::GetKeyMappingLength(const KeyEvent& keyEvent) const
 {
-    size_t length = 0;
     if (keyEvent.IsCursorKey())
     {
-        length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
     }
-    else
-    {
-        length = (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
-    }
-    return length;
+ 
+    return (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
 }
 
 const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& keyEvent) const
