@@ -117,15 +117,92 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _vkey = value;
     }
 
-    winrt::Microsoft::Terminal::Settings::KeyChord KeyChord::FromString(const hstring& str)
+    winrt::Microsoft::Terminal::Settings::KeyChord KeyChord::FromString(const hstring& hstr)
     {
+        std::wstring wstr{ hstr };
+
         // Split the string on '+'
+        std::wstring temp;
+        std::vector<std::wstring> parts;
+        std::wstringstream wss(wstr);
+
+        while(std::getline(wss, temp, L'+'))
+        {
+            parts.push_back(temp);
+        }
 
         // If we have > 4, something's wrong.
+        if (parts.size() > 4)
+        {
+            throw hresult_invalid_argument();
+        }
+
+        // winrt::Microsoft::Terminal::Settings::KeyChord kc{ false, false, false, 0 };
+        KeyModifiers modifiers = KeyModifiers::None;
+        int32_t vkey = 0;
 
         // Look for ctrl, shift, alt. Anything else might be a key
-        //      For potential keys, look through the pairs of strings and vkeys
-        throw hresult_not_implemented();
+        for (const auto& part : parts)
+        {
+            if (part == CTRL_KEY)
+            {
+                modifiers |= KeyModifiers::Ctrl;
+            }
+            else if (part == ALT_KEY)
+            {
+                modifiers |= KeyModifiers::Alt;
+            }
+            else if (part == SHIFT_KEY)
+            {
+                modifiers |= KeyModifiers::Shift;
+            }
+            else
+            {
+                bool foundKey = false;
+                // For potential keys, look through the pairs of strings and vkeys
+                if (part.size() == 1)
+                {
+                    const wchar_t wch = part[0];
+                    // Quick lookup: ranges of vkeys that correlate directly to a key.
+                    if (wch >= L'0' && wch <= L'9')
+                    {
+                        vkey = static_cast<int32_t>(wch);
+                        foundKey = true;
+                    }
+                    else if (wch >= L'a' && wch <= L'z')
+                    {
+                        // subtract 0x20 to shift to uppercase
+                        vkey = static_cast<int32_t>(wch - 0x20);
+                        foundKey = true;
+                    }
+                    else if (wch >= L'A' && wch <= L'Z')
+                    {
+                        vkey = static_cast<int32_t>(wch);
+                        foundKey = true;
+                    }
+                }
+
+                if (!foundKey)
+                {
+                    for (const auto& pair : vkeyNamePairs)
+                    {
+                        if (pair.second == part)
+                        {
+                            vkey = pair.first;
+                            foundKey = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!foundKey)
+                {
+                    throw hresult_invalid_argument();
+                }
+            }
+        }
+
+        return winrt::Microsoft::Terminal::Settings::KeyChord{ modifiers, vkey };
     }
 
     hstring KeyChord::ToString()
@@ -170,6 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
                 {
                     buffer += pair.second;
                     serializedSuccessfully = true;
+                    break;
                 }
             }
         }

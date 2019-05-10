@@ -168,15 +168,68 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
 
-
     TerminalApp::AppKeyBindings AppKeyBindings::FromJson(Windows::Data::Json::JsonArray const& json)
     {
-        throw hresult_not_implemented();
+        TerminalApp::AppKeyBindings newBindings{};
+
+        for (const auto& value : json)
+        {
+            if (value.ValueType() == JsonValueType::Object)
+            {
+                JsonObject obj = value.GetObjectW();
+                if (obj.HasKey(COMMAND_KEY) && obj.HasKey(KEYS_KEY))
+                {
+                    const auto commandString = obj.GetNamedString(COMMAND_KEY);
+                    const auto keys = obj.GetNamedArray(KEYS_KEY);
+                    if (keys.Size() != 1)
+                    {
+                        continue;
+                    }
+                    const auto keyChordString = keys.GetAt(0).GetString();
+                    ShortcutAction action;
+                    bool parsedSuccessfully = false;
+                    // Try matching the command to one we have
+                    for (const auto& pair : commandNames)
+                    {
+                        if (pair.second == commandString)
+                        {
+                            action = pair.first;
+                            parsedSuccessfully = true;
+                            break;
+                        }
+                    }
+                    if (!parsedSuccessfully)
+                    {
+                        continue;
+                    }
+                    // Try parsing the chord
+                    Settings::KeyChord chord{ false, false, false, 0 };
+                    parsedSuccessfully = false;
+                    try
+                    {
+                        chord = Settings::KeyChord::FromString(keyChordString);
+                        parsedSuccessfully = true;
+                    }
+                    catch (...)
+                    {
+                        continue;
+                    }
+                    if (parsedSuccessfully)
+                    {
+                        newBindings.SetKeyBinding(action, chord);
+                    }
+                }
+            }
+        }
+        return newBindings;
     }
+
     Windows::Data::Json::JsonArray AppKeyBindings::ToJson()
     {
         winrt::Windows::Data::Json::JsonArray bindingsArray;
-
+        // TODO: Don't iterate this way, they'll be in random order. Instead
+        // iterate over all the possible actions in the names list, and see if
+        // it has a binding.
         for (const auto& kv : _keyShortcuts)
         {
             const auto chord = kv.first;

@@ -193,9 +193,18 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
         }
     }
 
-    // TODO:MSFT:20700157
     // Load the keybindings from the file as well
-    resultPtr->_CreateDefaultKeybindings();
+    if (json.HasKey(KEYBINDINGS_KEY))
+    {
+        const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
+        auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
+        resultPtr->_globals.GetKeybindings() = loadedBindings;
+    }
+    else
+    {
+        // Create the default keybindings if we couldn't find any keybindings.
+        resultPtr->_CreateDefaultKeybindings();
+    }
 
     return resultPtr;
 }
