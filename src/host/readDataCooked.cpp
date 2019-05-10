@@ -60,6 +60,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _tempHandle{ nullptr },
     _exeName{ exeName },
     _pdwNumBytes{ nullptr },
+    _SupplementaryCode{ 0 },
 
     _commandHistory{ CommandHistory },
     _controlKeyState{ 0 },
@@ -486,11 +487,24 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
     size_t NumToWrite;
     WCHAR wch = wchOrig;
     bool fStartFromDelim;
+    // U+010000 to U+10FFFF
+    intptr_t isSupplementary = 0;
 
     status = STATUS_SUCCESS;
     if (_bytesRead >= (_bufferSize - (2 * sizeof(WCHAR))) && wch != UNICODE_CARRIAGERETURN && wch != UNICODE_BACKSPACE)
     {
         return false;
+    }
+
+    if ((wch & 0xDC00) == 0xDC00 && (_SupplementaryCode[0] & 0xD800) == 0xD800)
+    {
+      isSupplementary = 1;
+    }
+    else if ((wch & 0xD800) == 0xD800)
+    {
+      // save temporaly
+      _SupplementaryCode[0] = wch;
+      return false;
     }
 
     if (_ctrlWakeupMask != 0 && wch < L' ' && (_ctrlWakeupMask & (1 << wch)))
@@ -526,16 +540,23 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 loop = false;
                 if (_echoInput)
                 {
-                    NumToWrite = sizeof(WCHAR);
+                    NumToWrite = sizeof(WCHAR) * (1 + isSupplementary);
+                    _SupplementaryCode[isSupplementary] = wch;
+
                     status = WriteCharsLegacy(_screenInfo,
                                             _backupLimit,
                                             _bufPtr,
-                                            &wch,
+                                            _SupplementaryCode,
                                             &NumToWrite,
                                             &NumSpaces,
                                             _originalCursorPosition.X,
                                             WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
                                             &ScrollY);
+                    if (isSupplementary)
+                    {
+                      // clean-up to detect bad encoding
+                      _SupplementaryCode[0] = 0;
+                    }
                     if (NT_SUCCESS(status))
                     {
                         _originalCursorPosition.Y += ScrollY;

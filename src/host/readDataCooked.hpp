@@ -133,6 +133,8 @@ private:
 
     size_t* _pdwNumBytes;
 
+    wchar_t _SupplementaryCode[2];
+
     std::unique_ptr<byte[]> _buffer;
     std::wstring _exeName;
     std::unique_ptr<ConsoleHandleData> _tempHandle;
