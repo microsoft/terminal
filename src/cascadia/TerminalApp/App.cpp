@@ -629,7 +629,7 @@ namespace winrt::TerminalApp::implementation
                 // reloading settings)
                 const auto* const p = _settings->FindProfile(tabProfile);
 
-                // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+                // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
                 if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
                 {
                     _RemoveTabViewItem(tabViewItem);
@@ -661,7 +661,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void App::_CloseFocusedTab()
     {
-        // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
             int focusedTabIndex = _GetFocusedTabIndex();
@@ -759,7 +759,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
-        // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         // Don't allow the user to close the last tab ..
         // .. yet.
         if (_tabs.size() > 1)
@@ -816,7 +816,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(_root).Properties().IsMiddleButtonPressed())
         {
-            // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+            // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
             if (_tabs.size() > 1)
             {
                 _RemoveTabViewItem(sender);
