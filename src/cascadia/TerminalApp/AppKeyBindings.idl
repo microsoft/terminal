@@ -21,9 +21,18 @@ namespace TerminalApp
         NewWindow,
         CloseWindow,
         CloseTab,
-        SwitchToTab,
         NextTab,
         PrevTab,
+        SwitchToTab0,
+        SwitchToTab1,
+        SwitchToTab2,
+        SwitchToTab3,
+        SwitchToTab4,
+        SwitchToTab5,
+        SwitchToTab6,
+        SwitchToTab7,
+        SwitchToTab8,
+        SwitchToTab9,
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
@@ -37,9 +46,9 @@ namespace TerminalApp
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();
-    delegate void SwitchToTabEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
+    delegate void SwitchToTabEventArgs(Int32 profileIndex);
     delegate void IncreaseFontSizeEventArgs();
     delegate void DecreaseFontSizeEventArgs();
     delegate void ScrollUpEventArgs();
