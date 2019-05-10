@@ -124,7 +124,7 @@ nuget restore OpenConsole.sln
 msbuild OpenConsole.sln /p:Platform=x64
 ```
 
-(Replace "x64" with another platform if desired.)
+(Replace "x64" with either "arm64" or "x86" if desired.)
 
 We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
 
