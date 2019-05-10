@@ -148,8 +148,8 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
-    _profiles.emplace_back(cmdProfile);
     _profiles.emplace_back(powershellProfile);
+    _profiles.emplace_back(cmdProfile);
     
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
