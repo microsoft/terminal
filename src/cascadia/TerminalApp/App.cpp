@@ -329,6 +329,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
     }
 
     // Method Description:
@@ -629,7 +630,7 @@ namespace winrt::TerminalApp::implementation
                 // reloading settings)
                 const auto* const p = _settings->FindProfile(tabProfile);
 
-                // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+                // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
                 if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
                 {
                     _RemoveTabViewItem(tabViewItem);
@@ -661,6 +662,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void App::_CloseFocusedTab()
     {
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
             int focusedTabIndex = _GetFocusedTabIndex();
@@ -671,6 +673,7 @@ namespace winrt::TerminalApp::implementation
             _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
             _tabView.Items().RemoveAt(focusedTabIndex);
             _tabs.erase(_tabs.begin() + focusedTabIndex);
+            _UpdateTabView();
         }
     }
 
@@ -712,6 +715,16 @@ namespace winrt::TerminalApp::implementation
         _SetFocusedTabIndex(
             static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
         );
+    }
+
+    // Method Description:
+    // - Sets focus to the desired tab.
+    void App::_SelectTab(const int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        {
+            _SetFocusedTabIndex(tabIndex);
+        }
     }
 
     // Method Description:
@@ -758,6 +771,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         // Don't allow the user to close the last tab ..
         // .. yet.
         if (_tabs.size() > 1)
@@ -814,7 +828,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(_root).Properties().IsMiddleButtonPressed())
         {
-            _RemoveTabViewItem(sender);
+            // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
+            if (_tabs.size() > 1)
+            {
+                _RemoveTabViewItem(sender);
+            }
             eventArgs.Handled(true);
         }
     }

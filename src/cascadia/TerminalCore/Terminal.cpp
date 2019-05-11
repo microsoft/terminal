@@ -560,6 +560,8 @@ void Terminal::ClearSelection() noexcept
     _endSelectionPosition = {0, 0};
     _selectionAnchor_YOffset = 0;
     _endSelectionPosition_YOffset = 0;
+
+    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 // Method Description:

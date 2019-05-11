@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _useAcrylic{ false },
-        _closeOnExit{ false },
+        _closeOnExit{ true },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
