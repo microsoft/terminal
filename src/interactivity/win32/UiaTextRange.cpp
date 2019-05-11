@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
 //#define UIATEXTRANGE_DEBUG_MSGS 1
 #undef UIATEXTRANGE_DEBUG_MSGS
 
-IdType UiaTextRange::id = 0;
+IdType UiaTextRange::id = 1;
 
 UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
                                    const MovementDirection direction) :
@@ -466,10 +466,7 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     }
     // tracing
     ApiMsgCompare apiMsg;
-    if (other)
-    {
-        apiMsg.OtherId = other->GetId();
-    }
+    apiMsg.OtherId = other == nullptr ? INVALID_ID : other->GetId();
     apiMsg.Equal = !!*pRetVal;
     Tracing::s_TraceUia(this, ApiCall::Compare, &apiMsg);
 

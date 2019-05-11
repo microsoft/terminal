@@ -29,6 +29,7 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
+#define INVALID_ID 0
 
 // The UiaTextRange deals with several data structures that have
 // similar semantics. In order to keep the information from these data
