@@ -98,7 +98,7 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
 
 void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
 {
-	_requestedTheme = requestedTheme;
+    _requestedTheme = requestedTheme;
 }
 
 

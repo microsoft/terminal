@@ -155,7 +155,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
 
-	_globals.SetRequestedTheme(winrt::Windows::UI::Xaml::ElementTheme::Default);
+    _globals.SetRequestedTheme(winrt::Windows::UI::Xaml::ElementTheme::Default);
 }
 
 // Method Description:
