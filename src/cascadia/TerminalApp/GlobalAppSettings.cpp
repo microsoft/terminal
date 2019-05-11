@@ -96,6 +96,11 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
     return _requestedTheme;
 }
 
+void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
+{
+	_requestedTheme = requestedTheme;
+}
+
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept

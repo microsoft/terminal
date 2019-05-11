@@ -154,6 +154,8 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.emplace_back(cmdProfile);
 
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
+
+	_globals.SetRequestedTheme(winrt::Windows::UI::Xaml::ElementTheme::Default);
 }
 
 // Method Description:
