@@ -68,5 +68,6 @@ private:
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
     static bool _IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline);
+    static bool _IsWSLDistributionAvailable(std::filesystem::path WSLDirectory, std::wstring searchString, std::filesystem::path& cmdline);
     static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
 };
