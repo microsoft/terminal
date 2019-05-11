@@ -40,6 +40,9 @@ ColorScheme _CreateCampbellScheme()
 
 ColorScheme _CreateOneHalfDarkScheme()
 {
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-dark.reg
+    // Dark gray is per colortool scheme, the other 7 of the last 8 colors from the colortool
+    // scheme are the same as their dark color equivalents.
     ColorScheme oneHalfDarkScheme { L"One Half Dark",
                                     RGB(220, 223, 228),
                                     RGB( 40,  44,  52) };
@@ -53,7 +56,7 @@ ColorScheme _CreateOneHalfDarkScheme()
     oneHalfDarkTable[5]  = RGB(198, 120, 221); // dark magenta
     oneHalfDarkTable[6]  = RGB( 86, 182, 194); // dark cyan
     oneHalfDarkTable[7]  = RGB(220, 223, 228); // gray
-    oneHalfDarkTable[8]  = RGB( 40,  44,  52); // dark gray
+    oneHalfDarkTable[8]  = RGB( 90,  99, 116); // dark gray
     oneHalfDarkTable[9]  = RGB(224, 108, 117); // red
     oneHalfDarkTable[10] = RGB(152, 195, 121); // green
     oneHalfDarkTable[11] = RGB(229, 192, 123); // yellow
@@ -68,27 +71,29 @@ ColorScheme _CreateOneHalfDarkScheme()
 
 ColorScheme _CreateOneHalfLightScheme()
 {
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-light.reg
+    // Last 8 colors per colortool scheme.
     ColorScheme oneHalfLightScheme { L"One Half Light",
-                                    RGB(250, 250, 250),
-                                    RGB( 56,  58,  66) };
+                                    RGB(56,  58,  66),
+                                    RGB(250, 250, 250) };
     auto& oneHalfLightTable = oneHalfLightScheme.GetTable();
     auto oneHalfLightSpan = gsl::span<COLORREF>(&oneHalfLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     oneHalfLightTable[0]  = RGB( 56,  58,  66); // black
     oneHalfLightTable[1]  = RGB(228,  86,  73); // dark red
     oneHalfLightTable[2]  = RGB( 80, 161,  79); // dark green
-    oneHalfLightTable[3]  = RGB(193, 132,   1); // dark yellow
+    oneHalfLightTable[3]  = RGB(193, 131,   1); // dark yellow
     oneHalfLightTable[4]  = RGB(  1, 132, 188); // dark blue
     oneHalfLightTable[5]  = RGB(166,  38, 164); // dark magenta
     oneHalfLightTable[6]  = RGB(  9, 151, 179); // dark cyan
     oneHalfLightTable[7]  = RGB(250, 250, 250); // gray
-    oneHalfLightTable[8]  = RGB( 56,  58,  66); // dark gray
-    oneHalfLightTable[9]  = RGB(228,  86,  73); // red
-    oneHalfLightTable[10] = RGB( 80, 161,  79); // green
-    oneHalfLightTable[11] = RGB(193, 132,   1); // yellow
-    oneHalfLightTable[12] = RGB(  1, 132, 188); // blue
-    oneHalfLightTable[13] = RGB(166,  38, 164); // magenta
-    oneHalfLightTable[14] = RGB(  9, 151, 179); // cyan
-    oneHalfLightTable[15] = RGB(250, 250, 250); // white
+    oneHalfLightTable[8]  = RGB( 79,  82,  93); // dark gray
+    oneHalfLightTable[9]  = RGB(223, 108, 117); // red
+    oneHalfLightTable[10] = RGB(152, 195, 121); // green
+    oneHalfLightTable[11] = RGB(228, 192, 122); // yellow
+    oneHalfLightTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfLightTable[13] = RGB(197, 119, 221); // magenta
+    oneHalfLightTable[14] = RGB( 86, 181, 193); // cyan
+    oneHalfLightTable[15] = RGB(255, 255, 255); // white
     Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
 
     return oneHalfLightScheme;
