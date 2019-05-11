@@ -21,14 +21,7 @@ namespace Microsoft::Console::VirtualTerminal
 {
     class TerminalInput final
     {
-    public:
-        TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
-        ~TerminalInput() = default;
-
-        bool HandleKey(const IInputEvent* const pInEvent) const;
-        void ChangeKeypadMode(const bool fApplicationMode);
-        void ChangeCursorKeysMode(const bool fApplicationMode);
-
+   
     private:
 
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
@@ -87,7 +80,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool _SearchWithModifier(const KeyEvent& keyEvent) const;
 
 
-    public:
+	public:
+        TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+        ~TerminalInput() = default;
+
+        bool HandleKey(const IInputEvent* const pInEvent) const;
+        void ChangeKeypadMode(const bool fApplicationMode);
+        void ChangeCursorKeysMode(const bool fApplicationMode);
+
         const size_t GetKeyMappingLength(const KeyEvent& keyEvent) const;
         const _TermKeyMap* GetKeyMapping(const KeyEvent& keyEvent) const;
 
