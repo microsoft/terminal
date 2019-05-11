@@ -89,7 +89,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 > 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
 
-> ⚠ **Note**: the Command-Line Team are actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
+> ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
 
 ## Communicating with the Team
 
@@ -102,7 +102,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
   - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-  
+
   - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
   - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
@@ -120,11 +120,11 @@ git submodule update --init --recursive
 OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line:
 
 ```shell
-nuget restore OpenConsole.sln
-msbuild OpenConsole.sln
+.\tools\razzle.cmd
+bcz
 ```
 
-We've provided a set of convenience scripts in the **/tools** directory to help automate the process of building and running tests.
+We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
 
 ## Coding Guidance
 

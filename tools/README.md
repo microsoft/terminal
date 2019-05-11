@@ -21,7 +21,7 @@ to similar effect.
 ## bcz
 
 `bcz` can quick be used to clean and build the project. By default, it builds
-the `%DEFAULT_CONFIGURATION%` configuration, which
+the `%DEFAULT_CONFIGURATION%` configuration, which is `Debug` if you use `razzle.cmd`.
 
  - `bcz dbg` can be used to manually build the Debug configuration.
  - `bcz rel` can be used to manually build the Release configuration.

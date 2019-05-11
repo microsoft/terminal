@@ -69,7 +69,7 @@ Profile::Profile() :
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
     _scrollbarState{ },
-    _closeOnExit{ false },
+    _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
     _icon{ }
 {
