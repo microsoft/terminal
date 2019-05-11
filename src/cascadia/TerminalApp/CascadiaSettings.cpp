@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
+#include "../../inc/DefaultSettings.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -122,7 +123,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     Profile cmdProfile{};
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
-    cmdProfile.SetStartingDirectory(L"%USERPROFILE%");
+    cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
@@ -143,7 +144,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
-    powershellProfile.SetStartingDirectory(L"%USERPROFILE%");
+    powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
@@ -151,7 +152,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-    
+
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
