@@ -24,17 +24,6 @@ Notes:
 #include "StructureArray.h"
 
 /////////////////////////////////////////////////////////////////////////////
-// CCompString
-
-class CCompString : public CComBSTR
-{
-public:
-    CCompString() : CComBSTR() { };
-    CCompString(__in_ecount(dwLen) LPWSTR lpsz, DWORD dwLen) : CComBSTR(dwLen, lpsz) { };
-    virtual ~CCompString() { };
-};
-
-/////////////////////////////////////////////////////////////////////////////
 // CCompAttribute
 
 class CCompAttribute : public CStructureArray<BYTE>

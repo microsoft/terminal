@@ -217,7 +217,7 @@ HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& 
 
 [[nodiscard]]
 HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rangeIn,
-                                                 CCompString& CompStr, CCompTfGuidAtom& CompGuid, CCompString& ResultStr,
+                                                 std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr,
                                                  BOOL bInWriteSession,
                                                  CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
 {
@@ -388,7 +388,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
             da.bAttr = TF_ATTR_INPUT;
 
             CompGuid.FillData(guidatom, ulcch0);
-            CompStr.Append(wstr0, ulcch0);
+            CompStr.append(wstr0, ulcch0);
         }
 
         textRange->Collapse(ec, TF_ANCHOR_END);
@@ -420,7 +420,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
 [[nodiscard]]
 HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRange* gap_range, LONG result_comp,
-                                                         CCompString& CompStr, CCompTfGuidAtom& CompGuid, CCompString& ResultStr)
+                                                         std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr)
 {
     TfGuidAtom guidatom;
     guidatom = TF_INVALID_GUIDATOM;
@@ -451,10 +451,10 @@ HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRan
 
         if (result_comp <= 0) {
             CompGuid.FillData(guidatom, ulcch0);
-            CompStr.Append(wstr0, ulcch0);
+            CompStr.append(wstr0, ulcch0);
         }
         else {
-            ResultStr.Append(wstr0, ulcch0);
+            ResultStr.append(wstr0, ulcch0);
             LOG_IF_FAILED(ClearTextInRange(ec, backup_range));
         }
     }
@@ -477,9 +477,9 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
                                                               BOOL bInWriteSession,
                                                               TF_DISPLAYATTRIBUTE da,
                                                               TfGuidAtom guidatom,
-                                                              CCompString& CompStr,
+                                                              std::wstring& CompStr,
                                                               CCompTfGuidAtom& CompGuid,
-                                                              CCompString& ResultStr)
+                                                              std::wstring& ResultStr)
 {
     BOOL fEmpty;
     WCHAR wstr0[256 + 1];
@@ -508,13 +508,13 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
                 da.bAttr = TF_ATTR_INPUT;
             }
             CompGuid.FillData(guidatom, ulcch0);
-            CompStr.Append(wstr0, ulcch0);
+            CompStr.append(wstr0, ulcch0);
         }
         else if (bInWriteSession) {
             // if there's no disp attribute attached, it probably means
             // the part of string is finalized.
             //
-            ResultStr.Append(wstr0, ulcch0);
+            ResultStr.append(wstr0, ulcch0);
 
             // it was a 'determined' string
             // so the doc has to shrink
@@ -659,8 +659,7 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
         if (SUCCEEDED(spRange->GetText(ec, TF_TF_IGNOREEND, wstr.get(), (ULONG)cch, (ULONG*)&cch)))
         {
             // Make Result String.
-            CCompString ResultStr(wstr.get(), cch);
-            hr = conv_area->DrawResult(ResultStr);
+            hr = conv_area->DrawResult({ wstr.get(), static_cast<size_t>(cch) });
         }
     }
     CATCH_RETURN();
@@ -838,10 +837,10 @@ HRESULT CEditSessionUpdateCompositionString::_IsInterimSelection(TfEditCookie ec
 HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie ec, ITfRange* FullTextRange, BOOL bInWriteSession,
                                                                     CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
 {
-    CCompString CompStr;
+    std::wstring CompStr;
     CCompTfGuidAtom CompGuid;
     CCompCursorPos CompCursorPos;
-    CCompString ResultStr;
+    std::wstring ResultStr;
     BOOL fIgnorePreviousCompositionResult = FALSE;
 
     RETURN_IF_FAILED(_GetTextAndAttribute(ec, FullTextRange,
@@ -874,10 +873,10 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
         CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
-        if (ResultStr && !fIgnorePreviousCompositionResult) {
+        if (!ResultStr.empty() && !fIgnorePreviousCompositionResult) {
             return conv_area->DrawResult(ResultStr);
         }
-        if (CompStr) {
+        if (!CompStr.empty()) {
             ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
@@ -933,8 +932,6 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     FullTextRange->CompareEnd(ec, InterimRange, TF_ANCHOR_END, &lEndResult);
     RETURN_HR_IF(E_FAIL, lEndResult != 1);
 
-    CCompString ResultStr;
-
     if (lStartResult < 0) {
         // Make result string.
         RETURN_IF_FAILED(FullTextRange->ShiftEndToRange(ec, InterimRange, TF_ANCHOR_START));
@@ -961,9 +958,9 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
     }
 
     // Make interim character
-    CCompString CompStr;
+    std::wstring CompStr;
     CCompTfGuidAtom CompGuid;
-    CCompString _tempResultStr;
+    std::wstring _tempResultStr;
 
     RETURN_IF_FAILED(_GetTextAndAttribute(ec, InterimRange,
                                           CompStr, CompGuid, _tempResultStr,
@@ -986,10 +983,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
         CConversionArea* conv_area = g_pConsoleTSF ? g_pConsoleTSF->GetConversionArea() : NULL;
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
-        if (ResultStr) {
-            return conv_area->DrawResult(ResultStr);
-        }
-        if (CompStr) {
+        if (!CompStr.empty()) {
             ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
