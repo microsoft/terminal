@@ -415,8 +415,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         cursorTimer.Interval(std::chrono::milliseconds(500));
         auto registrationtoken = cursorTimer.Tick({ this, &TermControl::_BlinkCursor });
 
-        _controlRoot.GotFocus([cursorTimer](auto&, auto&) {
+        _controlRoot.GotFocus([this, cursorTimer](auto&, auto&) {
             // Start blinking the cursor when the window is focused.
+			_terminal->SetCursorVisible(true);
             cursorTimer.Start();
         });
 
@@ -430,7 +431,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot.KeyDown([this, cursorTimer](auto&, auto&) {
             // Manually show the cursor when a key is pressed. Restarting
             // the timer prevents flickering.
-            _terminal->SetCursorVisible(true);
+            _terminal->SetCursorOn(true);
             cursorTimer.Start();
         });
 
@@ -885,7 +886,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
+        if (!(_terminal->GetTextBuffer().GetCursor().IsBlinkingAllowed() || _terminal->IsCursorOn()) || _terminal->IsCursorVisible()) _terminal->SetCursorOn(!_terminal->IsCursorOn());
     }
 
     // Method Description:

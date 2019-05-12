@@ -97,6 +97,7 @@ public:
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
     void SetCursorVisible(const bool isVisible) noexcept;
+	void SetCursorOn(const bool isOn) noexcept;
     ULONG GetCursorHeight() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
