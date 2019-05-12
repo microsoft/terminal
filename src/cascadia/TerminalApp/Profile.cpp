@@ -260,7 +260,7 @@ JsonObject Profile::ToJson() const
 
     if (_scrollbarState)
     {
-        const auto scrollbarState = JsonValue::CreateStringValue(_scrollbarState.value());
+        const auto scrollbarState = JsonValue::CreateStringValue(*_scrollbarState);
         jsonObject.Insert(SCROLLBARSTATE_KEY, scrollbarState);
     }
 
