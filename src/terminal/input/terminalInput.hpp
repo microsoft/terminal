@@ -82,7 +82,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 	public:
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
-        ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent) const;
         void ChangeKeypadMode(const bool fApplicationMode);
