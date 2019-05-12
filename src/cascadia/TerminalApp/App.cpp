@@ -510,7 +510,7 @@ namespace winrt::TerminalApp::implementation
 
         if (profileIndex)
         {
-            const auto realIndex = profileIndex.value();
+            const auto realIndex = *profileIndex;
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.

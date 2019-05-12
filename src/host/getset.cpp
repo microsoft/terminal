@@ -1732,9 +1732,9 @@ HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
         written = 0;
         needed = 0;
 
-        if (title.has_value() && title.value().size() > 0)
+        if (title.has_value() && title->size() > 0)
         {
-            title.value().at(0) = ANSI_NULL;
+            title->at(0) = ANSI_NULL;
         }
 
         // Get the appropriate title and length depending on the mode.
@@ -1758,13 +1758,13 @@ HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
         // If we have a pointer to receive the data, then copy it out.
         if (title.has_value())
         {
-            HRESULT const hr = StringCchCopyNW(title.value().data(), title.value().size(), pwszTitle, cchTitleLength);
+            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), pwszTitle, cchTitleLength);
 
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
-                written = std::min(gsl::narrow<size_t>(title.value().size()), cchTitleLength);
+                written = std::min(gsl::narrow<size_t>(title->size()), cchTitleLength);
             }
         }
         return S_OK;

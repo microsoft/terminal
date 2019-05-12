@@ -303,7 +303,7 @@ const Profile* CascadiaSettings::FindProfile(GUID profileGuid) const noexcept
 // - <none>
 TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidArg) const
 {
-    GUID profileGuid = profileGuidArg ? profileGuidArg.value() : _globals.GetDefaultProfile();
+    GUID profileGuid = profileGuidArg.value_or(_globals.GetDefaultProfile());
     const Profile* const profile = FindProfile(profileGuid);
     if (profile == nullptr)
     {

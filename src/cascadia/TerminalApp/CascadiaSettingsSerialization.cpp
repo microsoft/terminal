@@ -45,7 +45,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     const bool foundFile = fileData.has_value();
     if (foundFile)
     {
-        const auto actualData = fileData.value();
+        const auto actualData = *fileData;
 
         JsonValue root{ nullptr };
         bool parsedSuccessfully = JsonValue::TryParse(actualData, root);

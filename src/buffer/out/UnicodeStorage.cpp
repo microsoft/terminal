@@ -66,7 +66,7 @@ void UnicodeStorage::Remap(const std::map<SHORT, SHORT>& rowMap, const std::opti
             const auto oldColId = oldCoord.X;
 
             // If the column index is at/beyond the row width, don't bother copying it to the new map.
-            if (oldColId >= width.value())
+            if (oldColId >= *width)
             {
                 continue;
             }

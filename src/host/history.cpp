@@ -397,7 +397,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         BestCandidate->_processHandle = processHandle;
         WI_SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
 
-        return &s_historyLists.emplace_front(BestCandidate.value());
+        return &s_historyLists.emplace_front(*BestCandidate);
     }
 
     return nullptr;

@@ -490,7 +490,7 @@ class ApiRoutinesTests
         while (it)
         {
             if (backgroundArea.IsInBounds(it._pos) ||
-                (clip.has_value() && !clip.value().IsInBounds(it._pos)))
+                (clip.has_value() && !clip->IsInBounds(it._pos)))
             {
                 auto cellInfo = gci.AsCharInfo(*it);
                 VERIFY_ARE_EQUAL(background, cellInfo);
@@ -555,7 +555,7 @@ class ApiRoutinesTests
             // If there is a clip rectangle...
             else
             {
-                const auto unboxedClip = clip.value();
+                const auto unboxedClip = *clip;
 
                 if (unboxedClip.IsInBounds(it._pos))
                 {
@@ -637,7 +637,7 @@ class ApiRoutinesTests
             clipRectDimensions.X /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
 
         // Scroll everything up and backfill with red As.
@@ -661,7 +661,7 @@ class ApiRoutinesTests
             clipRectDimensions.Y /= 2;
             
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
 
         Log::Comment(L"Fill screen with green Zs. Scroll all left by two, backfilling with red As. Confirm every cell.");
@@ -695,7 +695,7 @@ class ApiRoutinesTests
         {
             // Clip out the left most and top most column.
             clipViewport = Viewport::FromDimensions({ 1, 1 }, { 4, 4 });
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination, clipViewport);
@@ -711,7 +711,7 @@ class ApiRoutinesTests
         {
             // Clip out the bottom most and right most column
             clipViewport = Viewport::FromDimensions({ 0, 0 }, { 4, 4 });
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination, clipViewport);
@@ -730,7 +730,7 @@ class ApiRoutinesTests
             clipRectDimensions.X /= 2;
 
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
         VERIFY_SUCCEEDED(_pApiRoutines->ScrollConsoleScreenBufferWImpl(si, scroll, destination, clipRectangle, fill.Char.UnicodeChar, fill.Attributes));
         ValidateScreen(si, background, fill, destination, clipViewport);
@@ -756,7 +756,7 @@ class ApiRoutinesTests
             // If we're doing clipping here, we're going to clip the scrolled area (after Bs are filled onto field of Zs)
             // to only the 3rd and 4th columns of the pattern.
             clipViewport = Viewport::FromDimensions({ 2, 0 }, { 2, 5 });
-            clipRectangle = clipViewport.value().ToInclusive();
+            clipRectangle = clipViewport->ToInclusive();
         }
 
         Log::Comment(L"Scroll a small portion of the screen in an overlapping fashion.");

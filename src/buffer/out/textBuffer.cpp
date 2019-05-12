@@ -867,7 +867,7 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
         if (newRowWidth.has_value())
         {
             // Realloc in the X direction
-            THROW_IF_FAILED(it.Resize(newRowWidth.value()));
+            THROW_IF_FAILED(it.Resize(*newRowWidth));
         }
     }
 

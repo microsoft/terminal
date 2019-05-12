@@ -445,7 +445,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // we already were storing a leading surrogate but we got another one. Go ahead and send the
                 // saved surrogate piece and save the new one
-                auto hstr = to_hstring(_leadingSurrogate.value());
+                auto hstr = to_hstring(*_leadingSurrogate);
                 _connection.WriteInput(hstr);
             }
             // save the leading portion of a surrogate pair so that they can be sent at the same time
@@ -455,7 +455,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             std::wstring wstr;
             wstr.reserve(2);
-            wstr.push_back(_leadingSurrogate.value());
+            wstr.push_back(*_leadingSurrogate);
             wstr.push_back(ch);
             _leadingSurrogate.reset();
 
@@ -612,7 +612,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto contactRect = point.Properties().ContactRect();
             winrt::Windows::Foundation::Point newTouchPoint{ contactRect.X, contactRect.Y };
-            const auto anchor = _touchAnchor.value();
+            const auto anchor = *_touchAnchor;
 
             // Get the difference between the point we've dragged to and the start of the touch.
             const float fontHeight = float(_actualFont.GetSize().Y);
@@ -785,7 +785,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      last scroll event we raised.
             // Regardless, we're going to ignore this message, because the
             //      terminal is already in the scroll position it wants.
-            const auto ourLastOffset = _lastScrollOffset.value();
+            const auto ourLastOffset = *_lastScrollOffset;
             if (newValue == ourLastOffset)
             {
                 _lastScrollOffset = std::nullopt;

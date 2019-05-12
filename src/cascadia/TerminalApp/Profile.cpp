@@ -142,13 +142,13 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     if (_startingDirectory)
     {
-        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
+        const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(*_startingDirectory);
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
     }
 
     if (_schemeName)
     {
-        const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
+        const ColorScheme* const matchingScheme = _FindScheme(schemes, *_schemeName);
         if (matchingScheme)
         {
             matchingScheme->ApplyScheme(terminalSettings);
@@ -156,16 +156,16 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     }
     if (_defaultForeground)
     {
-        terminalSettings.DefaultForeground(_defaultForeground.value());
+        terminalSettings.DefaultForeground(*_defaultForeground);
     }
     if (_defaultBackground)
     {
-        terminalSettings.DefaultBackground(_defaultBackground.value());
+        terminalSettings.DefaultBackground(*_defaultBackground);
     }
 
     if (_scrollbarState)
     {
-        ScrollbarState result = ParseScrollbarState(_scrollbarState.value());
+        ScrollbarState result = ParseScrollbarState(*_scrollbarState);
         terminalSettings.ScrollState(result);
     }
 
@@ -203,7 +203,7 @@ JsonObject Profile::ToJson() const
 
     if (_startingDirectory)
     {
-        const auto startingDirectory = JsonValue::CreateStringValue(_startingDirectory.value());
+        const auto startingDirectory = JsonValue::CreateStringValue(*_startingDirectory);
         jsonObject.Insert(STARTINGDIRECTORY_KEY, startingDirectory);
     }
 
@@ -213,17 +213,17 @@ JsonObject Profile::ToJson() const
     // Core Settings
     if (_defaultForeground)
     {
-        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground.value()));
+        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(*_defaultForeground));
         jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
     }
     if (_defaultBackground)
     {
-        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground.value()));
+        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(*_defaultBackground));
         jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
     }
     if (_schemeName)
     {
-        const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
+        const auto scheme = JsonValue::CreateStringValue(*_schemeName);
         jsonObject.Insert(COLORSCHEME_KEY, scheme);
     }
     else
@@ -266,7 +266,7 @@ JsonObject Profile::ToJson() const
 
     if (_icon)
     {
-        const auto icon = JsonValue::CreateStringValue(_icon.value());
+        const auto icon = JsonValue::CreateStringValue(*_icon);
         jsonObject.Insert(ICON_KEY, icon);
     }
 
@@ -464,7 +464,7 @@ bool Profile::HasIcon() const noexcept
 std::wstring_view Profile::GetIconPath() const noexcept
 {
     return HasIcon() ?
-           std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
+           std::wstring_view{ *_icon } :
            std::wstring_view{ L"", 0 };
 }
 

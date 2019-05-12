@@ -147,9 +147,9 @@ HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
     // Ensure output variables are initialized
     writtenOrNeeded = 0;
 
-    if (target.has_value() && target.value().size() > 0)
+    if (target.has_value() && target->size() > 0)
     {
-        target.value().at(0) = UNICODE_NULL;
+        target->at(0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
@@ -178,9 +178,9 @@ HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
     if (target.has_value())
     {
         // if the user didn't give us enough space, return with insufficient buffer code early.
-        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), gsl::narrow<size_t>(target.value().size()) < neededSize);
+        RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER), gsl::narrow<size_t>(target->size()) < neededSize);
 
-        RETURN_IF_FAILED(StringCchCopyNW(target.value().data(), target.value().size(), targetString.data(), targetSize));
+        RETURN_IF_FAILED(StringCchCopyNW(target->data(), target->size(), targetString.data(), targetSize));
     }
 
     return S_OK;
@@ -455,14 +455,14 @@ HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
 
-    if (aliasBuffer.has_value() && aliasBuffer.value().size() > 0)
+    if (aliasBuffer.has_value() && aliasBuffer->size() > 0)
     {
-        aliasBuffer.value().at(0) = UNICODE_NULL;
+        aliasBuffer->at(0) = UNICODE_NULL;
     }
 
     std::wstring exeNameString(exeName);
 
-    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
+    LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     // Each of the alises will be made up of the source, a seperator, the target, then a null character.
@@ -495,10 +495,10 @@ HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
                 size_t cchNewTotal;
                 RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
 
-                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasBuffer.value().size()));
+                RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasBuffer->size()));
 
                 size_t cchAliasBufferRemaining;
-                RETURN_IF_FAILED(SizeTSub(aliasBuffer.value().size(), cchTotalLength, &cchAliasBufferRemaining));
+                RETURN_IF_FAILED(SizeTSub(aliasBuffer->size(), cchTotalLength, &cchAliasBufferRemaining));
 
                 RETURN_IF_FAILED(StringCchCopyNW(AliasesBufferPtrW, cchAliasBufferRemaining, pair.first.data(), cchSource));
                 RETURN_IF_FAILED(SizeTSub(cchAliasBufferRemaining, cchSource, &cchAliasBufferRemaining));
@@ -708,12 +708,12 @@ HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasEx
 {
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
-    if (aliasExesBuffer.has_value() && aliasExesBuffer.value().size() > 0)
+    if (aliasExesBuffer.has_value() && aliasExesBuffer->size() > 0)
     {
-        aliasExesBuffer.value().at(0) = UNICODE_NULL;
+        aliasExesBuffer->at(0) = UNICODE_NULL;
     }
 
-    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer.value().data() : nullptr;
+    LPWSTR AliasExesBufferPtrW = aliasExesBuffer.has_value() ? aliasExesBuffer->data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
     size_t const cchNull = 1;
@@ -734,10 +734,10 @@ HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasEx
             // Error out early if there is a problem.
             size_t cchNewTotal;
             RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchNewTotal));
-            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasExesBuffer.value().size()));
+            RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_BUFFER_OVERFLOW), cchNewTotal > gsl::narrow<size_t>(aliasExesBuffer->size()));
 
             size_t cchRemaining;
-            RETURN_IF_FAILED(SizeTSub(aliasExesBuffer.value().size(), cchTotalLength, &cchRemaining));
+            RETURN_IF_FAILED(SizeTSub(aliasExesBuffer->size(), cchTotalLength, &cchRemaining));
 
             RETURN_IF_FAILED(StringCchCopyNW(AliasExesBufferPtrW, cchRemaining, pair.first.data(), cchExe));
             AliasExesBufferPtrW += cchNeeded;

@@ -140,7 +140,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
         return hr;
     }
 
-    LPCWSTR lpCurrentDirectory = startingDirectory.has_value() ? startingDirectory.value().c_str() : nullptr;
+    LPCWSTR lpCurrentDirectory = startingDirectory.has_value() ? startingDirectory->c_str() : nullptr;
 
     bool fSuccess = !!CreateProcessW(
         nullptr,
