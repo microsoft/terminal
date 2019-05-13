@@ -635,6 +635,10 @@ namespace winrt::TerminalApp::implementation
                 {
                     _RemoveTabViewItem(tabViewItem);
                 }
+                else if (p != nullptr && p->GetCloseOnExit())
+                {
+                    _lastTabClosedHandlers();
+                }
             });
         });
 
@@ -662,7 +666,6 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void App::_CloseFocusedTab()
     {
-        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
             int focusedTabIndex = _GetFocusedTabIndex();
@@ -674,6 +677,12 @@ namespace winrt::TerminalApp::implementation
             _tabView.Items().RemoveAt(focusedTabIndex);
             _tabs.erase(_tabs.begin() + focusedTabIndex);
             _UpdateTabView();
+        }
+        // To close the window here, we need to close the hosting window.
+        // As such, we cannot use a more straightforward way.
+
+        else {
+            _lastTabClosedHandlers();
         }
     }
 
@@ -771,13 +780,16 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
-        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-        // Don't allow the user to close the last tab ..
-        // .. yet.
         if (_tabs.size() > 1)
         {
             const auto tabViewItem = eventArgs.Item();
             _RemoveTabViewItem(tabViewItem);
+        }
+
+        // To close the window here, we need to close the hosting window.
+        // As such, we cannot use a more straightforward way.
+        else {
+            _lastTabClosedHandlers();
         }
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
@@ -832,6 +844,9 @@ namespace winrt::TerminalApp::implementation
             if (_tabs.size() > 1)
             {
                 _RemoveTabViewItem(sender);
+            }
+            else {
+                _lastTabClosedHandlers();
             }
             eventArgs.Handled(true);
         }
@@ -892,4 +907,5 @@ namespace winrt::TerminalApp::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 }

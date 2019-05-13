@@ -13,7 +13,7 @@ public:
     virtual ~IslandWindow() override;
 
     void MakeWindow() noexcept;
-
+    void Close();
     virtual void OnSize();
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -32,9 +32,9 @@ protected:
     unsigned int _currentWidth;
     unsigned int _currentHeight;
 
-    HWND _interopWindowHandle;
-
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
+
+    HWND _interopWindowHandle;
 
     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
