@@ -198,7 +198,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
     {
         const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
         auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
-        resultPtr->_globals.GetKeybindings() = loadedBindings;
+        resultPtr->_globals.SetKeybindings(loadedBindings);
     }
     else
     {

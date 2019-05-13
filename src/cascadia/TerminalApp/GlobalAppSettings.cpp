@@ -71,6 +71,11 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
     return _keybindings;
 }
 
+void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
+{
+    _keybindings = newBindings;
+}
+
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
 {
     return _alwaysShowTabs;
