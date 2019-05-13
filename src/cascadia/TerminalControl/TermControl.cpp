@@ -417,7 +417,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _controlRoot.GotFocus([this, cursorTimer](auto&, auto&) {
             // Start blinking the cursor when the window is focused.
-			_terminal->SetCursorVisible(true);
+            _terminal->SetCursorVisible(true);
             cursorTimer.Start();
         });
 
@@ -886,7 +886,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!(_terminal->GetTextBuffer().GetCursor().IsBlinkingAllowed() || _terminal->IsCursorOn()) || _terminal->IsCursorVisible()) _terminal->SetCursorOn(!_terminal->IsCursorOn());
+        if (!(_terminal->GetTextBuffer().GetCursor().IsBlinkingAllowed() || 
+              _terminal->IsCursorOn()) || 
+            _terminal->IsCursorVisible())
+        {
+            _terminal->SetCursorOn(!_terminal->IsCursorOn());
+        }
     }
 
     // Method Description:
