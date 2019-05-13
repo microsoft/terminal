@@ -268,8 +268,6 @@ HRESULT DxEngine::_PrepareRenderTarget() noexcept
     RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
                                                              &_d2dBrushBackground));
 
-    _d2dBrushBackground->SetOpacity(.9f);
-
     RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                              &_d2dBrushForeground));
 
