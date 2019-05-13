@@ -8,7 +8,7 @@ static const std::wstring CTRL_KEY{ L"ctrl" };
 static const std::wstring SHIFT_KEY{ L"shift" };
 static const std::wstring ALT_KEY{ L"alt" };
 
-static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs{
+static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs {
     { VK_BACK       , L"backspace"},
     { VK_TAB        , L"tab"},
     { VK_RETURN     , L"enter" },
@@ -67,8 +67,9 @@ static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs{
     { VK_OEM_COMMA  , L"," },
     { VK_OEM_MINUS  , L"-" },
     { VK_OEM_PERIOD , L"." }
-
 // TODO:
+// These all look like they'd be good keybindings, but change based on keyboard
+// layout. How do we deal with that?
 // #define VK_OEM_NEC_EQUAL  0x92   // '=' key on numpad
 // #define VK_OEM_1          0xBA   // ';:' for US
 // #define VK_OEM_2          0xBF   // '/?' for US
@@ -78,8 +79,6 @@ static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs{
 // #define VK_OEM_6          0xDD  //  ']}' for US
 // #define VK_OEM_7          0xDE  //  ''"' for US
 };
-
-
 
 namespace winrt::Microsoft::Terminal::Settings::implementation
 {
@@ -117,6 +116,17 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _vkey = value;
     }
 
+    // Method Description:
+    // - Deserializes the given string into a new KeyChord instance. If this
+    //   fails to translate the string into a keychord, it will throw a
+    //   hresult_invalid_argument exception.
+    // - The string should fit the format "[ctrl+][alt+][shift+]<keyName>",
+    //   where each modifier is optional, and keyName is either one of the
+    //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-zA-Z.
+    // Arguments:
+    // - hstr: the string to parse into a keychord.
+    // Return Value:
+    // - a newly constructed KeyChord
     winrt::Microsoft::Terminal::Settings::KeyChord KeyChord::FromString(const hstring& hstr)
     {
         std::wstring wstr{ hstr };
@@ -137,7 +147,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
             throw hresult_invalid_argument();
         }
 
-        // winrt::Microsoft::Terminal::Settings::KeyChord kc{ false, false, false, 0 };
         KeyModifiers modifiers = KeyModifiers::None;
         int32_t vkey = 0;
 
@@ -182,6 +191,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
                     }
                 }
 
+                // If we didn't find the key with a quick lookup, search the
+                // table to see if we have a matching name.
                 if (!foundKey)
                 {
                     for (const auto& pair : vkeyNamePairs)
@@ -195,6 +206,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
                     }
                 }
 
+                // If we weren't able to find a match, throw an exception.
                 if (!foundKey)
                 {
                     throw hresult_invalid_argument();
@@ -205,11 +217,22 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         return winrt::Microsoft::Terminal::Settings::KeyChord{ modifiers, vkey };
     }
 
+    // Method Description:
+    // - Serialize this keychord into a string represenation.
+    // - The string will fit the format "[ctrl+][alt+][shift+]<keyName>",
+    //   where each modifier is optional, and keyName is either one of the
+    //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-z.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - a string which is an equivalent serialization of this object.
     hstring KeyChord::ToString()
     {
         bool serializedSuccessfully = false;
 
         std::wstring buffer{ L"" };
+
+        // Add modifiers
         if (WI_IsFlagSet(_modifiers, Settings::KeyModifiers::Ctrl))
         {
             buffer += CTRL_KEY;
@@ -260,20 +283,3 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     }
 
 }
-
-
-// #define VK_OEM_NEC_EQUAL  0x92   // '=' key on numpad
-// #define VK_OEM_1          0xBA   // ';:' for US
-// #define VK_OEM_PLUS       0xBB   // '+' any country
-// #define VK_OEM_COMMA      0xBC   // ',' any country
-// #define VK_OEM_MINUS      0xBD   // '-' any country
-// #define VK_OEM_PERIOD     0xBE   // '.' any country
-// #define VK_OEM_2          0xBF   // '/?' for US
-// #define VK_OEM_3          0xC0   // '`~' for US
-// #define VK_OEM_4          0xDB  //  '[{' for US
-// #define VK_OEM_5          0xDC  //  '\|' for US
-// #define VK_OEM_6          0xDD  //  ']}' for US
-// #define VK_OEM_7          0xDE  //  ''"' for US
-// #define VK_OEM_8          0xDF
-// #define VK_OEM_AX         0xE1  //  'AX' key on Japanese AX kbd
-// #define VK_OEM_102        0xE2  //  "<>" or "\|" on RT 102-key kbd.

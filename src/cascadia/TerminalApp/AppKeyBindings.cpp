@@ -168,6 +168,18 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
 
+
+    // Method Description:
+    // - Deserialize an AppKeyBindings from the key mappings that are in the
+    //   array `json`. The json array should contain an array of objects with
+    //   both a `command` string and a `keys` array, where `command` i one of
+    //   the names listed in `commandNames`, and `keys` is an array of
+    //   keypresses. Currently, the array should contain a single string, which
+    //   can be deserialized into a KeyChord.
+    // Arguments:
+    // - json: and arrayof JsonObject's to deserialize into our _keyShortcuts mapping.
+    // Return Value:
+    // - the newly constructed AppKeyBindings object.
     TerminalApp::AppKeyBindings AppKeyBindings::FromJson(Windows::Data::Json::JsonArray const& json)
     {
         TerminalApp::AppKeyBindings newBindings{};
@@ -224,9 +236,15 @@ namespace winrt::TerminalApp::implementation
         return newBindings;
     }
 
+    // Function Description:
+    // - Small helper to insert a given KeyChord, ShortcutAction pair into the
+    //   given json array
+    // Arguments:
+    // - bindingsArray: The JsonArray to insert the object into.
+    // - chord: The KeyChord to serailize and place in the json array
+    // - actionName: the name of the ShortcutAction to use with this KeyChord
     void _AddShortcutToJsonArray(JsonArray bindingsArray,
                                  const Settings::KeyChord& chord,
-                                 const TerminalApp::ShortcutAction& action,
                                  const std::wstring& actionName)
     {
         const auto keyString = chord.ToString();
@@ -244,11 +262,17 @@ namespace winrt::TerminalApp::implementation
         bindingsArray.Append(jsonObject);
     }
 
+    // Method Description:
+    // - Serialize this AppKeyBindings to a json array of objects. Each object
+    //   in the array represents a single keybinding, mapping a KeyChord to a
+    //   ShortcutAction.
+    // Return Value:
+    // - a JsonArray which is an equivalent serialization of this object.
     Windows::Data::Json::JsonArray AppKeyBindings::ToJson()
     {
         winrt::Windows::Data::Json::JsonArray bindingsArray;
 
-        // iterate over all the possible actions in the names list, and see if
+        // Iterate over all the possible actions in the names list, and see if
         // it has a binding.
         for (auto& actionName : commandNames)
         {
@@ -260,13 +284,11 @@ namespace winrt::TerminalApp::implementation
                 const auto command = kv.second;
                 if (command == searchedForAction)
                 {
-                    _AddShortcutToJsonArray(bindingsArray, chord, command, searchedForName);
+                    _AddShortcutToJsonArray(bindingsArray, chord, searchedForName);
                 }
             }
         }
 
         return bindingsArray;
     }
-
-
 }

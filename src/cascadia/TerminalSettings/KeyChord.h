@@ -24,16 +24,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     private:
         Settings::KeyModifiers _modifiers;
         int32_t _vkey;
-
-        // struct VkeyStringMap
-        // {
-        //     const int32_t vkey;
-        //     const std::wstring name;
-        //     VkeyStringMap(const int32_t key, const std::wstring name) :
-        //         vkey(vkey),
-        //         name(name) {};
-        // }
-
     };
 }
 
