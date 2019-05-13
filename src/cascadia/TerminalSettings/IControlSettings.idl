@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Settings
         Boolean UseAcrylic;
         Boolean CloseOnExit;
         Double TintOpacity;
+        Double Opacity;
         ScrollbarState ScrollState; 
 
         String FontFace;

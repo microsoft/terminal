@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CloseOnExit(bool value);
         double TintOpacity();
         void TintOpacity(double value);
+        double Opacity();
+        void Opacity(double value);
         hstring Padding();
         void Padding(hstring value);
 
@@ -91,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         bool _useAcrylic;
         bool _closeOnExit;
         double _tintOpacity;
+        double _opacity;
         hstring _fontFace;
         int32_t _fontSize;
         hstring _padding;

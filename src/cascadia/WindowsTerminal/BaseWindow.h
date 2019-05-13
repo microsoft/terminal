@@ -5,6 +5,7 @@
 
 // Custom window messages
 #define CM_UPDATE_TITLE          (WM_USER)
+#define CM_UPDATE_OPACITY        (WM_USER + 1)
 
 template <typename T>
 class BaseWindow
@@ -93,6 +94,11 @@ public:
             SetWindowTextW(_window, _title.c_str());
             break;
         }
+        case CM_UPDATE_OPACITY:
+        {
+            SetLayeredWindowAttributes(_window, 0x000000, _opacity * 0xFF, LWA_ALPHA);
+            break;
+        }
         }
 
         return DefWindowProc(_window, message, wparam, lparam);
@@ -151,6 +157,18 @@ public:
         PostMessageW(_window, CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     };
 
+    // Method Description:
+    // - Send a message to our message loop to update the opacity of the window.
+    // Arguments:
+    // - opacity: a number in [0, 1] to use as the new opacity of the window.
+    // Return Value:
+    // - <none>
+    void UpdateOpacity(double opacity)
+    {
+        _opacity = opacity;
+        PostMessageW(_window, CM_UPDATE_OPACITY, 0, 0);
+    }
+
 protected:
     using base_type = BaseWindow<T>;
     HWND _window = nullptr;
@@ -159,6 +177,8 @@ protected:
     bool _inDpiChange = false;
 
     std::wstring _title = L"";
+
+    double _opacity;
 
     bool _minimized = false;
 };

@@ -107,6 +107,8 @@ void IslandWindow::Initialize()
 {
     const bool initialized = (_interopWindowHandle != nullptr);
 
+    SetWindowLong(_window, GWL_EXSTYLE, GetWindowLong(_window, GWL_EXSTYLE) | WS_EX_LAYERED);
+
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();

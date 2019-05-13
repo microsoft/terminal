@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _useAcrylic{ false },
         _closeOnExit{ true },
         _tintOpacity{ 0.5 },
+        _opacity{ 0.75 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
@@ -159,6 +160,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::TintOpacity(double value)
     {
         _tintOpacity = value;
+    }
+
+    double TerminalSettings::Opacity()
+    {
+        return _opacity;
+    }
+
+    void TerminalSettings::Opacity(double value)
+    {
+        _opacity = value;
     }
 
     hstring TerminalSettings::Padding()

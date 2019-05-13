@@ -70,8 +70,10 @@ void AppHost::Initialize()
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
+    _app.OpacityChanged({ this, &AppHost::AppOpacityChanged });
 
     AppTitleChanged(_app.GetTitle());
+    AppOpacityChanged(_app.GetOpacity());
 
     _window->SetRootContent(_app.GetRoot());
     if (_useNonClientArea)
@@ -91,6 +93,18 @@ void AppHost::Initialize()
 void AppHost::AppTitleChanged(winrt::hstring newTitle)
 {
     _window->UpdateTitle(newTitle.c_str());
+}
+
+// Method Description:
+// - Called when the app's opacity changes. Fires off a window message so we can
+//   update the window's opacity on the main thread.
+// Arguments:
+// - newOpacity: the number to use as the new window opacity
+// Return Value:
+// - <none>
+void AppHost::AppOpacityChanged(double newOpacity)
+{
+    _window->UpdateOpacity(newOpacity);
 }
 
 // Method Description:

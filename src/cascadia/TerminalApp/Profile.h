@@ -51,6 +51,9 @@ public:
 
     bool GetCloseOnExit() const noexcept;
 
+    double GetOpacity() const noexcept;
+    void SetOpacity(double opacity) noexcept;
+
 private:
 
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -79,6 +82,7 @@ private:
     std::optional<std::wstring> _startingDirectory;
     int32_t _fontSize;
     double _acrylicTransparency;
+    double _opacity;
     bool _useAcrylic;
 
     std::optional<std::wstring> _scrollbarState;

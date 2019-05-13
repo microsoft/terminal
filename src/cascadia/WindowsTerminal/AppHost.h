@@ -15,6 +15,7 @@ public:
     virtual ~AppHost();
 
     void AppTitleChanged(winrt::hstring newTitle);
+    void AppOpacityChanged(double newOpacity);
 
     void Initialize();
 

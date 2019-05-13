@@ -756,6 +756,7 @@ namespace winrt::TerminalApp::implementation
 
                 tab->SetFocused(true);
                 _titleChangeHandlers(GetTitle());
+                _opacityChangeHandlers(_settings->FindProfile(tab->GetProfile())->GetOpacity());
             }
             CATCH_LOG();
         }
@@ -817,6 +818,27 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return { L"Windows Terminal" };
+    }
+
+    // Method Description:
+    // - Gets the opacity of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns 1
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the opacity of the focused control if there is one, else 1
+    double App::GetOpacity()
+    {
+        auto selectedIndex = _tabView.SelectedIndex();
+        if (selectedIndex >= 0)
+        {
+            try
+            {
+                return _settings->FindProfile(_tabs.at(selectedIndex)->GetProfile())->GetOpacity();
+            }
+            CATCH_LOG();
+        }
+        return 1;
     }
 
     // Method Description:
@@ -891,5 +913,6 @@ namespace winrt::TerminalApp::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(App, TitleChanged,   _titleChangeHandlers,   TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(App, OpacityChanged, _opacityChangeHandlers, TerminalApp::OpacityChangedEventArgs);
 }

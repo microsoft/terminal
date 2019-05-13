@@ -3,6 +3,8 @@
 
 namespace TerminalApp
 {
+    delegate void OpacityChangedEventArgs(Double opacity);
+
     [default_interface]
     runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication
     {
@@ -24,8 +26,10 @@ namespace TerminalApp
         Boolean GetShowTabsInTitlebar();
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
+        event OpacityChangedEventArgs OpacityChanged;
 
         String GetTitle();
+        Double GetOpacity();
 
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class

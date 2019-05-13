@@ -30,6 +30,7 @@ static const std::wstring COMMANDLINE_KEY{ L"commandline" };
 static const std::wstring FONTFACE_KEY{ L"fontFace" };
 static const std::wstring FONTSIZE_KEY{ L"fontSize" };
 static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
+static const std::wstring OPACITY_KEY{ L"opacity" };
 static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
 static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
 static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
@@ -67,6 +68,7 @@ Profile::Profile() :
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
+    _opacity{ 0.75 },
     _useAcrylic{ false },
     _scrollbarState{ },
     _closeOnExit{ true },
@@ -133,6 +135,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     terminalSettings.UseAcrylic(_useAcrylic);
     terminalSettings.CloseOnExit(_closeOnExit);
     terminalSettings.TintOpacity(_acrylicTransparency);
+    terminalSettings.Opacity(_opacity);
 
     terminalSettings.FontFace(_fontFace);
     terminalSettings.FontSize(_fontSize);
@@ -197,6 +200,7 @@ JsonObject Profile::ToJson() const
     const auto fontFace = JsonValue::CreateStringValue(_fontFace);
     const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
     const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
+    const auto opacity = JsonValue::CreateNumberValue(_opacity);
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto closeOnExit = JsonValue::CreateBooleanValue(_closeOnExit);
     const auto padding = JsonValue::CreateStringValue(_padding);
@@ -254,6 +258,7 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(FONTFACE_KEY, fontFace);
     jsonObject.Insert(FONTSIZE_KEY, fontSize);
     jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
+    jsonObject.Insert(OPACITY_KEY, opacity);
     jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
     jsonObject.Insert(CLOSEONEXIT_KEY, closeOnExit);
     jsonObject.Insert(PADDING_KEY, padding);
@@ -377,6 +382,10 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._acrylicTransparency = json.GetNamedNumber(ACRYLICTRANSPARENCY_KEY);
     }
+    if (json.HasKey(OPACITY_KEY))
+    {
+        result._opacity = json.GetNamedNumber(OPACITY_KEY);
+    }
     if (json.HasKey(USEACRYLIC_KEY))
     {
         result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
@@ -482,6 +491,16 @@ std::wstring_view Profile::GetName() const noexcept
 bool Profile::GetCloseOnExit() const noexcept
 {
     return _closeOnExit;
+}
+
+double Profile::GetOpacity() const noexcept
+{
+    return _opacity;
+}
+
+void Profile::SetOpacity(double opacity) noexcept
+{
+    _opacity = opacity;
 }
 
 // Method Description:

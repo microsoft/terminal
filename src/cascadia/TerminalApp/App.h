@@ -41,9 +41,11 @@ namespace winrt::TerminalApp::implementation
         ~App();
 
         hstring GetTitle();
+        double GetOpacity();
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(TitleChanged,   _titleChangeHandlers,   winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(OpacityChanged, _opacityChangeHandlers, TerminalApp::OpacityChangedEventArgs);
 
     private:
         App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
