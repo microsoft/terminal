@@ -13,7 +13,9 @@
     "/dep/",
     "/.vs/",
     "/build/",
-    "/src/cascadia/"
+    "/src/cascadia/",
+    "/.nuget/",
+    "/.github/"
   ],
   "SuffixFilters": [
     ".dbb",
