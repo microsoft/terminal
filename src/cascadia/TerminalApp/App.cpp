@@ -830,7 +830,8 @@ namespace winrt::TerminalApp::implementation
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
         // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-        if (_tabs.size() <= 1) {
+        if (_tabs.size() <= 1)
+        {
             return;
         }
 
@@ -845,6 +846,9 @@ namespace winrt::TerminalApp::implementation
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
+
+        // ensure tabs and focus is sync
+        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
     }
 
     // Method Description:
