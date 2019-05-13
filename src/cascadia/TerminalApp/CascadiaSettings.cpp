@@ -177,7 +177,7 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                                          static_cast<int>('W') });
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
                                KeyChord{ KeyModifiers::Ctrl,
-                                         static_cast<int>('S') });
+                                         VK_OEM_COMMA });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
                                KeyChord{ KeyModifiers::Ctrl,
