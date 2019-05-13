@@ -81,6 +81,10 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
   - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
 * You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
 
+## Debugging
+
+* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only"
+
 ## Contributing
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
