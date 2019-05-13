@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        Windows::UI::Xaml::DispatcherTimer _cursorTimer;
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
 
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.

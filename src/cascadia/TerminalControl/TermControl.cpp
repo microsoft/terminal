@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -412,11 +413,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
         // Set up blinking cursor
-        _cursorTimer.Interval(std::chrono::milliseconds(500));
-        auto registrationtoken = _cursorTimer.Tick({ this, &TermControl::_BlinkCursor });
+        int blinkTime = GetCaretBlinkTime();
+        if (blinkTime != INFINITE)
+        {
+            // Create a timer
+            _cursorTimer = std::make_optional(DispatcherTimer());
+            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+            auto registrationtoken = _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
 
-        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
+            _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
+            _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
+        }
+        else
+        {
+            // The user has disabled cursor blinking
+            _cursorTimer = std::nullopt;
+        }
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -517,10 +529,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                               WI_IsFlagSet(modifiers, KeyModifiers::Alt),
                                               WI_IsFlagSet(modifiers, KeyModifiers::Shift));
 
-            // Manually show the cursor when a key is pressed. Restarting
-            // the timer prevents flickering.
-            _terminal->SetCursorVisible(true);
-            _cursorTimer.Start();
+            if (_cursorTimer.has_value())
+            {
+                // Manually show the cursor when a key is pressed. Restarting
+                // the timer prevents flickering.
+                _terminal->SetCursorVisible(true);
+                _cursorTimer.value().Start();
+            }
         }
 
         e.Handled(handled);
@@ -816,17 +831,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the GotFocus event. This is used to start
     //   blinking the cursor when the window is focused.
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
-                                       RoutedEventArgs const& /* args */) {
-        _cursorTimer.Start();
+                                       RoutedEventArgs const& /* args */)
+    {
+        if (_cursorTimer.has_value())
+            _cursorTimer.value().Start();
     }
 
     // Method Description:
     // - Event handler for the LostFocus event. This is used to hide
     //   and stop blinking the cursor when the window loses focus.
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
-                                        RoutedEventArgs const& /* args */) {
-        _cursorTimer.Stop();
-        _terminal->SetCursorVisible(false);
+                                        RoutedEventArgs const& /* args */)
+    {
+        if (_cursorTimer.has_value())
+        {
+            _cursorTimer.value().Stop();
+            _terminal->SetCursorVisible(false);
+        }
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
