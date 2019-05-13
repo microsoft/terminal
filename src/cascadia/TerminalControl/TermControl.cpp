@@ -419,7 +419,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Create a timer
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            auto registrationtoken = _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
 
             _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
             _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
