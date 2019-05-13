@@ -75,8 +75,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
-        swapChainPanel.SetValue(FrameworkElement::HorizontalAlignmentProperty(),
-            box_value(HorizontalAlignment::Stretch));
 
         swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
         swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
