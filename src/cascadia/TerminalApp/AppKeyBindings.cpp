@@ -224,44 +224,45 @@ namespace winrt::TerminalApp::implementation
         return newBindings;
     }
 
+    void _AddShortcutToJsonArray(JsonArray bindingsArray,
+                                 const Settings::KeyChord& chord,
+                                 const TerminalApp::ShortcutAction& action,
+                                 const std::wstring& actionName)
+    {
+        const auto keyString = chord.ToString();
+        if (keyString == L"")
+        {
+            return;
+        }
+
+        winrt::Windows::Data::Json::JsonObject jsonObject;
+        winrt::Windows::Data::Json::JsonArray keysArray;
+        keysArray.Append(JsonValue::CreateStringValue(keyString));
+        jsonObject.Insert(KEYS_KEY, keysArray);
+        jsonObject.Insert(COMMAND_KEY, JsonValue::CreateStringValue(actionName));
+
+        bindingsArray.Append(jsonObject);
+    }
+
     Windows::Data::Json::JsonArray AppKeyBindings::ToJson()
     {
         winrt::Windows::Data::Json::JsonArray bindingsArray;
-        // TODO: Don't iterate this way, they'll be in random order. Instead
+
         // iterate over all the possible actions in the names list, and see if
         // it has a binding.
-        for (const auto& kv : _keyShortcuts)
+        for (auto& actionName : commandNames)
         {
-            const auto chord = kv.first;
-            const auto command = kv.second;
-
-            const auto keyString = chord.ToString();
-            if (keyString == L"")
+            const auto searchedForAction = actionName.first;
+            const auto searchedForName = actionName.second;
+            for (const auto& kv : _keyShortcuts)
             {
-                continue;
-            }
-
-            std::wstring commandName{ L"" };
-            for (const auto& pair : commandNames)
-            {
-                if (pair.first == command)
+                const auto chord = kv.first;
+                const auto command = kv.second;
+                if (command == searchedForAction)
                 {
-                    commandName = pair.second;
+                    _AddShortcutToJsonArray(bindingsArray, chord, command, searchedForName);
                 }
             }
-            if (commandName == L"")
-            {
-                continue;
-            }
-
-
-            winrt::Windows::Data::Json::JsonObject jsonObject;
-            winrt::Windows::Data::Json::JsonArray keysArray;
-            keysArray.Append(JsonValue::CreateStringValue(keyString));
-            jsonObject.Insert(KEYS_KEY, keysArray);
-            jsonObject.Insert(COMMAND_KEY, JsonValue::CreateStringValue(commandName));
-
-            bindingsArray.Append(jsonObject);
         }
 
         return bindingsArray;

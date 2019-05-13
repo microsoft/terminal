@@ -207,7 +207,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
     hstring KeyChord::ToString()
     {
-
         bool serializedSuccessfully = false;
 
         std::wstring buffer{ L"" };
