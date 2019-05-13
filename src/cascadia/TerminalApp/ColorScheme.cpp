@@ -99,7 +99,7 @@ JsonObject ColorScheme::ToJson() const
 	for (int i = 0; i < TABLE_SIZE; i++)
 	{
 		auto current = TABLE_COLORS[i];
-		auto color = _table[i];
+		auto& color = _table[i];
 		auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
 				
 		jsonObject.Insert(current, s);
