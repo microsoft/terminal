@@ -10,7 +10,7 @@ exception use.
 
 ## Rules
 1. **DO NOT** allow exceptions to leak out of new code into old code
-1. **DO** use NTSTATUS or HRESULT as return values as appropriate
+1. **DO** use NTSTATUS or HRESULT as return values as appropriate (HRESULT is preferred)
 1. **DO** Encapsulate all exception behaviors within implementing classes
 1. **DO NOT** introduce modern exception throwing code into old code. Instead, refactor as needed to allow encapsulation or
    use non-exception based code

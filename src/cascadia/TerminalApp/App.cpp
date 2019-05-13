@@ -373,7 +373,7 @@ namespace winrt::TerminalApp::implementation
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
             // We want file modifications, AND when files are renamed to be
-            // profiles.json. This second case will ofentimes happen with text
+            // profiles.json. This second case will oftentimes happen with text
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             if (!(event == wil::FolderChangeEvent::Modified ||
@@ -631,7 +631,7 @@ namespace winrt::TerminalApp::implementation
                 // reloading settings)
                 const auto* const p = _settings->FindProfile(tabProfile);
 
-                // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
+                // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
                 if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
                 {
                     _RemoveTabViewItem(tabViewItem);
@@ -668,6 +668,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void App::_CloseFocusedTab()
     {
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
             int focusedTabIndex = _GetFocusedTabIndex();
@@ -776,6 +777,7 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         // Don't allow the user to close the last tab ..
         // .. yet.
         if (_tabs.size() > 1)
@@ -832,7 +834,11 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(_root).Properties().IsMiddleButtonPressed())
         {
-            _RemoveTabViewItem(sender);
+            // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
+            if (_tabs.size() > 1)
+            {
+                _RemoveTabViewItem(sender);
+            }
             eventArgs.Handled(true);
         }
     }
