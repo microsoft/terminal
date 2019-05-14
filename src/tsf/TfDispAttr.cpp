@@ -49,38 +49,29 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
                                                                       ITfReadOnlyProperty **ppProp, IEnumTfRanges **ppEnum, ULONG *pulNumProp)
 {
     HRESULT hr = E_FAIL;
-
-    ULONG ulNumProp = static_cast<ULONG>(m_DispAttrProp.size());
-    if (ulNumProp) {
-        const GUID **ppguidProp;
-        //
-        // TrackProperties wants an array of GUID *'s
-        //
-        ppguidProp = (const GUID **) new(std::nothrow) GUID* [ulNumProp];
-        if (ppguidProp == NULL) {
-            hr = E_OUTOFMEMORY;
-        }
-        else {
+    try {
+        ULONG ulNumProp = static_cast<ULONG>(m_DispAttrProp.size());
+        if (ulNumProp) {
+            // TrackProperties wants an array of GUID *'s
+            auto ppguidProp = std::make_unique<const GUID*[]>(ulNumProp);
             for (ULONG i = 0; i < ulNumProp; i++) {
                 ppguidProp[i] = &m_DispAttrProp.at(i);
             }
 
-            wil::com_ptr_nothrow<ITfReadOnlyProperty> pProp;
-            if (SUCCEEDED(hr = pic->TrackProperties(ppguidProp, ulNumProp, 0, NULL, &pProp))) {
+            wil::com_ptr<ITfReadOnlyProperty> pProp;
+            if (SUCCEEDED(hr = pic->TrackProperties(ppguidProp.get(), ulNumProp, 0, NULL, &pProp))) {
                 hr = pProp->EnumRanges(ec, ppEnum, pRange);
                 if (SUCCEEDED(hr)) {
                     *ppProp = pProp.detach();
                 }
             }
 
-            delete [] ppguidProp;
-
             if (SUCCEEDED(hr)) {
                 *pulNumProp = ulNumProp;
             }
         }
     }
-
+    CATCH_RETURN();
     return hr;
 }
 
@@ -169,17 +160,20 @@ HRESULT CicDisplayAttributeMgr::InitDisplayAttributeInstance(ITfCategoryMgr* pca
     if (pEnumProp) {
          GUID guidProp;
 
-         //
-         // add System Display Attribute first.
-         // so no other Display Attribute property overwrite it.
-         //
-         m_DispAttrProp.emplace_back(GUID_PROP_ATTRIBUTE);
+         try {
+             //
+             // add System Display Attribute first.
+             // so no other Display Attribute property overwrite it.
+             //
+             m_DispAttrProp.emplace_back(GUID_PROP_ATTRIBUTE);
 
-         while(pEnumProp->Next(1, &guidProp, NULL) == S_OK) {
-             if (!IsEqualGUID(guidProp, GUID_PROP_ATTRIBUTE)) {
-                 m_DispAttrProp.emplace_back(guidProp);
+             while (pEnumProp->Next(1, &guidProp, NULL) == S_OK) {
+                 if (!IsEqualGUID(guidProp, GUID_PROP_ATTRIBUTE)) {
+                     m_DispAttrProp.emplace_back(guidProp);
+                 }
              }
          }
+         CATCH_RETURN();
     }
     return hr;
 }

@@ -383,8 +383,11 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
             TF_DISPLAYATTRIBUTE da;
             da.bAttr = TF_ATTR_INPUT;
 
-            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
-            CompStr.append(wstr0, ulcch0);
+            try {
+                CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
+                CompStr.append(wstr0, ulcch0);
+            }
+            CATCH_RETURN();
         }
 
         textRange->Collapse(ec, TF_ANCHOR_END);
@@ -443,14 +446,17 @@ HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRan
             return E_FAIL;
         }
 
-        if (result_comp <= 0) {
-            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
-            CompStr.append(wstr0, ulcch0);
+        try {
+            if (result_comp <= 0) {
+                CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
+                CompStr.append(wstr0, ulcch0);
+            }
+            else {
+                ResultStr.append(wstr0, ulcch0);
+                LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
+            }
         }
-        else {
-            ResultStr.append(wstr0, ulcch0);
-            LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
-        }
+        CATCH_RETURN();
     }
 
 
@@ -496,31 +502,34 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
             return E_FAIL;
         }
 
-        // see if there is a valid disp attribute
-        if (fCompExist == TRUE && result_comp <= 0) {
-            if (guidatom == TF_INVALID_GUIDATOM) {
-                da.bAttr = TF_ATTR_INPUT;
+        try {
+            // see if there is a valid disp attribute
+            if (fCompExist == TRUE && result_comp <= 0) {
+                if (guidatom == TF_INVALID_GUIDATOM) {
+                    da.bAttr = TF_ATTR_INPUT;
+                }
+                CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
+                CompStr.append(wstr0, ulcch0);
             }
-            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
-            CompStr.append(wstr0, ulcch0);
-        }
-        else if (bInWriteSession) {
-            // if there's no disp attribute attached, it probably means
-            // the part of string is finalized.
-            //
-            ResultStr.append(wstr0, ulcch0);
+            else if (bInWriteSession) {
+                // if there's no disp attribute attached, it probably means
+                // the part of string is finalized.
+                //
+                ResultStr.append(wstr0, ulcch0);
 
-            // it was a 'determined' string
-            // so the doc has to shrink
-            //
-            LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
+                // it was a 'determined' string
+                // so the doc has to shrink
+                //
+                LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
+            }
+            else {
+                //
+                // Prevent infinite loop
+                //
+                break;
+            }
         }
-        else {
-            //
-            // Prevent infinite loop
-            //
-            break;
-        }
+        CATCH_RETURN();
     }
 
     return S_OK;
