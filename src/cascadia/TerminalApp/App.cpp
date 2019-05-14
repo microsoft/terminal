@@ -329,8 +329,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _DoScroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
-		bindings.ScrollUpPage([this]() { _DoScrollPage(-1); });
-		bindings.ScrollDownPage([this]() { _DoScrollPage(1); });
+        bindings.ScrollUpPage([this]() { _DoScrollPage(-1); });
+        bindings.ScrollDownPage([this]() { _DoScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
     }
 
@@ -687,25 +687,25 @@ namespace winrt::TerminalApp::implementation
     // - delta: a number of lines to move the viewport relative to the current viewport.
     void App::_DoScroll(int delta)
     {
-		int focusedTabIndex = _GetFocusedTabIndex();
-		_tabs[focusedTabIndex]->Scroll(delta);
+        int focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->Scroll(delta);
     }
 
-	// Method Description:
-	// - Move the viewport of the terminal of the currently focused tab up or
-	//      down a number of lines depending on the height of the Viewpoint. 
-	//      Negative values of `delta` will move the view up, and positive values
-	//      will move the viewport down.
-	// Arguments:
-	// - delta: a number of lines to move the viewport relative to the current viewport.
-	void App::_DoScrollPage(int delta)
-	{
-		delta = std::clamp(delta, -1, 1);
-		const auto focusedTabIndex = _GetFocusedTabIndex();
-		const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
-		auto termHeight = control.GetTermHeight();
-		_tabs[focusedTabIndex]->Scroll(termHeight*delta);
-	}
+    // Method Description:
+    // - Move the viewport of the terminal of the currently focused tab up or
+    //      down a number of lines depending on the height of the Viewpoint. 
+    //      Negative values of `delta` will move the view up, and positive values
+    //      will move the viewport down.
+    // Arguments:
+    // - delta: a number of lines to move the viewport relative to the current viewport.
+    void App::_DoScrollPage(int delta)
+    {
+        delta = std::clamp(delta, -1, 1);
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
+        auto termHeight = control.GetTermHeight();
+        _tabs[focusedTabIndex]->Scroll(termHeight*delta);
+    }
 
     // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard

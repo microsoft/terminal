@@ -96,7 +96,7 @@ namespace winrt::TerminalApp::implementation
         void _CopyText(const bool trimTrailingWhitespace);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
-		void _DoScrollPage(int delta);
+        void _DoScrollPage(int delta);
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);

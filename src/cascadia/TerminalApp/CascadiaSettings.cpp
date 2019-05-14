@@ -223,12 +223,12 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_DOWN });
-	keyBindings.SetKeyBinding(ShortcutAction::ScrollDownPage,
-							  KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-										VK_NEXT });
-	keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
-							  KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-										VK_PRIOR });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollDownPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_NEXT });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
                               KeyChord{ KeyModifiers::Alt,
                                         static_cast<int>('1') });

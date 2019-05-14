@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
-		int GetTermHeight();
+        int GetTermHeight();
 
         void SwapChainChanged();
         ~TermControl();
