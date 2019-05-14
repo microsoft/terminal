@@ -702,9 +702,9 @@ namespace winrt::TerminalApp::implementation
     void App::_ScrollPage(int delta)
     {
         delta = std::clamp(delta, -1, 1);
-        auto focusedTabIndex = _GetFocusedTabIndex();
-        auto control = _tabs[focusedTabIndex]->GetTerminalControl();
-        auto termHeight = control.GetViewHeight();
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
+        const auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
 
