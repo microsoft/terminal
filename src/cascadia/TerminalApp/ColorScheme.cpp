@@ -135,7 +135,7 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         result._defaultBackground = color;
     }
 
-    //Legacy Deserialization. Leave in place to allow forward compatibility
+    // Legacy Deserialization. Leave in place to allow forward compatibility
     if (json.HasKey(TABLE_KEY))
     {
         const auto table = json.GetNamedArray(TABLE_KEY);
