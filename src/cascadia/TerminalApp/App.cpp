@@ -629,15 +629,9 @@ namespace winrt::TerminalApp::implementation
                 // get destroyed before this is called (case in point -
                 // reloading settings)
                 const auto* const p = _settings->FindProfile(tabProfile);
-
-                // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-                if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
+                if (p != nullptr && p->GetCloseOnExit())
                 {
                     _RemoveTabViewItem(tabViewItem);
-                }
-                else if (p != nullptr && p->GetCloseOnExit())
-                {
-                    _lastTabClosedHandlers();
                 }
             });
         });
@@ -780,17 +774,8 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
-        if (_tabs.size() > 1)
-        {
-            const auto tabViewItem = eventArgs.Item();
-            _RemoveTabViewItem(tabViewItem);
-        }
-
-        // To close the window here, we need to close the hosting window.
-        // As such, we cannot use a more straightforward way.
-        else {
-            _lastTabClosedHandlers();
-        }
+        const auto tabViewItem = eventArgs.Item();
+        _RemoveTabViewItem(tabViewItem);
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
     }
@@ -840,14 +825,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (eventArgs.GetCurrentPoint(_root).Properties().IsMiddleButtonPressed())
         {
-            // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-            if (_tabs.size() > 1)
-            {
-                _RemoveTabViewItem(sender);
-            }
-            else {
-                _lastTabClosedHandlers();
-            }
+            _RemoveTabViewItem(sender);
             eventArgs.Handled(true);
         }
     }
@@ -858,6 +836,11 @@ namespace winrt::TerminalApp::implementation
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
+        // To close the window here, we need to close the hosting window.
+        if (_tabs.size() == 1)
+		{
+			_lastTabClosedHandlers();
+        }
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 

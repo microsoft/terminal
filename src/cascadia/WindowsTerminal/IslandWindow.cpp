@@ -67,7 +67,6 @@ void IslandWindow::MakeWindow() noexcept
 // - <none>
 // Return Value:
 // - <none>
-
 void IslandWindow::Close()
 {
     PostQuitMessage(0);
