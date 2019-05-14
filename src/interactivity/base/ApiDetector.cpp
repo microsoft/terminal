@@ -78,13 +78,13 @@ NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _Outptr_re
     //       This however has the side-effect of not working on downlevel.
     //       LoadLibraryEx asserts that the flags passed in are valid. If any
     //       invalid flags are passed, it sets the last error to
-    //       STATUS_INVALID_PARAMETER and returns. Since
+    //       ERROR_INVALID_PARAMETER and returns. Since
     //       LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER does not exist on
     //       downlevel Windows, the call will fail there.
     //
     //       To counteract that, we try to load the library skipping forwarders
     //       first under the assumption that we are running on a sufficiently
-    //       new system. If the call fails with STATUS_INVALID_PARAMETER, we
+    //       new system. If the call fails with ERROR_INVALID_PARAMETER, we
     //       know there is a problem with the flags, so we try again without
     //       the NO_FORWARDER part. Because reverse forwarders do not exist on
     //       downlevel (i.e. < Windows 10), we do not run the risk of failing
@@ -98,7 +98,7 @@ NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _Outptr_re
     //       versioning API's behave sanely.
 
     status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER, phModule);
-    if (!NT_SUCCESS(status) && GetLastError() == STATUS_INVALID_PARAMETER)
+    if (!NT_SUCCESS(status) && GetLastError() == ERROR_INVALID_PARAMETER)
     {
         status = TryLoadWellKnownLibrary(lpLibrary, LOAD_LIBRARY_SEARCH_SYSTEM32, phModule);
     }
