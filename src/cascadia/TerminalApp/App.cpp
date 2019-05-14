@@ -671,7 +671,7 @@ namespace winrt::TerminalApp::implementation
         // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
-			_RemoveTabViewItem(_tabView.SelectedItem());
+            _RemoveTabViewItem(_tabView.SelectedItem());
         }
     }
 
@@ -851,8 +851,15 @@ namespace winrt::TerminalApp::implementation
 
 		if (tabIndexFromControl == focusedTabIndex)
 		{
-			if (focusedTabIndex >= _tabs.size()) focusedTabIndex = _tabs.size() - 1;
-			if (focusedTabIndex < 0) focusedTabIndex = 0;
+            if (focusedTabIndex >= _tabs.size())
+            {
+                focusedTabIndex = _tabs.size() - 1;
+            }
+
+            if (focusedTabIndex < 0) {
+                focusedTabIndex = 0;
+            }
+
 			_SelectTab(focusedTabIndex);
 		}
     }
