@@ -220,6 +220,25 @@ namespace winrt::TerminalApp::implementation
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
 
+            // add the keyboard shortcuts for the first 10 profiles
+            if (profileIndex < 10)
+            {
+                auto profileShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+                profileShortcut.Modifiers(Windows::System::VirtualKeyModifiers::Control | Windows::System::VirtualKeyModifiers::Shift);
+                
+                if (profileIndex == 9)
+                {
+                    // the last tab is actually 0 in the shortcut, so make sure to handle that
+                    profileShortcut.Key(Windows::System::VirtualKey::Number0);
+                }
+                else
+                {
+                    // VK_Number1 starts at 48
+                    profileShortcut.Key(static_cast<Windows::System::VirtualKey>(49 + profileIndex));
+                }
+                profileMenuItem.KeyboardAccelerators().Append(profileShortcut);
+            }
+
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
             profileMenuItem.Text(hName);
@@ -253,6 +272,10 @@ namespace winrt::TerminalApp::implementation
 
             settingsItem.Click({ this, &App::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
+
+            // Using alternate method here than VirtualKey due to https://github.com/microsoft/microsoft-ui-xaml/issues/708
+            // this should really use KeyboardAccelerator API bug above bug in framework prevents it, using override
+            settingsItem.KeyboardAcceleratorTextOverride(L"Control + ,");
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
