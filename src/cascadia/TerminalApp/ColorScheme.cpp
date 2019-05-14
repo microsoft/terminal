@@ -134,6 +134,25 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         const auto color = Utils::ColorFromHexString(bgString.c_str());
         result._defaultBackground = color;
     }
+
+	//Legacy Deserialization. Leave in place to allow forward compatibility
+	if (json.HasKey(TABLE_KEY))
+	{
+		const auto table = json.GetNamedArray(TABLE_KEY);
+		int i = 0;
+
+		for (auto v : table)
+		{
+			if (v.ValueType() == JsonValueType::String)
+			{
+				auto str = v.GetString();
+				auto color = Utils::ColorFromHexString(str.c_str());
+				result._table[i] = color;
+			}
+			i++;
+		}
+	}
+
 	for (int i = 0; i < TABLE_SIZE; i++)
 	{
 		auto current = TABLE_COLORS[i];
