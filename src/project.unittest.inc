@@ -26,6 +26,7 @@ TEST_CODE               = 1
 INCLUDES = \
     $(INCLUDES); \
     $(CONSOLE_SRC_PATH)\inc\test; \
+    $(CONSOLE_SRC_PATH)\..\..\inc; \
     $(ONECORESDKTOOLS_INTERNAL_INC_PATH_L)\wextest\cue; \
 
 TARGETLIBS = \
