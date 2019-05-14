@@ -600,3 +600,12 @@ void Terminal::SetCursorVisible(const bool isVisible) noexcept
     auto& cursor = _buffer->GetCursor();
     cursor.SetIsVisible(isVisible);
 }
+
+// Method Description:
+// - Sets the on/off state of the text cursor.
+// Arguments:
+// - isOn: whether the cursor should be visible
+void Terminal::SetCursorOn(const bool isOn) noexcept 
+{
+    _buffer->GetCursor().SetIsOn(isOn);
+}

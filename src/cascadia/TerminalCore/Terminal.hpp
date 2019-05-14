@@ -96,8 +96,6 @@ public:
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
-    void SetCursorVisible(const bool isVisible) noexcept;
-    void SetCursorOn(const bool isOn) noexcept;
     ULONG GetCursorHeight() const noexcept override;
     ULONG GetCursorPixelWidth() const noexcept override;
     CursorType GetCursorStyle() const noexcept override;
@@ -116,6 +114,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
 
     void SetCursorVisible(const bool isVisible) noexcept;
+    void SetCursorOn(const bool isOn) noexcept;
 
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
