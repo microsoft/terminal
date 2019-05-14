@@ -596,10 +596,6 @@ namespace winrt::TerminalApp::implementation
 
     void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
     {
-
-        // TODO" All these event handles we hook up to the termControl, we need
-        // to put it intp a single method that the Split* methods use too.
-
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
         term.CopyToClipboard([this](auto copiedData) {
@@ -642,6 +638,30 @@ namespace winrt::TerminalApp::implementation
             // Possibly update the icon of the tab.
             _UpdateTabIcon(hostingTab);
         });
+
+        // hostingTab->Closed([](){
+        //     auto tabViewItem = hostingTab->GetTabViewItem();
+        // //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [hostingTab, tabViewItem, this]() {
+
+        //     _RemoveTabViewItem(tabViewItem);
+
+        // });
+        // TODO:
+        // // Add an event handler when the terminal's connection is closed.
+        // hostingTab->GetTerminalControl().ConnectionClosed([=]() {
+        //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [hostingTab, tabViewItem, this]() {
+        //         const GUID tabProfile = hostingTab->GetProfile();
+        //         // Don't just capture this pointer, because the profile might
+        //         // get destroyed before this is called (case in point -
+        //         // reloading settings)
+        //         const auto* const p = _settings->FindProfile(tabProfile);
+
+        //         if (p != nullptr && p->GetCloseOnExit())
+        //         {
+        //             _RemoveTabViewItem(tabViewItem);
+        //         }
+        //     });
+        // });
     }
 
     // Method Description:
@@ -654,12 +674,10 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
         TermControl term{ settings };
 
-
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
         _RegisterTerminalEvents(term, newTab);
-
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -672,24 +690,13 @@ namespace winrt::TerminalApp::implementation
             tabViewItem.Icon(_GetIconFromProfile(*profile));
         }
 
-        // TODO:
-        // // Add an event handler when the terminal's connection is closed.
-        // newTab->GetTerminalControl().ConnectionClosed([=]() {
-        //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
-        //         const GUID tabProfile = newTab->GetProfile();
-        //         // Don't just capture this pointer, because the profile might
-        //         // get destroyed before this is called (case in point -
-        //         // reloading settings)
-        //         const auto* const p = _settings->FindProfile(tabProfile);
-
-        //         if (p != nullptr && p->GetCloseOnExit())
-        //         {
-        //             _RemoveTabViewItem(tabViewItem);
-        //         }
-        //     });
-        // });
-
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
+
+        newTab->Closed([tabViewItem, this](){
+            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
+                _RemoveTabViewItem(tabViewItem);
+            });
+        });
 
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);

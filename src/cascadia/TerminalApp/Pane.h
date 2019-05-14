@@ -3,6 +3,7 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 class Pane
 {
@@ -36,6 +37,7 @@ public:
     void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
+    DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
@@ -48,7 +50,10 @@ private:
 
     bool _lastFocused;
     std::optional<GUID> _profile;
+    winrt::event_token _connectionClosedToken;
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
+    void _SetupChildCloseHandlers();
+    void _AddControlToRoot(winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 };

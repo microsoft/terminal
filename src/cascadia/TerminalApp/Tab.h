@@ -30,6 +30,8 @@ public:
     winrt::hstring CheckTitleUpdate();
     void SetTabText(const winrt::hstring& text);
 
+    DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
+
 private:
 
     std::shared_ptr<Pane> _rootPane;

@@ -1173,7 +1173,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
@@ -1193,6 +1194,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
                              (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
                              (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
+    }
+
+    bool TermControl::CloseOnExit() const noexcept
+    {
+        return _settings.CloseOnExit();
     }
 
     // -------------------------------- WinRT Events ---------------------------------

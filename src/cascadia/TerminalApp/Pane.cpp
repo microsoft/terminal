@@ -7,6 +7,7 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused) :
     _control{ control },
@@ -14,22 +15,36 @@ Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermContro
     _profile{ profile },
     _splitState{ SplitState::None },
     _firstChild{ nullptr },
-    _secondChild{ nullptr }
+    _secondChild{ nullptr },
+    _connectionClosedToken{}
 {
     _root = Controls::Grid{};
-    _root.Children().Append(_control.GetControl());
+    _AddControlToRoot(_control);
 }
 
 Pane::~Pane()
 {
 }
 
-winrt::Windows::UI::Xaml::Controls::Grid Pane::GetRootElement()
+void Pane::_AddControlToRoot(TermControl control)
+{
+    _root.Children().Append(control.GetControl());
+
+    _connectionClosedToken = control.ConnectionClosed([=]() {
+        if (control.CloseOnExit())
+        {
+            // Fire our ConnectionClosed event
+            _closedHandlers();
+        }
+    });
+}
+
+Controls::Grid Pane::GetRootElement()
 {
     return _root;
 }
 
-winrt::Microsoft::Terminal::TerminalControl::TermControl Pane::GetFocusedTerminalControl()
+TermControl Pane::GetFocusedTerminalControl()
 {
     if (_IsLeaf())
     {
@@ -131,6 +146,53 @@ void Pane::CheckUpdateSettings(TerminalSettings settings, GUID profile)
     }
 }
 
+void Pane::_SetupChildCloseHandlers()
+{
+
+    _firstChild->Closed([this](){
+
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+            _control = _secondChild->_control;
+            _profile = _secondChild->_profile;
+            _secondChild->_root.Children().Clear();
+            _lastFocused = _firstChild->_lastFocused || _secondChild->_lastFocused;
+            _root.Children().Clear();
+            _root.ColumnDefinitions().Clear();
+            _root.RowDefinitions().Clear();
+            _separatorRoot = { nullptr };
+            _AddControlToRoot(_control);
+            if (_lastFocused)
+            {
+                _control.GetControl().Focus(FocusState::Programmatic);
+            }
+            _splitState = SplitState::None;
+            _firstChild = nullptr;
+            _secondChild = nullptr;
+        });
+    });
+
+    _secondChild->Closed([this](){
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+            _control = _firstChild->_control;
+            _profile = _firstChild->_profile;
+            _firstChild->_root.Children().Clear();
+            _lastFocused = _firstChild->_lastFocused || _secondChild->_lastFocused;
+            _root.Children().Clear();
+            _root.ColumnDefinitions().Clear();
+            _root.RowDefinitions().Clear();
+            _separatorRoot = { nullptr };
+            _AddControlToRoot(_control);
+            if (_lastFocused)
+            {
+                _control.GetControl().Focus(FocusState::Programmatic);
+            }
+            _splitState = SplitState::None;
+            _firstChild = nullptr;
+            _secondChild = nullptr;
+        });
+    });
+}
+
 void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
 {
     if (!_IsLeaf())
@@ -146,6 +208,9 @@ void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalContr
 
         return;
     }
+    // revoke our handler - the child will take care of the control now.
+    _control.ConnectionClosed(_connectionClosedToken);
+
     _splitState = SplitState::Vertical;
 
     // Create two columns in this grid.
@@ -181,6 +246,7 @@ void Pane::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalContr
     _root.Children().Append(_secondChild->GetRootElement());
     Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
 
+    _SetupChildCloseHandlers();
 
     _lastFocused = false;
 }
@@ -237,5 +303,9 @@ void Pane::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalCon
     _root.Children().Append(_secondChild->GetRootElement());
     Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
 
+    _SetupChildCloseHandlers();
+
     _lastFocused = false;
 }
+
+DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);

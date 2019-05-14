@@ -7,6 +7,7 @@
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
     _focused{ false },
@@ -14,6 +15,11 @@ Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl 
     _rootPane{ nullptr }
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
+
+    _rootPane->Closed([=]() {
+        _closedHandlers();
+    });
+
     _MakeTabViewItem();
 }
 
@@ -126,3 +132,5 @@ void Tab::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalCont
 {
     _rootPane->SplitHorizontal(profile, control);
 }
+
+DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
