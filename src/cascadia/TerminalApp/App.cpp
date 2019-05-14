@@ -330,6 +330,7 @@ namespace winrt::TerminalApp::implementation
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        bindings.OpenSettings([this]() { _OpenSettings(); });
     }
 
     // Method Description:
@@ -372,7 +373,7 @@ namespace winrt::TerminalApp::implementation
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
             // We want file modifications, AND when files are renamed to be
-            // profiles.json. This second case will ofentimes happen with text
+            // profiles.json. This second case will oftentimes happen with text
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             if (!(event == wil::FolderChangeEvent::Modified ||
@@ -656,6 +657,11 @@ namespace winrt::TerminalApp::implementation
     int App::_GetFocusedTabIndex() const
     {
         return _tabView.SelectedIndex();
+    }
+
+    void App::_OpenSettings()
+    {
+        LaunchSettings();
     }
 
     // Method Description:

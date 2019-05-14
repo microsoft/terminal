@@ -73,6 +73,7 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 ## Prerequisites
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
+  - **As of May 2019** this build is only available through Windows Insider Program. You may register and configure Insider Program through your device's system settings.
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You will need at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
 * You will need to install both the following packages in VS ("Workloads" tab in Visual Studio Installer) :
@@ -80,6 +81,10 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
   - "Universal Windows Platform Development"
   - If you're running VS2019, you'll also need to install the "v141 Toolset" and "Visual C++ ATL for x86 and x64"
 * You will also need to enable Developer Mode in the Settings app to enable installing the Terminal app for running locally.
+
+## Debugging
+
+* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only"
 
 ## Contributing
 
