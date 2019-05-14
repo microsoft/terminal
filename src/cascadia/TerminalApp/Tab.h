@@ -3,7 +3,6 @@
 
 #pragma once
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "Pane.h"
 
 class Tab
@@ -16,6 +15,7 @@ public:
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    std::optional<GUID> GetLastFocusedProfile() const noexcept;
 
     bool IsFocused();
     void SetFocused(bool focused);
@@ -25,6 +25,8 @@ public:
     void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
     void CheckFocus();
+
+    void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
 
 private:
 

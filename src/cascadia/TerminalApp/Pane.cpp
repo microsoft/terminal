@@ -6,6 +6,7 @@
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused) :
     _control{ control },
@@ -59,6 +60,24 @@ winrt::Microsoft::Terminal::TerminalControl::TermControl Pane::GetLastFocusedTer
     }
 }
 
+std::optional<GUID> Pane::GetLastFocusedProfile() const noexcept
+{
+    if (_IsLeaf())
+    {
+        return _lastFocused ? _profile : std::nullopt;
+    }
+    else
+    {
+        auto firstFocused = _firstChild->GetLastFocusedProfile();
+        if (firstFocused.has_value())
+        {
+            return firstFocused;
+        }
+        auto secondFocused = _secondChild->GetLastFocusedProfile();
+        return secondFocused;
+    }
+}
+
 bool Pane::WasLastFocused() const noexcept
 {
     return _lastFocused;
@@ -93,6 +112,22 @@ void Pane::CheckFocus()
         _lastFocused = false;
         _firstChild->CheckFocus();
         _secondChild->CheckFocus();
+    }
+}
+
+void Pane::CheckUpdateSettings(TerminalSettings settings, GUID profile)
+{
+    if (!_IsLeaf())
+    {
+        _firstChild->CheckUpdateSettings(settings, profile);
+        _secondChild->CheckUpdateSettings(settings, profile);
+    }
+    else
+    {
+        if (profile == _profile)
+        {
+            _control.UpdateSettings(settings);
+        }
     }
 }
 

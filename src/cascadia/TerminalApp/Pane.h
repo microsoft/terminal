@@ -2,9 +2,7 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
-
 
 class Pane
 {
@@ -21,14 +19,17 @@ public:
     Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused = false);
     ~Pane();
 
-    winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
+    // winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     // winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
+    std::optional<GUID> GetLastFocusedProfile() const noexcept;
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;
     void CheckFocus();
+
+    void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
 
     // GUID GetProfile() const noexcept;
 

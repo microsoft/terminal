@@ -6,6 +6,7 @@
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
     _focused{ false },
@@ -71,11 +72,15 @@ void Tab::SetFocused(bool focused)
     }
 }
 
-// TODO
-// GUID Tab::GetProfile() const noexcept
-// {
-//     return _profile;
-// }
+std::optional<GUID> Tab::GetLastFocusedProfile() const noexcept
+{
+    return _rootPane->GetLastFocusedProfile();
+}
+
+void Tab::CheckUpdateSettings(TerminalSettings settings, GUID profile)
+{
+    _rootPane->CheckUpdateSettings(settings, profile);
+}
 
 void Tab::_Focus()
 {
@@ -88,7 +93,6 @@ void Tab::_Focus()
         lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
     }
 }
-
 
 void Tab::CheckFocus()
 {

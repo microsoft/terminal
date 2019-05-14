@@ -419,24 +419,30 @@ namespace winrt::TerminalApp::implementation
 
             for (auto &tab : _tabs)
             {
-                // TODO
-                // const auto term = tab->GetTerminalControl();
-                // const GUID tabProfile = tab->GetProfile();
-
-                // if (profileGuid == tabProfile)
-                // {
-                //     term.UpdateSettings(settings);
-
-                //     // Update the icons of the tabs with this profile open.
-                //     auto tabViewItem = tab->GetTabViewItem();
-                //     tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem]() {
-                //         // _GetIconFromProfile has to run on the main thread
-                //         tabViewItem.Icon(App::_GetIconFromProfile(profile));
-                //     });
-                // }
+                // Attempt to reload the settings of any panes with this profile
+                tab->CheckUpdateSettings(settings, profileGuid);
             }
         }
 
+        // Update the icon of the tab for the currently focused profile in that tab.
+        for (auto &tab : _tabs)
+        {
+            const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
+            if (lastFocusedProfileOpt.has_value())
+            {
+                const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+
+                auto tabViewItem = tab->GetTabViewItem();
+                tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
+                    // _GetIconFromProfile has to run on the main thread
+                    const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+                    if (matchingProfile)
+                    {
+                        tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
+                    }
+                });
+            }
+        }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Refresh the UI theme
