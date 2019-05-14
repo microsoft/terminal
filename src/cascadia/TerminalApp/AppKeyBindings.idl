@@ -36,7 +36,8 @@ namespace TerminalApp
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
-        ScrollDown
+        ScrollDown,
+        OpenSettings
     };
 
     delegate void CopyTextEventArgs();
@@ -53,6 +54,7 @@ namespace TerminalApp
     delegate void DecreaseFontSizeEventArgs();
     delegate void ScrollUpEventArgs();
     delegate void ScrollDownEventArgs();
+    delegate void OpenSettingsEventArgs();
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -75,5 +77,6 @@ namespace TerminalApp
         event DecreaseFontSizeEventArgs DecreaseFontSize;
         event ScrollUpEventArgs ScrollUp;
         event ScrollDownEventArgs ScrollDown;
+        event OpenSettingsEventArgs OpenSettings;
     }
 }

@@ -12,7 +12,10 @@
     "/ipch/",
     "/dep/",
     "/.vs/",
-    "/build/"
+    "/build/",
+    "/src/cascadia/",
+    "/.nuget/",
+    "/.github/"
   ],
   "SuffixFilters": [
     ".dbb",
