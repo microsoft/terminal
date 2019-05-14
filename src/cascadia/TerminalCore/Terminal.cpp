@@ -590,3 +590,13 @@ const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhi
 
     return result;
 }
+
+// Method Description:
+// - Sets the visibility of the text cursor.
+// Arguments:
+// - isVisible: whether the cursor should be visible
+void Terminal::SetCursorVisible(const bool isVisible) noexcept
+{
+    auto& cursor = _buffer->GetCursor();
+    cursor.SetIsVisible(isVisible);
+}
