@@ -1512,7 +1512,7 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-		DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
+        DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
     if (fSuccess)

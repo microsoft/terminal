@@ -331,6 +331,8 @@ namespace winrt::TerminalApp::implementation
         bindings.PrevTab([this]() { _SelectNextTab(false); });
         bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
         bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
+        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        bindings.OpenSettings([this]() { _OpenSettings(); });
     }
 
     // Method Description:
@@ -373,7 +375,7 @@ namespace winrt::TerminalApp::implementation
             [this](wil::FolderChangeEvent event, PCWSTR fileModified)
         {
             // We want file modifications, AND when files are renamed to be
-            // profiles.json. This second case will ofentimes happen with text
+            // profiles.json. This second case will oftentimes happen with text
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             if (!(event == wil::FolderChangeEvent::Modified ||
@@ -680,8 +682,7 @@ namespace winrt::TerminalApp::implementation
         //         // reloading settings)
         //         const auto* const p = _settings->FindProfile(tabProfile);
 
-        //         // TODO: MSFT:21268795: Need a better story for what should happen when the last tab is closed.
-        //         if (p != nullptr && p->GetCloseOnExit() && _tabs.size() > 1)
+        //         if (p != nullptr && p->GetCloseOnExit())
         //         {
         //             _RemoveTabViewItem(tabViewItem);
         //         }
@@ -708,21 +709,18 @@ namespace winrt::TerminalApp::implementation
         return _tabView.SelectedIndex();
     }
 
+    void App::_OpenSettings()
+    {
+        LaunchSettings();
+    }
+
     // Method Description:
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void App::_CloseFocusedTab()
     {
-        if (_tabs.size() > 1)
-        {
-            int focusedTabIndex = _GetFocusedTabIndex();
-            std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-
-            // We're not calling _FocusTab here because it makes an async dispatch
-            // that is practically guaranteed to not happen before we delete the tab.
-            _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
-            _tabView.Items().RemoveAt(focusedTabIndex);
-            _tabs.erase(_tabs.begin() + focusedTabIndex);
-        }
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        _RemoveTabViewItem(focusedTab->GetTabViewItem());
     }
 
     // Method Description:
@@ -765,6 +763,16 @@ namespace winrt::TerminalApp::implementation
         _SetFocusedTabIndex(
             static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
         );
+    }
+
+    // Method Description:
+    // - Sets focus to the desired tab.
+    void App::_SelectTab(const int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        {
+            _SetFocusedTabIndex(tabIndex);
+        }
     }
 
     // Method Description:
@@ -813,13 +821,9 @@ namespace winrt::TerminalApp::implementation
     // - eventArgs: the event's constituent arguments
     void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
-        // Don't allow the user to close the last tab ..
-        // .. yet.
-        if (_tabs.size() > 1)
-        {
-            const auto tabViewItem = eventArgs.Item();
-            _RemoveTabViewItem(tabViewItem);
-        }
+        const auto tabViewItem = eventArgs.Item();
+        _RemoveTabViewItem(tabViewItem);
+
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
     }
@@ -881,6 +885,12 @@ namespace winrt::TerminalApp::implementation
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
+        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
+        if (_tabs.size() <= 1)
+        {
+            return;
+        }
+
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 
@@ -892,6 +902,9 @@ namespace winrt::TerminalApp::implementation
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
+
+        // ensure tabs and focus is sync
+        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
     }
 
     // Method Description:
