@@ -632,6 +632,23 @@ namespace winrt::TerminalApp::implementation
             {
                 _titleChangeHandlers(newTabTitle);
             }
+
+            // Copied from _ReloadSettings
+            const auto lastFocusedProfileOpt = hostingTab->GetLastFocusedProfile();
+            if (lastFocusedProfileOpt.has_value())
+            {
+                const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+
+                auto tabViewItem = hostingTab->GetTabViewItem();
+                tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
+                    // _GetIconFromProfile has to run on the main thread
+                    const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+                    if (matchingProfile)
+                    {
+                        tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
+                    }
+                });
+            }
         });
     }
 

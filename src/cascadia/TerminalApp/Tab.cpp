@@ -28,18 +28,7 @@ Tab::~Tab()
 void Tab::_MakeTabViewItem()
 {
     _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
-    // auto f = _tabViewItem.FontSize();
     _tabViewItem.FontSize(12);
-    // auto a = 0;
-    // a++;
-
-    // const auto title = _control.Title();
-
-    // _tabViewItem.Header(title);
-
-    // TODO
-    // _control.TitleChanged([=](auto newTitle){
-    // });
 }
 
 winrt::Windows::UI::Xaml::UIElement Tab::GetRootElement()
@@ -50,14 +39,12 @@ winrt::Windows::UI::Xaml::UIElement Tab::GetRootElement()
 winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetFocusedTerminalControl()
 {
     return _rootPane->GetFocusedTerminalControl();
-    // return _control;
 }
 
 winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
 {
     return _tabViewItem;
 }
-
 
 bool Tab::IsFocused()
 {
@@ -87,8 +74,7 @@ void Tab::CheckUpdateSettings(TerminalSettings settings, GUID profile)
 void Tab::_Focus()
 {
     _focused = true;
-    // _control.GetControl().Focus(FocusState::Programmatic);
-    // _rootPane->SetFocused(true);
+
     auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
     if (lastFocusedControl)
     {
