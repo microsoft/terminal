@@ -38,7 +38,8 @@ namespace TerminalApp
         ScrollUp,
         ScrollDown,
         ScrollUpPage,
-        ScrollDownPage
+        ScrollDownPage,
+        OpenSettings
     };
 
     delegate void CopyTextEventArgs();
@@ -57,6 +58,7 @@ namespace TerminalApp
     delegate void ScrollDownEventArgs();
     delegate void ScrollUpPageEventArgs();
     delegate void ScrollDownPageEventArgs();
+    delegate void OpenSettingsEventArgs();
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -81,5 +83,6 @@ namespace TerminalApp
         event ScrollDownEventArgs ScrollDown;
         event ScrollUpPageEventArgs ScrollUpPage;
         event ScrollDownPageEventArgs ScrollDownPage;
+        event OpenSettingsEventArgs OpenSettings;
     }
 }

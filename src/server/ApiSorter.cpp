@@ -165,10 +165,10 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         const auto trace = Tracing::s_TraceApiCall(Status, Descriptor->TraceName);
         Status = (*Descriptor->Routine)(Message, &ReplyPending);
     }
-	if (Status != STATUS_BUFFER_TOO_SMALL)
-	{
+    if (Status != STATUS_BUFFER_TOO_SMALL)
+    {
         Status = NTSTATUS_FROM_HRESULT(Status);
-	}
+    }
 
     if (!ReplyPending)
     {
