@@ -671,15 +671,7 @@ namespace winrt::TerminalApp::implementation
         // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
         if (_tabs.size() > 1)
         {
-            int focusedTabIndex = _GetFocusedTabIndex();
-            std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-
-            // We're not calling _FocusTab here because it makes an async dispatch
-            // that is practically guaranteed to not happen before we delete the tab.
-            _tabView.SelectedIndex((focusedTabIndex > 0) ? focusedTabIndex - 1 : 1);
-            _tabView.Items().RemoveAt(focusedTabIndex);
-            _tabs.erase(_tabs.begin() + focusedTabIndex);
-            _UpdateTabView();
+			_RemoveTabViewItem(_tabView.SelectedItem());
         }
     }
 
