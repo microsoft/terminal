@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
+#include "../../inc/DefaultSettings.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -107,7 +108,6 @@ void CascadiaSettings::_CreateDefaultSchemes()
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
-
 }
 
 // Method Description:
@@ -120,15 +120,14 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile defaultProfile{};
-    defaultProfile.SetFontFace(L"Consolas");
-    defaultProfile.SetCommandline(L"cmd.exe");
-    defaultProfile.SetColorScheme({ L"Campbell" });
-    defaultProfile.SetAcrylicOpacity(0.75);
-    defaultProfile.SetUseAcrylic(true);
-    defaultProfile.SetName(L"cmd");
-
-    _globals.SetDefaultProfile(defaultProfile.GetGuid());
+    Profile cmdProfile{};
+    cmdProfile.SetFontFace(L"Consolas");
+    cmdProfile.SetCommandline(L"cmd.exe");
+    cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+    cmdProfile.SetColorScheme({ L"Campbell" });
+    cmdProfile.SetAcrylicOpacity(0.75);
+    cmdProfile.SetUseAcrylic(true);
+    cmdProfile.SetName(L"cmd");
 
     Profile powershellProfile{};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
@@ -145,13 +144,16 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
+    powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
-    _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
+    _profiles.emplace_back(cmdProfile);
+
+    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
@@ -227,6 +229,36 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 	keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
 							  KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
 										VK_PRIOR });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('1') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('2') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('3') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('4') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('5') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('6') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('7') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('8') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('9') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('0') });
 }
 
 // Method Description:

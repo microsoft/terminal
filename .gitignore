@@ -271,7 +271,7 @@ MSG*.bin
 # python
 *.pyc
 
-**Generated Files/
+**/Generated Files/
 **/Merged/*
 **/Unmerged/*
 profiles.json
