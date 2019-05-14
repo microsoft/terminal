@@ -57,6 +57,11 @@ The Windows Terminal is in the _very early_ alpha stage, and not ready for the g
 
 Otherwise, you'll need to wait until Mid-June for an official preview build to drop.
 
+## I built and ran the new Terminal, but I just get a blank window app!
+
+Make sure your are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
+To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
+
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
 
 Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
