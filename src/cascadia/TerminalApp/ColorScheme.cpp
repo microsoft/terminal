@@ -19,22 +19,22 @@ static const std::wstring BACKGROUND_KEY{ L"background" };
 static const std::int16_t TABLE_SIZE = 16;
 static const std::wstring TABLE_COLORS[TABLE_SIZE] =
 {
-	L"black",
-	L"red",
-	L"green",
-	L"yellow",
-	L"blue",
-	L"purple",
-	L"cyan",
-	L"white",
-	L"brightBlack",
-	L"brightRed",
-	L"brightGreen",
-	L"brightYellow",
-	L"brightBlue",
-	L"brightPurple",
-	L"brightCyan",
-	L"brightWhite"
+    L"black",
+    L"red",
+    L"green",
+    L"yellow",
+    L"blue",
+    L"purple",
+    L"cyan",
+    L"white",
+    L"brightBlack",
+    L"brightRed",
+    L"brightGreen",
+    L"brightYellow",
+    L"brightBlue",
+    L"brightPurple",
+    L"brightCyan",
+    L"brightWhite"
 };
 
 ColorScheme::ColorScheme() :
@@ -96,14 +96,14 @@ JsonObject ColorScheme::ToJson() const
     jsonObject.Insert(FOREGROUND_KEY, fg);
     jsonObject.Insert(BACKGROUND_KEY, bg);
  
-	for (int i = 0; i < TABLE_SIZE; i++)
-	{
-		auto current = TABLE_COLORS[i];
-		auto& color = _table[i];
-		auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
-				
-		jsonObject.Insert(current, s);
-	}
+    for (int i = 0; i < TABLE_SIZE; i++)
+    {
+        auto current = TABLE_COLORS[i];
+        auto& color = _table[i];
+        auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
+
+        jsonObject.Insert(current, s);
+    }
 
     return jsonObject;
 }
@@ -135,34 +135,34 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         result._defaultBackground = color;
     }
 
-	//Legacy Deserialization. Leave in place to allow forward compatibility
-	if (json.HasKey(TABLE_KEY))
-	{
-		const auto table = json.GetNamedArray(TABLE_KEY);
-		int i = 0;
+    //Legacy Deserialization. Leave in place to allow forward compatibility
+    if (json.HasKey(TABLE_KEY))
+    {
+        const auto table = json.GetNamedArray(TABLE_KEY);
+        int i = 0;
 
-		for (auto v : table)
-		{
-			if (v.ValueType() == JsonValueType::String)
-			{
-				auto str = v.GetString();
-				auto color = Utils::ColorFromHexString(str.c_str());
-				result._table[i] = color;
-			}
-			i++;
-		}
-	}
+        for (auto v : table)
+        {
+            if (v.ValueType() == JsonValueType::String)
+            {
+                auto str = v.GetString();
+                auto color = Utils::ColorFromHexString(str.c_str());
+                result._table[i] = color;
+            }
+            i++;
+        }
+    }
 
-	for (int i = 0; i < TABLE_SIZE; i++)
-	{
-		auto current = TABLE_COLORS[i];
-		if (json.HasKey(current))
-		{
-			const auto str = json.GetNamedString(current);
-			const auto color = Utils::ColorFromHexString(str.c_str());
-			result._table[i] = color;
-		}
-	}
+    for (int i = 0; i < TABLE_SIZE; i++)
+    {
+        auto current = TABLE_COLORS[i];
+        if (json.HasKey(current))
+        {
+            const auto str = json.GetNamedString(current);
+            const auto color = Utils::ColorFromHexString(str.c_str());
+            result._table[i] = color;
+        }
+    }
 
     return result;
 }
