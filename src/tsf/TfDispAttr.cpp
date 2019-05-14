@@ -53,8 +53,7 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
 {
     HRESULT hr = E_FAIL;
 
-    ULONG ulNumProp;
-    ulNumProp = (ULONG) m_DispAttrProp.Count();
+    ULONG ulNumProp = static_cast<ULONG>(m_DispAttrProp.size());
     if (ulNumProp) {
         const GUID **ppguidProp;
         //
@@ -65,8 +64,8 @@ HRESULT CicDisplayAttributeMgr::GetDisplayAttributeTrackPropertyRange(TfEditCook
             hr = E_OUTOFMEMORY;
         }
         else {
-            for (ULONG i=0; i<ulNumProp; i++) {
-                ppguidProp[i] = m_DispAttrProp.GetAt(i);
+            for (ULONG i = 0; i < ulNumProp; i++) {
+                ppguidProp[i] = &m_DispAttrProp.at(i);
             }
 
             CComPtr<ITfReadOnlyProperty> pProp;
@@ -180,19 +179,11 @@ HRESULT CicDisplayAttributeMgr::InitDisplayAttributeInstance(ITfCategoryMgr* pca
          // add System Display Attribute first.
          // so no other Display Attribute property overwrite it.
          //
-         GUID *pguid;
-
-         pguid = m_DispAttrProp.Append();
-         if (pguid != NULL) {
-             *pguid = GUID_PROP_ATTRIBUTE;
-         }
+         m_DispAttrProp.emplace_back(GUID_PROP_ATTRIBUTE);
 
          while(pEnumProp->Next(1, &guidProp, NULL) == S_OK) {
              if (!IsEqualGUID(guidProp, GUID_PROP_ATTRIBUTE)) {
-                 pguid = m_DispAttrProp.Append();
-                 if (pguid != NULL) {
-                     *pguid = guidProp;
-                 }
+                 m_DispAttrProp.emplace_back(guidProp);
              }
          }
     }

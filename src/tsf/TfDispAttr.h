@@ -21,8 +21,6 @@ Notes:
 
 #pragma once
 
-#include "StructureArray.h"
-
 class CicDisplayAttributeMgr
 {
 public:
@@ -52,5 +50,5 @@ public:
 
 private:
     CComQIPtr<ITfDisplayAttributeMgr>  m_pDAM;
-    CStructureArray<GUID>              m_DispAttrProp;
+    std::vector<GUID>              m_DispAttrProp;
 };

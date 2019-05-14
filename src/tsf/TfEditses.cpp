@@ -217,7 +217,7 @@ HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& 
 
 [[nodiscard]]
 HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rangeIn,
-                                                 std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr,
+                                                 std::wstring& CompStr, std::vector<TfGuidAtom>& CompGuid, std::wstring& ResultStr,
                                                  BOOL bInWriteSession,
                                                  CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
 {
@@ -387,7 +387,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
             TF_DISPLAYATTRIBUTE da;
             da.bAttr = TF_ATTR_INPUT;
 
-            CompGuid.FillData(guidatom, ulcch0);
+            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
             CompStr.append(wstr0, ulcch0);
         }
 
@@ -420,7 +420,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
 [[nodiscard]]
 HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRange* gap_range, LONG result_comp,
-                                                         std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr)
+                                                         std::wstring& CompStr, std::vector<TfGuidAtom>& CompGuid, std::wstring& ResultStr)
 {
     TfGuidAtom guidatom;
     guidatom = TF_INVALID_GUIDATOM;
@@ -450,7 +450,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRan
         }
 
         if (result_comp <= 0) {
-            CompGuid.FillData(guidatom, ulcch0);
+            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
             CompStr.append(wstr0, ulcch0);
         }
         else {
@@ -478,7 +478,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
                                                               TF_DISPLAYATTRIBUTE da,
                                                               TfGuidAtom guidatom,
                                                               std::wstring& CompStr,
-                                                              CCompTfGuidAtom& CompGuid,
+                                                              std::vector<TfGuidAtom>& CompGuid,
                                                               std::wstring& ResultStr)
 {
     BOOL fEmpty;
@@ -507,7 +507,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
             if (guidatom == TF_INVALID_GUIDATOM) {
                 da.bAttr = TF_ATTR_INPUT;
             }
-            CompGuid.FillData(guidatom, ulcch0);
+            CompGuid.insert(CompGuid.end(), ulcch0, guidatom);
             CompStr.append(wstr0, ulcch0);
         }
         else if (bInWriteSession) {
@@ -838,7 +838,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
                                                                     CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
 {
     std::wstring CompStr;
-    CCompTfGuidAtom CompGuid;
+    std::vector<TfGuidAtom> CompGuid;
     CCompCursorPos CompCursorPos;
     std::wstring ResultStr;
     BOOL fIgnorePreviousCompositionResult = FALSE;
@@ -877,17 +877,17 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
             return conv_area->DrawResult(ResultStr);
         }
         if (!CompStr.empty()) {
-            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            const size_t cchDisplayAttribute = CompGuid.size();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
 
-            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+            for (size_t i = 0; i < cchDisplayAttribute; i++) {
                 TF_DISPLAYATTRIBUTE da;
                 ZeroMemory(&da, sizeof(da));
                 da.bAttr = TF_ATTR_OTHER;
 
                 GUID guid;
-                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                if (SUCCEEDED(cat->GetGUID(CompGuid.at(i), &guid))) {
                     CLSID clsid;
                     CComPtr<ITfDisplayAttributeInfo> dai;
                     if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
@@ -959,7 +959,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
 
     // Make interim character
     std::wstring CompStr;
-    CCompTfGuidAtom CompGuid;
+    std::vector<TfGuidAtom> CompGuid;
     std::wstring _tempResultStr;
 
     RETURN_IF_FAILED(_GetTextAndAttribute(ec, InterimRange,
@@ -984,16 +984,16 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
         RETURN_HR_IF_NULL(E_FAIL, conv_area);
 
         if (!CompStr.empty()) {
-            ULONG cchDisplayAttribute = (ULONG)CompGuid.Count();
+            const size_t cchDisplayAttribute = CompGuid.size();
             std::vector<TF_DISPLAYATTRIBUTE> DisplayAttributes;
             DisplayAttributes.reserve(cchDisplayAttribute);
 
-            for (DWORD i = 0; i < cchDisplayAttribute; i++) {
+            for (size_t i = 0; i < cchDisplayAttribute; i++) {
                 TF_DISPLAYATTRIBUTE da;
                 ZeroMemory(&da, sizeof(da));
                 da.bAttr = TF_ATTR_OTHER;
                 GUID  guid;
-                if (SUCCEEDED(cat->GetGUID(*CompGuid.GetAt(i), &guid))) {
+                if (SUCCEEDED(cat->GetGUID(CompGuid.at(i), &guid))) {
                     CLSID clsid;
                     CComPtr<ITfDisplayAttributeInfo> dai;
                     if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {

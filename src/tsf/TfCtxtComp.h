@@ -21,30 +21,6 @@ Notes:
 
 #pragma once
 
-#include "StructureArray.h"
-
-/////////////////////////////////////////////////////////////////////////////
-// CCompAttribute
-
-class CCompAttribute : public CStructureArray<BYTE>
-{
-public:
-    CCompAttribute(BYTE* lpAttr=NULL, DWORD dwLen=0) : CStructureArray<BYTE>(dwLen)
-    {
-        if (! InsertAt(0, dwLen)) {
-            return;
-        }
-
-        BYTE* pb = GetAt(0);
-        if (pb == NULL) {
-            return;
-        }
-
-        memcpy(pb, lpAttr, dwLen * sizeof(BYTE));
-    }
-    virtual ~CCompAttribute() { };
-};
-
 /////////////////////////////////////////////////////////////////////////////
 // CCompCursorPos
 
@@ -65,31 +41,4 @@ public:
 
 private:
     DWORD m_CursorPosition;
-};
-
-/////////////////////////////////////////////////////////////////////////////
-// CCompTfGuidAtom
-
-class CCompTfGuidAtom : public CStructureArray<TfGuidAtom>
-{
-public:
-    CCompTfGuidAtom() { };
-    virtual ~CCompTfGuidAtom() { };
-
-    operator TfGuidAtom* () { return GetAt(0); }
-
-    DWORD FillData(const TfGuidAtom& data, DWORD dwLen)
-    {
-        TfGuidAtom *psTemp = Append(dwLen);
-        if (psTemp == NULL) {
-            return 0;
-        }
-
-        DWORD index = dwLen;
-        while (index--) {
-            *psTemp++ = data;
-        }
-
-        return dwLen;
-    }
 };

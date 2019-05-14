@@ -84,7 +84,7 @@ protected:
 
     [[nodiscard]]
     HRESULT _GetTextAndAttribute(TfEditCookie ec, ITfRange* range,
-                                 std::wstring& CompStr, CCompTfGuidAtom CompGuid,
+                                 std::wstring& CompStr, std::vector<TfGuidAtom> CompGuid,
                                  BOOL bInWriteSession,
                                  CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr)
     {
@@ -97,14 +97,14 @@ protected:
 
     [[nodiscard]]
     HRESULT _GetTextAndAttribute(TfEditCookie ec, ITfRange* range,
-                                 std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr,
+                                 std::wstring& CompStr, std::vector<TfGuidAtom>& CompGuid, std::wstring& ResultStr,
                                  BOOL bInWriteSession,
                                  CicCategoryMgr* pCicCatMgr, CicDisplayAttributeMgr* pCicDispAttr);
 
 
     [[nodiscard]]
     HRESULT _GetTextAndAttributeGapRange(TfEditCookie ec, ITfRange* gap_range, LONG result_comp,
-                                         std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr);
+                                         std::wstring& CompStr, std::vector<TfGuidAtom>& CompGuid, std::wstring& ResultStr);
 
     [[nodiscard]]
     HRESULT _GetTextAndAttributePropertyRange(TfEditCookie ec, ITfRange* pPropRange,
@@ -113,7 +113,7 @@ protected:
                                               BOOL bInWriteSession,
                                               TF_DISPLAYATTRIBUTE da,
                                               TfGuidAtom guidatom,
-                                              std::wstring& CompStr, CCompTfGuidAtom& CompGuid, std::wstring& ResultStr);
+                                              std::wstring& CompStr, std::vector<TfGuidAtom>& CompGuid, std::wstring& ResultStr);
 
     [[nodiscard]]
     HRESULT _GetNoDisplayAttributeRange(TfEditCookie ec, ITfRange* range,
