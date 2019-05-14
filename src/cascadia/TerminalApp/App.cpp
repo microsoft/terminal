@@ -832,7 +832,7 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.size() == 1)
         {
-		    _lastTabClosedHandlers();
+            _lastTabClosedHandlers();
         }
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
