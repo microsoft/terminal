@@ -96,8 +96,10 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle); // DECSCUSR
         virtual bool SetCursorColor(const COLORREF cursorColor);
 
-        virtual bool SetColorTableEntry(const size_t tableIndex,
-                                        const DWORD dwColor); // OscColorTable
+        virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor); // OscColorTable
+        virtual bool SetDefaultForeground(const DWORD /*dwColor*/); // OSCDefaultForeground
+        virtual bool SetDefaultBackground(const DWORD /*dwColor*/); // OSCDefaultBackground
+
         virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                         _In_reads_(cParams) const unsigned short* const rgusParams,
                                         const size_t cParams); // DTTERM_WindowManipulation

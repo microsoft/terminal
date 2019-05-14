@@ -70,8 +70,10 @@ public:
     COORD GetCursorPosition() override;
     bool EraseCharacters(const unsigned int numChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
-    bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
+    bool SetDefaultForeground(const COLORREF dwColor) override;
+    bool SetDefaultBackground(const COLORREF dwColor) override;
     #pragma endregion
 
     #pragma region ITerminalInput

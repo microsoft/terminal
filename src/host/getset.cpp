@@ -2170,3 +2170,61 @@ HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) 
     CATCH_RETURN();
 
 }
+
+// Method Description:
+// - Sets the default foreground color to the color specified in value.
+// Arguments:
+// - value: the new RGB value to use for the default foreground color
+// Return Value:
+// - S_OK
+[[nodiscard]]
+HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
+{
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetDefaultForegroundColor(value);
+
+        // Update the screen colors if we're not a pty
+        // No need to force a redraw in pty mode.
+        if (g.pRender && !gci.IsInVtIoMode())
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+
+}
+
+// Method Description:
+// - Sets the default background color to the color specified in value.
+// Arguments:
+// - value: the new RGB value to use for the default background color
+// Return Value:
+// - S_OK
+[[nodiscard]]
+HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
+{
+    try
+    {
+        Globals& g = ServiceLocator::LocateGlobals();
+        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+        gci.SetDefaultBackgroundColor(value);
+
+        // Update the screen colors if we're not a pty
+        // No need to force a redraw in pty mode.
+        if (g.pRender && !gci.IsInVtIoMode())
+        {
+            g.pRender->TriggerRedrawAll();
+        }
+
+        return S_OK;
+    }
+    CATCH_RETURN();
+
+}

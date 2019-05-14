@@ -1853,6 +1853,45 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
     return fSuccess;
 }
 
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+
+    fSuccess = !!_conApi->PrivateSetDefaultForeground(dwColor);
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+    fSuccess = !!_conApi->PrivateSetDefaultBackground(dwColor);
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
 //Routine Description:
 // Window Manipulation - Performs a variety of actions relating to the window,
 //      such as moving the window position, resizing the window, querying

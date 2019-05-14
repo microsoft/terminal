@@ -62,6 +62,8 @@ public:
     virtual bool EnableAnyEventMouseMode(const bool /*fEnabled*/) { return false; } // ?1003
     virtual bool EnableAlternateScroll(const bool /*fEnabled*/) { return false; } // ?1007
     virtual bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) { return false; } // OSCColorTable
+    virtual bool SetDefaultForeground(const DWORD /*dwColor*/) { return false; } // OSCDefaultForeground
+    virtual bool SetDefaultBackground(const DWORD /*dwColor*/) { return false; } // OSCDefaultBackground
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) { return false; } // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) { return false; } // EL

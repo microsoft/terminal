@@ -131,8 +131,13 @@ namespace Microsoft::Console::VirtualTerminal
             SetIconAndWindowTitle = 0,
             SetWindowIcon = 1,
             SetWindowTitle = 2,
+            SetWindowProperty = 3, // Not implemented
             SetColor = 4,
+            SetForegroundColor = 10, // WIP
+            SetBackgroundColor = 11, // WIP
             SetCursorColor = 12,
+            ResetForegroundColor = 110, // Not implemented
+            ResetBackgroundColor = 111, // Not implemented
             ResetCursorColor = 112,
         };
 

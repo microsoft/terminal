@@ -99,3 +99,9 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]]
 HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept;
+
+[[nodiscard]]
+HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept;
+
+[[nodiscard]]
+HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept;

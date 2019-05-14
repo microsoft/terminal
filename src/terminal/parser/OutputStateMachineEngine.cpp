@@ -697,6 +697,8 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetColor:
         fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
+    case OscActionCodes::SetForegroundColor:
+    case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
         fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
         break;
@@ -722,6 +724,16 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             break;
         case OscActionCodes::SetColor:
             fSuccess = _dispatch->SetColorTableEntry(tableIndex, dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+
+        case OscActionCodes::SetForegroundColor:
+            fSuccess = _dispatch->SetDefaultForeground(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+
+        case OscActionCodes::SetBackgroundColor:
+            fSuccess = _dispatch->SetDefaultBackground(dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
             break;
         case OscActionCodes::SetCursorColor:
@@ -1476,8 +1488,8 @@ bool OutputStateMachineEngine::s_ParseColorSpec(_In_reads_(cchBuffer) const wcha
 //          "rgb:<red>/<green>/<blue>"
 //          where <color> is two hex digits
 // Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pwchOscStringBuffer - a pointer to point to the Osc String to parse.
+// - cchOscString - a pointer place the length of ppwchTitle into.
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
@@ -1553,8 +1565,7 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
 //          "rgb:<red>/<green>/<blue>"
 //          where <color> is two hex digits
 // Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pRgb - a pointer too place the color into
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 bool OutputStateMachineEngine::_GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,

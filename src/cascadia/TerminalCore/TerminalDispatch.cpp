@@ -75,3 +75,14 @@ bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorSty
 {
     return _terminalApi.SetCursorStyle(cursorStyle);
 }
+
+
+bool TerminalDispatch::SetDefaultForeground(const DWORD dwColor)
+{
+    return _terminalApi.SetDefaultForeground(dwColor);
+}
+
+bool TerminalDispatch::SetDefaultBackground(const DWORD dwColor)
+{
+    return _terminalApi.SetDefaultBackground(dwColor);
+}

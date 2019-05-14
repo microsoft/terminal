@@ -776,6 +776,28 @@ public:
         return _fPrivateSetColorTableEntryResult;
     }
 
+    BOOL PrivateSetDefaultForeground(const COLORREF value) const noexcept override
+    {
+        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
+        if (_fPrivateSetDefaultColorResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedColorValue, value);
+        }
+
+        return _fPrivateSetDefaultColorResult;
+    }
+
+    BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override
+    {
+        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
+        if (_fPrivateSetDefaultColorResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedColorValue, value);
+        }
+
+        return _fPrivateSetDefaultColorResult;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;
@@ -1377,6 +1399,8 @@ public:
     bool _fPrivateSetColorTableEntryResult = false;
     short _expectedColorTableIndex = -1;
     COLORREF _expectedColorValue = INVALID_COLOR;
+
+    bool _fPrivateSetDefaultColorResult = false;
 
 private:
     HANDLE _hCon;

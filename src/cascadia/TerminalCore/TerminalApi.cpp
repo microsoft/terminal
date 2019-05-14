@@ -157,7 +157,7 @@ bool Terminal::SetWindowTitle(std::wstring_view title)
 // - dwColor: the new COLORREF to use as that color table value.
 // Return Value:
 // - true iff we successfully updated the color table entry.
-bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
+bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor)
 {
     if (tableIndex > _colorTable.size())
     {
@@ -217,5 +217,23 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     _buffer->GetCursor().SetType(finalCursorType);
     _buffer->GetCursor().SetBlinkingAllowed(fShouldBlink);
 
+    return true;
+}
+
+bool Terminal::SetDefaultForeground(const COLORREF dwColor)
+{
+    _defaultFg = dwColor;
+
+    // Repaint everything - the colors might have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
+    return true;
+}
+
+bool Terminal::SetDefaultBackground(const COLORREF dwColor)
+{
+    _defaultBg = dwColor;
+
+    // Repaint everything - the colors might have changed
+    _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
