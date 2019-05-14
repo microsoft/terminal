@@ -93,7 +93,7 @@ HRESULT CEditSessionObject::GetAllTextRange(TfEditCookie ec, ITfContext* ic, ITf
     //
     // Create the range that covers all the text.
     //
-    CComPtr<ITfRange> rangeFull;
+    wil::com_ptr_nothrow<ITfRange> rangeFull;
     if (FAILED(hr = ic->GetStart(ec, &rangeFull))) {
         return hr;
     }
@@ -108,8 +108,6 @@ HRESULT CEditSessionObject::GetAllTextRange(TfEditCookie ec, ITfContext* ic, ITf
     }
 
     *lpTextLength = cch;
-
-    rangeFull.Release();
 
     return S_OK;
 }
@@ -171,7 +169,7 @@ HRESULT CEditSessionObject::_GetCursorPosition(TfEditCookie ec, CCompCursorPos& 
     sel.range = NULL;
 
     if (SUCCEEDED(hr = pic->GetSelection(ec, TF_DEFAULT_SELECTION, 1, &sel, &cFetched))) {
-        CComPtr<ITfRange> start;
+        wil::com_ptr_nothrow<ITfRange> start;
         LONG ich;
         TF_HALTCOND hc;
 
@@ -233,7 +231,7 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
     // Otherwise, result range is the same to input range.
     //
     LONG result_comp;
-    CComPtr<ITfRange> no_display_attribute_range;
+    wil::com_ptr_nothrow<ITfRange> no_display_attribute_range;
     if (FAILED(hr = rangeIn->Clone(&no_display_attribute_range))) {
         return hr;
     }
@@ -243,13 +241,13 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
     if (FAILED(hr = _GetNoDisplayAttributeRange(ec, rangeIn,
                                                 guids, guid_size,
-                                                no_display_attribute_range))) {
+                                                no_display_attribute_range.get()))) {
         return hr;
     }
 
 
 
-    CComPtr<ITfReadOnlyProperty> propComp;
+    wil::com_ptr_nothrow<ITfReadOnlyProperty> propComp;
     if (FAILED(hr = pic->TrackProperties(guids, guid_size,       // system property
                                          NULL, 0,                // application property
                                          &propComp))) {
@@ -257,21 +255,21 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
     }
 
 
-    CComPtr<IEnumTfRanges> enumComp;
+    wil::com_ptr_nothrow<IEnumTfRanges> enumComp;
     if (FAILED(hr = propComp->EnumRanges(ec, &enumComp, rangeIn))) {
         return hr;
     }
 
-    CComPtr<ITfRange>  range;
+    wil::com_ptr_nothrow<ITfRange> range;
     while (enumComp->Next(1, &range, NULL) == S_OK) {
         VARIANT var;
         BOOL fCompExist = FALSE;
 
-        hr = propComp->GetValue(ec, range, &var);
+        hr = propComp->GetValue(ec, range.get(), &var);
         if (S_OK == hr) {
 
-            CComQIPtr<IEnumTfPropertyValue> EnumPropVal(var.punkVal);
-            if (EnumPropVal) {
+            wil::com_ptr_nothrow<IEnumTfPropertyValue> EnumPropVal;
+            if (wil::try_com_query_to(var.punkVal, &EnumPropVal)) {
                 TF_PROPERTYVAL tfPropertyVal;
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK) {
@@ -297,36 +295,36 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
         ULONG ulNumProp;
 
-        CComPtr<IEnumTfRanges> enumProp;
-        CComPtr<ITfReadOnlyProperty> prop;
-        if (FAILED(hr = pCicDispAttr->GetDisplayAttributeTrackPropertyRange(ec, pic, range, &prop, &enumProp, &ulNumProp))) {
+        wil::com_ptr_nothrow<IEnumTfRanges> enumProp;
+        wil::com_ptr_nothrow<ITfReadOnlyProperty> prop;
+        if (FAILED(hr = pCicDispAttr->GetDisplayAttributeTrackPropertyRange(ec, pic, range.get(), &prop, &enumProp, &ulNumProp))) {
             return hr;
         }
 
         // use text range for get text
-        CComPtr<ITfRange> textRange;
+        wil::com_ptr_nothrow<ITfRange> textRange;
         if (FAILED(hr = range->Clone(&textRange))) {
             return hr;
         }
 
         // use text range for gap text (no property range).
-        CComPtr<ITfRange> gap_range;
+        wil::com_ptr_nothrow<ITfRange> gap_range;
         if (FAILED(hr = range->Clone(&gap_range))) {
             return hr;
         }
 
-        CComPtr<ITfRange> pPropRange;
+        wil::com_ptr_nothrow<ITfRange> pPropRange;
         while (enumProp->Next(1, &pPropRange, NULL) == S_OK) {
 
             // pick up the gap up to the next property
-            gap_range->ShiftEndToRange(ec, pPropRange, TF_ANCHOR_START);
+            gap_range->ShiftEndToRange(ec, pPropRange.get(), TF_ANCHOR_START);
 
             //
             // GAP range
             //
-            no_display_attribute_range->CompareStart(ec, gap_range, TF_ANCHOR_START, &result_comp);
+            no_display_attribute_range->CompareStart(ec, gap_range.get(), TF_ANCHOR_START, &result_comp);
             LOG_IF_FAILED(_GetTextAndAttributeGapRange(ec,
-                                                       gap_range,
+                                                       gap_range.get(),
                                                        result_comp,
                                                        CompStr, CompGuid,
                                                        ResultStr));
@@ -339,8 +337,8 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
             LOG_IF_FAILED(pCicDispAttr->GetDisplayAttributeData(pCicCatMgr->GetCategoryMgr(),
                                                                 ec,
-                                                                prop,
-                                                                pPropRange,
+                                                                prop.get(),
+                                                                pPropRange.get(),
                                                                 &da,
                                                                 &guidatom,
                                                                 ulNumProp));
@@ -348,16 +346,16 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
             //
             // Property range
             //
-            no_display_attribute_range->CompareStart(ec, pPropRange, TF_ANCHOR_START, &result_comp);
+            no_display_attribute_range->CompareStart(ec, pPropRange.get(), TF_ANCHOR_START, &result_comp);
 
             // Adjust GAP range's start anchor to the end of proprty range.
-            gap_range->ShiftStartToRange(ec, pPropRange, TF_ANCHOR_END);
+            gap_range->ShiftStartToRange(ec, pPropRange.get(), TF_ANCHOR_END);
 
             //
             // Get property text
             //
             LOG_IF_FAILED(_GetTextAndAttributePropertyRange(ec,
-                                                            pPropRange,
+                                                            pPropRange.get(),
                                                             fCompExist,
                                                             result_comp,
                                                             bInWriteSession,
@@ -367,13 +365,11 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
                                                             CompGuid,
                                                             ResultStr));
 
-            pPropRange.Release();
-
         } // while
 
         // the last non-attr
-        textRange->ShiftStartToRange(ec, gap_range, TF_ANCHOR_START);
-        textRange->ShiftEndToRange(ec, range, TF_ANCHOR_END);
+        textRange->ShiftStartToRange(ec, gap_range.get(), TF_ANCHOR_START);
+        textRange->ShiftEndToRange(ec, range.get(), TF_ANCHOR_END);
 
         BOOL fEmpty;
         while (textRange->IsEmpty(ec, &fEmpty) == S_OK && !fEmpty) {
@@ -393,15 +389,13 @@ HRESULT CEditSessionObject::_GetTextAndAttribute(TfEditCookie ec, ITfRange* rang
 
         textRange->Collapse(ec, TF_ANCHOR_END);
 
-        range.Release();
-
     } // out-most while for GUID_PROP_COMPOSING
 
 
     //
     // set GUID_PROP_CONIME_TRACKCOMPOSITION
     //
-    CComPtr<ITfProperty> PropertyTrackComposition;
+    wil::com_ptr_nothrow<ITfProperty> PropertyTrackComposition;
     if (SUCCEEDED(hr = pic->GetProperty(GUID_PROP_CONIME_TRACKCOMPOSITION, &PropertyTrackComposition))) {
         VARIANT var;
         var.vt = VT_I4;
@@ -433,7 +427,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRan
     ULONG ulcch0;
 
     while (gap_range->IsEmpty(ec, &fEmpty) == S_OK && !fEmpty) {
-        CComPtr<ITfRange> backup_range;
+        wil::com_ptr_nothrow<ITfRange> backup_range;
         if (FAILED(gap_range->Clone(&backup_range))) {
             return E_FAIL;
         }
@@ -455,7 +449,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributeGapRange(TfEditCookie ec, ITfRan
         }
         else {
             ResultStr.append(wstr0, ulcch0);
-            LOG_IF_FAILED(ClearTextInRange(ec, backup_range));
+            LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
         }
     }
 
@@ -486,7 +480,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
     ULONG ulcch0;
 
     while (pPropRange->IsEmpty(ec, &fEmpty) == S_OK && !fEmpty) {
-        CComPtr<ITfRange> backup_range;
+        wil::com_ptr_nothrow<ITfRange> backup_range;
         if (FAILED(pPropRange->Clone(&backup_range))) {
             return E_FAIL;
         }
@@ -519,7 +513,7 @@ HRESULT CEditSessionObject::_GetTextAndAttributePropertyRange(TfEditCookie ec,
             // it was a 'determined' string
             // so the doc has to shrink
             //
-            LOG_IF_FAILED(ClearTextInRange(ec, backup_range));
+            LOG_IF_FAILED(ClearTextInRange(ec, backup_range.get()));
         }
         else {
             //
@@ -546,7 +540,7 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
         return E_FAIL;
     }
 
-    CComPtr<ITfReadOnlyProperty> propComp;
+    wil::com_ptr_nothrow<ITfReadOnlyProperty> propComp;
     HRESULT hr = pic->TrackProperties(guids, guid_size,       // system property
                                       NULL, 0,                // application property
                                       &propComp);
@@ -554,23 +548,23 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
         return hr;
     }
 
-    CComPtr<IEnumTfRanges> enumComp;
+    wil::com_ptr_nothrow<IEnumTfRanges> enumComp;
     hr = propComp->EnumRanges(ec, &enumComp, rangeIn);
     if (FAILED(hr)) {
         return hr;
     }
 
-    CComPtr<ITfRange> pRange;
+    wil::com_ptr_nothrow<ITfRange> pRange;
 
     while (enumComp->Next(1, &pRange, NULL) == S_OK) {
         VARIANT var;
         BOOL fCompExist = FALSE;
 
-        hr = propComp->GetValue(ec, pRange, &var);
+        hr = propComp->GetValue(ec, pRange.get(), &var);
         if (S_OK == hr) {
 
-            CComQIPtr<IEnumTfPropertyValue> EnumPropVal(var.punkVal);
-            if (EnumPropVal) {
+            wil::com_ptr_nothrow<IEnumTfPropertyValue> EnumPropVal;
+            if (wil::try_com_query_to(var.punkVal, &EnumPropVal)) {
                 TF_PROPERTYVAL tfPropertyVal;
 
                 while (EnumPropVal->Next(1, &tfPropertyVal, NULL) == S_OK) {
@@ -595,12 +589,10 @@ HRESULT CEditSessionObject::_GetNoDisplayAttributeRange(TfEditCookie ec, ITfRang
         if (!fCompExist) {
 
             // Adjust GAP range's start anchor to the end of proprty range.
-            no_display_attribute_range->ShiftStartToRange(ec, pRange, TF_ANCHOR_START);
+            no_display_attribute_range->ShiftStartToRange(ec, pRange.get(), TF_ANCHOR_START);
         }
 
         VariantClear(&var);
-
-        pRange.Release();
     }
 
     return S_OK;
@@ -619,7 +611,7 @@ HRESULT CEditSessionCompositionComplete::CompComplete(TfEditCookie ec)
     RETURN_HR_IF_NULL(E_FAIL, pic);
 
     // Get the whole text, finalize it, and set empty string in TOM
-    CComPtr<ITfRange> spRange;
+    wil::com_ptr_nothrow<ITfRange> spRange;
     LONG cch;
 
     RETURN_IF_FAILED(GetAllTextRange(ec, pic, &spRange, &cch));
@@ -699,7 +691,7 @@ HRESULT CEditSessionCompositionCleanup::EmptyCompositionRange(TfEditCookie ec)
         long cchCompleted = g_pConsoleTSF->GetCompletedRangeLength();
         if (cchCompleted != 0)
         {
-            CComPtr<ITfRange> spRange;
+            wil::com_ptr_nothrow<ITfRange> spRange;
             LONG cch;
             hr = GetAllTextRange(ec, pic, &spRange, &cch);
             if (SUCCEEDED(hr))
@@ -709,7 +701,7 @@ HRESULT CEditSessionCompositionCleanup::EmptyCompositionRange(TfEditCookie ec)
                 {
                     spRange->ShiftEnd(ec, (cchCompleted - cch), &cch, NULL);
                 }
-                hr = ClearTextInRange(ec, spRange);
+                hr = ClearTextInRange(ec, spRange.get());
                 g_pConsoleTSF->SetCompletedRangeLength(0);  // cleaned up all completed text
             }
         }
@@ -749,13 +741,13 @@ HRESULT CEditSessionUpdateCompositionString::UpdateCompositionString(TfEditCooki
         return hr;
     }
 
-    CComPtr<ITfRange> FullTextRange;
+    wil::com_ptr_nothrow<ITfRange> FullTextRange;
     LONG lTextLength;
     if (FAILED(hr = GetAllTextRange(ec, pic, &FullTextRange, &lTextLength))) {
         return hr;
     }
 
-    CComPtr<ITfRange> InterimRange;
+    wil::com_ptr_nothrow<ITfRange> InterimRange;
     BOOL fInterim = FALSE;
     if (FAILED(hr = _IsInterimSelection(ec, &InterimRange, &fInterim))) {
         return hr;
@@ -770,10 +762,10 @@ HRESULT CEditSessionUpdateCompositionString::UpdateCompositionString(TfEditCooki
     hr = _CreateCategoryAndDisplayAttributeManager(&pCicCat, &pDispAttr);
     if (SUCCEEDED(hr)) {
         if (fInterim) {
-            hr = _MakeInterimString(ec, FullTextRange, InterimRange, lTextLength, bInWriteSession, pCicCat, pDispAttr);
+            hr = _MakeInterimString(ec, FullTextRange.get(), InterimRange.get(), lTextLength, bInWriteSession, pCicCat, pDispAttr);
         }
         else {
-            hr = _MakeCompositionString(ec, FullTextRange, bInWriteSession, pCicCat, pDispAttr);
+            hr = _MakeCompositionString(ec, FullTextRange.get(), bInWriteSession, pCicCat, pDispAttr);
         }
     }
 
@@ -889,7 +881,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeCompositionString(TfEditCookie
                 GUID guid;
                 if (SUCCEEDED(cat->GetGUID(CompGuid.at(i), &guid))) {
                     CLSID clsid;
-                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    wil::com_ptr_nothrow<ITfDisplayAttributeInfo> dai;
                     if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
                         dai->GetAttributeInfo(&da);
                     }
@@ -995,7 +987,7 @@ HRESULT CEditSessionUpdateCompositionString::_MakeInterimString(TfEditCookie ec,
                 GUID  guid;
                 if (SUCCEEDED(cat->GetGUID(CompGuid.at(i), &guid))) {
                     CLSID clsid;
-                    CComPtr<ITfDisplayAttributeInfo> dai;
+                    wil::com_ptr_nothrow<ITfDisplayAttributeInfo> dai;
                     if (SUCCEEDED(dam->GetDisplayAttributeInfo(guid, &dai, &clsid))) {
                         dai->GetAttributeInfo(&da);
                     }

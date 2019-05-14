@@ -46,9 +46,9 @@ public:
     [[nodiscard]]
     HRESULT InitDisplayAttributeInstance(ITfCategoryMgr* pcat);
 
-    inline ITfDisplayAttributeMgr* GetDisplayAttributeMgr() { return m_pDAM; }
+    inline ITfDisplayAttributeMgr* GetDisplayAttributeMgr() { return m_pDAM.get(); }
 
 private:
-    CComQIPtr<ITfDisplayAttributeMgr>  m_pDAM;
+    wil::com_ptr_nothrow<ITfDisplayAttributeMgr>  m_pDAM;
     std::vector<GUID>              m_DispAttrProp;
 };
