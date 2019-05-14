@@ -32,9 +32,9 @@ protected:
     unsigned int _currentWidth;
     unsigned int _currentHeight;
 
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
-
     HWND _interopWindowHandle;
+
+    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
 
     winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
