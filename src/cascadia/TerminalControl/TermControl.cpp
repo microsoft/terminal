@@ -982,7 +982,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Gets the height of the terminal in lines of text
     // Return Value:
     // - The height of the terminal in lines of text
-    int TermControl::GetViewHeight()
+    int TermControl::GetViewHeight() const
     {
         auto viewPort = _terminal->GetViewport();
         return viewPort.Height();
