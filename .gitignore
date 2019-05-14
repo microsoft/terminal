@@ -17,6 +17,7 @@
 [Rr]eleases/
 x64/
 x86/
+ARM64/
 build/
 bld/
 [Bb]in/
@@ -270,7 +271,7 @@ MSG*.bin
 # python
 *.pyc
 
-**Generated Files/
+**/Generated Files/
 **/Merged/*
 **/Unmerged/*
 profiles.json

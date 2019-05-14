@@ -57,15 +57,20 @@ The Windows Terminal is in the _very early_ alpha stage, and not ready for the g
 
 Otherwise, you'll need to wait until Mid-June for an official preview build to drop.
 
+## I built and ran the new Terminal, but I just get a blank window app!
+
+Make sure your are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
+To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
+
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
 
 Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
 
-Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
+Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
 
 ## I tried running WindowsTerminal.exe and it crashes!
 
-* Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Preview) app.
+* Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
 * Make sure you're on the right version of Windows. You'll need to be on Insider's builds, or wait for the 1903 release, as the Windows Terminal **REQUIRES** features from the latest Windows release.
 
 # Getting Started
@@ -73,6 +78,7 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
 ## Prerequisites
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
+ - **As of May 2019** this build is only available through Windows Insider Program. You may register and configure Insider Program through your device's system settings.
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
 * You must install the following Workloads via the VS Installer:
@@ -84,7 +90,11 @@ Secondly, try pressing Ctrl+t. The tabs are hidden when you only have one tab by
     - Also install the following Individual Component:
       - C++ (v141) Universal Windows Platform Tools
 
-* You must also enable Developer Mode in the Windows Settings app to locally install and run the Terminal app.
+* You must also [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run the Terminal app.
+
+## Debugging
+
+* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only"
 
 ## Contributing
 
@@ -94,7 +104,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 > 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
 
-> ⚠ **Note**: the Command-Line Team are actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
+> ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
 
 ## Communicating with the Team
 
@@ -125,11 +135,11 @@ git submodule update --init --recursive
 OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line:
 
 ```shell
-nuget restore OpenConsole.sln
-msbuild OpenConsole.sln
+.\tools\razzle.cmd
+bcz
 ```
 
-We've provided a set of convenience scripts in the **/tools** directory to help automate the process of building and running tests.
+We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
 
 ## Coding Guidance
 

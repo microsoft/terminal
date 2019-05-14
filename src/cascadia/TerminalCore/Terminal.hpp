@@ -113,6 +113,8 @@ public:
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
 
+    void SetCursorVisible(const bool isVisible) noexcept;
+
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
     void SetSelectionAnchor(const COORD position);
