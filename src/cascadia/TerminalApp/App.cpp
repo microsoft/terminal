@@ -594,6 +594,17 @@ namespace winrt::TerminalApp::implementation
         eventArgs.HandleClipboardData(text);
     }
 
+    // Method Description:
+    // - Connects event handlers to the TermControl for events that we want to
+    //   handle. This includes:
+    //    * the Copy and Paste events, for setting and retrieving clipboard data
+    //      on the right thread
+    //    * the TitleChanged event, for changing the text of the tab
+    //    * the GotFocus event, for chnging the title/icon in the tab when a new
+    //      control is focused
+    // Arguments:
+    // - term: The newly created TermControl to connect the events for
+    // - hostingTab: The Tab that's hosting this TermControl instance
     void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
     {
         // Add an event handler when the terminal's selection wants to be copied.
@@ -638,30 +649,6 @@ namespace winrt::TerminalApp::implementation
             // Possibly update the icon of the tab.
             _UpdateTabIcon(hostingTab);
         });
-
-        // hostingTab->Closed([](){
-        //     auto tabViewItem = hostingTab->GetTabViewItem();
-        // //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [hostingTab, tabViewItem, this]() {
-
-        //     _RemoveTabViewItem(tabViewItem);
-
-        // });
-        // TODO:
-        // // Add an event handler when the terminal's connection is closed.
-        // hostingTab->GetTerminalControl().ConnectionClosed([=]() {
-        //     _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [hostingTab, tabViewItem, this]() {
-        //         const GUID tabProfile = hostingTab->GetProfile();
-        //         // Don't just capture this pointer, because the profile might
-        //         // get destroyed before this is called (case in point -
-        //         // reloading settings)
-        //         const auto* const p = _settings->FindProfile(tabProfile);
-
-        //         if (p != nullptr && p->GetCloseOnExit())
-        //         {
-        //             _RemoveTabViewItem(tabViewItem);
-        //         }
-        //     });
-        // });
     }
 
     // Method Description:
@@ -677,6 +664,7 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
+        // Hookp our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
@@ -692,6 +680,7 @@ namespace winrt::TerminalApp::implementation
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
+        // When the tab is closed, remove it from our list of tabs.
         newTab->Closed([tabViewItem, this](){
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
                 _RemoveTabViewItem(tabViewItem);
@@ -749,11 +738,6 @@ namespace winrt::TerminalApp::implementation
     //    and get text to appear on separate lines.
     void App::_CopyText(const bool trimTrailingWhitespace)
     {
-        // const int focusedTabIndex = _GetFocusedTabIndex();
-        // std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-
-        // const auto control = focusedTab->GetTerminalControl();
-
         const auto control = _GetFocusedControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
@@ -804,11 +788,8 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 auto tab = _tabs.at(selectedIndex);
-                auto term = tab->GetFocusedTerminalControl();
-                auto control = term.GetControl();
 
                 _tabContent.Children().Clear();
-                // _tabContent.Children().Append(control);
                 _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
@@ -863,8 +844,6 @@ namespace winrt::TerminalApp::implementation
                 try
                 {
                     return _GetFocusedControl().Title();
-                    // auto tab = _tabs.at(selectedIndex);
-                    // return tab->GetTerminalControl().Title();
                 }
                 CATCH_LOG();
             }
@@ -950,25 +929,20 @@ namespace winrt::TerminalApp::implementation
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
-        return focusedTab->GetFocusedTerminalControl();
+        return focusedTab->GetLastFocusedTerminalControl();
     }
 
     void App::_SplitVertical(std::optional<GUID> profileGuid)
     {
-        const GUID realGuid = profileGuid ? profileGuid.value() :
-                                            _settings->GlobalSettings().GetDefaultProfile();
-        auto controlSettings = _settings->MakeSettings(realGuid);
-        TermControl newControl{ controlSettings };
-
-        int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
-
-        _RegisterTerminalEvents(newControl, focusedTab);
-
-        return focusedTab->SplitVertical(realGuid, newControl);
+        _SplitPane(false, profileGuid);
     }
 
     void App::_SplitHorizontal(std::optional<GUID> profileGuid)
+    {
+        _SplitPane(true, profileGuid);
+    }
+
+    void App::_SplitPane(const bool splitHorizontal, std::optional<GUID> profileGuid)
     {
         const GUID realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
@@ -978,11 +952,12 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
+        // Hookp our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return focusedTab->SplitHorizontal(realGuid, newControl);
+        return splitHorizontal ? focusedTab->SplitHorizontal(realGuid, newControl) :
+                                 focusedTab->SplitVertical(realGuid, newControl);
     }
-
 
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.

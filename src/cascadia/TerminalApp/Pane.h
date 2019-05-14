@@ -20,9 +20,6 @@ public:
     Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused = false);
     ~Pane();
 
-    // winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
-    // winrt::Microsoft::Terminal::TerminalControl::TermControl GetTerminalControl();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
     std::optional<GUID> GetLastFocusedProfile() const noexcept;
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
@@ -31,8 +28,6 @@ public:
     void CheckFocus();
 
     void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
-
-    // GUID GetProfile() const noexcept;
 
     void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
@@ -56,4 +51,7 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
     void _AddControlToRoot(winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+
+    void _CloseChild(const bool closeFirst);
+
 };

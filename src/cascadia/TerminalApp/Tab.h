@@ -14,15 +14,15 @@ public:
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
     std::optional<GUID> GetLastFocusedProfile() const noexcept;
 
     bool IsFocused();
-    void SetFocused(bool focused);
+    void SetFocused(const bool focused);
 
-    void Scroll(int delta);
-    void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void Scroll(const int delta);
+    void SplitVertical(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitHorizontal(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
     void CheckFocus();
 

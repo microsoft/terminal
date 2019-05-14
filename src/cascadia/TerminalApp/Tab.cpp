@@ -42,9 +42,9 @@ winrt::Windows::UI::Xaml::UIElement Tab::GetRootElement()
     return _rootPane->GetRootElement();
 }
 
-winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetFocusedTerminalControl()
+winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetLastFocusedTerminalControl()
 {
-    return _rootPane->GetFocusedTerminalControl();
+    return _rootPane->GetLastFocusedTerminalControl();
 }
 
 winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
@@ -57,7 +57,7 @@ bool Tab::IsFocused()
     return _focused;
 }
 
-void Tab::SetFocused(bool focused)
+void Tab::SetFocused(const bool focused)
 {
     _focused = focused;
 
@@ -114,10 +114,10 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - delta: a number of lines to move the viewport relative to the current viewport.
 // Return Value:
 // - <none>
-void Tab::Scroll(int delta)
+void Tab::Scroll(const int delta)
 {
-    GetFocusedTerminalControl().GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-        auto control = GetFocusedTerminalControl();
+    GetLastFocusedTerminalControl().GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+        auto control = GetLastFocusedTerminalControl();
         const auto currentOffset = control.GetScrollOffset();
         control.ScrollViewport(currentOffset + delta);
     });

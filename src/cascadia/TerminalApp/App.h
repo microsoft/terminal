@@ -103,6 +103,7 @@ namespace winrt::TerminalApp::implementation
         void _CopyText(const bool trimTrailingWhitespace);
         void _SplitVertical(std::optional<GUID> profileGuid);
         void _SplitHorizontal(std::optional<GUID> profileGuid);
+        void _SplitPane(const bool splitHorizontal, std::optional<GUID> profileGuid);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
 
