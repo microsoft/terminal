@@ -16,8 +16,7 @@ static const std::wstring NAME_KEY{ L"name" };
 static const std::wstring TABLE_KEY{ L"colors" };
 static const std::wstring FOREGROUND_KEY{ L"foreground" };
 static const std::wstring BACKGROUND_KEY{ L"background" };
-static const std::int16_t TABLE_SIZE = 16;
-static const std::wstring TABLE_COLORS[TABLE_SIZE] =
+static const std::array<std::wstring, 16> TABLE_COLORS =
 {
     L"black",
     L"red",
@@ -96,13 +95,14 @@ JsonObject ColorScheme::ToJson() const
     jsonObject.Insert(FOREGROUND_KEY, fg);
     jsonObject.Insert(BACKGROUND_KEY, bg);
  
-    for (int i = 0; i < TABLE_SIZE; i++)
+    int i = 0;
+    for (const auto& current : TABLE_COLORS)
     {
-        auto current = TABLE_COLORS[i];
         auto& color = _table[i];
         auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
 
         jsonObject.Insert(current, s);
+        i++;
     }
 
     return jsonObject;
@@ -153,15 +153,16 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         }
     }
 
-    for (int i = 0; i < TABLE_SIZE; i++)
+    int i = 0;
+    for (const auto& current : TABLE_COLORS)
     {
-        auto current = TABLE_COLORS[i];
         if (json.HasKey(current))
         {
             const auto str = json.GetNamedString(current);
             const auto color = Utils::ColorFromHexString(str.c_str());
             result._table[i] = color;
         }
+        i++;
     }
 
     return result;
