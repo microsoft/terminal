@@ -630,6 +630,7 @@ namespace winrt::TerminalApp::implementation
                 // get destroyed before this is called (case in point -
                 // reloading settings)
                 const auto* const p = _settings->FindProfile(tabProfile);
+
                 if (p != nullptr && p->GetCloseOnExit())
                 {
                     _RemoveTabViewItem(tabViewItem);
@@ -767,6 +768,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto tabViewItem = eventArgs.Item();
         _RemoveTabViewItem(tabViewItem);
+
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
     }
@@ -829,8 +831,8 @@ namespace winrt::TerminalApp::implementation
     {
         // To close the window here, we need to close the hosting window.
         if (_tabs.size() == 1)
-		{
-			_lastTabClosedHandlers();
+        {
+		    _lastTabClosedHandlers();
         }
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
