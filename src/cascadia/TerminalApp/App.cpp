@@ -275,7 +275,7 @@ namespace winrt::TerminalApp::implementation
 
             // Using alternate method here than VirtualKey due to https://github.com/microsoft/microsoft-ui-xaml/issues/708
             // this should really use KeyboardAccelerator API bug above bug in framework prevents it, using override
-            settingsItem.KeyboardAcceleratorTextOverride(L"Control + ,");
+            settingsItem.KeyboardAcceleratorTextOverride(L"Ctrl + ,");
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
