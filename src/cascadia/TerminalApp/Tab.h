@@ -27,6 +27,8 @@ public:
     void CheckFocus();
 
     void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
+    winrt::hstring CheckTitleUpdate();
+    void SetTabText(const winrt::hstring& text);
 
 private:
 

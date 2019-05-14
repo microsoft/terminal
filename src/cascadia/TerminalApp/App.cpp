@@ -424,7 +424,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Update the icon of the tab for the currently focused profile in that tab.
+        // Update the icon of the tab for the currently focused profile in that
+        // tab.
         for (auto &tab : _tabs)
         {
             const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
@@ -572,22 +573,15 @@ namespace winrt::TerminalApp::implementation
         eventArgs.HandleClipboardData(text);
     }
 
-    // Method Description:
-    // - Creates a new tab with the given settings. If the tab bar is not being
-    //      currently displayed, it will be shown.
-    // Arguments:
-    // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
     {
-        // Initialize the new tab
-        TermControl term{ settings };
 
         // TODO" All these event handles we hook up to the termControl, we need
         // to put it intp a single method that the Split* methods use too.
 
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
-        term.CopyToClipboard([=](auto copiedData) {
+        term.CopyToClipboard([this](auto copiedData) {
             _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
                 DataPackage dataPack = DataPackage();
                 dataPack.RequestedOperation(DataPackageOperation::Copy);
@@ -600,32 +594,62 @@ namespace winrt::TerminalApp::implementation
         });
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
-        term.PasteFromClipboard([=](auto /*sender*/, auto eventArgs) {
+        term.PasteFromClipboard([this](auto /*sender*/, auto eventArgs) {
             _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
                 PasteFromClipboard(eventArgs);
             });
         });
 
+        term.TitleChanged([this, hostingTab](auto newTitle){
+            // The title of the control changed, but not necessarily the title
+            // of the tab. Get the title of the focused pane of the tab, and set
+            // the tab's text to the focused panes' text.
+            auto newTabTitle = hostingTab->CheckTitleUpdate();
+
+            // TODO #608: If the settings don't want the terminal's text in the
+            // tab, then display something else.
+            hostingTab->SetTabText(newTabTitle);
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                hostingTab->IsFocused())
+            {
+                _titleChangeHandlers(newTabTitle);
+            }
+        });
+
+        // TODO: this feels like it should be a weak ref, not a strong ref.
+        term.GetControl().GotFocus([this, hostingTab](auto&&, auto&&)
+        {
+            hostingTab->CheckFocus();
+            // Possibly update the title of the tab, window to match the newly
+            // focused pane.
+            auto newTabTitle = hostingTab->CheckTitleUpdate();
+
+            // TODO #608: If the settings don't want the terminal's text in the
+            // tab, then display something else.
+            hostingTab->SetTabText(newTabTitle);
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                hostingTab->IsFocused())
+            {
+                _titleChangeHandlers(newTabTitle);
+            }
+        });
+    }
+
+    // Method Description:
+    // - Creates a new tab with the given settings. If the tab bar is not being
+    //      currently displayed, it will be shown.
+    // Arguments:
+    // - settings: the TerminalSettings object to use to create the TerminalControl with.
+    void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    {
+        // Initialize the new tab
+        TermControl term{ settings };
+
+
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
-        // TODO:
-        // // Add an event handler when the terminal's title changes. When the
-        // // title changes, we'll bubble it up to listeners of our own title
-        // // changed event, so they can handle it.
-        // newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
-        //     // Only bubble the change if this tab is the focused tab.
-        //     if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-        //         newTab->IsFocused())
-        //     {
-        //         _titleChangeHandlers(newTitle);
-        //     }
-        // });
-
-        term.GetControl().GotFocus([newTab](auto&&, auto&&)
-        {
-            newTab->CheckFocus();
-        });
+        _RegisterTerminalEvents(term, newTab);
 
 
         auto tabViewItem = newTab->GetTabViewItem();
@@ -912,10 +936,7 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
-        newControl.GetControl().GotFocus([focusedTab](auto&&, auto&&)
-        {
-            focusedTab->CheckFocus();
-        });
+        _RegisterTerminalEvents(newControl, focusedTab);
 
         return focusedTab->SplitVertical(realGuid, newControl);
     }
@@ -930,10 +951,7 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
-        newControl.GetControl().GotFocus([focusedTab](auto&&, auto&&)
-        {
-            focusedTab->CheckFocus();
-        });
+        _RegisterTerminalEvents(newControl, focusedTab);
 
         return focusedTab->SplitHorizontal(realGuid, newControl);
     }

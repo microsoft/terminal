@@ -28,15 +28,17 @@ Tab::~Tab()
 void Tab::_MakeTabViewItem()
 {
     _tabViewItem = ::winrt::Microsoft::UI::Xaml::Controls::TabViewItem{};
+    // auto f = _tabViewItem.FontSize();
+    _tabViewItem.FontSize(12);
+    // auto a = 0;
+    // a++;
+
     // const auto title = _control.Title();
 
     // _tabViewItem.Header(title);
 
     // TODO
     // _control.TitleChanged([=](auto newTitle){
-    //     _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-    //         _tabViewItem.Header(newTitle);
-    //     });
     // });
 }
 
@@ -97,6 +99,19 @@ void Tab::_Focus()
 void Tab::CheckFocus()
 {
     _rootPane->CheckFocus();
+}
+
+winrt::hstring Tab::CheckTitleUpdate()
+{
+    auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
+    return lastFocusedControl ? lastFocusedControl.Title() : L"";
+}
+
+void Tab::SetTabText(const winrt::hstring& text)
+{
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+        _tabViewItem.Header(text);
+    });
 }
 
 // Method Description:
