@@ -81,6 +81,10 @@ namespace winrt::TerminalApp::implementation
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UpdateTabView();
+        void _UpdateTabIcon(std::shared_ptr<Tab> tab);
+        void _CheckTitleUpdate(std::shared_ptr<Tab> tab);
+
+
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);

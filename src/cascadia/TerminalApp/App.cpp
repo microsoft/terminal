@@ -424,25 +424,10 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // Update the icon of the tab for the currently focused profile in that
-        // tab.
-        for (auto &tab : _tabs)
+        // Update the icon of the tab for the currently focused profile in that tab.
+        for (auto& tab : _tabs)
         {
-            const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
-            if (lastFocusedProfileOpt.has_value())
-            {
-                const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-                auto tabViewItem = tab->GetTabViewItem();
-                tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                    // _GetIconFromProfile has to run on the main thread
-                    const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                    if (matchingProfile)
-                    {
-                        tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
-                    }
-                });
-            }
+            _UpdateTabIcon(tab);
         }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
@@ -453,6 +438,40 @@ namespace winrt::TerminalApp::implementation
             // profile, which might have changed
             _CreateNewTabFlyout();
         });
+
+    }
+
+    void App::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+    {
+        const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
+        {
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+
+            auto tabViewItem = tab->GetTabViewItem();
+            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
+                // _GetIconFromProfile has to run on the main thread
+                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+                if (matchingProfile)
+                {
+                    tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
+                }
+            });
+        }
+    }
+
+    void App::_CheckTitleUpdate(std::shared_ptr<Tab> tab)
+    {
+        auto newTabTitle = tab->CheckTitleUpdate();
+
+        // TODO #608: If the settings don't want the terminal's text in the
+        // tab, then display something else.
+        tab->SetTabText(newTabTitle);
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
+        {
+            _titleChangeHandlers(newTabTitle);
+        }
 
     }
 
@@ -600,55 +619,26 @@ namespace winrt::TerminalApp::implementation
             });
         });
 
+        // TODO: hostingTab feels like it should be a weak ref, not a strong ref.
         term.TitleChanged([this, hostingTab](auto newTitle){
             // The title of the control changed, but not necessarily the title
             // of the tab. Get the title of the focused pane of the tab, and set
             // the tab's text to the focused panes' text.
-            auto newTabTitle = hostingTab->CheckTitleUpdate();
-
-            // TODO #608: If the settings don't want the terminal's text in the
-            // tab, then display something else.
-            hostingTab->SetTabText(newTabTitle);
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                hostingTab->IsFocused())
-            {
-                _titleChangeHandlers(newTabTitle);
-            }
+            _CheckTitleUpdate(hostingTab);
         });
 
-        // TODO: this feels like it should be a weak ref, not a strong ref.
+        // TODO: hostingTab feels like it should be a weak ref, not a strong ref.
         term.GetControl().GotFocus([this, hostingTab](auto&&, auto&&)
         {
+            // Update the focus of the tab's panes
             hostingTab->CheckFocus();
+
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
-            auto newTabTitle = hostingTab->CheckTitleUpdate();
+            _CheckTitleUpdate(hostingTab);
 
-            // TODO #608: If the settings don't want the terminal's text in the
-            // tab, then display something else.
-            hostingTab->SetTabText(newTabTitle);
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                hostingTab->IsFocused())
-            {
-                _titleChangeHandlers(newTabTitle);
-            }
-
-            // Copied from _ReloadSettings
-            const auto lastFocusedProfileOpt = hostingTab->GetLastFocusedProfile();
-            if (lastFocusedProfileOpt.has_value())
-            {
-                const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-                auto tabViewItem = hostingTab->GetTabViewItem();
-                tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                    // _GetIconFromProfile has to run on the main thread
-                    const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                    if (matchingProfile)
-                    {
-                        tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
-                    }
-                });
-            }
+            // Possibly update the icon of the tab.
+            _UpdateTabIcon(hostingTab);
         });
     }
 
