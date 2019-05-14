@@ -1,14 +1,14 @@
 # Welcome\! 
 #### This repository contains the source code for:
 
-  - Windows Terminal
-  - The Windows console host (`conhost.exe`)
-  - Components shared between the two projects
-  - [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
-  - [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
+  * Windows Terminal
+  * The Windows console host (`conhost.exe`)
+  * Components shared between the two projects
+  * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
+  * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
   
 #### Other related repositories include:
-  - [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
+  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
 
 ### Build Status
 
@@ -118,13 +118,13 @@ Please help us keep this repository clean, inclusive, and fun\! We will not tole
 
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
-  - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
+  * Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
-  - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
+  * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
   
-  - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
+  * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
-  - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+  * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 
 # Developer Guidance
 
