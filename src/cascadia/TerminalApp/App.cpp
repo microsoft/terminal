@@ -693,17 +693,18 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
-    //      down a number of lines depending on the height of the Viewpoint. 
-    //      Negative values of `delta` will move the view up, and positive values
-    //      will move the viewport down.
+    //      down a page. The page length will be dependent on the terminal view height.
+    //      Negative values of `delta` will move the view up by one page, and positive values
+    //      will move the viewport down by one page.
     // Arguments:
-    // - delta: a number of lines to move the viewport relative to the current viewport.
+    // - delta: The direction to move the view relative to the current viewport(it 
+	//      is clamped between -1 and 1)
     void App::_DoScrollPage(int delta)
     {
         delta = std::clamp(delta, -1, 1);
         const auto focusedTabIndex = _GetFocusedTabIndex();
         const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
-        auto termHeight = control.GetTermHeight();
+        auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight*delta);
     }
 

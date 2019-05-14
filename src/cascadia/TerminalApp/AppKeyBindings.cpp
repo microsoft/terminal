@@ -147,7 +147,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
-    DEFINE_EVENT(AppKeyBindings, ScrollUpPage,		_ScrollUpPageHandlers,		TerminalApp::ScrollUpPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollUpPage,	    _ScrollUpPageHandlers,	TerminalApp::ScrollUpPageEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,	TerminalApp::ScrollDownPageEventArgs);
 
 
