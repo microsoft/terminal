@@ -843,14 +843,14 @@ namespace winrt::TerminalApp::implementation
     {
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-		size_t focusedTabIndex = _GetFocusedTabIndex();
+        size_t focusedTabIndex = _GetFocusedTabIndex();
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
 
-		if (tabIndexFromControl == focusedTabIndex)
-		{
+        if (tabIndexFromControl == focusedTabIndex)
+        {
             if (focusedTabIndex >= _tabs.size())
             {
                 focusedTabIndex = _tabs.size() - 1;
@@ -860,8 +860,8 @@ namespace winrt::TerminalApp::implementation
                 focusedTabIndex = 0;
             }
 
-			_SelectTab(focusedTabIndex);
-		}
+            _SelectTab(focusedTabIndex);
+        }
     }
 
     // Method Description:
