@@ -901,17 +901,19 @@ namespace winrt::TerminalApp::implementation
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 
-        if (tabIndexFromControl == _GetFocusedTabIndex())
-        {
-            _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
-        }
+        // if (tabIndexFromControl == _GetFocusedTabIndex())
+        // {
+        //     auto newTabIndex = (tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1;
+        //     _tabView.SelectedIndex(newTabIndex);
+        // }
+
+        // ensure tabs and focus is sync
+        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
 
-        // ensure tabs and focus is sync
-        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
     }
 
     // Method Description:
