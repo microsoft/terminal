@@ -330,6 +330,7 @@ namespace winrt::TerminalApp::implementation
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        bindings.OpenSettings([this]() { _OpenSettings(); });
     }
 
     // Method Description:
@@ -656,6 +657,11 @@ namespace winrt::TerminalApp::implementation
     int App::_GetFocusedTabIndex() const
     {
         return _tabView.SelectedIndex();
+    }
+
+    void App::_OpenSettings()
+    {
+        LaunchSettings();
     }
 
     // Method Description:
