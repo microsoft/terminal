@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include <climits>
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
@@ -18,7 +19,23 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
+static short _ClampZeroToShortMax(int value)
+{
+    if (value < 0)
+    {
+        return 0;
+    }
+    else if (value > SHRT_MAX)
+    {
+        return SHRT_MAX;
+    }
+    else
+    {
+        return static_cast<short>(value);
+    }
+}
+
+static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
     for(auto& ev : inEventsToWrite)
@@ -65,7 +82,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
+    COORD bufferSize { viewportSize.X, _ClampZeroToShortMax(viewportSize.Y + scrollbackLines) };
     TextAttribute attr{};
     UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
@@ -79,9 +96,9 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
+    const COORD viewportSize{ _ClampZeroToShortMax(settings.InitialCols()), _ClampZeroToShortMax(settings.InitialRows()) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, static_cast<short>(settings.HistorySize()), renderTarget);
+    Create(viewportSize, _ClampZeroToShortMax(settings.HistorySize()), renderTarget);
 
     UpdateSettings(settings);
 }
