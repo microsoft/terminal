@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
+        int GetViewHeight() const;
 
         void SwapChainChanged();
         ~TermControl();
@@ -84,6 +85,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
+        std::optional<Windows::UI::Xaml::DispatcherTimer> _cursorTimer;
+
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
@@ -100,7 +103,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _PointerReleasedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
+        void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
+        void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SendInputToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
