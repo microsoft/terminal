@@ -191,6 +191,11 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext1> _d2dTargetRenderContext;
+		// If there is a text effect, this is a ID2D1BitmapRenderTarget, otherwise it is _d2DRenderTarget
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> _d2dTextRenderContext;
+		// Can be null, but otherwise should use _d2dTextRenderContext as an input
+        ::Microsoft::WRL::ComPtr<ID2D1Effect> _d2dTextEffect;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;

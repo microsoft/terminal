@@ -11,20 +11,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="KeyChord.cpp" />
     <ClCompile Include="TermControl.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="KeyChord.h" />
     <ClInclude Include="TermControl.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
-    <Midl Include="KeyChord.idl" />
-    <Midl Include="IKeyBindings.idl" />
-    <Midl Include="IControlSettings.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />

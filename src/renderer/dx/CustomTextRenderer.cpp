@@ -246,8 +246,8 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
     D2D1_POINT_2F baselineOrigin = origin;
     baselineOrigin.y += drawingContext->spacing.baseline;
 
-    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
-    RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
+    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> backgroundContext;
+    RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(backgroundContext.GetAddressOf()));
 
     // Draw the background
     D2D1_RECT_F rect;
@@ -261,7 +261,13 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
         rect.right += glyphRun->glyphAdvances[i];
     }
 
-    d2dContext4->FillRectangle(rect, drawingContext->backgroundBrush);
+    backgroundContext->FillRectangle(rect, drawingContext->backgroundBrush);
+    if (drawingContext->textEffect)
+    {
+        drawingContext->textRenderContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
+        drawingContext->textRenderContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
+        drawingContext->textRenderContext->PopAxisAlignedClip();
+    }
 
     // Now go onto drawing the text.
 
@@ -332,22 +338,24 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                 case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
                 {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
-                    d2dContext4->DrawColorBitmapGlyphRun(colorRun->glyphImageFormat,
-                                                         currentBaselineOrigin,
-                                                         &colorRun->glyphRun,
-                                                         measuringMode);
+                    drawingContext->textRenderContext->DrawColorBitmapGlyphRun(
+                        colorRun->glyphImageFormat,
+                        currentBaselineOrigin,
+                        &colorRun->glyphRun,
+                        measuringMode);
                 }
                 break;
 
                 case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
                 {
                     // This run is SVG glyphs. Use Direct2D to draw them.
-                    d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
-                                                 &colorRun->glyphRun,
-                                                 drawingContext->foregroundBrush,
-                                                 nullptr,                // svgGlyphStyle
-                                                 0,                      // colorPaletteIndex
-                                                 measuringMode);
+                    drawingContext->textRenderContext->DrawSvgGlyphRun(
+                        currentBaselineOrigin,
+                        &colorRun->glyphRun,
+                        drawingContext->foregroundBrush,
+                        nullptr,                // svgGlyphStyle
+                        0,                      // colorPaletteIndex
+                        measuringMode);
                 }
                 break;
 
@@ -371,7 +379,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     {
                         if (!tempBrush)
                         {
-                            RETURN_IF_FAILED(d2dContext4->CreateSolidColorBrush(colorRun->runColor, &tempBrush));
+                            RETURN_IF_FAILED(drawingContext->textRenderContext->CreateSolidColorBrush(colorRun->runColor, &tempBrush));
                         }
                         else
                         {
@@ -406,6 +414,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                                             glyphRunDescription,
                                             drawingContext->foregroundBrush));
     }
+
     return S_OK;
 }
 #pragma endregion
@@ -418,11 +427,8 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingCont
                                                _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
                                                ID2D1Brush* brush)
 {
-    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
-    RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
-
     // Using the context is the easiest/default way of drawing.
-    d2dContext4->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
+    clientDrawingContext->textRenderContext->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
 
     // However, we could probably add options here and switch out to one of these other drawing methods (making it 
     // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:

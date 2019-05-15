@@ -235,6 +235,9 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     if (_isPainting) {
         // TODO: MSFT: 21169176 - remove this or restore the "try a few times to render" code... I think
         _d2dRenderTarget->BeginDraw();
+        if (_d2dTextEffect) {
+            _d2dTextRenderContext->BeginDraw();
+        }
     }
 
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
@@ -253,7 +256,7 @@ HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
-    D2D1_RENDER_TARGET_PROPERTIES props =
+    D2D1_RENDER_TARGET_PROPERTIES renderTargetProps =
         D2D1::RenderTargetProperties(
             D2D1_RENDER_TARGET_TYPE_DEFAULT,
             D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
@@ -261,8 +264,44 @@ HRESULT DxEngine::_PrepareRenderTarget() noexcept
             0.0f);
 
     RETURN_IF_FAILED(_d2dFactory->CreateDxgiSurfaceRenderTarget(_dxgiSurface.Get(),
-                                                                &props,
+                                                                &renderTargetProps,
                                                                 &_d2dRenderTarget));
+
+    const auto fdpi = static_cast<float>(_dpi);
+
+#if false // direct render
+    RETURN_IF_FAILED(_d2dRenderTarget.As(&_d2dTargetRenderContext));
+    _d2dTextRenderContext = _d2dTargetRenderContext;
+#else // effect render
+    RETURN_IF_FAILED(_d2dRenderTarget.As(&_d2dTargetRenderContext));
+    ::Microsoft::WRL::ComPtr<ID2D1BitmapRenderTarget> bitmapRenderTarget;
+    RETURN_IF_FAILED(_d2dRenderTarget->CreateCompatibleRenderTarget(&bitmapRenderTarget));
+    RETURN_IF_FAILED(bitmapRenderTarget.As(&_d2dTextRenderContext));
+    ::Microsoft::WRL::ComPtr<ID2D1Bitmap> bitmap;
+    RETURN_IF_FAILED(bitmapRenderTarget->GetBitmap(&bitmap));
+
+#if false // blur
+    RETURN_IF_FAILED(_d2dTargetRenderContext->CreateEffect(CLSID_D2D1GaussianBlur, &_d2dTextEffect));
+    _d2dTextEffect->SetInput(0, bitmap.Get());
+#elif true // drop-shadow
+    ::Microsoft::WRL::ComPtr<ID2D1Effect> shadowEffect;
+    RETURN_IF_FAILED(_d2dTargetRenderContext->CreateEffect(CLSID_D2D1Shadow, &shadowEffect));
+    shadowEffect->SetInput(0, bitmap.Get());
+    RETURN_IF_FAILED(_d2dTargetRenderContext->CreateEffect(CLSID_D2D1Composite, &_d2dTextEffect));
+    _d2dTextEffect->SetInputEffect(0, shadowEffect.Get());
+    _d2dTextEffect->SetInput(1, bitmap.Get());
+#else // "water" effect (only affects a 500x500-ish square in the top-left?)
+    ::Microsoft::WRL::ComPtr<ID2D1Effect> turbulenceEffect;
+    RETURN_IF_FAILED(_d2dTargetRenderContext->CreateEffect(CLSID_D2D1Turbulence, &turbulenceEffect));
+    RETURN_IF_FAILED(_d2dTargetRenderContext->CreateEffect(CLSID_D2D1DisplacementMap, &_d2dTextEffect));
+    _d2dTextEffect->SetValue(D2D1_DISPLACEMENTMAP_PROP_SCALE, 50.0f);
+    _d2dTextEffect->SetValue(D2D1_DISPLACEMENTMAP_PROP_X_CHANNEL_SELECT, D2D1_CHANNEL_SELECTOR_R);
+    _d2dTextEffect->SetValue(D2D1_DISPLACEMENTMAP_PROP_Y_CHANNEL_SELECT, D2D1_CHANNEL_SELECTOR_G);
+    _d2dTextEffect->SetInput(0, bitmap.Get());
+    _d2dTextEffect->SetInputEffect(1, turbulenceEffect.Get());
+#endif
+
+#endif
 
     _d2dRenderTarget->SetTextAntialiasMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
     RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkRed),
@@ -274,7 +313,6 @@ HRESULT DxEngine::_PrepareRenderTarget() noexcept
     // If in composition mode, apply scaling factor matrix
     if (_chainMode == SwapChainMode::ForComposition)
     {
-        const auto fdpi = static_cast<float>(_dpi);
         _d2dRenderTarget->SetDpi(fdpi, fdpi);
 
         DXGI_MATRIX_3X2_F inverseScale = { 0 };
@@ -304,6 +342,9 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     if (nullptr != _d2dRenderTarget.Get() && _isPainting)
     {
+        if (_d2dTextEffect) {
+            _d2dTextRenderContext->EndDraw();
+        }
         _d2dRenderTarget->EndDraw();
     }
 
@@ -702,6 +743,9 @@ HRESULT DxEngine::StartPaint() noexcept
         }
 
         _d2dRenderTarget->BeginDraw();
+        if (_d2dTextEffect) {
+            _d2dTextRenderContext->BeginDraw();
+        }
         _isPainting = true;
     }
 
@@ -724,7 +768,14 @@ HRESULT DxEngine::EndPaint() noexcept
     if (_haveDeviceResources) {
         _isPainting = false;
 
-        hr = _d2dRenderTarget->EndDraw();
+        if (_d2dTextEffect) {
+            _d2dTargetRenderContext->DrawImage(_d2dTextEffect.Get());
+            hr = _d2dTextRenderContext->EndDraw();
+        }
+
+        if (SUCCEEDED(hr)) {
+            hr = _d2dRenderTarget->EndDraw();
+        }
 
         if (SUCCEEDED(hr)) {
 
@@ -885,6 +936,8 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
+                               _d2dTextRenderContext.Get(),
+                               _d2dTextEffect.Get(),
                                _d2dBrushForeground.Get(),
                                _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
