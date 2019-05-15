@@ -6,6 +6,7 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
+#include "../../inc/DefaultSettings.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -37,9 +38,69 @@ ColorScheme _CreateCampbellScheme()
     return campbellScheme;
 }
 
+ColorScheme _CreateOneHalfDarkScheme()
+{
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-dark.reg
+    // Dark gray is per colortool scheme, the other 7 of the last 8 colors from the colortool
+    // scheme are the same as their dark color equivalents.
+    ColorScheme oneHalfDarkScheme { L"One Half Dark",
+                                    RGB(220, 223, 228),
+                                    RGB( 40,  44,  52) };
+    auto& oneHalfDarkTable = oneHalfDarkScheme.GetTable();
+    auto oneHalfDarkSpan = gsl::span<COLORREF>(&oneHalfDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfDarkTable[0]  = RGB( 40,  44,  52); // black
+    oneHalfDarkTable[1]  = RGB(224, 108, 117); // dark red
+    oneHalfDarkTable[2]  = RGB(152, 195, 121); // dark green
+    oneHalfDarkTable[3]  = RGB(229, 192, 123); // dark yellow
+    oneHalfDarkTable[4]  = RGB( 97, 175, 239); // dark blue
+    oneHalfDarkTable[5]  = RGB(198, 120, 221); // dark magenta
+    oneHalfDarkTable[6]  = RGB( 86, 182, 194); // dark cyan
+    oneHalfDarkTable[7]  = RGB(220, 223, 228); // gray
+    oneHalfDarkTable[8]  = RGB( 90,  99, 116); // dark gray
+    oneHalfDarkTable[9]  = RGB(224, 108, 117); // red
+    oneHalfDarkTable[10] = RGB(152, 195, 121); // green
+    oneHalfDarkTable[11] = RGB(229, 192, 123); // yellow
+    oneHalfDarkTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
+    oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
+    oneHalfDarkTable[15] = RGB(220, 223, 228); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
+
+    return oneHalfDarkScheme;
+}
+
+ColorScheme _CreateOneHalfLightScheme()
+{
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-light.reg
+    // Last 8 colors per colortool scheme.
+    ColorScheme oneHalfLightScheme { L"One Half Light",
+                                    RGB(56,  58,  66),
+                                    RGB(250, 250, 250) };
+    auto& oneHalfLightTable = oneHalfLightScheme.GetTable();
+    auto oneHalfLightSpan = gsl::span<COLORREF>(&oneHalfLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfLightTable[0]  = RGB( 56,  58,  66); // black
+    oneHalfLightTable[1]  = RGB(228,  86,  73); // dark red
+    oneHalfLightTable[2]  = RGB( 80, 161,  79); // dark green
+    oneHalfLightTable[3]  = RGB(193, 131,   1); // dark yellow
+    oneHalfLightTable[4]  = RGB(  1, 132, 188); // dark blue
+    oneHalfLightTable[5]  = RGB(166,  38, 164); // dark magenta
+    oneHalfLightTable[6]  = RGB(  9, 151, 179); // dark cyan
+    oneHalfLightTable[7]  = RGB(250, 250, 250); // gray
+    oneHalfLightTable[8]  = RGB( 79,  82,  93); // dark gray
+    oneHalfLightTable[9]  = RGB(223, 108, 117); // red
+    oneHalfLightTable[10] = RGB(152, 195, 121); // green
+    oneHalfLightTable[11] = RGB(228, 192, 122); // yellow
+    oneHalfLightTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfLightTable[13] = RGB(197, 119, 221); // magenta
+    oneHalfLightTable[14] = RGB( 86, 181, 193); // cyan
+    oneHalfLightTable[15] = RGB(255, 255, 255); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
+
+    return oneHalfLightScheme;
+}
+
 ColorScheme _CreateSolarizedDarkScheme()
 {
-
     ColorScheme solarizedDarkScheme { L"Solarized Dark",
                                       RGB(253, 246, 227),
                                       RGB(  7, 54,  66) };
@@ -96,8 +157,8 @@ ColorScheme _CreateSolarizedLightScheme()
 
 // Method Description:
 // - Create the set of schemes to use as the default schemes. Currently creates
-//      three default color schemes - Campbell (the new cmd color scheme),
-//      Solarized Dark and Solarized Light.
+//      five default color schemes - Campbell (the new cmd color scheme),
+//      One Half Dark, One Half Light, Solarized Dark, and Solarized Light.
 // Arguments:
 // - <none>
 // Return Value:
@@ -105,9 +166,10 @@ ColorScheme _CreateSolarizedLightScheme()
 void CascadiaSettings::_CreateDefaultSchemes()
 {
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfDarkScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfLightScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
-
 }
 
 // Method Description:
@@ -120,15 +182,14 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile defaultProfile{};
-    defaultProfile.SetFontFace(L"Consolas");
-    defaultProfile.SetCommandline(L"cmd.exe");
-    defaultProfile.SetColorScheme({ L"Campbell" });
-    defaultProfile.SetAcrylicOpacity(0.75);
-    defaultProfile.SetUseAcrylic(true);
-    defaultProfile.SetName(L"cmd");
-
-    _globals.SetDefaultProfile(defaultProfile.GetGuid());
+    Profile cmdProfile{};
+    cmdProfile.SetFontFace(L"Consolas");
+    cmdProfile.SetCommandline(L"cmd.exe");
+    cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+    cmdProfile.SetColorScheme({ L"Campbell" });
+    cmdProfile.SetAcrylicOpacity(0.75);
+    cmdProfile.SetUseAcrylic(true);
+    cmdProfile.SetName(L"cmd");
 
     Profile powershellProfile{};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
@@ -145,13 +206,16 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
+    powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
-    _profiles.emplace_back(defaultProfile);
     _profiles.emplace_back(powershellProfile);
+    _profiles.emplace_back(cmdProfile);
+
+    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
@@ -173,6 +237,9 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                                KeyChord{ KeyModifiers::Ctrl,
                                          static_cast<int>('W') });
+    keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
+                               KeyChord{ KeyModifiers::Ctrl,
+                                         VK_OEM_COMMA });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
                                KeyChord{ KeyModifiers::Ctrl,
@@ -217,10 +284,46 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        VK_PRIOR });
+                                        VK_UP });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_DOWN });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollDownPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_NEXT });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_PRIOR });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('1') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('2') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('3') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('4') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('5') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('6') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('7') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('8') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('9') });
+    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
+                              KeyChord{ KeyModifiers::Alt,
+                                        static_cast<int>('0') });
 }
 
 // Method Description:
@@ -358,7 +461,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     do
     {
         result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), static_cast<DWORD>(result.size()));
+        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
     } while (requiredSize != result.size());
 
     // Trim the terminating null character

@@ -70,6 +70,7 @@ void AppHost::Initialize()
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
+    _app.LastTabClosed({ this, &AppHost::LastTabClosed });
 
     AppTitleChanged(_app.GetTitle());
 
@@ -91,6 +92,16 @@ void AppHost::Initialize()
 void AppHost::AppTitleChanged(winrt::hstring newTitle)
 {
     _window->UpdateTitle(newTitle.c_str());
+}
+
+// Method Description:
+// - Called when no tab is remaining to close the window.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::LastTabClosed() {
+    _window->Close();
 }
 
 // Method Description:

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -34,6 +35,19 @@ static const std::wstring INCREASEFONTSIZE_KEY{ L"increaseFontSize" };
 static const std::wstring DECREASEFONTSIZE_KEY{ L"decreaseFontSize" };
 static const std::wstring SCROLLUP_KEY{ L"scrollUp" };
 static const std::wstring SCROLLDOWN_KEY{ L"scrollDown" };
+static const std::wstring SCROLLUPPAGE_KEY{ L"scrollUpPage" };
+static const std::wstring SCROLLDOWNPAGE_KEY{ L"scrollDownPage" };
+static const std::wstring SWITCHTOTAB0_KEY{ L"switchToTab0" };
+static const std::wstring SWITCHTOTAB1_KEY{ L"switchToTab1" };
+static const std::wstring SWITCHTOTAB2_KEY{ L"switchToTab2" };
+static const std::wstring SWITCHTOTAB3_KEY{ L"switchToTab3" };
+static const std::wstring SWITCHTOTAB4_KEY{ L"switchToTab4" };
+static const std::wstring SWITCHTOTAB5_KEY{ L"switchToTab5" };
+static const std::wstring SWITCHTOTAB6_KEY{ L"switchToTab6" };
+static const std::wstring SWITCHTOTAB7_KEY{ L"switchToTab7" };
+static const std::wstring SWITCHTOTAB8_KEY{ L"switchToTab8" };
+static const std::wstring SWITCHTOTAB9_KEY{ L"switchToTab9" };
+static const std::wstring OPENSETTINGS_KEY{ L"openSettings" };
 
 static const std::vector<std::pair<ShortcutAction, std::wstring>> commandNames {
     { ShortcutAction::CopyText, COPYTEXT_KEY },
@@ -52,13 +66,24 @@ static const std::vector<std::pair<ShortcutAction, std::wstring>> commandNames {
     { ShortcutAction::NewWindow, NEWWINDOW_KEY },
     { ShortcutAction::CloseWindow, CLOSEWINDOW_KEY },
     { ShortcutAction::CloseTab, CLOSETAB_KEY },
-    { ShortcutAction::SwitchToTab, SWITCHTOTAB_KEY },
     { ShortcutAction::NextTab, NEXTTAB_KEY },
     { ShortcutAction::PrevTab, PREVTAB_KEY },
     { ShortcutAction::IncreaseFontSize, INCREASEFONTSIZE_KEY },
     { ShortcutAction::DecreaseFontSize, DECREASEFONTSIZE_KEY },
     { ShortcutAction::ScrollUp, SCROLLUP_KEY },
     { ShortcutAction::ScrollDown, SCROLLDOWN_KEY },
+    { ShortcutAction::ScrollUpPage, SCROLLUPPAGE_KEY },
+    { ShortcutAction::ScrollDownPage, SCROLLDOWNPAGE_KEY },
+    { ShortcutAction::SwitchToTab0, SWITCHTOTAB0_KEY },
+    { ShortcutAction::SwitchToTab1, SWITCHTOTAB1_KEY },
+    { ShortcutAction::SwitchToTab2, SWITCHTOTAB2_KEY },
+    { ShortcutAction::SwitchToTab3, SWITCHTOTAB3_KEY },
+    { ShortcutAction::SwitchToTab4, SWITCHTOTAB4_KEY },
+    { ShortcutAction::SwitchToTab5, SWITCHTOTAB5_KEY },
+    { ShortcutAction::SwitchToTab6, SWITCHTOTAB6_KEY },
+    { ShortcutAction::SwitchToTab7, SWITCHTOTAB7_KEY },
+    { ShortcutAction::SwitchToTab8, SWITCHTOTAB8_KEY },
+    { ShortcutAction::SwitchToTab9, SWITCHTOTAB9_KEY },
 };
 
 namespace winrt::TerminalApp::implementation
@@ -92,6 +117,9 @@ namespace winrt::TerminalApp::implementation
                 return true;
             case ShortcutAction::NewTab:
                 _NewTabHandlers();
+                return true;
+            case ShortcutAction::OpenSettings:
+                _OpenSettingsHandlers();
                 return true;
 
             case ShortcutAction::NewTabProfile0:
@@ -141,12 +169,49 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::ScrollDown:
                 _ScrollDownHandlers();
                 return true;
+            case ShortcutAction::ScrollUpPage:
+                _ScrollUpPageHandlers();
+                return true;
+            case ShortcutAction::ScrollDownPage:
+                _ScrollDownPageHandlers();
+                return true;
 
             case ShortcutAction::NextTab:
                 _NextTabHandlers();
                 return true;
             case ShortcutAction::PrevTab:
                 _PrevTabHandlers();
+                return true;
+
+            case ShortcutAction::SwitchToTab0:
+                _SwitchToTabHandlers(0);
+                return true;
+            case ShortcutAction::SwitchToTab1:
+                _SwitchToTabHandlers(1);
+                return true;
+            case ShortcutAction::SwitchToTab2:
+                _SwitchToTabHandlers(2);
+                return true;
+            case ShortcutAction::SwitchToTab3:
+                _SwitchToTabHandlers(3);
+                return true;
+            case ShortcutAction::SwitchToTab4:
+                _SwitchToTabHandlers(4);
+                return true;
+            case ShortcutAction::SwitchToTab5:
+                _SwitchToTabHandlers(5);
+                return true;
+            case ShortcutAction::SwitchToTab6:
+                _SwitchToTabHandlers(6);
+                return true;
+            case ShortcutAction::SwitchToTab7:
+                _SwitchToTabHandlers(7);
+                return true;
+            case ShortcutAction::SwitchToTab8:
+                _SwitchToTabHandlers(8);
+                return true;
+            case ShortcutAction::SwitchToTab9:
+                _SwitchToTabHandlers(9);
                 return true;
         }
         return false;
@@ -167,7 +232,9 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
-
+    DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
 
     // Method Description:
     // - Deserialize an AppKeyBindings from the key mappings that are in the
