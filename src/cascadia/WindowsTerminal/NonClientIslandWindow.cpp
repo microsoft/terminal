@@ -68,7 +68,6 @@ void NonClientIslandWindow::Initialize()
 void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _nonClientRootGrid.Children().Clear();
-    ApplyCorrection(_scale.ScaleX());
     _nonClientRootGrid.Children().Append(content);
 }
 
@@ -177,8 +176,14 @@ void NonClientIslandWindow::OnSize()
                  clientArea.Height(),
                  SWP_SHOWWINDOW);
 
-    _rootGrid.Width(clientArea.Width());
-    _rootGrid.Height(clientArea.Height());
+    if (_rootGrid)
+    {
+        const auto dpi = GetCurrentDpiScale();
+        const auto logicalWidth = (clientArea.Width() / dpi) + 0.5;
+        _rootGrid.Width(logicalWidth);
+        const auto logicalHeigth = (clientArea.Height() / dpi) + 0.5;
+        _rootGrid.Height(logicalHeigth);
+    }
 
     // update the interop window size
     SetWindowPos(_nonClientInteropWindowHandle, 0,

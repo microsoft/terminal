@@ -89,7 +89,6 @@ public:
         }
         case CM_UPDATE_TITLE:
         {
-
             SetWindowTextW(_window, _title.c_str());
             break;
         }
@@ -115,13 +114,10 @@ public:
                 SWP_NOZORDER | SWP_NOACTIVATE);
 
             _currentDpi = uDpi;
-            NewScale(uDpi);
         }
         _inDpiChange = false;
         return 0;
     }
-
-    virtual void NewScale(UINT dpi) = 0;
 
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
