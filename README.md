@@ -110,6 +110,10 @@ We ask that **before you start work on a feature that you would like to contribu
 
 > ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
 
+## Documentation
+
+All documentation is located in the ./docs folder. If you would like to contribute to the documentation, please complete a pull request with any new changes.
+
 ## Communicating with the Team
 
 The easiest way to communicate with the team is via GitHub issues. Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before you do**.
