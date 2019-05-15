@@ -112,7 +112,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 ## Documentation
 
-All documentation is located in the ./docs folder. If you would like to contribute to the documentation, please complete a pull request with any new changes.
+All documentation is located in the `./docs` folder. If you would like to contribute to the documentation, please submit a pull request.
 
 ## Communicating with the Team
 
