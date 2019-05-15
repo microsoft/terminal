@@ -9,9 +9,9 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int SEPERATOR_SIZE = 8;
+static const int SEPERATOR_SIZE = 4;
 
-Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused) :
+Pane::Pane(GUID profile, TermControl control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile },
@@ -185,6 +185,21 @@ void Pane::CheckFocus()
 }
 
 // Method Description:
+// - Focuses this control if we're a leaf, or attempts to focus the first leaf
+//   of our first child, recursively.
+void Pane::_FocusFirstChild()
+{
+    if (_IsLeaf())
+    {
+        _control.GetControl().Focus(FocusState::Programmatic);
+    }
+    else
+    {
+        _firstChild->_FocusFirstChild();
+    }
+}
+
+// Method Description:
 // - Attempts to update the settings of this pane or any children of this pane.
 //   * If this pane is a leaf, and our profile guid matches the parameter, then
 //     we'll apply the new settings to our control.
@@ -216,6 +231,7 @@ void Pane::CheckUpdateSettings(TerminalSettings settings, GUID profile)
 //   should be preserved, and vice-versa for false.
 void Pane::_CloseChild(const bool closeFirst)
 {
+    auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
     // If the only child left is a leaf, that means we're a leaf now.
@@ -266,21 +282,15 @@ void Pane::_CloseChild(const bool closeFirst)
         _firstChild = remainingChild->_firstChild;
         _secondChild = remainingChild->_secondChild;
 
-        // remainingChild->_root.Children().Clear();
+        // Reset our UI:
         _root.Children().Clear();
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
-        // Copy the UI over to our grid.
-        auto oldCols = remainingChild->_root.ColumnDefinitions();
-        auto oldRows = remainingChild->_root.RowDefinitions();
-
-        // remainingChild->_root.Children().Clear();
-        // remainingChild->_root.ColumnDefinitions().Clear();
-        // remainingChild->_root.RowDefinitions().Clear();
-        // TODO: These throw, because apparently the definitions are still
-        // parented to another (the old) element. maybe we need to just
-        // regenerate them?
+        // Copy the old UI over to our grid.
+        // Start by copying the row/column definitions. Iterate over the
+        // rows/cols, and remove each one from the old grid, and attach it to
+        // our grid instead.
         while (remainingChild->_root.ColumnDefinitions().Size() > 0)
         {
             auto col = remainingChild->_root.ColumnDefinitions().GetAt(0);
@@ -294,22 +304,29 @@ void Pane::_CloseChild(const bool closeFirst)
             _root.RowDefinitions().Append(row);
         }
 
+        // Remove the child's UI elements from the child's grid, so we can
+        // attach them to us instead.
         remainingChild->_root.Children().Clear();
 
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_separatorRoot);
         _root.Children().Append(_secondChild->GetRootElement());
 
-
+        // Set up new close handlers on the children, so thay'll notify us
+        // instead of their old parent.
         _SetupChildCloseHandlers();
 
+        // If the closed child was focused, transfer the focus to it's first sibling.
+        if (closedChild->_lastFocused)
+        {
+            _FocusFirstChild();
+        }
+
+        // Release the pointers that the child was holding.
         remainingChild->_firstChild = nullptr;
         remainingChild->_secondChild = nullptr;
         remainingChild->_separatorRoot = { nullptr };
-
     }
-
-
 }
 
 // Method Description:
@@ -329,6 +346,13 @@ void Pane::_SetupChildCloseHandlers()
     });
 }
 
+// Method Description:
+// - Vertically split the focused pane in our tree of panes, and place the given
+//   TermControl into the newly created pane. If we're the focused pane, then
+//   we'll create two new children, and place them side-by-side in our Grid.
+// Arguments:
+// - profile: The profile GUID to associate with the newly created pane.
+// - control: A TermControl to use in the new pane.
 void Pane::SplitVertical(const GUID profile, TermControl control)
 {
     // If we're not the leaf, recurse into our children to split them.
@@ -393,7 +417,14 @@ void Pane::SplitVertical(const GUID profile, TermControl control)
     _lastFocused = false;
 }
 
-void Pane::SplitHorizontal(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
+// Method Description:
+// - Horizontally split the focused pane in our tree of panes, and place the given
+//   TermControl into the newly created pane. If we're the focused pane, then
+//   we'll create two new children, and place them side-by-side in our Grid.
+// Arguments:
+// - profile: The profile GUID to associate with the newly created pane.
+// - control: A TermControl to use in the new pane.
+void Pane::SplitHorizontal(const GUID profile, TermControl control)
 {
     if (!_IsLeaf())
     {

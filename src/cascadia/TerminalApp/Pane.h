@@ -56,4 +56,5 @@ private:
 
     void _CloseChild(const bool closeFirst);
 
+    void _FocusFirstChild();
 };
