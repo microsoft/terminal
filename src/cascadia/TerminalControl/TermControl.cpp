@@ -178,8 +178,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_settings.UseAcrylic())
         {
             Media::AcrylicBrush acrylic{};
-            acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylic.FallbackColor(bgColor);
+			acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+			acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
             acrylic.TintOpacity(_settings.TintOpacity());
             _root.Background(acrylic);
@@ -189,13 +189,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // default BG color.
             _settings.DefaultBackground(ARGB(0, R, G, B));
         }
+		else if (!_settings.BackgroundImage().empty())
+		{
+			Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+			Media::Imaging::BitmapImage image(imageUri);
+
+			Media::ImageBrush brush{};
+			brush.ImageSource(image);
+			brush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
+			brush.Opacity(_settings.BackgroundImageOpacity());
+
+			_root.Background(brush);
+
+			// Set the default background as transparent to prevent the
+			// DX layer from overwriting the image settings
+			_settings.DefaultBackground(ARGB(0, R, G, B));
+		}
         else
         {
             Media::SolidColorBrush solidColor{};
             solidColor.Color(bgColor);
             _root.Background(solidColor);
             _settings.DefaultBackground(RGB(R, G, B));
-        }
+		}
 
         // Apply padding to the root Grid
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
@@ -1022,6 +1038,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // send data up for clipboard
         _clipboardCopyHandlers(copiedData);
     }
+
+	//void TermControl::PasteText(winrt::hstring text)
+	//{
+	//	_SendInputToConnection(text.c_str());
+	//}
 
     void TermControl::Close()
     {

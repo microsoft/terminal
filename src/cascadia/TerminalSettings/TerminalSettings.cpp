@@ -24,6 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
+		_backgroundImage{},
+		_backgroundImageOpacity{ 1.0 },
+		_backgroundImageStretchMode{ ImageStretchMode::UniformToFill },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
@@ -190,6 +193,37 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     {
         _fontSize = value;
     }
+
+	void TerminalSettings::BackgroundImage(hstring const& value)
+	{
+		_backgroundImage = value;
+	}
+
+	hstring TerminalSettings::BackgroundImage()
+	{
+		return _backgroundImage;
+	}
+
+	void TerminalSettings::BackgroundImageOpacity(double value)
+	{
+		_backgroundImageOpacity = value;
+	}
+
+	double TerminalSettings::BackgroundImageOpacity()
+	{
+		return _backgroundImageOpacity;
+	}
+
+	winrt::Microsoft::Terminal::Settings::ImageStretchMode TerminalSettings::BackgroundImageStretchMode()
+	{
+		return _backgroundImageStretchMode;
+	}
+
+	void TerminalSettings::BackgroundImageStretchMode(winrt::Microsoft::Terminal::Settings::ImageStretchMode value)
+	{
+		_backgroundImageStretchMode = value;
+	}
+
 
     Settings::IKeyBindings TerminalSettings::KeyBindings()
     {
