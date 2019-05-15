@@ -827,12 +827,11 @@ namespace winrt::TerminalApp::implementation
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
-        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-        if (_tabs.size() <= 1)
+        // To close the window here, we need to close the hosting window.
+        if (_tabs.size() == 1)
         {
-            return;
+            _lastTabClosedHandlers();
         }
-
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 
@@ -885,4 +884,5 @@ namespace winrt::TerminalApp::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 }

@@ -13,7 +13,7 @@ public:
     virtual ~IslandWindow() override;
 
     void MakeWindow() noexcept;
-
+    void Close();
     virtual void OnSize();
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
