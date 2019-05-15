@@ -8,47 +8,47 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
-static const std::wstring KEYS_KEY{ L"keys" };
-static const std::wstring COMMAND_KEY{ L"command" };
+static const wchar_t* const KEYS_KEY{ L"keys" };
+static const wchar_t* const COMMAND_KEY{ L"command" };
 
-static const std::wstring COPYTEXT_KEY{ L"copy" };
-static const std::wstring PASTETEXT_KEY{ L"paste" };
-static const std::wstring NEWTAB_KEY{ L"newTab" };
-static const std::wstring NEWTABWITHPROFILE0_KEY{ L"newTabProfile0" };
-static const std::wstring NEWTABWITHPROFILE1_KEY{ L"newTabProfile1" };
-static const std::wstring NEWTABWITHPROFILE2_KEY{ L"newTabProfile2" };
-static const std::wstring NEWTABWITHPROFILE3_KEY{ L"newTabProfile3" };
-static const std::wstring NEWTABWITHPROFILE4_KEY{ L"newTabProfile4" };
-static const std::wstring NEWTABWITHPROFILE5_KEY{ L"newTabProfile5" };
-static const std::wstring NEWTABWITHPROFILE6_KEY{ L"newTabProfile6" };
-static const std::wstring NEWTABWITHPROFILE7_KEY{ L"newTabProfile7" };
-static const std::wstring NEWTABWITHPROFILE8_KEY{ L"newTabProfile8" };
-static const std::wstring NEWTABWITHPROFILE9_KEY{ L"newTabProfile9" };
-static const std::wstring NEWWINDOW_KEY{ L"newWindow" };
-static const std::wstring CLOSEWINDOW_KEY{ L"closeWindow" };
-static const std::wstring CLOSETAB_KEY{ L"closeTab" };
-static const std::wstring SWITCHTOTAB_KEY{ L"switchToTab" };
-static const std::wstring NEXTTAB_KEY{ L"nextTab" };
-static const std::wstring PREVTAB_KEY{ L"prevTab" };
-static const std::wstring INCREASEFONTSIZE_KEY{ L"increaseFontSize" };
-static const std::wstring DECREASEFONTSIZE_KEY{ L"decreaseFontSize" };
-static const std::wstring SCROLLUP_KEY{ L"scrollUp" };
-static const std::wstring SCROLLDOWN_KEY{ L"scrollDown" };
-static const std::wstring SCROLLUPPAGE_KEY{ L"scrollUpPage" };
-static const std::wstring SCROLLDOWNPAGE_KEY{ L"scrollDownPage" };
-static const std::wstring SWITCHTOTAB0_KEY{ L"switchToTab0" };
-static const std::wstring SWITCHTOTAB1_KEY{ L"switchToTab1" };
-static const std::wstring SWITCHTOTAB2_KEY{ L"switchToTab2" };
-static const std::wstring SWITCHTOTAB3_KEY{ L"switchToTab3" };
-static const std::wstring SWITCHTOTAB4_KEY{ L"switchToTab4" };
-static const std::wstring SWITCHTOTAB5_KEY{ L"switchToTab5" };
-static const std::wstring SWITCHTOTAB6_KEY{ L"switchToTab6" };
-static const std::wstring SWITCHTOTAB7_KEY{ L"switchToTab7" };
-static const std::wstring SWITCHTOTAB8_KEY{ L"switchToTab8" };
-static const std::wstring SWITCHTOTAB9_KEY{ L"switchToTab9" };
-static const std::wstring OPENSETTINGS_KEY{ L"openSettings" };
+static const wchar_t* const COPYTEXT_KEY{ L"copy" };
+static const wchar_t* const PASTETEXT_KEY{ L"paste" };
+static const wchar_t* const NEWTAB_KEY{ L"newTab" };
+static const wchar_t* const NEWTABWITHPROFILE0_KEY{ L"newTabProfile0" };
+static const wchar_t* const NEWTABWITHPROFILE1_KEY{ L"newTabProfile1" };
+static const wchar_t* const NEWTABWITHPROFILE2_KEY{ L"newTabProfile2" };
+static const wchar_t* const NEWTABWITHPROFILE3_KEY{ L"newTabProfile3" };
+static const wchar_t* const NEWTABWITHPROFILE4_KEY{ L"newTabProfile4" };
+static const wchar_t* const NEWTABWITHPROFILE5_KEY{ L"newTabProfile5" };
+static const wchar_t* const NEWTABWITHPROFILE6_KEY{ L"newTabProfile6" };
+static const wchar_t* const NEWTABWITHPROFILE7_KEY{ L"newTabProfile7" };
+static const wchar_t* const NEWTABWITHPROFILE8_KEY{ L"newTabProfile8" };
+static const wchar_t* const NEWTABWITHPROFILE9_KEY{ L"newTabProfile9" };
+static const wchar_t* const NEWWINDOW_KEY{ L"newWindow" };
+static const wchar_t* const CLOSEWINDOW_KEY{ L"closeWindow" };
+static const wchar_t* const CLOSETAB_KEY{ L"closeTab" };
+static const wchar_t* const SWITCHTOTAB_KEY{ L"switchToTab" };
+static const wchar_t* const NEXTTAB_KEY{ L"nextTab" };
+static const wchar_t* const PREVTAB_KEY{ L"prevTab" };
+static const wchar_t* const INCREASEFONTSIZE_KEY{ L"increaseFontSize" };
+static const wchar_t* const DECREASEFONTSIZE_KEY{ L"decreaseFontSize" };
+static const wchar_t* const SCROLLUP_KEY{ L"scrollUp" };
+static const wchar_t* const SCROLLDOWN_KEY{ L"scrollDown" };
+static const wchar_t* const SCROLLUPPAGE_KEY{ L"scrollUpPage" };
+static const wchar_t* const SCROLLDOWNPAGE_KEY{ L"scrollDownPage" };
+static const wchar_t* const SWITCHTOTAB0_KEY{ L"switchToTab0" };
+static const wchar_t* const SWITCHTOTAB1_KEY{ L"switchToTab1" };
+static const wchar_t* const SWITCHTOTAB2_KEY{ L"switchToTab2" };
+static const wchar_t* const SWITCHTOTAB3_KEY{ L"switchToTab3" };
+static const wchar_t* const SWITCHTOTAB4_KEY{ L"switchToTab4" };
+static const wchar_t* const SWITCHTOTAB5_KEY{ L"switchToTab5" };
+static const wchar_t* const SWITCHTOTAB6_KEY{ L"switchToTab6" };
+static const wchar_t* const SWITCHTOTAB7_KEY{ L"switchToTab7" };
+static const wchar_t* const SWITCHTOTAB8_KEY{ L"switchToTab8" };
+static const wchar_t* const SWITCHTOTAB9_KEY{ L"switchToTab9" };
+static const wchar_t* const OPENSETTINGS_KEY{ L"openSettings" };
 
-static const std::vector<std::pair<ShortcutAction, std::wstring>> commandNames {
+static const std::map<ShortcutAction, std::wstring_view> commandNames {
     { ShortcutAction::CopyText, COPYTEXT_KEY },
     { ShortcutAction::PasteText, PASTETEXT_KEY },
     { ShortcutAction::NewTab, NEWTAB_KEY },
@@ -311,7 +311,7 @@ namespace winrt::TerminalApp::implementation
     // - actionName: the name of the ShortcutAction to use with this KeyChord
     void _AddShortcutToJsonArray(JsonArray bindingsArray,
                                  const Settings::KeyChord& chord,
-                                 const std::wstring& actionName)
+                                 const std::wstring_view& actionName)
     {
         const auto keyString = chord.ToString();
         if (keyString == L"")

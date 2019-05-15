@@ -4,14 +4,13 @@
 #include "pch.h"
 #include "KeyChord.h"
 
-
-static const std::wstring CTRL_KEY{ L"ctrl" };
-static const std::wstring SHIFT_KEY{ L"shift" };
-static const std::wstring ALT_KEY{ L"alt" };
+static const wchar_t* const CTRL_KEY{ L"ctrl" };
+static const wchar_t* const SHIFT_KEY{ L"shift" };
+static const wchar_t* const ALT_KEY{ L"alt" };
 
 static constexpr int MAX_CHORD_PARTS = 4;
 
-static const std::unordered_map<int32_t, std::wstring> vkeyNamePairs {
+static const std::unordered_map<int32_t, std::wstring_view> vkeyNamePairs {
     { VK_BACK       , L"backspace"},
     { VK_TAB        , L"tab"},
     { VK_RETURN     , L"enter" },
@@ -266,14 +265,10 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         }
         else
         {
-            for (const auto& pair : vkeyNamePairs)
+            if (vkeyNamePairs.find(_vkey) != vkeyNamePairs.end())
             {
-                if (pair.first == _vkey)
-                {
-                    buffer += pair.second;
-                    serializedSuccessfully = true;
-                    break;
-                }
+                buffer += vkeyNamePairs.at(_vkey);
+                serializedSuccessfully = true;
             }
         }
 
