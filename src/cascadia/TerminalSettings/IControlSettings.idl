@@ -20,7 +20,7 @@ namespace Microsoft.Terminal.Settings
         UniformToFill = 3
     };
 
-	// Class Description:
+    // Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings

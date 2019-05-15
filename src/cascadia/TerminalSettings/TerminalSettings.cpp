@@ -24,9 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
-		_backgroundImage{},
-		_backgroundImageOpacity{ 1.0 },
-		_backgroundImageStretchMode{ ImageStretchMode::UniformToFill },
+        _backgroundImage{},
+        _backgroundImageOpacity{ 1.0 },
+        _backgroundImageStretchMode{ ImageStretchMode::UniformToFill },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {

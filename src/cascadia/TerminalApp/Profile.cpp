@@ -56,7 +56,6 @@ static const std::wstring IMAGESTRETCHMODE_FILL{ L"fill" };
 static const std::wstring IMAGESTRETCHMODE_UNIFORM{ L"uniform" };
 static const std::wstring IMAGESTRETCHMODE_UNIFORMTOFILL{ L"uniformToFill" };
 
-
 Profile::Profile() :
     Profile(Utils::CreateGuid())
 {
@@ -86,9 +85,9 @@ Profile::Profile(const winrt::guid& guid):
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
     _icon{ },
-	_backgroundImage{ },
-	_backgroundImageOpacity{ },
-	_backgroundImageStretchMode{ }
+    _backgroundImage{ },
+    _backgroundImageOpacity{ },
+    _backgroundImageStretchMode{ }
 {
 }
 
@@ -311,10 +310,6 @@ JsonObject Profile::ToJson() const
     {
         const auto opacity = JsonValue::CreateNumberValue(_backgroundImageOpacity.value());
         jsonObject.Insert(BACKGROUNDIMAGEOPACITY_KEY, opacity);
-    }
-
-    if (_backgroundImageStretchMode)
-    {
     }
 
     if (_backgroundImageStretchMode)
