@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -88,13 +87,13 @@ static const std::vector<std::pair<ShortcutAction, std::wstring>> commandNames {
 
 namespace winrt::TerminalApp::implementation
 {
-    void AppKeyBindings::SetKeyBinding(TerminalApp::ShortcutAction const& action,
-                                       Settings::KeyChord const& chord)
+    void AppKeyBindings::SetKeyBinding(const TerminalApp::ShortcutAction& action,
+                                       const Settings::KeyChord& chord)
     {
         _keyShortcuts[chord] = action;
     }
 
-    bool AppKeyBindings::TryKeyChord(Settings::KeyChord const& kc)
+    bool AppKeyBindings::TryKeyChord(const Settings::KeyChord& kc)
     {
         const auto keyIter = _keyShortcuts.find(kc);
         if (keyIter != _keyShortcuts.end())
@@ -239,15 +238,15 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Deserialize an AppKeyBindings from the key mappings that are in the
     //   array `json`. The json array should contain an array of objects with
-    //   both a `command` string and a `keys` array, where `command` i one of
+    //   both a `command` string and a `keys` array, where `command` is one of
     //   the names listed in `commandNames`, and `keys` is an array of
     //   keypresses. Currently, the array should contain a single string, which
     //   can be deserialized into a KeyChord.
     // Arguments:
-    // - json: and arrayof JsonObject's to deserialize into our _keyShortcuts mapping.
+    // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
     // Return Value:
     // - the newly constructed AppKeyBindings object.
-    TerminalApp::AppKeyBindings AppKeyBindings::FromJson(Windows::Data::Json::JsonArray const& json)
+    TerminalApp::AppKeyBindings AppKeyBindings::FromJson(const JsonArray& json)
     {
         TerminalApp::AppKeyBindings newBindings{};
 

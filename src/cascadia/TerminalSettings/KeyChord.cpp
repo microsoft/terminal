@@ -4,11 +4,14 @@
 #include "pch.h"
 #include "KeyChord.h"
 
+
 static const std::wstring CTRL_KEY{ L"ctrl" };
 static const std::wstring SHIFT_KEY{ L"shift" };
 static const std::wstring ALT_KEY{ L"alt" };
 
-static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs {
+static constexpr int MAX_CHORD_PARTS = 4;
+
+static const std::unordered_map<int32_t, std::wstring> vkeyNamePairs {
     { VK_BACK       , L"backspace"},
     { VK_TAB        , L"tab"},
     { VK_RETURN     , L"enter" },
@@ -34,11 +37,11 @@ static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs {
     { VK_NUMPAD7    , L"numpad_7" },
     { VK_NUMPAD8    , L"numpad_8" },
     { VK_NUMPAD9    , L"numpad_9" },
-    { VK_MULTIPLY   , L"*" },
-    { VK_ADD        , L"+" },
-    { VK_SUBTRACT   , L"-" },
-    { VK_DECIMAL    , L"." },
-    { VK_DIVIDE     , L"/" },
+    { VK_MULTIPLY   , L"numpad_multiply" },
+    { VK_ADD        , L"numpad_plus" },
+    { VK_SUBTRACT   , L"numpad_minus" },
+    { VK_DECIMAL    , L"numpad_period" },
+    { VK_DIVIDE     , L"numpad_divide" },
     { VK_F1         , L"f1" },
     { VK_F2         , L"f2" },
     { VK_F3         , L"f3" },
@@ -63,7 +66,7 @@ static const std::vector<std::pair<int32_t, std::wstring>> vkeyNamePairs {
     { VK_F22        , L"f22" },
     { VK_F23        , L"f23" },
     { VK_F24        , L"f24" },
-    { VK_OEM_PLUS   , L"+" },
+    { VK_OEM_PLUS   , L"plus" },
     { VK_OEM_COMMA  , L"," },
     { VK_OEM_MINUS  , L"-" },
     { VK_OEM_PERIOD , L"." }
@@ -139,12 +142,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         while(std::getline(wss, temp, L'+'))
         {
             parts.push_back(temp);
-        }
 
-        // If we have > 4, something's wrong.
-        if (parts.size() > 4)
-        {
-            throw hresult_invalid_argument();
+            // If we have > 4, something's wrong.
+            if (parts.size() > MAX_CHORD_PARTS)
+            {
+                throw hresult_invalid_argument();
+            }
         }
 
         KeyModifiers modifiers = KeyModifiers::None;
@@ -153,15 +156,17 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         // Look for ctrl, shift, alt. Anything else might be a key
         for (const auto& part : parts)
         {
-            if (part == CTRL_KEY)
+            std::wstring lowercase = part;
+            std::transform(lowercase.begin(), lowercase.end(), lowercase.begin(), std::towlower);
+            if (lowercase == CTRL_KEY)
             {
                 modifiers |= KeyModifiers::Ctrl;
             }
-            else if (part == ALT_KEY)
+            else if (lowercase == ALT_KEY)
             {
                 modifiers |= KeyModifiers::Alt;
             }
-            else if (part == SHIFT_KEY)
+            else if (lowercase == SHIFT_KEY)
             {
                 modifiers |= KeyModifiers::Shift;
             }
@@ -222,8 +227,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     // - The string will fit the format "[ctrl+][alt+][shift+]<keyName>",
     //   where each modifier is optional, and keyName is either one of the
     //   names listed in the vkeyNamePairs vector above, or is one of 0-9a-z.
-    // Arguments:
-    // - <none>
     // Return Value:
     // - a string which is an equivalent serialization of this object.
     hstring KeyChord::ToString()
