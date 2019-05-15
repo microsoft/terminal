@@ -17,7 +17,6 @@ namespace TerminalApp
         NewTabProfile6,
         NewTabProfile7,
         NewTabProfile8,
-        NewTabProfile9,
         NewWindow,
         CloseWindow,
         CloseTab,

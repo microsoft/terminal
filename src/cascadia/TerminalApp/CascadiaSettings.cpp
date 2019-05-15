@@ -278,9 +278,6 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('9') });
-    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        static_cast<int>('0') });
 
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
