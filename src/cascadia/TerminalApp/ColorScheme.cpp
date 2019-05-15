@@ -98,7 +98,7 @@ JsonObject ColorScheme::ToJson() const
     int i = 0;
     for (const auto& current : TABLE_COLORS)
     {
-        auto& color = _table[i];
+        auto& color = _table.at(i);
         auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
 
         jsonObject.Insert(current, s);
@@ -147,7 +147,7 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
             {
                 auto str = v.GetString();
                 auto color = Utils::ColorFromHexString(str.c_str());
-                result._table[i] = color;
+                result._table.at(i) = color;
             }
             i++;
         }
@@ -160,7 +160,7 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         {
             const auto str = json.GetNamedString(current);
             const auto color = Utils::ColorFromHexString(str.c_str());
-            result._table[i] = color;
+            result._table.at(i) = color;
         }
         i++;
     }
