@@ -89,14 +89,18 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::ScrollDown:
                 _ScrollDownHandlers();
                 return true;
-
+            case ShortcutAction::ScrollUpPage:
+                _ScrollUpPageHandlers();
+                return true;
+            case ShortcutAction::ScrollDownPage:
+                _ScrollDownPageHandlers();
+                return true;
             case ShortcutAction::NextTab:
                 _NextTabHandlers();
                 return true;
             case ShortcutAction::PrevTab:
                 _PrevTabHandlers();
                 return true;
-
             case ShortcutAction::SwitchToTab0:
                 _SwitchToTabHandlers(0);
                 return true;
@@ -146,6 +150,8 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
     DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
 
 

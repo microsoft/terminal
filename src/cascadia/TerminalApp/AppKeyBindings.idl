@@ -37,6 +37,8 @@ namespace TerminalApp
         DecreaseFontSize,
         ScrollUp,
         ScrollDown,
+        ScrollUpPage,
+        ScrollDownPage,
         OpenSettings
     };
 
@@ -54,6 +56,8 @@ namespace TerminalApp
     delegate void DecreaseFontSizeEventArgs();
     delegate void ScrollUpEventArgs();
     delegate void ScrollDownEventArgs();
+    delegate void ScrollUpPageEventArgs();
+    delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
 
     [default_interface]
@@ -77,6 +81,8 @@ namespace TerminalApp
         event DecreaseFontSizeEventArgs DecreaseFontSize;
         event ScrollUpEventArgs ScrollUp;
         event ScrollDownEventArgs ScrollDown;
+        event ScrollUpPageEventArgs ScrollUpPage;
+        event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
     }
 }

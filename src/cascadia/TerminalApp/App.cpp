@@ -323,10 +323,12 @@ namespace winrt::TerminalApp::implementation
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _DoScroll(-1); });
-        bindings.ScrollDown([this]() { _DoScroll(1); });
+        bindings.ScrollUp([this]() { _Scroll(-1); });
+        bindings.ScrollDown([this]() { _Scroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
+        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
     }
@@ -676,10 +678,27 @@ namespace winrt::TerminalApp::implementation
     //      view up, and positive values will move the viewport down.
     // Arguments:
     // - delta: a number of lines to move the viewport relative to the current viewport.
-    void App::_DoScroll(int delta)
+    void App::_Scroll(int delta)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         _tabs[focusedTabIndex]->Scroll(delta);
+    }
+
+    // Method Description:
+    // - Move the viewport of the terminal of the currently focused tab up or
+    //      down a page. The page length will be dependent on the terminal view height.
+    //      Negative values of `delta` will move the view up by one page, and positive values
+    //      will move the viewport down by one page.
+    // Arguments:
+    // - delta: The direction to move the view relative to the current viewport(it 
+    //      is clamped between -1 and 1)
+    void App::_ScrollPage(int delta)
+    {
+        delta = std::clamp(delta, -1, 1);
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
+        const auto termHeight = control.GetViewHeight();
+        _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
 
     // Method Description:
