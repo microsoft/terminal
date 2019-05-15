@@ -9,7 +9,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-Tab::Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control) :
+Tab::Tab(GUID profile, TermControl control) :
     _focused{ false },
     _tabViewItem{ nullptr },
     _rootPane{ nullptr }
@@ -37,12 +37,21 @@ void Tab::_MakeTabViewItem()
     _tabViewItem.FontSize(12);
 }
 
-winrt::Windows::UI::Xaml::UIElement Tab::GetRootElement()
+UIElement Tab::GetRootElement()
 {
     return _rootPane->GetRootElement();
 }
 
-winrt::Microsoft::Terminal::TerminalControl::TermControl Tab::GetLastFocusedTerminalControl()
+// Method Description:
+// - Returns nullptr if no children of this tab were the last control to be
+//   focused, or the TermControl that _was_ the last control to be focused (if
+//   there was one).
+// - This control might not currently be focused, if the tab itself is not
+//   currently focused.
+// Return Value:
+// - nullptr if no children were marked `_lastFocused`, else the TermControl
+//   that was last focused.
+TermControl Tab::GetLastFocusedTerminalControl()
 {
     return _rootPane->GetLastFocusedTerminalControl();
 }
@@ -57,6 +66,14 @@ bool Tab::IsFocused()
     return _focused;
 }
 
+// Method Description:
+// - Updates our focus state. If we're gaining focus, make sure to transfer
+//   focus to the last focused terminal control in our tree of controls.
+// Arguments:
+// - focused: our new focus state. If true, we should be focused. If false, we
+//   should be unfocused.
+// Return Value:
+// - <none>
 void Tab::SetFocused(const bool focused)
 {
     _focused = focused;
@@ -67,16 +84,30 @@ void Tab::SetFocused(const bool focused)
     }
 }
 
+// Method Description:
+// - Returns nullopt if no children of this tab were the last control to be
+//   focused, or the GUID of the profile of the last control to be focused (if
+//   there was one).
+// Return Value:
+// - nullopt if no children of this tab were the last control to be
+//   focused, else the GUID of the profile of the last control to be focused
 std::optional<GUID> Tab::GetLastFocusedProfile() const noexcept
 {
     return _rootPane->GetLastFocusedProfile();
 }
 
+// Method Description:
+// - Attempts to update the settings of this tab's tree of panes.
+// Arguments:
+// - settings: The new TerminalSettings to apply to any matching controls
+// - profile: The GUID of the profile these settings should apply to.
 void Tab::CheckUpdateSettings(TerminalSettings settings, GUID profile)
 {
     _rootPane->CheckUpdateSettings(settings, profile);
 }
 
+// Method Description:
+// - Focus the last focused control in our tree of panes.
 void Tab::_Focus()
 {
     _focused = true;
@@ -88,17 +119,31 @@ void Tab::_Focus()
     }
 }
 
+// Method Description:
+// - Update the focus state of this tab's tree of panes. If one of the controls
+//   under this tab is focused, then it will be marked as the last focused. If
+//   there are no focused panes, then there will not be a last focused contrl
+//   when this returns.
 void Tab::CheckFocus()
 {
     _rootPane->CheckFocus();
 }
 
-winrt::hstring Tab::CheckTitleUpdate()
+// Method Description:
+// - Gets the title string of the last focused terminal control in our tree.
+//   Returns the empty string if there is no such control.
+// Return Value:
+// - the title string of the last focused terminal control in our tree.
+winrt::hstring Tab::GetLastFocusedTitle()
 {
     auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
+// Method Description:
+// - Set the text on the TabViewItem for this tab.
+// Arguments:
+// - text: The new text string to use as the Header for our TabViewItem
 void Tab::SetTabText(const winrt::hstring& text)
 {
     _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
@@ -123,12 +168,24 @@ void Tab::Scroll(const int delta)
     });
 }
 
-void Tab::SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
+// Method Description:
+// - Vertically split the focused pane in our tree of panes, and place the
+//   given TermControl into the newly created pane.
+// Arguments:
+// - profile: The profile GUID to associate with the newly created pane.
+// - control: A TermControl to use in the new pane.
+void Tab::SplitVertical(GUID profile, TermControl control)
 {
     _rootPane->SplitVertical(profile, control);
 }
 
-void Tab::SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control)
+// Method Description:
+// - Horizontally split the focused pane in our tree of panes, and place the
+//   given TermControl into the newly created pane.
+// Arguments:
+// - profile: The profile GUID to associate with the newly created pane.
+// - control: A TermControl to use in the new pane.
+void Tab::SplitHorizontal(GUID profile, TermControl control)
 {
     _rootPane->SplitHorizontal(profile, control);
 }

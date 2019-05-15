@@ -443,6 +443,11 @@ namespace winrt::TerminalApp::implementation
 
     }
 
+    // Method Description:
+    // - Get the icon of the currently focused terminal control, and set it's
+    //   tab's icon to that icon.
+    // Arguments:
+    // - tab: the Tab to update the title for.
     void App::_UpdateTabIcon(std::shared_ptr<Tab> tab)
     {
         const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
@@ -462,9 +467,15 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Get the title of the currently focused terminal control, and set it's
+    //   tab's text to that text. If this tab is the focused tab, then also
+    //   bubble this title to any listeners of our TitleChanged event.
+    // Arguments:
+    // - tab: the Tab to update the title for.
     void App::_CheckTitleUpdate(std::shared_ptr<Tab> tab)
     {
-        auto newTabTitle = tab->CheckTitleUpdate();
+        auto newTabTitle = tab->GetLastFocusedTitle();
 
         // TODO #608: If the settings don't want the terminal's text in the
         // tab, then display something else.
@@ -932,16 +943,36 @@ namespace winrt::TerminalApp::implementation
         return focusedTab->GetLastFocusedTerminalControl();
     }
 
+    // Method Description:
+    // - Vertically split the focused pane, and place the given TermControl into
+    //   the newly created pane.
+    // Arguments:
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
     void App::_SplitVertical(std::optional<GUID> profileGuid)
     {
         _SplitPane(false, profileGuid);
     }
 
+    // Method Description:
+    // - Horizontally split the focused pane and place the given TermControl
+    //   into the newly created pane.
+    // Arguments:
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
     void App::_SplitHorizontal(std::optional<GUID> profileGuid)
     {
         _SplitPane(true, profileGuid);
     }
 
+    // Method Description:
+    // - Split the focused pane either horizontally or vertically, and place the
+    //   given TermControl into the newly created pane.
+    // Arguments:
+    // - splitHorizontal: if true, split the pane horizontally. Else split
+    //   vertically.
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
     void App::_SplitPane(const bool splitHorizontal, std::optional<GUID> profileGuid)
     {
         const GUID realGuid = profileGuid ? profileGuid.value() :
