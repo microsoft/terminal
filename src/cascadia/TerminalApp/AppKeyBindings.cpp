@@ -280,8 +280,8 @@ namespace winrt::TerminalApp::implementation
                     // Try parsing the chord
                     try
                     {
-                        chord = Settings::KeyChord::FromString(keyChordString);
-                        parsedSuccessfully = true;
+                        auto chord = KeyChordSerialization::FromString(keyChordString);
+                        newBindings.SetKeyBinding(action, chord);
                     }
                     catch (...)
                     {
@@ -304,7 +304,7 @@ namespace winrt::TerminalApp::implementation
                                         const Settings::KeyChord& chord,
                                         const std::wstring_view& actionName)
     {
-        const auto keyString = chord.ToString();
+        const auto keyString = KeyChordSerialization::ToString(chord);
         if (keyString == L"")
         {
             return;

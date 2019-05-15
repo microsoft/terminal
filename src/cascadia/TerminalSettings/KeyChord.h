@@ -13,9 +13,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         KeyChord(Settings::KeyModifiers const& modifiers, int32_t vkey);
         KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey);
 
-        static Terminal::Settings::KeyChord FromString(const winrt::hstring& str);
-        winrt::hstring ToString();
-
         Settings::KeyModifiers Modifiers();
         void Modifiers(Settings::KeyModifiers const& value);
         int32_t Vkey();
