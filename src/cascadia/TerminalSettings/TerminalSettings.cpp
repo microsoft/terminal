@@ -194,36 +194,35 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontSize = value;
     }
 
-	void TerminalSettings::BackgroundImage(hstring const& value)
-	{
-		_backgroundImage = value;
-	}
+    void TerminalSettings::BackgroundImage(hstring const& value)
+    {
+        _backgroundImage = value;
+    }
 
-	hstring TerminalSettings::BackgroundImage()
-	{
-		return _backgroundImage;
-	}
+    hstring TerminalSettings::BackgroundImage()
+    {
+        return _backgroundImage;
+    }
 
-	void TerminalSettings::BackgroundImageOpacity(double value)
-	{
-		_backgroundImageOpacity = value;
-	}
+    void TerminalSettings::BackgroundImageOpacity(double value)
+    {
+        _backgroundImageOpacity = value;
+    }
 
-	double TerminalSettings::BackgroundImageOpacity()
-	{
-		return _backgroundImageOpacity;
-	}
+    double TerminalSettings::BackgroundImageOpacity()
+    {
+        return _backgroundImageOpacity;
+    }
 
-	winrt::Microsoft::Terminal::Settings::ImageStretchMode TerminalSettings::BackgroundImageStretchMode()
-	{
-		return _backgroundImageStretchMode;
-	}
+    winrt::Microsoft::Terminal::Settings::ImageStretchMode TerminalSettings::BackgroundImageStretchMode()
+    {
+        return _backgroundImageStretchMode;
+    }
 
-	void TerminalSettings::BackgroundImageStretchMode(winrt::Microsoft::Terminal::Settings::ImageStretchMode value)
-	{
-		_backgroundImageStretchMode = value;
-	}
-
+    void TerminalSettings::BackgroundImageStretchMode(winrt::Microsoft::Terminal::Settings::ImageStretchMode value)
+    {
+        _backgroundImageStretchMode = value;
+    }
 
     Settings::IKeyBindings TerminalSettings::KeyBindings()
     {

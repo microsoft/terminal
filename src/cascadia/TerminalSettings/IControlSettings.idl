@@ -12,15 +12,15 @@ namespace Microsoft.Terminal.Settings
         Hidden
     };
 
-	enum ImageStretchMode
-	{
-		None = 0,
-		Fill = 1,
-		Uniform = 2,
-		UniformToFill = 3
-	};
+    enum ImageStretchMode
+    {
+        None = 0,
+        Fill = 1,
+        Uniform = 2,
+        UniformToFill = 3
+    };
 
-    // Class Description:
+	// Class Description:
     // TerminalSettings encapsulates all settings that control the
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
@@ -42,8 +42,8 @@ namespace Microsoft.Terminal.Settings
         String StartingDirectory;
         String EnvironmentVariables;
 
-		String BackgroundImage;
-		Double BackgroundImageOpacity;
-		ImageStretchMode BackgroundImageStretchMode;
+        String BackgroundImage;
+        Double BackgroundImageOpacity;
+        ImageStretchMode BackgroundImageStretchMode;
     };
 }

@@ -185,20 +185,20 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.ScrollState(result);
     }
 
-	if (_backgroundImage)
-	{
-		terminalSettings.BackgroundImage(_backgroundImage.value());
-	}
+    if (_backgroundImage)
+    {
+        terminalSettings.BackgroundImage(_backgroundImage.value());
+    }
 
-	if (_backgroundImageOpacity)
-	{
-		terminalSettings.BackgroundImageOpacity(_backgroundImageOpacity.value());
-	}
+    if (_backgroundImageOpacity)
+    {
+        terminalSettings.BackgroundImageOpacity(_backgroundImageOpacity.value());
+    }
 
-	if (_backgroundImageStretchMode)
-	{
-		terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
-	}
+    if (_backgroundImageStretchMode)
+    {
+        terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
+    }
 
     return terminalSettings;
 }
@@ -301,28 +301,28 @@ JsonObject Profile::ToJson() const
         jsonObject.Insert(ICON_KEY, icon);
     }
 
-	if (_backgroundImage)
-	{
-		const auto backgroundImage = JsonValue::CreateStringValue(_backgroundImage.value());
-		jsonObject.Insert(BACKGROUNDIMAGE_KEY, backgroundImage);
-	}
+    if (_backgroundImage)
+    {
+        const auto backgroundImage = JsonValue::CreateStringValue(_backgroundImage.value());
+        jsonObject.Insert(BACKGROUNDIMAGE_KEY, backgroundImage);
+    }
 
-	if (_backgroundImageOpacity)
-	{
-		const auto opacity = JsonValue::CreateNumberValue(_backgroundImageOpacity.value());
-		jsonObject.Insert(BACKGROUNDIMAGEOPACITY_KEY, opacity);
-	}
+    if (_backgroundImageOpacity)
+    {
+        const auto opacity = JsonValue::CreateNumberValue(_backgroundImageOpacity.value());
+        jsonObject.Insert(BACKGROUNDIMAGEOPACITY_KEY, opacity);
+    }
 
-	if (_backgroundImageStretchMode)
-	{
-	}
+    if (_backgroundImageStretchMode)
+    {
+    }
 
-	if (_backgroundImageStretchMode)
-	{
-		const auto imageStretchMode = JsonValue::CreateStringValue(
-			SerializeImageStretchMode(_backgroundImageStretchMode.value()));
-		jsonObject.Insert(BACKGROUNDIMAGESTRETCHMODE_KEY, imageStretchMode);
-	}
+    if (_backgroundImageStretchMode)
+    {
+        const auto imageStretchMode = JsonValue::CreateStringValue(
+            SerializeImageStretchMode(_backgroundImageStretchMode.value()));
+        jsonObject.Insert(BACKGROUNDIMAGESTRETCHMODE_KEY, imageStretchMode);
+    }
 
     return jsonObject;
 }
@@ -455,19 +455,19 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._icon = json.GetNamedString(ICON_KEY);
     }
-	if (json.HasKey(BACKGROUNDIMAGE_KEY))
-	{
-		result._backgroundImage = json.GetNamedString(BACKGROUNDIMAGE_KEY);
-	}
-	if (json.HasKey(BACKGROUNDIMAGEOPACITY_KEY))
-	{
-		result._backgroundImageOpacity = json.GetNamedNumber(BACKGROUNDIMAGEOPACITY_KEY);
-	}
-	if (json.HasKey(BACKGROUNDIMAGESTRETCHMODE_KEY))
-	{
-		const auto stretchMode = json.GetNamedString(BACKGROUNDIMAGESTRETCHMODE_KEY);
-		result._backgroundImageStretchMode = ParseImageStretchMode(stretchMode.c_str());
-	}
+    if (json.HasKey(BACKGROUNDIMAGE_KEY))
+    {
+        result._backgroundImage = json.GetNamedString(BACKGROUNDIMAGE_KEY);
+    }
+    if (json.HasKey(BACKGROUNDIMAGEOPACITY_KEY))
+    {
+        result._backgroundImageOpacity = json.GetNamedNumber(BACKGROUNDIMAGEOPACITY_KEY);
+    }
+    if (json.HasKey(BACKGROUNDIMAGESTRETCHMODE_KEY))
+    {
+        const auto stretchMode = json.GetNamedString(BACKGROUNDIMAGESTRETCHMODE_KEY);
+        result._backgroundImageStretchMode = ParseImageStretchMode(stretchMode.c_str());
+    }
 
     return result;
 }
@@ -623,22 +623,22 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The corresponding enum value which maps to the string provided by the user
 ImageStretchMode Profile::ParseImageStretchMode(const std::wstring& imageStretchMode)
 {
-	if (imageStretchMode == IMAGESTRETCHMODE_NONE)
-	{
-		return ImageStretchMode::None;
-	}
-	else if (imageStretchMode == IMAGESTRETCHMODE_FILL)
-	{
-		return ImageStretchMode::Fill;
-	}
-	else if (imageStretchMode == IMAGESTRETCHMODE_UNIFORM)
-	{
-		return ImageStretchMode::Uniform;
-	}
-	else // Fall through to default behavior
-	{
-		return ImageStretchMode::UniformToFill;
-	}
+    if (imageStretchMode == IMAGESTRETCHMODE_NONE)
+    {
+        return ImageStretchMode::None;
+    }
+    else if (imageStretchMode == IMAGESTRETCHMODE_FILL)
+    {
+        return ImageStretchMode::Fill;
+    }
+    else if (imageStretchMode == IMAGESTRETCHMODE_UNIFORM)
+    {
+        return ImageStretchMode::Uniform;
+    }
+    else // Fall through to default behavior
+    {
+        return ImageStretchMode::UniformToFill;
+    }
 }
 
 // Method Description:
@@ -650,18 +650,18 @@ ImageStretchMode Profile::ParseImageStretchMode(const std::wstring& imageStretch
 // - The string value for the given ImageStretchMode
 std::wstring Profile::SerializeImageStretchMode(const ImageStretchMode imageStretchMode)
 {
-	switch (imageStretchMode)
-	{
-	case ImageStretchMode::None:
-		return IMAGESTRETCHMODE_NONE;
-	case ImageStretchMode::Fill:
-		return IMAGESTRETCHMODE_FILL;
-	case ImageStretchMode::Uniform:
-		return IMAGESTRETCHMODE_UNIFORM;
-	default:
-	case ImageStretchMode::UniformToFill:
-		return IMAGESTRETCHMODE_UNIFORMTOFILL;
-	}
+    switch (imageStretchMode)
+    {
+    case ImageStretchMode::None:
+        return IMAGESTRETCHMODE_NONE;
+    case ImageStretchMode::Fill:
+        return IMAGESTRETCHMODE_FILL;
+    case ImageStretchMode::Uniform:
+        return IMAGESTRETCHMODE_UNIFORM;
+    default:
+    case ImageStretchMode::UniformToFill:
+        return IMAGESTRETCHMODE_UNIFORMTOFILL;
+    }
 }
 
 

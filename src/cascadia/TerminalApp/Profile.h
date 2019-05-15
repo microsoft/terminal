@@ -59,8 +59,8 @@ private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
-	static winrt::Microsoft::Terminal::Settings::ImageStretchMode ParseImageStretchMode(const std::wstring& imageStretchMode);
-	static std::wstring SerializeImageStretchMode(const winrt::Microsoft::Terminal::Settings::ImageStretchMode imageStretchMode);
+    static winrt::Microsoft::Terminal::Settings::ImageStretchMode ParseImageStretchMode(const std::wstring& imageStretchMode);
+    static std::wstring SerializeImageStretchMode(const winrt::Microsoft::Terminal::Settings::ImageStretchMode imageStretchMode);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
@@ -85,10 +85,10 @@ private:
     int32_t _fontSize;
     double _acrylicTransparency;
     bool _useAcrylic;
-	
-	std::optional<std::wstring> _backgroundImage;
-	std::optional<double> _backgroundImageOpacity;
-	std::optional<winrt::Microsoft::Terminal::Settings::ImageStretchMode> _backgroundImageStretchMode;
+
+    std::optional<std::wstring> _backgroundImage;
+    std::optional<double> _backgroundImageOpacity;
+    std::optional<winrt::Microsoft::Terminal::Settings::ImageStretchMode> _backgroundImageStretchMode;
 
     std::optional<std::wstring> _scrollbarState;
     bool _closeOnExit;
