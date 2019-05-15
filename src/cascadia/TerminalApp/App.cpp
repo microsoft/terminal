@@ -162,6 +162,7 @@ namespace winrt::TerminalApp::implementation
         {
             IInspectable g = res.Lookup(key);
             winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
+            _root.Style(style);
             _tabRow.Style(style);
         }
 
