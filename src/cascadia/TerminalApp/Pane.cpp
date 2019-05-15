@@ -18,7 +18,9 @@ Pane::Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermContro
     _splitState{ SplitState::None },
     _firstChild{ nullptr },
     _secondChild{ nullptr },
-    _connectionClosedToken{}
+    _connectionClosedToken{},
+    _firstClosedToken{},
+    _secondClosedToken{}
 {
     _root = Controls::Grid{};
     _AddControlToRoot(_control);
@@ -214,51 +216,113 @@ void Pane::CheckUpdateSettings(TerminalSettings settings, GUID profile)
 //   should be preserved, and vice-versa for false.
 void Pane::_CloseChild(const bool closeFirst)
 {
-    // take the control and profile of the pane that _wasn't_ closed.
-    _control = closeFirst ? _secondChild->_control : _firstChild->_control;
-    _profile = closeFirst ? _secondChild->_profile : _firstChild->_profile;
+    auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
-    // Remove all the ui elements of our children. This'll make sure we can
-    // re-attach the TermControl to our Grid.
-    _firstChild->_root.Children().Clear();
-    _secondChild->_root.Children().Clear();
-
-    // If either of our children was focused, we want to take that focus from
-    // them.
-    _lastFocused = _firstChild->_lastFocused || _secondChild->_lastFocused;
-
-    // Reset our UI:
-    _root.Children().Clear();
-    _root.ColumnDefinitions().Clear();
-    _root.RowDefinitions().Clear();
-    _separatorRoot = { nullptr };
-
-    // Reattach the TermControl to our grid.
-    _AddControlToRoot(_control);
-
-    if (_lastFocused)
+    // If the only child left is a leaf, that means we're a leaf now.
+    if (remainingChild->_IsLeaf())
     {
-        _control.GetControl().Focus(FocusState::Programmatic);
+        // take the control and profile of the pane that _wasn't_ closed.
+        _control = closeFirst ? _secondChild->_control : _firstChild->_control;
+        _profile = closeFirst ? _secondChild->_profile : _firstChild->_profile;
+
+        // If either of our children was focused, we want to take that focus from
+        // them.
+        _lastFocused = _firstChild->_lastFocused || _secondChild->_lastFocused;
+
+        // Remove all the ui elements of our children. This'll make sure we can
+        // re-attach the TermControl to our Grid.
+        _firstChild->_root.Children().Clear();
+        _secondChild->_root.Children().Clear();
+
+        // Reset our UI:
+        _root.Children().Clear();
+        _root.ColumnDefinitions().Clear();
+        _root.RowDefinitions().Clear();
+        _separatorRoot = { nullptr };
+
+        // Reattach the TermControl to our grid.
+        _AddControlToRoot(_control);
+
+        if (_lastFocused)
+        {
+            _control.GetControl().Focus(FocusState::Programmatic);
+        }
+
+        _splitState = SplitState::None;
+
+        // Release our children.
+        _firstChild = nullptr;
+        _secondChild = nullptr;
+    }
+    else
+    {
+        // Revoke the old event handlers.
+        _firstChild->Closed(_firstClosedToken);
+        _secondChild->Closed(_secondClosedToken);
+
+        // Steal all the state from our child
+        _splitState = remainingChild->_splitState;
+        _separatorRoot = remainingChild->_separatorRoot;
+        _firstChild = remainingChild->_firstChild;
+        _secondChild = remainingChild->_secondChild;
+
+        // remainingChild->_root.Children().Clear();
+        _root.Children().Clear();
+        _root.ColumnDefinitions().Clear();
+        _root.RowDefinitions().Clear();
+
+        // Copy the UI over to our grid.
+        auto oldCols = remainingChild->_root.ColumnDefinitions();
+        auto oldRows = remainingChild->_root.RowDefinitions();
+
+        // remainingChild->_root.Children().Clear();
+        // remainingChild->_root.ColumnDefinitions().Clear();
+        // remainingChild->_root.RowDefinitions().Clear();
+        // TODO: These throw, because apparently the definitions are still
+        // parented to another (the old) element. maybe we need to just
+        // regenerate them?
+        while (remainingChild->_root.ColumnDefinitions().Size() > 0)
+        {
+            auto col = remainingChild->_root.ColumnDefinitions().GetAt(0);
+            remainingChild->_root.ColumnDefinitions().RemoveAt(0);
+            _root.ColumnDefinitions().Append(col);
+        }
+        while (remainingChild->_root.RowDefinitions().Size() > 0)
+        {
+            auto row = remainingChild->_root.RowDefinitions().GetAt(0);
+            remainingChild->_root.RowDefinitions().RemoveAt(0);
+            _root.RowDefinitions().Append(row);
+        }
+
+        remainingChild->_root.Children().Clear();
+
+        _root.Children().Append(_firstChild->GetRootElement());
+        _root.Children().Append(_separatorRoot);
+        _root.Children().Append(_secondChild->GetRootElement());
+
+
+        _SetupChildCloseHandlers();
+
+        remainingChild->_firstChild = nullptr;
+        remainingChild->_secondChild = nullptr;
+        remainingChild->_separatorRoot = { nullptr };
+
     }
 
-    _splitState = SplitState::None;
 
-    // Release our children.
-    _firstChild = nullptr;
-    _secondChild = nullptr;
 }
 
 // Method Description:
 // - Adds event handlers to our chilcren to handle their close events.
 void Pane::_SetupChildCloseHandlers()
 {
-    _firstChild->Closed([this](){
+    _firstClosedToken = _firstChild->Closed([this](){
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
             _CloseChild(true);
         });
     });
 
-    _secondChild->Closed([this](){
+    _secondClosedToken = _secondChild->Closed([this](){
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
             _CloseChild(false);
         });

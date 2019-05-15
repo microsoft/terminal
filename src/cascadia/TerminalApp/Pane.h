@@ -46,6 +46,8 @@ private:
     bool _lastFocused;
     std::optional<GUID> _profile;
     winrt::event_token _connectionClosedToken;
+    winrt::event_token _firstClosedToken;
+    winrt::event_token _secondClosedToken;
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
