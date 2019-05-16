@@ -1067,8 +1067,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        const auto cols = settings.InitialCols();
-        const auto rows = settings.InitialRows();
+        // If the settings have negative or zero row or column counts, ignore those counts.
+        // (The lower TerminalCore layer also has upper bounds as well, but at this layer
+        //  we may eventually impose different ones depending on how many pixels we can address.)
+        const auto cols = std::max(settings.InitialCols(), 1);
+        const auto rows = std::max(settings.InitialRows(), 1);
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
