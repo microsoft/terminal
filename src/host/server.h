@@ -69,7 +69,7 @@ Revision History:
 
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 
-class COOKED_READ_DATA;
+class CookedRead;
 class CommandHistory;
 
 class CONSOLE_INFORMATION :
@@ -125,9 +125,9 @@ public:
 
     bool IsInVtIoMode() const;
     bool HasPendingCookedRead() const noexcept;
-    const COOKED_READ_DATA& CookedReadData() const noexcept;
-    COOKED_READ_DATA& CookedReadData() noexcept;
-    void SetCookedReadData(COOKED_READ_DATA* readData) noexcept;
+    const CookedRead& CookedReadData() const noexcept;
+    CookedRead& CookedReadData() noexcept;
+    void SetCookedReadData(CookedRead* readData) noexcept;
 
     COLORREF GetDefaultForeground() const noexcept;
     COLORREF GetDefaultBackground() const noexcept;
@@ -160,7 +160,7 @@ private:
     std::wstring _OriginalTitle;
     std::wstring _LinkTitle;   // Path to .lnk file
     SCREEN_INFORMATION* pCurrentScreenBuffer;
-    COOKED_READ_DATA* _cookedReadData; // non-ownership pointer
+    CookedRead* _cookedReadData; // non-ownership pointer
 
     Microsoft::Console::VirtualTerminal::VtIo _vtIo;
     Microsoft::Console::CursorBlinker _blinker;

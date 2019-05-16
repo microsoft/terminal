@@ -18,25 +18,19 @@ Author(s):
 #pragma once
 
 #include "../history.h"
-#include "../readDataCooked.hpp"
+#include "../cookedRead.hpp"
 
 
 class PopupTestHelper final
 {
 public:
 
-    static void InitReadData(COOKED_READ_DATA& cookedReadData,
-                             wchar_t* const pBuffer,
-                             const size_t cchBuffer,
-                             const size_t cursorPosition) noexcept
+    static void InitReadData(CookedRead& cookedReadData,
+                             const std::wstring& wstr) noexcept
     {
-        cookedReadData._bufferSize = cchBuffer * sizeof(wchar_t);
-        cookedReadData._bufPtr = pBuffer + cursorPosition;
-        cookedReadData._backupLimit = pBuffer;
-        cookedReadData.OriginalCursorPosition() = { 0, 0 };
-        cookedReadData._bytesRead = cursorPosition * sizeof(wchar_t);
-        cookedReadData._currentPosition = cursorPosition;
-        cookedReadData.VisibleCharCount() = cursorPosition;
+        cookedReadData._insertionIndex = 0;
+        cookedReadData._prompt = wstr;
+        cookedReadData.MoveInsertionIndexToEnd();
     }
 
     static void InitHistory(CommandHistory& history) noexcept
@@ -44,7 +38,7 @@ public:
         history.Empty();
         history.Flags |= CLE_ALLOCATED;
         VERIFY_SUCCEEDED(history.Add(L"I'm a little teapot", false));
-        VERIFY_SUCCEEDED(history.Add(L"hear me shout", false));
+        VERIFY_SUCCEEDED(history.Add(L"short and stout", false));
         VERIFY_SUCCEEDED(history.Add(L"here is my handle", false));
         VERIFY_SUCCEEDED(history.Add(L"here is my spout", false));
         VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 4u);

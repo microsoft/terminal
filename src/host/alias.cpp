@@ -41,13 +41,13 @@ struct case_insensitive_equality
     }
 };
 
-std::unordered_map<std::wstring,
-    std::unordered_map<std::wstring,
-    std::wstring,
-    case_insensitive_hash,
-    case_insensitive_equality>,
-    case_insensitive_hash,
-    case_insensitive_equality> g_aliasData;
+static std::unordered_map<std::wstring,
+                          std::unordered_map<std::wstring,
+                                             std::wstring,
+                                             case_insensitive_hash,
+                                             case_insensitive_equality>,
+                          case_insensitive_hash,
+                          case_insensitive_equality> g_aliasData;
 
 // Routine Description:
 // - Adds a command line alias to the global set.
@@ -318,7 +318,7 @@ HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
 {
     // Ensure output variables are initialized
     bufferRequired = 0;
-    
+
     try
     {
         const std::wstring exeNameString(exeName);

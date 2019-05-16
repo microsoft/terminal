@@ -19,6 +19,7 @@
 #include "ApiRoutines.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "cookedRead.hpp"
 
 #pragma hdrstop
 
@@ -347,6 +348,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG m
                 if (gci.HasPendingCookedRead())
                 {
                     gci.CookedReadData().SetInsertMode(gci.GetInsertMode());
+                    ;
                 }
             }
         }

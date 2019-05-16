@@ -22,15 +22,15 @@ CopyToCharPopup::CopyToCharPopup(SCREEN_INFORMATION& screenInfo) :
 // - cookedReadData - the read data to operate on
 // - LastCommand - the most recent command run
 // - wch - the wchar to copy up to
-void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch)
+void CopyToCharPopup::_copyToChar(CookedRead& cookedReadData, const std::wstring_view LastCommand, const wchar_t wch)
 {
     // make sure that there it is possible to copy any found text over
-    if (cookedReadData.InsertionPoint() >= LastCommand.size())
+    if (cookedReadData.InsertionIndex() >= LastCommand.size())
     {
         return;
     }
 
-    const auto searchStart = std::next(LastCommand.cbegin(), cookedReadData.InsertionPoint() + 1);
+    const auto searchStart = std::next(LastCommand.cbegin(), cookedReadData.InsertionIndex() + 1);
     auto location = std::find(searchStart, LastCommand.cend(), wch);
 
     // didn't find wch so copy nothing
@@ -39,10 +39,10 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
         return;
     }
 
-    const auto startIt = std::next(LastCommand.cbegin(), cookedReadData.InsertionPoint());
-    const auto endIt = location;
+    const std::wstring_view::const_iterator startIt = std::next(LastCommand.cbegin(), cookedReadData.InsertionIndex());
+    const std::wstring_view::const_iterator endIt = location;
 
-    cookedReadData.Write({ &*startIt, gsl::narrow<size_t>(std::distance(startIt, endIt)) });
+    cookedReadData.Overwrite(startIt, endIt);
 }
 
 // Routine Description:
@@ -51,7 +51,7 @@ void CopyToCharPopup::_copyToChar(COOKED_READ_DATA& cookedReadData, const std::w
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
 [[nodiscard]]
-NTSTATUS CopyToCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+NTSTATUS CopyToCharPopup::Process(CookedRead& cookedReadData) noexcept
 {
     wchar_t wch = UNICODE_NULL;
     bool popupKey = false;

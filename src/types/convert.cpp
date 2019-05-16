@@ -73,7 +73,7 @@ std::string ConvertToA(const UINT codepage, const std::wstring_view source)
     {
         return {};
     }
-    
+
     int iSource; // convert to int because Wc2Mb requires it.
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
@@ -347,7 +347,12 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
 CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
 {
     // 0x00-0x1F is ambiguous by font
-    if (0x20 <= wch && wch <= 0x7e)
+    // ... but we render ctrl+z wide
+    if (wch == 0x1a)
+    {
+        return CodepointWidth::Wide;
+    }
+    else if (0x20 <= wch && wch <= 0x7e)
     {
         /* ASCII */
         return CodepointWidth::Narrow;

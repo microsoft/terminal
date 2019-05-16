@@ -443,6 +443,10 @@ class SelectionInputTests
         bool fResult = Selection::s_GetInputLineBoundaries(nullptr, nullptr);
         VERIFY_IS_FALSE(fResult);
 
+        // prepare input buffer
+        m_state->PrepareGlobalInputBuffer();
+        auto cleanupInputBuffer = wil::scope_exit([&]() { m_state->CleanupGlobalInputBuffer(); });
+
         // prepare some read data
         m_state->PrepareReadHandle();
         auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
@@ -451,7 +455,7 @@ class SelectionInputTests
         // set up to clean up read data later
         auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
 
-        COOKED_READ_DATA& readData = gci.CookedReadData();
+        CookedRead& readData = gci.CookedReadData();
 
         // backup text info position over remainder of text execution duration
         TextBuffer& textBuffer = gci.GetActiveOutputBuffer().GetTextBuffer();
@@ -460,10 +464,13 @@ class SelectionInputTests
         coordOldTextInfoPos.Y = textBuffer.GetCursor().GetPosition().Y;
 
         // set various cursor positions
-        readData.OriginalCursorPosition().X = 15;
-        readData.OriginalCursorPosition().Y = 3;
+        readData.SetPromptStartLocation({ 15, 3 });
 
-        readData.VisibleCharCount() = 200;
+        // place some data into the prompt
+        readData.BufferInput(L't');
+        size_t numBytes = 0;
+        ULONG ctrlKeyState = 0;
+        VERIFY_ARE_EQUAL(readData.Read(true, numBytes, ctrlKeyState), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT));
 
         textBuffer.GetCursor().SetXPosition(35);
         textBuffer.GetCursor().SetYPosition(35);
@@ -480,8 +487,8 @@ class SelectionInputTests
         VERIFY_IS_TRUE(fResult);
 
         // starting position/boundary should always be where the input line started
-        VERIFY_ARE_EQUAL(coordStart.X, readData.OriginalCursorPosition().X);
-        VERIFY_ARE_EQUAL(coordStart.Y, readData.OriginalCursorPosition().Y);
+        VERIFY_ARE_EQUAL(coordStart.X, readData.PromptStartLocation().X);
+        VERIFY_ARE_EQUAL(coordStart.Y, readData.PromptStartLocation().Y);
 
         // ending position can vary. it's in one of two spots
         // 1. If the original cooked cursor was valid (which it was this first time), it's NumberOfVisibleChars ahead.
@@ -489,15 +496,14 @@ class SelectionInputTests
 
         const short cCharsToAdjust = ((short)readData.VisibleCharCount() - 1); // then -1 to be on the last piece of text, not past it
 
-        coordFinalPos.X = (readData.OriginalCursorPosition().X + cCharsToAdjust) % sRowWidth;
-        coordFinalPos.Y = readData.OriginalCursorPosition().Y + ((readData.OriginalCursorPosition().X + cCharsToAdjust) / sRowWidth);
+        coordFinalPos.X = (readData.PromptStartLocation().X + cCharsToAdjust) % sRowWidth;
+        coordFinalPos.Y = readData.PromptStartLocation().Y + ((readData.PromptStartLocation().X + cCharsToAdjust) / sRowWidth);
 
         VERIFY_ARE_EQUAL(coordEnd.X, coordFinalPos.X);
         VERIFY_ARE_EQUAL(coordEnd.Y, coordFinalPos.Y);
 
         // 2. if the original cooked cursor is invalid, then it's the text info cursor position
-        readData.OriginalCursorPosition().X = -1;
-        readData.OriginalCursorPosition().Y = -1;
+        readData.SetPromptStartLocation({ -1, -1 });
 
         fResult = Selection::s_GetInputLineBoundaries(nullptr, &coordEnd);
         VERIFY_IS_TRUE(fResult);

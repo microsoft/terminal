@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "search.h"
+#include "cookedRead.hpp"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 #include "../types/inc/convert.hpp"
@@ -954,8 +955,8 @@ bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart
     }
 
     const auto& cookedRead = gci.CookedReadData();
-    const COORD coordStart = cookedRead.OriginalCursorPosition();
-    COORD coordEnd = cookedRead.OriginalCursorPosition();
+    const COORD coordStart = cookedRead.PromptStartLocation();
+    COORD coordEnd = coordStart;
 
     if (coordEnd.X < 0 && coordEnd.Y < 0)
     {

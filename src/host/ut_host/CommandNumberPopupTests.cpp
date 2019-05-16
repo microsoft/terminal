@@ -58,6 +58,7 @@ class CommandNumberPopupTests
     {
         CommandHistory::s_Free((HANDLE)0);
         m_pHistory = nullptr;
+        CommandHistory::s_ClearHistoryListStorage();
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
         m_state->CleanupGlobalInputBuffer();
@@ -68,7 +69,7 @@ class CommandNumberPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
@@ -83,20 +84,15 @@ class CommandNumberPopupTests
 
         // prepare cookedReadData
         const std::wstring testString = L"hello world";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
+        PopupTestHelper::InitReadData(cookedReadData, testString);
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should not be changed
-        const std::wstring resultString(buffer, buffer + testString.size());
-        VERIFY_ARE_EQUAL(testString, resultString);
-        VERIFY_ARE_EQUAL(cookedReadData._bytesRead, testString.size() * sizeof(wchar_t));
+        VERIFY_ARE_EQUAL(testString, cookedReadData._prompt);
 
         // popup has been dismissed
         VERIFY_IS_FALSE(CommandLine::Instance().HasPopup());
@@ -108,7 +104,7 @@ class CommandNumberPopupTests
         // CommanNumberPopup is the only popup that can act as a 2nd popup. make sure that it dismisses all
         // popups when exiting
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = true;
             wch = VK_ESCAPE;
@@ -117,6 +113,13 @@ class CommandNumberPopupTests
         };
 
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        // prepare cookedReadData
+        const std::wstring testString = L"hello world";
+        auto& cookedReadData = gci.CookedReadData();
+        PopupTestHelper::InitReadData(cookedReadData, testString);
+        PopupTestHelper::InitHistory(*m_pHistory);
+        cookedReadData._pCommandHistory = m_pHistory;
+
         // add popups to CommandLine
         auto& commandLine = CommandLine::Instance();
         commandLine._popups.emplace_front(std::make_unique<CommandListPopup>(gci.GetActiveOutputBuffer(), *m_pHistory));
@@ -125,17 +128,6 @@ class CommandNumberPopupTests
         numberPopup.SetUserInputFunction(fn);
 
         VERIFY_ARE_EQUAL(commandLine._popups.size(), 2u);
-
-        // prepare cookedReadData
-        const std::wstring testString = L"hello world";
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
-        std::copy(testString.begin(), testString.end(), std::begin(buffer));
-        auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), testString.size());
-        PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
-
         VERIFY_ARE_EQUAL(numberPopup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
         VERIFY_IS_FALSE(commandLine.HasPopup());
 
@@ -144,7 +136,7 @@ class CommandNumberPopupTests
     TEST_METHOD(EmptyInputCountsAsOldestHistory)
     {
         Log::Comment(L"hitting enter with no input should grab the oldest history item");
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             popupKey = false;
             wch = UNICODE_CARRIAGERETURN;
@@ -158,20 +150,17 @@ class CommandNumberPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
+        PopupTestHelper::InitReadData(cookedReadData, L"");
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should contain the least recent history item
 
         const std::wstring_view expected = m_pHistory->GetLastCommand();
-        const std::wstring resultString(buffer, buffer + expected.size());
-        VERIFY_ARE_EQUAL(expected, resultString);
+        VERIFY_ARE_EQUAL(expected, cookedReadData._prompt);
     }
 
     TEST_METHOD(CanSelectHistoryItem)
@@ -179,7 +168,7 @@ class CommandNumberPopupTests
         PopupTestHelper::InitHistory(*m_pHistory);
         for (unsigned int historyIndex = 0; historyIndex < m_pHistory->GetNumberOfCommands(); ++historyIndex)
         {
-            Popup::UserInputFunction fn = [historyIndex](COOKED_READ_DATA& /*cookedReadData*/,
+            Popup::UserInputFunction fn = [historyIndex](CookedRead& /*cookedReadData*/,
                                                          bool& popupKey,
                                                          DWORD& modifiers,
                                                          wchar_t& wch)
@@ -207,19 +196,16 @@ class CommandNumberPopupTests
             popup.SetUserInputFunction(fn);
 
             // prepare cookedReadData
-            wchar_t buffer[BUFFER_SIZE];
-            std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
             auto& cookedReadData = gci.CookedReadData();
-            PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
-            cookedReadData._commandHistory = m_pHistory;
+            PopupTestHelper::InitReadData(cookedReadData, L"");
+            cookedReadData._pCommandHistory = m_pHistory;
 
             VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
             // the buffer should contain the correct nth history item
 
             const auto expected = m_pHistory->GetNth(gsl::narrow<short>(historyIndex));
-            const std::wstring resultString(buffer, buffer + expected.size());
-            VERIFY_ARE_EQUAL(expected, resultString);
+            VERIFY_ARE_EQUAL(expected, cookedReadData._prompt);
         }
     }
 
@@ -228,7 +214,7 @@ class CommandNumberPopupTests
         Log::Comment(L"entering a number larger than the number of history items should grab the most recent history item");
 
         // simulates user pressing 1, 2, 3, 4, 5, enter
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
+        Popup::UserInputFunction fn = [](CookedRead& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
         {
             static int num = 1;
             popupKey = false;
@@ -252,20 +238,17 @@ class CommandNumberPopupTests
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
-        wchar_t buffer[BUFFER_SIZE];
-        std::fill(std::begin(buffer), std::end(buffer), UNICODE_SPACE);
         auto& cookedReadData = gci.CookedReadData();
-        PopupTestHelper::InitReadData(cookedReadData, buffer, ARRAYSIZE(buffer), 0);
+        PopupTestHelper::InitReadData(cookedReadData, L"");
         PopupTestHelper::InitHistory(*m_pHistory);
-        cookedReadData._commandHistory = m_pHistory;
+        cookedReadData._pCommandHistory = m_pHistory;
 
         VERIFY_ARE_EQUAL(popup.Process(cookedReadData), static_cast<NTSTATUS>(CONSOLE_STATUS_WAIT_NO_BLOCK));
 
         // the buffer should contain the most recent history item
 
         const std::wstring_view expected = m_pHistory->GetLastCommand();
-        const std::wstring resultString(buffer, buffer + expected.size());
-        VERIFY_ARE_EQUAL(expected, resultString);
+        VERIFY_ARE_EQUAL(expected, cookedReadData._prompt);
     }
 
     TEST_METHOD(InputIsLimited)
