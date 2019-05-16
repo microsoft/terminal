@@ -108,7 +108,7 @@ HANDLE ConsoleInputThread::Start()
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)ConsoleInputThreadProcOneCore,
+                           ConsoleInputThreadProcOneCore,
                            _pConIoSrvComm,
                            0,
                            &dwThreadId);

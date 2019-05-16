@@ -175,7 +175,7 @@ HRESULT PtySignalInputThread::Start() noexcept
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)PtySignalInputThread::StaticThreadProc,
+                           PtySignalInputThread::StaticThreadProc,
                            this,
                            0,
                            &dwThreadId);

@@ -192,7 +192,7 @@ void CursorBlinker::SetCaretTimer()
 
         bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
                                      _hCaretBlinkTimerQueue,
-                                     (WAITORTIMERCALLBACKFUNC)CursorTimerRoutineWrapper,
+                                     CursorTimerRoutineWrapper,
                                      this,
                                      dwEffectivePeriod,
                                      dwEffectivePeriod,

@@ -258,7 +258,7 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
     RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
 
-    HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, 0, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 

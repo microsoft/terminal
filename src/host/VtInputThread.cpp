@@ -167,7 +167,7 @@ HRESULT VtInputThread::Start()
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)VtInputThread::StaticVtInputThreadProc,
+                           VtInputThread::StaticVtInputThreadProc,
                            this,
                            0,
                            &dwThreadId);

@@ -92,7 +92,7 @@ void DoFind()
         HWND const hwnd = pWindow->GetWindowHandle();
 
         ++g.uiDialogBoxCount;
-        DialogBoxParamW(g.hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, (DLGPROC)FindDialogProc, (LPARAM) nullptr);
+        DialogBoxParamW(g.hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, FindDialogProc, (LPARAM) nullptr);
         --g.uiDialogBoxCount;
     }
 }
