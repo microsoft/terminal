@@ -3,8 +3,8 @@
 
 #include "precomp.h"
 #include <WexTestClass.h>
-#include <climits>
 
+#include "DefaultSettings.h"
 #include "../cascadia/TerminalCore/Terminal.hpp"
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
@@ -29,10 +29,10 @@ public:
     int32_t HistorySize() { return _historySize; }
     int32_t InitialRows() { return _initialRows; }
     int32_t InitialCols() { return _initialCols; }
-    uint32_t DefaultForeground() { return 0xFFFFFFFFUL; }
-    uint32_t DefaultBackground() { return 0UL; }
+    uint32_t DefaultForeground() { return COLOR_WHITE; }
+    uint32_t DefaultBackground() { return COLOR_BLACK; }
     bool SnapOnInput() { return false; }
-    uint32_t CursorColor() { return 0xFFFFFFFFUL; }
+    uint32_t CursorColor() { return COLOR_WHITE; }
     CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
     uint32_t CursorHeight() { return 42UL; }
 

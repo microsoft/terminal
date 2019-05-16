@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
-#include <climits>
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
@@ -19,20 +18,9 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-static short _ClampToShortMax(int value, short min)
+static constexpr short _ClampToShortMax(int value, short min)
 {
-    if (value < min)
-    {
-        return min;
-    }
-    else if (value > SHRT_MAX)
-    {
-        return SHRT_MAX;
-    }
-    else
-    {
-        return static_cast<short>(value);
-    }
+    return static_cast<short>(std::clamp(value, static_cast<int>(min), SHRT_MAX));
 }
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
@@ -82,9 +70,9 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
-    TextAttribute attr{};
-    UINT cursorSize = 12;
+    const COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const TextAttribute attr{};
+    const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
