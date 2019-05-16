@@ -690,8 +690,8 @@ namespace winrt::TerminalApp::implementation
     //      Negative values of `delta` will move the view up by one page, and positive values
     //      will move the viewport down by one page.
     // Arguments:
-    // - delta: The direction to move the view relative to the current viewport(it
-    //      is clamped between -1 and 1)
+    // - delta: The direction to move the view relative to the current viewport
+    //      (it is clamped between -1 and 1)
     void App::_ScrollPage(int delta)
     {
         delta = std::clamp(delta, -1, 1);
@@ -855,7 +855,7 @@ namespace winrt::TerminalApp::implementation
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 
-        int focusedTabIndex = _GetFocusedTabIndex();
+        const auto focusedTabIndex = _GetFocusedTabIndex();
 
         if (tabIndexFromControl == focusedTabIndex)
         {
@@ -867,9 +867,9 @@ namespace winrt::TerminalApp::implementation
         _tabView.Items().RemoveAt(tabIndexFromControl);
 
         // ensure tabs and focus is sync
-        // focused tab shifts to the left if possible
         if (focusedTabIndex < 0)
         {
+            // focus the 1st tab if there is no focused tab
             if (_tabs.size() > 0)
             {
                 _tabView.SelectedIndex(0);
@@ -877,10 +877,13 @@ namespace winrt::TerminalApp::implementation
         }
         else if (tabIndexFromControl <= focusedTabIndex)
         {
+            // the "less or equal" in "else if" implies,
+            // when closing the focused tab, the focus will shift to the left if possible
             _tabView.SelectedIndex((focusedTabIndex > 0) ? (focusedTabIndex - 1) : 0);
         }
         else
         {
+            // the being removed tab is to the right of focused tab, just keep the focus
             _tabView.SelectedIndex(focusedTabIndex);
         }
     }
