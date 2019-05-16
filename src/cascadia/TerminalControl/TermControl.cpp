@@ -205,7 +205,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             Media::ImageBrush brush{};
             brush.ImageSource(image);
-            brush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
+            brush.Stretch(_settings.BackgroundImageStretchMode());
             brush.Opacity(_settings.BackgroundImageOpacity());
 
             _root.Background(brush);
