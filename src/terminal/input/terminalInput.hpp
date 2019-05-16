@@ -26,6 +26,15 @@ namespace Microsoft::Console::VirtualTerminal
       
 		TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
+		TerminalInput() = delete;
+		TerminalInput(const TerminalInput& old) = default;
+        TerminalInput(TerminalInput&& moved) = default;
+
+		TerminalInput& operator=(const TerminalInput& old) = default;
+        TerminalInput& operator=(TerminalInput&& moved) = default;
+
+		~TerminalInput() = default;
+
 		bool HandleKey(const IInputEvent* const pInEvent) const;
 		void ChangeKeypadMode(const bool fApplicationMode);
 		void ChangeCursorKeysMode(const bool fApplicationMode);
