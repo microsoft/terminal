@@ -1,0 +1,10 @@
+namespace Microsoft.Terminal.TerminalControl
+{
+	[default_interface]
+	runtimeclass TerminalBackgroundBrush : Windows.UI.Xaml.Media.XamlCompositionBrushBase
+	{
+		TerminalBackgroundBrush();
+		//static Windows.UI.Xaml.DependencyProperty BlurAmountProperty{ get; };
+		//Double BlurAmount;
+	}
+}
