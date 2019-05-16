@@ -15,7 +15,8 @@
     "/build/",
     "/src/cascadia/",
     "/.nuget/",
-    "/.github/"
+    "/.github/",
+    "/samples/"
   ],
   "SuffixFilters": [
     ".dbb",
