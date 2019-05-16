@@ -11,8 +11,7 @@ assignees: ''
 
 <!-- 
 A clear and concise description of what the problem is that the new feature would solve.
-Try formulating it in user story style (if applicable):
-'As a user I want X so that Y.' with X being the being the action and Y being the value of the action.
+Describe why and how a user would use this new functionality (if applicable).
 -->
 
 # Proposed technical implementation details (optional)
