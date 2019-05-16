@@ -214,7 +214,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     return Status;
 }
 
-DWORD ConsoleIoThread();
+DWORD ConsoleIoThread(LPVOID lpParameter);
 
 void ConsoleCheckDebug()
 {
@@ -638,7 +638,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD ConsoleIoThread()
+DWORD ConsoleIoThread(LPVOID /*lpParameter*/)
 {
     auto& globals = ServiceLocator::LocateGlobals();
 
