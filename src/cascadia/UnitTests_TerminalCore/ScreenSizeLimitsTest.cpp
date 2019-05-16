@@ -72,7 +72,7 @@ class ScreenSizeLimitsTest
 
 		// Negative values for initial visible row count or column count
 		// are clamped to 1. Too-large positive values are clamped to SHRT_MAX.
-		MockTermSettings negativeColumnsSettings(10000, 9999999, -1234);
+		auto negativeColumnsSettings = winrt::make<MockTermSettings>(10000, 9999999, -1234);
 		Terminal negativeColumnsTerminal;
 		negativeColumnsTerminal.CreateFromSettings(negativeColumnsSettings, emptyRenderTarget);
 		COORD actualDimensions = negativeColumnsTerminal.GetViewport().Dimensions();
@@ -80,7 +80,7 @@ class ScreenSizeLimitsTest
 		VERIFY_ARE_EQUAL(actualDimensions.X, 1, L"Column count clamped to 1");
 
 		// Zero values are clamped to 1 as well.
-		MockTermSettings zeroRowsSettings(10000, 0, 9999999);
+		auto zeroRowsSettings = winrt::make<MockTermSettings>(10000, 0, 9999999);
 		Terminal zeroRowsTerminal;
 		zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, emptyRenderTarget);
 		actualDimensions = zeroRowsTerminal.GetViewport().Dimensions();
@@ -98,35 +98,35 @@ class ScreenSizeLimitsTest
 		DummyRenderTarget emptyRenderTarget;
 
 		// Zero history size is acceptable.
-		MockTermSettings noHistorySettings(0, visibleRowCount, 100);
+		auto noHistorySettings = winrt::make<MockTermSettings>(0, visibleRowCount, 100);
 		Terminal noHistoryTerminal;
 		noHistoryTerminal.CreateFromSettings(noHistorySettings, emptyRenderTarget);
 		VERIFY_ARE_EQUAL(noHistoryTerminal.GetTextBuffer().TotalRowCount(), visibleRowCount,
 			L"History size of 0 is accepted");
 
 		// Negative history sizes are clamped to zero.
-		MockTermSettings negativeHistorySizeSettings(-100, visibleRowCount, 100);
+		auto negativeHistorySizeSettings = winrt::make<MockTermSettings>(-100, visibleRowCount, 100);
 		Terminal negativeHistorySizeTerminal;
 		negativeHistorySizeTerminal.CreateFromSettings(negativeHistorySizeSettings, emptyRenderTarget);
 		VERIFY_ARE_EQUAL(negativeHistorySizeTerminal.GetTextBuffer().TotalRowCount(), visibleRowCount,
 			L"Negative history size is clamped to 0");
 
 		// History size + initial visible rows == SHRT_MAX is acceptable.
-		MockTermSettings maxHistorySizeSettings(SHRT_MAX - visibleRowCount, visibleRowCount, 100);
+		auto maxHistorySizeSettings = winrt::make<MockTermSettings>(SHRT_MAX - visibleRowCount, visibleRowCount, 100);
 		Terminal maxHistorySizeTerminal;
 		maxHistorySizeTerminal.CreateFromSettings(maxHistorySizeSettings, emptyRenderTarget);
 		VERIFY_ARE_EQUAL(maxHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX),
 			L"History size == SHRT_MAX - initial row count is accepted");
 
 		// History size + initial visible rows == SHRT_MAX + 1 will be clamped slightly.
-		MockTermSettings justTooBigHistorySizeSettings(SHRT_MAX - visibleRowCount + 1, visibleRowCount, 100);
+		auto justTooBigHistorySizeSettings = winrt::make<MockTermSettings>(SHRT_MAX - visibleRowCount + 1, visibleRowCount, 100);
 		Terminal justTooBigHistorySizeTerminal;
 		justTooBigHistorySizeTerminal.CreateFromSettings(justTooBigHistorySizeSettings, emptyRenderTarget);
 		VERIFY_ARE_EQUAL(justTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX),
 			L"History size == 1 + SHRT_MAX - initial row count is clamped to SHRT_MAX - initial row count");
 
 		// Ridiculously large history sizes are also clamped.
-		MockTermSettings farTooBigHistorySizeSettings(99999999, visibleRowCount, 100);
+		auto farTooBigHistorySizeSettings = winrt::make<MockTermSettings>(99999999, visibleRowCount, 100);
 		Terminal farTooBigHistorySizeTerminal;
 		farTooBigHistorySizeTerminal.CreateFromSettings(farTooBigHistorySizeSettings, emptyRenderTarget);
 		VERIFY_ARE_EQUAL(farTooBigHistorySizeTerminal.GetTextBuffer().TotalRowCount(), static_cast<unsigned int>(SHRT_MAX),
