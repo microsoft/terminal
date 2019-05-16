@@ -461,7 +461,7 @@ void SetupInput()
     SetConsoleMode(hIn, dwInMode);
 }
 
-DWORD InputThread(LPVOID /*lpParameter*/)
+DWORD WINAPI InputThread(LPVOID /*lpParameter*/)
 {
     // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
@@ -510,7 +510,7 @@ void CreateIOThreads()
 }
 
 
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler( DWORD fdwCtrlType )
 {
     switch( fdwCtrlType )
     {

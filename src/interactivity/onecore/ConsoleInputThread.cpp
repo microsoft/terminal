@@ -16,7 +16,7 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 
-DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
+DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
     Globals& globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();

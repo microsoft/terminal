@@ -335,7 +335,7 @@ void VtConsole::deactivate()
     _active = false;
 }
 
-DWORD VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
+DWORD WINAPI VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
 {
     VtConsole* const pInstance = (VtConsole*)lpParameter;
     return pInstance->_OutputThread();

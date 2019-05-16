@@ -131,7 +131,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         CloseHandle(_piConhost.hProcess);
     }
 
-    DWORD ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
+    DWORD WINAPI ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
         ConhostConnection* const pInstance = (ConhostConnection*)lpParameter;
         return pInstance->_OutputThread();

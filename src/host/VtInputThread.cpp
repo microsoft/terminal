@@ -90,7 +90,7 @@ HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuf
 // - lpParameter - A pointer to the VtInputThread instance that should be called.
 // Return Value:
 // - The return value of the underlying instance's _InputThread
-DWORD VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
+DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 {
     VtInputThread* const pInstance = reinterpret_cast<VtInputThread*>(lpParameter);
     return pInstance->_InputThread();

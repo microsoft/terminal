@@ -163,7 +163,7 @@ void handleWindowEvent(WINDOW_BUFFER_SIZE_RECORD windowEvent)
 
 }
 
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler( DWORD fdwCtrlType )
 {
     switch( fdwCtrlType )
     {

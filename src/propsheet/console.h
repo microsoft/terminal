@@ -173,13 +173,13 @@ VOID SetRegistryValues(
 PCONSOLE_STATE_INFO InitStateValues(
     HWND hwnd);
 
-LRESULT FontPreviewWndProc(
+LRESULT CALLBACK FontPreviewWndProc(
     HWND hWnd,
     UINT wMsg,
     WPARAM wParam,
     LPARAM lParam);
 
-LRESULT PreviewWndProc(
+LRESULT CALLBACK PreviewWndProc(
     HWND hWnd,
     UINT wMsg,
     WPARAM wParam,

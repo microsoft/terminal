@@ -937,7 +937,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
 // Routine Description:
 // - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
+LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 {
     MSG msg = *((PMSG)lParam);
 
@@ -995,7 +995,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 // (for a window)
 // ----------------------------
 
-DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
+DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
 
