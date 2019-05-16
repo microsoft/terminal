@@ -156,8 +156,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
-    //   * Sets up the background of the control with the provided BG color,
-    //      acrylic or not, and if acrylic, then uses the opacity from _settings.
+	//   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
+	//       from _settings.
+	//   * If acrylic is not enabled and a backgroundImage is present, it is used,
+	//       respecting the opacity and stretch mode settings from _settings.
+	//   * Falls back to a solid color background from _settings if acrylic is not
+	//       enabled and no background image is present.
     // - Core settings will be passed to the terminal in _InitializeTerminal
     // Arguments:
     // - <none>
@@ -194,6 +198,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
             Media::Imaging::BitmapImage image(imageUri);
 
+			// Note that BitmapImage handles the image load asynchronously,
+			// which is especially important since the image 
+			// may well be both large and somewhere out on the
+			// internet.
+
             Media::ImageBrush brush{};
             brush.ImageSource(image);
             brush.Stretch(static_cast<Media::Stretch>(_settings.BackgroundImageStretchMode()));
@@ -202,7 +211,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _root.Background(brush);
 
             // Set the default background as transparent to prevent the
-            // DX layer from overwriting the image settings
+            // DX layer from overwriting the background image
             _settings.DefaultBackground(ARGB(0, R, G, B));
         }
         else
