@@ -415,15 +415,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-
-            _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-            _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
         }
         else
         {
             // The user has disabled cursor blinking
             _cursorTimer = std::nullopt;
         }
+
+        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
+        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -544,6 +544,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
+        // Ignore mouse events while the terminal does not have focus. 
+        // This prevents the user from selecting and copying text if they 
+        // click inside the current tab to refocus the terminal window. 
+        if (!_focused) {
+            args.Handled(true);
+            return;
+        }
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
@@ -828,6 +836,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        _focused = true;
+
         if (_cursorTimer.has_value())
             _cursorTimer.value().Start();
     }
@@ -838,6 +848,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        _focused = false;
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
