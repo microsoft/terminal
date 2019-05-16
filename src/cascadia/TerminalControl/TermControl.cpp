@@ -547,7 +547,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Ignore mouse events while the terminal does not have focus. 
         // This prevents the user from selecting and copying text if they 
         // click inside the current tab to refocus the terminal window. 
-        if (!_focused) {
+        if (!_focused) 
+        {
             args.Handled(true);
             return;
         }
