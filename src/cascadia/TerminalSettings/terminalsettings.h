@@ -65,8 +65,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void BackgroundImage(hstring const& value);
         double BackgroundImageOpacity();
         void BackgroundImageOpacity(double value);
-        winrt::Microsoft::Terminal::Settings::ImageStretchMode BackgroundImageStretchMode();
-        void BackgroundImageStretchMode(winrt::Microsoft::Terminal::Settings::ImageStretchMode value);
+        winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode();
+        void BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value);
 
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
@@ -103,7 +103,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _padding;
         hstring _backgroundImage;
         double _backgroundImageOpacity;
-        Settings::ImageStretchMode _backgroundImageStretchMode;
+        winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;

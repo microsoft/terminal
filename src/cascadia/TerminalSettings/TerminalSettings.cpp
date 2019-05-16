@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontSize{ DEFAULT_FONT_SIZE },
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
-        _backgroundImageStretchMode{ ImageStretchMode::UniformToFill },
+        _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
@@ -214,12 +214,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         return _backgroundImageOpacity;
     }
 
-    winrt::Microsoft::Terminal::Settings::ImageStretchMode TerminalSettings::BackgroundImageStretchMode()
+    winrt::Windows::UI::Xaml::Media::Stretch TerminalSettings::BackgroundImageStretchMode()
     {
         return _backgroundImageStretchMode;
     }
 
-    void TerminalSettings::BackgroundImageStretchMode(winrt::Microsoft::Terminal::Settings::ImageStretchMode value)
+    void TerminalSettings::BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value)
     {
         _backgroundImageStretchMode = value;
     }

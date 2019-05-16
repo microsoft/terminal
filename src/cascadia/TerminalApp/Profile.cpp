@@ -616,23 +616,23 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The value from the profiles.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
-ImageStretchMode Profile::ParseImageStretchMode(const std::wstring& imageStretchMode)
+winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const std::wstring& imageStretchMode)
 {
     if (imageStretchMode == IMAGESTRETCHMODE_NONE)
     {
-        return ImageStretchMode::None;
+        return winrt::Windows::UI::Xaml::Media::Stretch::None;
     }
     else if (imageStretchMode == IMAGESTRETCHMODE_FILL)
     {
-        return ImageStretchMode::Fill;
+        return winrt::Windows::UI::Xaml::Media::Stretch::Fill;
     }
     else if (imageStretchMode == IMAGESTRETCHMODE_UNIFORM)
     {
-        return ImageStretchMode::Uniform;
+        return winrt::Windows::UI::Xaml::Media::Stretch::Uniform;
     }
     else // Fall through to default behavior
     {
-        return ImageStretchMode::UniformToFill;
+        return winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill;
     }
 }
 
@@ -643,18 +643,18 @@ ImageStretchMode Profile::ParseImageStretchMode(const std::wstring& imageStretch
 // - imageStretchMode: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given ImageStretchMode
-std::wstring Profile::SerializeImageStretchMode(const ImageStretchMode imageStretchMode)
+std::wstring Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
 {
     switch (imageStretchMode)
     {
-    case ImageStretchMode::None:
+    case winrt::Windows::UI::Xaml::Media::Stretch::None:
         return IMAGESTRETCHMODE_NONE;
-    case ImageStretchMode::Fill:
+    case winrt::Windows::UI::Xaml::Media::Stretch::Fill:
         return IMAGESTRETCHMODE_FILL;
-    case ImageStretchMode::Uniform:
+    case winrt::Windows::UI::Xaml::Media::Stretch::Uniform:
         return IMAGESTRETCHMODE_UNIFORM;
     default:
-    case ImageStretchMode::UniformToFill:
+    case winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill:
         return IMAGESTRETCHMODE_UNIFORMTOFILL;
     }
 }
