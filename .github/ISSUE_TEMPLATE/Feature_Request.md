@@ -1,7 +1,7 @@
 ---
 name: Feature Request/Idea 🚀
 about: Suggest a new feature or improvement (this does not mean you have to implement it)
-title: "Feature Request:"
+title: "Feature Request"
 labels: Issue-Feature
 assignees: ''
 
