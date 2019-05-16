@@ -85,5 +85,11 @@ private:
     bool _closeOnExit;
     std::wstring _padding;
 
+    bool _useShadow;
+    double _shadowBlur;
+    double _shadowOffsetX;
+    double _shadowOffsetY;
+    uint32_t _shadowColor;
+
     std::optional<std::wstring> _icon;
 };

@@ -36,6 +36,11 @@ static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
 static const std::wstring PADDING_KEY{ L"padding" };
 static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 static const std::wstring ICON_KEY{ L"icon" };
+static const std::wstring USESHADOW_KEY{ L"useShadow" };
+static const std::wstring SHADOWBLUR_KEY{ L"shadowBlur" };
+static const std::wstring SHADOWOFFSETX_KEY{ L"shadowOffsetX" };
+static const std::wstring SHADOWOFFSETY_KEY{ L"shadowOffsetY" };
+static const std::wstring SHADOWCOLOR_KEY{ L"shadowColor" };
 
 // Possible values for Scrollbar state
 static const std::wstring ALWAYS_VISIBLE{ L"visible" };
@@ -71,7 +76,12 @@ Profile::Profile() :
     _scrollbarState{ },
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
-    _icon{ }
+    _icon{ },
+    _useShadow{ false },
+    _shadowBlur{ 3.0 },
+    _shadowOffsetX{ 0.0 },
+    _shadowOffsetY{ 0.0 },
+    _shadowColor{ DEFAULT_SHADOW_COLOR }
 {
     UuidCreate(&_guid);
 }
@@ -163,6 +173,12 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.DefaultBackground(_defaultBackground.value());
     }
 
+    terminalSettings.UseShadow(_useShadow);
+    terminalSettings.ShadowBlur(_shadowBlur);
+    terminalSettings.ShadowOffsetX(_shadowOffsetX);
+    terminalSettings.ShadowOffsetY(_shadowOffsetY);
+    terminalSettings.ShadowColor(_shadowColor);
+
     if (_scrollbarState)
     {
         ScrollbarState result = ParseScrollbarState(_scrollbarState.value());
@@ -200,6 +216,11 @@ JsonObject Profile::ToJson() const
     const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
     const auto closeOnExit = JsonValue::CreateBooleanValue(_closeOnExit);
     const auto padding = JsonValue::CreateStringValue(_padding);
+    const auto useShadow = JsonValue::CreateBooleanValue(_useShadow);
+    const auto shadowBlur = JsonValue::CreateNumberValue(_shadowBlur);
+    const auto shadowOffsetX = JsonValue::CreateNumberValue(_shadowOffsetX);
+    const auto shadowOffsetY = JsonValue::CreateNumberValue(_shadowOffsetY);
+    const auto shadowColor = JsonValue::CreateStringValue(Utils::ColorToHexString(_shadowColor));
 
     if (_startingDirectory)
     {
@@ -269,6 +290,12 @@ JsonObject Profile::ToJson() const
         const auto icon = JsonValue::CreateStringValue(_icon.value());
         jsonObject.Insert(ICON_KEY, icon);
     }
+
+    jsonObject.Insert(USESHADOW_KEY, useShadow);
+    jsonObject.Insert(SHADOWBLUR_KEY, shadowBlur);
+    jsonObject.Insert(SHADOWOFFSETX_KEY, shadowOffsetX);
+    jsonObject.Insert(SHADOWOFFSETY_KEY, shadowOffsetY);
+    jsonObject.Insert(SHADOWCOLOR_KEY, shadowColor);
 
     return jsonObject;
 }
@@ -400,6 +427,29 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(ICON_KEY))
     {
         result._icon = json.GetNamedString(ICON_KEY);
+    }
+    if (json.HasKey(USESHADOW_KEY))
+    {
+        result._useShadow = json.GetNamedBoolean(USESHADOW_KEY);
+    }
+    if (json.HasKey(SHADOWBLUR_KEY))
+    {
+        result._shadowBlur = json.GetNamedNumber(SHADOWBLUR_KEY);
+    }
+    if (json.HasKey(SHADOWOFFSETX_KEY))
+    {
+        result._shadowOffsetX = json.GetNamedNumber(SHADOWOFFSETX_KEY);
+    }
+    if (json.HasKey(SHADOWOFFSETY_KEY))
+    {
+        result._shadowOffsetY = json.GetNamedNumber(SHADOWOFFSETY_KEY);
+    }
+    if (json.HasKey(SHADOWCOLOR_KEY))
+    {
+        const auto colorString = json.GetNamedString(SHADOWCOLOR_KEY);
+        // TODO: MSFT:20737698 - if this fails, display an approriate error
+        const auto color = Utils::ColorFromHexString(colorString.c_str());
+        result._shadowColor = color;
     }
 
     return result;

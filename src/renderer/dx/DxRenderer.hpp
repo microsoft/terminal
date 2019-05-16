@@ -121,6 +121,9 @@ namespace Microsoft::Console::Render
 
         float GetScaling() const noexcept;
 
+        [[nodiscard]]
+        HRESULT UpdateShadow(bool const enabled, float const blurInDip, COLORREF const color) noexcept;
+
     protected:
         [[nodiscard]]
         HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
@@ -152,6 +155,10 @@ namespace Microsoft::Console::Render
 
         D2D1_COLOR_F _foregroundColor;
         D2D1_COLOR_F _backgroundColor;
+
+        bool _useEffect;
+        float _shadowBlurInDip;
+        D2D1_COLOR_F _shadowColor;
 
         [[nodiscard]]
         RECT _GetDisplayRect() const noexcept;
@@ -191,11 +198,11 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
-        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext1> _d2dTargetRenderContext;
-		// If there is a text effect, this is a ID2D1BitmapRenderTarget, otherwise it is _d2DRenderTarget
-        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> _d2dTextRenderContext;
-		// Can be null, but otherwise should use _d2dTextRenderContext as an input
-        ::Microsoft::WRL::ComPtr<ID2D1Effect> _d2dTextEffect;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> _d2dTargetRenderContext;
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> _d2dEffectRenderContext;
+        ID2D1DeviceContext4* _d2dPaintContext;
+        ::Microsoft::WRL::ComPtr<ID2D1Effect> _d2dEffect;
+        ::Microsoft::WRL::ComPtr<ID2D1Effect> _d2dShadowEffect;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;

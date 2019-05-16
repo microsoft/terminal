@@ -139,6 +139,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Refresh our font with the renderer
             _UpdateFont();
 
+            THROW_IF_FAILED(_renderEngine->UpdateShadow(_settings.UseShadow(),
+                                                        static_cast<float>(_settings.ShadowBlur()),
+                                                        _settings.ShadowColor()));
+
             const auto width = _swapChainPanel.ActualWidth();
             const auto height = _swapChainPanel.ActualHeight();
             if (width != 0 && height != 0)
@@ -322,6 +326,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Tell the DX Engine to notify us when the swap chain changes.
         dxEngine->SetCallback(std::bind(&TermControl::SwapChainChanged, this));
+
+        // FIXME: pull out renderer settings to pass to DxEngine.
+        THROW_IF_FAILED(dxEngine->UpdateShadow(_settings.UseShadow(),
+                                               static_cast<float>(_settings.ShadowBlur()),
+                                               _settings.ShadowColor()));
 
         THROW_IF_FAILED(dxEngine->Enable());
         _renderEngine = std::move(dxEngine);

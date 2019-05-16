@@ -34,5 +34,10 @@ namespace Microsoft.Terminal.Settings
         String StartingDirectory;
         String EnvironmentVariables;
 
+        Boolean UseShadow;
+        Double ShadowBlur;
+        Double ShadowOffsetX;
+        Double ShadowOffsetY;
+        UInt32 ShadowColor;
     };
 }

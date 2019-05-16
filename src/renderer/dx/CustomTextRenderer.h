@@ -11,9 +11,7 @@ namespace Microsoft::Console::Render
 {
     struct DrawingContext
     {
-        DrawingContext(ID2D1RenderTarget* renderTarget,
-                       ID2D1DeviceContext4* textRenderContext,
-                       ID2D1Effect* textEffect,
+        DrawingContext(ID2D1DeviceContext4* d2dContext,
                        ID2D1Brush* foregroundBrush,
                        ID2D1Brush* backgroundBrush,
                        IDWriteFactory* dwriteFactory,
@@ -21,9 +19,7 @@ namespace Microsoft::Console::Render
                        const D2D_SIZE_F cellSize,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE)
         {
-            this->renderTarget = renderTarget;
-			this->textRenderContext = textRenderContext;
-			this->textEffect = textEffect;
+            this->d2dContext = d2dContext;
             this->foregroundBrush = foregroundBrush;
             this->backgroundBrush = backgroundBrush;
             this->dwriteFactory = dwriteFactory;
@@ -32,9 +28,7 @@ namespace Microsoft::Console::Render
             this->options = options;
         }
 
-        ID2D1RenderTarget* renderTarget;
-        ID2D1DeviceContext4* textRenderContext;
-        ID2D1Effect* textEffect;
+        ID2D1DeviceContext4* d2dContext;
         ID2D1Brush* foregroundBrush;
         ID2D1Brush* backgroundBrush;
         IDWriteFactory* dwriteFactory;

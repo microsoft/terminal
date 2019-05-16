@@ -25,7 +25,11 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
         _keyBindings{ nullptr },
-        _scrollbarState{ ScrollbarState::Visible }
+        _scrollbarState{ ScrollbarState::Visible },
+        _shadowBlur{ 3.0 },
+        _shadowColor{ DEFAULT_SHADOW_COLOR },
+        _shadowOffsetX{ 0 },
+        _shadowOffsetY{ 0 }
     {
 
     }
@@ -229,6 +233,56 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::EnvironmentVariables(hstring const& value)
     {
         _envVars = value;
+    }
+
+    bool TerminalSettings::UseShadow()
+    {
+        return _useShadow;
+    }
+
+    void TerminalSettings::UseShadow(bool const value)
+    {
+        _useShadow = value;
+    }
+
+    double TerminalSettings::ShadowBlur()
+    {
+        return _shadowBlur;
+    }
+
+    void TerminalSettings::ShadowBlur(double const value)
+    {
+        _shadowBlur = value;
+    }
+
+    double TerminalSettings::ShadowOffsetX()
+    {
+        return _shadowOffsetX;
+    }
+
+    void TerminalSettings::ShadowOffsetX(double const value)
+    {
+        _shadowOffsetX = value;
+    }
+
+    double TerminalSettings::ShadowOffsetY()
+    {
+        return _shadowOffsetY;
+    }
+
+    void TerminalSettings::ShadowOffsetY(double const value)
+    {
+        _shadowOffsetY = value;
+    }
+
+    uint32_t TerminalSettings::ShadowColor()
+    {
+        return _shadowColor;
+    }
+
+    void TerminalSettings::ShadowColor(uint32_t const value)
+    {
+        _shadowColor = value;
     }
 
     Settings::ScrollbarState TerminalSettings::ScrollState() const noexcept

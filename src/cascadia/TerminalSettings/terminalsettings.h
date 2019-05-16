@@ -73,6 +73,21 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
+        bool UseShadow();
+        void UseShadow(bool const value);
+
+        double ShadowBlur();
+        void ShadowBlur(double const value);
+
+        double ShadowOffsetX();
+        void ShadowOffsetX(double const value);
+
+        double ShadowOffsetY();
+        void ShadowOffsetY(double const value);
+
+        uint32_t ShadowColor();
+        void ShadowColor(uint32_t const value);
+
         ScrollbarState ScrollState() const noexcept;
         void ScrollState(winrt::Microsoft::Terminal::Settings::ScrollbarState const& value) noexcept;
 
@@ -97,6 +112,13 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;
+
+        bool _useShadow;
+        uint32_t _shadowColor;
+        double _shadowBlur;
+        double _shadowOffsetX;
+        double _shadowOffsetY;
+
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;
     };

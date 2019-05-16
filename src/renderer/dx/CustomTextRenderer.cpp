@@ -43,8 +43,11 @@ HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
+    // Note that d2dContext could in theory be rendering to a different DPI than the device
+    // render target, if the bitmap render target used when rendering effects is at a different DPI.
+    // Perhaps useful to overscale some odd effects?
     float dpiX, dpiY;
-    drawingContext->renderTarget->GetDpi(&dpiX, &dpiY);
+    drawingContext->d2dContext->GetDpi(&dpiX, &dpiY);
     *pixelsPerDip = dpiX / USER_DEFAULT_SCREEN_DPI;
     return S_OK;
 }
@@ -65,7 +68,7 @@ HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
     // Matrix structures are defined identically
-    drawingContext->renderTarget->GetTransform((D2D1_MATRIX_3X2_F*)transform);
+    drawingContext->d2dContext->GetTransform((D2D1_MATRIX_3X2_F*)transform);
     return S_OK;
 }
 #pragma endregion
@@ -170,7 +173,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     }
 
     D2D1_RECT_F rect = D2D1::RectF(x, y, x + width, y + thickness);
-    drawingContext->renderTarget->FillRectangle(&rect, brush);
+    drawingContext->d2dContext->FillRectangle(&rect, brush);
 }
 
 // Routine Description:
@@ -246,9 +249,6 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
     D2D1_POINT_2F baselineOrigin = origin;
     baselineOrigin.y += drawingContext->spacing.baseline;
 
-    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> backgroundContext;
-    RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(backgroundContext.GetAddressOf()));
-
     // Draw the background
     D2D1_RECT_F rect;
     rect.top = origin.y;
@@ -261,13 +261,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
         rect.right += glyphRun->glyphAdvances[i];
     }
 
-    backgroundContext->FillRectangle(rect, drawingContext->backgroundBrush);
-    if (drawingContext->textEffect)
-    {
-        drawingContext->textRenderContext->PushAxisAlignedClip(rect, D2D1_ANTIALIAS_MODE_ALIASED);
-        drawingContext->textRenderContext->Clear(D2D1::ColorF(0.0f, 0.0f, 0.0f, 0.0f));
-        drawingContext->textRenderContext->PopAxisAlignedClip();
-    }
+    drawingContext->d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
     // Now go onto drawing the text.
 
@@ -338,7 +332,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                 case DWRITE_GLYPH_IMAGE_FORMATS_PREMULTIPLIED_B8G8R8A8:
                 {
                     // This run is bitmap glyphs. Use Direct2D to draw them.
-                    drawingContext->textRenderContext->DrawColorBitmapGlyphRun(
+                    drawingContext->d2dContext->DrawColorBitmapGlyphRun(
                         colorRun->glyphImageFormat,
                         currentBaselineOrigin,
                         &colorRun->glyphRun,
@@ -349,7 +343,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                 case DWRITE_GLYPH_IMAGE_FORMATS_SVG:
                 {
                     // This run is SVG glyphs. Use Direct2D to draw them.
-                    drawingContext->textRenderContext->DrawSvgGlyphRun(
+                    drawingContext->d2dContext->DrawSvgGlyphRun(
                         currentBaselineOrigin,
                         &colorRun->glyphRun,
                         drawingContext->foregroundBrush,
@@ -379,7 +373,7 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     {
                         if (!tempBrush)
                         {
-                            RETURN_IF_FAILED(drawingContext->textRenderContext->CreateSolidColorBrush(colorRun->runColor, &tempBrush));
+                            RETURN_IF_FAILED(drawingContext->d2dContext->CreateSolidColorBrush(colorRun->runColor, &tempBrush));
                         }
                         else
                         {
@@ -428,7 +422,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingCont
                                                ID2D1Brush* brush)
 {
     // Using the context is the easiest/default way of drawing.
-    clientDrawingContext->textRenderContext->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
+    clientDrawingContext->d2dContext->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
 
     // However, we could probably add options here and switch out to one of these other drawing methods (making it 
     // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:
@@ -448,7 +442,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
 {
     // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
-    clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
+    clientDrawingContext->d2dContext->GetFactory(d2dFactory.GetAddressOf());
 
     ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
     d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
@@ -476,7 +470,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
                                           &matrixAlign,
                                           transformedGeometry.GetAddressOf());
 
-    clientDrawingContext->renderTarget->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
+    clientDrawingContext->d2dContext->FillGeometry(transformedGeometry.Get(), clientDrawingContext->foregroundBrush);
 
     return S_OK;
 }
@@ -490,7 +484,7 @@ HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingConte
 {
     // This is glow text manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
-    clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
+    clientDrawingContext->d2dContext->GetFactory(d2dFactory.GetAddressOf());
 
     ::Microsoft::WRL::ComPtr<ID2D1PathGeometry> pathGeometry;
     d2dFactory->CreatePathGeometry(pathGeometry.GetAddressOf());
@@ -527,12 +521,12 @@ HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingConte
     ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> brush;
     ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> outlineBrush;
 
-    clientDrawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
-    clientDrawingContext->renderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
+    clientDrawingContext->d2dContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White, 1.0f), brush.GetAddressOf());
+    clientDrawingContext->d2dContext->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Red, 1.0f), outlineBrush.GetAddressOf());
 
-    clientDrawingContext->renderTarget->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
+    clientDrawingContext->d2dContext->DrawGeometry(transformedGeometry.Get(), outlineBrush.Get(), 2.0f);
 
-    clientDrawingContext->renderTarget->FillGeometry(alignedGeometry.Get(), brush.Get());
+    clientDrawingContext->d2dContext->FillGeometry(alignedGeometry.Get(), brush.Get());
 
     return S_OK;
 }
