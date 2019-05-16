@@ -395,7 +395,7 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
                 break;
             case TEST_LANG_CHINESE:
-                str = "側経意責家方家閉討店暖育田庁載社転線宇。";
+                str = "我是中国人，我爱自己的祖国。";
                 break;
             case TEST_LANG_JAPANESE:
                 str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
