@@ -23,10 +23,9 @@ namespace Microsoft::Console::VirtualTerminal
     {
  
 	public:
-      
-		TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
+        TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
-		TerminalInput() = delete;
+        TerminalInput() = delete;
 		TerminalInput(const TerminalInput& old) = default;
         TerminalInput(TerminalInput&& moved) = default;
 
@@ -40,7 +39,6 @@ namespace Microsoft::Console::VirtualTerminal
 		void ChangeCursorKeysMode(const bool fApplicationMode);
 
     private:
-
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
         bool _fKeypadApplicationMode = false;
         bool _fCursorApplicationMode = false;
