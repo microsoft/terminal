@@ -18,5 +18,5 @@ Try formulating it in user story style (if applicable):
 # Proposed technical implementation details (optional)
 
 <!-- 
-A clear and concise description of what you want to happen..
+A clear and concise description of what you want to happen.
 -->

@@ -2,13 +2,13 @@
 name: Bug report 🐛
 about: Report errors or unexpected behavior
 title: "Bug Report"
-labels: Issue-Question
+labels: ''
 assignees: ''
 
 ---
 
 <!--
-This bug-tracker is monitored by Windows Console development team and other technical folks.
+This bug-tracker is monitored by Windows Terminal development team and other technical folks.
 
 **Important: When reporting BSODs or security issues, DO NOT attach memory dumps, logs, or traces to Github issues**.
 Instead, send dumps/traces to secure@microsoft.com, referencing this GitHub issue.
