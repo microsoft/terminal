@@ -69,6 +69,9 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::NewTabProfile8:
                 _NewTabWithProfileHandlers(8);
                 return true;
+			case ShortcutAction::NewTabProfile9:
+				_NewTabWithProfileHandlers(9);
+				return true;
 
             case ShortcutAction::NewWindow:
                 _NewWindowHandlers();
