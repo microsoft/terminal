@@ -142,6 +142,7 @@ public:
         return scale;
     }
 
+    //// Gets the physical size of the client area of the HWND in _window
     SIZE GetPhysicalSize() const noexcept
     {
         RECT rect = {};
@@ -151,6 +152,7 @@ public:
         return SIZE{ windowsWidth, windowsHeight };
     }
 
+    //// Gets the logical size of physical size specified by the parameter physicalSize
     winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
     {
         const auto dpi = GetCurrentDpiScale();
