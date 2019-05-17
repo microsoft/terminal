@@ -26,14 +26,18 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 1. Issues manually marked as `Resolution-Duplicate` will be closed shortly after activity stops
 1. Pull requests manually marked as `AutoMerge` will permit the bot to complete the PR and do cleanup when certain conditions are met. See details below.
 
+### Quick-Guidance to Core Contributors
+1. Look at `Needs-Attention` as top priority
+1. Look at `Needs-Triage` during triage meetings to get a handle on what's new and sort it out
+1. Look at `Needs-Tag-Fix` when you have a few minutes to fix up things tagged impoperly
+1. Manually add `Needs-Author-Feedback` when there's something we need the author to follow up on and want attention if they return it or an auto-close for inactivity if it goes stale.
+
 ## Rules
 
 ### Issue Management
 
 #### Mark as Triage Needed
-- When an issue doesn't meet triage criteria, applies `Needs-Triage` tag.
-- Triage criteria:
-   - 
+- When an issue doesn't meet triage criteria, applies `Needs-Triage` tag. Right now, this is just when it's opened.
   
 ### Author Has Responded
 - When an issue with `Needs-Author-Feedback` gets an author response, drops that tag in favor of `Needs-Attention` to flag core contributors to drop by.
@@ -49,6 +53,10 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 
 #### Close Duplicate Issues
 - Every hour, checks if there's been a day since the last activity on an issue with tag `Resolution-Duplicate` and closes it if inactive.
+
+#### Enforce tag system
+- When an issue is opened or labels are changed in any way, we will check if the tagging matches the system. If not, it will get `Needs-Tag-Fix`. The system is to have an `Area-`, `Issue-`, and `Product-` tag for all open things, and also a `Resolution-` for closed ones.
+- When the tags from appropriate categories are applied, it will auto-remove the `Needs-Tag-Fix` tag.
 
 ### PR Management
 
@@ -76,8 +84,7 @@ We'll be using tags, primarily, to help us understand what needs attention, what
   - Will use Squash merge stratgy
   - Will attempt to delete branch after merge, if possible
   - Will automatically remove the `AutoMerge` label if changes are pushed by someone *without* Write Access.
-
-##### **ADD ADDITIONAL AUTO-MERGE RULES/TRIGGERS HERE**
+  - More information on bot-logic that can be controlled with comments is [here](https://github.com/OfficeDev/office-ui-fabric-react/wiki/Advanced-auto-merge)
   
 ## Admin Panel
 [Here](https://fabric-cp.azurewebsites.net/bot/)
