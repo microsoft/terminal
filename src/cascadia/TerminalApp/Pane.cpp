@@ -9,7 +9,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int SEPERATOR_SIZE = 4;
+static const int SEPARATOR_SIZE = 4;
 
 Pane::Pane(GUID profile, TermControl control, const bool lastFocused) :
     _control{ control },
@@ -20,9 +20,9 @@ Pane::Pane(GUID profile, TermControl control, const bool lastFocused) :
     _secondChild{ nullptr },
     _connectionClosedToken{},
     _firstClosedToken{},
-    _secondClosedToken{}
+    _secondClosedToken{},
+    _root{}
 {
-    _root = Controls::Grid{};
     _AddControlToRoot(_control);
 
     // Set the background of the pane to match that of the theme's default grid
@@ -34,12 +34,12 @@ Pane::Pane(GUID profile, TermControl control, const bool lastFocused) :
     {
         winrt::Windows::Foundation::IInspectable g = res.Lookup(key);
         winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
-        _root.Style(style);
+        // try_as fails by returning nullptr
+        if (style)
+        {
+            _root.Style(style);
+        }
     }
-}
-
-Pane::~Pane()
-{
 }
 
 // Method Description:
@@ -71,6 +71,33 @@ Controls::Grid Pane::GetRootElement()
 }
 
 // Method Description:
+// - If this is the last focused pane, returns itself. Returns nullptr if this
+//   is a leaf and it's not focused. If it's a parent, it returns nullptr if no
+//   children of this pane were the last pane to be focused, or the Pane that
+//   _was_ the last pane to be focused (if there was one).
+// - This Pane's control might not currently be focused, if the tab itself is
+//   not currently focused.
+// Return Value:
+// - nullptr if we're a leaf and unfocused, or no children were marked
+//   `_lastFocused`, else returns this
+std::shared_ptr<Pane> Pane::GetLastFocusedPane()
+{
+    if (_IsLeaf())
+    {
+        return _lastFocused ? shared_from_this() : nullptr;
+    }
+    else
+    {
+        auto firstFocused = _firstChild->GetLastFocusedPane();
+        if (firstFocused != nullptr)
+        {
+            return firstFocused;
+        }
+        return _secondChild->GetLastFocusedPane();
+    }
+}
+
+// Method Description:
 // - Returns nullptr if no children of this pane were the last control to be
 //   focused, or the TermControl that _was_ the last control to be focused (if
 //   there was one).
@@ -81,20 +108,8 @@ Controls::Grid Pane::GetRootElement()
 //   that was last focused.
 TermControl Pane::GetLastFocusedTerminalControl()
 {
-    if (_IsLeaf())
-    {
-        return _lastFocused ? _control : nullptr;
-    }
-    else
-    {
-        auto firstFocused = _firstChild->GetLastFocusedTerminalControl();
-        if (firstFocused != nullptr)
-        {
-            return firstFocused;
-        }
-        auto secondFocused = _secondChild->GetLastFocusedTerminalControl();
-        return secondFocused;
-    }
+    auto lastFocused = GetLastFocusedPane();
+    return lastFocused ? lastFocused->_control : nullptr;
 }
 
 // Method Description:
@@ -104,22 +119,10 @@ TermControl Pane::GetLastFocusedTerminalControl()
 // Return Value:
 // - nullopt if no children of this pane were the last control to be
 //   focused, else the GUID of the profile of the last control to be focused
-std::optional<GUID> Pane::GetLastFocusedProfile() const noexcept
+std::optional<GUID> Pane::GetLastFocusedProfile()
 {
-    if (_IsLeaf())
-    {
-        return _lastFocused ? _profile : std::nullopt;
-    }
-    else
-    {
-        auto firstFocused = _firstChild->GetLastFocusedProfile();
-        if (firstFocused.has_value())
-        {
-            return firstFocused;
-        }
-        auto secondFocused = _secondChild->GetLastFocusedProfile();
-        return secondFocused;
-    }
+    auto lastFocused = GetLastFocusedPane();
+    return lastFocused ? lastFocused->_profile : std::nullopt;
 }
 
 // Method Description:
@@ -167,7 +170,7 @@ bool Pane::_HasFocusedChild() const noexcept
 //   * If this is a leaf node, and our control is actively focused, well mark
 //     ourselves as the _lastFocused.
 //   * If we're not a leaf, we'll recurse on our children to check them.
-void Pane::CheckFocus()
+void Pane::UpdateFocus()
 {
     if (_IsLeaf())
     {
@@ -179,8 +182,8 @@ void Pane::CheckFocus()
     else
     {
         _lastFocused = false;
-        _firstChild->CheckFocus();
-        _secondChild->CheckFocus();
+        _firstChild->UpdateFocus();
+        _secondChild->UpdateFocus();
     }
 }
 
@@ -207,7 +210,7 @@ void Pane::_FocusFirstChild()
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
 // - profile: The GUID of the profile these settings should apply to.
-void Pane::CheckUpdateSettings(TerminalSettings settings, GUID profile)
+void Pane::CheckUpdateSettings(const TerminalSettings& settings, const GUID& profile)
 {
     if (!_IsLeaf())
     {
@@ -353,7 +356,7 @@ void Pane::_SetupChildCloseHandlers()
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Pane::SplitVertical(const GUID profile, TermControl control)
+void Pane::SplitVertical(const GUID& profile, TermControl control)
 {
     // If we're not the leaf, recurse into our children to split them.
     if (!_IsLeaf())
@@ -401,7 +404,7 @@ void Pane::SplitVertical(const GUID profile, TermControl control)
 
     // Create the pane separator, and place it in column 1
     _separatorRoot = Controls::Grid{};
-    _separatorRoot.Width(SEPERATOR_SIZE);
+    _separatorRoot.Width(SEPARATOR_SIZE);
     // NaN is the special value XAML uses for "Auto" sizing.
     _separatorRoot.Height(NAN);
     _root.Children().Append(_separatorRoot);
@@ -424,7 +427,7 @@ void Pane::SplitVertical(const GUID profile, TermControl control)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Pane::SplitHorizontal(const GUID profile, TermControl control)
+void Pane::SplitHorizontal(const GUID& profile, TermControl control)
 {
     if (!_IsLeaf())
     {
@@ -468,7 +471,7 @@ void Pane::SplitHorizontal(const GUID profile, TermControl control)
     Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
 
     _separatorRoot = Controls::Grid{};
-    _separatorRoot.Height(SEPERATOR_SIZE);
+    _separatorRoot.Height(SEPARATOR_SIZE);
     // NaN is the special value XAML uses for "Auto" sizing.
     _separatorRoot.Width(NAN);
     _root.Children().Append(_separatorRoot);

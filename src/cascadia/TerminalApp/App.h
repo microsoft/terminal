@@ -102,9 +102,9 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
-        void _SplitVertical(std::optional<GUID> profileGuid);
-        void _SplitHorizontal(std::optional<GUID> profileGuid);
-        void _SplitPane(const bool splitHorizontal, std::optional<GUID> profileGuid);
+        void _SplitVertical(const std::optional<GUID>& profileGuid);
+        void _SplitHorizontal(const std::optional<GUID>& profileGuid);
+        void _SplitPane(const bool splitHorizontal, const std::optional<GUID>& profileGuid);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
@@ -121,6 +121,9 @@ namespace winrt::TerminalApp::implementation
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
+
+        void _CopyToClipboardHandler(const winrt::hstring& copiedData);
+        void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
     };
 }
 

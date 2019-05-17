@@ -620,45 +620,42 @@ namespace winrt::TerminalApp::implementation
     {
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
-        term.CopyToClipboard([this](auto copiedData) {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
-                DataPackage dataPack = DataPackage();
-                dataPack.RequestedOperation(DataPackageOperation::Copy);
-                dataPack.SetText(copiedData);
-                Clipboard::SetContent(dataPack);
-
-                // TODO: MSFT 20642290 and 20642291
-                // rtf copy and html copy
-            });
-        });
+        term.CopyToClipboard({ this, &App::_CopyToClipboardHandler });
 
         // Add an event handler when the terminal wants to paste data from the Clipboard.
-        term.PasteFromClipboard([this](auto /*sender*/, auto eventArgs) {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
-                PasteFromClipboard(eventArgs);
-            });
-        });
+        term.PasteFromClipboard({ this, &App::_PasteFromClipboardHandler });
 
-        // TODO: hostingTab feels like it should be a weak ref, not a strong ref.
-        term.TitleChanged([this, hostingTab](auto newTitle){
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        term.TitleChanged([this, weakTabPtr](auto newTitle){
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
             // The title of the control changed, but not necessarily the title
             // of the tab. Get the title of the focused pane of the tab, and set
             // the tab's text to the focused panes' text.
-            _CheckTitleUpdate(hostingTab);
+            _CheckTitleUpdate(tab);
         });
 
-        // TODO: hostingTab feels like it should be a weak ref, not a strong ref.
-        term.GetControl().GotFocus([this, hostingTab](auto&&, auto&&)
+        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&)
         {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
             // Update the focus of the tab's panes
-            hostingTab->CheckFocus();
+            tab->UpdateFocus();
 
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
-            _CheckTitleUpdate(hostingTab);
+            _CheckTitleUpdate(tab);
 
             // Possibly update the icon of the tab.
-            _UpdateTabIcon(hostingTab);
+            _UpdateTabIcon(tab);
         });
     }
 
@@ -965,7 +962,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void App::_SplitVertical(std::optional<GUID> profileGuid)
+    void App::_SplitVertical(const std::optional<GUID>& profileGuid)
     {
         _SplitPane(false, profileGuid);
     }
@@ -976,7 +973,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void App::_SplitHorizontal(std::optional<GUID> profileGuid)
+    void App::_SplitHorizontal(const std::optional<GUID>& profileGuid)
     {
         _SplitPane(true, profileGuid);
     }
@@ -989,7 +986,7 @@ namespace winrt::TerminalApp::implementation
     //   vertically.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void App::_SplitPane(const bool splitHorizontal, std::optional<GUID> profileGuid)
+    void App::_SplitPane(const bool splitHorizontal, const std::optional<GUID>& profileGuid)
     {
         const GUID realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
@@ -1002,8 +999,40 @@ namespace winrt::TerminalApp::implementation
         // Hookp our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return splitHorizontal ? focusedTab->SplitHorizontal(realGuid, newControl) :
-                                 focusedTab->SplitVertical(realGuid, newControl);
+        return splitHorizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
+                                 focusedTab->AddVerticalSplit(realGuid, newControl);
+    }
+
+    // Method Description:
+    // - Place `copiedData` into the clipboard as text. Triggered when a
+    //   terminal control raises it's CopyToClipboard event.
+    // Arguments:
+    // - copiedData: the new string content to place on the clipboard.
+    void App::_CopyToClipboardHandler(const winrt::hstring& copiedData)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
+            DataPackage dataPack = DataPackage();
+            dataPack.RequestedOperation(DataPackageOperation::Copy);
+            dataPack.SetText(copiedData);
+            Clipboard::SetContent(dataPack);
+
+            // TODO: MSFT 20642290 and 20642291
+            // rtf copy and html copy
+        });
+    }
+
+    // Method Description:
+    // - Fires an async event to get data from the clipboard, and paste it to
+    //   the terminal. Triggered when the Terminal Control requests clipboard
+    //   data with it's PasteFromClipboard event.
+    // Arguments:
+    // - eventArgs: the PasteFromClipboard event sent from the TermControl
+    void App::_PasteFromClipboardHandler(const IInspectable& /*sender*/,
+                                         const PasteFromClipboardEventArgs& eventArgs)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
+            PasteFromClipboard(eventArgs);
+        });
     }
 
     // -------------------------------- WinRT Events ---------------------------------

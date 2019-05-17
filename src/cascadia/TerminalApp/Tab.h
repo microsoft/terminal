@@ -21,10 +21,10 @@ public:
     void SetFocused(const bool focused);
 
     void Scroll(const int delta);
-    void SplitVertical(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    void SplitHorizontal(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void AddVerticalSplit(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void AddHorizontalSplit(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
-    void CheckFocus();
+    void UpdateFocus();
 
     void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
     winrt::hstring GetLastFocusedTitle();

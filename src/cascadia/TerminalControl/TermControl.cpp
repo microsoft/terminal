@@ -227,11 +227,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     TermControl::~TermControl()
     {
         _closing = true;
-        if (_initializedTerminal)
-        {
-            // Don't let anyone else do something to the buffer.
-            auto lock = _terminal->LockForWriting();
-        }
+        // Don't let anyone else do something to the buffer.
+        auto lock = _terminal->LockForWriting();
 
         if (_connection != nullptr)
         {

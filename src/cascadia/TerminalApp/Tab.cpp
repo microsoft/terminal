@@ -124,9 +124,9 @@ void Tab::_Focus()
 //   under this tab is focused, then it will be marked as the last focused. If
 //   there are no focused panes, then there will not be a last focused contrl
 //   when this returns.
-void Tab::CheckFocus()
+void Tab::UpdateFocus()
 {
-    _rootPane->CheckFocus();
+    _rootPane->UpdateFocus();
 }
 
 // Method Description:
@@ -161,8 +161,8 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - <none>
 void Tab::Scroll(const int delta)
 {
-    GetLastFocusedTerminalControl().GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-        auto control = GetLastFocusedTerminalControl();
+    auto control = GetLastFocusedTerminalControl();
+    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta](){
         const auto currentOffset = control.GetScrollOffset();
         control.ScrollViewport(currentOffset + delta);
     });
@@ -174,7 +174,7 @@ void Tab::Scroll(const int delta)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Tab::SplitVertical(GUID profile, TermControl control)
+void Tab::AddVerticalSplit(GUID profile, TermControl control)
 {
     _rootPane->SplitVertical(profile, control);
 }
@@ -185,7 +185,7 @@ void Tab::SplitVertical(GUID profile, TermControl control)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Tab::SplitHorizontal(GUID profile, TermControl control)
+void Tab::AddHorizontalSplit(GUID profile, TermControl control)
 {
     _rootPane->SplitHorizontal(profile, control);
 }

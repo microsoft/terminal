@@ -1,11 +1,29 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// Module Name:
+// - Pane.h
+//
+// Abstract:
+// - Panes are an abstraction by which the terminal can dislay multiple terminal
+//   instances simultaneously in a single terminal window. While tabs allow for
+//   a single terminal window to have many terminal sessions running
+//   simultaneously within a single window, only one tab can be visible at a
+//   time. Panes, on the other hand, allow a user to have many different
+//   terminal sessions visible to the user within the context of a single window
+//   at the same time. This can enable greater productivity from the user, as
+//   they can see the output of one terminal window while working in another.
+// - See doc/cascadia/Panes.md for a detailed description.
+//
+// Author:
+// - Mike Griese (zadjii-msft) 16-May-2019
+
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-class Pane
+class Pane : public std::enable_shared_from_this<Pane>
 {
 
 public:
@@ -18,19 +36,21 @@ public:
     };
 
     Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused = false);
-    ~Pane();
+    ~Pane() = default;
 
+    std::shared_ptr<Pane> GetLastFocusedPane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
-    std::optional<GUID> GetLastFocusedProfile() const noexcept;
+    std::optional<GUID> GetLastFocusedProfile();
+
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;
-    void CheckFocus();
+    void UpdateFocus();
 
-    void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
+    void CheckUpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
 
-    void SplitHorizontal(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    void SplitVertical(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitHorizontal(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitVertical(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
