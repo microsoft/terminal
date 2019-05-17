@@ -25,7 +25,9 @@ class TerminalApp::Profile final
 {
 
 public:
+    Profile(const winrt::guid& guid);
     Profile();
+
     ~Profile();
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;

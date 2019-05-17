@@ -49,7 +49,13 @@ static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
 static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
 Profile::Profile() :
-    _guid{},
+    Profile(winrt::guid{})
+{
+    UuidCreate(&_guid);
+}
+
+Profile::Profile(const winrt::guid& guid):
+    _guid(guid),
     _name{ L"Default" },
     _schemeName{},
 
@@ -73,7 +79,6 @@ Profile::Profile() :
     _padding{ DEFAULT_PADDING },
     _icon{ }
 {
-    UuidCreate(&_guid);
 }
 
 Profile::~Profile()

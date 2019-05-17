@@ -8,10 +8,18 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
+#include <bcrypt.h>
+#include <wil/resource.h> // reinclude wil/resource to get the bcrypt defines.
+
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
+
+// {2BDE4A90-D05F-401C-9492-E40884EAD1D8}
+static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = 
+{ 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view data);
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -182,7 +190,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile cmdProfile{};
+    Profile cmdProfile{_GenerateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, "cmd")};
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
     cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
@@ -191,7 +199,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     cmdProfile.SetUseAcrylic(true);
     cmdProfile.SetName(L"cmd");
 
-    Profile powershellProfile{};
+    Profile powershellProfile{_GenerateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, "PowerShell")};
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::wstring psCmdline = L"powershell.exe";
@@ -468,3 +476,36 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     result.resize(requiredSize-1);
     return result;
 }
+
+GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view name)
+{
+    std::array<uint8_t, 16> namespaceBytes;
+    auto correctEndianNamespaceGuid = winrt::impl::endian_swap(namespaceGuid);
+    std::copy(reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid), reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid) + 16, namespaceBytes.begin());
+
+    wil::unique_bcrypt_hash hash;
+    std::array<uint8_t, 20> buffer;
+    //DWORD cbHashObject = 0;
+    //ULONG unused = 0;
+
+    //THROW_IF_NTSTATUS_FAILED(BCryptGetProperty(BCRYPT_SHA1_ALG_HANDLE, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&cbHashObject), sizeof(cbHashObject), &unused, 0));
+
+    //wil::unique_array_ptr<uint8_t> hashObject = wil::make_unique
+    //auto hashObject = std::make_unique<uint8_t[]>(cbHashObject);
+    //hashObject.resize(cbHashObject);
+
+    //THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, hashObject.get(), cbHashObject, nullptr, 0, 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, nullptr, 0, nullptr, 0, 0));
+
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), namespaceBytes.data(), namespaceBytes.size(), 0));
+    // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<char*>(name.data())), name.size(), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), buffer.size(), 0));
+
+    buffer[6] = (buffer[6] & 0x0F) | 0x50;  // set the uuid version to 5
+    buffer[8] = (buffer[8] & 0x3F) | 0x80;  // set the variant to 2 (RFC4122)
+
+    GUID newGuid{0};
+    std::copy(buffer.begin(), buffer.begin() + 16, reinterpret_cast<uint8_t*>(&newGuid));
+    return winrt::impl::endian_swap(newGuid);
+}
