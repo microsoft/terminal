@@ -181,7 +181,7 @@ void NonClientIslandWindow::OnSize()
 
     if (_rootGrid)
     {
-        const auto physicalSize = SIZE{ clientArea.Width(), clientArea.Height() };
+        const SIZE physicalSize{ clientArea.Width(), clientArea.Height() };
         const auto logicalSize = GetLogicalSize(physicalSize);
         _rootGrid.Width(logicalSize.Width);
         _rootGrid.Height(logicalSize.Height);
