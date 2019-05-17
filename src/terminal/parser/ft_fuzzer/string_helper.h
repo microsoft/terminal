@@ -17,10 +17,11 @@ void AppendFormat(
     va_start(args, format);
 
     const auto currentLength = to.length();
-    const auto appendLength = _vscprintf(format, args);
+    const auto appendLength = _vscprintf(format, args); // _vscprintf The value returned does not include the terminating null character.
 
     THROW_HR_IF(E_FAIL, appendLength < 0);
 
+    // sprintf_s guarantees that the buffer will be null-terminated. So allocate one more byte for null character and then remove it.
     to.resize(currentLength + appendLength + 1);
 
     const auto len = vsprintf_s(to.data() + currentLength, appendLength + 1, format, args);
@@ -41,6 +42,10 @@ void TrimLeft(_In_ T& str, _In_ const typename T::value_type ch)
     }
     else
     {
+        // find_first_not_of returns npos when:
+        // 1. str is empty.
+        // 2. str contains only ch. (For example : str = "AAA", ch = 'A')
+        // So here we should clear the string.
         str.clear();
     }
 }
