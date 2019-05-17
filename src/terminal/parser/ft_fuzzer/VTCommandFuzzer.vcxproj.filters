@@ -35,5 +35,8 @@
     <ClInclude Include="string_helper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="memallocator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

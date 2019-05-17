@@ -241,7 +241,7 @@ namespace fuzz
     // that does not require external modules or complex setup.  This should
     // make fuzzing easier to implement and test, as well as more explicit
     // with regard to what fuzzing manipulations are possible.
-    template <class _Alloc = CComAllocator>
+    template <class _Alloc = CFuzzCRTAllocator>
     class CFuzzLogic
     {
     public:

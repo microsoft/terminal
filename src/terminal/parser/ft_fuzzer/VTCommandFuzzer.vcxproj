@@ -10,6 +10,7 @@
   <ItemGroup>
     <ClInclude Include="fuzzing_directed.h" />
     <ClInclude Include="fuzzing_logic.h" />
+    <ClInclude Include="memallocator.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="string_helper.h" />
   </ItemGroup>
