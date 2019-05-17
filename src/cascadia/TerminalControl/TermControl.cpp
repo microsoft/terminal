@@ -1047,6 +1047,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Function Description:
+    // - Gets the height of the terminal in lines of text
+    // Return Value:
+    // - The height of the terminal in lines of text
+    int TermControl::GetViewHeight() const
+    {
+        const auto viewPort = _terminal->GetViewport();
+        return viewPort.Height();
+    }
+
+    // Function Description:
     // - Determines how much space (in pixels) an app would need to reserve to
     //   create a control with the settings stored in the settings param. This
     //   accounts for things like the font size and face, the initialRows and

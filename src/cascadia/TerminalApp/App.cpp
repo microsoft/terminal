@@ -300,14 +300,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the feedback button is clicked. Launches the feedback hub
-    //   to the list of all feedback for the Terminal app.
+    // - Called when the feedback button is clicked. Launches github in your
+    //   default browser, navigated to the "issues" page of the Terminal repo.
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        // If you want this to go to the new feedback page automatically, use &newFeedback=true
-        winrt::Windows::System::Launcher::LaunchUriAsync({ L"feedback-hub://?tabid=2&appid=Microsoft.WindowsTerminal_8wekyb3d8bbwe!App" });
-
+        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
     }
 
     // Method Description:
@@ -325,12 +323,14 @@ namespace winrt::TerminalApp::implementation
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _DoScroll(-1); });
-        bindings.ScrollDown([this]() { _DoScroll(1); });
+        bindings.ScrollUp([this]() { _Scroll(-1); });
+        bindings.ScrollDown([this]() { _Scroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
         bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
         bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
+        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
+        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
     }
@@ -736,10 +736,27 @@ namespace winrt::TerminalApp::implementation
     //      view up, and positive values will move the viewport down.
     // Arguments:
     // - delta: a number of lines to move the viewport relative to the current viewport.
-    void App::_DoScroll(int delta)
+    void App::_Scroll(int delta)
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         _tabs[focusedTabIndex]->Scroll(delta);
+    }
+
+    // Method Description:
+    // - Move the viewport of the terminal of the currently focused tab up or
+    //      down a page. The page length will be dependent on the terminal view height.
+    //      Negative values of `delta` will move the view up by one page, and positive values
+    //      will move the viewport down by one page.
+    // Arguments:
+    // - delta: The direction to move the view relative to the current viewport(it
+    //      is clamped between -1 and 1)
+    void App::_ScrollPage(int delta)
+    {
+        delta = std::clamp(delta, -1, 1);
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        const auto control = _GetFocusedControl();
+        const auto termHeight = control.GetViewHeight();
+        _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
 
     // Method Description:
@@ -882,12 +899,11 @@ namespace winrt::TerminalApp::implementation
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
-        // TODO: GitHub:627: Need a better story for what should happen when the last tab is closed.
-        if (_tabs.size() <= 1)
+        // To close the window here, we need to close the hosting window.
+        if (_tabs.size() == 1)
         {
-            return;
+            _lastTabClosedHandlers();
         }
-
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
 
@@ -994,4 +1010,5 @@ namespace winrt::TerminalApp::implementation
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 }
