@@ -27,9 +27,6 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
 protected:
-    unsigned int _currentWidth;
-    unsigned int _currentHeight;
-
     HWND _interopWindowHandle;
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
@@ -38,6 +35,5 @@ protected:
 
     std::function<void(const HWND, const RECT)> _pfnCreateCallback;
 
-    double GetCurrentDpiScale();
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

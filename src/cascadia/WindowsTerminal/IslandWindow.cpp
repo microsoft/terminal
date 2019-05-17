@@ -17,8 +17,6 @@ using namespace ::Microsoft::Console::Types;
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
 IslandWindow::IslandWindow() noexcept :
-    _currentWidth{ 0 },
-    _currentHeight{ 0 },
     _interopWindowHandle{ nullptr },
     _rootGrid{ nullptr },
     _source{ nullptr },
@@ -121,30 +119,17 @@ void IslandWindow::Initialize()
     OnSize();
 }
 
-double IslandWindow::GetCurrentDpiScale()
-{
-    // setup a root grid that will be used to apply DPI scaling
-    winrt::Windows::UI::Xaml::Media::ScaleTransform dpiScaleTransform;
-    winrt::Windows::UI::Xaml::Controls::Grid dpiAdjustmentGrid;
-
-    const auto dpi = GetDpiForWindow(_window);
-    const double scale = double(dpi) / double(USER_DEFAULT_SCREEN_DPI);
-    return scale;
-}
-
-
 void IslandWindow::OnSize()
 {
+    const auto physicalSize = GetPhysicalSize();
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0, 0, 0, _currentWidth, _currentHeight, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, 0, 0, 0, physicalSize.cx, physicalSize.cy, SWP_SHOWWINDOW);
 
     if (_rootGrid)
     {
-        const auto dpi = GetCurrentDpiScale();
-        const auto logicalWidth = (_currentWidth / dpi) + 0.5;
-        _rootGrid.Width(logicalWidth);
-        const auto logicalHeigth = (_currentHeight / dpi) + 0.5;
-        _rootGrid.Height(logicalHeigth);
+        const auto size = GetLogicalSize();
+        _rootGrid.Width(size.Width);
+        _rootGrid.Height(size.Height);
     }
 }
 
@@ -179,12 +164,7 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
 // - height: the new height of the window _in pixels_
 void IslandWindow::OnResize(const UINT width, const UINT height)
 {
-    _currentWidth = width;
-    _currentHeight = height;
-    if (nullptr != _rootGrid)
-    {
-        OnSize();
-    }
+    OnSize();
 }
 
 // Method Description:

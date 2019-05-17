@@ -123,17 +123,47 @@ public:
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
 
-    RECT GetWindowRect() const
+    RECT GetWindowRect() const noexcept
     {
         RECT rc = { 0 };
         ::GetWindowRect(_window, &rc);
         return rc;
     }
 
-    HWND GetHandle() noexcept
+    HWND GetHandle() const noexcept
     {
         return _window;
     };
+
+    float GetCurrentDpiScale() const noexcept
+    {
+        const auto dpi = ::GetDpiForWindow(_window);
+        const auto scale = float(dpi) / float(USER_DEFAULT_SCREEN_DPI);
+        return scale;
+    }
+
+    SIZE GetPhysicalSize() const noexcept
+    {
+        RECT rect = {};
+        GetClientRect(_window, &rect);
+        const auto windowsWidth = rect.right - rect.left;
+        const auto windowsHeight = rect.bottom - rect.top;
+        return SIZE{ windowsWidth, windowsHeight };
+    }
+
+    winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
+    {
+        const auto dpi = GetCurrentDpiScale();
+        // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
+        const auto logicalWidth = (physicalSize.cx / dpi) + 0.5f;
+        const auto logicalHeigth = (physicalSize.cy / dpi) + 0.5f;
+        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeigth);
+    }
+
+    winrt::Windows::Foundation::Size GetLogicalSize() const noexcept
+    {
+        return GetLogicalSize(GetPhysicalSize());
+    }
 
     // Method Description:
     // - Sends a message to our message loop to update the title of the window.

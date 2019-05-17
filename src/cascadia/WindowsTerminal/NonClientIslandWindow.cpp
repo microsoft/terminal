@@ -90,13 +90,15 @@ void NonClientIslandWindow::SetNonClientHeight(const int contentHeight) noexcept
 //   content, in window coordinates.
 Viewport NonClientIslandWindow::GetTitlebarContentArea() const noexcept
 {
-    const auto dpi = GetDpiForWindow(_window);
-    const double scale = static_cast<double>(dpi) / static_cast<double>(USER_DEFAULT_SCREEN_DPI);
+    const auto scale = GetCurrentDpiScale();
 
     const auto titlebarContentHeight = _titlebarUnscaledContentHeight * scale;
     const auto titlebarMarginRight = _titlebarMarginRight;
 
-    auto titlebarWidth = _currentWidth - (_windowMarginSides + titlebarMarginRight);
+    const auto physicalSize = GetPhysicalSize();
+    const auto clientWidth = physicalSize.cx;
+
+    auto titlebarWidth = clientWidth - (_windowMarginSides + titlebarMarginRight);
     // Adjust for maximized margins
     titlebarWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
 
@@ -132,8 +134,9 @@ Viewport NonClientIslandWindow::GetClientContentArea() const noexcept
     COORD clientOrigin = { static_cast<short>(margins.cxLeftWidth),
                            static_cast<short>(margins.cyTopHeight) };
 
-    auto clientWidth = _currentWidth;
-    auto clientHeight = _currentHeight;
+    const auto physicalSize = GetPhysicalSize();
+    auto clientWidth = physicalSize.cx;
+    auto clientHeight = physicalSize.cy;
 
     // If we're maximized, we don't want to use the frame as our margins,
     // instead we want to use the margins from the maximization. If we included
@@ -178,11 +181,10 @@ void NonClientIslandWindow::OnSize()
 
     if (_rootGrid)
     {
-        const auto dpi = GetCurrentDpiScale();
-        const auto logicalWidth = (clientArea.Width() / dpi) + 0.5;
-        _rootGrid.Width(logicalWidth);
-        const auto logicalHeigth = (clientArea.Height() / dpi) + 0.5;
-        _rootGrid.Height(logicalHeigth);
+        const auto physicalSize = SIZE{ clientArea.Width(), clientArea.Height() };
+        const auto logicalSize = GetLogicalSize(physicalSize);
+        _rootGrid.Width(logicalSize.Width);
+        _rootGrid.Height(logicalSize.Height);
     }
 
     // update the interop window size
