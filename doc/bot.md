@@ -80,4 +80,4 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 ##### **ADD ADDITIONAL AUTO-MERGE RULES/TRIGGERS HERE**
   
 ## Admin Panel
-https://fabric-cp.azurewebsites.net/bot/
+[Here](https://fabric-cp.azurewebsites.net/bot/)
