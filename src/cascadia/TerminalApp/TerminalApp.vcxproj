@@ -104,6 +104,9 @@
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
+    <ProjectReference Include="..\TerminalSettings\TerminalSettings.vcxproj">
+      <Project>{ca5cad1a-d7ec-4107-b7c6-79cb77ae2907}</Project>
+    </ProjectReference>
 
   </ItemGroup>
   <PropertyGroup>
