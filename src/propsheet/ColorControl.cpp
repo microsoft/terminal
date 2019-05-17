@@ -42,7 +42,7 @@ void SimpleColorDoPaint(const HWND hColor, PAINTSTRUCT& ps, const int ColorId)
 
 // Routine Description:
 // - Window proc for the color buttons
-LRESULT SimpleColorControlProc(const HWND hColor, const UINT wMsg, const WPARAM wParam, const LPARAM lParam)
+LRESULT CALLBACK SimpleColorControlProc(const HWND hColor, const UINT wMsg, const WPARAM wParam, const LPARAM lParam)
 {
     PAINTSTRUCT ps;
     int ColorId;

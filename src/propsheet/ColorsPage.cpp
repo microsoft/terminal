@@ -10,7 +10,7 @@ static int iColor;
 
 // Routine Description:
 // - Window proc for the color buttons
-LRESULT ColorTableControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK ColorTableControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam)
 {
     PAINTSTRUCT ps;
     int ColorId;

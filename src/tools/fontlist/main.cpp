@@ -5,7 +5,7 @@
 #include <windowsx.h>
 #include <wil\result.h>
 
-int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam);
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam);
 int
 AddFont(
     ENUMLOGFONT *pelf,
@@ -56,7 +56,7 @@ SHORT TTPoints[] = {
 };
 
 
-int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
 {
     UINT i;
     LPCWSTR pwszFace = pelf->elfLogFont.lfFaceName;
