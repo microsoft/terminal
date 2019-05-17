@@ -84,7 +84,7 @@ class ScreenSizeLimitsTest
         Terminal zeroRowsTerminal;
         zeroRowsTerminal.CreateFromSettings(zeroRowsSettings, emptyRenderTarget);
         actualDimensions = zeroRowsTerminal.GetViewport().Dimensions();
-        VERIFY_ARE_EQUAL(actualDimensions.Y, 1, L"Row count clamped to 1" WCS(SHRT_MAX));
+        VERIFY_ARE_EQUAL(actualDimensions.Y, 1, L"Row count clamped to 1");
         VERIFY_ARE_EQUAL(actualDimensions.X, SHRT_MAX, L"Column count clamped to SHRT_MAX == " WCS(SHRT_MAX));
     }
 
