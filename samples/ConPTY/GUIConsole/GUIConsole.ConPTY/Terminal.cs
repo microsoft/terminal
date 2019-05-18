@@ -1,9 +1,7 @@
 ﻿using GUIConsole.ConPTY.Processes;
 using Microsoft.Win32.SafeHandles;
 using System;
-using System.ComponentModel;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Threading;
 using static GUIConsole.ConPTY.Native.ConsoleApi;
 
@@ -31,35 +29,7 @@ namespace GUIConsole.ConPTY
 
         public Terminal()
         {
-            // By default, UI applications don't have a console associated with them.
-            // So first, we check to see if this process has a console.
-            if (GetConsoleWindow() == IntPtr.Zero)
-            {
-                // If it doesn't, ask Windows to allocate one to it for us.
-                bool createConsoleSuccess = AllocConsole();
-                if (!createConsoleSuccess)
-                {
-                    throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not allocate console for this process.");
-                }
-            }
 
-            // And enable VT processing for our process's console.
-            EnableVirtualTerminalSequenceProcessing();
-        }        
-        
-        private void EnableVirtualTerminalSequenceProcessing()
-        {
-            SafeFileHandle screenBuffer = GetConsoleScreenBuffer();
-            if (!GetConsoleMode(screenBuffer, out uint outConsoleMode))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not get console mode.");
-            }
-            outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-
-            if (!SetConsoleMode(screenBuffer, outConsoleMode))
-            {
-                throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not enable virtual terminal processing.");
-            }
         }
 
         /// <summary>
@@ -124,45 +94,20 @@ namespace GUIConsole.ConPTY
         {
             SetConsoleCtrlHandler(eventType =>
             {
-                if(eventType == CtrlTypes.CTRL_CLOSE_EVENT)
+                if (eventType == CtrlTypes.CTRL_CLOSE_EVENT)
                 {
                     handler();
                 }
                 return false;
             }, true);
         }
-        
+
         private void DisposeResources(params IDisposable[] disposables)
         {
             foreach (var disposable in disposables)
             {
                 disposable.Dispose();
             }
-        }
-
-        /// <summary>
-        /// A helper method that opens a handle on the console's screen buffer, which will allow us to get its output,
-        /// even if STDOUT has been redirected (which Visual Studio does by default).
-        /// </summary>
-        /// <returns>A file handle to the console's screen buffer.</returns>
-        /// <remarks>This is described in more detail here: https://docs.microsoft.com/en-us/windows/console/console-handles </remarks>
-        private SafeFileHandle GetConsoleScreenBuffer()
-        {
-            IntPtr file = CreateFileW(
-                ConsoleOutPseudoFilename,
-                GENERIC_WRITE | GENERIC_READ,
-                FILE_SHARE_WRITE,
-                IntPtr.Zero,
-                OPEN_EXISTING,
-                FILE_ATTRIBUTE_NORMAL,
-                IntPtr.Zero);
-
-            if (file == new IntPtr(-1))
-            {                
-                throw new Win32Exception(Marshal.GetLastWin32Error(), "Could not get console screen buffer.");
-            }
-
-            return new SafeFileHandle(file, true);
         }
     }
 }

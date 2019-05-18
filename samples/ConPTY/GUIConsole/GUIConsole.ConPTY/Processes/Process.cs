@@ -58,9 +58,9 @@ namespace GUIConsole.ConPTY.Processes
         {
             Dispose(false);
         }
-        
+
         public void Dispose()
-        {            
+        {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
