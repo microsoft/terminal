@@ -18,7 +18,12 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
+static constexpr short _ClampToShortMax(int value, short min)
+{
+    return static_cast<short>(std::clamp(value, static_cast<int>(min), SHRT_MAX));
+}
+
+static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
     for(auto& ev : inEventsToWrite)
@@ -65,9 +70,9 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
-    TextAttribute attr{};
-    UINT cursorSize = 12;
+    const COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const TextAttribute attr{};
+    const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
@@ -79,9 +84,9 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
+    const COORD viewportSize{ _ClampToShortMax(settings.InitialCols(), 1), _ClampToShortMax(settings.InitialRows(), 1) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, static_cast<short>(settings.HistorySize()), renderTarget);
+    Create(viewportSize, _ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
 }
@@ -589,4 +594,14 @@ const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhi
     }
 
     return result;
+}
+
+// Method Description:
+// - Sets the visibility of the text cursor.
+// Arguments:
+// - isVisible: whether the cursor should be visible
+void Terminal::SetCursorVisible(const bool isVisible) noexcept
+{
+    auto& cursor = _buffer->GetCursor();
+    cursor.SetIsVisible(isVisible);
 }

@@ -15,7 +15,7 @@
 
 #pragma hdrstop
 
-INT_PTR FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // This bool is used to track which option - up or down - was used to perform the last search. That way, the next time the
@@ -92,7 +92,7 @@ void DoFind()
         HWND const hwnd = pWindow->GetWindowHandle();
 
         ++g.uiDialogBoxCount;
-        DialogBoxParamW(g.hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, (DLGPROC)FindDialogProc, (LPARAM) nullptr);
+        DialogBoxParamW(g.hInstance, MAKEINTRESOURCE(ID_CONSOLE_FINDDLG), hwnd, FindDialogProc, (LPARAM) nullptr);
         --g.uiDialogBoxCount;
     }
 }

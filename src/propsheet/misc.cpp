@@ -420,7 +420,7 @@ DestroyFonts(
  * Is called exactly once by GDI for each font in the system. This
  * routine is used to store the FONT_INFO structure.
  */
-int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
 {
     FAIL_FAST_IF(!(ShouldAllowAllMonoTTFonts()));
     UINT i;
@@ -546,6 +546,7 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
  * routine is used to store the FONT_INFO structure.
  */
 int
+CALLBACK
 FontEnum(
     ENUMLOGFONT *pelf,
     NEWTEXTMETRIC *pntm,

@@ -840,7 +840,7 @@ public:
     bool _fDeleteCharacter;
     DispatchTypes::EraseType _eraseType;
     bool _fSetGraphics;
-	DispatchTypes::AnsiStatusType _statusReportType;
+    DispatchTypes::AnsiStatusType _statusReportType;
     bool _fDeviceStatusReport;
     bool _fDeviceAttributes;
     bool _fIsAltBuffer;

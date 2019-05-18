@@ -13,7 +13,7 @@
 2. Add matching fields to Settings.hpp
     - add getters, setters, the whole drill.
 
-3. Add to the propsheet.
+3. Add to the propsheet
     - We need to add it to *reading and writing* the registry from the propsheet, and *reading* the link from the propsheet. Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization.
     - `src/propsheet/registry.cpp`
         -  `propsheet/registry.cpp@InitRegistryValues` should initialize the default value for the property.
@@ -28,7 +28,7 @@
 6. Add the setting to `Menu::s_GetConsoleState`, and `Menu::s_PropertiesUpdate`
 Now, your new setting should be stored just like all the other properties.
 
-7. Update the feature test properties to get add the setting as well.
+7. Update the feature test properties to get add the setting as well
     - `ft_uia/Common/NativeMethods.cs@WinConP`:
         - `Wtypes.PROPERTYKEY PKEY_Console_`
         - `NT_CONSOLE_PROPS`
@@ -36,5 +36,5 @@ Now, your new setting should be stored just like all the other properties.
 8. Add the default value for the setting to `win32k-settings.man`
     - If the setting shouldn't default to 0 or `nullptr`, then you'll need to set the default value of the setting in `win32k-settings.man`.
 
-9. Update `Settings::InitFromStateInfo` and `Settings::CreateConsoleStateInfo` to get/set the value in a CONSOLE_STATE_INFO appropriately.
+9. Update `Settings::InitFromStateInfo` and `Settings::CreateConsoleStateInfo` to get/set the value in a CONSOLE_STATE_INFO appropriately
 

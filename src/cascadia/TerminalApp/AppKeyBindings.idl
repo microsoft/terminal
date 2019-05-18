@@ -17,7 +17,6 @@ namespace TerminalApp
         NewTabProfile6,
         NewTabProfile7,
         NewTabProfile8,
-        NewTabProfile9,
         NewWindow,
         CloseWindow,
         CloseTab,
@@ -32,11 +31,13 @@ namespace TerminalApp
         SwitchToTab6,
         SwitchToTab7,
         SwitchToTab8,
-        SwitchToTab9,
         IncreaseFontSize,
         DecreaseFontSize,
         ScrollUp,
-        ScrollDown
+        ScrollDown,
+        ScrollUpPage,
+        ScrollDownPage,
+        OpenSettings
     };
 
     delegate void CopyTextEventArgs();
@@ -53,6 +54,9 @@ namespace TerminalApp
     delegate void DecreaseFontSizeEventArgs();
     delegate void ScrollUpEventArgs();
     delegate void ScrollDownEventArgs();
+    delegate void ScrollUpPageEventArgs();
+    delegate void ScrollDownPageEventArgs();
+    delegate void OpenSettingsEventArgs();
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -75,5 +79,8 @@ namespace TerminalApp
         event DecreaseFontSizeEventArgs DecreaseFontSize;
         event ScrollUpEventArgs ScrollUp;
         event ScrollDownEventArgs ScrollDown;
+        event ScrollUpPageEventArgs ScrollUpPage;
+        event ScrollDownPageEventArgs ScrollDownPage;
+        event OpenSettingsEventArgs OpenSettings;
     }
 }

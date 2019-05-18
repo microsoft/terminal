@@ -1024,9 +1024,9 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
             }
         }
 
-        data.text.emplace_back(selectionText);
-        data.FgAttr.emplace_back(selectionFgAttr);
-        data.BkAttr.emplace_back(selectionBkAttr);
+        data.text.emplace_back(std::move(selectionText));
+        data.FgAttr.emplace_back(std::move(selectionFgAttr));
+        data.BkAttr.emplace_back(std::move(selectionBkAttr));
     }
 
     return data;

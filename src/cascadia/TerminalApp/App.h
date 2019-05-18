@@ -44,6 +44,7 @@ namespace winrt::TerminalApp::implementation
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
+        DECLARE_EVENT(LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 
     private:
         App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
@@ -72,6 +73,8 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
 
         void _LoadSettings();
+        void _OpenSettings();
+
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
         void _RegisterSettingsChange();
@@ -92,10 +95,11 @@ namespace winrt::TerminalApp::implementation
         void _SetFocusedTabIndex(int tabIndex);
         int _GetFocusedTabIndex() const;
 
-        void _DoScroll(int delta);
+        void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
+        void _ScrollPage(int delta);
 
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);

@@ -16,6 +16,25 @@ static const std::wstring NAME_KEY{ L"name" };
 static const std::wstring TABLE_KEY{ L"colors" };
 static const std::wstring FOREGROUND_KEY{ L"foreground" };
 static const std::wstring BACKGROUND_KEY{ L"background" };
+static const std::array<std::wstring, 16> TABLE_COLORS =
+{
+    L"black",
+    L"red",
+    L"green",
+    L"yellow",
+    L"blue",
+    L"purple",
+    L"cyan",
+    L"white",
+    L"brightBlack",
+    L"brightRed",
+    L"brightGreen",
+    L"brightYellow",
+    L"brightBlue",
+    L"brightPurple",
+    L"brightCyan",
+    L"brightWhite"
+};
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
@@ -71,17 +90,20 @@ JsonObject ColorScheme::ToJson() const
     auto fg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
     auto bg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
     auto name = JsonValue::CreateStringValue(_schemeName);
-    JsonArray tableArray{};
-    for (auto& color : _table)
-    {
-        auto s = Utils::ColorToHexString(color);
-        tableArray.Append(JsonValue::CreateStringValue(s));
-    }
 
     jsonObject.Insert(NAME_KEY, name);
     jsonObject.Insert(FOREGROUND_KEY, fg);
     jsonObject.Insert(BACKGROUND_KEY, bg);
-    jsonObject.Insert(TABLE_KEY, tableArray);
+ 
+    int i = 0;
+    for (const auto& current : TABLE_COLORS)
+    {
+        auto& color = _table.at(i);
+        auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
+
+        jsonObject.Insert(current, s);
+        i++;
+    }
 
     return jsonObject;
 }
@@ -112,6 +134,8 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
         const auto color = Utils::ColorFromHexString(bgString.c_str());
         result._defaultBackground = color;
     }
+
+    // Legacy Deserialization. Leave in place to allow forward compatibility
     if (json.HasKey(TABLE_KEY))
     {
         const auto table = json.GetNamedArray(TABLE_KEY);
@@ -123,10 +147,22 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
             {
                 auto str = v.GetString();
                 auto color = Utils::ColorFromHexString(str.c_str());
-                result._table[i] = color;
+                result._table.at(i) = color;
             }
             i++;
         }
+    }
+
+    int i = 0;
+    for (const auto& current : TABLE_COLORS)
+    {
+        if (json.HasKey(current))
+        {
+            const auto str = json.GetNamedString(current);
+            const auto color = Utils::ColorFromHexString(str.c_str());
+            result._table.at(i) = color;
+        }
+        i++;
     }
 
     return result;

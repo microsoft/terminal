@@ -25,6 +25,16 @@ steps:
     restoreSolution: OpenConsole.sln
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
+- task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+  displayName: 'NuGet restore packages for CI'
+  inputs:
+    command: restore
+    restoreSolution: build/.nuget/packages.config
+    feedsToUse: config
+    externalFeedCredentials: 'TAEF NuGet Feed'
+    nugetConfigPath: build/config/NuGet.config
+    restoreDirectory: '$(Build.SourcesDirectory)/packages'
+
 - task: VSBuild@1
   displayName: 'Build solution **\OpenConsole.sln'
   inputs:

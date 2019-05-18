@@ -37,9 +37,69 @@ ColorScheme _CreateCampbellScheme()
     return campbellScheme;
 }
 
+ColorScheme _CreateOneHalfDarkScheme()
+{
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-dark.reg
+    // Dark gray is per colortool scheme, the other 7 of the last 8 colors from the colortool
+    // scheme are the same as their dark color equivalents.
+    ColorScheme oneHalfDarkScheme { L"One Half Dark",
+                                    RGB(220, 223, 228),
+                                    RGB( 40,  44,  52) };
+    auto& oneHalfDarkTable = oneHalfDarkScheme.GetTable();
+    auto oneHalfDarkSpan = gsl::span<COLORREF>(&oneHalfDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfDarkTable[0]  = RGB( 40,  44,  52); // black
+    oneHalfDarkTable[1]  = RGB(224, 108, 117); // dark red
+    oneHalfDarkTable[2]  = RGB(152, 195, 121); // dark green
+    oneHalfDarkTable[3]  = RGB(229, 192, 123); // dark yellow
+    oneHalfDarkTable[4]  = RGB( 97, 175, 239); // dark blue
+    oneHalfDarkTable[5]  = RGB(198, 120, 221); // dark magenta
+    oneHalfDarkTable[6]  = RGB( 86, 182, 194); // dark cyan
+    oneHalfDarkTable[7]  = RGB(220, 223, 228); // gray
+    oneHalfDarkTable[8]  = RGB( 90,  99, 116); // dark gray
+    oneHalfDarkTable[9]  = RGB(224, 108, 117); // red
+    oneHalfDarkTable[10] = RGB(152, 195, 121); // green
+    oneHalfDarkTable[11] = RGB(229, 192, 123); // yellow
+    oneHalfDarkTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
+    oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
+    oneHalfDarkTable[15] = RGB(220, 223, 228); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
+
+    return oneHalfDarkScheme;
+}
+
+ColorScheme _CreateOneHalfLightScheme()
+{
+    // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-light.reg
+    // Last 8 colors per colortool scheme.
+    ColorScheme oneHalfLightScheme { L"One Half Light",
+                                    RGB(56,  58,  66),
+                                    RGB(250, 250, 250) };
+    auto& oneHalfLightTable = oneHalfLightScheme.GetTable();
+    auto oneHalfLightSpan = gsl::span<COLORREF>(&oneHalfLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    oneHalfLightTable[0]  = RGB( 56,  58,  66); // black
+    oneHalfLightTable[1]  = RGB(228,  86,  73); // dark red
+    oneHalfLightTable[2]  = RGB( 80, 161,  79); // dark green
+    oneHalfLightTable[3]  = RGB(193, 131,   1); // dark yellow
+    oneHalfLightTable[4]  = RGB(  1, 132, 188); // dark blue
+    oneHalfLightTable[5]  = RGB(166,  38, 164); // dark magenta
+    oneHalfLightTable[6]  = RGB(  9, 151, 179); // dark cyan
+    oneHalfLightTable[7]  = RGB(250, 250, 250); // gray
+    oneHalfLightTable[8]  = RGB( 79,  82,  93); // dark gray
+    oneHalfLightTable[9]  = RGB(223, 108, 117); // red
+    oneHalfLightTable[10] = RGB(152, 195, 121); // green
+    oneHalfLightTable[11] = RGB(228, 192, 122); // yellow
+    oneHalfLightTable[12] = RGB( 97, 175, 239); // blue
+    oneHalfLightTable[13] = RGB(197, 119, 221); // magenta
+    oneHalfLightTable[14] = RGB( 86, 181, 193); // cyan
+    oneHalfLightTable[15] = RGB(255, 255, 255); // white
+    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
+
+    return oneHalfLightScheme;
+}
+
 ColorScheme _CreateSolarizedDarkScheme()
 {
-
     ColorScheme solarizedDarkScheme { L"Solarized Dark",
                                       RGB(253, 246, 227),
                                       RGB(  7, 54,  66) };
@@ -96,8 +156,8 @@ ColorScheme _CreateSolarizedLightScheme()
 
 // Method Description:
 // - Create the set of schemes to use as the default schemes. Currently creates
-//      three default color schemes - Campbell (the new cmd color scheme),
-//      Solarized Dark and Solarized Light.
+//      five default color schemes - Campbell (the new cmd color scheme),
+//      One Half Dark, One Half Light, Solarized Dark, and Solarized Light.
 // Arguments:
 // - <none>
 // Return Value:
@@ -105,6 +165,8 @@ ColorScheme _CreateSolarizedLightScheme()
 void CascadiaSettings::_CreateDefaultSchemes()
 {
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfDarkScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateOneHalfLightScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
 
@@ -151,58 +213,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
     
-    // Add all WSL distros from: HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
-    Profile WSLDistro{};
-    wil::unique_hkey hLXSSKey;
-    wil::unique_hkey hHKCUUncached;
-    RegOpenCurrentUser(KEY_READ, &hHKCUUncached); // Retrieve the uncached equivalent of HKEY_CURRENT_USER
-    if (RegOpenKeyExW(hHKCUUncached.get(), L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss",
-            0, KEY_READ, &hLXSSKey) == ERROR_SUCCESS)
-    {
-        std::filesystem::path AppsDirectory{ ExpandEnvironmentVariableString(L"%ProgramFiles%") };
-        AppsDirectory /= "WindowsApps";
-        std::filesystem::path WSLCommandLine{ L"" };
-
-        wchar_t WSLKey[MAX_PATH]{ L"" }; // Registry key for a distinct WSL Distribution
-        wchar_t DistributionName[MAX_PATH]{ L"" }; // The name to be displayed by the flyout list
-        wchar_t PackageFamilyName[MAX_PATH]{ L"" }; // The distinct name for the distribution
-        std::wstring PFNString{ L"" };
-        std::wstring PFNSubString{ L"" };
-
-        // These tell the Registry functions how much space they have to work with when returning a value.
-        DWORD cchWSLKey{ (DWORD) std::size(WSLKey) };
-        DWORD cchDistributionName{ (DWORD) std::size(DistributionName) };
-        DWORD cchPackageFamilyName{ (DWORD) std::size(PackageFamilyName) };
-
-        for (int i = 0;
-            RegEnumKeyExW(hLXSSKey.get(), i, WSLKey, &cchWSLKey, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS;
-            i++)
-        {
-            // Reset available space for each value.
-            cchWSLKey = (DWORD) std::size(WSLKey);
-            cchDistributionName = (DWORD) std::size(DistributionName);
-            cchPackageFamilyName = (DWORD) std::size(PackageFamilyName);
-
-            if (RegGetValueW(hLXSSKey.get(), WSLKey, L"DistributionName", RRF_RT_REG_SZ, nullptr,
-                        DistributionName, &cchDistributionName) == ERROR_SUCCESS
-                    && RegGetValueW(hLXSSKey.get(), WSLKey, L"PackageFamilyName", RRF_RT_REG_SZ, nullptr,
-                        PackageFamilyName, &cchPackageFamilyName) == ERROR_SUCCESS) 
-            {
-                // The PackageFamilyName is split and has version information placed in the middle
-                // when creating the ProgramFiles directory.  I chose to only compare the last section.
-                PFNString = PackageFamilyName;
-                PFNSubString = PFNString.substr(PFNString.find(L"_"));
-                if (_IsWSLDistributionAvailable(AppsDirectory, PFNSubString, WSLCommandLine)) 
-                {
-                    WSLDistro.SetCommandline(WSLCommandLine);
-                    WSLDistro.SetName(DistributionName);
-                    WSLDistro.SetColorScheme({ L"Campbell" });
-                    _profiles.emplace_back(WSLDistro);
-                }
-            }
-        }
-    }
-
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
@@ -263,17 +273,19 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('9') });
-    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        static_cast<int>('0') });
 
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        VK_PRIOR });
+                                        VK_UP });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_DOWN });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollDownPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_NEXT });
-
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
                               KeyChord{ KeyModifiers::Alt,
                                         static_cast<int>('1') });
@@ -301,9 +313,6 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
                               KeyChord{ KeyModifiers::Alt,
                                         static_cast<int>('9') });
-    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
-                              KeyChord{ KeyModifiers::Alt,
-                                        static_cast<int>('0') });
 }
 
 // Method Description:
@@ -429,39 +438,6 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileE
 }
 
 // Function Description:
-// - Returns true if the executable for the distribution was found.
-// Arguments:
-// - A string that contains the distribution's directory.
-// - A string representing the distinct WSL distribution.
-// - A ref of a path that receives the result of [distribution].exe's full path.
-// Return Value:
-// - true or false.
-bool CascadiaSettings::_IsWSLDistributionAvailable(std::filesystem::path WSLDirectory, std::wstring searchString, std::filesystem::path& cmdline)
-{
-    std::wstring FileString{ L"" };
-    // step through all of the directory names to find the one with our search string
-    for (const auto& directory : std::filesystem::directory_iterator(WSLDirectory)) 
-    {
-        FileString = directory.path().wstring();
-        if (FileString.find(searchString) != std::wstring::npos) 
-        {
-
-            // step through all of the files looking for an executable.  
-            // I couldn't find a way of determining the validity of this step.
-            for (const auto& file : std::filesystem::directory_iterator(directory.path())) 
-            {
-                if (file.path().extension() == ".exe") 
-                {
-                    cmdline = file.path();
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
-// Function Description:
 // - Get a environment variable string.
 // Arguments:
 // - A string that contains an environment-variable string in the form: %variableName%.
@@ -474,7 +450,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     do
     {
         result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), static_cast<DWORD>(result.size()));
+        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
     } while (requiredSize != result.size());
 
     // Trim the terminating null character

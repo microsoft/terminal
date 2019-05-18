@@ -62,6 +62,17 @@ void IslandWindow::MakeWindow() noexcept
 }
 
 // Method Description:
+// - Called when no tab is remaining to close the window.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void IslandWindow::Close()
+{
+    PostQuitMessage(0);
+}
+
+// Method Description:
 // - Set a callback to be called when we process a WM_CREATE message. This gives
 //   the AppHost a chance to resize the window to the propoer size.
 // Arguments:
