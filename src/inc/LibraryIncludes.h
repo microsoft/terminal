@@ -9,6 +9,7 @@
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 
 // C
+#include <climits>
 #include <cwchar>
 #include <cwctype>
 
