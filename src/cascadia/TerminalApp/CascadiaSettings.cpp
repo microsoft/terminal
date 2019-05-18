@@ -6,7 +6,6 @@
 #include <conattrs.hpp>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
-#include "../../inc/DefaultSettings.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -108,6 +107,7 @@ void CascadiaSettings::_CreateDefaultSchemes()
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedLightScheme());
+
 }
 
 // Method Description:
@@ -123,7 +123,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     Profile cmdProfile{};
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
-    cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
@@ -144,7 +143,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     }
     powershellProfile.SetFontFace(L"Courier New");
     powershellProfile.SetCommandline(psCmdline);
-    powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
@@ -152,61 +150,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-=======
     
-    // Add all WSL distros from: HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
-    Profile WSLDistro{};
-    wil::unique_hkey hLXSSKey;
-    wil::unique_hkey hHKCUUncached;
-    RegOpenCurrentUser(KEY_READ, &hHKCUUncached); // Retrieve the uncached equivalent of HKEY_CURRENT_USER
-    if (RegOpenKeyExW(hHKCUUncached.get(), L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss",
-            0, KEY_READ, &hLXSSKey) == ERROR_SUCCESS)
-    {
-        std::filesystem::path AppsDirectory{ ExpandEnvironmentVariableString(L"%ProgramFiles%") };
-        AppsDirectory /= "WindowsApps";
-        std::filesystem::path WSLCommandLine{ L"" };
-
-        wchar_t WSLKey[MAX_PATH]{ L"" }; // Registry key for a distinct WSL Distribution
-        wchar_t DistributionName[MAX_PATH]{ L"" }; // The name to be displayed by the flyout list
-        wchar_t PackageFamilyName[MAX_PATH]{ L"" }; // The distinct name for the distribution
-        std::wstring PFNString{ L"" };
-        std::wstring PFNSubString{ L"" };
-
-        // These tell the Registry functions how much space they have to work with when returning a value.
-        DWORD cchWSLKey{ (DWORD) std::size(WSLKey) };
-        DWORD cchDistributionName{ (DWORD) std::size(DistributionName) };
-        DWORD cchPackageFamilyName{ (DWORD) std::size(PackageFamilyName) };
-
-        for (int i = 0;
-            RegEnumKeyExW(hLXSSKey.get(), i, WSLKey, &cchWSLKey, nullptr, nullptr, nullptr, nullptr) == ERROR_SUCCESS;
-            i++)
-        {
-            // Reset available space for each value.
-            cchWSLKey = (DWORD) std::size(WSLKey);
-            cchDistributionName = (DWORD) std::size(DistributionName);
-            cchPackageFamilyName = (DWORD) std::size(PackageFamilyName);
-
-            if (RegGetValueW(hLXSSKey.get(), WSLKey, L"DistributionName", RRF_RT_REG_SZ, nullptr,
-                        DistributionName, &cchDistributionName) == ERROR_SUCCESS
-                    && RegGetValueW(hLXSSKey.get(), WSLKey, L"PackageFamilyName", RRF_RT_REG_SZ, nullptr,
-                        PackageFamilyName, &cchPackageFamilyName) == ERROR_SUCCESS) 
-            {
-                // The PackageFamilyName is split and has version information placed in the middle
-                // when creating the ProgramFiles directory.  I chose to only compare the last section.
-                PFNString = PackageFamilyName;
-                PFNSubString = PFNString.substr(PFNString.find(L"_"));
-                if (_IsWSLDistributionAvailable(AppsDirectory, PFNSubString, WSLCommandLine)) 
-                {
-                    WSLDistro.SetCommandline(WSLCommandLine);
-                    WSLDistro.SetName(DistributionName);
-                    WSLDistro.SetColorScheme({ L"Campbell" });
-                    _profiles.emplace_back(WSLDistro);
-                }
-            }
-        }
-    }
-
-
     _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
@@ -229,9 +173,6 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                                KeyChord{ KeyModifiers::Ctrl,
                                          static_cast<int>('W') });
-    keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         VK_OEM_COMMA });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
                                KeyChord{ KeyModifiers::Ctrl,
@@ -429,39 +370,6 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileE
             {
                 cmdline = psCorePath;
                 return true;
-            }
-        }
-    }
-    return false;
-}
-
-// Function Description:
-// - Returns true if the executable for the distribution was found.
-// Arguments:
-// - A string that contains the distribution's directory.
-// - A string representing the distinct WSL distribution.
-// - A ref of a path that receives the result of [distribution].exe's full path.
-// Return Value:
-// - true or false.
-bool CascadiaSettings::_IsWSLDistributionAvailable(std::filesystem::path WSLDirectory, std::wstring searchString, std::filesystem::path& cmdline)
-{
-    std::wstring FileString{ L"" };
-    // step through all of the directory names to find the one with our search string
-    for (const auto& directory : std::filesystem::directory_iterator(WSLDirectory)) 
-    {
-        FileString = directory.path().wstring();
-        if (FileString.find(searchString) != std::wstring::npos) 
-        {
-
-            // step through all of the files looking for an executable.  
-            // I couldn't find a way of determining the validity of this step.
-            for (const auto& file : std::filesystem::directory_iterator(directory.path())) 
-            {
-                if (file.path().extension() == ".exe") 
-                {
-                    cmdline = file.path();
-                    return true;
-                }
             }
         }
     }
