@@ -481,7 +481,13 @@ GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view name)
 {
     std::array<uint8_t, 16> namespaceBytes;
     auto correctEndianNamespaceGuid = winrt::impl::endian_swap(namespaceGuid);
-    std::copy(reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid), reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid) + 16, namespaceBytes.begin());
+    // We're using memcpy here pursuant to [basic.types] subclause 2,
+    // "...the underlying bytes making up the object can be copied into an array
+    // of char or unsigned char...".
+    // std::copy may compile down to ::memcpy for these types, but using it might
+    // contravene the standard and nobody's got time for that.
+    ::memcpy(namespaceBytes.data(), &correctEndianNamespaceGuid, sizeof(GUID));
+    //std::copy(reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid), reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid) + 16, namespaceBytes.begin());
 
     wil::unique_bcrypt_hash hash;
     std::array<uint8_t, 20> buffer;
