@@ -9,6 +9,7 @@
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
@@ -215,26 +216,56 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
-        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+
         {
-            const auto& profile = _settings->GetProfiles()[profileIndex];
-            auto profileMenuItem = Controls::MenuFlyoutItem{};
+            Controls::MenuFlyoutItem defaultMenuItem;
+            std::vector<Controls::MenuFlyoutItem> nonDefaultMenuItems;
+            nonDefaultMenuItems.reserve(_settings->GetProfiles().size());
 
-            auto profileName = profile.GetName();
-            winrt::hstring hName{ profileName };
-            profileMenuItem.Text(hName);
-
-            // If there's an icon set for this profile, set it as the icon for
-            // this flyout item.
-            if (profile.HasIcon())
+            const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
+            for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
             {
-                profileMenuItem.Icon(_GetIconFromProfile(profile));
+                const auto& profile = _settings->GetProfiles()[profileIndex];
+                auto profileMenuItem = Controls::MenuFlyoutItem{};
+
+                profileMenuItem.Text(profile.GetName());
+
+                // If there's an icon set for this profile, set it as the icon for
+                // this flyout item.
+                if (profile.HasIcon())
+                {
+                    profileMenuItem.Icon(_GetIconFromProfile(profile));
+                }
+
+                profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
+                    this->_OpenNewTab({ profileIndex });
+                });
+
+                if (profile.GetGuid() == defaultProfileGuid)
+                {
+                    // Contrast the default profile with others in font weight.
+
+                    // The "bold" and "normal" font weights are 700 and 400 respectively,
+                    // so we add 300 to get bold from normal.
+                    // If the default font weight is higher, so is the accented one (but no higher than 999).
+                    const uint16_t defaultFontWeight = profileMenuItem.FontWeight().Weight;
+                    const uint16_t accentedFontWeight = gsl::narrow<uint16_t>(defaultFontWeight + 300u);
+                    profileMenuItem.FontWeight({ std::min(gsl::narrow<uint16_t>(999u), accentedFontWeight) });
+
+                    defaultMenuItem = std::move(profileMenuItem);
+                }
+                else
+                {
+                    nonDefaultMenuItems.emplace_back(std::move(profileMenuItem));
+                }
             }
 
-            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
-                this->_OpenNewTab({ profileIndex });
-            });
-            newTabFlyout.Items().Append(profileMenuItem);
+            // Top-pin the default profile
+            newTabFlyout.Items().Append(std::move(defaultMenuItem));
+            for (auto &nonDefaultMenuItem : nonDefaultMenuItems)
+            {
+                newTabFlyout.Items().Append(std::move(nonDefaultMenuItem));
+            }
         }
 
         // add menu separator
