@@ -26,13 +26,13 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
         TerminalInput() = delete;
-		TerminalInput(const TerminalInput& old) = default;
+        TerminalInput(const TerminalInput& old) = default;
         TerminalInput(TerminalInput&& moved) = default;
 
-		TerminalInput& operator=(const TerminalInput& old) = default;
+        TerminalInput& operator=(const TerminalInput& old) = default;
         TerminalInput& operator=(TerminalInput&& moved) = default;
 
-		~TerminalInput() = default;
+        ~TerminalInput() = default;
 
 		bool HandleKey(const IInputEvent* const pInEvent) const;
 		void ChangeKeypadMode(const bool fApplicationMode);
@@ -68,7 +68,14 @@ namespace Microsoft::Console::VirtualTerminal
             // C++11 syntax for prohibiting assignment
             // We can't assign, everything here is const.
             // We also shouldn't need to, this is only for a specific table.
+            _TermKeyMap(const _TermKeyMap&) = delete;
             _TermKeyMap& operator=(const _TermKeyMap&) = delete;
+
+			_TermKeyMap(_TermKeyMap&&) = delete;
+            _TermKeyMap& operator=(_TermKeyMap&&) = delete;
+
+			_TermKeyMap() = delete;
+			~_TermKeyMap() = default;
         };
 
         static const _TermKeyMap s_rgCursorKeysNormalMapping[];
