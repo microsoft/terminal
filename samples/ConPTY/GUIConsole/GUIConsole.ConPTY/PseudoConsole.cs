@@ -27,7 +27,7 @@ namespace GUIConsole.ConPTY
                 0, out IntPtr hPC);
             if(createResult != 0)
             {                             
-                throw new Win32Exception(createResult, "Could not create psuedo console.");
+                throw new Win32Exception(createResult, "Could not create pseudo console.");
             }
             return new PseudoConsole(hPC);
         }
