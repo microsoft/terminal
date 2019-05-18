@@ -442,6 +442,12 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
     _pfnScrollPositionChanged = pfn;
 }
 
+void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+{
+    _pfnBackgroundColorChanged = pfn;
+}
+
+
 // Method Description:
 // - Checks if selection is active
 // Return Value:

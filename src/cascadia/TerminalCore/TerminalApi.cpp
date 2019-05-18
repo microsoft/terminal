@@ -232,6 +232,7 @@ bool Terminal::SetDefaultForeground(const COLORREF dwColor)
 bool Terminal::SetDefaultBackground(const COLORREF dwColor)
 {
     _defaultBg = dwColor;
+    _pfnBackgroundColorChanged(dwColor);
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
