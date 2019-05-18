@@ -846,25 +846,27 @@ namespace winrt::TerminalApp::implementation
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
-        // To close the window here, we need to close the hosting window.
+		uint32_t removingTabIndex;
+		_tabView.Items().IndexOf(tabViewItem, removingTabIndex);
+
         if (_tabs.size() == 1)
         {
+			// To close the window here, we need to close the hosting window.
             _lastTabClosedHandlers();
         }
-        uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+		else
+		{
+			// If we are closing the tab we are on, flee to an adjacent tab first!
+			// We go to the tab on the right if we are on the 0th tab, or the one on the left otherwise.
+			if (removingTabIndex == _GetFocusedTabIndex())
+			{
+				_tabView.SelectedIndex(removingTabIndex > 0 ? removingTabIndex - 1 : 1);
+			}
+			_tabView.Items().RemoveAt(removingTabIndex);
+		}
 
-        if (tabIndexFromControl == _GetFocusedTabIndex())
-        {
-            _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
-        }
-
-        // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndexFromControl);
-        _tabView.Items().RemoveAt(tabIndexFromControl);
-
-        // ensure tabs and focus is sync
-        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
+		// Removing the tab from the collection will destroy its control and disconnect its connection.
+		_tabs.erase(_tabs.begin() + removingTabIndex);
     }
 
     // Method Description:
