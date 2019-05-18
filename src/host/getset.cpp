@@ -2226,5 +2226,4 @@ HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
         return S_OK;
     }
     CATCH_RETURN();
-
 }

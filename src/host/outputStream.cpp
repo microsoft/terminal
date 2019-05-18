@@ -762,7 +762,6 @@ BOOL ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const C
     return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
 }
 
-
 BOOL ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultForegroundColor(value));
