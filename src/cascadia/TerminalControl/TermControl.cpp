@@ -544,20 +544,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                          Input::PointerRoutedEventArgs const& args)
     {
-        // Ignore mouse events while the terminal does not have focus. 
-        // This prevents the user from selecting and copying text if they 
-        // click inside the current tab to refocus the terminal window. 
-        if (!_focused) 
-        {
-            args.Handled(true);
-            return;
-        }
-
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
+            // Ignore mouse events while the terminal does not have focus. 
+            // This prevents the user from selecting and copying text if they 
+            // click inside the current tab to refocus the terminal window. 
+            if (!_focused)
+            {
+                args.Handled(true);
+                return;
+            }
+
             const auto modifiers = args.KeyModifiers();
             const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
             const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
