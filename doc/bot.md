@@ -5,8 +5,13 @@
 The goal here is to help us automate, manage, and narrow down what we actually need to focus on in this repository.
 We'll be using tags, primarily, to help us understand what needs attention, what is sitting around and turning stale, etc.
 
-### Tagging/Process Details
+### Quick-Guidance to Core Contributors
+1. Look at `Needs-Attention` as top priority
+1. Look at `Needs-Triage` during triage meetings to get a handle on what's new and sort it out
+1. Look at `Needs-Tag-Fix` when you have a few minutes to fix up things tagged impoperly
+1. Manually add `Needs-Author-Feedback` when there's something we need the author to follow up on and want attention if they return it or an auto-close for inactivity if it goes stale.
 
+### Tagging/Process Details
 1. When new issues arrive, or when issues are not properly tagged... we'll mark them as `Needs-Triage` automatically.
    - The core contributor team will then come through and mark them up as appropriate. The goal is to have a tag that fits the `Product`, `Area`, and `Issue` category. 
    - The `Needs-Triage` tag will be removed manually by the core contributor team during a triage meeting. (Exception, triage may also be done offline by senior team members during high-volume times.)
@@ -26,12 +31,6 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 1. Issues manually marked as `Resolution-Duplicate` will be closed shortly after activity stops
 1. Pull requests manually marked as `AutoMerge` will permit the bot to complete the PR and do cleanup when certain conditions are met. See details below.
 
-### Quick-Guidance to Core Contributors
-1. Look at `Needs-Attention` as top priority
-1. Look at `Needs-Triage` during triage meetings to get a handle on what's new and sort it out
-1. Look at `Needs-Tag-Fix` when you have a few minutes to fix up things tagged impoperly
-1. Manually add `Needs-Author-Feedback` when there's something we need the author to follow up on and want attention if they return it or an auto-close for inactivity if it goes stale.
-
 ## Rules
 
 ### Issue Management
@@ -39,10 +38,10 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 #### Mark as Triage Needed
 - When an issue doesn't meet triage criteria, applies `Needs-Triage` tag. Right now, this is just when it's opened.
   
-### Author Has Responded
+#### Author Has Responded
 - When an issue with `Needs-Author-Feedback` gets an author response, drops that tag in favor of `Needs-Attention` to flag core contributors to drop by.
 
-### Remove Activity Tag
+#### Remove Activity Tag
 - When an issue with `No-Recent-Activity` has activity, drops this tag
 
 #### Close Stale
