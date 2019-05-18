@@ -36,6 +36,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         void ScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
+        Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
     }
 }

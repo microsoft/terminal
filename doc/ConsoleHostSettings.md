@@ -1,6 +1,6 @@
 # Understanding Console Host Settings
 
-Settings in the Windows Console Host can be a bit tricky to understand. This is mostly because the settings system evolved over the course of decades. Before we dig into the details of how settings are persisted, it's probably worth a quick look at what these settings are.
+Settings in the Windows Console Host can be a bit tricky to understand. This is mostly because the settings system evolved over the course of decades. Before we dig into the details of how settings are persisted, it's probably worth taking a quick look at what these settings are.
 
 ## Settings Description
 

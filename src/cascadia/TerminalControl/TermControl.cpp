@@ -7,6 +7,7 @@
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
+#include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 using namespace ::Microsoft::Console::Types;
@@ -36,7 +37,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
-        _leadingSurrogate{}
+        _leadingSurrogate{},
+        _cursorTimer{}
     {
         _Create();
     }
@@ -405,6 +407,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
+        // Set up blinking cursor
+        int blinkTime = GetCaretBlinkTime();
+        if (blinkTime != INFINITE)
+        {
+            // Create a timer
+            _cursorTimer = std::make_optional(DispatcherTimer());
+            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+
+            _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
+            _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
+        }
+        else
+        {
+            // The user has disabled cursor blinking
+            _cursorTimer = std::nullopt;
+        }
+
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
@@ -503,6 +523,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                               WI_IsFlagSet(modifiers, KeyModifiers::Ctrl),
                                               WI_IsFlagSet(modifiers, KeyModifiers::Alt),
                                               WI_IsFlagSet(modifiers, KeyModifiers::Shift));
+
+            if (_cursorTimer.has_value())
+            {
+                // Manually show the cursor when a key is pressed. Restarting
+                // the timer prevents flickering.
+                _terminal->SetCursorVisible(true);
+                _cursorTimer.value().Start();
+            }
         }
 
         e.Handled(handled);
@@ -794,6 +822,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Event handler for the GotFocus event. This is used to start
+    //   blinking the cursor when the window is focused.
+    void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
+                                       RoutedEventArgs const& /* args */)
+    {
+        if (_cursorTimer.has_value())
+            _cursorTimer.value().Start();
+    }
+
+    // Method Description:
+    // - Event handler for the LostFocus event. This is used to hide
+    //   and stop blinking the cursor when the window loses focus.
+    void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
+                                        RoutedEventArgs const& /* args */)
+    {
+        if (_cursorTimer.has_value())
+        {
+            _cursorTimer.value().Stop();
+            _terminal->SetCursorVisible(false);
+        }
+    }
+
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
@@ -846,6 +897,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
         THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
         _renderer->TriggerRedrawAll();
+    }
+
+    // Method Description:
+    // - Toggle the cursor on and off when called by the cursor blink timer.
+    // Arguments:
+    // - sender: not used
+    // - e: not used
+    void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
+                                   Windows::Foundation::IInspectable const& /* e */)
+    {
+        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
     // Method Description:
@@ -979,6 +1041,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Function Description:
+    // - Gets the height of the terminal in lines of text
+    // Return Value:
+    // - The height of the terminal in lines of text
+    int TermControl::GetViewHeight() const
+    {
+        const auto viewPort = _terminal->GetViewport();
+        return viewPort.Height();
+    }
+
+    // Function Description:
     // - Determines how much space (in pixels) an app would need to reserve to
     //   create a control with the settings stored in the settings param. This
     //   accounts for things like the font size and face, the initialRows and
@@ -1005,8 +1077,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        const auto cols = settings.InitialCols();
-        const auto rows = settings.InitialRows();
+        // If the settings have negative or zero row or column counts, ignore those counts.
+        // (The lower TerminalCore layer also has upper bounds as well, but at this layer
+        //  we may eventually impose different ones depending on how many pixels we can address.)
+        const auto cols = std::max(settings.InitialCols(), 1);
+        const auto rows = std::max(settings.InitialRows(), 1);
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
