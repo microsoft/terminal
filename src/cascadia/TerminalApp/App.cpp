@@ -847,7 +847,7 @@ namespace winrt::TerminalApp::implementation
     void App::_RemoveTabViewItem(const IInspectable& tabViewItem)
     {
         uint32_t removingTabIndex;
-        _tabView.Items().IndexOf(tabViewItem, removingTabIndex);
+        WINRT_ASSERT(_tabView.Items().IndexOf(tabViewItem, removingTabIndex));
 
         if (_tabs.size() == 1)
         {
