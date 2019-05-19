@@ -650,25 +650,28 @@ DWORD ConsoleIoThread()
     bool fShouldExit = false;
     while (!fShouldExit)
     {
+		PCD_IO_COMPLETE pCompletion = nullptr;
+
         if (ReplyMsg != nullptr)
         {
+			pCompletion = &ReplyMsg->Complete;
             LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
-        
-            // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-            HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
-            if (FAILED(hr))
-            {
-                if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
-                {
-                    fShouldExit = true;
+        }
 
-                    // This will not return. Terminate immediately when disconnected.
-                    ServiceLocator::RundownAndExit(STATUS_SUCCESS);
-                }
-                RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
-                ReplyMsg = nullptr;
-                continue;
+        // TODO: 9115192 correct mixed NTSTATUS/HRESULT
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(pCompletion, &ReceiveMsg);
+        if (FAILED(hr))
+        {
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
+            {
+                fShouldExit = true;
+
+                // This will not return. Terminate immediately when disconnected.
+                ServiceLocator::RundownAndExit(STATUS_SUCCESS);
             }
+            RIPMSG1(RIP_WARNING, "DeviceIoControl failed with Result 0x%x", hr);
+            ReplyMsg = nullptr;
+            continue;
         }
 
         IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);
