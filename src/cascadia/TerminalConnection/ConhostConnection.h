@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD _outputThreadId;
         HANDLE _hOutputThread;
         PROCESS_INFORMATION _piConhost;
+        GUID _guid; // A "unique" session identifier for connected client
         bool _closing;
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);

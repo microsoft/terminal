@@ -33,6 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialRows = initialRows;
         _initialCols = initialCols;
 
+        THROW_IF_FAILED(CoCreateGuid(&_guid));
     }
 
     winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
@@ -64,6 +65,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             startingDirectory = _startingDirectory;
         }
 
+        EnvironmentVariableMapW extraEnvVars;
+        {
+            // Convert connection Guid to string and ignore the enclosing '{}'.
+            WCHAR wszGuid[MAX_PATH]{};
+            THROW_HR_IF(E_OUTOFMEMORY, StringFromGUID2(_guid, wszGuid, static_cast<int>(std::size(wszGuid))) == 0);
+            wszGuid[::wcslen(wszGuid) - 1] = '\0';
+
+            WCHAR* pwszGuid = &wszGuid[1];
+
+            // Ensure every connection has the unique identifier in the environment.
+            extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
+        }
+
         CreateConPty(cmdline,
                      startingDirectory,
                      static_cast<short>(_initialCols),
@@ -71,7 +85,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                      &_inPipe,
                      &_outPipe,
                      &_signalPipe,
-                     &_piConhost);
+                     &_piConhost,
+                     extraEnvVars);
 
         _connected = true;
 
