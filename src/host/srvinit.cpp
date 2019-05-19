@@ -654,7 +654,7 @@ DWORD ConsoleIoThread()
 
         if (ReplyMsg != nullptr)
         {
-			pCompletion = &ReplyMsg->Complete;
+            pCompletion = &ReplyMsg->Complete;
             LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
         }
 
