@@ -151,7 +151,7 @@ JsonObject GlobalAppSettings::ToJson() const
 
     jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-        jsonObject.Insert(REQUESTED_THEME_KEY,
+    jsonObject.Insert(REQUESTED_THEME_KEY,
                           JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
 
     return jsonObject;
