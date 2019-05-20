@@ -63,7 +63,7 @@ Otherwise, you'll need to wait until Mid-June for an official preview build to d
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
-Make sure your are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
+Make sure you are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
 To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
 
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
@@ -112,7 +112,7 @@ We ask that **before you start work on a feature that you would like to contribu
 
 ## Documentation
 
-All documentation is located in the `./docs` folder. If you would like to contribute to the documentation, please submit a pull request.
+All documentation is located in the `./doc` folder. If you would like to contribute to the documentation, please submit a pull request.
 
 ## Communicating with the Team
 

@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         PROCESS_INFORMATION _piConhost;
         bool _closing;
 
-        static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+        static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
     };
 }

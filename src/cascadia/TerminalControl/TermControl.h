@@ -76,6 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
+        bool _focused;
         bool _closing;
 
         FontInfoDesired _desiredFont;

@@ -979,6 +979,7 @@ Return Value:
 /* ----- Preview routines ----- */
 
 LRESULT
+CALLBACK
 FontPreviewWndProc(
     HWND hWnd,
     UINT wMessage,

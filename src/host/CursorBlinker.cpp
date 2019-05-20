@@ -129,7 +129,7 @@ DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);
 }
 
-void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOL /* TimerOrWaitFired */)
+void CALLBACK CursorTimerRoutineWrapper(_In_ PVOID /* lpParam */, _In_ BOOLEAN /* TimerOrWaitFired */)
 {
     // Suppose the following sequence of events takes place:
     //
@@ -192,7 +192,7 @@ void CursorBlinker::SetCaretTimer()
 
         bRet = CreateTimerQueueTimer(&_hCaretBlinkTimer,
                                      _hCaretBlinkTimerQueue,
-                                     (WAITORTIMERCALLBACKFUNC)CursorTimerRoutineWrapper,
+                                     CursorTimerRoutineWrapper,
                                      this,
                                      dwEffectivePeriod,
                                      dwEffectivePeriod,
