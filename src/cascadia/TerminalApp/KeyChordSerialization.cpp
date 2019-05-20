@@ -141,7 +141,7 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
             // For potential keys, look through the pairs of strings and vkeys
             if (part.size() == 1)
             {
-                const wchar_t wch = part[0];
+                const wchar_t wch = part.at(0);
                 // Quick lookup: ranges of vkeys that correlate directly to a key.
                 if (wch >= L'0' && wch <= L'9')
                 {

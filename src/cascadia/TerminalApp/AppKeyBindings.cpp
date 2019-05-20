@@ -49,6 +49,8 @@ static constexpr std::wstring_view SWITCHTOTAB8_KEY{ L"switchToTab8" };
 static constexpr std::wstring_view SWITCHTOTAB9_KEY{ L"switchToTab9" };
 static constexpr std::wstring_view OPENSETTINGS_KEY{ L"openSettings" };
 
+// Specifically use a map here over an unordered_map. We want to be able to
+// iterate over these entries in-order when we're serializing the keybindings.
 static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { COPYTEXT_KEY, ShortcutAction::CopyText },
     { PASTETEXT_KEY, ShortcutAction::PasteText },
@@ -213,6 +215,9 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SwitchToTab9:
                 _SwitchToTabHandlers(9);
                 return true;
+
+            default:
+                return false;
         }
         return false;
     }
@@ -268,9 +273,10 @@ namespace winrt::TerminalApp::implementation
                     ShortcutAction action;
 
                     // Try matching the command to one we have
-                    if (commandNames.find(commandString) != commandNames.end())
+                    auto found = commandNames.find(commandString);
+                    if (found != commandNames.end())
                     {
-                        action = commandNames.at(commandString);
+                        action = found->second;
                     }
                     else
                     {
