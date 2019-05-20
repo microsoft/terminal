@@ -153,7 +153,7 @@ HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
 
     if (State.InputBuffer != nullptr)
     {
-        delete[] static_cast<BYTE**>(State.InputBuffer);
+        delete[] static_cast<BYTE*>(State.InputBuffer);
         State.InputBuffer = nullptr;
     }
 
