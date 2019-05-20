@@ -89,7 +89,6 @@ public:
         }
         case CM_UPDATE_TITLE:
         {
-
             SetWindowTextW(_window, _title.c_str());
             break;
         }
@@ -115,29 +114,66 @@ public:
                 SWP_NOZORDER | SWP_NOACTIVATE);
 
             _currentDpi = uDpi;
-            NewScale(uDpi);
         }
         _inDpiChange = false;
         return 0;
     }
 
-    virtual void NewScale(UINT dpi) = 0;
-
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
 
-    RECT GetWindowRect() const
+    RECT GetWindowRect() const noexcept
     {
         RECT rc = { 0 };
         ::GetWindowRect(_window, &rc);
         return rc;
     }
 
-    HWND GetHandle() noexcept
+    HWND GetHandle() const noexcept
     {
         return _window;
     };
+
+    float GetCurrentDpiScale() const noexcept
+    {
+        const auto dpi = ::GetDpiForWindow(_window);
+        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        return scale;
+    }
+
+    //// Gets the physical size of the client area of the HWND in _window
+    SIZE GetPhysicalSize() const noexcept
+    {
+        RECT rect = {};
+        GetClientRect(_window, &rect);
+        const auto windowsWidth = rect.right - rect.left;
+        const auto windowsHeight = rect.bottom - rect.top;
+        return SIZE{ windowsWidth, windowsHeight };
+    }
+
+    //// Gets the logical (in DIPs) size of a physical size specified by the parameter physicalSize
+    //// Remarks:
+    //// XAML coordinate system is always in Display Indepenent Pixels (a.k.a DIPs or Logical). However Win32 GDI (because of legacy reasons)
+    //// in DPI mode "Per-Monitor and Per-Monitor (V2) DPI Awareness" is always in physical pixels.
+    //// The formula to transform is:
+    ////     logical = (physical / dpi) + 0.5 // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
+    //// See also:
+    ////   https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/dpi-and-device-independent-pixels
+    ////   https://docs.microsoft.com/en-us/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows#per-monitor-and-per-monitor-v2-dpi-awareness
+    winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
+    {
+        const auto dpi = GetCurrentDpiScale();
+        // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
+        const auto logicalWidth = (physicalSize.cx / dpi) + 0.5f;
+        const auto logicalHeigth = (physicalSize.cy / dpi) + 0.5f;
+        return winrt::Windows::Foundation::Size(logicalWidth, logicalHeigth);
+    }
+
+    winrt::Windows::Foundation::Size GetLogicalSize() const noexcept
+    {
+        return GetLogicalSize(GetPhysicalSize());
+    }
 
     // Method Description:
     // - Sends a message to our message loop to update the title of the window.
