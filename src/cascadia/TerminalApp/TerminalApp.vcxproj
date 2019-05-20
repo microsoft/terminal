@@ -28,11 +28,12 @@
     </ApplicationDefinition>
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
-  <ItemGroup>
-    <Page Include="CustomContentDialog.xaml">
-      <Type>DefaultStyle</Type>
+  <!-- <ItemGroup>
+    <Page Include="MyUserControl.xaml">
+      <SubType>Designer</SubType>
     </Page>
-  </ItemGroup>
+  </ItemGroup> -->
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Tab.h" />

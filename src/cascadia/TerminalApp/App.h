@@ -77,6 +77,7 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& textKey);
 
+        void _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
 

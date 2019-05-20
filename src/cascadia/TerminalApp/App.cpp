@@ -174,7 +174,16 @@ namespace winrt::TerminalApp::implementation
         _root.Loaded({ this, &App::_OnLoaded });
     }
 
-    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& textKey)
+    // Method Description:
+    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
+    //   the title and text from our Resources using the provided keys.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens.
+    // Arguments:
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - textKey: The key to use to lookup the content text from our resources.
+    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey,
+                                       const winrt::hstring& textKey)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -193,30 +202,29 @@ namespace winrt::TerminalApp::implementation
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(message));
-        // dialog.CloseButtonText(buttonText);
-        dialog.PrimaryButtonText(buttonText);
-        // This doesn't work.
-        // dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+        dialog.CloseButtonText(buttonText);
 
-        // auto res = Resources();
-        // IInspectable key = winrt::box_value(L"BackgroundContentDialogThemeStyle");
-        // if (res.HasKey(key))
-        // {
-        //     IInspectable g = res.Lookup(key);
-        //     winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
-        //     dialog.Style(style);
-        // }
-        
-        // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
-        
+        // IMPORTANT: Add the dialog to the _root UIElement before you show it,
+        // so it knows how to attach to the XAML content.
         _root.Children().Append(dialog);
+
+        // Display the dialog.
         Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, release the dialog lock so another can be shown.
         _dialogLock.unlock();
     }
 
-    void App::_OnLoaded(const IInspectable& sender, const RoutedEventArgs& eventArgs)
+    // Method Description:
+    // - Triggered when the application is fiished loading. If we failed to load
+    //   the settings, then this will display the error dialog. This is done
+    //   here instead of when loading the settings, because we need our UI to be
+    //   visible to display the dialog, and when we're loading the settings,
+    //   the UI might not be visible yet.
+    // Arguments:
+    // - <unused>
+    void App::_OnLoaded(const IInspectable& /*sender*/,
+                        const RoutedEventArgs& /*eventArgs*/)
     {
         if (FAILED(_settingsLoadedResult))
         {
@@ -392,16 +400,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Initialized our settings. See CascadiaSettings for more details.
-    //      Additionally hooks up our callbacks for keybinding events to the
-    //      keybindings object.
-    // NOTE: This must be called from a MTA if we're running as a packaged
-    //      application. The Windows.Storage APIs require a MTA. If this isn't
-    //      happening during startup, it'll need to happen on a background thread.
-    void App::LoadSettings()
+    // - Attempt to load the settings. If we fail for any reason, sets
+    //   _settingsLoadedResult to the appropriate HRESULT.
+    // Arguments:
+    // - saveOnLoad: If true, after loading the settings, we should re-write
+    //   them to the file, to make sure the schema is updated. See
+    //   `CascadiaSettings::LoadAll` for details.
+    // Return Value:
+    // - <none>
+    void App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
         _settingsLoadedResult = E_FAIL;
-        // TODO: Try this.
+
         try
         {
             auto newSettings = CascadiaSettings::LoadAll();
@@ -415,19 +425,31 @@ namespace winrt::TerminalApp::implementation
         }
         catch (...)
         {
-            // TODO can this ever be hit? or will it always be a winrt::hresult_error?
             LOG_HR(wil::ResultFromCaughtException());
         }
+    }
+
+    // Method Description:
+    // - Initialized our settings. See CascadiaSettings for more details.
+    //      Additionally hooks up our callbacks for keybinding events to the
+    //      keybindings object.
+    // NOTE: This must be called from a MTA if we're running as a packaged
+    //      application. The Windows.Storage APIs require a MTA. If this isn't
+    //      happening during startup, it'll need to happen on a background thread.
+    void App::LoadSettings()
+    {
+        // Attempt to load the settings.
+        // If it fails,
+        //  - use Default settings,
+        //  - don't persist them (LoadAll won't save them in this case).
+        //  - _settingsLoadedResult will be set to an error, indicating that
+        //    we should display the loading error.
+        //    * We can't display the error now, because we might not have a
+        //      UI yet. We'll display the error in _OnLoaded.
+        _TryLoadSettings(true);
 
         if (FAILED(_settingsLoadedResult))
         {
-            // If it fails,
-            //  - use Default settings,
-            //  - don't persist them.
-            //  - Set a flag saying that we should display the loading error.
-            //      * Settings could not be loaded from file - temporarily using
-            //        default settings. Check for syntax errors, including trailing
-            //        commas.
             _settings = std::make_unique<CascadiaSettings>();
             _settings->CreateDefaults();
         }
@@ -487,34 +509,14 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Reloads the settings from the profile.json.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
     void App::_ReloadSettings()
     {
-        // TODO: Try this.
+        // Attempt to load our settings.
         // If it fails,
         //  - don't change the settings (and don't actually apply the new settings)
         //  - don't persist them.
         //  - display a loading error
-        _settingsLoadedResult = E_FAIL;
-        try
-        {
-            auto newSettings = CascadiaSettings::LoadAll(false);
-            _settings = std::move(newSettings);
-            _settingsLoadedResult = S_OK;
-        }
-        catch (const winrt::hresult_error& e)
-        {
-            _settingsLoadedResult = e.code();
-            LOG_HR(_settingsLoadedResult);
-        }
-        catch (...)
-        {
-            // TODO can this ever be hit? or will it always be a winrt::hresult_error?
-            LOG_HR(wil::ResultFromCaughtException());
-        }
+        _TryLoadSettings(false);
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -527,12 +529,16 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        // Here, we successfully reloaded the settings, and created a new
+        // TerminalSettings object.
+
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
         _HookupKeyBindings(_settings->GetKeybindings());
 
-        auto profiles = _settings->GetProfiles();
+        // Refresh UI elements
 
+        auto profiles = _settings->GetProfiles();
         for (auto &profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
@@ -811,7 +817,7 @@ namespace winrt::TerminalApp::implementation
     //      Negative values of `delta` will move the view up by one page, and positive values
     //      will move the viewport down by one page.
     // Arguments:
-    // - delta: The direction to move the view relative to the current viewport(it 
+    // - delta: The direction to move the view relative to the current viewport(it
     //      is clamped between -1 and 1)
     void App::_ScrollPage(int delta)
     {

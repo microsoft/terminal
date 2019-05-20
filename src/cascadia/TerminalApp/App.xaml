@@ -18,7 +18,6 @@ the MIT License. See LICENSE in the project root for license information. -->
             <ResourceDictionary.MergedDictionaries>
                 <!-- Include the MUX Controls resources -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
-                <!-- <ResourceDictionary Source="CustomContentDialog.xaml" /> -->
                 <ResourceDictionary>
 
                     <!-- We're going to apply this style to the root Grid acting
@@ -30,16 +29,18 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <Style x:Name="BackgroundGridThemeStyle" TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
-                    <!-- <Style x:Name="BackgroundContentDialogThemeStyle" TargetType="ContentDialog">
-                        <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
-                    </Style> -->
-                    <!-- <Style TargetType="Button" x:Name="dialogCloseButtonStyle">
-                        <Setter Property="Background" Value="Blue"/>
-                    </Style> -->
 
-
+                    <!-- Manually theme the CloseButton of a ContentDialog. We
+                    need to do this, because for whatever reason, if we show a
+                    ContentDialog when the app theme is opposite the system
+                    theme, the buttons will appear transparent. This only
+                    applies to the Close button of the dialog, since we're only
+                    using the Close button of the dialog. If we ever add other
+                    dialogs with more buttons, we'll probably want to make sure
+                    the buttons are styled differently. -->
                     <Style TargetType="ContentDialog">
-                        <!-- <Setter Property="PrimaryButtonStyle" Value="{ThemeResource dialogCloseButtonStyle}" /> -->
+                        <!-- the value `AccentButtonStyle` is taken straight
+                        from the ContentDialog source -->
                         <Setter Target="CloseButtonStyle" Value="{StaticResource AccentButtonStyle}" />
                     </Style>
 
