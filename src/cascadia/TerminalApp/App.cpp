@@ -866,7 +866,7 @@ namespace winrt::TerminalApp::implementation
             // We go to the tab on the right if we are on the 0th tab, or the one on the left otherwise.
             if (removingTabIndex == _GetFocusedTabIndex())
             {
-                _tabView.SelectedIndex(removingTabIndex > 0 ? removingTabIndex - 1 : 1);
+                _tabView.SelectedIndex((removingTabIndex > 0) ? removingTabIndex - 1 : 1);
             }
             _tabView.Items().RemoveAt(removingTabIndex);
 
