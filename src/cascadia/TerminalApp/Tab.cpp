@@ -9,7 +9,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-Tab::Tab(GUID profile, TermControl control) :
+Tab::Tab(const GUID& profile, const TermControl& control) :
     _focused{ false },
     _tabViewItem{ nullptr },
     _rootPane{ nullptr }
@@ -21,14 +21,6 @@ Tab::Tab(GUID profile, TermControl control) :
     });
 
     _MakeTabViewItem();
-}
-
-Tab::~Tab()
-{
-    // When we're destructed, winrt will automatically decrement the refcount
-    // of our terminalcontrol.
-    // Assuming that refcount hits 0, it'll destruct it on it's own, including
-    //      calling Close on the terminal and connection.
 }
 
 void Tab::_MakeTabViewItem()
@@ -51,9 +43,9 @@ UIElement Tab::GetRootElement()
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Tab::GetLastFocusedTerminalControl()
+TermControl Tab::GetFocusedTerminalControl()
 {
-    return _rootPane->GetLastFocusedTerminalControl();
+    return _rootPane->GetFocusedTerminalControl();
 }
 
 winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
@@ -61,7 +53,7 @@ winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
     return _tabViewItem;
 }
 
-bool Tab::IsFocused()
+bool Tab::IsFocused() const noexcept
 {
     return _focused;
 }
@@ -91,9 +83,9 @@ void Tab::SetFocused(const bool focused)
 // Return Value:
 // - nullopt if no children of this tab were the last control to be
 //   focused, else the GUID of the profile of the last control to be focused
-std::optional<GUID> Tab::GetLastFocusedProfile() const noexcept
+std::optional<GUID> Tab::GetFocusedProfile() const noexcept
 {
-    return _rootPane->GetLastFocusedProfile();
+    return _rootPane->GetFocusedProfile();
 }
 
 // Method Description:
@@ -101,9 +93,9 @@ std::optional<GUID> Tab::GetLastFocusedProfile() const noexcept
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
 // - profile: The GUID of the profile these settings should apply to.
-void Tab::CheckUpdateSettings(TerminalSettings settings, GUID profile)
+void Tab::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
 {
-    _rootPane->CheckUpdateSettings(settings, profile);
+    _rootPane->UpdateSettings(settings, profile);
 }
 
 // Method Description:
@@ -112,7 +104,7 @@ void Tab::_Focus()
 {
     _focused = true;
 
-    auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
+    auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     if (lastFocusedControl)
     {
         lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
@@ -134,9 +126,9 @@ void Tab::UpdateFocus()
 //   Returns the empty string if there is no such control.
 // Return Value:
 // - the title string of the last focused terminal control in our tree.
-winrt::hstring Tab::GetLastFocusedTitle()
+winrt::hstring Tab::GetFocusedTitle()
 {
-    auto lastFocusedControl = _rootPane->GetLastFocusedTerminalControl();
+    auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
@@ -161,7 +153,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 // - <none>
 void Tab::Scroll(const int delta)
 {
-    auto control = GetLastFocusedTerminalControl();
+    auto control = GetFocusedTerminalControl();
     control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta](){
         const auto currentOffset = control.GetScrollOffset();
         control.ScrollViewport(currentOffset + delta);
@@ -174,7 +166,7 @@ void Tab::Scroll(const int delta)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Tab::AddVerticalSplit(GUID profile, TermControl control)
+void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
 {
     _rootPane->SplitVertical(profile, control);
 }
@@ -185,7 +177,7 @@ void Tab::AddVerticalSplit(GUID profile, TermControl control)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Tab::AddHorizontalSplit(GUID profile, TermControl control)
+void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
 {
     _rootPane->SplitHorizontal(profile, control);
 }

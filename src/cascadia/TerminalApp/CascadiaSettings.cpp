@@ -250,10 +250,10 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                                          VK_TAB });
 
     keyBindings.SetKeyBinding(ShortcutAction::SplitVertical,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Shift,
                                         VK_OEM_PLUS }); // For any country/region, the '+' key
     keyBindings.SetKeyBinding(ShortcutAction::SplitHorizontal,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Shift,
                                         VK_OEM_MINUS }); // For any country/region, the '-' key
 
     // Yes these are offset by one.

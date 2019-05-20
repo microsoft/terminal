@@ -1,7 +1,9 @@
-# Panes in the Windows Terminal
+---
+author: "Mike Griese @zadjii-msft"
+created on: 2019-May-16
+---
 
-* author: Mike Griese __[@zadjii-msft](https://github.com/zadjii-msft)__
-* created on: 2019-May-16
+# Panes in the Windows Terminal
 
 ## Abstract
 
@@ -16,7 +18,6 @@ window while working in another.
 
 This spec will help outline the design of the implementation of panes in the
 Windows Terminal.
-
 
 ## Inspirations
 
@@ -142,8 +143,8 @@ pane, the child will:
  3. Split its UI in half, and display each child in one half.
 
 It's up to the app hosting the panes to tell the pane what kind of terminal in
-wants created in the new pane. Implemented by default is the new pane will be
-created with the default settings profile.
+wants created in the new pane. By default, the new pane will be created with the
+default settings profile.
 
 ### While panes are open
 

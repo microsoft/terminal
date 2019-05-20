@@ -35,22 +35,21 @@ public:
         Horizontal = 2
     };
 
-    Pane(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control, const bool lastFocused = false);
-    ~Pane() = default;
+    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool lastFocused = false);
 
-    std::shared_ptr<Pane> GetLastFocusedPane();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
-    std::optional<GUID> GetLastFocusedProfile();
+    std::shared_ptr<Pane> GetFocusedPane();
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    std::optional<GUID> GetFocusedProfile();
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;
     void UpdateFocus();
 
-    void CheckUpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
 
-    void SplitHorizontal(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    void SplitVertical(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 

@@ -9,25 +9,24 @@ class Tab
 {
 
 public:
-    Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    ~Tab();
+    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
-    winrt::Microsoft::Terminal::TerminalControl::TermControl GetLastFocusedTerminalControl();
-    std::optional<GUID> GetLastFocusedProfile() const noexcept;
+    winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
+    std::optional<GUID> GetFocusedProfile() const noexcept;
 
-    bool IsFocused();
+    bool IsFocused() const noexcept;
     void SetFocused(const bool focused);
 
     void Scroll(const int delta);
-    void AddVerticalSplit(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
-    void AddHorizontalSplit(const GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
+    void AddVerticalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void AddHorizontalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateFocus();
 
-    void CheckUpdateSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings settings, GUID profile);
-    winrt::hstring GetLastFocusedTitle();
+    void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+    winrt::hstring GetFocusedTitle();
     void SetTabText(const winrt::hstring& text);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);

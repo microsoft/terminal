@@ -422,7 +422,7 @@ namespace winrt::TerminalApp::implementation
             for (auto &tab : _tabs)
             {
                 // Attempt to reload the settings of any panes with this profile
-                tab->CheckUpdateSettings(settings, profileGuid);
+                tab->UpdateSettings(settings, profileGuid);
             }
         }
 
@@ -450,7 +450,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void App::_UpdateTabIcon(std::shared_ptr<Tab> tab)
     {
-        const auto lastFocusedProfileOpt = tab->GetLastFocusedProfile();
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
@@ -475,7 +475,7 @@ namespace winrt::TerminalApp::implementation
     // - tab: the Tab to update the title for.
     void App::_CheckTitleUpdate(std::shared_ptr<Tab> tab)
     {
-        auto newTabTitle = tab->GetLastFocusedTitle();
+        auto newTabTitle = tab->GetFocusedTitle();
 
         // TODO #608: If the settings don't want the terminal's text in the
         // tab, then display something else.
@@ -953,7 +953,7 @@ namespace winrt::TerminalApp::implementation
     {
         int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
-        return focusedTab->GetLastFocusedTerminalControl();
+        return focusedTab->GetFocusedTerminalControl();
     }
 
     // Method Description:

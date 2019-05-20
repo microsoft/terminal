@@ -11,7 +11,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 
 static const int SEPARATOR_SIZE = 4;
 
-Pane::Pane(GUID profile, TermControl control, const bool lastFocused) :
+Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile },
@@ -80,7 +80,7 @@ Controls::Grid Pane::GetRootElement()
 // Return Value:
 // - nullptr if we're a leaf and unfocused, or no children were marked
 //   `_lastFocused`, else returns this
-std::shared_ptr<Pane> Pane::GetLastFocusedPane()
+std::shared_ptr<Pane> Pane::GetFocusedPane()
 {
     if (_IsLeaf())
     {
@@ -88,12 +88,12 @@ std::shared_ptr<Pane> Pane::GetLastFocusedPane()
     }
     else
     {
-        auto firstFocused = _firstChild->GetLastFocusedPane();
+        auto firstFocused = _firstChild->GetFocusedPane();
         if (firstFocused != nullptr)
         {
             return firstFocused;
         }
-        return _secondChild->GetLastFocusedPane();
+        return _secondChild->GetFocusedPane();
     }
 }
 
@@ -106,9 +106,9 @@ std::shared_ptr<Pane> Pane::GetLastFocusedPane()
 // Return Value:
 // - nullptr if no children were marked `_lastFocused`, else the TermControl
 //   that was last focused.
-TermControl Pane::GetLastFocusedTerminalControl()
+TermControl Pane::GetFocusedTerminalControl()
 {
-    auto lastFocused = GetLastFocusedPane();
+    auto lastFocused = GetFocusedPane();
     return lastFocused ? lastFocused->_control : nullptr;
 }
 
@@ -119,9 +119,9 @@ TermControl Pane::GetLastFocusedTerminalControl()
 // Return Value:
 // - nullopt if no children of this pane were the last control to be
 //   focused, else the GUID of the profile of the last control to be focused
-std::optional<GUID> Pane::GetLastFocusedProfile()
+std::optional<GUID> Pane::GetFocusedProfile()
 {
-    auto lastFocused = GetLastFocusedPane();
+    auto lastFocused = GetFocusedPane();
     return lastFocused ? lastFocused->_profile : std::nullopt;
 }
 
@@ -210,12 +210,12 @@ void Pane::_FocusFirstChild()
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
 // - profile: The GUID of the profile these settings should apply to.
-void Pane::CheckUpdateSettings(const TerminalSettings& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
 {
     if (!_IsLeaf())
     {
-        _firstChild->CheckUpdateSettings(settings, profile);
-        _secondChild->CheckUpdateSettings(settings, profile);
+        _firstChild->UpdateSettings(settings, profile);
+        _secondChild->UpdateSettings(settings, profile);
     }
     else
     {
@@ -356,7 +356,7 @@ void Pane::_SetupChildCloseHandlers()
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Pane::SplitVertical(const GUID& profile, TermControl control)
+void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 {
     // If we're not the leaf, recurse into our children to split them.
     if (!_IsLeaf())
@@ -427,7 +427,7 @@ void Pane::SplitVertical(const GUID& profile, TermControl control)
 // Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
-void Pane::SplitHorizontal(const GUID& profile, TermControl control)
+void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
