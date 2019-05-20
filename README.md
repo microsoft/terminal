@@ -140,12 +140,11 @@ This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-S
 git submodule update --init --recursive
 ```
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line:
+OpenConsole.sln may be built from within Visual Studio or from the command-line using MSBuild. To build from the command line (`cmd.exe` should be used):
 
 ```shell
-cd tools
-razzle.cmd
-bcz.cmd
+.\tools\razzle.cmd
+bcz
 ```
 
 We've provided a set of convenience scripts as well as [README](./tools/README.md) in the **/tools** directory to help automate the process of building and running tests.
