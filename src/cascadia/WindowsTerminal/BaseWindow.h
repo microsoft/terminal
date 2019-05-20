@@ -138,7 +138,7 @@ public:
     float GetCurrentDpiScale() const noexcept
     {
         const auto dpi = ::GetDpiForWindow(_window);
-        const auto scale = float(dpi) / float(USER_DEFAULT_SCREEN_DPI);
+        const auto scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         return scale;
     }
 
