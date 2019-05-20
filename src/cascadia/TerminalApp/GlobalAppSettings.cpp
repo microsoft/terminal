@@ -96,6 +96,10 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
     return _requestedTheme;
 }
 
+void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
+{
+    _requestedTheme = requestedTheme;
+}
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
@@ -147,11 +151,8 @@ JsonObject GlobalAppSettings::ToJson() const
 
     jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-    if (_requestedTheme != ElementTheme::Default)
-    {
-        jsonObject.Insert(REQUESTED_THEME_KEY,
-                          JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
-    }
+    jsonObject.Insert(REQUESTED_THEME_KEY,
+                      JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
 
     return jsonObject;
 }

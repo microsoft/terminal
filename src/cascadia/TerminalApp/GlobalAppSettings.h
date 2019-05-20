@@ -42,6 +42,8 @@ public:
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
 
+    void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
+
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
 
