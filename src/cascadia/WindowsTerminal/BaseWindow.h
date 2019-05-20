@@ -152,7 +152,15 @@ public:
         return SIZE{ windowsWidth, windowsHeight };
     }
 
-    //// Gets the logical size of physical size specified by the parameter physicalSize
+    //// Gets the logical (in DIPs) size of a physical size specified by the parameter physicalSize
+    //// Remarks:
+    //// XAML coordinate system is always in Display Indepenent Pixels (a.k.a DIPs or Logical). However Win32 GDI (because of legacy reasons)
+    //// in DPI mode "Per-Monitor and Per-Monitor (V2) DPI Awareness" is always in physical pixels.
+    //// The formula to transform is:
+    ////     logical = (physical / dpi) + 0.5 // 0.5 is to ensure that we pixel snap correctly at the edges, this is necessary with odd DPIs like 1.25, 1.5, 1, .75
+    //// See also:
+    ////   https://docs.microsoft.com/en-us/windows/desktop/LearnWin32/dpi-and-device-independent-pixels
+    ////   https://docs.microsoft.com/en-us/windows/desktop/hidpi/high-dpi-desktop-application-development-on-windows#per-monitor-and-per-monitor-v2-dpi-awareness
     winrt::Windows::Foundation::Size GetLogicalSize(const SIZE physicalSize) const noexcept
     {
         const auto dpi = GetCurrentDpiScale();
