@@ -1,0 +1,139 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp">
+
+
+    <Style x:Key="primaryButtonStyle" TargetType="Button">
+        <Setter Property="Background" Value="Red" />
+    </Style>
+
+    <Style TargetType="Button" x:Key="secondaryButtonStyle">
+        <Setter Property="Background" Value="Blue"/>
+    </Style>
+
+
+    <Style TargetType="ContentDialog">
+        <Setter Property="Foreground" Value="{ThemeResource ContentDialogForeground}" />
+        <Setter Property="Background" Value="{ThemeResource ContentDialogBackground}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ContentDialogBorderBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="MaxHeight" Value="{ThemeResource ContentDialogMaxHeight}" />
+        <Setter Property="MinHeight" Value="{ThemeResource ContentDialogMinHeight}" />
+        <Setter Property="MaxWidth" Value="{ThemeResource ContentDialogMaxWidth}" />
+        <Setter Property="MinWidth" Value="{ThemeResource ContentDialogMinWidth}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ContentDialog">
+                    <Border x:Name="Container">
+                        <Grid x:Name="LayoutRoot">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border x:Name="BackgroundElement"
+                            Background="{TemplateBinding Background}"
+                            FlowDirection="{TemplateBinding FlowDirection}"
+                            BorderThickness="{ThemeResource ContentDialogBorderWidth}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            MaxWidth="{TemplateBinding MaxWidth}"
+                            MaxHeight="{TemplateBinding MaxHeight}"
+                            MinWidth="{TemplateBinding MinWidth}"
+                            MinHeight="{TemplateBinding MinHeight}">
+                                <Grid x:Name="DialogSpace" VerticalAlignment="Stretch" Padding="{ThemeResource ContentDialogPadding}">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <ScrollViewer x:Name="ContentScrollViewer"
+                                    HorizontalScrollBarVisibility="Disabled"
+                                    VerticalScrollBarVisibility="Disabled"
+                                    ZoomMode="Disabled"
+                                    Margin="{ThemeResource ContentDialogContentScrollViewerMargin}"
+                                IsTabStop="False">
+                                        <Grid>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+                                            <ContentControl x:Name="Title"
+                                            Margin="{ThemeResource ContentDialogTitleMargin}"
+                                            Content="{TemplateBinding Title}"
+                                            ContentTemplate="{TemplateBinding TitleTemplate}"
+                                            FontSize="20"
+                                            FontFamily="XamlAutoFontFamily"
+                                            FontWeight="Normal"
+                                            Foreground="{TemplateBinding Foreground}"
+                                            HorizontalAlignment="Left"
+                                            VerticalAlignment="Top"
+                                            IsTabStop="False">
+                                                <ContentControl.Template>
+                                                    <ControlTemplate TargetType="ContentControl">
+                                                        <ContentPresenter Content="{TemplateBinding Content}"
+                                                        MaxLines="2"
+                                                        TextWrapping="Wrap"
+                                                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                        Margin="{TemplateBinding Padding}"
+                                                        ContentTransitions="{TemplateBinding ContentTransitions}"
+                                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                        VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                                                    </ControlTemplate>
+                                                </ContentControl.Template>
+                                            </ContentControl>
+                                            <ContentPresenter x:Name="Content"
+                                            ContentTemplate="{TemplateBinding ContentTemplate}"
+                                            Content="{TemplateBinding Content}"
+                                            FontSize="{ThemeResource ControlContentThemeFontSize}"
+                                            FontFamily="{ThemeResource ContentControlThemeFontFamily}"
+                                            Margin="{ThemeResource ContentDialogContentMargin}"
+                                            Foreground="{TemplateBinding Foreground}"
+                                            Grid.Row="1"
+                                            TextWrapping="Wrap" />
+                                        </Grid>
+                                    </ScrollViewer>
+                                    <Grid x:Name="CommandSpace"
+                                    Grid.Row="1"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Bottom">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition />
+                                            <ColumnDefinition />
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="Button1Host"
+
+                                        Margin="{ThemeResource ContentDialogButton1HostMargin}"
+                                        MinWidth="{ThemeResource ContentDialogButtonMinWidth}"
+                                        MinHeight="{ThemeResource ContentDialogButtonMinHeight}" >
+                                            <Border.Resources>
+                                                <Style TargetType="Button" BasedOn="{StaticResource primaryButtonStyle}"/>
+                                            </Border.Resources>
+                                        </Border>
+                                        <Border x:Name="Button2Host"
+
+                                        Margin="{ThemeResource ContentDialogButton2HostMargin}"
+                                        MinWidth="{ThemeResource ContentDialogButtonMinWidth}"
+                                        MinHeight="{ThemeResource ContentDialogButtonMinHeight}"
+                                        Grid.Column="1">
+                                            <Border.Resources>
+                                                <Style TargetType="Button" BasedOn="{StaticResource secondaryButtonStyle}"/>
+                                            </Border.Resources>
+                                        </Border>
+
+                                    </Grid>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+
+</ResourceDictionary>

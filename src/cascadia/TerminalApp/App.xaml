@@ -1,3 +1,5 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
 <MSMarkup:XamlApplication
     x:Class="TerminalApp.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,7 +18,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <!-- Include the MUX Controls resources -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
-
+                <!-- <ResourceDictionary Source="CustomContentDialog.xaml" /> -->
                 <ResourceDictionary>
 
                     <!-- We're going to apply this style to the root Grid acting
@@ -28,8 +30,17 @@
                     <Style x:Name="BackgroundGridThemeStyle" TargetType="Grid">
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
-                    <Style x:Name="BackgroundContentDialogThemeStyle" TargetType="ContentDialog">
+                    <!-- <Style x:Name="BackgroundContentDialogThemeStyle" TargetType="ContentDialog">
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+                    </Style> -->
+                    <!-- <Style TargetType="Button" x:Name="dialogCloseButtonStyle">
+                        <Setter Property="Background" Value="Blue"/>
+                    </Style> -->
+
+
+                    <Style TargetType="ContentDialog">
+                        <!-- <Setter Property="PrimaryButtonStyle" Value="{ThemeResource dialogCloseButtonStyle}" /> -->
+                        <Setter Target="CloseButtonStyle" Value="{StaticResource AccentButtonStyle}" />
                     </Style>
 
                     <ResourceDictionary.ThemeDictionaries>
@@ -42,8 +53,11 @@
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
+
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
+
+
     </MSMarkup:XamlApplication.Resources>
 </MSMarkup:XamlApplication>

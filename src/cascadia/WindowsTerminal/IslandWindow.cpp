@@ -4,6 +4,9 @@
 #include "pch.h"
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
+#include <winrt/coroutine.h>
+using namespace std::chrono_literals;
+using namespace winrt;
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -273,9 +276,39 @@ void IslandWindow::OnRestore()
     // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
 }
 
+winrt::fire_and_forget DoTheThing(winrt::Windows::UI::Xaml::Controls::Grid grid) {
+    winrt::Windows::UI::Xaml::Controls::ContentDialog dialog;
+    dialog.Title(winrt::box_value(L"Foo"));
+    dialog.Content(winrt::box_value(L"Bar"));
+    // dialog.CloseButtonText(buttonText);
+    // dialog.PrimaryButtonText(L"Primary");
+    dialog.CloseButtonText(L"Close");
+    // dialog.PrimaryButtonStyle() Do this thing here
+    grid.Children().Append(dialog);
+    // grid.RequestedTheme(ElementTheme::Dark);
+    co_await 3ms;
+    co_await winrt::resume_foreground(grid.Dispatcher());
+    // grid.RequestedTheme(ElementTheme::Light);
+    Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+
+}
+
+winrt::fire_and_forget _ShowOkDialog(winrt::Windows::UI::Xaml::Controls::Grid grid)
+{
+    co_await 5s;
+    grid.Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [grid]() {
+        grid.RequestedTheme(ElementTheme::Light);
+        DoTheThing(grid);
+    });
+
+}
+
 void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _rootGrid.Children().Clear();
     ApplyCorrection(_scale.ScaleX());
     _rootGrid.Children().Append(content);
+
+    _ShowOkDialog(_rootGrid);
 }
+

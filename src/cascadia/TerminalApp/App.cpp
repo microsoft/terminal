@@ -193,8 +193,8 @@ namespace winrt::TerminalApp::implementation
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
         dialog.Content(winrt::box_value(message));
-        dialog.CloseButtonText(buttonText);
-
+        // dialog.CloseButtonText(buttonText);
+        dialog.PrimaryButtonText(buttonText);
         // This doesn't work.
         // dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
 
@@ -206,8 +206,9 @@ namespace winrt::TerminalApp::implementation
         //     winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
         //     dialog.Style(style);
         // }
-
+        
         // IMPORTANT: Add the dialog to the _root UIElementw before you show it, so it knows how to attach to the XAML content.
+        
         _root.Children().Append(dialog);
         Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
