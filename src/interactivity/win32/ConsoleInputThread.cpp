@@ -18,7 +18,7 @@ HANDLE ConsoleInputThread::Start()
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)ConsoleInputThreadProcWin32,
+                           ConsoleInputThreadProcWin32,
                            nullptr,
                            0,
                            &dwThreadId);

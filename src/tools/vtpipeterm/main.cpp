@@ -461,7 +461,7 @@ void SetupInput()
     SetConsoleMode(hIn, dwInMode);
 }
 
-DWORD InputThread(LPVOID /*lpParameter*/)
+DWORD WINAPI InputThread(LPVOID /*lpParameter*/)
 {
     // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
@@ -502,7 +502,7 @@ void CreateIOThreads()
     DWORD dwInputThreadId = (DWORD) -1;
     HANDLE hInputThread = CreateThread(nullptr,
                                         0,
-                                        (LPTHREAD_START_ROUTINE)InputThread,
+                                        InputThread,
                                         nullptr,
                                         0,
                                         &dwInputThreadId);
@@ -510,7 +510,7 @@ void CreateIOThreads()
 }
 
 
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler( DWORD fdwCtrlType )
 {
     switch( fdwCtrlType )
     {
@@ -531,7 +531,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed:
     srand((unsigned int)time(NULL));
-    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+    SetConsoleCtrlHandler(CtrlHandler, TRUE );
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);

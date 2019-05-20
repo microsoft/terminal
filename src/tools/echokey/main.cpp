@@ -163,7 +163,7 @@ void handleWindowEvent(WINDOW_BUFFER_SIZE_RECORD windowEvent)
 
 }
 
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler( DWORD fdwCtrlType )
 {
     switch( fdwCtrlType )
     {
@@ -239,7 +239,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     DWORD dwInMode = 0;
     GetConsoleMode(g_hOut, &dwOutMode);
     GetConsoleMode(g_hIn, &dwInMode);
-    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+    SetConsoleCtrlHandler(CtrlHandler, TRUE );
     const DWORD initialInMode = dwInMode;
     const DWORD initialOutMode = dwOutMode;
 

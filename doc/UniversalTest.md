@@ -7,13 +7,13 @@ Universal Testing is the Microsoft framework for creating and deploying test pac
 It involves several parts:
 - TESTMD
   - These define a package unit for deployment to the test device. This usually includes the test binaries and any dependent data that it will need to execute.
-  - There can also be a hierarchy where one package can depend on another such that packages can be re-used
+  - There can also be a hierarchy where one package can depend on another such that packages can be re-used.
 
 - TESTLIST
   - This defines a batch of TESTMD packages that should be executed together.
 
 - TESTPASSES
-  - This defines a list of tests via a TESTLIST and a lab environment configuration on which the tests should be run
+  - This defines a list of tests via a TESTLIST and a lab environment configuration on which the tests should be run.
 
   These files can either include their child element as they're supposed to (TESTMDs included in TESTLISTs) or they can often include themselves to provide chain structuring (one TESTLIST can reference another TESTLIST).
 

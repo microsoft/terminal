@@ -149,7 +149,7 @@ void VtConsole::_spawn(const std::wstring& command)
     _dwOutputThreadId = (DWORD)-1;
     _hOutputThread = CreateThread(nullptr,
                                   0,
-                                  (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                  StaticOutputThreadProc,
                                   this,
                                   0,
                                   &_dwOutputThreadId);
@@ -335,7 +335,7 @@ void VtConsole::deactivate()
     _active = false;
 }
 
-DWORD VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
+DWORD WINAPI VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
 {
     VtConsole* const pInstance = (VtConsole*)lpParameter;
     return pInstance->_OutputThread();
