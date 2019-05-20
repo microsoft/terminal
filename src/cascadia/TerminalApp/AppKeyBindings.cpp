@@ -24,7 +24,6 @@ static constexpr std::wstring_view NEWTABWITHPROFILE5_KEY{ L"newTabProfile5" };
 static constexpr std::wstring_view NEWTABWITHPROFILE6_KEY{ L"newTabProfile6" };
 static constexpr std::wstring_view NEWTABWITHPROFILE7_KEY{ L"newTabProfile7" };
 static constexpr std::wstring_view NEWTABWITHPROFILE8_KEY{ L"newTabProfile8" };
-static constexpr std::wstring_view NEWTABWITHPROFILE9_KEY{ L"newTabProfile9" };
 static constexpr std::wstring_view NEWWINDOW_KEY{ L"newWindow" };
 static constexpr std::wstring_view CLOSEWINDOW_KEY{ L"closeWindow" };
 static constexpr std::wstring_view CLOSETAB_KEY{ L"closeTab" };
@@ -46,7 +45,6 @@ static constexpr std::wstring_view SWITCHTOTAB5_KEY{ L"switchToTab5" };
 static constexpr std::wstring_view SWITCHTOTAB6_KEY{ L"switchToTab6" };
 static constexpr std::wstring_view SWITCHTOTAB7_KEY{ L"switchToTab7" };
 static constexpr std::wstring_view SWITCHTOTAB8_KEY{ L"switchToTab8" };
-static constexpr std::wstring_view SWITCHTOTAB9_KEY{ L"switchToTab9" };
 static constexpr std::wstring_view OPENSETTINGS_KEY{ L"openSettings" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
@@ -64,7 +62,6 @@ static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { NEWTABWITHPROFILE6_KEY, ShortcutAction::NewTabProfile6 },
     { NEWTABWITHPROFILE7_KEY, ShortcutAction::NewTabProfile7 },
     { NEWTABWITHPROFILE8_KEY, ShortcutAction::NewTabProfile8 },
-    { NEWTABWITHPROFILE9_KEY, ShortcutAction::NewTabProfile9 },
     { NEWWINDOW_KEY, ShortcutAction::NewWindow },
     { CLOSEWINDOW_KEY, ShortcutAction::CloseWindow },
     { CLOSETAB_KEY, ShortcutAction::CloseTab },
@@ -85,7 +82,6 @@ static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { SWITCHTOTAB6_KEY, ShortcutAction::SwitchToTab6 },
     { SWITCHTOTAB7_KEY, ShortcutAction::SwitchToTab7 },
     { SWITCHTOTAB8_KEY, ShortcutAction::SwitchToTab8 },
-    { SWITCHTOTAB9_KEY, ShortcutAction::SwitchToTab9 },
 };
 
 namespace winrt::TerminalApp::implementation
@@ -151,9 +147,6 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::NewTabProfile8:
                 _NewTabWithProfileHandlers(8);
                 return true;
-            case ShortcutAction::NewTabProfile9:
-                _NewTabWithProfileHandlers(9);
-                return true;
 
             case ShortcutAction::NewWindow:
                 _NewWindowHandlers();
@@ -211,9 +204,6 @@ namespace winrt::TerminalApp::implementation
                 return true;
             case ShortcutAction::SwitchToTab8:
                 _SwitchToTabHandlers(8);
-                return true;
-            case ShortcutAction::SwitchToTab9:
-                _SwitchToTabHandlers(9);
                 return true;
 
             default:

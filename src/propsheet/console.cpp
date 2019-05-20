@@ -506,7 +506,7 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         pFontPage->dwSize      = sizeof(PROPSHEETPAGE);
         pFontPage->hInstance   = ghInstance;
         pFontPage->pszTemplate = MAKEINTRESOURCE(DID_FONTDLG);
-        pFontPage->pfnDlgProc  = (DLGPROC) FontDlgProc;
+        pFontPage->pfnDlgProc  = FontDlgProc;
         pFontPage->lParam      = FONT_PAGE_INDEX;
         pOptionsPage->dwFlags      = PSP_DEFAULT;
 
@@ -660,7 +660,7 @@ void RegisterClasses(HINSTANCE hModule)
     WNDCLASS wc;
     wc.lpszClassName = TEXT("SimpleColor");
     wc.hInstance     = hModule;
-    wc.lpfnWndProc   = (WNDPROC) SimpleColorControlProc;
+    wc.lpfnWndProc   = SimpleColorControlProc;
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon         = NULL;
     wc.lpszMenuName  = NULL;
@@ -672,7 +672,7 @@ void RegisterClasses(HINSTANCE hModule)
 
     wc.lpszClassName = TEXT("ColorTableColor");
     wc.hInstance     = hModule;
-    wc.lpfnWndProc   = (WNDPROC) ColorTableControlProc;
+    wc.lpfnWndProc   = ColorTableControlProc;
     wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
     wc.hIcon         = NULL;
     wc.lpszMenuName  = NULL;
@@ -683,13 +683,13 @@ void RegisterClasses(HINSTANCE hModule)
     RegisterClass(&wc);
 
     wc.lpszClassName = TEXT("WOAWinPreview");
-    wc.lpfnWndProc   = (WNDPROC) PreviewWndProc;
+    wc.lpfnWndProc   = PreviewWndProc;
     wc.hbrBackground = (HBRUSH) (COLOR_BACKGROUND + 1);
     wc.style         = 0;
     RegisterClass(&wc);
 
     wc.lpszClassName = TEXT("WOAFontPreview");
-    wc.lpfnWndProc   = (WNDPROC) FontPreviewWndProc;
+    wc.lpfnWndProc   = FontPreviewWndProc;
     wc.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
     wc.style         = 0;
     RegisterClass(&wc);

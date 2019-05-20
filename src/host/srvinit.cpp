@@ -214,7 +214,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     return Status;
 }
 
-DWORD ConsoleIoThread();
+DWORD WINAPI ConsoleIoThread(LPVOID lpParameter);
 
 void ConsoleCheckDebug()
 {
@@ -258,7 +258,7 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
     RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
 
-    HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, 0, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -638,7 +638,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD ConsoleIoThread()
+DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
 {
     auto& globals = ServiceLocator::LocateGlobals();
 

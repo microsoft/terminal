@@ -63,7 +63,7 @@ Otherwise, you'll need to wait until Mid-June for an official preview build to d
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
-Make sure your are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
+Make sure you are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
 To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
 
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
@@ -109,6 +109,10 @@ We ask that **before you start work on a feature that you would like to contribu
 > 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
 
 > ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
+
+## Documentation
+
+All documentation is located in the `./doc` folder. If you would like to contribute to the documentation, please submit a pull request.
 
 ## Communicating with the Team
 

@@ -1,5 +1,5 @@
 {
-  "$schema": "http://universaltest/schema/testmddefinition-2.json",
+  "$schema": "http://universaltest/schema/testmddefinition-5.json",
   "Package": {
     "ComponentName": "Console",
     "SubComponentName": "Host-FeatureTests"
@@ -30,6 +30,7 @@
       "AdditionalPlugins": [
         {
           "Type": "Microsoft.TestInfrastructure.UniversalTest.TestMD.Plugins.Winperf.WinperfPlugin",
+          "Role": "Default",
           "Parameters": {
             "MachineConfigurationParameter": "none",
             "LocalReproUpload": "true"
