@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,[this](){
             // Update our control settings
             _ApplyUISettings();
-            // Update the terminal core with it's new Core settings
+            // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
             // Refresh our font with the renderer
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->AddRenderEngine(dxEngine.get());
 
         // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out it's width another way.
+        //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
 
