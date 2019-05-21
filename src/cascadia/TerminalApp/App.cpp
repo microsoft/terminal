@@ -215,28 +215,47 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
+        auto _keyBindings = _settings->GetKeybindings();
+
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
 
-            // add the keyboard shortcuts for the first 10 profiles
-            if (profileIndex < 10)
+            // add the keyboard shortcuts for the first 9 profiles
+            if (profileIndex < 9)
             {
-                auto profileShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
-                profileShortcut.Modifiers(Windows::System::VirtualKeyModifiers::Control | Windows::System::VirtualKeyModifiers::Shift);
+                // enum value for ShortcutAction::NewTabProfileX starts at 3; 0==3
+                auto profileKeyChord = _keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + 3));
                 
-                if (profileIndex == 9)
+                // make sure we find one to display
+                if (profileKeyChord)
                 {
-                    // the last tab is actually 0 in the shortcut, so make sure to handle that
-                    profileShortcut.Key(Windows::System::VirtualKey::Number0);
-                }
-                else
-                {
-                    // VK_Number1 starts at 48
-                    profileShortcut.Key(static_cast<Windows::System::VirtualKey>(49 + profileIndex));
-                }
-                profileMenuItem.KeyboardAccelerators().Append(profileShortcut);
+                    // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
+                    if (profileKeyChord.Vkey() != VK_OEM_COMMA)
+                    {
+                        // use the XAML shortcut to give us the automatic capabilities
+                        auto profileShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+
+                        // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
+                        profileShortcut.Key(static_cast<Windows::System::VirtualKey>(profileKeyChord.Vkey()));
+
+                        // inspect the modifiers fromt he KeyChord and set the flags int he XAML value
+                        auto modifiers = AppKeyBindings::ConvertVKModifiers(profileKeyChord.Modifiers());
+
+                        // add the modifiers to the shortcut
+                        profileShortcut.Modifiers(modifiers);
+
+                        // add to the menu
+                        profileMenuItem.KeyboardAccelerators().Append(profileShortcut);
+                    }
+                    else // we've got a comma, so need to just use the alternate method
+                    {
+                        // extract the modifier and key to a nice format
+                        auto overrideString = AppKeyBindings::FormatOverrideShortcutText(profileKeyChord.Modifiers());
+                        profileMenuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
+                    }
+                }                
             }
 
             auto profileName = profile.GetName();
@@ -275,7 +294,34 @@ namespace winrt::TerminalApp::implementation
 
             // Using alternate method here than VirtualKey due to https://github.com/microsoft/microsoft-ui-xaml/issues/708
             // this should really use KeyboardAccelerator API bug above bug in framework prevents it, using override
-            settingsItem.KeyboardAcceleratorTextOverride(L"Ctrl + ,");
+            auto settingsKeyChord = _keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            if (settingsKeyChord)
+            {
+                // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
+                if (settingsKeyChord.Vkey() != VK_OEM_COMMA)
+                {
+                    // use the XAML shortcut to give us the automatic capabilities
+                    auto settingsShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+
+                    // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
+                    settingsShortcut.Key(static_cast<Windows::System::VirtualKey>(settingsKeyChord.Vkey()));
+
+                    // inspect the modifiers fromt he KeyChord and set the flags int he XAML value
+                    auto modifiers = AppKeyBindings::ConvertVKModifiers(settingsKeyChord.Modifiers());
+
+                    // add the modifiers to the shortcut
+                    settingsShortcut.Modifiers(modifiers);
+
+                    // add to the menu
+                    settingsItem.KeyboardAccelerators().Append(settingsShortcut);
+                }
+                else // we've got a comma, so need to just use the alternate method
+                {
+                    // extract the modifier and key to a nice format
+                    auto overrideString = AppKeyBindings::FormatOverrideShortcutText(settingsKeyChord.Modifiers());
+                    settingsItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
+                }
+            }
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};

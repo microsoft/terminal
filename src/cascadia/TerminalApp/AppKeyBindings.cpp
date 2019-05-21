@@ -82,6 +82,7 @@ static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { SWITCHTOTAB6_KEY, ShortcutAction::SwitchToTab6 },
     { SWITCHTOTAB7_KEY, ShortcutAction::SwitchToTab7 },
     { SWITCHTOTAB8_KEY, ShortcutAction::SwitchToTab8 },
+    { OPENSETTINGS_KEY, ShortcutAction::OpenSettings },
 };
 
 namespace winrt::TerminalApp::implementation
@@ -90,6 +91,15 @@ namespace winrt::TerminalApp::implementation
                                        const Settings::KeyChord& chord)
     {
         _keyShortcuts[chord] = action;
+    }
+
+    Microsoft::Terminal::Settings::KeyChord AppKeyBindings::GetKeyBinding(TerminalApp::ShortcutAction const& action)
+    {
+        for (auto& kv : _keyShortcuts)
+        {
+            if (kv.second == action) return kv.first;
+        }
+        return { nullptr };
     }
 
     bool AppKeyBindings::TryKeyChord(const Settings::KeyChord& kc)
@@ -343,5 +353,45 @@ namespace winrt::TerminalApp::implementation
         }
 
         return bindingsArray;
+    }
+    Windows::System::VirtualKeyModifiers AppKeyBindings::ConvertVKModifiers(Settings::KeyModifiers modifiers)
+    {
+        Windows::System::VirtualKeyModifiers keyModifiers = Windows::System::VirtualKeyModifiers::None;
+        
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            keyModifiers |= Windows::System::VirtualKeyModifiers::Control;
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            keyModifiers |= Windows::System::VirtualKeyModifiers::Shift;
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            // note: Menu is the Alt VK_MENU
+            keyModifiers |= Windows::System::VirtualKeyModifiers::Menu;
+        }
+
+        return keyModifiers;
+    }
+
+    winrt::hstring AppKeyBindings::FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return winrt::hstring{ buffer };
     }
 }
