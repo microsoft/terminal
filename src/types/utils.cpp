@@ -3,10 +3,6 @@
 
 #include "precomp.h"
 #include "inc/utils.hpp"
-#include <Objbase.h>
-
-#include <bcrypt.h>
-#include <wil/resource.h> // reinclude wil/resource to get the bcrypt defines.
 
 using namespace Microsoft::Console;
 
@@ -44,6 +40,17 @@ GUID Utils::GuidFromString(const std::wstring wstr)
 {
     GUID result{};
     THROW_IF_FAILED(IIDFromString(wstr.c_str(), &result));
+    return result;
+}
+
+// Method Description:
+// - Creates a GUID, but not via an out parameter.
+// Return Value:
+// - A GUID if there's enough randomness; otherwise, an exception.
+GUID Utils::CreateGuid()
+{
+    GUID result{};
+    THROW_IF_FAILED(::CoCreateGuid(&result));
     return result;
 }
 
@@ -411,7 +418,6 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
     }
 }
 
-
 // Function Description:
 // - Generate a Version 5 UUID (specified in RFC4122 4.3)
 //   v5 UUIDs are stable given the same namespace and "name".
@@ -424,6 +430,7 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
 // - a new stable v5 UUID
 GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::byte>& name)
 {
+    // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
 
     wil::unique_bcrypt_hash hash;
@@ -447,6 +454,6 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::b
     // std::copy may compile down to ::memcpy for these types, but using it might
     // contravene the standard and nobody's got time for that.
     GUID newGuid{ 0 };
-    ::memcpy(&newGuid, buffer.data(), sizeof(GUID));
+    ::memcpy_s(&newGuid, sizeof(GUID), buffer.data(), sizeof(GUID));
     return EndianSwap(newGuid);
 }

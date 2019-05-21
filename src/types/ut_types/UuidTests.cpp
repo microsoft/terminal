@@ -16,7 +16,7 @@ using namespace Microsoft::Console::Utils;
 class UuidTests
 {
     // {AD56DE9E-5167-41B6-80EB-FB19F7927D1A}
-    static constexpr GUID c_testNamespaceGuid{ 0xad56de9e, 0x5167, 0x41b6,
+    static constexpr GUID TEST_NAMESPACE_GUID{ 0xad56de9e, 0x5167, 0x41b6,
         { 0x80, 0xeb, 0xfb, 0x19, 0xf7, 0x92, 0x7d, 0x1a } };
 
     TEST_CLASS(UuidTests);
@@ -27,7 +27,7 @@ class UuidTests
             { 0xb3, 0x15, 0xf1, 0xd2, 0xd2, 0x7e, 0xc6, 0xda} };
 
         std::string name{ "testing" };
-        auto uuidActual = CreateV5Uuid(c_testNamespaceGuid, gsl::as_bytes(gsl::make_span(name)));
+        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
 
         VERIFY_ARE_EQUAL(uuidExpected, uuidActual);
     }
@@ -39,7 +39,7 @@ class UuidTests
 
         // This'll come out in little endian; the reference GUID was generated as such.
         std::wstring name{ L"testing" };
-        auto uuidActual = CreateV5Uuid(c_testNamespaceGuid, gsl::as_bytes(gsl::make_span(name)));
+        auto uuidActual = CreateV5Uuid(TEST_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
 
         VERIFY_ARE_EQUAL(uuidExpected, uuidActual);
     }

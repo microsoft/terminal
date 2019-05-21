@@ -49,9 +49,8 @@ static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
 static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
 Profile::Profile() :
-    Profile(winrt::guid{})
+    Profile(Utils::CreateGuid())
 {
-    UuidCreate(&_guid);
 }
 
 Profile::Profile(const winrt::guid& guid):

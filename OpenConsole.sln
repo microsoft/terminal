@@ -228,7 +228,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Buffer", "Buffer", "{1E4A06
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{89CDCC5C-9F53-4054-97A4-639D99F169CD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types.Test.Unit", "src\types\ut\Types.Unit.Test.vcxproj", "{34DE34D3-1CD6-4EE3-8BD9-A26B5B27EC73}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types.Unit.Tests", "src\types\ut_types\Types.Unit.Tests.vcxproj", "{34DE34D3-1CD6-4EE3-8BD9-A26B5B27EC73}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
