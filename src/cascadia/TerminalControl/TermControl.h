@@ -44,6 +44,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void ScrollViewport(int viewTop);
         int GetScrollOffset();
+        int GetViewHeight() const;
 
         void SwapChainChanged();
         ~TermControl();
@@ -74,6 +75,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
+        bool _focused;
         bool _closing;
 
         FontInfoDesired _desiredFont;

@@ -278,17 +278,19 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile8,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('9') });
-    keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile9,
-                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        static_cast<int>('0') });
 
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        VK_PRIOR });
+                                        VK_UP });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollDown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_DOWN });
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollDownPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_NEXT });
-
+    keyBindings.SetKeyBinding(ShortcutAction::ScrollUpPage,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
                               KeyChord{ KeyModifiers::Alt,
                                         static_cast<int>('1') });
@@ -316,9 +318,6 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
                               KeyChord{ KeyModifiers::Alt,
                                         static_cast<int>('9') });
-    keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab9,
-                              KeyChord{ KeyModifiers::Alt,
-                                        static_cast<int>('0') });
 }
 
 // Method Description:

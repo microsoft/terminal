@@ -26,15 +26,15 @@
     <PostBuildEvent Condition="'$(Platform)'!='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll&quot; )
-        (echo f | xcopy /y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
     <PostBuildEvent Condition="'$(Platform)'=='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).dll&quot; )
-        (echo f | xcopy /y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -42,7 +42,7 @@
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
-    directory on it's own, it just assumes it exists.
+    directory on its own, it just assumes it exists.
 
     Also make the directory w/o the platform, because the x86 build in CI will
     try to place the pri files into

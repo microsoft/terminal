@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,[this](){
             // Update our control settings
             _ApplyUISettings();
-            // Update the terminal core with it's new Core settings
+            // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
             // Refresh our font with the renderer
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->AddRenderEngine(dxEngine.get());
 
         // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out it's width another way.
+        //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
 
@@ -415,15 +415,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-
-            _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-            _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
         }
         else
         {
             // The user has disabled cursor blinking
             _cursorTimer = std::nullopt;
         }
+
+        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
+        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -549,6 +549,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
+            // Ignore mouse events while the terminal does not have focus. 
+            // This prevents the user from selecting and copying text if they 
+            // click inside the current tab to refocus the terminal window. 
+            if (!_focused)
+            {
+                args.Handled(true);
+                return;
+            }
+
             const auto modifiers = args.KeyModifiers();
             const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
             const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
@@ -828,6 +837,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        _focused = true;
+
         if (_cursorTimer.has_value())
             _cursorTimer.value().Start();
     }
@@ -838,6 +849,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        _focused = false;
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();
@@ -1041,6 +1054,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Function Description:
+    // - Gets the height of the terminal in lines of text
+    // Return Value:
+    // - The height of the terminal in lines of text
+    int TermControl::GetViewHeight() const
+    {
+        const auto viewPort = _terminal->GetViewport();
+        return viewPort.Height();
+    }
+
+    // Function Description:
     // - Determines how much space (in pixels) an app would need to reserve to
     //   create a control with the settings stored in the settings param. This
     //   accounts for things like the font size and face, the initialRows and
@@ -1067,8 +1090,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
-        const auto cols = settings.InitialCols();
-        const auto rows = settings.InitialRows();
+        // If the settings have negative or zero row or column counts, ignore those counts.
+        // (The lower TerminalCore layer also has upper bounds as well, but at this layer
+        //  we may eventually impose different ones depending on how many pixels we can address.)
+        const auto cols = std::max(settings.InitialCols(), 1);
+        const auto rows = std::max(settings.InitialRows(), 1);
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns

@@ -2,7 +2,7 @@
 
 ## Generation
 
-conhost requests that user32 inject a thread into the attached console application.
+conhost requests that user32 injects a thread into the attached console application.
 See ntuser's exitwin.c for `CreateCtrlThread`.
 
 ## Timeouts

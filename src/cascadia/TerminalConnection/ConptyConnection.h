@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         HANDLE _hOutputThread;
         PROCESS_INFORMATION _piClient;
 
-        static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+        static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         void _CreatePseudoConsole();
         DWORD _OutputThread();
     };

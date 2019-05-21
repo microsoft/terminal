@@ -1,14 +1,14 @@
 # Welcome\! 
 #### This repository contains the source code for:
 
-  - Windows Terminal
-  - The Windows console host (`conhost.exe`)
-  - Components shared between the two projects
-  - [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
-  - [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
+  * Windows Terminal
+  * The Windows console host (`conhost.exe`)
+  * Components shared between the two projects
+  * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
+  * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
   
 #### Other related repositories include:
-  - [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
+  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
 
 ### Build Status
 
@@ -63,7 +63,7 @@ Otherwise, you'll need to wait until Mid-June for an official preview build to d
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
-Make sure your are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
+Make sure you are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
 To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
 
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
@@ -84,12 +84,9 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
  - **As of May 2019** this build is only available through Windows Insider Program. You may register and configure Insider Program through your device's system settings.
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
-* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed
-* You must install the following Workloads via the VS Installer:
+* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed.
+* You must install the following Workloads via the VS Installer. If you're running VS 2019, opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).
   - Desktop Development with C++
-    - If you're running VS2019, you'll also need to install the following Individual Components: 
-      - MSVC v141 - VS 2017 C++ (x86 and x64) build tools
-      - C++ ATL for v141 build tools (x86 and x64)
   - Universal Windows Platform Development
     - Also install the following Individual Component:
       - C++ (v141) Universal Windows Platform Tools
@@ -110,6 +107,10 @@ We ask that **before you start work on a feature that you would like to contribu
 
 > ⚠ **Note**: The Command-Line Team is actively working out of this repository and will be periodically re-structuring the code to make it easier to comprehend, navigate, build, test, and contribute to, so **DO expect significant changes to code layout on a regular basis**.
 
+## Documentation
+
+All documentation is located in the `./doc` folder. If you would like to contribute to the documentation, please submit a pull request.
+
 ## Communicating with the Team
 
 The easiest way to communicate with the team is via GitHub issues. Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before you do**.
@@ -118,13 +119,13 @@ Please help us keep this repository clean, inclusive, and fun\! We will not tole
 
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
-  - Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
+  * Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
-  - Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
+  * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
   
-  - Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
+  * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
-  - Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
+  * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 
 # Developer Guidance
 
