@@ -35,6 +35,33 @@ static const std::array<std::wstring, 16> TABLE_COLORS =
     L"brightCyan",
     L"brightWhite"
 };
+////////////////////////////////////////////////////////////////////////////////
+
+static constexpr std::string_view NAME_KEY_2{ "name" };
+static constexpr std::string_view TABLE_KEY_2{ "colors" };
+static constexpr std::string_view FOREGROUND_KEY_2{ "foreground" };
+static constexpr std::string_view BACKGROUND_KEY_2{ "background" };
+static constexpr std::array<std::string_view, 16> TABLE_COLORS_2 =
+{
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "purple",
+    "cyan",
+    "white",
+    "brightBlack",
+    "brightRed",
+    "brightGreen",
+    "brightYellow",
+    "brightBlue",
+    "brightPurple",
+    "brightCyan",
+    "brightWhite"
+};
+////////////////////////////////////////////////////////////////////////////////
+
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
@@ -94,7 +121,7 @@ JsonObject ColorScheme::ToJson() const
     jsonObject.Insert(NAME_KEY, name);
     jsonObject.Insert(FOREGROUND_KEY, fg);
     jsonObject.Insert(BACKGROUND_KEY, bg);
- 
+
     int i = 0;
     for (const auto& current : TABLE_COLORS)
     {
@@ -107,6 +134,31 @@ JsonObject ColorScheme::ToJson() const
 
     return jsonObject;
 }
+
+Json::Value ColorScheme::ToJson2() const
+{
+    Json::Value root;
+    auto fg { Utils::ColorToHexString(_defaultForeground) };
+    auto bg { Utils::ColorToHexString(_defaultBackground) };
+    auto name { _schemeName };
+
+    root[NAME_KEY_2.data()] = winrt::to_string(name);
+    root[FOREGROUND_KEY_2.data()] = winrt::to_string(fg);
+    root[BACKGROUND_KEY_2.data()] = winrt::to_string(bg);
+
+    int i = 0;
+    for (const auto& colorName : TABLE_COLORS_2)
+    {
+        auto& colorValue = _table.at(i);
+        auto colorHexString = Utils::ColorToHexString(colorValue);
+
+        root[colorName.data()] = winrt::to_string(colorHexString);
+        i++;
+    }
+
+    return root;
+}
+
 
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.

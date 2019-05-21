@@ -423,7 +423,7 @@ namespace winrt::TerminalApp::implementation
         }
         catch (...)
         {
-            hr = wil::ResultFromCaughtException()
+            hr = wil::ResultFromCaughtException();
             LOG_HR(hr);
         }
         return hr;

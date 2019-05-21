@@ -73,7 +73,9 @@
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
-    <ClInclude Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
 
   </ItemGroup>
 

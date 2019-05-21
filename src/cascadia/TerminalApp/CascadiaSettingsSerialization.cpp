@@ -9,8 +9,6 @@
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <shlobj.h>
-#include <json-forwards.h>
-#include <json.h>
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -26,6 +24,11 @@ static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\
 static const std::wstring PROFILES_KEY{ L"profiles" };
 static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
 static const std::wstring SCHEMES_KEY{ L"schemes" };
+
+
+static constexpr std::string_view PROFILES_KEY_2{ "profiles" };
+static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
+static constexpr std::string_view SCHEMES_KEY_2{ "schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -91,6 +94,11 @@ void CascadiaSettings::SaveAll() const
     const JsonObject json = ToJson();
     auto serializedSettings = json.Stringify();
 
+    const auto json2 = ToJson2();
+    Json::StreamWriterBuilder wbuilder;
+    
+    const auto s = Json::writeString(wbuilder, json2);
+
     if (_IsPackaged())
     {
         _SaveAsPackagedApp(serializedSettings);
@@ -134,6 +142,25 @@ JsonObject CascadiaSettings::ToJson() const
 
     return jsonObject;
 }
+
+Json::Value CascadiaSettings::ToJson2() const
+{
+    Json::Value root;
+
+    Json::Value schemesArray;
+    const auto& colorSchemes = _globals.GetColorSchemes();
+    for (auto& scheme : colorSchemes)
+    {
+        schemesArray.append(scheme.ToJson2());
+    }
+
+    // root[PROFILES_KEY] = profilesArray;
+    root[SCHEMES_KEY_2.data()] = schemesArray;
+    // root[KEYBINDINGS_KEY] = _globals.GetKeybindings().ToJson2();
+
+    return root;
+}
+
 
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.

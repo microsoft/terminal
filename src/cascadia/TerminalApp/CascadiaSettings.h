@@ -46,6 +46,7 @@ public:
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson2() const;
 
     static winrt::hstring GetSettingsPath();
 
