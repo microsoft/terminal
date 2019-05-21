@@ -869,8 +869,6 @@ namespace winrt::TerminalApp::implementation
                 _tabView.SelectedIndex((removingTabIndex > 0) ? removingTabIndex - 1 : 1);
             }
             _tabView.Items().RemoveAt(removingTabIndex);
-            // Ensure tabs and focus are in sync (see PR 737)
-            _tabView.SelectedIndex((removingTabIndex > 0) ? removingTabIndex - 1 : 0);
 
             // Removing the tab from the collection will destroy its control and disconnect its connection.
             _tabs.erase(_tabs.begin() + removingTabIndex);
