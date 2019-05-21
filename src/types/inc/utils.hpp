@@ -53,5 +53,5 @@ namespace Microsoft::Console::Utils
         return value;
     }
 
-    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::byte>& name);
+    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name);
 }

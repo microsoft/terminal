@@ -428,7 +428,7 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
 // - name: Bytes comprising the name (in a namespace-specific format)
 // Return Value:
 // - a new stable v5 UUID
-GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::byte>& name)
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name)
 {
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
@@ -440,7 +440,7 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::b
     // through unsigned char or char pointer *is defined*.
     THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
     // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<gsl::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
 
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
