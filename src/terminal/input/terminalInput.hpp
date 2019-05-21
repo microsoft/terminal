@@ -22,7 +22,7 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalInput final
     {
  
-	public:
+    public:
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
         TerminalInput() = delete;
@@ -34,9 +34,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         ~TerminalInput() = default;
 
-		bool HandleKey(const IInputEvent* const pInEvent) const;
-		void ChangeKeypadMode(const bool fApplicationMode);
-		void ChangeCursorKeysMode(const bool fApplicationMode);
+        bool HandleKey(const IInputEvent* const pInEvent) const;
+        void ChangeKeypadMode(const bool fApplicationMode);
+        void ChangeCursorKeysMode(const bool fApplicationMode);
 
     private:
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
@@ -71,11 +71,11 @@ namespace Microsoft::Console::VirtualTerminal
             _TermKeyMap(const _TermKeyMap&) = delete;
             _TermKeyMap& operator=(const _TermKeyMap&) = delete;
 
-			_TermKeyMap(_TermKeyMap&&) = delete;
+            _TermKeyMap(_TermKeyMap&&) = delete;
             _TermKeyMap& operator=(_TermKeyMap&&) = delete;
 
-			_TermKeyMap() = delete;
-			~_TermKeyMap() = default;
+            _TermKeyMap() = delete;
+            ~_TermKeyMap() = default;
         };
 
         static const _TermKeyMap s_rgCursorKeysNormalMapping[];
