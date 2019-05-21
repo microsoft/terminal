@@ -99,7 +99,6 @@ namespace winrt::TerminalApp::implementation
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-
         newTabBtnColDef.Width(GridLengthHelper::Auto());
 
         _tabRow.ColumnDefinitions().Append(tabsColDef);
@@ -138,6 +137,8 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _tabRow.Children().Append(_tabView);
+
+        _newTabButton.Margin({-600,0,0,0});
         _tabRow.Children().Append(_newTabButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
