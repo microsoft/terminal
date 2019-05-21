@@ -2174,7 +2174,7 @@ HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) 
 // Method Description:
 // - Sets the default foreground color to the color specified in value.
 // Arguments:
-// - value: the new RGB value to use for the default foreground color
+// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // - S_OK
 [[nodiscard]]
@@ -2197,13 +2197,12 @@ HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
         return S_OK;
     }
     CATCH_RETURN();
-
 }
 
 // Method Description:
 // - Sets the default background color to the color specified in value.
 // Arguments:
-// - value: the new RGB value to use for the default background color
+// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // - S_OK
 [[nodiscard]]

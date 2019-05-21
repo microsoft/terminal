@@ -1828,8 +1828,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - dwColor: The new RGB color value to use.
 // Return Value:
 // True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
-                                       const DWORD dwColor)
+bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
 
     bool fSuccess = tableIndex < 256;
@@ -1853,10 +1852,15 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
     return fSuccess;
 }
 
+// Method Description:
+// - Sets the default foreground color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False othewise.
 bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     bool fSuccess = true;
-
     fSuccess = !!_conApi->PrivateSetDefaultForeground(dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
@@ -1873,6 +1877,12 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
     return fSuccess;
 }
 
+// Method Description:
+// - Sets the default background color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False othewise.
 bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     bool fSuccess = true;

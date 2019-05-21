@@ -220,6 +220,12 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     return true;
 }
 
+// Method Description:
+// - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
+// Arguments:
+// - dwColor: the new COLORREF to use as the default foreground color
+// Return Value:
+// - true
 bool Terminal::SetDefaultForeground(const COLORREF dwColor)
 {
     _defaultFg = dwColor;
@@ -229,6 +235,12 @@ bool Terminal::SetDefaultForeground(const COLORREF dwColor)
     return true;
 }
 
+// Method Description:
+// - Updates the default background color from a COLORREF, format 0x00BBGGRR.
+// Arguments:
+// - dwColor: the new COLORREF to use as the default background color
+// Return Value:
+// - true
 bool Terminal::SetDefaultBackground(const COLORREF dwColor)
 {
     _defaultBg = dwColor;

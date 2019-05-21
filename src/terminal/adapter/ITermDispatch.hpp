@@ -68,7 +68,6 @@ public:
     virtual bool SetDefaultForeground(const DWORD dwColor) = 0; // OSCDefaultForeground
     virtual bool SetDefaultBackground(const DWORD dwColor) = 0; // OSCDefaultBackground
 
-
     virtual bool EraseInDisplay(const DispatchTypes::EraseType  eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType  eraseType) = 0; // EL
     virtual bool EraseCharacters(const unsigned int uiNumChars) = 0; // ECH

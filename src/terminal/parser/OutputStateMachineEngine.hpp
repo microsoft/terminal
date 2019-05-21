@@ -133,8 +133,8 @@ namespace Microsoft::Console::VirtualTerminal
             SetWindowTitle = 2,
             SetWindowProperty = 3, // Not implemented
             SetColor = 4,
-            SetForegroundColor = 10, // WIP
-            SetBackgroundColor = 11, // WIP
+            SetForegroundColor = 10,
+            SetBackgroundColor = 11,
             SetCursorColor = 12,
             ResetForegroundColor = 110, // Not implemented
             ResetBackgroundColor = 111, // Not implemented
@@ -256,7 +256,7 @@ namespace Microsoft::Console::VirtualTerminal
                                      const size_t cchBuffer,
                                      _Out_ DWORD* const pRgb);
 
-        bool _GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+        bool _GetOscSetColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                    const size_t cchOscString,
                                    _Out_ DWORD* const pRgb) const;
 

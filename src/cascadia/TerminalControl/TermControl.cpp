@@ -158,8 +158,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
-    //   * Sets up the background of the control with the provided BG color,
-    //      acrylic or not, and if acrylic, then uses the opacity from _settings.
+    //   * Calls _BackgroundColorChanged to style the background of the control
     // - Core settings will be passed to the terminal in _InitializeTerminal
     // Arguments:
     // - <none>
@@ -187,6 +186,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _desiredFont = { _actualFont };
     }
 
+    // Method Description:
+    // - Style the background of the control with the provided background color
+    // - Respects the settings for acrylic and opacity from _settings
+    // Arguments:
+    // - color: The background color to use as a uint32 (aka DWORD COLORREF)
+    // Return Value:
+    // - <none>
     void TermControl::_BackgroundColorChanged(const uint32_t color)
     {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
@@ -221,7 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _root.Background(solidColor);
                 _settings.DefaultBackground(RGB(R, G, B));
             }
-            });
+        });
     }
 
     // Method Description:

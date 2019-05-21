@@ -762,11 +762,25 @@ BOOL ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const C
     return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
 }
 
+// Method Description:
+// - Connects the PrivateSetDefaultForeground call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR. 
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetDefaultForegroundColor). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultForegroundColor(value));
 }
 
+// Method Description:
+// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
+//      call inside Conhost.exe
+// Arguments:
+// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetDefaultBackgroundColor). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) const noexcept
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
