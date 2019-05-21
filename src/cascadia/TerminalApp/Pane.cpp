@@ -18,9 +18,9 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _splitState{ SplitState::None },
     _firstChild{ nullptr },
     _secondChild{ nullptr },
-    _connectionClosedToken{},
-    _firstClosedToken{},
-    _secondClosedToken{},
+    _connectionClosedToken{ 0 },
+    _firstClosedToken{ 0 },
+    _secondClosedToken{ 0 },
     _root{}
 {
     _AddControlToRoot(_control);
@@ -51,8 +51,8 @@ void Pane::_AddControlToRoot(TermControl control)
 {
     _root.Children().Append(control.GetControl());
 
-    _connectionClosedToken = control.ConnectionClosed([=]() {
-        if (control.CloseOnExit())
+    _connectionClosedToken = control.ConnectionClosed([this]() {
+        if (_control.CloseOnExit())
         {
             // Fire our Closed event to tell our parent that we should be removed.
             _closedHandlers();
@@ -240,6 +240,12 @@ void Pane::_CloseChild(const bool closeFirst)
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
+        // Revoke the old event handlers.
+        _firstChild->Closed(_firstClosedToken);
+        _secondChild->Closed(_secondClosedToken);
+        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
+        remainingChild->_control.ConnectionClosed(remainingChild->_connectionClosedToken);
+
         // take the control and profile of the pane that _wasn't_ closed.
         _control = closeFirst ? _secondChild->_control : _firstChild->_control;
         _profile = closeFirst ? _secondChild->_profile : _firstChild->_profile;
@@ -375,6 +381,7 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionClosed(_connectionClosedToken);
+    _connectionClosedToken.value = 0;
 
     _splitState = SplitState::Vertical;
 
@@ -445,6 +452,7 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionClosed(_connectionClosedToken);
+    _connectionClosedToken.value = 0;
 
     _splitState = SplitState::Horizontal;
 

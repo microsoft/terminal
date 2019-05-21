@@ -230,6 +230,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Don't let anyone else do something to the buffer.
         auto lock = _terminal->LockForWriting();
 
+        // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+        if (_cursorTimer)
+        {
+            _cursorTimer.value().Stop();
+            _cursorTimer = std::nullopt;
+        }
+
         if (_connection != nullptr)
         {
             _connection.Close();
@@ -840,6 +847,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = true;
 
         if (_cursorTimer.has_value())
@@ -852,6 +863,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = false;
 
         if (_cursorTimer.has_value())
@@ -923,6 +938,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
