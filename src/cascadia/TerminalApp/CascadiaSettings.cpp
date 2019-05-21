@@ -203,10 +203,10 @@ void CascadiaSettings::_CreateDefaultProfiles()
     if (_IsPowerShellCoreInstalled(psCoreCmdline))
     {
         Profile pwshProfile{};
-        powershellProfile.SetCommandline(psCoreCmdline);
-        powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        powershellProfile.SetColorScheme({ L"Campbell" });
-        powershellProfile.SetName(L"PowerShell Core");
+        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        pwshProfile.SetColorScheme({ L"Campbell" });
+        pwshProfile.SetName(L"PowerShell Core");
 
         // If powershell core is installed, we'll use that as the default.
         // Otherwise, we'll use normal Windows Powershell as the default.
