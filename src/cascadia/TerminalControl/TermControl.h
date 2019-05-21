@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
 
         void ScrollViewport(int viewTop);
+        void KeyBoardScrollViewPort(int viewTop);
         int GetScrollOffset();
         int GetViewHeight() const;
 
