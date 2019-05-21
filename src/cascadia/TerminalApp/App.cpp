@@ -180,22 +180,21 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the title text from our resources.
     // - textKey: The key to use to lookup the content text from our resources.
-    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey,
+    fire_and_forget App::_ShowOkDialog(const winrt::hstring& contentKey,
                                        const winrt::hstring& textKey)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
-        auto gotLock = _dialogLock.try_lock();
-        if (!gotLock)
+        if (!_dialogLock.try_lock())
         {
             // Another dialog is visible.
             return;
         }
 
         auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = l.GetString(titleKey);
+        auto title = l.GetString(contentKey);
         auto message = l.GetString(textKey);
         auto buttonText = l.GetString(L"Ok");
 
@@ -400,33 +399,34 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Attempt to load the settings. If we fail for any reason, sets
-    //   _settingsLoadedResult to the appropriate HRESULT.
+    // - Attempt to load the settings. If we fail for any reason, returns an error.
     // Arguments:
     // - saveOnLoad: If true, after loading the settings, we should re-write
     //   them to the file, to make sure the schema is updated. See
     //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
-    // - <none>
-    void App::_TryLoadSettings(const bool saveOnLoad) noexcept
+    // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
+    HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
-        _settingsLoadedResult = E_FAIL;
+        HRESULT hr = E_FAIL;
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll();
+            auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
             _settings = std::move(newSettings);
-            _settingsLoadedResult = S_OK;
+            hr = S_OK;
         }
         catch (const winrt::hresult_error& e)
         {
-            _settingsLoadedResult = e.code();
-            LOG_HR(_settingsLoadedResult);
+            hr = e.code();
+            LOG_HR(hr);
         }
         catch (...)
         {
-            LOG_HR(wil::ResultFromCaughtException());
+            hr = wil::ResultFromCaughtException()
+            LOG_HR(hr);
         }
+        return hr;
     }
 
     // Method Description:
@@ -446,7 +446,7 @@ namespace winrt::TerminalApp::implementation
         //    we should display the loading error.
         //    * We can't display the error now, because we might not have a
         //      UI yet. We'll display the error in _OnLoaded.
-        _TryLoadSettings(true);
+        _settingsLoadedResult = _TryLoadSettings(true);
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -516,7 +516,7 @@ namespace winrt::TerminalApp::implementation
         //  - don't change the settings (and don't actually apply the new settings)
         //  - don't persist them.
         //  - display a loading error
-        _TryLoadSettings(false);
+        _settingsLoadedResult = _TryLoadSettings(false);
 
         if (FAILED(_settingsLoadedResult))
         {
