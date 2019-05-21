@@ -49,39 +49,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        JsonValue root{ nullptr };
-        bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
-        // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-        if (parsedSuccessfully)
-        {
-            JsonObject obj = root.GetObjectW();
-            resultPtr = FromJson(obj);
+        // If Parse fails, it'll throw a hresult_error
+        JsonObject root = JsonObject::Parse(actualData);
 
-            //  Update profile only if it has changed.
-            if (saveOnLoad)
+        resultPtr = FromJson(root);
+
+        //  Update profile only if it has changed.
+        if (saveOnLoad)
+        {
+            const JsonObject json = resultPtr->ToJson();
+            auto serializedSettings = json.Stringify();
+
+            if (actualData != serializedSettings)
             {
-                const JsonObject json = resultPtr->ToJson();
-                auto serializedSettings = json.Stringify();
-
-                if (actualData != serializedSettings)
-                {
-                    resultPtr->SaveAll();
-                }
+                resultPtr->SaveAll();
             }
-        }
-        else
-        {
-            // Until 20737698 is done, throw an error, so debugging can trace
-            //      the exception here, instead of later on in unrelated code
-            THROW_HR(E_INVALIDARG);
         }
     }
     else
     {
         resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->_CreateDefaults();
+        resultPtr->CreateDefaults();
 
-        // The settings file does not exist.  Let's commit one.
+        // The settings file does not exist. Let's commit one.
         resultPtr->SaveAll();
     }
 

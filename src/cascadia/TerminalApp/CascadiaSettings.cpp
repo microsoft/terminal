@@ -326,7 +326,7 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_CreateDefaults()
+void CascadiaSettings::CreateDefaults()
 {
     _CreateDefaultProfiles();
     _CreateDefaultSchemes();

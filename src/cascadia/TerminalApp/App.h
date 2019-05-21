@@ -65,13 +65,19 @@ namespace winrt::TerminalApp::implementation
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
+        HRESULT _settingsLoadedResult;
+
         bool _loadedInitialSettings;
+        std::shared_mutex _dialogLock;
 
         wil::unique_folder_change_reader_nothrow _reader;
 
         void _Create();
         void _CreateNewTabFlyout();
 
+        fire_and_forget _ShowOkDialog(const winrt::hstring& contentKey, const winrt::hstring& textKey);
+
+        HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
 
@@ -101,6 +107,7 @@ namespace winrt::TerminalApp::implementation
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
 
+        void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
