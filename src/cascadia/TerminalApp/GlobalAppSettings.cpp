@@ -71,6 +71,11 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
     return _keybindings;
 }
 
+void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
+{
+    _keybindings = newBindings;
+}
+
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
 {
     return _alwaysShowTabs;
@@ -96,6 +101,10 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
     return _requestedTheme;
 }
 
+void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
+{
+    _requestedTheme = requestedTheme;
+}
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
@@ -147,11 +156,11 @@ JsonObject GlobalAppSettings::ToJson() const
 
     jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
                       JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-    if (_requestedTheme != ElementTheme::Default)
-    {
-        jsonObject.Insert(REQUESTED_THEME_KEY,
-                          JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
-    }
+    jsonObject.Insert(REQUESTED_THEME_KEY,
+                      JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
+
+    // We'll add the keybindings later in CascadiaSettings, because if we do it
+    // here, they'll appear before the profiles.
 
     return jsonObject;
 }
@@ -227,7 +236,7 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to it's corresponding string
+// - Helper function for converting a CursorStyle to its corresponding string
 //   value.
 // Arguments:
 // - theme: The enum value to convert to a string.

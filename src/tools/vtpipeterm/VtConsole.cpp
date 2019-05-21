@@ -145,7 +145,7 @@ void VtConsole::_spawn(const std::wstring& command)
     _connected = true;
 
     // Create our own output handling thread
-    // Each console needs to make sure to drain the output from it's backing host.
+    // Each console needs to make sure to drain the output from its backing host.
     _dwOutputThreadId = (DWORD)-1;
     _hOutputThread = CreateThread(nullptr,
                                   0,
@@ -368,7 +368,8 @@ bool VtConsole::Repaint()
 
 bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
-    if (_fUseConPty) {
+    if (_fUseConPty)
+    {
         return SUCCEEDED(ResizePseudoConsole(_hPC, {(SHORT)cols, (SHORT)rows}));
     }
     else

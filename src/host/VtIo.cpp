@@ -367,7 +367,7 @@ void VtIo::CloseOutput()
     // owned by the paint.
     // Instead we're releasing the Engine here. A pointer to it has already been
     // given to the Renderer, so we don't want the unique_ptr to delete it. The
-    // Renderer will own it's lifetime now.
+    // Renderer will own its lifetime now.
     _pVtRenderEngine.release();
 
     g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);

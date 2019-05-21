@@ -67,6 +67,9 @@ namespace TerminalApp
     {
         AppKeyBindings();
 
+        Windows.Data.Json.JsonArray ToJson();
+        static AppKeyBindings FromJson(Windows.Data.Json.JsonArray json);
+
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
 
         event CopyTextEventArgs CopyText;

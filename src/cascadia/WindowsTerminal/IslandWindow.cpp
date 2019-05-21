@@ -46,7 +46,7 @@ void IslandWindow::MakeWindow() noexcept
     WINRT_ASSERT(!_window);
 
     // Create the window with the default size here - During the creation of the
-    // window, the system will give us a chance to set it's size in WM_CREATE.
+    // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
         L"Windows Terminal",
