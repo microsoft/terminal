@@ -49,6 +49,7 @@
 #include <wil/Result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
+#include <wil/com.h>
 
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
