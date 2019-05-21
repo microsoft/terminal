@@ -42,7 +42,7 @@
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
-    directory on it's own, it just assumes it exists.
+    directory on its own, it just assumes it exists.
 
     Also make the directory w/o the platform, because the x86 build in CI will
     try to place the pri files into

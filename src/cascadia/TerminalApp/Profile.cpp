@@ -572,7 +572,7 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to it's corresponding string
+// - Helper function for converting a CursorStyle to its corresponding string
 //   value.
 // Arguments:
 // - cursorShape: The enum value to convert to a string.

@@ -228,7 +228,7 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to it's corresponding string
+// - Helper function for converting a CursorStyle to its corresponding string
 //   value.
 // Arguments:
 // - theme: The enum value to convert to a string.

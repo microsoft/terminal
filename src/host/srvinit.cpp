@@ -517,7 +517,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         auto renderThread = std::make_unique<RenderThread>();
         // stash a local pointer to the thread here -
         // We're going to give ownership of the thread to the Renderer,
-        //      but the thread also need to be told who it's renderer is,
+        //      but the thread also need to be told who its renderer is,
         //      and we can't do that until the renderer is constructed.
         auto* const localPointerToThread = renderThread.get();
 
@@ -529,7 +529,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         g.pRender->EnablePainting();
 
         // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out it's width another way.
+        //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
 

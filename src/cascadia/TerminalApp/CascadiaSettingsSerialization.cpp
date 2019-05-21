@@ -366,7 +366,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 
 // function Description:
 // - Returns the full path to the settings file, either within the application
-//   package, or in it's unpackaged location.
+//   package, or in its unpackaged location.
 // Arguments:
 // - <none>
 // Return Value:
@@ -378,7 +378,7 @@ winrt::hstring CascadiaSettings::GetSettingsPath()
 }
 
 // Function Description:
-// - Get the full path to settings file in it's packaged location.
+// - Get the full path to settings file in its packaged location.
 // Arguments:
 // - <none>
 // Return Value:

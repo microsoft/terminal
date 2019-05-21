@@ -86,7 +86,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 
 // Routine Description:
 //  Given the commandline of tokens `args`, tries to find the argument at
-//      index+1, and places it's value into pSetting.
+//      index+1, and places its value into pSetting.
 //  If there aren't enough args, then returns E_INVALIDARG.
 //  If we found a value, then we take the elements at both index and index+1 out
 //      of args. We'll also decrement index, so that a caller who is using index
@@ -157,7 +157,7 @@ HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>
 // Method Description:
 // Routine Description:
 //  Given the commandline of tokens `args`, tries to find the argument at
-//      index+1, and places it's value into pSetting. See above for examples.
+//      index+1, and places its value into pSetting. See above for examples.
 //  This implementation attempts to parse a short from the argument.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
