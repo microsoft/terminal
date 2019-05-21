@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,[this](){
             // Update our control settings
             _ApplyUISettings();
-            // Update the terminal core with it's new Core settings
+            // Update the terminal core with its new Core settings
             _terminal->UpdateSettings(_settings);
 
             // Refresh our font with the renderer
@@ -293,7 +293,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderer->AddRenderEngine(dxEngine.get());
 
         // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out it's width another way.
+        //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
 
@@ -415,15 +415,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-
-            _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-            _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
         }
         else
         {
             // The user has disabled cursor blinking
             _cursorTimer = std::nullopt;
         }
+
+        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
+        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -549,6 +549,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
+            // Ignore mouse events while the terminal does not have focus. 
+            // This prevents the user from selecting and copying text if they 
+            // click inside the current tab to refocus the terminal window. 
+            if (!_focused)
+            {
+                args.Handled(true);
+                return;
+            }
+
             const auto modifiers = args.KeyModifiers();
             const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
             const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
@@ -828,6 +837,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        _focused = true;
+
         if (_cursorTimer.has_value())
             _cursorTimer.value().Start();
     }
@@ -838,6 +849,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        _focused = false;
+
         if (_cursorTimer.has_value())
         {
             _cursorTimer.value().Stop();

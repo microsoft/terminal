@@ -20,7 +20,7 @@ Tab::~Tab()
 {
     // When we're destructed, winrt will automatically decrement the refcount
     // of our terminalcontrol.
-    // Assuming that refcount hits 0, it'll destruct it on it's own, including
+    // Assuming that refcount hits 0, it'll destruct it on its own, including
     //      calling Close on the terminal and connection.
 }
 

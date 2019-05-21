@@ -3358,7 +3358,7 @@ public:
 
         Log::Comment(L"Test 5: Change Foreground to Legacy Attr while BG is RGB color");
         // Unfortunately this test isn't all that good, because the adapterTest adapter isn't smart enough
-        //   to have it's own color table and translate the pre-existing RGB BG into a legacy BG.
+        //   to have its own color table and translate the pre-existing RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;

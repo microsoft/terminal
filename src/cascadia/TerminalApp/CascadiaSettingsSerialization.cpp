@@ -127,6 +127,9 @@ JsonObject CascadiaSettings::ToJson() const
     jsonObject.Insert(PROFILES_KEY, profilesArray);
     jsonObject.Insert(SCHEMES_KEY, schemesArray);
 
+    jsonObject.Insert(KEYBINDINGS_KEY,
+                      _globals.GetKeybindings().ToJson());
+
     return jsonObject;
 }
 
@@ -180,9 +183,18 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
         }
     }
 
-    // TODO:MSFT:20700157
     // Load the keybindings from the file as well
-    resultPtr->_CreateDefaultKeybindings();
+    if (json.HasKey(KEYBINDINGS_KEY))
+    {
+        const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
+        auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
+        resultPtr->_globals.SetKeybindings(loadedBindings);
+    }
+    else
+    {
+        // Create the default keybindings if we couldn't find any keybindings.
+        resultPtr->_CreateDefaultKeybindings();
+    }
 
     return resultPtr;
 }
@@ -356,7 +368,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 
 // function Description:
 // - Returns the full path to the settings file, either within the application
-//   package, or in it's unpackaged location.
+//   package, or in its unpackaged location.
 // Arguments:
 // - <none>
 // Return Value:
@@ -368,7 +380,7 @@ winrt::hstring CascadiaSettings::GetSettingsPath()
 }
 
 // Function Description:
-// - Get the full path to settings file in it's packaged location.
+// - Get the full path to settings file in its packaged location.
 // Arguments:
 // - <none>
 // Return Value:

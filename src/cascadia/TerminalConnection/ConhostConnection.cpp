@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _connected = true;
 
         // Create our own output handling thread
-        // Each console needs to make sure to drain the output from it's backing host.
+        // Each console needs to make sure to drain the output from its backing host.
         _outputThreadId = (DWORD)-1;
         _hOutputThread = CreateThread(nullptr,
                                       0,

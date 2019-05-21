@@ -352,7 +352,7 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 }
 
 // Routine Description:
-// - Called when the text buffer is about to circle it's backing buffer.
+// - Called when the text buffer is about to circle its backing buffer.
 //      A renderer might want to get painted before that happens.
 // Arguments:
 // - <none>
@@ -869,7 +869,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const
     const WORD legacyAttributes = textAttributes.GetLegacyAttributes();
     const bool isBold = textAttributes.IsBold();
 
-    // The last color need's to be each engine's responsibility. If it's local to this function,
+    // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
     RETURN_IF_FAILED(pEngine->UpdateDrawingBrushes(rgbForeground, rgbBackground, legacyAttributes, isBold, isSettingDefaultBrushes));
 
