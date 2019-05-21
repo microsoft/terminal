@@ -479,39 +479,29 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
 
 GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view name)
 {
-    std::array<uint8_t, 16> namespaceBytes;
-    auto correctEndianNamespaceGuid = winrt::impl::endian_swap(namespaceGuid);
-    // We're using memcpy here pursuant to [basic.types] subclause 2,
-    // "...the underlying bytes making up the object can be copied into an array
-    // of char or unsigned char...".
-    // std::copy may compile down to ::memcpy for these types, but using it might
-    // contravene the standard and nobody's got time for that.
-    ::memcpy(namespaceBytes.data(), &correctEndianNamespaceGuid, sizeof(GUID));
-    //std::copy(reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid), reinterpret_cast<uint8_t*>(&correctEndianNamespaceGuid) + 16, namespaceBytes.begin());
+    auto correctEndianNamespaceGuid = Microsoft::Console::Utils::EndianSwap(namespaceGuid);
 
     wil::unique_bcrypt_hash hash;
-    std::array<uint8_t, 20> buffer;
-    //DWORD cbHashObject = 0;
-    //ULONG unused = 0;
-
-    //THROW_IF_NTSTATUS_FAILED(BCryptGetProperty(BCRYPT_SHA1_ALG_HANDLE, BCRYPT_OBJECT_LENGTH, reinterpret_cast<PUCHAR>(&cbHashObject), sizeof(cbHashObject), &unused, 0));
-
-    //wil::unique_array_ptr<uint8_t> hashObject = wil::make_unique
-    //auto hashObject = std::make_unique<uint8_t[]>(cbHashObject);
-    //hashObject.resize(cbHashObject);
-
-    //THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, hashObject.get(), cbHashObject, nullptr, 0, 0));
     THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, nullptr, 0, nullptr, 0, 0));
 
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), namespaceBytes.data(), namespaceBytes.size(), 0));
+    // According to N4713 8.2.1.11 [basic.lval], accessing the bytes underlying an object
+    // through unsigned char or char pointer *is defined*.
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
     // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
     THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<char*>(name.data())), name.size(), 0));
+
+    std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), buffer.size(), 0));
 
     buffer[6] = (buffer[6] & 0x0F) | 0x50;  // set the uuid version to 5
     buffer[8] = (buffer[8] & 0x3F) | 0x80;  // set the variant to 2 (RFC4122)
 
+    // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
+    // "...the underlying bytes making up the object can be copied into an array
+    // of char or unsigned char...array is copied back into the object..."
+    // std::copy may compile down to ::memcpy for these types, but using it might
+    // contravene the standard and nobody's got time for that.
     GUID newGuid{0};
-    std::copy(buffer.begin(), buffer.begin() + 16, reinterpret_cast<uint8_t*>(&newGuid));
-    return winrt::impl::endian_swap(newGuid);
+    ::memcpy(&newGuid, buffer.data(), sizeof(GUID));
+    return Microsoft::Console::Utils::EndianSwap(newGuid);
 }
