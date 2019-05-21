@@ -4,6 +4,10 @@
 #include "precomp.h"
 #include "inc/utils.hpp"
 #include <Objbase.h>
+
+#include <bcrypt.h>
+#include <wil/resource.h> // reinclude wil/resource to get the bcrypt defines.
+
 using namespace Microsoft::Console;
 
 // Function Description:
@@ -405,4 +409,44 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
     {
         WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
     }
+}
+
+
+// Function Description:
+// - Generate a Version 5 UUID (specified in RFC4122 4.3)
+//   v5 UUIDs are stable given the same namespace and "name".
+// Arguments:
+// - namespaceGuid: The GUID of the v5 UUID namespace, which provides both
+//                  a seed and a tacit agreement that all UUIDs generated
+//                  with it will follow the same data format.
+// - name: Bytes comprising the name (in a namespace-specific format)
+// Return Value:
+// - a new stable v5 UUID
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const std::byte>& name)
+{
+    auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };
+
+    wil::unique_bcrypt_hash hash;
+    THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, nullptr, 0, nullptr, 0, 0));
+
+    // According to N4713 8.2.1.11 [basic.lval], accessing the bytes underlying an object
+    // through unsigned char or char pointer *is defined*.
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
+    // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
+    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<std::byte*>(name.data())), gsl::narrow<ULONG>(name.size()), 0));
+
+    std::array<uint8_t, 20> buffer;
+    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
+
+    buffer[6] = (buffer[6] & 0x0F) | 0x50;  // set the uuid version to 5
+    buffer[8] = (buffer[8] & 0x3F) | 0x80;  // set the variant to 2 (RFC4122)
+
+    // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
+    // "...the underlying bytes making up the object can be copied into an array
+    // of char or unsigned char...array is copied back into the object..."
+    // std::copy may compile down to ::memcpy for these types, but using it might
+    // contravene the standard and nobody's got time for that.
+    GUID newGuid{ 0 };
+    ::memcpy(&newGuid, buffer.data(), sizeof(GUID));
+    return EndianSwap(newGuid);
 }

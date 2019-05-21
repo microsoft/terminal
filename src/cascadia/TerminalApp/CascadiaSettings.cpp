@@ -8,18 +8,15 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
-#include <bcrypt.h>
-#include <wil/resource.h> // reinclude wil/resource to get the bcrypt defines.
-
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
-// {2BDE4A90-D05F-401C-9492-E40884EAD1D8}
-static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = 
+// {2bde4a90-d05f-401c-9492-e40884ead1d8}
+// uuidv5 properties: name format is UTF-16LE bytes
+static constexpr GUID c_terminalProfileNamespaceGuid =
 { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
-GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view data);
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -190,16 +187,15 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile cmdProfile{_GenerateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, "cmd")};
+    auto cmdProfile{ _CreateDefaultProfile(L"cmd") };
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
     cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
-    cmdProfile.SetName(L"cmd");
 
-    Profile powershellProfile{_GenerateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, "PowerShell")};
+    auto powershellProfile{ _CreateDefaultProfile(L"PowerShell") };
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::wstring psCmdline = L"powershell.exe";
@@ -218,7 +214,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"PowerShell");
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
@@ -477,31 +472,23 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     return result;
 }
 
-GUID _GenerateV5Uuid(const GUID& namespaceGuid, const std::string_view name)
+// Method Description:
+// - Helper function for creating a skeleton default profile with a pre-populated
+//   guid and name.
+// Arguments:
+// - name: the name of the new profile.
+// Return Value:
+// - A Profile, ready to be filled in
+Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view& name)
 {
-    auto correctEndianNamespaceGuid = Microsoft::Console::Utils::EndianSwap(namespaceGuid);
+    Profile newProfile{
+        Microsoft::Console::Utils::CreateV5Uuid(
+	    c_terminalProfileNamespaceGuid,
+	    gsl::as_bytes(gsl::make_span(name))
+	)
+    };
 
-    wil::unique_bcrypt_hash hash;
-    THROW_IF_NTSTATUS_FAILED(BCryptCreateHash(BCRYPT_SHA1_ALG_HANDLE, &hash, nullptr, 0, nullptr, 0, 0));
+    newProfile.SetName(static_cast<std::wstring>(name));
 
-    // According to N4713 8.2.1.11 [basic.lval], accessing the bytes underlying an object
-    // through unsigned char or char pointer *is defined*.
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(&correctEndianNamespaceGuid), sizeof(GUID), 0));
-    // BCryptHashData is ill-specified in that it leaves off "const" qualification for pbInput
-    THROW_IF_NTSTATUS_FAILED(BCryptHashData(hash.get(), reinterpret_cast<PUCHAR>(const_cast<char*>(name.data())), name.size(), 0));
-
-    std::array<uint8_t, 20> buffer;
-    THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), buffer.size(), 0));
-
-    buffer[6] = (buffer[6] & 0x0F) | 0x50;  // set the uuid version to 5
-    buffer[8] = (buffer[8] & 0x3F) | 0x80;  // set the variant to 2 (RFC4122)
-
-    // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
-    // "...the underlying bytes making up the object can be copied into an array
-    // of char or unsigned char...array is copied back into the object..."
-    // std::copy may compile down to ::memcpy for these types, but using it might
-    // contravene the standard and nobody's got time for that.
-    GUID newGuid{0};
-    ::memcpy(&newGuid, buffer.data(), sizeof(GUID));
-    return Microsoft::Console::Utils::EndianSwap(newGuid);
-}
+    return newProfile;
+}
