@@ -83,6 +83,8 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCC,
             OSCRCC,
             REP,
+            OSCFG,
+            OSCBG,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };

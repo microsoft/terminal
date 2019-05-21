@@ -728,11 +728,11 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
             break;
         case OscActionCodes::SetForegroundColor:
             fSuccess = _dispatch->SetDefaultForeground(dwColor);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
             break;
         case OscActionCodes::SetBackgroundColor:
             fSuccess = _dispatch->SetDefaultBackground(dwColor);
-            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
             break;
         case OscActionCodes::SetCursorColor:
             fSuccess = _dispatch->SetCursorColor(dwColor);
