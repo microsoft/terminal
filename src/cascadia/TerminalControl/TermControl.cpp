@@ -278,14 +278,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
         const auto windowHeight = _swapChainPanel.ActualHeight();
 
-        _terminal = new ::Microsoft::Terminal::Core::Terminal();
+        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
         auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
         // Stash a local pointer to the render thread, so we can enable it after
         //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
-        _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal, nullptr, 0, std::move(renderThread));
+        _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
         // Set up the DX Engine
