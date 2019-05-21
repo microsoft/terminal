@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include <unknwn.h>
 #include "pch.h"
 #include "ConhostConnection.h"
 #include "windows.h"
@@ -12,28 +13,31 @@
 #endif
 
 #include <conpty-universal.h>
+#include "../../types/inc/Utils.hpp"
+
+using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    ConhostConnection::ConhostConnection(hstring const& commandline,
-                                         hstring const& startingDirectory,
-                                        uint32_t initialRows,
-                                        uint32_t initialCols) :
-        _connected{ false },
-        _inPipe{ INVALID_HANDLE_VALUE },
-        _outPipe{ INVALID_HANDLE_VALUE },
-        _signalPipe{ INVALID_HANDLE_VALUE },
-        _outputThreadId{ 0 },
-        _hOutputThread{ INVALID_HANDLE_VALUE },
-        _piConhost{ 0 },
-        _closing{ false }
+    ConhostConnection::ConhostConnection(const hstring& commandline,
+                                         const hstring& startingDirectory,
+                                         uint32_t initialRows,
+                                         uint32_t initialCols,
+                                         const guid& initialGuid) :
+        _initialRows{ initialRows },
+        _initialCols{ initialCols },
+        _commandline{ commandline },
+        _startingDirectory{ startingDirectory },
+        _guid{ initialGuid }
     {
-        _commandline = commandline;
-        _startingDirectory = startingDirectory;
-        _initialRows = initialRows;
-        _initialCols = initialCols;
+        guid zeroGuid{};
+        if (_guid == zeroGuid)
+        {
+            GUID Guid{};
+            THROW_IF_FAILED(CoCreateGuid(&Guid));
 
-        THROW_IF_FAILED(CoCreateGuid(&_guid));
+            _guid = Guid;
+        }
     }
 
     winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
@@ -68,11 +72,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         EnvironmentVariableMapW extraEnvVars;
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
-            WCHAR wszGuid[MAX_PATH]{};
-            THROW_HR_IF(E_OUTOFMEMORY, StringFromGUID2(_guid, wszGuid, static_cast<int>(std::size(wszGuid))) == 0);
-            wszGuid[::wcslen(wszGuid) - 1] = '\0';
+            std::wstring wsGuid{ Utils::GuidToString(_guid) };
+            wsGuid.pop_back();
 
-            WCHAR* pwszGuid = &wszGuid[1];
+            WCHAR* pwszGuid{ wsGuid.data() + 1 };
 
             // Ensure every connection has the unique identifier in the environment.
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);

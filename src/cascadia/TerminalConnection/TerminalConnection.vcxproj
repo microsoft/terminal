@@ -52,6 +52,18 @@
 
   </ItemDefinitionGroup>
 
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+
+  </ItemGroup>
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
