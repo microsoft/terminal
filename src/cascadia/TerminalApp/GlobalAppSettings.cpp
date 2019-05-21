@@ -20,7 +20,7 @@ static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
 
-static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
+static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"showTabsInTitlebar" };
 
 static const std::wstring LIGHT_THEME_VALUE{ L"light" };
 static const std::wstring DARK_THEME_VALUE{ L"dark" };
@@ -30,11 +30,11 @@ GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
     _defaultProfile{},
-    _alwaysShowTabs{ false },
+    _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ false },
+    _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default }
 {
 

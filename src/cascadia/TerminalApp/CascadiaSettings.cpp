@@ -174,12 +174,10 @@ void CascadiaSettings::_CreateDefaultSchemes()
 
 // Method Description:
 // - Create a set of profiles to use as the "default" profiles when initializing
-//      the terminal. Currently, we create two profiles: one for cmd.exe, and
-//      one for powershell.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
+//   the terminal. Currently, we create two or three profiles:
+//    * one for cmd.exe
+//    * one for powershell.exe (inbox Windows Powershell)
+//    * if Powershell Core is installed, we'll create another for Powershell Core.
 void CascadiaSettings::_CreateDefaultProfiles()
 {
     Profile cmdProfile{};
@@ -192,30 +190,36 @@ void CascadiaSettings::_CreateDefaultProfiles()
     cmdProfile.SetName(L"cmd");
 
     Profile powershellProfile{};
-    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
-    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
-    std::wstring psCmdline = L"powershell.exe";
-    std::filesystem::path psCoreCmdline{};
-    if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", psCoreCmdline))
-    {
-        psCmdline = psCoreCmdline;
-    }
-    else if (_IsPowerShellCoreInstalled(L"%ProgramFiles(x86)%", psCoreCmdline))
-    {
-        psCmdline = psCoreCmdline;
-    }
-    powershellProfile.SetFontFace(L"Courier New");
-    powershellProfile.SetCommandline(psCmdline);
+    powershellProfile.SetCommandline(L"powershell.exe");
     powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
+    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
+    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
+    std::filesystem::path psCoreCmdline{};
+    if (_IsPowerShellCoreInstalled(psCoreCmdline))
+    {
+        Profile pwshProfile{};
+        powershellProfile.SetCommandline(psCoreCmdline);
+        powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        powershellProfile.SetColorScheme({ L"Campbell" });
+        powershellProfile.SetName(L"PowerShell Core");
+
+        // If powershell core is installed, we'll use that as the default.
+        // Otherwise, we'll use normal Windows Powershell as the default.
+        _profiles.emplace_back(pwshProfile);
+        _globals.SetDefaultProfile(pwshProfile.GetGuid());
+    }
+    else
+    {
+        _globals.SetDefaultProfile(powershellProfile.GetGuid());
+    }
+
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-
-    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
@@ -416,13 +420,27 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 }
 
 // Function Description:
+// - Returns true if the user has installed PowerShell Core. This will check
+//   both %ProgramFiles% and %ProgramFiles(x86)%, and will return true if
+//   powershell core was installed in either location.
+// Arguments:
+// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
+// Return Value:
+// - true or false.
+bool CascadiaSettings::_IsPowerShellCoreInstalled(std::filesystem::path& cmdline)
+{
+    return _CheckPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ? true :
+           _CheckPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
+}
+
+// Function Description:
 // - Returns true if the user has installed PowerShell Core.
 // Arguments:
 // - A string that contains an environment-variable string in the form: %variableName%.
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true or false.
-bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
+bool CascadiaSettings::_CheckPowerShellCoreInstalledInPath(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
     psCorePath /= L"PowerShell";

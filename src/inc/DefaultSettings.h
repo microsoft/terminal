@@ -24,7 +24,7 @@ constexpr COLORREF DEFAULT_BACKGROUND = COLOR_BLACK;
 constexpr COLORREF DEFAULT_BACKGROUND_WITH_ALPHA = OPACITY_OPAQUE | DEFAULT_BACKGROUND;
 constexpr short DEFAULT_HISTORY_SIZE = 9001;
 const std::wstring DEFAULT_FONT_FACE { L"Consolas" };
-constexpr int DEFAULT_FONT_SIZE = 12;
+constexpr int DEFAULT_FONT_SIZE = 10;
 
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
