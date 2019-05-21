@@ -9,6 +9,8 @@
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <shlobj.h>
+#include <json-forwards.h>
+#include <json.h>
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
