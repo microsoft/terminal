@@ -112,11 +112,9 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
-        {
-            _root.Children().Append(_tabRow);
-            Controls::Grid::SetRow(_tabRow, 0);
-        }
+        _root.Children().Append(_tabRow);
+        Controls::Grid::SetRow(_tabRow, 0);
+
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabContent, 1);
         Controls::Grid::SetColumn(_tabView, 0);

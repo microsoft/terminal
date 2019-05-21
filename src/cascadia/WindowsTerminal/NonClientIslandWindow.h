@@ -33,33 +33,13 @@ public:
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
-
     virtual void Initialize() override;
 
     MARGINS GetFrameMargins() const noexcept;
 
-    void SetNonClientHeight(const int contentHeight) noexcept;
-
 private:
 
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
-
-    HWND _nonClientInteropWindowHandle;
-    winrt::Windows::UI::Xaml::Controls::Grid _nonClientRootGrid;
-
-    int _windowMarginBottom = 2;
-    int _windowMarginSides = 2;
-    int _titlebarMarginRight = 0;
-    int _titlebarMarginTop = 2;
-    int _titlebarMarginBottom = 0;
-
-    int _titlebarUnscaledContentHeight = 0;
-
-    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea() const noexcept;
-    ::Microsoft::Console::Types::Viewport GetClientContentArea() const noexcept;
-
-    MARGINS _maximizedMargins;
+    MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
 
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;

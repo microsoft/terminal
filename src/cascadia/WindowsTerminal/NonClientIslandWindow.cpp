@@ -26,10 +26,6 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{ },
-    _nonClientInteropWindowHandle{ nullptr },
-    _nonClientRootGrid{ nullptr },
-    _nonClientSource{ nullptr },
-    _maximizedMargins{ 0 },
     _isMaximized{ false }
 {
 }
@@ -44,123 +40,8 @@ NonClientIslandWindow::~NonClientIslandWindow()
 //   Island.
 void NonClientIslandWindow::Initialize()
 {
-    _nonClientSource = DesktopWindowXamlSource{};
-    auto interop = _nonClientSource.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(_window));
-
-    // stash the child interop handle so we can resize it when the main hwnd is resized
-    interop->get_WindowHandle(&_nonClientInteropWindowHandle);
-
-    _nonClientRootGrid = winrt::Windows::UI::Xaml::Controls::Grid{};
-
-    _nonClientSource.Content(_nonClientRootGrid);
-
     // Call the IslandWindow Initialize to set up the client xaml island
     IslandWindow::Initialize();
-}
-
-// Method Description:
-// - Sets the content of the non-client area of our window to the given XAML element.
-// Arguments:
-// - content: a XAML element to use as the content of the titlebar.
-// Return Value:
-// - <none>
-void NonClientIslandWindow::SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content)
-{
-    _nonClientRootGrid.Children().Clear();
-    _nonClientRootGrid.Children().Append(content);
-}
-
-
-// Method Description:
-// - Set the height we expect to reserve for the non-client content.
-// Arguments:
-// - contentHeight: the size in pixels we should use for the non-client content.
-void NonClientIslandWindow::SetNonClientHeight(const int contentHeight) noexcept
-{
-    _titlebarUnscaledContentHeight = contentHeight;
-}
-
-// Method Description:
-// - Gets the size of the content area of the titlebar (the non-client area).
-//   This can be padded either by the margins from maximization (when the window
-//   is maximized) or the normal window borders.
-// Return Value:
-// - A Viewport representing the area of the window which should be the titlebar
-//   content, in window coordinates.
-Viewport NonClientIslandWindow::GetTitlebarContentArea() const noexcept
-{
-    const auto scale = GetCurrentDpiScale();
-
-    const auto titlebarContentHeight = _titlebarUnscaledContentHeight * scale;
-    const auto titlebarMarginRight = _titlebarMarginRight;
-
-    const auto physicalSize = GetPhysicalSize();
-    const auto clientWidth = physicalSize.cx;
-
-    auto titlebarWidth = clientWidth - (_windowMarginSides + titlebarMarginRight);
-    // Adjust for maximized margins
-    titlebarWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
-
-    const auto titlebarHeight = titlebarContentHeight - (_titlebarMarginTop + _titlebarMarginBottom);
-
-
-    COORD titlebarOrigin = { static_cast<short>(_windowMarginSides),
-                             static_cast<short>(_titlebarMarginTop) };
-
-    if (_isMaximized)
-    {
-        titlebarOrigin.X = static_cast<short>(_maximizedMargins.cxLeftWidth);
-        titlebarOrigin.Y = static_cast<short>(_maximizedMargins.cyTopHeight);
-    }
-
-    return Viewport::FromDimensions(titlebarOrigin,
-                                    { static_cast<short>(titlebarWidth), static_cast<short>(titlebarHeight) });
-}
-
-// Method Description:
-// - Gets the size of the client content area of the window.
-//   This can be padded either by the margins from maximization (when the window
-//   is maximized) or the normal window borders.
-// Arguments:
-// - <none>
-// Return Value:
-// - A Viewport representing the area of the window which should be the client
-//   content, in window coordinates.
-Viewport NonClientIslandWindow::GetClientContentArea() const noexcept
-{
-    MARGINS margins = GetFrameMargins();
-
-    COORD clientOrigin = { static_cast<short>(margins.cxLeftWidth),
-                           static_cast<short>(margins.cyTopHeight) };
-
-    const auto physicalSize = GetPhysicalSize();
-    auto clientWidth = physicalSize.cx;
-    auto clientHeight = physicalSize.cy;
-
-    // If we're maximized, we don't want to use the frame as our margins,
-    // instead we want to use the margins from the maximization. If we included
-    // the left&right sides of the frame in this calculation while maximized,
-    // you' have a few pixels of the window border on the sides while maximized,
-    // which most apps do not have.
-    if (_isMaximized)
-    {
-        clientWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
-        clientHeight -= (margins.cyTopHeight + _maximizedMargins.cyBottomHeight);
-        clientOrigin.X = static_cast<short>(_maximizedMargins.cxLeftWidth);
-    }
-    else
-    {
-        // Remove the left and right width of the frame from the client area
-        clientWidth -= (margins.cxLeftWidth + margins.cxRightWidth);
-        clientHeight -= (margins.cyTopHeight + margins.cyBottomHeight);
-    }
-
-    // The top maximization margin is already included in the GetFrameMargins
-    // calcualtion.
-
-    return Viewport::FromDimensions(clientOrigin,
-                                    { static_cast<short>(clientWidth), static_cast<short>(clientHeight) });
 }
 
 // Method Description:
@@ -168,32 +49,66 @@ Viewport NonClientIslandWindow::GetClientContentArea() const noexcept
 //   sizes of our child Xaml Islands to match our new sizing.
 void NonClientIslandWindow::OnSize()
 {
-    auto clientArea = GetClientContentArea();
-    auto titlebarArea = GetTitlebarContentArea();
+    const auto dpi = GetCurrentDpiScale();
 
-    // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0,
-                 clientArea.Left(),
-                 clientArea.Top(),
-                 clientArea.Width(),
-                 clientArea.Height(),
-                 SWP_SHOWWINDOW);
+    const auto dragY = ::GetSystemMetrics(SM_CYDRAG);
+    const auto dragX = ::GetSystemMetrics(SM_CXDRAG);
+
+    RECT buttonsRect = {};
+    ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
+    const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
+    const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
+    const auto dragRegionHeight = minMaxWidth;
+
+    RECT windowRect = {};
+    ::GetWindowRect(_window, &windowRect);
+
+    RECT clientRect = {};
+    GetClientRect(_window, &clientRect);
+    const auto clientAreaWidth = clientRect.right - clientRect.left;
+    const auto clientAreaHeight = clientRect.bottom - clientRect.top;
+
+    auto windowsWidth = clientAreaWidth;
+    auto windowsHeight = clientAreaHeight;
+    // If we're maximized, we don't want to use the frame as our margins,
+    // instead we want to use the margins from the maximization. If we included
+    // the left&right sides of the frame in this calculation while maximized,
+    // you' have a few pixels of the window border on the sides while maximized,
+    // which most apps do not have.
+    if (_isMaximized)
+    {
+        windowsWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
+        windowsHeight -= (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight);
+    }
+    else
+    {
+        windowsWidth -= dragX * 2;
+        windowsHeight -= dragY * 2;
+    }
 
     if (_rootGrid)
     {
-        const SIZE physicalSize{ clientArea.Width(), clientArea.Height() };
-        const auto logicalSize = GetLogicalSize(physicalSize);
-        _rootGrid.Width(logicalSize.Width);
-        _rootGrid.Height(logicalSize.Height);
+        _rootGrid.Height((windowsHeight / dpi) + 0.5);
+        _rootGrid.Width((windowsWidth / dpi) + 0.5);
     }
 
-    // update the interop window size
-    SetWindowPos(_nonClientInteropWindowHandle, 0,
-                 titlebarArea.Left(),
-                 titlebarArea.Top(),
-                 titlebarArea.Width(),
-                 titlebarArea.Height(),
-                 SWP_SHOWWINDOW);
+    auto xPos = dragX;
+    auto yPos = dragY;
+    if (_isMaximized)
+    {
+        xPos = _maximizedMargins.cxLeftWidth;
+        yPos = _maximizedMargins.cyTopHeight;
+    }
+
+    SetWindowPos(_interopWindowHandle, NULL, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW);
+
+    HRGN region = CreateRectRgn(0, 0, 0, 0);
+    HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - minMaxWidth - dragRegionHeight, nonClientHeight);
+    HRGN clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
+    CombineRgn(region, nonClientRegion, clientRegion, RGN_OR);
+    SetWindowRgn(_interopWindowHandle, region, true);
+
+    _UpdateFrameMargins();
 }
 
 // Method Description:
@@ -267,13 +182,18 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 // - A MARGINS struct containing the border dimensions we want.
 MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 {
-    const auto titlebarView = GetTitlebarContentArea();
+    auto windowMarginSides = ::GetSystemMetrics(SM_CXDRAG);
+    auto windowMarginBottom = ::GetSystemMetrics(SM_CXDRAG);
+
+    RECT buttonsRect = {};
+    ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
+    const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
 
     MARGINS margins{0};
-    margins.cxLeftWidth = _windowMarginSides;
-    margins.cxRightWidth = _windowMarginSides;
-    margins.cyBottomHeight = _windowMarginBottom;
-    margins.cyTopHeight = titlebarView.BottomExclusive();
+    margins.cxLeftWidth = windowMarginSides;
+    margins.cxRightWidth = windowMarginSides;
+    margins.cyBottomHeight = windowMarginBottom;
+    margins.cyTopHeight = nonClientHeight + windowMarginBottom;
 
     return margins;
 }
@@ -312,8 +232,7 @@ HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 //   origin in pixels. Measures the outer edges of the potential window.
 // NOTE:
 // Heavily taken from WindowMetrics::GetMaxWindowRectInPixels in conhost.
-RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT * const prcSuggested,
-                                                     _Out_opt_ UINT * pDpiSuggested)
+RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested)
 {
     // prepare rectangle
     RECT rc = *prcSuggested;
@@ -476,19 +395,6 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
 //   non-client area of the window.
 void NonClientIslandWindow::_HandleActivateWindow()
 {
-    const auto dpi = GetDpiForWindow(_window);
-
-    // Use DwmGetWindowAttribute to get the complete size of the caption buttons.
-    RECT captionSize{ 0 };
-    THROW_IF_FAILED(DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &captionSize, sizeof(RECT)));
-
-    // Divide by 3 to get the width of a single button
-    // Multiply by 4 to reserve the space of one button as the "grab handle"
-    _titlebarMarginRight = MulDiv(RECT_WIDTH(&captionSize), 4, 3);
-
-    // _titlebarUnscaledContentHeight is set with SetNonClientHeight by the app
-    // hosting us.
-
     _UpdateFrameMargins();
 }
 
@@ -639,7 +545,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
     else
     {
         // Clear our maximization state
-        _maximizedMargins = {0};
+        _maximizedMargins = { 0 };
 
         // Immediately after resoring down, don't update our frame margins. If
         // you do this here, then a small gap will appear between the titlebar
