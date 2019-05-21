@@ -9,6 +9,7 @@
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <shlobj.h>
+#include "AppKeyBindingsSerialization.h"
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -163,11 +164,10 @@ Json::Value CascadiaSettings::ToJson2() const
 
     root[PROFILES_KEY_2.data()] = profilesArray;
     root[SCHEMES_KEY_2.data()] = schemesArray;
-    // root[KEYBINDINGS_KEY] = _globals.GetKeybindings().ToJson2();
+    root[KEYBINDINGS_KEY_2.data()] = AppKeyBindingsSerialization::ToJson2(_globals.GetKeybindings());
 
     return root;
 }
-
 
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.

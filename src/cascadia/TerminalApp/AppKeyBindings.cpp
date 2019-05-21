@@ -12,6 +12,9 @@ using namespace winrt::Windows::Data::Json;
 static constexpr std::wstring_view KEYS_KEY{ L"keys" };
 static constexpr std::wstring_view COMMAND_KEY{ L"command" };
 
+static constexpr std::string_view KEYS_KEY_2{ "keys" };
+static constexpr std::string_view COMMAND_KEY_2{ "command" };
+
 static constexpr std::wstring_view COPYTEXT_KEY{ L"copy" };
 static constexpr std::wstring_view PASTETEXT_KEY{ L"paste" };
 static constexpr std::wstring_view NEWTAB_KEY{ L"newTab" };
@@ -344,4 +347,19 @@ namespace winrt::TerminalApp::implementation
 
         return bindingsArray;
     }
+
+    winrt::Microsoft::Terminal::Settings::KeyChord AppKeyBindings::LookupKeyBinding(TerminalApp::ShortcutAction const& action)
+    {
+        for (const auto& kv : _keyShortcuts)
+        {
+            const auto chord = kv.first;
+            const auto command = kv.second;
+            if (command == action)
+            {
+                return chord;
+            }
+        }
+        return nullptr;
+    }
+
 }

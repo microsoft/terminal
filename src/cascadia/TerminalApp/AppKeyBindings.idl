@@ -68,6 +68,8 @@ namespace TerminalApp
 
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
 
+        Microsoft.Terminal.Settings.KeyChord LookupKeyBinding(ShortcutAction action);
+
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;

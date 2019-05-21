@@ -34,9 +34,12 @@ namespace winrt::TerminalApp::implementation
 
         static TerminalApp::AppKeyBindings FromJson(Windows::Data::Json::JsonArray const& json);
         Windows::Data::Json::JsonArray ToJson();
+        Json::Value ToJson2();
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+
+        winrt::Microsoft::Terminal::Settings::KeyChord LookupKeyBinding(TerminalApp::ShortcutAction const& action);
 
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
