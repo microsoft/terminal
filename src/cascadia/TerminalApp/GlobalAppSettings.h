@@ -35,6 +35,7 @@ public:
     GUID GetDefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;

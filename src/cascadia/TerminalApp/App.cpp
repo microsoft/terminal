@@ -405,7 +405,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void App::_ReloadSettings()
     {
-        _settings = CascadiaSettings::LoadAll();
+        _settings = CascadiaSettings::LoadAll(false);
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
         _HookupKeyBindings(_settings->GetKeybindings());

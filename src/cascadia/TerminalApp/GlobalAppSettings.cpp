@@ -71,6 +71,11 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
     return _keybindings;
 }
 
+void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
+{
+    _keybindings = newBindings;
+}
+
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
 {
     return _alwaysShowTabs;
@@ -153,6 +158,9 @@ JsonObject GlobalAppSettings::ToJson() const
                       JsonValue::CreateBooleanValue(_showTabsInTitlebar));
     jsonObject.Insert(REQUESTED_THEME_KEY,
                       JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
+
+    // We'll add the keybindings later in CascadiaSettings, because if we do it
+    // here, they'll appear before the profiles.
 
     return jsonObject;
 }
