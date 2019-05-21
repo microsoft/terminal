@@ -6,6 +6,8 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 
+extern double NON_CLIENT_DRAGBAR_WIDTH;
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
@@ -44,21 +46,25 @@ void NonClientIslandWindow::Initialize()
     IslandWindow::Initialize();
 }
 
+const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
+const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
+
 // Method Description:
 // - called when the size of the window changes for any reason. Updates the
 //   sizes of our child Xaml Islands to match our new sizing.
 void NonClientIslandWindow::OnSize()
 {
-    const auto dpi = GetCurrentDpiScale();
+    const auto scale = GetCurrentDpiScale();
+    const auto dpi = ::GetDpiForWindow(_window);
 
-    const auto dragY = ::GetSystemMetrics(SM_CYDRAG);
-    const auto dragX = ::GetSystemMetrics(SM_CXDRAG);
+    const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+    const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
     RECT buttonsRect = {};
     ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
     const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
     const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
-    const auto dragRegionHeight = static_cast<LONG>(300 * dpi) - (2 * 110 * dpi); //minMaxWidth;
+    const auto dragRegionWidth = static_cast<LONG>((NON_CLIENT_DRAGBAR_WIDTH - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
 
     RECT windowRect = {};
     ::GetWindowRect(_window, &windowRect);
@@ -88,8 +94,8 @@ void NonClientIslandWindow::OnSize()
 
     if (_rootGrid)
     {
-        _rootGrid.Height((windowsHeight / dpi) + 0.5);
-        _rootGrid.Width((windowsWidth / dpi) + 0.5);
+        _rootGrid.Height((windowsHeight / scale) + 0.5);
+        _rootGrid.Width((windowsWidth / scale) + 0.5);
     }
 
     auto xPos = dragX;
@@ -103,7 +109,7 @@ void NonClientIslandWindow::OnSize()
     SetWindowPos(_interopWindowHandle, NULL, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW);
 
     HRGN region = CreateRectRgn(0, 0, 0, 0);
-    HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - minMaxWidth - dragRegionHeight, nonClientHeight);
+    HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
     HRGN clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
     CombineRgn(region, nonClientRegion, clientRegion, RGN_OR);
     SetWindowRgn(_interopWindowHandle, region, true);
@@ -182,8 +188,9 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 // - A MARGINS struct containing the border dimensions we want.
 MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 {
-    auto windowMarginSides = ::GetSystemMetrics(SM_CXDRAG);
-    auto windowMarginBottom = ::GetSystemMetrics(SM_CXDRAG);
+    const auto dpi = ::GetDpiForWindow(_window);
+    const auto windowMarginSides = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+    const auto windowMarginBottom = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
     RECT buttonsRect = {};
     ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));

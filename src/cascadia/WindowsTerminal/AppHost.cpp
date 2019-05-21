@@ -12,11 +12,14 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console::Types;
 
+double NON_CLIENT_DRAGBAR_WIDTH = 0.0;
+
 AppHost::AppHost() noexcept :
     _app{},
     _window{ nullptr }
 {
     _useNonClientArea = _app.GetShowTabsInTitlebar();
+    NON_CLIENT_DRAGBAR_WIDTH = _app.GetNonClientAreaDragBarWidth();
 
     if (_useNonClientArea)
     {

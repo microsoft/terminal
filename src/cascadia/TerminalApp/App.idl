@@ -29,6 +29,8 @@ namespace TerminalApp
 
         String GetTitle();
 
+        FLOAT GetNonClientAreaDragBarWidth();
+
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class
         // as the toplevel "active" Xaml application. This Application (through IXamlMetadataProvider)
