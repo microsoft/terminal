@@ -13,6 +13,11 @@ using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
+// {2bde4a90-d05f-401c-9492-e40884ead1d8}
+// uuidv5 properties: name format is UTF-16LE bytes
+static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
+{ 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+
 CascadiaSettings::CascadiaSettings() :
     _globals{},
     _profiles{}
@@ -182,16 +187,15 @@ void CascadiaSettings::_CreateDefaultSchemes()
 // - <none>
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile cmdProfile{};
+    auto cmdProfile{ _CreateDefaultProfile(L"cmd") };
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
     cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
-    cmdProfile.SetName(L"cmd");
 
-    Profile powershellProfile{};
+    auto powershellProfile{ _CreateDefaultProfile(L"PowerShell") };
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::wstring psCmdline = L"powershell.exe";
@@ -210,7 +214,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"PowerShell");
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
@@ -461,4 +464,25 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     // Trim the terminating null character
     result.resize(requiredSize-1);
     return result;
+}
+
+// Method Description:
+// - Helper function for creating a skeleton default profile with a pre-populated
+//   guid and name.
+// Arguments:
+// - name: the name of the new profile.
+// Return Value:
+// - A Profile, ready to be filled in
+Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view& name)
+{
+    Profile newProfile{
+        Microsoft::Console::Utils::CreateV5Uuid(
+	    TERMINAL_PROFILE_NAMESPACE_GUID,
+	    gsl::as_bytes(gsl::make_span(name))
+	)
+    };
+
+    newProfile.SetName(static_cast<std::wstring>(name));
+
+    return newProfile;
 }
