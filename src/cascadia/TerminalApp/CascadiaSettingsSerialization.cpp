@@ -18,12 +18,12 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring PROFILES_KEY{ L"profiles" };
-static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-static const std::wstring SCHEMES_KEY{ L"schemes" };
+static constexpr std::wstring_view PROFILES_KEY{ L"profiles" };
+static constexpr std::wstring_view KEYBINDINGS_KEY{ L"keybindings" };
+static constexpr std::wstring_view SCHEMES_KEY{ L"schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates

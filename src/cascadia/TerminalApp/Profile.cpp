@@ -13,40 +13,40 @@ using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
 
-static const std::wstring NAME_KEY{ L"name" };
-static const std::wstring GUID_KEY{ L"guid" };
-static const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
+static constexpr std::wstring_view NAME_KEY{ L"name" };
+static constexpr std::wstring_view GUID_KEY{ L"guid" };
+static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorscheme" };
 
-static const std::wstring FOREGROUND_KEY{ L"foreground" };
-static const std::wstring BACKGROUND_KEY{ L"background" };
-static const std::wstring COLORTABLE_KEY{ L"colorTable" };
-static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
-static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
-static const std::wstring CURSORCOLOR_KEY{ L"cursorColor" };
-static const std::wstring CURSORSHAPE_KEY{ L"cursorShape" };
-static const std::wstring CURSORHEIGHT_KEY{ L"cursorHeight" };
+static constexpr std::wstring_view FOREGROUND_KEY{ L"foreground" };
+static constexpr std::wstring_view BACKGROUND_KEY{ L"background" };
+static constexpr std::wstring_view COLORTABLE_KEY{ L"colorTable" };
+static constexpr std::wstring_view HISTORYSIZE_KEY{ L"historySize" };
+static constexpr std::wstring_view SNAPONINPUT_KEY{ L"snapOnInput" };
+static constexpr std::wstring_view CURSORCOLOR_KEY{ L"cursorColor" };
+static constexpr std::wstring_view CURSORSHAPE_KEY{ L"cursorShape" };
+static constexpr std::wstring_view CURSORHEIGHT_KEY{ L"cursorHeight" };
 
-static const std::wstring COMMANDLINE_KEY{ L"commandline" };
-static const std::wstring FONTFACE_KEY{ L"fontFace" };
-static const std::wstring FONTSIZE_KEY{ L"fontSize" };
-static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
-static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
-static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
-static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
-static const std::wstring PADDING_KEY{ L"padding" };
-static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
-static const std::wstring ICON_KEY{ L"icon" };
+static constexpr std::wstring_view COMMANDLINE_KEY{ L"commandline" };
+static constexpr std::wstring_view FONTFACE_KEY{ L"fontFace" };
+static constexpr std::wstring_view FONTSIZE_KEY{ L"fontSize" };
+static constexpr std::wstring_view ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
+static constexpr std::wstring_view USEACRYLIC_KEY{ L"useAcrylic" };
+static constexpr std::wstring_view SCROLLBARSTATE_KEY{ L"scrollbarState" };
+static constexpr std::wstring_view CLOSEONEXIT_KEY{ L"closeOnExit" };
+static constexpr std::wstring_view PADDING_KEY{ L"padding" };
+static constexpr std::wstring_view STARTINGDIRECTORY_KEY{ L"startingDirectory" };
+static constexpr std::wstring_view ICON_KEY{ L"icon" };
 
 // Possible values for Scrollbar state
-static const std::wstring ALWAYS_VISIBLE{ L"visible" };
-static const std::wstring ALWAYS_HIDE{ L"hidden" };
+static constexpr std::wstring_view ALWAYS_VISIBLE{ L"visible" };
+static constexpr std::wstring_view ALWAYS_HIDE{ L"hidden" };
 
 // Possible values for Cursor Shape
-static const std::wstring CURSORSHAPE_VINTAGE{ L"vintage" };
-static const std::wstring CURSORSHAPE_BAR{ L"bar" };
-static const std::wstring CURSORSHAPE_UNDERSCORE{ L"underscore" };
-static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
-static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
+static constexpr std::wstring_view CURSORSHAPE_VINTAGE{ L"vintage" };
+static constexpr std::wstring_view CURSORSHAPE_BAR{ L"bar" };
+static constexpr std::wstring_view CURSORSHAPE_UNDERSCORE{ L"underscore" };
+static constexpr std::wstring_view CURSORSHAPE_FILLEDBOX{ L"filledBox" };
+static constexpr std::wstring_view CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
 Profile::Profile() :
     Profile(Utils::CreateGuid())
@@ -582,7 +582,7 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
 // - cursorShape: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given CursorStyle
-std::wstring Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
+std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {
