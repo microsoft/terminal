@@ -58,7 +58,7 @@ void NonClientIslandWindow::OnSize()
     ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
     const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
     const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
-    const auto dragRegionHeight = static_cast<LONG>(600 * dpi) - (2 * minMaxWidth); //minMaxWidth;
+    const auto dragRegionHeight = static_cast<LONG>(300 * dpi) - (2 * 110 * dpi); //minMaxWidth;
 
     RECT windowRect = {};
     ::GetWindowRect(_window, &windowRect);

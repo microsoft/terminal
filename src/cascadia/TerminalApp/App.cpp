@@ -138,7 +138,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        _newTabButton.Margin({-600,0,0,0});
+        _newTabButton.Margin({-300,0,0,0});
         _tabRow.Children().Append(_newTabButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
