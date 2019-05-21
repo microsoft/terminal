@@ -19,8 +19,8 @@
     <ProjectGuid>{34de34d3-1cd6-4ee3-8bd9-a26b5b27ec73}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TypesUnitTests</RootNamespace>
-    <ProjectName>Types.Test.Unit</ProjectName>
-    <TargetName>Types.Test.Unit</TargetName>
+    <ProjectName>Types.Unit.Test</ProjectName>
+    <TargetName>Types.Unit.Test</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
