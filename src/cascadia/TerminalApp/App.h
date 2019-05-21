@@ -112,6 +112,7 @@ namespace winrt::TerminalApp::implementation
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
+        static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }
 

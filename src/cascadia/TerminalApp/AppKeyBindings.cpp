@@ -354,6 +354,11 @@ namespace winrt::TerminalApp::implementation
 
         return bindingsArray;
     }
+
+    // Method Description:
+    // - Takes the KeyModifier flags from Terminal and maps them to the WinRT types which are used by XAML
+    // Return Value:
+    // - a Windows::System::VirtualKeyModifiers object with the flags of which modifiers used.
     Windows::System::VirtualKeyModifiers AppKeyBindings::ConvertVKModifiers(Settings::KeyModifiers modifiers)
     {
         Windows::System::VirtualKeyModifiers keyModifiers = Windows::System::VirtualKeyModifiers::None;
@@ -375,6 +380,13 @@ namespace winrt::TerminalApp::implementation
         return keyModifiers;
     }
 
+    // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM_COMMA issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a WinRT hstring representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
     winrt::hstring AppKeyBindings::FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
     {
         std::wstring buffer{ L"" };
