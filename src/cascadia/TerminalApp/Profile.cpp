@@ -48,6 +48,34 @@ static const std::wstring CURSORSHAPE_UNDERSCORE{ L"underscore" };
 static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
 static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
+////////////////////////////////////////////////////////////////////////////////
+static constexpr std::string_view NAME_KEY_2{ "name" };
+static constexpr std::string_view GUID_KEY_2{ "guid" };
+static constexpr std::string_view COLORSCHEME_KEY_2{ "colorscheme" };
+
+static constexpr std::string_view FOREGROUND_KEY_2{ "foreground" };
+static constexpr std::string_view BACKGROUND_KEY_2{ "background" };
+static constexpr std::string_view COLORTABLE_KEY_2{ "colorTable" };
+static constexpr std::string_view HISTORYSIZE_KEY_2{ "historySize" };
+static constexpr std::string_view SNAPONINPUT_KEY_2{ "snapOnInput" };
+static constexpr std::string_view CURSORCOLOR_KEY_2{ "cursorColor" };
+static constexpr std::string_view CURSORSHAPE_KEY_2{ "cursorShape" };
+static constexpr std::string_view CURSORHEIGHT_KEY_2{ "cursorHeight" };
+
+static constexpr std::string_view COMMANDLINE_KEY_2{ "commandline" };
+static constexpr std::string_view FONTFACE_KEY_2{ "fontFace" };
+static constexpr std::string_view FONTSIZE_KEY_2{ "fontSize" };
+static constexpr std::string_view ACRYLICTRANSPARENCY_KEY_2{ "acrylicOpacity" };
+static constexpr std::string_view USEACRYLIC_KEY_2{ "useAcrylic" };
+static constexpr std::string_view SCROLLBARSTATE_KEY_2{ "scrollbarState" };
+static constexpr std::string_view CLOSEONEXIT_KEY_2{ "closeOnExit" };
+static constexpr std::string_view PADDING_KEY_2{ "padding" };
+static constexpr std::string_view STARTINGDIRECTORY_KEY_2{ "startingDirectory" };
+static constexpr std::string_view ICON_KEY_2{ "icon" };
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 Profile::Profile() :
     _guid{},
     _name{ L"Default" },
@@ -272,6 +300,76 @@ JsonObject Profile::ToJson() const
 
     return jsonObject;
 }
+
+Json::Value Profile::ToJson2() const
+{
+    Json::Value root;
+
+    ///// Profile-specific settings /////
+    root[GUID_KEY_2.data()] = winrt::to_string(Utils::GuidToString(_guid));
+    root[NAME_KEY_2.data()] = winrt::to_string(_name);
+
+    ///// Core Settings /////
+    if (_defaultForeground)
+    {
+        const auto defaultForeground = winrt::to_string(Utils::ColorToHexString(_defaultForeground.value()));
+        root[FOREGROUND_KEY_2.data()] = defaultForeground;
+    }
+    if (_defaultBackground)
+    {
+        const auto defaultBackground = winrt::to_string(Utils::ColorToHexString(_defaultBackground.value()));
+        root[BACKGROUND_KEY_2.data()] = defaultBackground;
+    }
+    if (_schemeName)
+    {
+        const auto scheme = winrt::to_string(_schemeName.value());
+        root[COLORSCHEME_KEY_2.data()] = scheme;
+    }
+    else
+    {
+        Json::Value tableArray{};
+        for (auto& color : _colorTable)
+        {
+            auto s = Utils::ColorToHexString(color);
+            tableArray.append(winrt::to_string(s));
+        }
+        root[COLORTABLE_KEY_2.data()] = tableArray;
+    }
+    root[HISTORYSIZE_KEY_2.data()] = _historySize;
+    root[SNAPONINPUT_KEY_2.data()] = _snapOnInput;
+    root[CURSORCOLOR_KEY_2.data()] = winrt::to_string(Utils::ColorToHexString(_cursorColor));
+    // Only add the cursor height property if we're a legacy-style cursor.
+    if (_cursorShape == CursorStyle::Vintage)
+    {
+        root[CURSORHEIGHT_KEY_2.data()] = _cursorHeight;
+    }
+    root[CURSORSHAPE_KEY_2.data()] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
+
+    ///// Control Settings /////
+    root[COMMANDLINE_KEY_2.data()] = winrt::to_string(_commandline);
+    root[FONTFACE_KEY_2.data()] = winrt::to_string(_fontFace);
+    root[FONTSIZE_KEY_2.data()] = _fontSize;
+    root[ACRYLICTRANSPARENCY_KEY_2.data()] = _acrylicTransparency;
+    root[USEACRYLIC_KEY_2.data()] = _useAcrylic;
+    root[CLOSEONEXIT_KEY_2.data()] = _closeOnExit;
+    root[PADDING_KEY_2.data()] = winrt::to_string(_padding);
+
+    if (_scrollbarState)
+    {
+        const auto scrollbarState = winrt::to_string(_scrollbarState.value());
+        root[SCROLLBARSTATE_KEY_2.data()] = scrollbarState;
+    }
+
+    if (_icon)
+    {
+        const auto icon = winrt::to_string(_icon.value());
+        root[ICON_KEY_2.data()] = icon;
+    }
+
+    return root;
+}
+
+
 
 // Method Description:
 // - Create a new instance of this class from a serialized JsonObject.

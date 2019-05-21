@@ -96,7 +96,8 @@ void CascadiaSettings::SaveAll() const
 
     const auto json2 = ToJson2();
     Json::StreamWriterBuilder wbuilder;
-    
+    // Use 4 spaces to indent instead of \t
+    wbuilder.settings_["indentation"] = "    ";
     const auto s = Json::writeString(wbuilder, json2);
 
     if (_IsPackaged())
@@ -147,6 +148,12 @@ Json::Value CascadiaSettings::ToJson2() const
 {
     Json::Value root;
 
+    Json::Value profilesArray;
+    for (const auto& profile : _profiles)
+    {
+        profilesArray.append(profile.ToJson2());
+    }
+
     Json::Value schemesArray;
     const auto& colorSchemes = _globals.GetColorSchemes();
     for (auto& scheme : colorSchemes)
@@ -154,7 +161,7 @@ Json::Value CascadiaSettings::ToJson2() const
         schemesArray.append(scheme.ToJson2());
     }
 
-    // root[PROFILES_KEY] = profilesArray;
+    root[PROFILES_KEY_2.data()] = profilesArray;
     root[SCHEMES_KEY_2.data()] = schemesArray;
     // root[KEYBINDINGS_KEY] = _globals.GetKeybindings().ToJson2();
 
