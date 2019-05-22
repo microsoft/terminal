@@ -89,7 +89,7 @@ void NonClientIslandWindow::OnSize()
     }
 
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-    auto yPos = dragY;
+    const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
     if (_isMaximized)
     {
         xPos = _maximizedMargins.cxLeftWidth;
