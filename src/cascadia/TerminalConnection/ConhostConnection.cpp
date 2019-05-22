@@ -29,13 +29,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _startingDirectory{ startingDirectory },
         _guid{ initialGuid }
     {
-        guid zeroGuid{};
-        if (_guid == zeroGuid)
+        if (_guid == guid())
         {
-            GUID Guid;
-            THROW_IF_FAILED(CoCreateGuid(&Guid));
-
-            _guid = Guid;
+            _guid = Utils::CreateGuid();
         }
     }
 
