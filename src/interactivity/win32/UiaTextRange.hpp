@@ -67,7 +67,7 @@ typedef unsigned int Column;
 // the first char of the 0th row in the text buffer row array.
 typedef unsigned int Endpoint;
 
-constexpr IdType invalid_id = 0;
+constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Interactivity::Win32
 {
