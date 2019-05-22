@@ -5,6 +5,8 @@
 
 #include "XamlApplication.h"
 
+#include "XamlApplication.g.cpp"
+
 namespace xaml = ::winrt::Windows::UI::Xaml;
 
 extern "C" {

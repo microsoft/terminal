@@ -10,6 +10,8 @@
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
+#include "TermControl.g.cpp"
+
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
