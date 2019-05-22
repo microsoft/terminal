@@ -51,6 +51,16 @@ namespace winrt::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
+    float App::GetNonClientAreaDragBarWidth() const noexcept
+    {
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
+        {
+            return 0.0;
+        }
+
+        return NON_CLIENT_DRAGBAR_WIDTH;
+    }
+
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
@@ -138,7 +148,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        _newTabButton.Margin({ 0, 0, NON_CLIENT_DRAGBAR_WIDTH, 0 });
+        _newTabButton.Margin({ 0, 0, GetNonClientAreaDragBarWidth(), 0 });
         _tabRow.Children().Append(_newTabButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
