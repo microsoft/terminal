@@ -99,6 +99,14 @@
     <Content Include="Images\Wide310x150Logo.scale-150.png" />
     <Content Include="Images\Wide310x150Logo.scale-200.png" />
     <Content Include="Images\Wide310x150Logo.scale-400.png" />
+    <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png" />
+    <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png" />
+    <Content Include="ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-100.png" />
+    <Content Include="ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-200.png" />
+    <Content Include="ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-100.png" />
+    <Content Include="ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-200.png" />
+    <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-100.png" />
+    <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
 

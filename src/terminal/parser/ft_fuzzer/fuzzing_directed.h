@@ -21,12 +21,14 @@
 
 #include <vector>
 #include <limits>
-#include <atlcoll.h>
 #include <assert.h>
 #include <strsafe.h>
 
+#pragma warning(disable:4505)
+#include "memallocator.h"
+
 #ifndef __FUZZING_ALLOCATOR
-#define __FUZZING_ALLOCATOR CComAllocator
+#define __FUZZING_ALLOCATOR fuzz::CFuzzCRTAllocator
 #endif
 
 namespace variadic
