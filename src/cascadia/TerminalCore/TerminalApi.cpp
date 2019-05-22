@@ -170,6 +170,12 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
     return true;
 }
 
+// Method Description:
+// - Sets the cursor style to the given style.
+// Arguments:
+// - cursorStyle: the style to be set for the cursor
+// Return Value:
+// - true iff we successfully set the cursor style
 bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     CursorType finalCursorType = CursorType::Legacy;
