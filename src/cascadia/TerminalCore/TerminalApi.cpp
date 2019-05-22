@@ -172,8 +172,8 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 
 bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType finalCursorType;
-    bool shouldBlink;
+    CursorType finalCursorType = CursorType::Legacy;
+    bool shouldBlink = false;
 
     switch (cursorStyle)
     {
@@ -202,8 +202,6 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
         finalCursorType = CursorType::VerticalBar;
         shouldBlink = false;
         break;
-    default:
-        return false;
     }
 
     _buffer->GetCursor().SetType(finalCursorType);
