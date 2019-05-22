@@ -33,8 +33,6 @@ public:
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    virtual void Initialize() override;
-
     MARGINS GetFrameMargins() const noexcept;
 
 private:

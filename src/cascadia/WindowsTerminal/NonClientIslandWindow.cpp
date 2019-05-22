@@ -36,16 +36,6 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
-// Method Description:
-// - Used to initialize the XAML island for the non-client area. Also calls our
-//   base IslandWindow's Initialize, which will initialize the client XAML
-//   Island.
-void NonClientIslandWindow::Initialize()
-{
-    // Call the IslandWindow Initialize to set up the client xaml island
-    IslandWindow::Initialize();
-}
-
 const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
 const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
 

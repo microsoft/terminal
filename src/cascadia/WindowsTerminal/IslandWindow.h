@@ -22,7 +22,7 @@ public:
     void OnRestore() override;
     void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    virtual void Initialize();
+    void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
