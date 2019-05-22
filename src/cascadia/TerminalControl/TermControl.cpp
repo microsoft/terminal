@@ -1051,7 +1051,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    void TermControl::KeyBoardScrollViewPort(int viewTop)
+    void TermControl::KeyBoardScrollViewport(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
         _lastScrollOffset = std::nullopt;
