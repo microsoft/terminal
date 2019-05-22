@@ -88,7 +88,7 @@ void NonClientIslandWindow::OnSize()
         _rootGrid.Width((windowsWidth / scale) + 0.5);
     }
 
-    auto xPos = dragX;
+    const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     auto yPos = dragY;
     if (_isMaximized)
     {
