@@ -220,6 +220,62 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
     return result;
 }
 
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a ColorScheme object.
+// Return Value:
+// - a new ColorScheme instance created from the values in `json`
+ColorScheme ColorScheme::FromJson2(Json::Value json)
+{
+    ColorScheme result{};
+
+    if (auto name{ json[NAME_KEY_2.data()] })
+    {
+        result._schemeName = winrt::to_hstring(name.asString());
+    }
+    if (auto fgString{ json[FOREGROUND_KEY_2.data()] })
+    {
+        const auto color = Utils::ColorFromHexString(GetWstringFromJson(fgString));
+        result._defaultForeground = color;
+    }
+    if (auto bgString{ json[BACKGROUND_KEY_2.data()] })
+    {
+        const auto color = Utils::ColorFromHexString(GetWstringFromJson(bgString));
+        result._defaultBackground = color;
+    }
+
+    // Legacy Deserialization. Leave in place to allow forward compatibility
+    if (auto table{ json[TABLE_KEY_2.data()] })
+    {
+        int i = 0;
+
+        for (auto tableEntry : table)
+        {
+            if (tableEntry.isString())
+            {
+                auto color = Utils::ColorFromHexString(GetWstringFromJson(tableEntry));
+                result._table.at(i) = color;
+            }
+            i++;
+        }
+    }
+
+    int i = 0;
+    for (const auto& current : TABLE_COLORS_2)
+    {
+        if (auto str{ json[current.data()] })
+        {
+            const auto color = Utils::ColorFromHexString(GetWstringFromJson(str));
+            result._table.at(i) = color;
+        }
+        i++;
+    }
+
+    return result;
+}
+
+
 std::wstring_view ColorScheme::GetName() const noexcept
 {
     return { _schemeName };
@@ -238,4 +294,11 @@ COLORREF ColorScheme::GetForeground() const noexcept
 COLORREF ColorScheme::GetBackground() const noexcept
 {
     return _defaultBackground;
+}
+
+
+// TODO put this somewhere reasonable
+std::wstring GetWstringFromJson(const Json::Value& json)
+{
+    return winrt::to_hstring(json.asString()).c_str();
 }

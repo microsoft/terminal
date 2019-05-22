@@ -19,7 +19,9 @@ Author(s):
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 #include "../../inc/conattrs.hpp"
-#include <conattrs.hpp>
+
+std::wstring GetWstringFromJson(const Json::Value& json);
+
 
 namespace TerminalApp
 {
@@ -39,6 +41,7 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static ColorScheme FromJson(winrt::Windows::Data::Json::JsonObject json);
     Json::Value ToJson2() const;
+    static ColorScheme FromJson2(Json::Value json);
 
     std::wstring_view GetName() const noexcept;
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;

@@ -279,8 +279,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
             if (schemeJson.isObject())
             {
                 // auto schemeObj = schemeJson.GetObjectW();
-//                auto scheme = ColorScheme::FromJson2(schemeJson);
-                //resultSchemes.emplace_back(std::move(scheme));
+                auto scheme = ColorScheme::FromJson2(schemeJson);
+                resultSchemes.emplace_back(std::move(scheme));
             }
         }
     }
