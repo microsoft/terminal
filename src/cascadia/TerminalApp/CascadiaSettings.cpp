@@ -182,7 +182,8 @@ void CascadiaSettings::_CreateDefaultSchemes()
 //   the terminal. Currently, we create two or three profiles:
 //    * one for cmd.exe
 //    * one for powershell.exe (inbox Windows Powershell)
-//    * if Powershell Core is installed, we'll create another for Powershell Core.
+//    * if Powershell Core (pwsh.exe) is installed, we'll create another for
+//      Powershell Core.
 void CascadiaSettings::_CreateDefaultProfiles()
 {
     auto cmdProfile{ _CreateDefaultProfile(L"cmd") };
@@ -197,14 +198,14 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetCommandline(L"powershell.exe");
     powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
-    powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
+    powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
     powershellProfile.SetName(L"PowerShell");
 
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
-    if (_IsPowerShellCoreInstalled(psCoreCmdline))
+    if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         Profile pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
         pwshProfile.SetCommandline(psCoreCmdline);
@@ -431,10 +432,10 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true or false.
-bool CascadiaSettings::_IsPowerShellCoreInstalled(std::filesystem::path& cmdline)
+bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline)
 {
-    return _CheckPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ? true :
-           _CheckPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
+    return _checkPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ||
+           _checkPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
 }
 
 // Function Description:
@@ -444,7 +445,7 @@ bool CascadiaSettings::_IsPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true or false.
-bool CascadiaSettings::_CheckPowerShellCoreInstalledInPath(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
+bool CascadiaSettings::_checkPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
     psCorePath /= L"PowerShell";
