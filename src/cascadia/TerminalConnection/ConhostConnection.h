@@ -9,7 +9,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConhostConnection : ConhostConnectionT<ConhostConnection>
     {
-        ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, uint32_t rows, uint32_t cols, const guid& guid);
+        ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, const uint32_t rows, const uint32_t cols, const guid& guid);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
@@ -19,6 +19,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
+
+        winrt::guid Guid() const noexcept;
 
     private:
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
@@ -33,7 +35,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         HANDLE _inPipe{ INVALID_HANDLE_VALUE };  // The pipe for writing input to
         HANDLE _outPipe{ INVALID_HANDLE_VALUE }; // The pipe for reading output from
         HANDLE _signalPipe{ INVALID_HANDLE_VALUE };
-        //HPCON _hPC;
         DWORD _outputThreadId{};
         HANDLE _hOutputThread{ INVALID_HANDLE_VALUE };
         PROCESS_INFORMATION _piConhost{};

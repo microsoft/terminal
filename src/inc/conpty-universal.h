@@ -41,7 +41,8 @@ const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 //
 struct WStringCaseInsensitiveCompare
 {
-    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const
+    [[nodiscard]]
+    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
     {
         return (::_wcsicmp(lhs.c_str(), rhs.c_str()) < 0);
     }
@@ -49,22 +50,25 @@ struct WStringCaseInsensitiveCompare
 
 using EnvironmentVariableMapW = std::map<std::wstring, std::wstring, WStringCaseInsensitiveCompare>;
 
-HRESULT CreateConPty(const std::wstring& cmdline,                       // _In_
-                     const unsigned short w,                            // _In_
-                     const unsigned short h,                            // _In_
-                     HANDLE* const hInput,                              // _Out_
-                     HANDLE* const hOutput,                             // _Out_
-                     HANDLE* const hSignal,                             // _Out_
-                     PROCESS_INFORMATION* const piPty,                  // _Out_
-                     const EnvironmentVariableMapW& extraEnvVars = {}); // _In_
+[[nodiscard]]
+HRESULT CreateConPty(const std::wstring& cmdline,
+                     const unsigned short w,
+                     const unsigned short h,
+                     HANDLE* const hInput,
+                     HANDLE* const hOutput,
+                     HANDLE* const hSignal,
+                     PROCESS_INFORMATION* const piPty,
+                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept;
 
 bool SignalResizeWindow(const HANDLE hSignal,
                         const unsigned short w,
                         const unsigned short h);
 
-HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map);
+[[nodiscard]]
+HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept;
 
-HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars);
+[[nodiscard]]
+HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept;
 
 // Function Description:
 // - Updates an EnvironmentVariableMapW with the current process's unicode
@@ -73,8 +77,9 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
 // - map: The map to populate with the current processes's environment variables.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
+[[nodiscard]]
 __declspec(noinline) inline
-HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map)
+HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
 {
     LPWCH currentEnvVars{};
     auto freeCurrentEnv = wil::scope_exit([&] {
@@ -119,8 +124,9 @@ HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map)
 // - newEnvVars: The vector that will be used to create the new environment block.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
+[[nodiscard]]
 __declspec(noinline) inline
-HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars)
+HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept
 {
     // Clear environment block before use.
     constexpr size_t cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
@@ -213,6 +219,7 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing format the
 //      commandline or failing to launch the conhost
+[[nodiscard]]
 __declspec(noinline) inline
 HRESULT CreateConPty(const std::wstring& cmdline,
                      std::optional<std::wstring> startingDirectory,
@@ -222,7 +229,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                      HANDLE* const hOutput,
                      HANDLE* const hSignal,
                      PROCESS_INFORMATION* const piPty,
-                     const EnvironmentVariableMapW& extraEnvVars = {})
+                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
 {
     // Create some anon pipes so we can pass handles down and into the console.
     // IMPORTANT NOTE:

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <unknwn.h>
 #include "pch.h"
 #include "ConhostConnection.h"
 #include "windows.h"
@@ -21,8 +20,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
                                          const hstring& startingDirectory,
-                                         uint32_t initialRows,
-                                         uint32_t initialCols,
+                                         const uint32_t initialRows,
+                                         const uint32_t initialCols,
                                          const guid& initialGuid) :
         _initialRows{ initialRows },
         _initialCols{ initialCols },
@@ -33,11 +32,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         guid zeroGuid{};
         if (_guid == zeroGuid)
         {
-            GUID Guid{};
+            GUID Guid;
             THROW_IF_FAILED(CoCreateGuid(&Guid));
 
             _guid = Guid;
         }
+    }
+
+    winrt::guid ConhostConnection::Guid() const noexcept
+    {
+        return _guid;
     }
 
     winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
@@ -62,7 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Start()
     {
-        std::wstring cmdline = _commandline.c_str();
+        std::wstring cmdline{ _commandline.c_str() };
         std::optional<std::wstring> startingDirectory;
         if (!_startingDirectory.empty())
         {
@@ -75,27 +79,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::wstring wsGuid{ Utils::GuidToString(_guid) };
             wsGuid.pop_back();
 
-            WCHAR* pwszGuid{ wsGuid.data() + 1 };
+            const wchar_t* const pwszGuid{ wsGuid.data() + 1 };
 
             // Ensure every connection has the unique identifier in the environment.
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
-        CreateConPty(cmdline,
-                     startingDirectory,
-                     static_cast<short>(_initialCols),
-                     static_cast<short>(_initialRows),
-                     &_inPipe,
-                     &_outPipe,
-                     &_signalPipe,
-                     &_piConhost,
-                     extraEnvVars);
+        THROW_IF_FAILED(
+            CreateConPty(cmdline,
+                         startingDirectory,
+                         static_cast<short>(_initialCols),
+                         static_cast<short>(_initialRows),
+                         &_inPipe,
+                         &_outPipe,
+                         &_signalPipe,
+                         &_piConhost,
+                         extraEnvVars));
 
         _connected = true;
 
         // Create our own output handling thread
         // Each console needs to make sure to drain the output from its backing host.
-        _outputThreadId = (DWORD)-1;
+        _outputThreadId = static_cast<DWORD>(-1);
         _hOutputThread = CreateThread(nullptr,
                                       0,
                                       StaticOutputThreadProc,

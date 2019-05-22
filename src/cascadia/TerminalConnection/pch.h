@@ -9,6 +9,9 @@
 
 #include <LibraryIncludes.h>
 
+// Must be included before any WinRT headers.
+#include <unknwn.h>
+
 #include "winrt/Windows.Foundation.h"
 #include <Windows.h>
 #include <wil/result.h>
