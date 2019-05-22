@@ -650,16 +650,13 @@ DWORD ConsoleIoThread()
     bool fShouldExit = false;
     while (!fShouldExit)
     {
-		PCD_IO_COMPLETE pCompletion = nullptr;
-
         if (ReplyMsg != nullptr)
         {
-            pCompletion = &ReplyMsg->Complete;
             LOG_IF_FAILED(ReplyMsg->ReleaseMessageBuffers());
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(pCompletion, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
