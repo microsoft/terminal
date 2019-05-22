@@ -169,3 +169,45 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
+
+bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
+{
+    CursorType finalCursorType;
+    bool shouldBlink;
+
+    switch (cursorStyle)
+    {
+    case DispatchTypes::CursorStyle::BlinkingBlock:
+    case DispatchTypes::CursorStyle::BlinkingBlockDefault:
+        finalCursorType = CursorType::FullBox;
+        shouldBlink = true;
+        break;
+    case DispatchTypes::CursorStyle::SteadyBlock:
+        finalCursorType = CursorType::FullBox;
+        shouldBlink = false;
+        break;
+    case DispatchTypes::CursorStyle::BlinkingUnderline:
+        finalCursorType = CursorType::Underscore;
+        shouldBlink = true;
+        break;
+    case DispatchTypes::CursorStyle::SteadyUnderline:
+        finalCursorType = CursorType::Underscore;
+        shouldBlink = false;
+        break;
+    case DispatchTypes::CursorStyle::BlinkingBar:
+        finalCursorType = CursorType::VerticalBar;
+        shouldBlink = true;
+        break;
+    case DispatchTypes::CursorStyle::SteadyBar:
+        finalCursorType = CursorType::VerticalBar;
+        shouldBlink = false;
+        break;
+    default:
+        return false;
+    }
+
+    _buffer->GetCursor().SetType(finalCursorType);
+    _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
+
+    return true;
+}
