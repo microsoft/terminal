@@ -215,7 +215,7 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
-        auto _keyBindings = _settings->GetKeybindings();
+        auto keyBindings = _settings->GetKeybindings();
 
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
@@ -226,7 +226,7 @@ namespace winrt::TerminalApp::implementation
             if (profileIndex < 9)
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
-                auto profileKeyChord = _keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
+                auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
                 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -269,7 +269,7 @@ namespace winrt::TerminalApp::implementation
             settingsItem.Click({ this, &App::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
 
-            auto settingsKeyChord = _keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            auto settingsKeyChord = keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
             if (settingsKeyChord)
             {
                 _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
