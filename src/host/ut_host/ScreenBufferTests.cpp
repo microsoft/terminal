@@ -2522,20 +2522,44 @@ void ScreenBufferTests::SetDefaultForegroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    const COLORREF originalColor = gci.GetDefaultForegroundColor();
-    const COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    COLORREF originalColor = gci.GetDefaultForegroundColor();
+    COLORREF newColor = gci.GetDefaultForegroundColor();
+    COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
+    // Valid hexadecimal notation
     std::wstring seq = L"\x1b]10;rgb:33/66/99\x1b\\";
     stateMachine.ProcessString(seq);
 
-    VERIFY_ARE_EQUAL(testColor, gci.GetDefaultForegroundColor());
+    newColor = gci.GetDefaultForegroundColor();
+    VERIFY_ARE_EQUAL(testColor, newColor);
+
+    // invalid decimal notation
+    originalColor = newColor;
+    testColor = RGB(153, 102, 51);
+    seq = L"\x1b]10;rgb:153/102/51\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultForegroundColor();
+    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
+    // it will, in fact leave the color the way it was
+    VERIFY_ARE_EQUAL(originalColor, newColor);
+
+    // invalid hex without rgb
+    testColor = RGB(153, 102, 51);
+    seq = L"\x1b]10;99/66/33\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultForegroundColor();
+    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
+    // it will, in fact leave the color the way it was
+    VERIFY_ARE_EQUAL(originalColor, newColor);
 }
 
 
 void ScreenBufferTests::SetDefaultBackgroundColor()
 {
-    // Setting the default foreground color should work
+    // Setting the default Background color should work
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole(); // Lock must be taken to swap buffers.
@@ -2548,14 +2572,38 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    const COLORREF originalColor = gci.GetDefaultBackgroundColor();
-    const COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    COLORREF originalColor = gci.GetDefaultBackgroundColor();
+    COLORREF newColor = gci.GetDefaultBackgroundColor();
+    COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
+    // Valid hexadecimal notation
     std::wstring seq = L"\x1b]11;rgb:33/66/99\x1b\\";
     stateMachine.ProcessString(seq);
 
-    VERIFY_ARE_EQUAL(testColor, gci.GetDefaultBackgroundColor());
+    newColor = gci.GetDefaultBackgroundColor();
+    VERIFY_ARE_EQUAL(testColor, newColor);
+
+    // invalid decimal notation
+    originalColor = newColor;
+    testColor = RGB(153, 102, 51);
+    seq = L"\x1b]11;rgb:153/102/51\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultBackgroundColor();
+    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
+    // it will, in fact leave the color the way it was
+    VERIFY_ARE_EQUAL(originalColor, newColor);
+
+    // invalid hex without rgb
+    testColor = RGB(153, 102, 51);
+    seq = L"\x1b]11;99/66/33\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultBackgroundColor();
+    VERIFY_ARE_NOT_EQUAL(testColor, newColor);
+    // it will, in fact leave the color the way it was
+    VERIFY_ARE_EQUAL(originalColor, newColor);
 }
 
 
