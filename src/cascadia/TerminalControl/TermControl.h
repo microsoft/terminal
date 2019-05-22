@@ -124,6 +124,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
+        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };
 }
 
