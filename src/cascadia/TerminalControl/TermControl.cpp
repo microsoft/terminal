@@ -1054,7 +1054,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::KeyBoardScrollViewPort(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
-        const auto currentOffset = this->GetScrollOffset();
         _lastScrollOffset = std::nullopt;
         _scrollBar.Value(static_cast<int>(viewTop));
     }
