@@ -477,7 +477,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
 // - name: the name of the new profile.
 // Return Value:
 // - A Profile, ready to be filled in
-Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view& name)
+Profile CascadiaSettings::_CreateDefaultProfile(std::wstring_view name)
 {
     auto profileGuid{ Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name))) };
     Profile newProfile{ profileGuid };
