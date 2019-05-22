@@ -12,11 +12,15 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
+using namespace Microsoft::Console;
 
 // {2bde4a90-d05f-401c-9492-e40884ead1d8}
 // uuidv5 properties: name format is UTF-16LE bytes
 static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
 { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -37,8 +41,8 @@ ColorScheme _CreateCampbellScheme()
                                  RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
-    Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
+    Utils::InitializeCampbellColorTable(campbellSpan);
+    Utils::SetColorTableAlpha(campbellSpan, 0xff);
 
     return campbellScheme;
 }
@@ -69,7 +73,7 @@ ColorScheme _CreateOneHalfDarkScheme()
     oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
     oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
     oneHalfDarkTable[15] = RGB(220, 223, 228); // white
-    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
+    Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
 
     return oneHalfDarkScheme;
 }
@@ -99,7 +103,7 @@ ColorScheme _CreateOneHalfLightScheme()
     oneHalfLightTable[13] = RGB(197, 119, 221); // magenta
     oneHalfLightTable[14] = RGB( 86, 181, 193); // cyan
     oneHalfLightTable[15] = RGB(255, 255, 255); // white
-    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
+    Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
 
     return oneHalfLightScheme;
 }
@@ -127,7 +131,7 @@ ColorScheme _CreateSolarizedDarkScheme()
     solarizedDarkTable[13] = RGB(108, 113, 196);
     solarizedDarkTable[14] = RGB(147, 161, 161);
     solarizedDarkTable[15] = RGB(253, 246, 227);
-    Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
+    Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
 
     return solarizedDarkScheme;
 }
@@ -155,7 +159,7 @@ ColorScheme _CreateSolarizedLightScheme()
     solarizedLightTable[13] = RGB(108, 113, 196);
     solarizedLightTable[14] = RGB(147, 161, 161);
     solarizedLightTable[15] = RGB(253, 246, 227);
-    Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
+    Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
     return solarizedLightScheme;
 }
@@ -473,16 +477,18 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
 // - name: the name of the new profile.
 // Return Value:
 // - A Profile, ready to be filled in
-Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view& name)
+Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
 {
-    Profile newProfile{
-        Microsoft::Console::Utils::CreateV5Uuid(
-	    TERMINAL_PROFILE_NAMESPACE_GUID,
-	    gsl::as_bytes(gsl::make_span(name))
-	)
-    };
+    auto profileGuid{ Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name))) };
+    Profile newProfile{ profileGuid };
 
     newProfile.SetName(static_cast<std::wstring>(name));
+
+    std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
+    iconPath.append(Utils::GuidToString(profileGuid));
+    iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
+
+    newProfile.SetIconPath(iconPath);
 
     return newProfile;
 }
