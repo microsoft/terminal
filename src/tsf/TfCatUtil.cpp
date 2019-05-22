@@ -36,9 +36,6 @@ CicCategoryMgr::CicCategoryMgr()
 
 CicCategoryMgr::~CicCategoryMgr()
 {
-    if (m_pcat) {
-        m_pcat.Release();
-    }
 }
 
 //+---------------------------------------------------------------------------
@@ -65,5 +62,5 @@ HRESULT CicCategoryMgr::InitCategoryInstance( )
     //
     // Create ITfCategoryMgr instance.
     //
-    return m_pcat.CoCreateInstance(CLSID_TF_CategoryMgr);
+    return ::CoCreateInstance(CLSID_TF_CategoryMgr, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&m_pcat));
 }

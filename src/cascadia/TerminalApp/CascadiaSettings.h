@@ -70,4 +70,5 @@ private:
     static bool _CheckPowerShellCoreInstalledInPath(std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _IsPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
+    static Profile _CreateDefaultProfile(const std::wstring_view& name);
 };

@@ -25,7 +25,9 @@ class TerminalApp::Profile final
 {
 
 public:
+    Profile(const winrt::guid& guid);
     Profile();
+
     ~Profile();
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
@@ -57,7 +59,7 @@ private:
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
-    static std::wstring _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
+    static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     GUID _guid;
     std::wstring _name;

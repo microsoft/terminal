@@ -18,8 +18,8 @@ set _r=%random%
 set copy_dir=OpenConsole\%_r%
 rem Generate a unique name, so that we can debug multiple revisions of the binary at the same time if needed.
 
-(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
-(echo f | xcopy /Y %_last_build%\conechokey.exe %TEMP%\%copy_dir%\conechokey.exe) > nul
+(xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe*) > nul
+(xcopy /Y %_last_build%\conechokey.exe %TEMP%\%copy_dir%\conechokey.exe*) > nul
 
 rem start %TEMP%\%copy_dir%\OpenConsole.exe %TEMP%\%copy_dir%\conechokey.exe %*
 %TEMP%\%copy_dir%\conechokey.exe %*
