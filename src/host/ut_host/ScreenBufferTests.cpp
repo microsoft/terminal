@@ -149,6 +149,10 @@ class ScreenBufferTests
 
     TEST_METHOD(SetColorTableThreeDigits);
 
+    TEST_METHOD(SetDefaultForegroundColor);
+
+    TEST_METHOD(SetDefaultBackgroundColor);
+
     TEST_METHOD(DeleteCharsNearEndOfLine);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleFirstCase);
     TEST_METHOD(DeleteCharsNearEndOfLineSimpleSecondCase);
@@ -2501,6 +2505,60 @@ void ScreenBufferTests::SetColorTableThreeDigits()
     }
 
 }
+
+
+void ScreenBufferTests::SetDefaultForegroundColor()
+{
+    // Setting the default foreground color should work
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to swap buffers.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+
+    const COLORREF originalColor = gci.GetDefaultForegroundColor();
+    const COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
+
+    std::wstring seq = L"\x1b]10;rgb:33/66/99\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    VERIFY_ARE_EQUAL(testColor, gci.GetDefaultForegroundColor());
+}
+
+
+void ScreenBufferTests::SetDefaultBackgroundColor()
+{
+    // Setting the default foreground color should work
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to swap buffers.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    SCREEN_INFORMATION& mainBuffer = gci.GetActiveOutputBuffer();
+    VERIFY_IS_FALSE(mainBuffer._IsAltBuffer());
+    WI_SetFlag(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    VERIFY_IS_TRUE(WI_IsFlagSet(mainBuffer.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING));
+
+    StateMachine& stateMachine = mainBuffer.GetStateMachine();
+
+    const COLORREF originalColor = gci.GetDefaultBackgroundColor();
+    const COLORREF testColor = RGB(0x33, 0x66, 0x99);
+    VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
+
+    std::wstring seq = L"\x1b]11;rgb:33/66/99\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    VERIFY_ARE_EQUAL(testColor, gci.GetDefaultBackgroundColor());
+}
+
+
 
 void ScreenBufferTests::DeleteCharsNearEndOfLine()
 {
