@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
+#include "Utils.h"
 
 using namespace TerminalApp;
 using namespace ::Microsoft::Console;
@@ -294,11 +295,4 @@ COLORREF ColorScheme::GetForeground() const noexcept
 COLORREF ColorScheme::GetBackground() const noexcept
 {
     return _defaultBackground;
-}
-
-
-// TODO put this somewhere reasonable
-std::wstring GetWstringFromJson(const Json::Value& json)
-{
-    return winrt::to_hstring(json.asString()).c_str();
 }

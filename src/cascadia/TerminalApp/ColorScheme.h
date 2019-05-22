@@ -20,9 +20,6 @@ Author(s):
 #include <winrt/TerminalApp.h>
 #include "../../inc/conattrs.hpp"
 
-std::wstring GetWstringFromJson(const Json::Value& json);
-
-
 namespace TerminalApp
 {
     class ColorScheme;

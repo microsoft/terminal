@@ -278,27 +278,23 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         {
             if (schemeJson.isObject())
             {
-                // auto schemeObj = schemeJson.GetObjectW();
                 auto scheme = ColorScheme::FromJson2(schemeJson);
                 resultSchemes.emplace_back(std::move(scheme));
             }
         }
     }
 
-
-    // if (json.HasKey(PROFILES_KEY))
-    // {
-    //     auto profiles = json.GetNamedArray(PROFILES_KEY);
-    //     for (auto profileJson : profiles)
-    //     {
-    //         if (profileJson.ValueType() == JsonValueType::Object)
-    //         {
-    //             auto profileObj = profileJson.GetObjectW();
-    //             auto profile = Profile::FromJson(profileObj);
-    //             resultPtr->_profiles.emplace_back(std::move(profile));
-    //         }
-    //     }
-    // }
+    if (auto profiles{ json[PROFILES_KEY_2.data()] })
+    {
+        for (auto profileJson : profiles)
+        {
+            if (profileJson.isObject())
+            {
+                auto profile = Profile::FromJson2(profileJson);
+                resultPtr->_profiles.emplace_back(profile);
+            }
+        }
+    }
 
     // // Load the keybindings from the file as well
     // if (json.HasKey(KEYBINDINGS_KEY))

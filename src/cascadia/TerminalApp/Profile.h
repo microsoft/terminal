@@ -33,6 +33,7 @@ public:
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);
     Json::Value ToJson2() const;
+    static Profile FromJson2(Json::Value json);
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;

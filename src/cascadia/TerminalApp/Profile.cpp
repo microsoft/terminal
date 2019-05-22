@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profile.h"
+#include "Utils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
@@ -503,7 +504,124 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     return result;
 }
 
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a Profile object.
+// Return Value:
+// - a new Profile instance created from the values in `json`
+Profile Profile::FromJson2(Json::Value json)
+{
+    Profile result{};
 
+    // Profile-specific Settings
+    if (auto name{ json[NAME_KEY_2.data()] })
+    {
+        result._name = GetWstringFromJson(name);
+    }
+    if (auto guid{ json[GUID_KEY_2.data()] })
+    {
+        result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
+    }
+
+    // Core Settings
+    if (auto foreground{ json[FOREGROUND_KEY_2.data()] })
+    {
+        const auto color = Utils::ColorFromHexString(GetWstringFromJson(foreground));
+        result._defaultForeground = color;
+    }
+    if (auto background{ json[BACKGROUND_KEY_2.data()] })
+    {
+        const auto color = Utils::ColorFromHexString(GetWstringFromJson(background));
+        result._defaultBackground = color;
+    }
+    if (auto colorScheme{ json[COLORSCHEME_KEY_2.data()] })
+    {
+        result._schemeName = GetWstringFromJson(colorScheme);
+    }
+    else
+    {
+        if (auto colortable{ json[COLORTABLE_KEY_2.data()] })
+        {
+            int i = 0;
+            for (auto tableEntry : colortable)
+            {
+                if (tableEntry.isString())
+                {
+                    const auto color = Utils::ColorFromHexString(GetWstringFromJson(tableEntry));
+                    result._colorTable[i] = color;
+                }
+                i++;
+            }
+        }
+    }
+    if (auto historySize{ json[HISTORYSIZE_KEY_2.data()] })
+    {
+        // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
+        result._historySize = historySize.asInt();
+    }
+    if (auto snapOnInput{ json[SNAPONINPUT_KEY_2.data()] })
+    {
+        result._snapOnInput = snapOnInput.asBool();
+    }
+    if (auto cursorColor{ json[CURSORCOLOR_KEY_2.data()] })
+    {
+        const auto color = Utils::ColorFromHexString(GetWstringFromJson(cursorColor));
+        result._cursorColor = color;
+    }
+    if (auto cursorHeight{ json[CURSORHEIGHT_KEY_2.data()] })
+    {
+        result._cursorHeight = cursorHeight.asUInt();
+    }
+    if (auto cursorShape{ json[CURSORSHAPE_KEY_2.data()] })
+    {
+        result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+    }
+
+    // Control Settings
+    if (auto commandline{ json[COMMANDLINE_KEY_2.data()] })
+    {
+        result._commandline = GetWstringFromJson(commandline);
+    }
+    if (auto fontFace{ json[FONTFACE_KEY_2.data()] })
+    {
+        result._fontFace = GetWstringFromJson(fontFace);
+    }
+    if (auto fontSize{ json[FONTSIZE_KEY_2.data()] })
+    {
+        result._fontSize = fontSize.asInt();
+    }
+    if (auto acrylicTransparency{ json[ACRYLICTRANSPARENCY_KEY_2.data()] })
+    {
+        result._acrylicTransparency = acrylicTransparency.asFloat();
+    }
+    if (auto useAcrylic{ json[USEACRYLIC_KEY_2.data()] })
+    {
+        result._useAcrylic = useAcrylic.asBool();
+    }
+    if (auto closeOnExit{ json[CLOSEONEXIT_KEY_2.data()] })
+    {
+        result._closeOnExit = closeOnExit.asBool();
+    }
+    if (auto padding{ json[PADDING_KEY_2.data()] })
+    {
+        result._padding = GetWstringFromJson(padding);
+    }
+    if (auto scrollbarState{ json[SCROLLBARSTATE_KEY_2.data()] })
+    {
+        result._scrollbarState = GetWstringFromJson(scrollbarState);
+    }
+    if (auto startingDirectory{ json[STARTINGDIRECTORY_KEY_2.data()] })
+    {
+        result._startingDirectory = GetWstringFromJson(startingDirectory);
+    }
+    if (auto icon{ json[ICON_KEY_2.data()] })
+    {
+        result._icon = GetWstringFromJson(icon);
+    }
+
+    return result;
+}
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
 {
