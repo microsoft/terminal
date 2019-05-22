@@ -24,5 +24,5 @@ Please use 4-space indentation to trigger code parsing, rather than [fenced code
 
         void func()
         {
-            std::cout << "This is code. << std::endl";
+            std::cout << "This is code." << std::endl;
         }
