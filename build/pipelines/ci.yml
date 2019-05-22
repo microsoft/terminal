@@ -26,3 +26,7 @@ jobs:
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: x86
+
+  - template: ./templates/build-console-ci.yml
+    parameters:
+      platform: ARM64
