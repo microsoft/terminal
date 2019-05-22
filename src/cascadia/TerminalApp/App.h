@@ -75,8 +75,9 @@ namespace winrt::TerminalApp::implementation
         void _Create();
         void _CreateNewTabFlyout();
 
-        fire_and_forget _ShowOkDialog(const winrt::hstring& contentKey, const winrt::hstring& textKey);
+        fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
+        [[nodiscard]]
         HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();

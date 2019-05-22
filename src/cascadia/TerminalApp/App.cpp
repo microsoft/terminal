@@ -180,10 +180,10 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // - contentKey: The key to use to lookup the title text from our resources.
-    // - textKey: The key to use to lookup the content text from our resources.
-    fire_and_forget App::_ShowOkDialog(const winrt::hstring& contentKey,
-                                       const winrt::hstring& textKey)
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey,
+                                       const winrt::hstring& contentKey)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -193,10 +193,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = l.GetString(contentKey);
-        auto message = l.GetString(textKey);
-        auto buttonText = l.GetString(L"Ok");
+        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        auto title = resourceLoader.GetString(titleKey);
+        auto message = resourceLoader.GetString(contentKey);
+        auto buttonText = resourceLoader.GetString(L"Ok");
 
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -406,6 +406,7 @@ namespace winrt::TerminalApp::implementation
     //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
+    [[nodiscard]]
     HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
         HRESULT hr = E_FAIL;
@@ -423,7 +424,7 @@ namespace winrt::TerminalApp::implementation
         }
         catch (...)
         {
-            hr = wil::ResultFromCaughtException()
+            hr = wil::ResultFromCaughtException();
             LOG_HR(hr);
         }
         return hr;
