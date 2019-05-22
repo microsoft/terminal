@@ -8,7 +8,9 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface]
     runtimeclass ConhostConnection : ITerminalConnection
     {
-        ConhostConnection(String cmdline, String startingDirectory, UInt32 rows, UInt32 columns);
+        ConhostConnection(String cmdline, String startingDirectory, UInt32 rows, UInt32 columns, Guid guid);
+
+        Guid Guid { get; };
     };
 
 }
