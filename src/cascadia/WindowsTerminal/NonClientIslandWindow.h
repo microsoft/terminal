@@ -35,6 +35,8 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
+    static double NonClientDragBarWidth;
+
 private:
 
     MARGINS _maximizedMargins = { 0 };

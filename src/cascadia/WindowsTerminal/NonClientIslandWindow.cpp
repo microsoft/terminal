@@ -6,8 +6,6 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 
-extern double NON_CLIENT_DRAGBAR_WIDTH;
-
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
@@ -38,6 +36,7 @@ NonClientIslandWindow::~NonClientIslandWindow()
 
 const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
 const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
+double NonClientIslandWindow::NonClientDragBarWidth = 0.0; // Set by TerminalApp initialization
 
 // Method Description:
 // - called when the size of the window changes for any reason. Updates the
@@ -54,7 +53,7 @@ void NonClientIslandWindow::OnSize()
     ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
     const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
     const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
-    const auto dragRegionWidth = static_cast<LONG>((NON_CLIENT_DRAGBAR_WIDTH - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
+    const auto dragRegionWidth = static_cast<LONG>((NonClientDragBarWidth - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
 
     RECT windowRect = {};
     ::GetWindowRect(_window, &windowRect);
@@ -64,23 +63,20 @@ void NonClientIslandWindow::OnSize()
     const auto clientAreaWidth = clientRect.right - clientRect.left;
     const auto clientAreaHeight = clientRect.bottom - clientRect.top;
 
-    auto windowsWidth = clientAreaWidth;
-    auto windowsHeight = clientAreaHeight;
     // If we're maximized, we don't want to use the frame as our margins,
     // instead we want to use the margins from the maximization. If we included
     // the left&right sides of the frame in this calculation while maximized,
     // you' have a few pixels of the window border on the sides while maximized,
     // which most apps do not have.
-    if (_isMaximized)
-    {
-        windowsWidth -= (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth);
-        windowsHeight -= (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight);
-    }
-    else
-    {
-        windowsWidth -= dragX * 2;
-        windowsHeight -= dragY * 2;
-    }
+    const auto bordersWidth = _isMaximized ?
+        (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
+        (dragX * 2);
+    const auto bordersHeight = _isMaximized ?
+        (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
+        (dragY * 2);
+
+    const auto windowsWidth = clientAreaWidth - bordersWidth;
+    const auto windowsHeight = clientAreaHeight - bordersHeight;
 
     if (_rootGrid)
     {
@@ -90,19 +86,15 @@ void NonClientIslandWindow::OnSize()
 
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
-    if (_isMaximized)
-    {
-        xPos = _maximizedMargins.cxLeftWidth;
-        yPos = _maximizedMargins.cyTopHeight;
-    }
 
-    SetWindowPos(_interopWindowHandle, NULL, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW);
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, NULL, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 
     HRGN region = CreateRectRgn(0, 0, 0, 0);
     HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
     HRGN clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
-    CombineRgn(region, nonClientRegion, clientRegion, RGN_OR);
-    SetWindowRgn(_interopWindowHandle, region, true);
+
+    winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
+    winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
 
     _UpdateFrameMargins();
 }
