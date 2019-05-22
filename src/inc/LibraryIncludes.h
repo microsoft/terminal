@@ -6,7 +6,6 @@
 #include <CppCoreCheck/Warnings.h>
 
 #pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 
 // C
 #include <climits>

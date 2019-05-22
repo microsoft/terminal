@@ -85,11 +85,11 @@ steps:
     TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
     OverWrite: true
     flattenFolders: true
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['BuildConfiguration'], 'AuditMode'))
 
 - task: PublishBuildArtifacts@1
   displayName: 'Publish Artifact (appx) (Non-PR builds only)'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
     ArtifactName: 'appx-$(BuildConfiguration)'
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['BuildConfiguration'], 'AuditMode'))
