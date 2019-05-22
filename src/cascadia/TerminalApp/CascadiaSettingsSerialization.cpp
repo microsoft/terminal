@@ -53,10 +53,20 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        // If Parse fails, it'll throw a hresult_error
-        JsonObject root = JsonObject::Parse(actualData);
+        // // If Parse fails, it'll throw a hresult_error
+        // JsonObject root = JsonObject::Parse(actualData);
+        // resultPtr = FromJson(root);
 
-        resultPtr = FromJson(root);
+//        Json::Reader reader;
+        Json::Value root;
+        Json::CharReader* reader = Json::CharReaderBuilder::CharReaderBuilder().newCharReader();
+        auto raw = winrt::to_string(actualData);
+        std::string errs;
+        bool b = reader->parse(raw.c_str(), raw.c_str()+raw.size(), &root, &errs);
+        // TODO: need better error. `reader` might have the exception in a
+        // better format.
+        if (!b) throw winrt::hresult_error();
+        resultPtr = FromJson2(root);
 
         //  Update profile only if it has changed.
         if (saveOnLoad)
@@ -148,6 +158,10 @@ JsonObject CascadiaSettings::ToJson() const
 Json::Value CascadiaSettings::ToJson2() const
 {
     Json::Value root;
+    // TODO: Globals
+
+    // TODO: put the keybindings in the globals (now that the order doesn't
+    // really matter).
 
     Json::Value profilesArray;
     for (const auto& profile : _profiles)
@@ -234,6 +248,74 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
 
     return resultPtr;
 }
+
+
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a CascadiaSettings object.
+// Return Value:
+// - a new CascadiaSettings instance created from the values in `json`
+std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value& json)
+{
+    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+
+    // resultPtr->_globals = GlobalAppSettings::FromJson(json);
+
+    // TODO:MSFT:20737698 - Display an error if we failed to parse settings
+    // What should we do here if these keys aren't found?For default profile,
+    //      we could always pick the first  profile and just set that as the default.
+    // Finding no schemes is probably fine, unless of course one profile
+    //      references a scheme.  We could fail with come error saying the
+    //      profiles file is corrupted.
+    // Not having any profiles is also bad - should we say the file is corrupted?
+    //      Or should we just recreate the default profiles?
+
+    auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
+    if (auto schemes{ json[SCHEMES_KEY_2.data()] })
+    {
+        for (auto schemeJson : schemes)
+        {
+            if (schemeJson.isObject())
+            {
+                // auto schemeObj = schemeJson.GetObjectW();
+//                auto scheme = ColorScheme::FromJson2(schemeJson);
+                //resultSchemes.emplace_back(std::move(scheme));
+            }
+        }
+    }
+
+
+    // if (json.HasKey(PROFILES_KEY))
+    // {
+    //     auto profiles = json.GetNamedArray(PROFILES_KEY);
+    //     for (auto profileJson : profiles)
+    //     {
+    //         if (profileJson.ValueType() == JsonValueType::Object)
+    //         {
+    //             auto profileObj = profileJson.GetObjectW();
+    //             auto profile = Profile::FromJson(profileObj);
+    //             resultPtr->_profiles.emplace_back(std::move(profile));
+    //         }
+    //     }
+    // }
+
+    // // Load the keybindings from the file as well
+    // if (json.HasKey(KEYBINDINGS_KEY))
+    // {
+    //     const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
+    //     auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
+    //     resultPtr->_globals.SetKeybindings(loadedBindings);
+    // }
+    // else
+    // {
+    //     // Create the default keybindings if we couldn't find any keybindings.
+    //     resultPtr->_CreateDefaultKeybindings();
+    // }
+
+    return resultPtr;
+}
+
 
 // Function Description:
 // - Returns true if we're running in a packaged context. If we are, then we
