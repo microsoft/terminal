@@ -462,6 +462,15 @@ bool Profile::HasIcon() const noexcept
 }
 
 // Method Description:
+// - Sets this profile's icon path.
+// Arguments:
+// - path: the path
+void Profile::SetIconPath(const std::wstring_view& path) noexcept
+{
+    _icon.emplace(path);
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.

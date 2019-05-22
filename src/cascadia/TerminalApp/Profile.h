@@ -50,6 +50,7 @@ public:
 
     bool HasIcon() const noexcept;
     std::wstring_view GetIconPath() const noexcept;
+    void SetIconPath(const std::wstring_view& path) noexcept;
 
     bool GetCloseOnExit() const noexcept;
 
