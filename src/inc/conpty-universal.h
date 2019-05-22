@@ -92,8 +92,8 @@ HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
 
     RETURN_IF_NULL_ALLOC(currentEnvVars = ::GetEnvironmentStringsW());
 
-    // Block is guaranteed to be double-NULL terminated at a minimum.
-    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0';)
+    // Each entry is NULL-terminated; block is guaranteed to be double-NULL terminated at a minimum.
+    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
     {
         // Copy current entry into temporary map.
         const size_t cchEntry{ ::wcslen(lastCh) };
@@ -103,13 +103,12 @@ HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
         auto pos = entry.find_first_of(L"=", 0, 1);
         RETURN_HR_IF(E_UNEXPECTED, pos == std::wstring::npos);
 
-        std::wstring name{ lastCh, pos };
-        std::wstring value{ lastCh + pos + 1, cchEntry - pos - 1 };
+        std::wstring name{ entry.substr(0, pos) }; // portion before '='
+        std::wstring value{ entry.substr(pos + 1) }; // portion after '='
 
         // Don't replace entries that already exist.
         map.try_emplace(std::move(name), std::move(value));
-
-        lastCh += cchEntry + 1; // Each entry is NULL-terminated.
+        lastCh += cchEntry;
     }
 
     return S_OK;
