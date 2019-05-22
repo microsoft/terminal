@@ -200,7 +200,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"PowerShell");
 
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
@@ -211,7 +210,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
         pwshProfile.SetCommandline(psCoreCmdline);
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
-        pwshProfile.SetName(L"PowerShell Core");
 
         // If powershell core is installed, we'll use that as the default.
         // Otherwise, we'll use normal Windows Powershell as the default.
