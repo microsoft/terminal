@@ -44,11 +44,15 @@
 
 // WIL
 
+// ignore static analysis warnings in wil
+#pragma warning(push)
+#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 #include <wil/com.h>
+#pragma warning(pop)
 
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
