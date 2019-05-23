@@ -153,7 +153,7 @@ HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
 
     if (State.InputBuffer != nullptr)
     {
-        delete[] State.InputBuffer;
+        delete[] static_cast<BYTE*>(State.InputBuffer);
         State.InputBuffer = nullptr;
     }
 
@@ -170,7 +170,7 @@ HRESULT _CONSOLE_API_MSG::ReleaseMessageBuffers()
             LOG_IF_FAILED(_pDeviceComm->WriteOutput(&IoOperation));
         }
 
-        delete[] State.OutputBuffer;
+        delete[] static_cast<BYTE*>(State.OutputBuffer);
         State.OutputBuffer = nullptr;
     }
 

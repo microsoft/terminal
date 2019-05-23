@@ -326,7 +326,10 @@ unsigned int Utf8ToWideCharParser::_ParseFullRange(_In_reads_(cb) const byte* co
             LOG_LAST_ERROR();
             _currentState = _State::Error;
         }
-        _currentState = _State::Finished;
+        else 
+        {
+            _currentState = _State::Finished;
+        }
     }
     return bufferSize;
 }
@@ -505,5 +508,5 @@ void Utf8ToWideCharParser::_Reset()
 {
     _currentState = _State::Ready;
     _bytesStored = 0;
-    _convertedWideChars.release();
+    _convertedWideChars.reset(nullptr);
 }

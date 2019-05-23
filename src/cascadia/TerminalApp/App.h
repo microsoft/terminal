@@ -64,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
+        std::unique_ptr<TerminalApp::AppKeyBindings> _keyBindings;
 
         bool _loadedInitialSettings;
 
@@ -124,6 +125,8 @@ namespace winrt::TerminalApp::implementation
 
         void _CopyToClipboardHandler(const winrt::hstring& copiedData);
         void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
+
+        static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }
 

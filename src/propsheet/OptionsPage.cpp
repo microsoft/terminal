@@ -239,29 +239,32 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         else
         {
             const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-            switch (pshn->hdr.code) {
-                case PSN_APPLY:
-                    /*
-                     * Write out the state values and exit.
-                     */
-                    EndDlgPage(hDlg, !pshn->lParam);
-                    return TRUE;
+            if (lParam) 
+            {
+                switch (pshn->hdr.code) {
+                    case PSN_APPLY:
+                        /*
+                         * Write out the state values and exit.
+                         */
+                        EndDlgPage(hDlg, !pshn->lParam);
+                        return TRUE;
 
-                case PSN_SETACTIVE:
-                    ToggleV2OptionsControls(hDlg);
-                    return 0;
+                    case PSN_SETACTIVE:
+                        ToggleV2OptionsControls(hDlg);
+                        return 0;
 
-                case PSN_KILLACTIVE:
-                    /*
-                     * Fake the dialog proc into thinking the edit control just
-                     * lost focus so it'll update properly
-                     */
-                    Item = GetDlgCtrlID(GetFocus());
-                    if (Item)
-                    {
-                        SendMessage(hDlg, WM_COMMAND, MAKELONG(Item, EN_KILLFOCUS), 0);
-                    }
-                    return TRUE;
+                    case PSN_KILLACTIVE:
+                        /*
+                         * Fake the dialog proc into thinking the edit control just
+                         * lost focus so it'll update properly
+                         */
+                        Item = GetDlgCtrlID(GetFocus());
+                        if (Item)
+                        {
+                            SendMessage(hDlg, WM_COMMAND, MAKELONG(Item, EN_KILLFOCUS), 0);
+                        }
+                        return TRUE;
+                }
             }
         }
 
