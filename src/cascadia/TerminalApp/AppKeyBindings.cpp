@@ -5,6 +5,8 @@
 #include "AppKeyBindings.h"
 #include "KeyChordSerialization.h"
 
+#include "AppKeyBindings.g.cpp"
+
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
