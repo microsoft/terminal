@@ -187,7 +187,8 @@ namespace winrt::TerminalApp::implementation
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
-        if (!_dialogLock.try_lock())
+        std::unique_lock lock{ _dialogLock, std::try_to_lock };
+        if (!lock)
         {
             // Another dialog is visible.
             return;
@@ -210,8 +211,8 @@ namespace winrt::TerminalApp::implementation
         // Display the dialog.
         Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
-        // After the dialog is dismissed, release the dialog lock so another can be shown.
-        _dialogLock.unlock();
+        // After the dialog is dismissed, the dialog lock (held by `lock`) will
+        // be released so another can be shown.
     }
 
     // Method Description:
