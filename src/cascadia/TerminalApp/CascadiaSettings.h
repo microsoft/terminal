@@ -50,6 +50,8 @@ public:
     static winrt::hstring GetSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
+
+    void CreateDefaults();
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
@@ -58,7 +60,6 @@ private:
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
-    void _CreateDefaults();
 
     static bool _IsPackaged();
     static void _SaveAsPackagedApp(const winrt::hstring content);
