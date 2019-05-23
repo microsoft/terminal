@@ -178,40 +178,44 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 // - true iff we successfully set the cursor style
 bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
-    CursorType finalCursorType = CursorType::Legacy;
-    bool shouldBlink = false;
+    CursorType finalCursorType;
+    bool fShouldBlink;
 
     switch (cursorStyle)
     {
-    case DispatchTypes::CursorStyle::BlinkingBlock:
     case DispatchTypes::CursorStyle::BlinkingBlockDefault:
+        [[fallthrough]];
+    case DispatchTypes::CursorStyle::BlinkingBlock:
         finalCursorType = CursorType::FullBox;
-        shouldBlink = true;
+        fShouldBlink = true;
         break;
     case DispatchTypes::CursorStyle::SteadyBlock:
         finalCursorType = CursorType::FullBox;
-        shouldBlink = false;
+        fShouldBlink = false;
         break;
     case DispatchTypes::CursorStyle::BlinkingUnderline:
         finalCursorType = CursorType::Underscore;
-        shouldBlink = true;
+        fShouldBlink = true;
         break;
     case DispatchTypes::CursorStyle::SteadyUnderline:
         finalCursorType = CursorType::Underscore;
-        shouldBlink = false;
+        fShouldBlink = false;
         break;
     case DispatchTypes::CursorStyle::BlinkingBar:
         finalCursorType = CursorType::VerticalBar;
-        shouldBlink = true;
+        fShouldBlink = true;
         break;
     case DispatchTypes::CursorStyle::SteadyBar:
         finalCursorType = CursorType::VerticalBar;
-        shouldBlink = false;
+        fShouldBlink = false;
         break;
+    default:
+        finalCursorType = CursorType::Legacy;
+        fShouldBlink = false;
     }
 
     _buffer->GetCursor().SetType(finalCursorType);
-    _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
+    _buffer->GetCursor().SetBlinkingAllowed(fShouldBlink);
 
     return true;
 }
