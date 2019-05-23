@@ -41,13 +41,13 @@ RenderThread::~RenderThread()
     if (_hPaintEnabledEvent != INVALID_HANDLE_VALUE)
     {
         CloseHandle(_hPaintEnabledEvent);
-        _hEvent = INVALID_HANDLE_VALUE;
+        _hPaintEnabledEvent = INVALID_HANDLE_VALUE;
     }
 
     if (_hPaintCompletedEvent != INVALID_HANDLE_VALUE)
     {
         CloseHandle(_hPaintCompletedEvent);
-        _hEvent = INVALID_HANDLE_VALUE;
+        _hPaintCompletedEvent = INVALID_HANDLE_VALUE;
     }
 }
 

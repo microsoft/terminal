@@ -208,7 +208,7 @@ namespace Conhost.UIA.Tests
                         for (int i = 0; i < text.Count(); ++i)
                         {
                             string line = text.ElementAt(i);
-                            line.Trim(' ');
+                            line = line.Trim(' ');
                             if (!line.Equals(""))
                             {
                                 possiblePromptLines.Add(line);
