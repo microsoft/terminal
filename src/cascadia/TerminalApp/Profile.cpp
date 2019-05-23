@@ -643,7 +643,7 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const st
 // - imageStretchMode: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given ImageStretchMode
-std::wstring Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
+std::wstring_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
 {
     switch (imageStretchMode)
     {

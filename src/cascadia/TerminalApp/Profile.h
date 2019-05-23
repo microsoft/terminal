@@ -60,7 +60,7 @@ private:
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::wstring& imageStretchMode);
-    static std::wstring SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
+    static std::wstring_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
