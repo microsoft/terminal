@@ -29,7 +29,7 @@ public:
     [[nodiscard]]
     HRESULT SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const;
     [[nodiscard]]
-    HRESULT ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
+    HRESULT ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                    _Out_ CONSOLE_API_MSG* const pMessage) const;
     [[nodiscard]]
     HRESULT CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const;
