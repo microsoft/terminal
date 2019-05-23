@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings) :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), winrt::hstring(), 30, 80) },
+        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), winrt::hstring(), 30, 80, winrt::guid()) },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },
@@ -221,7 +221,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //     directory.
     void TermControl::_ApplyConnectionSettings()
     {
-        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80);
+        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80, winrt::guid());
     }
 
     TermControl::~TermControl()
@@ -278,14 +278,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
         const auto windowHeight = _swapChainPanel.ActualHeight();
 
-        _terminal = new ::Microsoft::Terminal::Core::Terminal();
+        _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
         auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
         // Stash a local pointer to the render thread, so we can enable it after
         //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
-        _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal, nullptr, 0, std::move(renderThread));
+        _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
 
         // Set up the DX Engine
@@ -565,13 +565,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
-
-                const auto fontSize = _actualFont.GetSize();
-
-                const COORD terminalPosition = {
-                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
-                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
-                };
+                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
                 // save location before rendering
                 _terminal->SetSelectionAnchor(terminalPosition);
@@ -627,13 +621,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
-
-                const auto fontSize = _actualFont.GetSize();
-
-                const COORD terminalPosition = {
-                    static_cast<SHORT>(cursorPosition.X / fontSize.X),
-                    static_cast<SHORT>(cursorPosition.Y / fontSize.Y)
-                };
+                const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
                 // save location (for rendering) + render
                 _terminal->SetEndSelectionPosition(terminalPosition);
@@ -1223,6 +1211,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
                              (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
                              (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
+    }
+
+    // Method Description:
+    // - Gets the corresponding viewport terminal position for the cursor
+    //    by excluding the padding and normalizing with the font size.
+    //    This is used for selection.
+    // Arguments:
+    // - cursorPosition: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    //    NOTE: origin (0,0) is top-left.
+    // Return Value:
+    // - the corresponding viewport terminal position for the given Point parameter
+    const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
+    {
+        // Exclude padding from cursor position calculation
+        COORD terminalPosition =
+        {
+            static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
+            static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
+        };
+        
+        const auto fontSize = _actualFont.GetSize();
+        FAIL_FAST_IF(fontSize.X == 0);
+        FAIL_FAST_IF(fontSize.Y == 0);
+        
+        // Normalize to terminal coordinates by using font size
+        terminalPosition.X /= fontSize.X;
+        terminalPosition.Y /= fontSize.Y;
+
+        return terminalPosition;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

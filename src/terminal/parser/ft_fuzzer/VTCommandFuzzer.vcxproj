@@ -10,7 +10,9 @@
   <ItemGroup>
     <ClInclude Include="fuzzing_directed.h" />
     <ClInclude Include="fuzzing_logic.h" />
+    <ClInclude Include="memallocator.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="string_helper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{96927B31-D6E8-4ABD-B03E-A5088A30BEBE}</ProjectGuid>

@@ -12,8 +12,8 @@
 #pragma once
 
 #include "fuzzing_directed.h"
+#include "string_helper.h"
 #ifdef __GENERATE_DIRECTED_FUZZING
-#include <atlstr.h>
 #include <strsafe.h>
 
 namespace fuzz
@@ -241,7 +241,7 @@ namespace fuzz
     // that does not require external modules or complex setup.  This should
     // make fuzzing easier to implement and test, as well as more explicit
     // with regard to what fuzzing manipulations are possible.
-    template <class _Alloc = CComAllocator>
+    template <class _Alloc = CFuzzCRTAllocator>
     class CFuzzLogic
     {
     public:
@@ -467,7 +467,7 @@ namespace fuzz
             { 1, [](DWORD) { return CFuzzChance::GetRandom<DWORD>(0xF); } }
         };
 
-        CStringA sFuzzed;
+        std::string sFuzzed;
         char *next_token = nullptr;
         char *token = strtok_s(psz, " ", &next_token);
         while (token)
@@ -475,7 +475,8 @@ namespace fuzz
             CFuzzType<DWORD> repeat(FUZZ_MAP(repeatMap), 1);
             for (DWORD i = 0; i < (DWORD)repeat; i++)
             {
-                sFuzzed.AppendFormat("%s ", token);
+                sFuzzed += token;
+                sFuzzed += " ";
             }
 
             token = strtok_s(nullptr, " ", &next_token);
@@ -484,7 +485,9 @@ namespace fuzz
         // If psz has a final trailing space, avoid trimming it away.  Otherwise, remove
         // the extra added final space appended via the loop above.
         size_t cch = strlen(psz);
-        return CFuzzLogic<>::DuplicateStringA(psz[cch] == ' ' ? sFuzzed.TrimRight() : sFuzzed);
+        if (psz[cch] == ' ')
+            TrimRight(sFuzzed, ' ');
+        return CFuzzLogic<>::DuplicateStringA(sFuzzed.c_str());
     }
 }
 #endif

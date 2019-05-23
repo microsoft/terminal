@@ -33,8 +33,8 @@ public:
     [[nodiscard]]
     HRESULT InitCategoryInstance();
 
-    inline ITfCategoryMgr* GetCategoryMgr() { return m_pcat; }
+    inline ITfCategoryMgr* GetCategoryMgr() { return m_pcat.get(); }
 
 private:
-    CComQIPtr<ITfCategoryMgr>          m_pcat;
+    wil::com_ptr_nothrow<ITfCategoryMgr>          m_pcat;
 };

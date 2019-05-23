@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
 
-        ::Microsoft::Terminal::Core::Terminal* _terminal;
+        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
@@ -125,6 +125,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
+        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };
 }
 
