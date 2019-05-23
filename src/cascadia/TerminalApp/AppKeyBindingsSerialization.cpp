@@ -133,5 +133,48 @@ Json::Value AppKeyBindingsSerialization::ToJson2(const winrt::TerminalApp::AppKe
 
 winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson2(const Json::Value& json)
 {
-    return nullptr;
+    winrt::TerminalApp::AppKeyBindings newBindings{};
+
+    for (const auto& value : json)
+    {
+        if (value.isObject())
+        {
+            const auto commandString = value[COMMAND_KEY_2.data()];
+            const auto keys = value[KEYS_KEY_2.data()];
+
+            if (commandString && keys)
+            {
+                if (!keys.isArray() || keys.size() != 1)
+                {
+                    continue;
+                }
+                const auto keyChordString = winrt::to_hstring(keys[0].asString());
+                ShortcutAction action;
+
+                // Try matching the command to one we have
+                auto found = commandNames.find(GetWstringFromJson(commandString));
+                if (found != commandNames.end())
+                {
+                    action = found->second;
+                }
+                else
+                {
+                    continue;
+                }
+
+                // Try parsing the chord
+                try
+                {
+                    auto chord = KeyChordSerialization::FromString(keyChordString);
+                    newBindings.SetKeyBinding(action, chord);
+                }
+                catch (...)
+                {
+                    continue;
+                }
+            }
+        }
+    }
+    return newBindings;
+
 }

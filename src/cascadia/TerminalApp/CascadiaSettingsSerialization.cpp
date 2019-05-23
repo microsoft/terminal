@@ -296,18 +296,17 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         }
     }
 
-    // // Load the keybindings from the file as well
-    // if (json.HasKey(KEYBINDINGS_KEY))
-    // {
-    //     const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
-    //     auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
-    //     resultPtr->_globals.SetKeybindings(loadedBindings);
-    // }
-    // else
-    // {
-    //     // Create the default keybindings if we couldn't find any keybindings.
-    //     resultPtr->_CreateDefaultKeybindings();
-    // }
+    // Load the keybindings from the file as well
+    if (auto keybindings{ json[KEYBINDINGS_KEY_2.data()] })
+    {
+        auto loadedBindings = AppKeyBindingsSerialization::FromJson2(keybindings);
+        resultPtr->_globals.SetKeybindings(loadedBindings);
+    }
+    else
+    {
+        // Create the default keybindings if we couldn't find any keybindings.
+        resultPtr->_CreateDefaultKeybindings();
+    }
 
     return resultPtr;
 }
