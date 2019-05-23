@@ -23,8 +23,6 @@ Notes:
 #include <windows.h>
 #include <ole2.h>
 
-#include <atlbase.h>        // ATL base
-
 extern "C"
 {
     #include <winuser.h>

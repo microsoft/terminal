@@ -216,11 +216,26 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
+        auto keyBindings = _settings->GetKeybindings();
+
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
+
+            // add the keyboard shortcuts for the first 9 profiles
+            if (profileIndex < 9)
+            {
+                // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
+                auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
+
+                // make sure we find one to display
+                if (profileKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
+                }
+            }
 
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
@@ -261,6 +276,12 @@ namespace winrt::TerminalApp::implementation
 
             settingsItem.Click({ this, &App::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
+
+            auto settingsKeyChord = keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            if (settingsKeyChord)
+            {
+                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+            }
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
@@ -413,7 +434,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void App::_ReloadSettings()
     {
-        _settings = CascadiaSettings::LoadAll();
+        _settings = CascadiaSettings::LoadAll(false);
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
         _HookupKeyBindings(_settings->GetKeybindings());
@@ -698,7 +719,7 @@ namespace winrt::TerminalApp::implementation
     //      Negative values of `delta` will move the view up by one page, and positive values
     //      will move the viewport down by one page.
     // Arguments:
-    // - delta: The direction to move the view relative to the current viewport(it 
+    // - delta: The direction to move the view relative to the current viewport(it
     //      is clamped between -1 and 1)
     void App::_ScrollPage(int delta)
     {
@@ -904,6 +925,40 @@ namespace winrt::TerminalApp::implementation
         else
         {
             return { nullptr };
+        }
+    }
+
+
+    // Method Description:
+    // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.
+    //   Takes into account a special case for an error condition for a comma
+    // Arguments:
+    // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
+    void App::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+    {
+        // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
+        if (keyChord.Vkey() != VK_OEM_COMMA)
+        {
+            // use the XAML shortcut to give us the automatic capabilities
+            auto menuShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+
+            // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
+            menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
+
+            // inspect the modifiers from the KeyChord and set the flags int he XAML value
+            auto modifiers = AppKeyBindings::ConvertVKModifiers(keyChord.Modifiers());
+
+            // add the modifiers to the shortcut
+            menuShortcut.Modifiers(modifiers);
+
+            // add to the menu
+            menuItem.KeyboardAccelerators().Append(menuShortcut);
+        }
+        else // we've got a comma, so need to just use the alternate method
+        {
+            // extract the modifier and key to a nice format
+            auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
+            menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
         }
     }
 

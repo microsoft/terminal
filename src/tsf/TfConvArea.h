@@ -31,7 +31,7 @@ class CConversionArea
 {
 public:
     [[nodiscard]]
-    HRESULT DrawComposition(const CComBSTR& CompStr,
+    HRESULT DrawComposition(const std::wstring_view CompStr,
                             const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
                             const DWORD CompCursorPos = -1);
 
@@ -39,7 +39,7 @@ public:
     HRESULT ClearComposition();
 
     [[nodiscard]]
-    HRESULT DrawResult(const CComBSTR& ResultStr);
+    HRESULT DrawResult(const std::wstring_view ResultStr);
 
 private:
     [[nodiscard]]

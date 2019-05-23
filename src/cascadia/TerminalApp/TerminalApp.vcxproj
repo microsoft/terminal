@@ -41,6 +41,7 @@
     <ClInclude Include="GlobalAppSettings.h" />
     <ClInclude Include="Profile.h" />
     <ClInclude Include="CascadiaSettings.h" />
+    <ClInclude Include="KeyChordSerialization.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
@@ -58,6 +59,7 @@
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

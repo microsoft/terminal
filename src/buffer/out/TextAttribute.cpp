@@ -238,8 +238,8 @@ void TextAttribute::SetDefaultBackground() noexcept
 }
 
 // Method Description:
-// - Returns true if this attribute indicates it's foreground is the "default"
-//      foreground. It's _rgbForeground will contain the actual value of the
+// - Returns true if this attribute indicates its foreground is the "default"
+//      foreground. Its _rgbForeground will contain the actual value of the
 //      default foreground. If the default colors are ever changed, this method
 //      should be used to identify attributes with the default fg value, and
 //      update them accordingly.
@@ -253,8 +253,8 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 }
 
 // Method Description:
-// - Returns true if this attribute indicates it's background is the "default"
-//      background. It's _rgbBackground will contain the actual value of the
+// - Returns true if this attribute indicates its background is the "default"
+//      background. Its _rgbBackground will contain the actual value of the
 //      default background. If the default colors are ever changed, this method
 //      should be used to identify attributes with the default bg value, and
 //      update them accordingly.

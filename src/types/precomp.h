@@ -17,15 +17,21 @@ Abstract:
 
 #pragma once
 
-// This includes support libraries from the CRT, STL, WIL, and GSL
-#include "LibraryIncludes.h"
-
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #endif
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 // Windows Header Files:
 #include <windows.h>
+#include <objbase.h>
+#include <bcrypt.h>
+
+// This includes support libraries from the CRT, STL, WIL, and GSL
+#include "LibraryIncludes.h"
 
 typedef long NTSTATUS;
 #define NT_SUCCESS(Status)  (((NTSTATUS)(Status)) >= 0)
