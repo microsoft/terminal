@@ -87,6 +87,6 @@ void Tab::Scroll(int delta)
 {
     _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
         const auto currentOffset = _control.GetScrollOffset();
-        _control.KeyBoardScrollViewport(currentOffset + delta);
+        _control.KeyboardScrollViewport(currentOffset + delta);
     });
 }

@@ -35,7 +35,7 @@ namespace Microsoft.Terminal.TerminalControl
         void Close();
 
         void ScrollViewport(Int32 viewTop);
-        void KeyBoardScrollViewport(Int32 viewTop);
+        void KeyboardScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
