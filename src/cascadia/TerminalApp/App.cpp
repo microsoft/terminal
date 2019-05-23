@@ -236,13 +236,7 @@ namespace winrt::TerminalApp::implementation
             if (profile.GetGuid() == defaultProfileGuid)
             {
                 // Contrast the default profile with others in font weight.
-
-                // The "bold" and "normal" font weights are 700 and 400 respectively,
-                // so we add 300 to get bold from normal.
-                // If the default font weight is higher, so is the accented one (but no higher than 999).
-                const uint16_t defaultFontWeight = profileMenuItem.FontWeight().Weight;
-                const uint16_t accentedFontWeight = gsl::narrow<uint16_t>(defaultFontWeight + 300u);
-                profileMenuItem.FontWeight({ std::min(gsl::narrow<uint16_t>(999u), accentedFontWeight) });
+                profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
