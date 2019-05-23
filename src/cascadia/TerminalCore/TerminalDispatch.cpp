@@ -70,3 +70,8 @@ bool TerminalDispatch::SetColorTableEntry(const size_t tableIndex,
 {
     return _terminalApi.SetColorTableEntry(tableIndex, dwColor);
 }
+
+bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
+{
+    return _terminalApi.SetCursorStyle(cursorStyle);
+}

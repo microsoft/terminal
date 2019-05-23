@@ -605,3 +605,9 @@ void Terminal::SetCursorVisible(const bool isVisible) noexcept
     auto& cursor = _buffer->GetCursor();
     cursor.SetIsVisible(isVisible);
 }
+
+bool Terminal::IsCursorBlinkingAllowed() const noexcept
+{
+    const auto& cursor = _buffer->GetCursor();
+    return cursor.IsBlinkingAllowed();
+}
