@@ -6,7 +6,7 @@
     </ClCompile>
     <Link>
       <ProgramDatabaseFile>$(OutDir)$(TargetName)FullPDB.pdb</ProgramDatabaseFile>
-      <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;uxtheme.lib;dwmapi.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>onecore_apiset.lib;dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;uxtheme.lib;dwmapi.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <!--
         There's a property that dictates which libraries are linked by default: MinimalCoreWin.
         When it's enabled, only a sparing few libraries are injected into Link.AdditionalDependencies.

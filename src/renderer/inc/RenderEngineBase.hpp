@@ -9,7 +9,7 @@ Abstract:
 - Implements a set of functions with common behavior across all render engines.
   For example, the behavior for setting the title. The title may change many
   times in the course of a single frame, but the RenderEngine should only
-  actually perform it's update operation if at the start of a frame, the new
+  actually perform its update operation if at the start of a frame, the new
   window title will be different then the last frames, and it should only ever
   update the title once per frame.
 

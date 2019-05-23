@@ -791,7 +791,7 @@ HRESULT DxEngine::_CopyFrontToBack() noexcept
 
 // Routine Description:
 // - Takes queued drawing information and presents it to the screen.
-// - This is separated out so it can be done outside the lock as it's expensive
+// - This is separated out so it can be done outside the lock as it's expensive.
 // Arguments:
 // - <none>
 // Return Value:

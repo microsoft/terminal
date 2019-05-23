@@ -1686,7 +1686,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
@@ -1698,7 +1698,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:

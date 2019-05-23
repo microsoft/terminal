@@ -32,7 +32,7 @@ void UnicodeStorage::StoreGlyph(const key_type key, const mapped_type& glyph)
 }
 
 // Routine Description:
-// - erases key and it's associated data from the storage
+// - erases key and its associated data from the storage
 // Arguments:
 // - key - the key to remove
 void UnicodeStorage::Erase(const key_type key) noexcept

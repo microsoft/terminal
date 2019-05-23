@@ -1277,7 +1277,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t wchIntermediate, 
 // Routine Description:
 // - Returns true if the engine should dispatch on the last charater of a string
 //      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist it's state across calls to
+//   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
@@ -1302,7 +1302,7 @@ bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
 }
 
 // Routine Description:
-// - Converts a hex character to it's equivalent integer value.
+// - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
 // - puiValue - recieves the int value of the char

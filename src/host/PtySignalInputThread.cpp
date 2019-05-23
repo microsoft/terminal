@@ -51,7 +51,7 @@ PtySignalInputThread::~PtySignalInputThread()
 // - lpParameter - A pointer to the PtySignalInputTHread instance that should be called.
 // Return Value:
 // - The return value of the underlying instance's _InputThread
-DWORD PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
+DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 {
     PtySignalInputThread* const pInstance = reinterpret_cast<PtySignalInputThread*>(lpParameter);
     return pInstance->_InputThread();
@@ -175,7 +175,7 @@ HRESULT PtySignalInputThread::Start() noexcept
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)PtySignalInputThread::StaticThreadProc,
+                           PtySignalInputThread::StaticThreadProc,
                            this,
                            0,
                            &dwThreadId);

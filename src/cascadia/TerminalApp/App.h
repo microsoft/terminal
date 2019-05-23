@@ -64,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
+        std::unique_ptr<TerminalApp::AppKeyBindings> _keyBindings;
 
         bool _loadedInitialSettings;
 
@@ -111,6 +112,7 @@ namespace winrt::TerminalApp::implementation
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
+        static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }
 

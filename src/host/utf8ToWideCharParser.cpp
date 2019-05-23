@@ -505,5 +505,5 @@ void Utf8ToWideCharParser::_Reset()
 {
     _currentState = _State::Ready;
     _bytesStored = 0;
-    _convertedWideChars.release();
+    _convertedWideChars.reset(nullptr);
 }

@@ -107,7 +107,7 @@ bool MouseInput::s_IsButtonDown(const unsigned int uiButton)
 }
 
 // Routine Description:
-// - translates the input windows mouse message into it's equivalent X11 encoding.
+// - translates the input windows mouse message into its equivalent X11 encoding.
 // X Button Encoding:
 // |7|6|5|4|3|2|1|0|
 // | |W|H|M|C|S|B|B|
@@ -178,7 +178,7 @@ int MouseInput::s_WindowsButtonToXEncoding(const unsigned int uiButton,
 
 
 // Routine Description:
-// - translates the input windows mouse message into it's equivalent SGR encoding.
+// - translates the input windows mouse message into its equivalent SGR encoding.
 // This is nearly identical to the X encoding, with an important difference.
 //      The button is always encoded as 0, 1, 2.
 //      3 is reserved for mouse hovers with _no_ buttons pressed.
