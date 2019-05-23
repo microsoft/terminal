@@ -52,6 +52,8 @@ public:
 
     winrt::Windows::Data::Json::JsonObject ToJson() const;
     static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson2() const;
+    static GlobalAppSettings FromJson2(Json::Value json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 

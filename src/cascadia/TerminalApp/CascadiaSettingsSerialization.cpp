@@ -4,12 +4,12 @@
 #include "pch.h"
 #include <argb.h>
 #include "CascadiaSettings.h"
+#include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 #include <shlobj.h>
-#include "AppKeyBindingsSerialization.h"
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -29,6 +29,7 @@ static const std::wstring SCHEMES_KEY{ L"schemes" };
 
 static constexpr std::string_view PROFILES_KEY_2{ "profiles" };
 static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
+static constexpr std::string_view GLOBALS_KEY_2{ "globals" };
 static constexpr std::string_view SCHEMES_KEY_2{ "schemes" };
 
 // Method Description:
@@ -53,11 +54,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        // // If Parse fails, it'll throw a hresult_error
-        // JsonObject root = JsonObject::Parse(actualData);
-        // resultPtr = FromJson(root);
-
-//        Json::Reader reader;
         Json::Value root;
         Json::CharReader* reader = Json::CharReaderBuilder::CharReaderBuilder().newCharReader();
         auto raw = winrt::to_string(actualData);
@@ -68,13 +64,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         if (!b) throw winrt::hresult_error();
         resultPtr = FromJson2(root);
 
-        //  Update profile only if it has changed.
         if (saveOnLoad)
         {
-            const JsonObject json = resultPtr->ToJson();
-            auto serializedSettings = json.Stringify();
-
-            if (actualData != serializedSettings)
+            // Logically compare the json we've parsed from the file to what
+            // we'd serialize at runtime. If the values are different, then
+            // write the updated schema back out.
+            const Json::Value reserialized = resultPtr->ToJson2();
+            if (reserialized != root)
             {
                 resultPtr->SaveAll();
             }
@@ -109,15 +105,15 @@ void CascadiaSettings::SaveAll() const
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
-    const auto s = Json::writeString(wbuilder, json2);
+    const auto s = winrt::to_hstring(Json::writeString(wbuilder, json2));
 
     if (_IsPackaged())
     {
-        _SaveAsPackagedApp(serializedSettings);
+        _SaveAsPackagedApp(s);
     }
     else
     {
-        _SaveAsUnpackagedApp(serializedSettings);
+        _SaveAsUnpackagedApp(s);
     }
 }
 
@@ -176,9 +172,9 @@ Json::Value CascadiaSettings::ToJson2() const
         schemesArray.append(scheme.ToJson2());
     }
 
+    root[GLOBALS_KEY_2.data()] = _globals.ToJson2();
     root[PROFILES_KEY_2.data()] = profilesArray;
     root[SCHEMES_KEY_2.data()] = schemesArray;
-    root[KEYBINDINGS_KEY_2.data()] = AppKeyBindingsSerialization::ToJson2(_globals.GetKeybindings());
 
     return root;
 }
@@ -260,7 +256,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    // resultPtr->_globals = GlobalAppSettings::FromJson(json);
+    if (auto globals{ json[GLOBALS_KEY_2.data()] })
+    {
+        if (globals.isObject())
+        {
+            resultPtr->_globals = GlobalAppSettings::FromJson2(globals);
+        }
+    }
+    else
+    {
+        // If there's no globals key in the root object, then try looking at the
+        // root object for those properties instead, to gracefully upgrade.
+        // This will attempt to do the legacy keybindings loading too
+        resultPtr->_globals = GlobalAppSettings::FromJson2(json);
+
+        // If we didn't find keybindings in the legacy path, then they probably
+        // don't exist in the file. Create the default keybindings if we
+        // couldn't find any keybindings.
+        auto keybindings{ json[KEYBINDINGS_KEY_2.data()] };
+        if (!keybindings)
+        {
+            resultPtr->_CreateDefaultKeybindings();
+        }
+    }
 
     // TODO:MSFT:20737698 - Display an error if we failed to parse settings
     // What should we do here if these keys aren't found?For default profile,
@@ -296,17 +314,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         }
     }
 
-    // Load the keybindings from the file as well
-    if (auto keybindings{ json[KEYBINDINGS_KEY_2.data()] })
-    {
-        auto loadedBindings = AppKeyBindingsSerialization::FromJson2(keybindings);
-        resultPtr->_globals.SetKeybindings(loadedBindings);
-    }
-    else
-    {
-        // Create the default keybindings if we couldn't find any keybindings.
-        resultPtr->_CreateDefaultKeybindings();
-    }
 
     return resultPtr;
 }

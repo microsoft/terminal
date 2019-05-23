@@ -5,6 +5,8 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "AppKeyBindingsSerialization.h"
+#include "Utils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -19,8 +21,18 @@ static const std::wstring INITIALROWS_KEY{ L"initialRows" };
 static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
 static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
 static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
-
 static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
+
+////////////////////////////////////////////////////////////////////////////////
+static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
+static constexpr std::string_view DEFAULTPROFILE_KEY_2{ "defaultProfile" };
+static constexpr std::string_view ALWAYS_SHOW_TABS_KEY_2{ "alwaysShowTabs" };
+static constexpr std::string_view INITIALROWS_KEY_2{ "initialRows" };
+static constexpr std::string_view INITIALCOLS_KEY_2{ "initialCols" };
+static constexpr std::string_view SHOW_TITLE_IN_TITLEBAR_KEY_2{ "showTerminalTitleInTitlebar" };
+static constexpr std::string_view REQUESTED_THEME_KEY_2{ "requestedTheme" };
+static constexpr std::string_view SHOW_TABS_IN_TITLEBAR_KEY_2{ "experimental_showTabsInTitlebar" };
+////////////////////////////////////////////////////////////////////////////////
 
 static const std::wstring LIGHT_THEME_VALUE{ L"light" };
 static const std::wstring DARK_THEME_VALUE{ L"dark" };
@@ -213,6 +225,82 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
 
     return result;
 }
+
+
+// Method Description:
+// - Serialize this object to a JsonObject.
+// Arguments:
+// - <none>
+// Return Value:
+// - a JsonObject which is an equivalent serialization of this object.
+Json::Value GlobalAppSettings::ToJson2() const
+{
+    Json::Value jsonObject;
+
+    jsonObject[DEFAULTPROFILE_KEY_2.data()] = winrt::to_string(Utils::GuidToString(_defaultProfile));
+    jsonObject[INITIALROWS_KEY_2.data()] = _initialRows;
+    jsonObject[INITIALCOLS_KEY_2.data()] = _initialCols;
+    jsonObject[ALWAYS_SHOW_TABS_KEY_2.data()] = _alwaysShowTabs;
+    jsonObject[SHOW_TITLE_IN_TITLEBAR_KEY_2.data()] = _showTitleInTitlebar;
+    jsonObject[SHOW_TABS_IN_TITLEBAR_KEY_2.data()] = _showTabsInTitlebar;
+    jsonObject[REQUESTED_THEME_KEY_2.data()] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[KEYBINDINGS_KEY_2.data()] = AppKeyBindingsSerialization::ToJson2(_keybindings);
+
+    return jsonObject;
+}
+
+// Method Description:
+// - Create a new instance of this class from a serialized JsonObject.
+// Arguments:
+// - json: an object which should be a serialization of a GlobalAppSettings object.
+// Return Value:
+// - a new GlobalAppSettings instance created from the values in `json`
+GlobalAppSettings GlobalAppSettings::FromJson2(Json::Value json)
+{
+    GlobalAppSettings result{};
+
+    if (auto defaultProfile{ json[DEFAULTPROFILE_KEY_2.data()] })
+    {
+        auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
+        result._defaultProfile = guid;
+    }
+
+    if (auto alwaysShowTabs{ json[ALWAYS_SHOW_TABS_KEY_2.data()] })
+    {
+        result._alwaysShowTabs = alwaysShowTabs.asBool();
+    }
+    if (auto initialRows{ json[INITIALROWS_KEY_2.data()] })
+    {
+        result._initialRows = initialRows.asInt();
+    }
+    if (auto initialCols{ json[INITIALCOLS_KEY_2.data()] })
+    {
+        result._initialCols = initialCols.asInt();
+    }
+
+    if (auto showTitleInTitlebar{ json[SHOW_TITLE_IN_TITLEBAR_KEY_2.data()] })
+    {
+        result._showTitleInTitlebar = showTitleInTitlebar.asBool();
+    }
+
+    if (auto showTabsInTitlebar{ json[SHOW_TABS_IN_TITLEBAR_KEY_2.data()] })
+    {
+        result._showTabsInTitlebar = showTabsInTitlebar.asBool();
+    }
+
+    if (auto requestedTheme{ json[REQUESTED_THEME_KEY_2.data()] })
+    {
+        result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+    }
+
+    if (auto keybindings{ json[KEYBINDINGS_KEY_2.data()] })
+    {
+        result._keybindings = AppKeyBindingsSerialization::FromJson2(keybindings);
+    }
+
+    return result;
+}
+
 
 // Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
