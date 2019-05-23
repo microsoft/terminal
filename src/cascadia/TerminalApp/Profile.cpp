@@ -51,10 +51,10 @@ static constexpr std::wstring_view CURSORSHAPE_FILLEDBOX{ L"filledBox" };
 static constexpr std::wstring_view CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
 // Possible values for Image Stretch Mode
-static const std::wstring IMAGESTRETCHMODE_NONE{ L"none" };
-static const std::wstring IMAGESTRETCHMODE_FILL{ L"fill" };
-static const std::wstring IMAGESTRETCHMODE_UNIFORM{ L"uniform" };
-static const std::wstring IMAGESTRETCHMODE_UNIFORMTOFILL{ L"uniformToFill" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_NONE{ L"none" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_FILL{ L"fill" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_UNIFORM{ L"uniform" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_UNIFORMTOFILL{ L"uniformToFill" };
 
 Profile::Profile() :
     Profile(Utils::CreateGuid())
