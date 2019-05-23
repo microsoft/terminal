@@ -10,6 +10,8 @@
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
+#include "TermControl.g.cpp"
+
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
@@ -908,6 +910,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
+        if (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible())
+        {
+            return;
+        }
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
@@ -1034,6 +1040,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::ScrollViewport(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
+    }
+
+    // Method Description:
+    // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
+    // Arguments:
+    // - viewTop: the viewTop to scroll to
+    // The difference between this function and ScrollViewport is that this one also 
+    // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
+    // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
+    void TermControl::KeyboardScrollViewport(int viewTop)
+    {
+        _terminal->UserScrollViewport(viewTop);
+        _lastScrollOffset = std::nullopt;
+        _scrollBar.Value(static_cast<int>(viewTop));
     }
 
     int TermControl::GetScrollOffset()

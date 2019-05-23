@@ -375,20 +375,23 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
             else
             {
                 const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-                switch (pshn->hdr.code) {
-                    case PSN_APPLY:
-                        EndDlgPage(hDlg, !pshn->lParam);
-                        return TRUE;
-                    case PSN_KILLACTIVE:
-                    {
-                        // Fake the dialog proc into thinking the edit control just
-                        // lost focus so it'll update properly
-                        int item = GetDlgCtrlID(GetFocus());
-                        if (item)
+                if (lParam) 
+                {
+                    switch (pshn->hdr.code) {
+                        case PSN_APPLY:
+                            EndDlgPage(hDlg, !pshn->lParam);
+                            return TRUE;
+                        case PSN_KILLACTIVE:
                         {
-                            SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                            // Fake the dialog proc into thinking the edit control just
+                            // lost focus so it'll update properly
+                            int item = GetDlgCtrlID(GetFocus());
+                            if (item)
+                            {
+                                SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                            }
+                            return TRUE;
                         }
-                        return TRUE;
                     }
                 }
 

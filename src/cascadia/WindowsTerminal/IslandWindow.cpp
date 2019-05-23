@@ -197,3 +197,4 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
 }
+
