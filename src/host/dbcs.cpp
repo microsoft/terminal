@@ -12,6 +12,7 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:

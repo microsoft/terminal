@@ -22,7 +22,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-
+using namespace Microsoft::Console::Interactivity;
 #include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 

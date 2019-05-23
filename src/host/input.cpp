@@ -15,7 +15,7 @@
 #pragma hdrstop
 
 #define KEY_ENHANCED 0x01000000
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 bool IsInProcessedInputMode()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

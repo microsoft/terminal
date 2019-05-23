@@ -9,7 +9,7 @@
 #include "srvinit.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 #pragma hdrstop
 
 #define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, (x)), RTL_FIELD_SIZE(Settings, (x))

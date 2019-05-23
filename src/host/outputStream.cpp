@@ -10,7 +10,7 @@
 #include "directio.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 #pragma hdrstop
 using namespace Microsoft::Console;
 

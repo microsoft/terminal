@@ -4,6 +4,8 @@
 #include "precomp.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
+using WEX::Logging::Log;
+using namespace WEX::Common;
 
 // This class is intended to test boundary conditions for:
 // SetConsoleActiveScreenBuffer
@@ -38,7 +40,7 @@ void BufferTests::TestSetConsoleActiveScreenBufferInvalid()
 void BufferTests::TestWritingInactiveScreenBuffer()
 {
     bool useVtOutput;
-    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"UseVtOutput", useVtOutput), L"Get whether this test should check VT output mode.");
+    VERIFY_SUCCEEDED_RETURN(WEX::TestExecution::TestData::TryGetValue(L"UseVtOutput", useVtOutput), L"Get whether this test should check VT output mode.");
 
     const std::wstring primary(L"You should see me");
     const std::wstring alternative(L"You should NOT see me!");

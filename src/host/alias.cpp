@@ -21,6 +21,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 struct case_insensitive_hash
 {

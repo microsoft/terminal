@@ -11,6 +11,9 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "..\types\inc\convert.hpp"
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::VtIo;
+
 CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     // ProcessHandleList initializes itself
     pInputBuffer(nullptr),

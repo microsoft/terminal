@@ -2,7 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
+using namespace WEX::TestExecution;
+using WEX::Logging::Log;
+using namespace WEX::Common;
 // This class is intended to test:
 // GetConsoleScreenBufferInfo
 // GetConsoleScreenBufferInfoEx

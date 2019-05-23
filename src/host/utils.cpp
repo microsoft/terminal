@@ -8,6 +8,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #include "srvinit.h"
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
 {

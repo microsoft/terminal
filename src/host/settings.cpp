@@ -6,7 +6,7 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "../types/inc/utils.hpp"
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 #pragma hdrstop
 
 #define DEFAULT_NUMBER_OF_COMMANDS 25

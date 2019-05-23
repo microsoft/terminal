@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
+using WEX::Logging::Log;
 // This class is intended to test restrictions placed on APIs from within a UWP application context
 class PolicyTests
 {

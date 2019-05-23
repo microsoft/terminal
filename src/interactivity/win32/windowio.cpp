@@ -23,7 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.

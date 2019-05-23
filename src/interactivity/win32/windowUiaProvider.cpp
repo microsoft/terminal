@@ -391,7 +391,7 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     return S_OK;
 }
 
-IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
+Microsoft::Console::Interactivity::IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
 {
-    return ServiceLocator::LocateConsoleWindow();
+    return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow();
 }

@@ -19,6 +19,8 @@
 
 #include "../types/inc/convert.hpp"
 
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 #pragma hdrstop
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;

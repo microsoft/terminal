@@ -2,6 +2,9 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
 
 static const COORD c_coordZero = {0,0};
 

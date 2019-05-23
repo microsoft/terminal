@@ -16,7 +16,7 @@
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
-
+using namespace Microsoft::Console::Interactivity;
 // This routine figures out what parameters to pass to CreateScreenBuffer based on the data from STARTUPINFO and the
 // registry defaults, and then calls CreateScreenBuffer.
 [[nodiscard]]

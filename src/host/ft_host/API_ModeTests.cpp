@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
+using namespace WEX::Logging;
 // This class is intended to test:
 // GetConsoleMode
 // SetConsoleMode

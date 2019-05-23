@@ -21,7 +21,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Creates an object representing an interactive popup overlay during cooked mode command line editing.
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)

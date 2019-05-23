@@ -25,7 +25,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine is called when the user changes the screen/popup colors.
 // - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.

@@ -21,7 +21,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
+using namespace Microsoft::Console::Interactivity;
 // The following mask is used to test for valid text attributes.
 #define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 

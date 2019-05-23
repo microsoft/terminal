@@ -2,7 +2,8 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
+using WEX::Logging::Log;
+using namespace WEX::Common;
 // This class is intended to test:
 // GetConsoleTitle
 class TitleTests
