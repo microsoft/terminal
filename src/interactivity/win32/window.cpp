@@ -1191,6 +1191,7 @@ void Window::s_ReinitializeFontsForDPIChange()
     gci.GetActiveOutputBuffer().RefreshFontWithRenderer();
 }
 
+[[nodiscard]]
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                       const BOOL fAutoPos,
                                       const Window* const pWindow)
@@ -1257,6 +1258,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     return Status;
 }
 
+[[nodiscard]]
 LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
 {
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;

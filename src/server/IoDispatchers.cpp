@@ -174,7 +174,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     // ConsoleApp will be false in the AttachConsole case.
     if (Cac.ConsoleApp)
     {
-        ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId);
+        // Failure to notify is not fatal.
+        (void)ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId);
     }
 
     ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleStartApplicationEvent(dwProcessId);

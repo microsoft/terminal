@@ -105,7 +105,7 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
 [[nodiscard]]
-HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, const HANDLE SignalHandle)
+HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
 
