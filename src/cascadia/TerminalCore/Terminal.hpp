@@ -71,7 +71,7 @@ public:
     bool EraseCharacters(const unsigned int numChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
     bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
-    bool SetCursorStyle(const Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
+    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
     #pragma endregion
 
     #pragma region ITerminalInput
@@ -115,7 +115,7 @@ public:
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
 
     void SetCursorVisible(const bool isVisible) noexcept;
-    bool IsCursorBlinkingAllowed() noexcept;
+    bool IsCursorBlinkingAllowed() const noexcept;
 
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
