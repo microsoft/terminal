@@ -10,6 +10,9 @@
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 
+static constexpr std::string_view KEYS_KEY_2{ "keys" };
+static constexpr std::string_view COMMAND_KEY_2{ "command" };
+
 static constexpr std::wstring_view COPYTEXT_KEY{ L"copy" };
 static constexpr std::wstring_view PASTETEXT_KEY{ L"paste" };
 static constexpr std::wstring_view NEWTAB_KEY{ L"newTab" };
@@ -81,8 +84,6 @@ static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { SWITCHTOTAB7_KEY, ShortcutAction::SwitchToTab7 },
     { SWITCHTOTAB8_KEY, ShortcutAction::SwitchToTab8 },
 };
-static constexpr std::string_view KEYS_KEY_2{ "keys" };
-static constexpr std::string_view COMMAND_KEY_2{ "command" };
 
 // Function Description:
 // - Small helper to insert a given KeyChord, ShortcutAction pair into the
@@ -111,7 +112,7 @@ static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
     bindingsArray.append(jsonObject);
 }
 
-Json::Value AppKeyBindingsSerialization::ToJson2(const winrt::TerminalApp::AppKeyBindings& bindings)
+Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKeyBindings& bindings)
 {
     Json::Value bindingsArray;
 
@@ -131,7 +132,7 @@ Json::Value AppKeyBindingsSerialization::ToJson2(const winrt::TerminalApp::AppKe
     return bindingsArray;
 }
 
-winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson2(const Json::Value& json)
+winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const Json::Value& json)
 {
     winrt::TerminalApp::AppKeyBindings newBindings{};
 

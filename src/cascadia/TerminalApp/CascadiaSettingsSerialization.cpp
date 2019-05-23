@@ -22,11 +22,6 @@ using namespace ::Microsoft::Console;
 static const std::wstring FILENAME { L"profiles.json" };
 static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring PROFILES_KEY{ L"profiles" };
-static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-static const std::wstring SCHEMES_KEY{ L"schemes" };
-
-
 static constexpr std::string_view PROFILES_KEY_2{ "profiles" };
 static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
 static constexpr std::string_view GLOBALS_KEY_2{ "globals" };
@@ -62,14 +57,14 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // TODO: need better error. `reader` might have the exception in a
         // better format.
         if (!b) throw winrt::hresult_error();
-        resultPtr = FromJson2(root);
+        resultPtr = FromJson(root);
 
         if (saveOnLoad)
         {
             // Logically compare the json we've parsed from the file to what
             // we'd serialize at runtime. If the values are different, then
             // write the updated schema back out.
-            const Json::Value reserialized = resultPtr->ToJson2();
+            const Json::Value reserialized = resultPtr->ToJson();
             if (reserialized != root)
             {
                 resultPtr->SaveAll();
@@ -98,10 +93,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 // - <none>
 void CascadiaSettings::SaveAll() const
 {
-    const JsonObject json = ToJson();
-    auto serializedSettings = json.Stringify();
-
-    const auto json2 = ToJson2();
+    const auto json2 = ToJson();
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
@@ -123,35 +115,7 @@ void CascadiaSettings::SaveAll() const
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject CascadiaSettings::ToJson() const
-{
-    // _globals.ToJson will initialize the settings object will all the global
-    // settings in the root of the object.
-    winrt::Windows::Data::Json::JsonObject jsonObject = _globals.ToJson();
-
-    JsonArray schemesArray{};
-    const auto& colorSchemes = _globals.GetColorSchemes();
-    for (auto& scheme : colorSchemes)
-    {
-        schemesArray.Append(scheme.ToJson());
-    }
-
-    JsonArray profilesArray{};
-    for (auto& profile : _profiles)
-    {
-        profilesArray.Append(profile.ToJson());
-    }
-
-    jsonObject.Insert(PROFILES_KEY, profilesArray);
-    jsonObject.Insert(SCHEMES_KEY, schemesArray);
-
-    jsonObject.Insert(KEYBINDINGS_KEY,
-                      _globals.GetKeybindings().ToJson());
-
-    return jsonObject;
-}
-
-Json::Value CascadiaSettings::ToJson2() const
+Json::Value CascadiaSettings::ToJson() const
 {
     Json::Value root;
     // TODO: Globals
@@ -162,17 +126,17 @@ Json::Value CascadiaSettings::ToJson2() const
     Json::Value profilesArray;
     for (const auto& profile : _profiles)
     {
-        profilesArray.append(profile.ToJson2());
+        profilesArray.append(profile.ToJson());
     }
 
     Json::Value schemesArray;
     const auto& colorSchemes = _globals.GetColorSchemes();
     for (auto& scheme : colorSchemes)
     {
-        schemesArray.append(scheme.ToJson2());
+        schemesArray.append(scheme.ToJson());
     }
 
-    root[GLOBALS_KEY_2.data()] = _globals.ToJson2();
+    root[GLOBALS_KEY_2.data()] = _globals.ToJson();
     root[PROFILES_KEY_2.data()] = profilesArray;
     root[SCHEMES_KEY_2.data()] = schemesArray;
 
@@ -185,74 +149,7 @@ Json::Value CascadiaSettings::ToJson2() const
 // - json: an object which should be a serialization of a CascadiaSettings object.
 // Return Value:
 // - a new CascadiaSettings instance created from the values in `json`
-std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
-{
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
-
-    resultPtr->_globals = GlobalAppSettings::FromJson(json);
-
-    // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-    // What should we do here if these keys aren't found?For default profile,
-    //      we could always pick the first  profile and just set that as the default.
-    // Finding no schemes is probably fine, unless of course one profile
-    //      references a scheme.  We could fail with come error saying the
-    //      profiles file is corrupted.
-    // Not having any profiles is also bad - should we say the file is corrupted?
-    //      Or should we just recreate the default profiles?
-
-    auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
-    if (json.HasKey(SCHEMES_KEY))
-    {
-        auto schemes = json.GetNamedArray(SCHEMES_KEY);
-        for (auto schemeJson : schemes)
-        {
-            if (schemeJson.ValueType() == JsonValueType::Object)
-            {
-                auto schemeObj = schemeJson.GetObjectW();
-                auto scheme = ColorScheme::FromJson(schemeObj);
-                resultSchemes.emplace_back(std::move(scheme));
-            }
-        }
-    }
-
-    if (json.HasKey(PROFILES_KEY))
-    {
-        auto profiles = json.GetNamedArray(PROFILES_KEY);
-        for (auto profileJson : profiles)
-        {
-            if (profileJson.ValueType() == JsonValueType::Object)
-            {
-                auto profileObj = profileJson.GetObjectW();
-                auto profile = Profile::FromJson(profileObj);
-                resultPtr->_profiles.emplace_back(std::move(profile));
-            }
-        }
-    }
-
-    // Load the keybindings from the file as well
-    if (json.HasKey(KEYBINDINGS_KEY))
-    {
-        const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
-        auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
-        resultPtr->_globals.SetKeybindings(loadedBindings);
-    }
-    else
-    {
-        // Create the default keybindings if we couldn't find any keybindings.
-        resultPtr->_CreateDefaultKeybindings();
-    }
-
-    return resultPtr;
-}
-
-
-// Method Description:
-// - Create a new instance of this class from a serialized JsonObject.
-// Arguments:
-// - json: an object which should be a serialization of a CascadiaSettings object.
-// Return Value:
-// - a new CascadiaSettings instance created from the values in `json`
-std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value& json)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
@@ -260,7 +157,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
     {
         if (globals.isObject())
         {
-            resultPtr->_globals = GlobalAppSettings::FromJson2(globals);
+            resultPtr->_globals = GlobalAppSettings::FromJson(globals);
         }
     }
     else
@@ -268,7 +165,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         // If there's no globals key in the root object, then try looking at the
         // root object for those properties instead, to gracefully upgrade.
         // This will attempt to do the legacy keybindings loading too
-        resultPtr->_globals = GlobalAppSettings::FromJson2(json);
+        resultPtr->_globals = GlobalAppSettings::FromJson(json);
 
         // If we didn't find keybindings in the legacy path, then they probably
         // don't exist in the file. Create the default keybindings if we
@@ -296,7 +193,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         {
             if (schemeJson.isObject())
             {
-                auto scheme = ColorScheme::FromJson2(schemeJson);
+                auto scheme = ColorScheme::FromJson(schemeJson);
                 resultSchemes.emplace_back(std::move(scheme));
             }
         }
@@ -308,16 +205,14 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson2(const Json::Value&
         {
             if (profileJson.isObject())
             {
-                auto profile = Profile::FromJson2(profileJson);
+                auto profile = Profile::FromJson(profileJson);
                 resultPtr->_profiles.emplace_back(profile);
             }
         }
     }
 
-
     return resultPtr;
 }
-
 
 // Function Description:
 // - Returns true if we're running in a packaged context. If we are, then we

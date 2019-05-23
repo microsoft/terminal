@@ -7,6 +7,6 @@
 class AppKeyBindingsSerialization final
 {
 public:
-    static winrt::TerminalApp::AppKeyBindings FromJson2(const Json::Value& json);
-    static Json::Value ToJson2(const winrt::TerminalApp::AppKeyBindings& bindings);
+    static winrt::TerminalApp::AppKeyBindings FromJson(const Json::Value& json);
+    static Json::Value ToJson(const winrt::TerminalApp::AppKeyBindings& bindings);
 };

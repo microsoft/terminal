@@ -15,15 +15,6 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
-static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
-static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-static const std::wstring INITIALROWS_KEY{ L"initialRows" };
-static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
-static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
-static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
-static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
-
-////////////////////////////////////////////////////////////////////////////////
 static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
 static constexpr std::string_view DEFAULTPROFILE_KEY_2{ "defaultProfile" };
 static constexpr std::string_view ALWAYS_SHOW_TABS_KEY_2{ "alwaysShowTabs" };
@@ -32,7 +23,6 @@ static constexpr std::string_view INITIALCOLS_KEY_2{ "initialCols" };
 static constexpr std::string_view SHOW_TITLE_IN_TITLEBAR_KEY_2{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view REQUESTED_THEME_KEY_2{ "requestedTheme" };
 static constexpr std::string_view SHOW_TABS_IN_TITLEBAR_KEY_2{ "experimental_showTabsInTitlebar" };
-////////////////////////////////////////////////////////////////////////////////
 
 static const std::wstring LIGHT_THEME_VALUE{ L"light" };
 static const std::wstring DARK_THEME_VALUE{ L"dark" };
@@ -149,91 +139,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject GlobalAppSettings::ToJson() const
-{
-    winrt::Windows::Data::Json::JsonObject jsonObject;
-
-    const auto guidStr = Utils::GuidToString(_defaultProfile);
-    const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
-    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
-    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
-
-    jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
-    jsonObject.Insert(INITIALROWS_KEY, initialRows);
-    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
-    jsonObject.Insert(ALWAYS_SHOW_TABS_KEY,
-                      JsonValue::CreateBooleanValue(_alwaysShowTabs));
-    jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTitleInTitlebar));
-
-    jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-    jsonObject.Insert(REQUESTED_THEME_KEY,
-                      JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
-
-    // We'll add the keybindings later in CascadiaSettings, because if we do it
-    // here, they'll appear before the profiles.
-
-    return jsonObject;
-}
-
-// Method Description:
-// - Create a new instance of this class from a serialized JsonObject.
-// Arguments:
-// - json: an object which should be a serialization of a GlobalAppSettings object.
-// Return Value:
-// - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonObject json)
-{
-    GlobalAppSettings result{};
-
-    if (json.HasKey(DEFAULTPROFILE_KEY))
-    {
-        auto guidString = json.GetNamedString(DEFAULTPROFILE_KEY);
-        auto guid = Utils::GuidFromString(guidString.c_str());
-        result._defaultProfile = guid;
-    }
-
-    if (json.HasKey(ALWAYS_SHOW_TABS_KEY))
-    {
-        result._alwaysShowTabs = json.GetNamedBoolean(ALWAYS_SHOW_TABS_KEY);
-    }
-    if (json.HasKey(INITIALROWS_KEY))
-    {
-        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
-    }
-    if (json.HasKey(INITIALCOLS_KEY))
-    {
-        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
-    }
-
-    if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
-    {
-        result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
-    }
-
-    if (json.HasKey(SHOW_TABS_IN_TITLEBAR_KEY))
-    {
-        result._showTabsInTitlebar = json.GetNamedBoolean(SHOW_TABS_IN_TITLEBAR_KEY);
-    }
-
-    if (json.HasKey(REQUESTED_THEME_KEY))
-    {
-        const auto themeStr = json.GetNamedString(REQUESTED_THEME_KEY);
-        result._requestedTheme = _ParseTheme(themeStr.c_str());
-    }
-
-    return result;
-}
-
-
-// Method Description:
-// - Serialize this object to a JsonObject.
-// Arguments:
-// - <none>
-// Return Value:
-// - a JsonObject which is an equivalent serialization of this object.
-Json::Value GlobalAppSettings::ToJson2() const
+Json::Value GlobalAppSettings::ToJson() const
 {
     Json::Value jsonObject;
 
@@ -244,7 +150,7 @@ Json::Value GlobalAppSettings::ToJson2() const
     jsonObject[SHOW_TITLE_IN_TITLEBAR_KEY_2.data()] = _showTitleInTitlebar;
     jsonObject[SHOW_TABS_IN_TITLEBAR_KEY_2.data()] = _showTabsInTitlebar;
     jsonObject[REQUESTED_THEME_KEY_2.data()] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    jsonObject[KEYBINDINGS_KEY_2.data()] = AppKeyBindingsSerialization::ToJson2(_keybindings);
+    jsonObject[KEYBINDINGS_KEY_2.data()] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
     return jsonObject;
 }
@@ -255,7 +161,7 @@ Json::Value GlobalAppSettings::ToJson2() const
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson2(Json::Value json)
+GlobalAppSettings GlobalAppSettings::FromJson(Json::Value json)
 {
     GlobalAppSettings result{};
 
@@ -295,7 +201,7 @@ GlobalAppSettings GlobalAppSettings::FromJson2(Json::Value json)
 
     if (auto keybindings{ json[KEYBINDINGS_KEY_2.data()] })
     {
-        result._keybindings = AppKeyBindingsSerialization::FromJson2(keybindings);
+        result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
     }
 
     return result;
