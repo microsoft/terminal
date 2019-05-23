@@ -429,7 +429,7 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 // Arguments:
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
-// - true or false.
+// - true iff powershell core (pwsh.exe) is present.
 bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline)
 {
     return _isPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ||
@@ -442,7 +442,7 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - A string that contains an environment-variable string in the form: %variableName%.
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
-// - true or false.
+// - true iff powershell core (pwsh.exe) is present in the given path
 bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
