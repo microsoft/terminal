@@ -58,6 +58,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                      HANDLE* const hOutput,
                      HANDLE* const hSignal,
                      PROCESS_INFORMATION* const piPty,
+                     DWORD dwCreationFlags = 0,
                      const EnvironmentVariableMapW& extraEnvVars = {}) noexcept;
 
 bool SignalResizeWindow(const HANDLE hSignal,
@@ -228,6 +229,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                      HANDLE* const hOutput,
                      HANDLE* const hSignal,
                      PROCESS_INFORMATION* const piPty,
+                     DWORD dwCreationFlags = 0,
                      const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
 {
     // Create some anon pipes so we can pass handles down and into the console.
@@ -301,7 +303,6 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                            newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
     });
 
-    DWORD dwCreationFlags = 0;
     if (!extraEnvVars.empty())
     {
         EnvironmentVariableMapW tempEnvMap{ extraEnvVars };
