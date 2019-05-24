@@ -20,7 +20,7 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::TermDispatch : public Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
-    void Execute(const wchar_t wchControl) override = 0 ;
+    void Execute(const wchar_t wchControl) override = 0;
     void Print(const wchar_t wchPrintable) override = 0;
     void PrintString(const wchar_t* const rgwch, const size_t cch) override = 0;
 
