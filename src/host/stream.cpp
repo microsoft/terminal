@@ -16,8 +16,10 @@
 #include "../types/inc/GlyphWidth.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-using Microsoft::Console::Interactivity::ServiceLocator;
+
 #pragma hdrstop
+
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
 // - This routine is used in stream input.  It gets input and filters it for unicode characters.

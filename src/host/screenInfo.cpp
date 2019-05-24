@@ -19,14 +19,16 @@
 
 #include "../types/inc/convert.hpp"
 
-using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::VirtualTerminal;
+
 #pragma hdrstop
+#pragma region Construct/Destruct
+
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
-
-#pragma region Construct/Destruct
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics *pMetrics,

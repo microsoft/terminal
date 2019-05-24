@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "ScreenBufferRenderTarget.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
+
 using Microsoft::Console::Interactivity::ServiceLocator;
 ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
     _owner{ owner }

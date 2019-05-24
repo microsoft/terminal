@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
+
 using WEX::Logging::Log;
 using namespace WEX::Common;
 

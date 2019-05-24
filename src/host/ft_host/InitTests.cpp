@@ -2,8 +2,10 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
+
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
+
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
 

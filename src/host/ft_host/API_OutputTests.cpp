@@ -13,6 +13,7 @@ using namespace Microsoft::Console::Types;
 using namespace WEX::TestExecution;
 using WEX::Logging::Log;
 using namespace WEX::Common;
+
 class OutputTests
 {
     BEGIN_TEST_CLASS(OutputTests)

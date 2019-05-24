@@ -61,9 +61,9 @@ public:
 
     std::vector<wchar_t> WordDelimiters;
 
-	Microsoft::Console::Render::IRenderer* pRender;
+    Microsoft::Console::Render::IRenderer* pRender;
 
-	Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
+    Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 

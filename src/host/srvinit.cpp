@@ -23,9 +23,10 @@
 #include "renderData.hpp"
 #include "../renderer/base/renderer.hpp"
 
+#pragma hdrstop
+
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Render;
-#pragma hdrstop
 
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;

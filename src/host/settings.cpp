@@ -6,11 +6,13 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 #include "../types/inc/utils.hpp"
-using Microsoft::Console::Interactivity::ServiceLocator;
+
 #pragma hdrstop
 
 #define DEFAULT_NUMBER_OF_COMMANDS 25
 #define DEFAULT_NUMBER_OF_BUFFERS 4
+
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 Settings::Settings() :
     _dwHotKey(0),

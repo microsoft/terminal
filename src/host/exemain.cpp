@@ -112,10 +112,10 @@ static HRESULT ActivateLegacyConhost(const HANDLE handle)
         typedef NTSTATUS(*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
 
         PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
-		if (pfnConsoleCreateIoThread != nullptr)
-		{
-			hr = HRESULT_FROM_NT (pfnConsoleCreateIoThread (handle));
-		}
+        if (pfnConsoleCreateIoThread != nullptr)
+        {
+            hr = HRESULT_FROM_NT (pfnConsoleCreateIoThread (handle));
+        }
         else
         {
             hr = HRESULT_FROM_WIN32(GetLastError());

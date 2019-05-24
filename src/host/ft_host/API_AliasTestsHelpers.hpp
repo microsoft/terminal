@@ -1,3 +1,4 @@
+#include "Common.hpp"
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -72,25 +73,25 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     {
     case 0:
         ptszSource = nullptr;
-		WEX::Logging::Log::Comment(L"Using null source arg.");
+        WEX::Logging::Log::Comment(L"Using null source arg.");
         break;
     case 1:
         ptszSource = ptszSourceGiven;
-		WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using source arg: '" TSTRFORMAT "'", ptszSource));
+        WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using source arg: '" TSTRFORMAT "'", ptszSource));
         break;
     default:
         VERIFY_FAIL(L"Unknown type.");
     }
 
-	switch (dwExeName)
+    switch (dwExeName)
     {
     case 0:
         ptszExeName = nullptr;
-		WEX::Logging::Log::Comment(L"Using null exe name.");
+        WEX::Logging::Log::Comment(L"Using null exe name.");
         break;
     case 1:
         ptszExeName = ptszExeNameGiven;
-		WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using exe name arg: '" TSTRFORMAT "'", ptszExeName));
+        WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using exe name arg: '" TSTRFORMAT "'", ptszExeName));
         break;
     default:
         VERIFY_FAIL(L"Unknown type.");
@@ -99,7 +100,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     DWORD const cbExpectedTargetString = (DWORD)TLEN(ptszExpectedTargetGiven) * sizeof(TCH);
 
     switch (dwTarget)
-	{
+    {
     case 0:
         cbTargetBuffer = 0;
         break;
@@ -143,7 +144,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         }
     });
 
-	WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using target buffer size: '%d'", cbTargetBuffer));
+    WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using target buffer size: '%d'", cbTargetBuffer));
 
     // Set the alias if we're supposed to and prepare for cleanup later.
     if (bSetFirst)
@@ -245,7 +246,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     VERIFY_ARE_EQUAL(dwExpectedResult, dwActualResult, L"Ensure result code/return value matches expected.");
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwActualLastError, L"Ensure last error code matches expected.");
 
-	WEX::Logging::Log::Comment(L"Compare target buffer character by character...");
+    WEX::Logging::Log::Comment(L"Compare target buffer character by character...");
     for (size_t i = 0; i < (cbTargetBuffer / sizeof(TCH)); i++)
     {
         if (ptchExpectedTarget[i] != ptchTargetBuffer[i])

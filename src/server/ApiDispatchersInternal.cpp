@@ -13,7 +13,9 @@
 #include "..\host\ntprivapi.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+
 using Microsoft::Console::Interactivity::ServiceLocator;
+
 [[nodiscard]]
 HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {

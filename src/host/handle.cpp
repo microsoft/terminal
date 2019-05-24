@@ -7,7 +7,9 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
+
 using Microsoft::Console::Interactivity::ServiceLocator;
+
 void LockConsole()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

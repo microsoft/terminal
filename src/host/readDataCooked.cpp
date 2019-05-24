@@ -15,7 +15,9 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #define LINE_INPUT_BUFFER_SIZE (256 * sizeof(WCHAR))
+
 using Microsoft::Console::Interactivity::ServiceLocator;
+
 // Routine Description:
 // - Constructs cooked read data class to hold context across key presses while a user is modifying their 'input line'.
 // Arguments:

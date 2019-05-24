@@ -6,6 +6,7 @@
 #include "Common.hpp"
 
 #include <future>
+
 using WEX::TestExecution::TestData;
 using WEX::Logging::Log;
 using namespace WEX::Common;

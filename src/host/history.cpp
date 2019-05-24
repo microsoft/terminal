@@ -21,7 +21,9 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
+
 using Microsoft::Console::Interactivity::ServiceLocator;
+
 // I need to be a list because we rearrange elements inside to maintain a
 // "least recently used" state. Doing many rearrangement operations with
 // a list will maintain the iterator pointers as valid to the elements

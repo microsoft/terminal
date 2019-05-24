@@ -9,9 +9,11 @@
 
 #define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
+
 using WEX::TestExecution::TestData;
 using WEX::Logging::Log;
 using namespace WEX::Common;
+
 namespace DbcsWriteRead
 {
     enum WriteMode

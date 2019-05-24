@@ -10,8 +10,10 @@
 // some assumptions have been made on this value. only change it if you have a good reason to.
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
+
 using WEX::Logging::Log;
 using namespace WEX::Common;
+
 // This class is intended to test:
 // FlushConsoleInputBuffer
 // PeekConsoleInput
@@ -62,7 +64,7 @@ class InputTests
 
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
 {
-	WEX::TestExecution::SetVerifyOutput verifySettings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
+    WEX::TestExecution::SetVerifyOutput verifySettings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
     DWORD nInputEvents = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEvents));
     VERIFY_ARE_EQUAL(nInputEvents,

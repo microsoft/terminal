@@ -10,11 +10,12 @@
 #include "../types/inc/GlyphWidth.hpp"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
-using Microsoft::Console::Interactivity::ServiceLocator;
+
 #pragma hdrstop
 
 #define CHAR_NULL      ((char)0)
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
 {

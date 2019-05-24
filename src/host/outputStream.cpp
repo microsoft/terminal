@@ -10,9 +10,11 @@
 #include "directio.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
-using Microsoft::Console::Interactivity::ServiceLocator;
+
 #pragma hdrstop
+
 using namespace Microsoft::Console;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },

@@ -19,13 +19,14 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
+#include "UnicodeLiteral.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
+
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace Microsoft::Console::Interactivity;
-#include "UnicodeLiteral.hpp"
-#include "../../inc/consoletaeftemplates.hpp"
-
 using namespace Microsoft::Console::Interactivity::Win32;
 
 static const WORD altScanCode = 0x38;

@@ -185,7 +185,7 @@ public:
     bool IsActiveScreenBuffer() const;
 
     const Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() const;
-	Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine();
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine();
 
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
@@ -256,8 +256,8 @@ private:
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
-	Microsoft::Console::Interactivity::IWindowMetrics *_pConsoleWindowMetrics;
-	Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IWindowMetrics *_pConsoleWindowMetrics;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
 
     [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,

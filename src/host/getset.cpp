@@ -21,7 +21,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-using namespace Microsoft::Console::Interactivity;
+
 // The following mask is used to test for valid text attributes.
 #define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 
@@ -30,6 +30,7 @@ using namespace Microsoft::Console::Interactivity;
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
