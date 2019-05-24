@@ -11,6 +11,8 @@
 #define STARTF_USESTDHANDLES       0x00000100
 #endif
 
+#include "ConhostConnection.g.cpp"
+
 #include <conpty-universal.h>
 #include "../../types/inc/Utils.hpp"
 

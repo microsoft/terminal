@@ -62,6 +62,8 @@ public:
     bool EnableAnyEventMouseMode(const bool /*fEnabled*/) override { return false; } // ?1003
     bool EnableAlternateScroll(const bool /*fEnabled*/) override { return false; } // ?1007
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) override { return false; } // OSCColorTable
+    bool SetDefaultForeground(const DWORD /*dwColor*/) override { return false; } // OSCDefaultForeground
+    bool SetDefaultBackground(const DWORD /*dwColor*/) override { return false; } // OSCDefaultBackground
 
     bool EraseInDisplay(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // ED
     bool EraseInLine(const DispatchTypes::EraseType /* eraseType*/) override { return false; } // EL
@@ -86,7 +88,7 @@ public:
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*Color*/) override { return false; } // OSCSetCursorColor, OSCResetCursorColor
-
+    
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*uiFunction*/,
                             _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,

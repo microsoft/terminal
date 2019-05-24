@@ -25,6 +25,10 @@ public:
     bool SetWindowTitle(std::wstring_view title) override;
 
     bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
+    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
+
+    bool SetDefaultForeground(const DWORD dwColor) override;
+    bool SetDefaultBackground(const DWORD dwColor) override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

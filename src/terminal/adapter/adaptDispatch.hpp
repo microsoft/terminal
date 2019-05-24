@@ -98,6 +98,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD dwColor) override; // OscColorTable
+        bool SetDefaultForeground(const DWORD dwColor) override; // OSCDefaultForeground
+        bool SetDefaultBackground(const DWORD dwColor) override; // OSCDefaultBackground
+        
         bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 const size_t cParams) override; // DTTERM_WindowManipulation

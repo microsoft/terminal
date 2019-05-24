@@ -43,7 +43,7 @@ std::string toPrintableString(const std::string_view& inString)
     for (size_t i = 0; i < inString.length(); i++)
     {
         unsigned char c = inString[i];
-        if (c < '\x20' && c < '\x7f')
+        if (c < '\x20')
         {
             retval += "^";
             char actual = (c + 0x40);

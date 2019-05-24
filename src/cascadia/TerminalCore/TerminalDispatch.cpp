@@ -64,9 +64,36 @@ bool TerminalDispatch::SetWindowTitle(std::wstring_view title)
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool TerminalDispatch::SetColorTableEntry(const size_t tableIndex,
                                           const DWORD dwColor)
 {
     return _terminalApi.SetColorTableEntry(tableIndex, dwColor);
+}
+
+bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
+{
+    return _terminalApi.SetCursorStyle(cursorStyle);
+}
+
+// Method Description:
+// - Sets the default foreground color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, in 0x00BBGGRR form
+// Return Value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::SetDefaultForeground(const DWORD dwColor)
+{
+    return _terminalApi.SetDefaultForeground(dwColor);
+}
+
+// Method Description:
+// - Sets the default background color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, in 0x00BBGGRR form
+// Return Value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::SetDefaultBackground(const DWORD dwColor)
+{
+    return _terminalApi.SetDefaultBackground(dwColor);
 }

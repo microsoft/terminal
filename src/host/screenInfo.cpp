@@ -678,7 +678,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         }
 
         pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer() | gci.IsTerminalScrolling(),
+                                 _IsAltBuffer() || gci.IsTerminalScrolling(),
                                  _viewport.Height(),
                                  gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
                                  _viewport.Top());
@@ -1280,7 +1280,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const RECT* const prcClientNew,
 
     const Viewport oldViewport = Viewport(_viewport);
 
-    _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
+    _InternalSetViewportSize(pcoordSize, fResizeFromTop, fResizeFromLeft);
 
     // MSFT 13194969, related to 12092729.
     // If we're in virtual terminal mode, and the viewport dimensions change,

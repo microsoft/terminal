@@ -1,3 +1,5 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
 <MSMarkup:XamlApplication
     x:Class="TerminalApp.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -16,7 +18,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <!-- Include the MUX Controls resources -->
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
-
                 <ResourceDictionary>
 
                     <!-- We're going to apply this style to the root Grid acting
@@ -29,6 +30,20 @@
                         <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
                     </Style>
 
+                    <!-- Manually theme the CloseButton of a ContentDialog. We
+                    need to do this, because for whatever reason, if we show a
+                    ContentDialog when the app theme is opposite the system
+                    theme, the buttons will appear transparent. This only
+                    applies to the Close button of the dialog, since we're only
+                    using the Close button of the dialog. If we ever add other
+                    dialogs with more buttons, we'll probably want to make sure
+                    the buttons are styled differently. -->
+                    <Style TargetType="ContentDialog">
+                        <!-- the value `AccentButtonStyle` is taken straight
+                        from the ContentDialog source -->
+                        <Setter Target="CloseButtonStyle" Value="{StaticResource AccentButtonStyle}" />
+                    </Style>
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->
@@ -39,8 +54,11 @@
                         </ResourceDictionary>
 
                     </ResourceDictionary.ThemeDictionaries>
+
                 </ResourceDictionary>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
+
+
     </MSMarkup:XamlApplication.Resources>
 </MSMarkup:XamlApplication>
