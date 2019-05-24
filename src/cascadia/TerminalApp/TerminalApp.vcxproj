@@ -15,7 +15,6 @@
     <ProjectName>TerminalApp</ProjectName>
     <RootNamespace>TerminalApp</RootNamespace>
   </PropertyGroup>
-
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -33,7 +32,6 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup> -->
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Tab.h" />
@@ -49,7 +47,6 @@
       <DependentUpon>App.xaml</DependentUpon>
     </ClInclude>
   </ItemGroup>
-
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="Tab.cpp" />
@@ -69,7 +66,6 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
-
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="App.idl">
@@ -77,13 +73,11 @@
     </Midl>
     <Midl Include="AppKeyBindings.idl" />
   </ItemGroup>
-
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="TerminalApp.def" />
   </ItemGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -97,14 +91,12 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
-
     <!-- This is needed to be able to reference the XamlApplication type. -->
     <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
       <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!--
@@ -116,7 +108,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <Link>
-      <AdditionalDependencies>Advapi32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Kernel32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
