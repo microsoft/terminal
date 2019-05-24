@@ -8,6 +8,8 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 #include <winrt/Windows.ApplicationModel.Resources.h>
 
+#include "App.g.cpp"
+
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -180,23 +182,24 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // - contentKey: The key to use to lookup the title text from our resources.
-    // - textKey: The key to use to lookup the content text from our resources.
-    fire_and_forget App::_ShowOkDialog(const winrt::hstring& contentKey,
-                                       const winrt::hstring& textKey)
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey,
+                                       const winrt::hstring& contentKey)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
-        if (!_dialogLock.try_lock())
+        std::unique_lock lock{ _dialogLock, std::try_to_lock };
+        if (!lock)
         {
             // Another dialog is visible.
             return;
         }
 
-        auto l = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = l.GetString(contentKey);
-        auto message = l.GetString(textKey);
-        auto buttonText = l.GetString(L"Ok");
+        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        auto title = resourceLoader.GetString(titleKey);
+        auto message = resourceLoader.GetString(contentKey);
+        auto buttonText = resourceLoader.GetString(L"Ok");
 
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
@@ -210,8 +213,8 @@ namespace winrt::TerminalApp::implementation
         // Display the dialog.
         Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
-        // After the dialog is dismissed, release the dialog lock so another can be shown.
-        _dialogLock.unlock();
+        // After the dialog is dismissed, the dialog lock (held by `lock`) will
+        // be released so another can be shown.
     }
 
     // Method Description:
@@ -280,10 +283,25 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFlyout()
     {
         auto newTabFlyout = Controls::MenuFlyout{};
+        auto keyBindings = _settings->GetKeybindings();
+
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
+
+            // add the keyboard shortcuts for the first 9 profiles
+            if (profileIndex < 9)
+            {
+                // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
+                auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
+
+                // make sure we find one to display
+                if (profileKeyChord)
+                {
+                    _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
+                }
+            }
 
             auto profileName = profile.GetName();
             winrt::hstring hName{ profileName };
@@ -318,6 +336,12 @@ namespace winrt::TerminalApp::implementation
 
             settingsItem.Click({ this, &App::_SettingsButtonOnClick });
             newTabFlyout.Items().Append(settingsItem);
+
+            auto settingsKeyChord = keyBindings.GetKeyBinding(ShortcutAction::OpenSettings);
+            if (settingsKeyChord)
+            {
+                _SetAcceleratorForMenuItem(settingsItem, settingsKeyChord);
+            }
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
@@ -406,6 +430,7 @@ namespace winrt::TerminalApp::implementation
     //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
+    [[nodiscard]]
     HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
         HRESULT hr = E_FAIL;
@@ -980,18 +1005,26 @@ namespace winrt::TerminalApp::implementation
         }
         uint32_t tabIndexFromControl = 0;
         _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-
-        if (tabIndexFromControl == _GetFocusedTabIndex())
-        {
-            _tabView.SelectedIndex((tabIndexFromControl > 0) ? tabIndexFromControl - 1 : 1);
-        }
+        auto focusedTabIndex = _GetFocusedTabIndex();
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
 
-        // ensure tabs and focus is sync
-        _tabView.SelectedIndex(tabIndexFromControl > 0 ? tabIndexFromControl - 1 : 0);
+        if (tabIndexFromControl == focusedTabIndex)
+        {
+            if (focusedTabIndex >= _tabs.size())
+            {
+                focusedTabIndex = _tabs.size() - 1;
+            }
+
+            if (focusedTabIndex < 0)
+            {
+                focusedTabIndex = 0;
+            }
+
+            _SelectTab(focusedTabIndex);
+        }
     }
 
     // Method Description:
@@ -1023,6 +1056,40 @@ namespace winrt::TerminalApp::implementation
         else
         {
             return { nullptr };
+        }
+    }
+
+
+    // Method Description:
+    // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.
+    //   Takes into account a special case for an error condition for a comma
+    // Arguments:
+    // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
+    void App::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+    {
+        // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
+        if (keyChord.Vkey() != VK_OEM_COMMA)
+        {
+            // use the XAML shortcut to give us the automatic capabilities
+            auto menuShortcut = Windows::UI::Xaml::Input::KeyboardAccelerator{};
+
+            // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
+            menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
+
+            // inspect the modifiers from the KeyChord and set the flags int he XAML value
+            auto modifiers = AppKeyBindings::ConvertVKModifiers(keyChord.Modifiers());
+
+            // add the modifiers to the shortcut
+            menuShortcut.Modifiers(modifiers);
+
+            // add to the menu
+            menuItem.KeyboardAccelerators().Append(menuShortcut);
+        }
+        else // we've got a comma, so need to just use the alternate method
+        {
+            // extract the modifier and key to a nice format
+            auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
+            menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
         }
     }
 

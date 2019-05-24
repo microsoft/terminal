@@ -21,8 +21,6 @@ Notes:
 
 #pragma once
 
-#include "StructureArray.h"
-
 class CicDisplayAttributeMgr
 {
 public:
@@ -48,9 +46,9 @@ public:
     [[nodiscard]]
     HRESULT InitDisplayAttributeInstance(ITfCategoryMgr* pcat);
 
-    inline ITfDisplayAttributeMgr* GetDisplayAttributeMgr() { return m_pDAM; }
+    inline ITfDisplayAttributeMgr* GetDisplayAttributeMgr() { return m_pDAM.get(); }
 
 private:
-    CComQIPtr<ITfDisplayAttributeMgr>  m_pDAM;
-    CStructureArray<GUID>              m_DispAttrProp;
+    wil::com_ptr_nothrow<ITfDisplayAttributeMgr>  m_pDAM;
+    std::vector<GUID>              m_DispAttrProp;
 };

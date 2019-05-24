@@ -29,7 +29,7 @@ Notes:
 //----------------------------------------------------------------------------
 
 [[nodiscard]]
-HRESULT CConversionArea::DrawComposition(const CComBSTR& CompStr,
+HRESULT CConversionArea::DrawComposition(const std::wstring_view CompStr,
                                          const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
                                          const DWORD CompCursorPos)
 {
@@ -44,15 +44,13 @@ HRESULT CConversionArea::DrawComposition(const CComBSTR& CompStr,
                                                                  DEFAULT_COMP_INPUT_ERROR
                                                                };
 
-    std::wstring_view text(CompStr, CompStr.Length());
-
     const auto encodedAttributes = _DisplayAttributesToEncodedAttributes(DisplayAttributes,
                                                                          CompCursorPos);
 
     std::basic_string_view<BYTE> attributes(encodedAttributes.data(), encodedAttributes.size());
     std::basic_string_view<WORD> colorArray(colors.data(), colors.size());
 
-    return ImeComposeData(text, attributes, colorArray);
+    return ImeComposeData(CompStr, attributes, colorArray);
 }
 
 [[nodiscard]]
@@ -62,11 +60,9 @@ HRESULT CConversionArea::ClearComposition()
 }
 
 [[nodiscard]]
-HRESULT CConversionArea::DrawResult(const CComBSTR& ResultStr)
+HRESULT CConversionArea::DrawResult(const std::wstring_view ResultStr)
 {
-    std::wstring_view text(ResultStr, ResultStr.Length());
-
-    return ImeComposeResult(text);
+    return ImeComposeResult(ResultStr);
 }
 
 [[nodiscard]]

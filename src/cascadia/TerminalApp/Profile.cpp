@@ -38,18 +38,23 @@ static constexpr std::string_view STARTINGDIRECTORY_KEY_2{ "startingDirectory" }
 static constexpr std::string_view ICON_KEY_2{ "icon" };
 
 // Possible values for Scrollbar state
-static const std::wstring ALWAYS_VISIBLE{ L"visible" };
-static const std::wstring ALWAYS_HIDE{ L"hidden" };
+static constexpr std::wstring_view ALWAYS_VISIBLE{ L"visible" };
+static constexpr std::wstring_view ALWAYS_HIDE{ L"hidden" };
 
 // Possible values for Cursor Shape
-static const std::wstring CURSORSHAPE_VINTAGE{ L"vintage" };
-static const std::wstring CURSORSHAPE_BAR{ L"bar" };
-static const std::wstring CURSORSHAPE_UNDERSCORE{ L"underscore" };
-static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
-static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
+static constexpr std::wstring_view CURSORSHAPE_VINTAGE{ L"vintage" };
+static constexpr std::wstring_view CURSORSHAPE_BAR{ L"bar" };
+static constexpr std::wstring_view CURSORSHAPE_UNDERSCORE{ L"underscore" };
+static constexpr std::wstring_view CURSORSHAPE_FILLEDBOX{ L"filledBox" };
+static constexpr std::wstring_view CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
 
 Profile::Profile() :
-    _guid{},
+    Profile(Utils::CreateGuid())
+{
+}
+
+Profile::Profile(const winrt::guid& guid):
+    _guid(guid),
     _name{ L"Default" },
     _schemeName{},
 
@@ -73,7 +78,6 @@ Profile::Profile() :
     _padding{ DEFAULT_PADDING },
     _icon{ }
 {
-    UuidCreate(&_guid);
 }
 
 Profile::~Profile()
@@ -416,6 +420,15 @@ bool Profile::HasIcon() const noexcept
 }
 
 // Method Description:
+// - Sets this profile's icon path.
+// Arguments:
+// - path: the path
+void Profile::SetIconPath(std::wstring_view path) noexcept
+{
+    _icon.emplace(path);
+}
+
+// Method Description:
 // - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
@@ -536,7 +549,7 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
 // - cursorShape: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given CursorStyle
-std::wstring Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
+std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {

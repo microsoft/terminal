@@ -5,6 +5,8 @@
 #include "EchoConnection.h"
 #include <sstream>
 
+#include "EchoConnection.g.cpp"
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     EchoConnection::EchoConnection()

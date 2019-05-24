@@ -19,8 +19,8 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
 static constexpr std::string_view PROFILES_KEY_2{ "profiles" };
 static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
@@ -50,6 +50,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         const auto actualData = fileData.value();
 
         Json::Value root;
+        // TODO: unique_ptr this guy VVVV
         Json::CharReader* reader = Json::CharReaderBuilder::CharReaderBuilder().newCharReader();
         auto raw = winrt::to_string(actualData);
         std::string errs;

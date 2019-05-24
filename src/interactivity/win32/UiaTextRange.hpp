@@ -29,7 +29,6 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-
 // The UiaTextRange deals with several data structures that have
 // similar semantics. In order to keep the information from these data
 // structures separated, each structure has its own naming for a
@@ -67,6 +66,8 @@ typedef unsigned int Column;
 // an endpoint is a char location in the text buffer. endpoint 0 is
 // the first char of the 0th row in the text buffer row array.
 typedef unsigned int Endpoint;
+
+constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Interactivity::Win32
 {

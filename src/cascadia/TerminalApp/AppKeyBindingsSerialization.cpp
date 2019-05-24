@@ -122,7 +122,7 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
     {
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
-        const auto chord = bindings.LookupKeyBinding(searchedForAction);
+        const auto chord = bindings.GetKeyBinding(searchedForAction);
         if (chord)
         {
             _AddShortcutToJsonArray2(bindingsArray, chord, searchedForName);

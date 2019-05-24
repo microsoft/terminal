@@ -75,8 +75,9 @@ namespace winrt::TerminalApp::implementation
         void _Create();
         void _CreateNewTabFlyout();
 
-        fire_and_forget _ShowOkDialog(const winrt::hstring& contentKey, const winrt::hstring& textKey);
+        fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
+        [[nodiscard]]
         HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
@@ -118,6 +119,7 @@ namespace winrt::TerminalApp::implementation
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
+        static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }
 

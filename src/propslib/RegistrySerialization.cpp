@@ -395,7 +395,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(const HKEY hConsoleKey,
         bool fDeleteKey = false;
         if (hConsoleKey != hKey)
         {
-            Status = s_QueryValue(hConsoleKey, pwszValueName, sizeof(Data), dwType, Data, nullptr);
+            Status = s_QueryValue(hConsoleKey, pwszValueName, cbDataLength, dwType, Data, nullptr);
             if (NT_SUCCESS(Status))
             {
                 fDeleteKey = (memcmp(pbData, Data, cbDataLength) == 0);
