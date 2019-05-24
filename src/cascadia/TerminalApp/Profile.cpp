@@ -427,6 +427,11 @@ void Profile::SetCommandline(std::wstring cmdline) noexcept
     _commandline = cmdline;
 }
 
+void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
+{
+    _startingDirectory = startingDirectory;
+}
+
 void Profile::SetName(std::wstring name) noexcept
 {
     _name = name;

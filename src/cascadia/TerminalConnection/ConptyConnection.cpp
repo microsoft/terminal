@@ -60,7 +60,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _outputThreadId = (DWORD)-1;
         _hOutputThread = CreateThread(nullptr,
                                       0,
-                                      (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                      StaticOutputThreadProc,
                                       this,
                                       0,
                                       &_outputThreadId);
@@ -222,7 +222,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
 
-    DWORD ConptyConnection::StaticOutputThreadProc(LPVOID lpParameter)
+    DWORD WINAPI ConptyConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
         ConptyConnection* const pInstance = (ConptyConnection*)lpParameter;
         return pInstance->_OutputThread();

@@ -26,15 +26,15 @@
     <PostBuildEvent Condition="'$(Platform)'!='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
     <PostBuildEvent Condition="'$(Platform)'=='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -51,14 +51,14 @@
   <ItemDefinitionGroup Condition="'$(Platform)'!='Win32'">
     <PreBuildEvent>
       <Command>
-        if not exist $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+        if not exist &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)&quot; mkdir &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)&quot;
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <PreBuildEvent>
       <Command>
-        if not exist $(OpenConsoleDir)$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)\$(Configuration)\$(ProjectName)
+        if not exist &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName)&quot; mkdir &quot;$(OpenConsoleDir)\$(Configuration)\$(ProjectName)&quot;
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>

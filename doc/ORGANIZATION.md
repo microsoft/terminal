@@ -4,7 +4,7 @@
 
 - **Follow the pattern of what you already see in the code**
 - Try to package new ideas/components into libraries that have nicely defined interfaces
-- Package new ideas into classes or refactor existing ideas into a class as you extend. 
+- Package new ideas into classes or refactor existing ideas into a class as you extend
 - Each project should have a Unit test in a ut_ folder in its subdirectory (like `ut_host`)
 - Functional tests should be in ft_ subdirectories (like `ft_api`)
 - Build scripts are generally in subdirectories with their type of output (like `/dll` or `/exe`)

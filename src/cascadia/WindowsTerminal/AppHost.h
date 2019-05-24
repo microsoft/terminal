@@ -15,7 +15,7 @@ public:
     virtual ~AppHost();
 
     void AppTitleChanged(winrt::hstring newTitle);
-
+    void LastTabClosed();
     void Initialize();
 
 private:

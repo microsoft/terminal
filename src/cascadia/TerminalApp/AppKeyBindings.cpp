@@ -38,6 +38,9 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::NewTab:
                 _NewTabHandlers();
                 return true;
+            case ShortcutAction::OpenSettings:
+                _OpenSettingsHandlers();
+                return true;
 
             case ShortcutAction::NewTabProfile0:
                 _NewTabWithProfileHandlers(0);
@@ -66,9 +69,6 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::NewTabProfile8:
                 _NewTabWithProfileHandlers(8);
                 return true;
-            case ShortcutAction::NewTabProfile9:
-                _NewTabWithProfileHandlers(9);
-                return true;
 
             case ShortcutAction::NewWindow:
                 _NewWindowHandlers();
@@ -86,14 +86,18 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::ScrollDown:
                 _ScrollDownHandlers();
                 return true;
-
+            case ShortcutAction::ScrollUpPage:
+                _ScrollUpPageHandlers();
+                return true;
+            case ShortcutAction::ScrollDownPage:
+                _ScrollDownPageHandlers();
+                return true;
             case ShortcutAction::NextTab:
                 _NextTabHandlers();
                 return true;
             case ShortcutAction::PrevTab:
                 _PrevTabHandlers();
                 return true;
-
             case ShortcutAction::SwitchToTab0:
                 _SwitchToTabHandlers(0);
                 return true;
@@ -121,9 +125,6 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SwitchToTab8:
                 _SwitchToTabHandlers(8);
                 return true;
-            case ShortcutAction::SwitchToTab9:
-                _SwitchToTabHandlers(9);
-                return true;
         }
         return false;
     }
@@ -143,6 +144,9 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
+    DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
 
 
 }

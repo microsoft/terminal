@@ -937,7 +937,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
 // Routine Description:
 // - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
+LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 {
     MSG msg = *((PMSG)lParam);
 
@@ -979,7 +979,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     // We intentionally ignore the return value of SetWindowsHookEx. There are mixed LUID cases where this call will fail but in the past this call
     // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
-    *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
+    *phhook = SetWindowsHookExW(WH_MSGFILTER, DialogHookProc, nullptr, GetCurrentThreadId());
 
     SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
@@ -995,7 +995,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 // (for a window)
 // ----------------------------
 
-DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
+DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
 

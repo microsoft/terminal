@@ -44,7 +44,7 @@ public:
 
     void signalWindow(unsigned short sx, unsigned short sy);
 
-    static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+    static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
 
     bool WriteInput(std::string& seq);
 
