@@ -4,7 +4,7 @@ root = true
 trim_trailing_whitespace = true
 insert_final_newline = true
 
-[{*.cpp,*.h,*.cs}]
+[{*.cpp,*.c,*.hpp,*.h,*.cs}]
 indent_style = space
 indent_size = 4
 
