@@ -14,14 +14,7 @@ static const int SEPARATOR_SIZE = 4;
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
-    _profile{ profile },
-    _splitState{ SplitState::None },
-    _firstChild{ nullptr },
-    _secondChild{ nullptr },
-    _connectionClosedToken{ 0 },
-    _firstClosedToken{ 0 },
-    _secondClosedToken{ 0 },
-    _root{}
+    _profile{ profile }
 {
     _AddControlToRoot(_control);
 

@@ -33,10 +33,10 @@ public:
 
 private:
 
-    std::shared_ptr<Pane> _rootPane;
+    std::shared_ptr<Pane> _rootPane{ nullptr };
 
-    bool _focused;
-    winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem;
+    bool _focused{ false };
+    winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };
 
     void _MakeTabViewItem();
     void _Focus();

@@ -54,19 +54,19 @@ public:
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
-    winrt::Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
 
-    std::shared_ptr<Pane> _firstChild;
-    std::shared_ptr<Pane> _secondChild;
-    SplitState _splitState;
+    std::shared_ptr<Pane> _firstChild{ nullptr };
+    std::shared_ptr<Pane> _secondChild{ nullptr };
+    SplitState _splitState{ SplitState::None };
 
-    bool _lastFocused;
-    std::optional<GUID> _profile;
-    winrt::event_token _connectionClosedToken;
-    winrt::event_token _firstClosedToken;
-    winrt::event_token _secondClosedToken;
+    bool _lastFocused{ false };
+    std::optional<GUID> _profile{ std::nullopt };
+    winrt::event_token _connectionClosedToken{ 0 };
+    winrt::event_token _firstClosedToken{ 0 };
+    winrt::event_token _secondClosedToken{ 0 };
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;

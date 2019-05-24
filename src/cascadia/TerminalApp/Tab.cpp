@@ -9,10 +9,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-Tab::Tab(const GUID& profile, const TermControl& control) :
-    _focused{ false },
-    _tabViewItem{ nullptr },
-    _rootPane{ nullptr }
+Tab::Tab(const GUID& profile, const TermControl& control)
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
 
