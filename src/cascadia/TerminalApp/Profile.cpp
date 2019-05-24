@@ -13,29 +13,29 @@ using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
-static constexpr std::string_view NAME_KEY_2{ "name" };
-static constexpr std::string_view GUID_KEY_2{ "guid" };
-static constexpr std::string_view COLORSCHEME_KEY_2{ "colorscheme" };
+static constexpr std::string_view NAME_KEY{ "name" };
+static constexpr std::string_view GUID_KEY{ "guid" };
+static constexpr std::string_view COLORSCHEME_KEY{ "colorscheme" };
 
-static constexpr std::string_view FOREGROUND_KEY_2{ "foreground" };
-static constexpr std::string_view BACKGROUND_KEY_2{ "background" };
-static constexpr std::string_view COLORTABLE_KEY_2{ "colorTable" };
-static constexpr std::string_view HISTORYSIZE_KEY_2{ "historySize" };
-static constexpr std::string_view SNAPONINPUT_KEY_2{ "snapOnInput" };
-static constexpr std::string_view CURSORCOLOR_KEY_2{ "cursorColor" };
-static constexpr std::string_view CURSORSHAPE_KEY_2{ "cursorShape" };
-static constexpr std::string_view CURSORHEIGHT_KEY_2{ "cursorHeight" };
+static constexpr std::string_view FOREGROUND_KEY{ "foreground" };
+static constexpr std::string_view BACKGROUND_KEY{ "background" };
+static constexpr std::string_view COLORTABLE_KEY{ "colorTable" };
+static constexpr std::string_view HISTORYSIZE_KEY{ "historySize" };
+static constexpr std::string_view SNAPONINPUT_KEY{ "snapOnInput" };
+static constexpr std::string_view CURSORCOLOR_KEY{ "cursorColor" };
+static constexpr std::string_view CURSORSHAPE_KEY{ "cursorShape" };
+static constexpr std::string_view CURSORHEIGHT_KEY{ "cursorHeight" };
 
-static constexpr std::string_view COMMANDLINE_KEY_2{ "commandline" };
-static constexpr std::string_view FONTFACE_KEY_2{ "fontFace" };
-static constexpr std::string_view FONTSIZE_KEY_2{ "fontSize" };
-static constexpr std::string_view ACRYLICTRANSPARENCY_KEY_2{ "acrylicOpacity" };
-static constexpr std::string_view USEACRYLIC_KEY_2{ "useAcrylic" };
-static constexpr std::string_view SCROLLBARSTATE_KEY_2{ "scrollbarState" };
-static constexpr std::string_view CLOSEONEXIT_KEY_2{ "closeOnExit" };
-static constexpr std::string_view PADDING_KEY_2{ "padding" };
-static constexpr std::string_view STARTINGDIRECTORY_KEY_2{ "startingDirectory" };
-static constexpr std::string_view ICON_KEY_2{ "icon" };
+static constexpr std::string_view COMMANDLINE_KEY{ "commandline" };
+static constexpr std::string_view FONTFACE_KEY{ "fontFace" };
+static constexpr std::string_view FONTSIZE_KEY{ "fontSize" };
+static constexpr std::string_view ACRYLICTRANSPARENCY_KEY{ "acrylicOpacity" };
+static constexpr std::string_view USEACRYLIC_KEY{ "useAcrylic" };
+static constexpr std::string_view SCROLLBARSTATE_KEY{ "scrollbarState" };
+static constexpr std::string_view CLOSEONEXIT_KEY{ "closeOnExit" };
+static constexpr std::string_view PADDING_KEY{ "padding" };
+static constexpr std::string_view STARTINGDIRECTORY_KEY{ "startingDirectory" };
+static constexpr std::string_view ICON_KEY{ "icon" };
 
 // Possible values for Scrollbar state
 static constexpr std::wstring_view ALWAYS_VISIBLE{ L"visible" };
@@ -187,24 +187,24 @@ Json::Value Profile::ToJson() const
     Json::Value root;
 
     ///// Profile-specific settings /////
-    root[GUID_KEY_2.data()] = winrt::to_string(Utils::GuidToString(_guid));
-    root[NAME_KEY_2.data()] = winrt::to_string(_name);
+    root[GUID_KEY.data()] = winrt::to_string(Utils::GuidToString(_guid));
+    root[NAME_KEY.data()] = winrt::to_string(_name);
 
     ///// Core Settings /////
     if (_defaultForeground)
     {
         const auto defaultForeground = winrt::to_string(Utils::ColorToHexString(_defaultForeground.value()));
-        root[FOREGROUND_KEY_2.data()] = defaultForeground;
+        root[FOREGROUND_KEY.data()] = defaultForeground;
     }
     if (_defaultBackground)
     {
         const auto defaultBackground = winrt::to_string(Utils::ColorToHexString(_defaultBackground.value()));
-        root[BACKGROUND_KEY_2.data()] = defaultBackground;
+        root[BACKGROUND_KEY.data()] = defaultBackground;
     }
     if (_schemeName)
     {
         const auto scheme = winrt::to_string(_schemeName.value());
-        root[COLORSCHEME_KEY_2.data()] = scheme;
+        root[COLORSCHEME_KEY.data()] = scheme;
     }
     else
     {
@@ -214,42 +214,42 @@ Json::Value Profile::ToJson() const
             auto s = Utils::ColorToHexString(color);
             tableArray.append(winrt::to_string(s));
         }
-        root[COLORTABLE_KEY_2.data()] = tableArray;
+        root[COLORTABLE_KEY.data()] = tableArray;
     }
-    root[HISTORYSIZE_KEY_2.data()] = _historySize;
-    root[SNAPONINPUT_KEY_2.data()] = _snapOnInput;
-    root[CURSORCOLOR_KEY_2.data()] = winrt::to_string(Utils::ColorToHexString(_cursorColor));
+    root[HISTORYSIZE_KEY.data()] = _historySize;
+    root[SNAPONINPUT_KEY.data()] = _snapOnInput;
+    root[CURSORCOLOR_KEY.data()] = winrt::to_string(Utils::ColorToHexString(_cursorColor));
     // Only add the cursor height property if we're a legacy-style cursor.
     if (_cursorShape == CursorStyle::Vintage)
     {
-        root[CURSORHEIGHT_KEY_2.data()] = _cursorHeight;
+        root[CURSORHEIGHT_KEY.data()] = _cursorHeight;
     }
-    root[CURSORSHAPE_KEY_2.data()] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
+    root[CURSORSHAPE_KEY.data()] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
     ///// Control Settings /////
-    root[COMMANDLINE_KEY_2.data()] = winrt::to_string(_commandline);
-    root[FONTFACE_KEY_2.data()] = winrt::to_string(_fontFace);
-    root[FONTSIZE_KEY_2.data()] = _fontSize;
-    root[ACRYLICTRANSPARENCY_KEY_2.data()] = _acrylicTransparency;
-    root[USEACRYLIC_KEY_2.data()] = _useAcrylic;
-    root[CLOSEONEXIT_KEY_2.data()] = _closeOnExit;
-    root[PADDING_KEY_2.data()] = winrt::to_string(_padding);
+    root[COMMANDLINE_KEY.data()] = winrt::to_string(_commandline);
+    root[FONTFACE_KEY.data()] = winrt::to_string(_fontFace);
+    root[FONTSIZE_KEY.data()] = _fontSize;
+    root[ACRYLICTRANSPARENCY_KEY.data()] = _acrylicTransparency;
+    root[USEACRYLIC_KEY.data()] = _useAcrylic;
+    root[CLOSEONEXIT_KEY.data()] = _closeOnExit;
+    root[PADDING_KEY.data()] = winrt::to_string(_padding);
 
     if (_scrollbarState)
     {
         const auto scrollbarState = winrt::to_string(_scrollbarState.value());
-        root[SCROLLBARSTATE_KEY_2.data()] = scrollbarState;
+        root[SCROLLBARSTATE_KEY.data()] = scrollbarState;
     }
 
     if (_icon)
     {
         const auto icon = winrt::to_string(_icon.value());
-        root[ICON_KEY_2.data()] = icon;
+        root[ICON_KEY.data()] = icon;
     }
 
     if (_startingDirectory)
     {
-        root[STARTINGDIRECTORY_KEY_2.data()] = winrt::to_string(_startingDirectory.value());
+        root[STARTINGDIRECTORY_KEY.data()] = winrt::to_string(_startingDirectory.value());
     }
 
     return root;
@@ -266,33 +266,33 @@ Profile Profile::FromJson(Json::Value json)
     Profile result{};
 
     // Profile-specific Settings
-    if (auto name{ json[NAME_KEY_2.data()] })
+    if (auto name{ json[NAME_KEY.data()] })
     {
         result._name = GetWstringFromJson(name);
     }
-    if (auto guid{ json[GUID_KEY_2.data()] })
+    if (auto guid{ json[GUID_KEY.data()] })
     {
         result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
 
     // Core Settings
-    if (auto foreground{ json[FOREGROUND_KEY_2.data()] })
+    if (auto foreground{ json[FOREGROUND_KEY.data()] })
     {
         const auto color = Utils::ColorFromHexString(GetWstringFromJson(foreground));
         result._defaultForeground = color;
     }
-    if (auto background{ json[BACKGROUND_KEY_2.data()] })
+    if (auto background{ json[BACKGROUND_KEY.data()] })
     {
         const auto color = Utils::ColorFromHexString(GetWstringFromJson(background));
         result._defaultBackground = color;
     }
-    if (auto colorScheme{ json[COLORSCHEME_KEY_2.data()] })
+    if (auto colorScheme{ json[COLORSCHEME_KEY.data()] })
     {
         result._schemeName = GetWstringFromJson(colorScheme);
     }
     else
     {
-        if (auto colortable{ json[COLORTABLE_KEY_2.data()] })
+        if (auto colortable{ json[COLORTABLE_KEY.data()] })
         {
             int i = 0;
             for (auto tableEntry : colortable)
@@ -306,67 +306,67 @@ Profile Profile::FromJson(Json::Value json)
             }
         }
     }
-    if (auto historySize{ json[HISTORYSIZE_KEY_2.data()] })
+    if (auto historySize{ json[HISTORYSIZE_KEY.data()] })
     {
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
         result._historySize = historySize.asInt();
     }
-    if (auto snapOnInput{ json[SNAPONINPUT_KEY_2.data()] })
+    if (auto snapOnInput{ json[SNAPONINPUT_KEY.data()] })
     {
         result._snapOnInput = snapOnInput.asBool();
     }
-    if (auto cursorColor{ json[CURSORCOLOR_KEY_2.data()] })
+    if (auto cursorColor{ json[CURSORCOLOR_KEY.data()] })
     {
         const auto color = Utils::ColorFromHexString(GetWstringFromJson(cursorColor));
         result._cursorColor = color;
     }
-    if (auto cursorHeight{ json[CURSORHEIGHT_KEY_2.data()] })
+    if (auto cursorHeight{ json[CURSORHEIGHT_KEY.data()] })
     {
         result._cursorHeight = cursorHeight.asUInt();
     }
-    if (auto cursorShape{ json[CURSORSHAPE_KEY_2.data()] })
+    if (auto cursorShape{ json[CURSORSHAPE_KEY.data()] })
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
 
     // Control Settings
-    if (auto commandline{ json[COMMANDLINE_KEY_2.data()] })
+    if (auto commandline{ json[COMMANDLINE_KEY.data()] })
     {
         result._commandline = GetWstringFromJson(commandline);
     }
-    if (auto fontFace{ json[FONTFACE_KEY_2.data()] })
+    if (auto fontFace{ json[FONTFACE_KEY.data()] })
     {
         result._fontFace = GetWstringFromJson(fontFace);
     }
-    if (auto fontSize{ json[FONTSIZE_KEY_2.data()] })
+    if (auto fontSize{ json[FONTSIZE_KEY.data()] })
     {
         result._fontSize = fontSize.asInt();
     }
-    if (auto acrylicTransparency{ json[ACRYLICTRANSPARENCY_KEY_2.data()] })
+    if (auto acrylicTransparency{ json[ACRYLICTRANSPARENCY_KEY.data()] })
     {
         result._acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (auto useAcrylic{ json[USEACRYLIC_KEY_2.data()] })
+    if (auto useAcrylic{ json[USEACRYLIC_KEY.data()] })
     {
         result._useAcrylic = useAcrylic.asBool();
     }
-    if (auto closeOnExit{ json[CLOSEONEXIT_KEY_2.data()] })
+    if (auto closeOnExit{ json[CLOSEONEXIT_KEY.data()] })
     {
         result._closeOnExit = closeOnExit.asBool();
     }
-    if (auto padding{ json[PADDING_KEY_2.data()] })
+    if (auto padding{ json[PADDING_KEY.data()] })
     {
         result._padding = GetWstringFromJson(padding);
     }
-    if (auto scrollbarState{ json[SCROLLBARSTATE_KEY_2.data()] })
+    if (auto scrollbarState{ json[SCROLLBARSTATE_KEY.data()] })
     {
         result._scrollbarState = GetWstringFromJson(scrollbarState);
     }
-    if (auto startingDirectory{ json[STARTINGDIRECTORY_KEY_2.data()] })
+    if (auto startingDirectory{ json[STARTINGDIRECTORY_KEY.data()] })
     {
         result._startingDirectory = GetWstringFromJson(startingDirectory);
     }
-    if (auto icon{ json[ICON_KEY_2.data()] })
+    if (auto icon{ json[ICON_KEY.data()] })
     {
         result._icon = GetWstringFromJson(icon);
     }

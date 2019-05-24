@@ -22,10 +22,10 @@ using namespace ::Microsoft::Console;
 static constexpr std::wstring_view FILENAME { L"profiles.json" };
 static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static constexpr std::string_view PROFILES_KEY_2{ "profiles" };
-static constexpr std::string_view KEYBINDINGS_KEY_2{ "keybindings" };
-static constexpr std::string_view GLOBALS_KEY_2{ "globals" };
-static constexpr std::string_view SCHEMES_KEY_2{ "schemes" };
+static constexpr std::string_view PROFILES_KEY{ "profiles" };
+static constexpr std::string_view KEYBINDINGS_KEY{ "keybindings" };
+static constexpr std::string_view GLOBALS_KEY{ "globals" };
+static constexpr std::string_view SCHEMES_KEY{ "schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -137,9 +137,9 @@ Json::Value CascadiaSettings::ToJson() const
         schemesArray.append(scheme.ToJson());
     }
 
-    root[GLOBALS_KEY_2.data()] = _globals.ToJson();
-    root[PROFILES_KEY_2.data()] = profilesArray;
-    root[SCHEMES_KEY_2.data()] = schemesArray;
+    root[GLOBALS_KEY.data()] = _globals.ToJson();
+    root[PROFILES_KEY.data()] = profilesArray;
+    root[SCHEMES_KEY.data()] = schemesArray;
 
     return root;
 }
@@ -154,7 +154,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    if (auto globals{ json[GLOBALS_KEY_2.data()] })
+    if (auto globals{ json[GLOBALS_KEY.data()] })
     {
         if (globals.isObject())
         {
@@ -171,7 +171,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         // If we didn't find keybindings in the legacy path, then they probably
         // don't exist in the file. Create the default keybindings if we
         // couldn't find any keybindings.
-        auto keybindings{ json[KEYBINDINGS_KEY_2.data()] };
+        auto keybindings{ json[KEYBINDINGS_KEY.data()] };
         if (!keybindings)
         {
             resultPtr->_CreateDefaultKeybindings();
@@ -188,7 +188,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
     //      Or should we just recreate the default profiles?
 
     auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
-    if (auto schemes{ json[SCHEMES_KEY_2.data()] })
+    if (auto schemes{ json[SCHEMES_KEY.data()] })
     {
         for (auto schemeJson : schemes)
         {
@@ -200,7 +200,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         }
     }
 
-    if (auto profiles{ json[PROFILES_KEY_2.data()] })
+    if (auto profiles{ json[PROFILES_KEY.data()] })
     {
         for (auto profileJson : profiles)
         {

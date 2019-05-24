@@ -10,8 +10,8 @@
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
 
-static constexpr std::string_view KEYS_KEY_2{ "keys" };
-static constexpr std::string_view COMMAND_KEY_2{ "command" };
+static constexpr std::string_view KEYS_KEY{ "keys" };
+static constexpr std::string_view COMMAND_KEY{ "command" };
 
 static constexpr std::wstring_view COPYTEXT_KEY{ L"copy" };
 static constexpr std::wstring_view PASTETEXT_KEY{ L"paste" };
@@ -106,8 +106,8 @@ static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
     Json::Value keysArray;
     keysArray.append(winrt::to_string(keyString));
 
-    jsonObject[KEYS_KEY_2.data()] = keysArray;
-    jsonObject[COMMAND_KEY_2.data()] = winrt::to_string(actionName);
+    jsonObject[KEYS_KEY.data()] = keysArray;
+    jsonObject[COMMAND_KEY.data()] = winrt::to_string(actionName);
 
     bindingsArray.append(jsonObject);
 }
@@ -140,8 +140,8 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
     {
         if (value.isObject())
         {
-            const auto commandString = value[COMMAND_KEY_2.data()];
-            const auto keys = value[KEYS_KEY_2.data()];
+            const auto commandString = value[COMMAND_KEY.data()];
+            const auto keys = value[KEYS_KEY.data()];
 
             if (commandString && keys)
             {
