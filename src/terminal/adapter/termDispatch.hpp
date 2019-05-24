@@ -71,10 +71,10 @@ public:
                               const size_t /*cOptions*/) override { return false; } // SGR
 
     bool SetPrivateModes(_In_reads_(_Param_(2)) const DispatchTypes::PrivateModeParams* const /*rgParams*/,
-                            const size_t /*cParams*/) override { return false; } // DECSET
+                         const size_t /*cParams*/) override { return false; } // DECSET
 
     bool ResetPrivateModes(_In_reads_(_Param_(2)) const DispatchTypes::PrivateModeParams* const /*rgParams*/,
-                            const size_t /*cParams*/) override { return false; } // DECRST
+                           const size_t /*cParams*/) override { return false; } // DECRST
 
     bool DeviceStatusReport(const DispatchTypes::AnsiStatusType /*statusType*/) override { return false; } // DSR
     bool DeviceAttributes() override { return false; } // DA
@@ -89,8 +89,8 @@ public:
 
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*uiFunction*/,
-                                    _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
-                                    const size_t /*cParams*/) override { return false; }
+                            _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
+                            const size_t /*cParams*/) override { return false; }
 
 };
 

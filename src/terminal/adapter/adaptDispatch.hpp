@@ -59,7 +59,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(_In_ unsigned int const uiCount) override; // ICH
         bool DeleteCharacter(_In_ unsigned int const uiCount) override; // DCH
         bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
-                                    const size_t cOptions) override; // SGR
+                                  const size_t cOptions) override; // SGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR
         bool DeviceAttributes() override; // DA
         bool ScrollUp(_In_ unsigned int const uiDistance) override; // SU
@@ -68,14 +68,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool DeleteLine(_In_ unsigned int const uiDistance) override; // DL
         bool SetColumns(_In_ unsigned int const uiColumns) override; // DECSCPP, DECCOLM
         bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
-                                const size_t cParams) override; // DECSET
+                             const size_t cParams) override; // DECSET
         bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
-                                const size_t cParams) override; // DECRST
+                               const size_t cParams) override; // DECRST
         bool SetCursorKeysMode(const bool fApplicationMode) override;  // DECCKM
         bool SetKeypadMode(const bool fApplicationMode) override;  // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool bEnable) override; // ATT610
         bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
-                                            const SHORT sBottomMargin) override; // DECSTBM
+                                          const SHORT sBottomMargin) override; // DECSTBM
         bool ReverseLineFeed() override; // RI
         bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
         bool UseAlternateScreenBuffer() override; // ASBSET
@@ -99,8 +99,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetColorTableEntry(const size_t tableIndex,
                                 const DWORD dwColor) override; // OscColorTable
         bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const size_t cParams) override; // DTTERM_WindowManipulation
+                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                const size_t cParams) override; // DTTERM_WindowManipulation
 
     private:
 
