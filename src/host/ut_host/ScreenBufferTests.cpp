@@ -2527,14 +2527,23 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
-    // Valid hexadecimal notation
+    Log::Comment(L"Valid Hexadecimal Notation");
     std::wstring seq = L"\x1b]10;rgb:33/66/99\x1b\\";
     stateMachine.ProcessString(seq);
 
     newColor = gci.GetDefaultForegroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    // invalid decimal notation
+    Log::Comment(L"Valid Hexadecimal Notation");
+    originalColor = newColor;
+    testColor = RGB(0xff, 0xff, 0xff);
+    seq = L"\x1b]10;rgb:ff/ff/ff\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultForegroundColor();
+    VERIFY_ARE_EQUAL(testColor, newColor);
+
+    Log::Comment(L"Invalid Decimal Notation");
     originalColor = newColor;
     testColor = RGB(153, 102, 51);
     seq = L"\x1b]10;rgb:153/102/51\x1b\\";
@@ -2545,7 +2554,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
 
-    // invalid hex without rgb
+    Log::Comment(L"Invalid syntax");
     testColor = RGB(153, 102, 51);
     seq = L"\x1b]10;99/66/33\x1b\\";
     stateMachine.ProcessString(seq);
@@ -2577,14 +2586,23 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
-    // Valid hexadecimal notation
+    Log::Comment(L"Valid Hexadecimal Notation");
     std::wstring seq = L"\x1b]11;rgb:33/66/99\x1b\\";
     stateMachine.ProcessString(seq);
 
     newColor = gci.GetDefaultBackgroundColor();
     VERIFY_ARE_EQUAL(testColor, newColor);
 
-    // invalid decimal notation
+    Log::Comment(L"Valid Hexadecimal Notation");
+    originalColor = newColor;
+    testColor = RGB(0xff, 0xff, 0xff);
+    seq = L"\x1b]11;rgb:ff/ff/ff\x1b\\";
+    stateMachine.ProcessString(seq);
+
+    newColor = gci.GetDefaultBackgroundColor();
+    VERIFY_ARE_EQUAL(testColor, newColor);
+
+    Log::Comment(L"Invalid Decimal Notation");
     originalColor = newColor;
     testColor = RGB(153, 102, 51);
     seq = L"\x1b]11;rgb:153/102/51\x1b\\";
@@ -2595,7 +2613,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
 
-    // invalid hex without rgb
+    Log::Comment(L"Invalid Syntax");
     testColor = RGB(153, 102, 51);
     seq = L"\x1b]11;99/66/33\x1b\\";
     stateMachine.ProcessString(seq);
