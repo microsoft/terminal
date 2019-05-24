@@ -114,7 +114,7 @@ static HRESULT ActivateLegacyConhost(const HANDLE handle)
         PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
         if (pfnConsoleCreateIoThread != nullptr)
         {
-            hr = HRESULT_FROM_NT (pfnConsoleCreateIoThread (handle));
+            hr = HRESULT_FROM_NT(pfnConsoleCreateIoThread(handle));
         }
         else
         {
