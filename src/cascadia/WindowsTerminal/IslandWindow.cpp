@@ -173,7 +173,7 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
 // Arguments:
 // - width: the new width of the window _in pixels_
 // - height: the new height of the window _in pixels_
-void IslandWindow::OnResize(const UINT width, const UINT height)
+void IslandWindow::OnResize(const UINT /*width*/, const UINT /*height*/)
 {
     OnSize();
 }
