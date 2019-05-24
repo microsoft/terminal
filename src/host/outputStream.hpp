@@ -157,6 +157,10 @@ public:
 
     BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override;
 
+    BOOL PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
+
+    BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

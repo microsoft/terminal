@@ -65,6 +65,8 @@ public:
     virtual bool EnableAnyEventMouseMode(const bool fEnabled) = 0; // ?1003
     virtual bool EnableAlternateScroll(const bool fEnabled) = 0; // ?1007
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) = 0; // OSCColorTable
+    virtual bool SetDefaultForeground(const DWORD dwColor) = 0; // OSCDefaultForeground
+    virtual bool SetDefaultBackground(const DWORD dwColor) = 0; // OSCDefaultBackground
 
     virtual bool EraseInDisplay(const DispatchTypes::EraseType  eraseType) = 0; // ED
     virtual bool EraseInLine(const DispatchTypes::EraseType  eraseType) = 0; // EL
@@ -97,4 +99,3 @@ public:
 
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() { }
-
