@@ -17,7 +17,6 @@ jobs:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
     condition: ne(parameters.configuration, "AuditMode")
 
-  steps:
   - template: build-console-audit-mode-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
