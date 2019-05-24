@@ -49,15 +49,19 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
+        // Parse the json data.
         Json::Value root;
-        // TODO: unique_ptr this guy VVVV
-        Json::CharReader* reader = Json::CharReaderBuilder::CharReaderBuilder().newCharReader();
-        auto raw = winrt::to_string(actualData);
-        std::string errs;
-        bool b = reader->parse(raw.c_str(), raw.c_str()+raw.size(), &root, &errs);
-        // TODO: need better error. `reader` might have the exception in a
-        // better format.
-        if (!b) throw winrt::hresult_error();
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        const auto raw = winrt::to_string(actualData);
+        std::string errs; // This string will recieve any error text from failing to parse.
+
+        // `parse` will return false if it fails.
+        if (!reader->parse(raw.c_str(), raw.c_str() + raw.size(), &root, &errs))
+        {
+            // TODO:GH#990 display this exception text to the user, in a
+            //      copy-pasteable way.
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
         resultPtr = FromJson(root);
 
         if (saveOnLoad)
