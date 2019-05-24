@@ -257,8 +257,8 @@ namespace Microsoft::Console::VirtualTerminal
                                      _Out_ DWORD* const pRgb);
 
         bool _GetOscSetColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
-                                   const size_t cchOscString,
-                                   _Out_ DWORD* const pRgb) const;
+                             const size_t cchOscString,
+                             _Out_ DWORD* const pRgb) const;
 
         static const DispatchTypes::CursorStyle s_defaultCursorStyle = DispatchTypes::CursorStyle::BlinkingBlockDefault;
         _Success_(return)
