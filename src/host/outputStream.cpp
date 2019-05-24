@@ -775,7 +775,7 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) co
 }
 
 // Method Description:
-// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
+// - Connects the PrivateSetDefaultBackground call directly into our Driver Message servicing
 //      call inside Conhost.exe
 // Arguments:
 // - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
