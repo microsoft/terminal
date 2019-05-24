@@ -134,7 +134,7 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 
         // only care if this TT font's name matches
         if ((0 != lstrcmp(FontInfo[i].FaceName, pwszTTFace)) && // wrong face name and
-            (pwszAltTTFace != NULL ||                           // either pwszAltTTFace is NULL or
+            (pwszAltTTFace == NULL ||                           // either pwszAltTTFace is NULL or
              (0 != lstrcmp(FontInfo[i].FaceName, pwszAltTTFace)))) // pwszAltTTFace is wrong too
         {
             // A TrueType font, but not the one we're interested in
@@ -979,6 +979,7 @@ Return Value:
 /* ----- Preview routines ----- */
 
 LRESULT
+CALLBACK
 FontPreviewWndProc(
     HWND hWnd,
     UINT wMessage,

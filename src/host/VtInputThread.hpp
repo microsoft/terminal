@@ -26,7 +26,7 @@ namespace Microsoft::Console
 
         [[nodiscard]]
         HRESULT Start();
-        static DWORD StaticVtInputThreadProc(_In_ LPVOID lpParameter);
+        static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
         void DoReadInput(const bool throwOnFail);
 
     private:

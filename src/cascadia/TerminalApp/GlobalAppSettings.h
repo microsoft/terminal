@@ -35,12 +35,15 @@ public:
     GUID GetDefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
 
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
+
+    void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
 
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
@@ -69,6 +72,6 @@ private:
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
-    static std::wstring _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+    static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
 };

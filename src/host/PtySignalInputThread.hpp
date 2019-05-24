@@ -25,7 +25,7 @@ namespace Microsoft::Console
 
         [[nodiscard]]
         HRESULT Start() noexcept;
-        static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
+        static DWORD WINAPI StaticThreadProc(_In_ LPVOID lpParameter);
 
         // Prevent copying and assignment.
         PtySignalInputThread(const PtySignalInputThread&) = delete;

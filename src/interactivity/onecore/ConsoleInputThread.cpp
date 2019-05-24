@@ -16,7 +16,7 @@
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 
-DWORD ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
+DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)
 {
     Globals& globals = ServiceLocator::LocateGlobals();
     ConIoSrvComm * const Server = ServiceLocator::LocateInputServices<ConIoSrvComm>();
@@ -108,7 +108,7 @@ HANDLE ConsoleInputThread::Start()
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)ConsoleInputThreadProcOneCore,
+                           ConsoleInputThreadProcOneCore,
                            _pConIoSrvComm,
                            0,
                            &dwThreadId);

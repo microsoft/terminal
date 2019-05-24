@@ -18,12 +18,12 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring PROFILES_KEY{ L"profiles" };
-static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-static const std::wstring SCHEMES_KEY{ L"schemes" };
+static constexpr std::wstring_view PROFILES_KEY{ L"profiles" };
+static constexpr std::wstring_view KEYBINDINGS_KEY{ L"keybindings" };
+static constexpr std::wstring_view SCHEMES_KEY{ L"schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -47,39 +47,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        JsonValue root{ nullptr };
-        bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
-        // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-        if (parsedSuccessfully)
-        {
-            JsonObject obj = root.GetObjectW();
-            resultPtr = FromJson(obj);
+        // If Parse fails, it'll throw a hresult_error
+        JsonObject root = JsonObject::Parse(actualData);
 
-            //  Update profile only if it has changed.
-            if (saveOnLoad)
+        resultPtr = FromJson(root);
+
+        //  Update profile only if it has changed.
+        if (saveOnLoad)
+        {
+            const JsonObject json = resultPtr->ToJson();
+            auto serializedSettings = json.Stringify();
+
+            if (actualData != serializedSettings)
             {
-                const JsonObject json = resultPtr->ToJson();
-                auto serializedSettings = json.Stringify();
-
-                if (actualData != serializedSettings)
-                {
-                    resultPtr->SaveAll();
-                }
+                resultPtr->SaveAll();
             }
-        }
-        else
-        {
-            // Until 20737698 is done, throw an error, so debugging can trace
-            //      the exception here, instead of later on in unrelated code
-            THROW_HR(E_INVALIDARG);
         }
     }
     else
     {
         resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->_CreateDefaults();
+        resultPtr->CreateDefaults();
 
-        // The settings file does not exist.  Let's commit one.
+        // The settings file does not exist. Let's commit one.
         resultPtr->SaveAll();
     }
 
@@ -137,6 +127,9 @@ JsonObject CascadiaSettings::ToJson() const
     jsonObject.Insert(PROFILES_KEY, profilesArray);
     jsonObject.Insert(SCHEMES_KEY, schemesArray);
 
+    jsonObject.Insert(KEYBINDINGS_KEY,
+                      _globals.GetKeybindings().ToJson());
+
     return jsonObject;
 }
 
@@ -190,9 +183,18 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
         }
     }
 
-    // TODO:MSFT:20700157
     // Load the keybindings from the file as well
-    resultPtr->_CreateDefaultKeybindings();
+    if (json.HasKey(KEYBINDINGS_KEY))
+    {
+        const auto keybindingsObj = json.GetNamedArray(KEYBINDINGS_KEY);
+        auto loadedBindings = AppKeyBindings::FromJson(keybindingsObj);
+        resultPtr->_globals.SetKeybindings(loadedBindings);
+    }
+    else
+    {
+        // Create the default keybindings if we couldn't find any keybindings.
+        resultPtr->_CreateDefaultKeybindings();
+    }
 
     return resultPtr;
 }
@@ -366,7 +368,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
 
 // function Description:
 // - Returns the full path to the settings file, either within the application
-//   package, or in it's unpackaged location.
+//   package, or in its unpackaged location.
 // Arguments:
 // - <none>
 // Return Value:
@@ -378,7 +380,7 @@ winrt::hstring CascadiaSettings::GetSettingsPath()
 }
 
 // Function Description:
-// - Get the full path to settings file in it's packaged location.
+// - Get the full path to settings file in its packaged location.
 // Arguments:
 // - <none>
 // Return Value:

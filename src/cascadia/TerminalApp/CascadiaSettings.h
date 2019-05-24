@@ -50,6 +50,8 @@ public:
     static winrt::hstring GetSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
+
+    void CreateDefaults();
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
@@ -58,7 +60,6 @@ private:
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
-    void _CreateDefaults();
 
     static bool _IsPackaged();
     static void _SaveAsPackagedApp(const winrt::hstring content);
@@ -67,6 +68,8 @@ private:
     static winrt::hstring _GetPackagedSettingsPath();
     static std::optional<winrt::hstring> _LoadAsPackagedApp();
     static std::optional<winrt::hstring> _LoadAsUnpackagedApp();
-    static bool _IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline);
+    static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
+    static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
+    static Profile _CreateDefaultProfile(const std::wstring_view name);
 };

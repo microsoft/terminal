@@ -419,7 +419,7 @@ HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
 [[nodiscard]]
 HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
 {
-    // inbox telnet uses xterm-ascii as it's mode. If we're in ascii mode, don't
+    // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.
     if (_fUseAsciiOnly)
     {

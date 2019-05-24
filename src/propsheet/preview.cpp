@@ -371,6 +371,7 @@ PreviewPaint(
 
 
 LRESULT
+CALLBACK
 PreviewWndProc(
     HWND hWnd,
     UINT wMessage,

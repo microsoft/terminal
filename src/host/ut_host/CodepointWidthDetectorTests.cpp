@@ -10,9 +10,9 @@
 
 using namespace WEX::Logging;
 
-static const std::wstring emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
+static constexpr std::wstring_view emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
 
-static const std::wstring ambiguous = L"\x414"; // U+0414 cyrillic capital de
+static constexpr std::wstring_view ambiguous = L"\x414"; // U+0414 cyrillic capital de
 
 // codepoint and utf16 encoded string
 static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData =

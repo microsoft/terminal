@@ -217,7 +217,7 @@ NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
     return Status;
 }
 
-DWORD ConsoleIoThread();
+DWORD WINAPI ConsoleIoThread(LPVOID lpParameter);
 
 void ConsoleCheckDebug()
 {
@@ -261,7 +261,7 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     ServerInformation.InputAvailableEvent = ServiceLocator::LocateGlobals().hInputEvent.get();
     RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
 
-    HANDLE const hThread = CreateThread(nullptr, 0, (LPTHREAD_START_ROUTINE)ConsoleIoThread, 0, 0, nullptr);
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, 0, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -520,7 +520,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         auto renderThread = std::make_unique<RenderThread>();
         // stash a local pointer to the thread here -
         // We're going to give ownership of the thread to the Renderer,
-        //      but the thread also need to be told who it's renderer is,
+        //      but the thread also need to be told who its renderer is,
         //      and we can't do that until the renderer is constructed.
         auto* const localPointerToThread = renderThread.get();
 
@@ -532,7 +532,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         g.pRender->EnablePainting();
 
         // Set up the renderer to be used to calculate the width of a glyph,
-        //      should we be unable to figure out it's width another way.
+        //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
 
@@ -641,7 +641,7 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 // - <none>
 // Return Value:
 // - This routine never returns. The process exits when no more references or clients exist.
-DWORD ConsoleIoThread()
+DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
 {
     auto& globals = ServiceLocator::LocateGlobals();
 
@@ -659,7 +659,7 @@ DWORD ConsoleIoThread()
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
