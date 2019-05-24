@@ -535,6 +535,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
+        // Manually prevent keyboard navigation with tab. We want to send tab to
+        // the terminal, and we don't want to be able to escape focus of the
+        // control with tab.
+        if (e.OriginalKey() == VirtualKey::Tab)
+        {
+            handled = true;
+        }
+
         e.Handled(handled);
     }
 
