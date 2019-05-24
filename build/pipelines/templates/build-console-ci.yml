@@ -10,14 +10,22 @@ jobs:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
   pool: { vmImage: vs2017-win2016 }
+  condition: ne(parameters.configuration, "AuditMode")
 
   steps:
   - template: build-console-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
-    condition: ne(parameters.configuration, "AuditMode")
 
+- job: Build${{ parameters.platform }}AuditMode
+  displayName: Build ${{ parameters.platform }} AuditMode
+  variables:
+    BuildConfiguration: ${{ parameters.configuration }}
+    BuildPlatform: ${{ parameters.platform }}
+  pool: { vmImage: vs2017-win2016 }
+  condition: eq(parameters.configuration, "AuditMode")
+
+  steps:
   - template: build-console-audit-mode-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
-    condition: eq(parameters.configuration, "AuditMode")
