@@ -58,8 +58,7 @@ Revision History:
 #define IDS_TOOLTIP_OPACITY          17
 #define IDS_TOOLTIP_INTERCEPT_COPY_PASTE    18
 
-[[nodiscard]]
-NTSTATUS
+void
 MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD *AltFontSize,

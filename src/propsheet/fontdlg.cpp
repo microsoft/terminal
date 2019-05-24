@@ -259,8 +259,7 @@ FontDlgProc(
 
         if (g_fHostedInFileProperties || gpStateInfo->Defaults)
         {
-            // Ignore failure and drive on to fallback.
-            (void)FindFontAndUpdateState();
+            LOG_IF_FAILED(FindFontAndUpdateState());
         }
 
         // IMPORTANT NOTE: When the propsheet and conhost disagree on a font (e.g. user has switched charsets and forgot
@@ -1095,10 +1094,7 @@ FindCreateFont(
                 Size = DefaultFontSize;
             }
         } else {
-            if (!NT_SUCCESS(MakeAltRasterFont(CodePage, &AltFontSize, &AltFontFamily, &AltFontIndex, AltFaceName)))
-            {
-                goto fallback;
-            }
+            MakeAltRasterFont(CodePage, &AltFontSize, &AltFontFamily, &AltFontIndex, AltFaceName);
 
             if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
                 pwszFace = AltFaceName;
@@ -1109,7 +1105,6 @@ FindCreateFont(
             }
         }
     } else {
-fallback:
         if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
             pwszFace = DefaultFaceName;
         }
@@ -1303,14 +1298,11 @@ SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
             BYTE  AltFontFamily;
             ULONG AltFontIndex = 0;
 
-            if (!NT_SUCCESS(MakeAltRasterFont(gpStateInfo->CodePage,
-                                              &AltFontSize,
-                                              &AltFontFamily,
-                                              &AltFontIndex,
-                                              AltFaceName)))
-            {
-                goto fallback;
-            }
+            MakeAltRasterFont(gpStateInfo->CodePage,
+                              &AltFontSize,
+                              &AltFontFamily,
+                              &AltFontIndex,
+                              AltFaceName);
 
             while (iCB > 0) {
                 iCB--;
@@ -1320,7 +1312,6 @@ SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
                 }
             }
         } else {
-fallback:
             while (iCB > 0) {
                 iCB--;
                 FontIndex = lcbGETITEMDATA(hWndList, bLB, iCB);

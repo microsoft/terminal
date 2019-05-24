@@ -23,7 +23,7 @@ Revision History:
 #include <strsafe.h>
 #pragma hdrstop
 
-NTSTATUS
+void
 MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD *AltFontSize,
@@ -63,8 +63,6 @@ MakeAltRasterFont(
     *AltFontFamily = FontInfo[*AltFontIndex].Family;
 
     DBGFONTS(("MakeAltRasterFont : AltFontIndex = %ld\n", *AltFontIndex));
-
-    return STATUS_SUCCESS;
 }
 
 [[nodiscard]]

@@ -389,7 +389,7 @@ VOID
 InitializeFonts(
     VOID)
 {
-    (void)EnumerateFonts(EF_DEFFACE);  // Just the Default font
+    LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE));  // Just the Default font
 }
 
 
