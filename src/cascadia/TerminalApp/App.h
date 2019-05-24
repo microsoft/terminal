@@ -8,8 +8,6 @@
 #include "App.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-#include <wil/filesystem.h>
-
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>

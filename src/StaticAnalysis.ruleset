@@ -6,9 +6,6 @@
   <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">
     <Rule Id="C6001" Action="Error" />
     <Rule Id="C6011" Action="Error" />
-    <Rule Id="C6029" Action="Error" />
-    <Rule Id="C6053" Action="Error" />
-    <Rule Id="C26436" Action="Error" />
   </Rules>
 
 </RuleSet>

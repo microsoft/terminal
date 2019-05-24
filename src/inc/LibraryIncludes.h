@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include <CppCoreCheck/Warnings.h>
 
 #pragma warning(push)
 
@@ -43,22 +42,21 @@
 #include <functional>
 
 // WIL
-
-// ignore static analysis warnings in wil
-#pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #include <wil/Common.h>
 #include <wil/Result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
 #include <wil/com.h>
-#pragma warning(pop)
+#include <wil/filesystem.h>
 
 // GSL
 // Block GSL Multi Span include because it both has C++17 deprecated iterators
 // and uses the C-namespaced "max" which conflicts with Windows definitions.
 #define GSL_MULTI_SPAN_H
 #include <gsl/gsl>
+
+// CppCoreCheck
+#include <CppCoreCheck/Warnings.h>
 
 // IntSafe
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
