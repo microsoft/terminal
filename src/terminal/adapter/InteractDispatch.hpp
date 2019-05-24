@@ -26,7 +26,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         InteractDispatch(ConGetSet* const pConApi);
 
-        ~InteractDispatch() override = default;
+        ~InteractDispatch() = default;
 
         bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
         bool WriteCtrlC() override;
