@@ -247,6 +247,11 @@ Json::Value Profile::ToJson() const
         root[ICON_KEY_2.data()] = icon;
     }
 
+    if (_startingDirectory)
+    {
+        root[STARTINGDIRECTORY_KEY_2.data()] = winrt::to_string(_startingDirectory.value());
+    }
+
     return root;
 }
 
