@@ -29,10 +29,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialCols{ initialCols },
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
-        _guid{ initialGuid },
-        _connected{ false }
+        _guid{ initialGuid }
     {
-        if (_guid == guid())
+        if (_guid == guid{})
         {
             _guid = Utils::CreateGuid();
         }

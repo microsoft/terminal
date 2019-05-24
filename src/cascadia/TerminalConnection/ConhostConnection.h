@@ -26,14 +26,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
         winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
 
+        // set during construction - not constant
         uint32_t _initialRows;
         uint32_t _initialCols;
         hstring _commandline;
         hstring _startingDirectory;
         guid _guid; // A "unique" session identifier for connected client
 
-        bool _connected;
-        std::atomic<bool> _closing;
+        bool _connected{ false };
+        std::atomic<bool> _closing{ false };
+
         wil::unique_hfile _inPipe;  // The pipe for writing input to
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_hfile _signalPipe;
