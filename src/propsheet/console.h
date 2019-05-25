@@ -91,7 +91,7 @@ IsAvailableTTFont(
 
 BOOL
 IsAvailableTTFontCP(
-    LPCWSTR pwszFace,
+    LPCTSTR ptszFace,
     UINT CodePage
     );
 
@@ -105,6 +105,7 @@ GetAltFaceName(
     LPCTSTR ptszFace
     );
 
+[[nodiscard]]
 NTSTATUS DestroyDbcsMisc(VOID);
 
 int
@@ -118,26 +119,6 @@ LanguageDisplay(
     HWND hDlg,
     UINT CodePage
     ) ;
-
-//
-// registry.c
-//
-NTSTATUS
-MyRegOpenKey(
-    __in_opt HANDLE hKey,
-    __in LPCWSTR lpSubKey,
-    __out PHANDLE phResult
-    );
-
-NTSTATUS
-MyRegEnumValue(
-    __in HANDLE hKey,
-    __in DWORD dwIndex,
-    __in DWORD dwValueLength,
-    __out_bcount(dwValueLength) LPWSTR lpValueName,
-    __in_range(4, 1024) DWORD dwDataLength,
-    __out_bcount(dwDataLength) LPBYTE lpData
-    );
 
 //
 // Function prototypes

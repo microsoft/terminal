@@ -153,6 +153,7 @@ GetAltFaceName(
     return NULL;
 }
 
+[[nodiscard]]
 NTSTATUS
 DestroyDbcsMisc(
     VOID)
