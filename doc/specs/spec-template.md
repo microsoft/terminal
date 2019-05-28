@@ -43,7 +43,7 @@ issue id: <github issue id>
 
 ## Future considerations
 
-[comment]: # What are some of the things that the fixes/features herein might unlock in the future? Does the implementation of this spec enable scenarios 
+[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios? 
 
 ## Resources
 
