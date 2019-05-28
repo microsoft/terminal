@@ -49,7 +49,7 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 
 **Complete the requested information and provide as much information as possible**. The more information you provide, the more likely your issue/ask will be understood and fixed. Wherever possible, provide steps to reproduce the issue: **Repro steps are among the most valuable part of a bug report!**
 
-Other Helpful information includes:
+Other helpful information includes:
 
 * What device you're running (inc. CPU type, memory, disk, etc.)
 * What build of Windows your device is running
