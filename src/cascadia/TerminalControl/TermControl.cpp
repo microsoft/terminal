@@ -297,12 +297,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
+        // Then stash a local pointer to the render thread so we can initialize it and enable it
+        // to paint itself *after* we hand off its ownership to the renderer.
+        // We split up construction and initialization of the render thread object this way
+        // because the renderer and render thread have circular references to each other.
         auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-        // Stash a local pointer to the render thread, so we can enable it after
-        //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
+
+        // Now create the renderer and initialize the render thread.
         _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
+
+        THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
         // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
@@ -349,8 +355,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
-
-        THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
         auto chain = _renderEngine->GetSwapChain();
         _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]()
