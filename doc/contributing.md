@@ -86,7 +86,7 @@ Specs help collaborators discuss different approaches to solve a problem, descri
 
 Specs will be managed in a very similar manner as code contributions so please follow the "Fork, Branch and Create your PR" below.
 
-### Writing / contributing to a spec
+### Writing / Contributing to a Spec
 
 To write/contribute to a spec, fork, branch and commit via PRs.
 
