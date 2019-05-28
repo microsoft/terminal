@@ -70,6 +70,8 @@ Other helpful information includes:
 
 👉Tip: We MUCH prefer text command-line script than screenshots of command-line script.
 
+Be sure to indicate if you intend to implement the fix/feature yourself, otherwise we may label the issue as ```Help-Wanted```.
+
 ## Proposing a new feature or a fix to an issue
 
 ⚠ Again, to help streamline your proposed fix or new feature, **file an issue and discuss your issue/feature/ask with the team before starting any work.**
