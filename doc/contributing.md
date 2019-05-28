@@ -80,7 +80,7 @@ Other helpful information includes:
 
 Some issues/features may be quick and simple to describe and agree upon. For such scenarios, once a team member has agreed your approach, skip ahead to "Fork, Branch, and Create your PR". Small issues that do not require a spec will be labelled Issue-Bug or Issue-Task.
 
-However, some issues/features require some careful thought & formal design before implementation. For these scenarios, we'll request that a spec is written and the associated issue will be labelled Issue-Feature.
+However, some issues/features require careful thought & formal design before implementation. For these scenarios, we'll request that a spec is written and the associated issue will be labeled Issue-Feature.
 
 Specs help collaborators discuss different approaches to solve a problem, describe how the feature will behave, how the feature will impact the user, what happens if something goes wrong, etc. Driving towards agreement in a spec, before any code is written, often results in simpler code, and less wasted effort in the long run.
 
