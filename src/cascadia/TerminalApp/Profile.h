@@ -33,7 +33,7 @@ public:
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
 
     Json::Value ToJson() const;
-    static Profile FromJson(Json::Value json);
+    static Profile FromJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;

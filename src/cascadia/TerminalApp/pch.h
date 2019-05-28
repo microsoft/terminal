@@ -50,5 +50,4 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);
 #include <TraceLoggingActivity.h>
 
 // JsonCpp
-#include <json-forwards.h>
 #include <json.h>

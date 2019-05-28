@@ -143,14 +143,14 @@ Json::Value GlobalAppSettings::ToJson() const
 {
     Json::Value jsonObject;
 
-    jsonObject[DEFAULTPROFILE_KEY.data()] = winrt::to_string(Utils::GuidToString(_defaultProfile));
-    jsonObject[INITIALROWS_KEY.data()] = _initialRows;
-    jsonObject[INITIALCOLS_KEY.data()] = _initialCols;
-    jsonObject[ALWAYS_SHOW_TABS_KEY.data()] = _alwaysShowTabs;
-    jsonObject[SHOW_TITLE_IN_TITLEBAR_KEY.data()] = _showTitleInTitlebar;
-    jsonObject[SHOW_TABS_IN_TITLEBAR_KEY.data()] = _showTabsInTitlebar;
-    jsonObject[REQUESTED_THEME_KEY.data()] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    jsonObject[KEYBINDINGS_KEY.data()] = AppKeyBindingsSerialization::ToJson(_keybindings);
+    jsonObject[JsonKey(DEFAULTPROFILE_KEY)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
+    jsonObject[JsonKey(INITIALROWS_KEY)] = _initialRows;
+    jsonObject[JsonKey(INITIALCOLS_KEY)] = _initialCols;
+    jsonObject[JsonKey(ALWAYS_SHOW_TABS_KEY)] = _alwaysShowTabs;
+    jsonObject[JsonKey(SHOW_TITLE_IN_TITLEBAR_KEY)] = _showTitleInTitlebar;
+    jsonObject[JsonKey(SHOW_TABS_IN_TITLEBAR_KEY)] = _showTabsInTitlebar;
+    jsonObject[JsonKey(REQUESTED_THEME_KEY)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(KEYBINDINGS_KEY)] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
     return jsonObject;
 }
@@ -161,45 +161,45 @@ Json::Value GlobalAppSettings::ToJson() const
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson(Json::Value json)
+GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
     GlobalAppSettings result{};
 
-    if (auto defaultProfile{ json[DEFAULTPROFILE_KEY.data()] })
+    if (auto defaultProfile{ json[JsonKey(DEFAULTPROFILE_KEY)] })
     {
         auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
         result._defaultProfile = guid;
     }
 
-    if (auto alwaysShowTabs{ json[ALWAYS_SHOW_TABS_KEY.data()] })
+    if (auto alwaysShowTabs{ json[JsonKey(ALWAYS_SHOW_TABS_KEY)] })
     {
         result._alwaysShowTabs = alwaysShowTabs.asBool();
     }
-    if (auto initialRows{ json[INITIALROWS_KEY.data()] })
+    if (auto initialRows{ json[JsonKey(INITIALROWS_KEY)] })
     {
         result._initialRows = initialRows.asInt();
     }
-    if (auto initialCols{ json[INITIALCOLS_KEY.data()] })
+    if (auto initialCols{ json[JsonKey(INITIALCOLS_KEY)] })
     {
         result._initialCols = initialCols.asInt();
     }
 
-    if (auto showTitleInTitlebar{ json[SHOW_TITLE_IN_TITLEBAR_KEY.data()] })
+    if (auto showTitleInTitlebar{ json[JsonKey(SHOW_TITLE_IN_TITLEBAR_KEY)] })
     {
         result._showTitleInTitlebar = showTitleInTitlebar.asBool();
     }
 
-    if (auto showTabsInTitlebar{ json[SHOW_TABS_IN_TITLEBAR_KEY.data()] })
+    if (auto showTabsInTitlebar{ json[JsonKey(SHOW_TABS_IN_TITLEBAR_KEY)] })
     {
         result._showTabsInTitlebar = showTabsInTitlebar.asBool();
     }
 
-    if (auto requestedTheme{ json[REQUESTED_THEME_KEY.data()] })
+    if (auto requestedTheme{ json[JsonKey(REQUESTED_THEME_KEY)] })
     {
         result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
     }
 
-    if (auto keybindings{ json[KEYBINDINGS_KEY.data()] })
+    if (auto keybindings{ json[JsonKey(KEYBINDINGS_KEY)] })
     {
         result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
     }

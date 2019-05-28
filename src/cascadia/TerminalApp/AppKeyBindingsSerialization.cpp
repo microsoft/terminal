@@ -110,8 +110,8 @@ static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
     Json::Value keysArray;
     keysArray.append(winrt::to_string(keyString));
 
-    jsonObject[KEYS_KEY.data()] = keysArray;
-    jsonObject[COMMAND_KEY.data()] = actionName.data();
+    jsonObject[JsonKey(KEYS_KEY)] = keysArray;
+    jsonObject[JsonKey(COMMAND_KEY)] = actionName.data();
 
     return jsonObject;
 }
@@ -165,8 +165,8 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
     {
         if (value.isObject())
         {
-            const auto commandString = value[COMMAND_KEY.data()];
-            const auto keys = value[KEYS_KEY.data()];
+            const auto commandString = value[JsonKey(COMMAND_KEY)];
+            const auto keys = value[JsonKey(KEYS_KEY)];
 
             if (commandString && keys)
             {

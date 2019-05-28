@@ -340,7 +340,7 @@ std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
     auto bufferData = buffer.data();
     std::string resultString;
     resultString.reserve(buffer.Length());
-    for (int i = 0; i < buffer.Length(); i++)
+    for (size_t i = 0; i < buffer.Length(); i++)
     {
         resultString.push_back(bufferData[i]);
     }

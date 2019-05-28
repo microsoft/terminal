@@ -87,21 +87,15 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 Json::Value ColorScheme::ToJson() const
 {
     Json::Value root;
-    auto fg { Utils::ColorToHexString(_defaultForeground) };
-    auto bg { Utils::ColorToHexString(_defaultBackground) };
-    auto name { _schemeName };
-
-    root[NAME_KEY.data()] = winrt::to_string(name);
-    root[FOREGROUND_KEY.data()] = winrt::to_string(fg);
-    root[BACKGROUND_KEY.data()] = winrt::to_string(bg);
+    root[JsonKey(NAME_KEY)] = winrt::to_string(_schemeName);
+    root[JsonKey(FOREGROUND_KEY)] = Utils::ColorToHexString(_defaultForeground);
+    root[JsonKey(BACKGROUND_KEY)] = Utils::ColorToHexString(_defaultBackground);
 
     int i = 0;
     for (const auto& colorName : TABLE_COLORS)
     {
         auto& colorValue = _table.at(i);
-        auto colorHexString = Utils::ColorToHexString(colorValue);
-
-        root[colorName.data()] = winrt::to_string(colorHexString);
+        root[JsonKey(colorName)] = Utils::ColorToHexString(colorValue);
         i++;
     }
 
@@ -114,35 +108,35 @@ Json::Value ColorScheme::ToJson() const
 // - json: an object which should be a serialization of a ColorScheme object.
 // Return Value:
 // - a new ColorScheme instance created from the values in `json`
-ColorScheme ColorScheme::FromJson(Json::Value json)
+ColorScheme ColorScheme::FromJson(const Json::Value& json)
 {
     ColorScheme result{};
 
-    if (auto name{ json[NAME_KEY.data()] })
+    if (auto name{ json[JsonKey(NAME_KEY)] })
     {
         result._schemeName = winrt::to_hstring(name.asString());
     }
-    if (auto fgString{ json[FOREGROUND_KEY.data()] })
+    if (auto fgString{ json[JsonKey(FOREGROUND_KEY)] })
     {
-        const auto color = Utils::ColorFromHexString(GetWstringFromJson(fgString));
+        const auto color = Utils::ColorFromHexString(fgString.asString());
         result._defaultForeground = color;
     }
-    if (auto bgString{ json[BACKGROUND_KEY.data()] })
+    if (auto bgString{ json[JsonKey(BACKGROUND_KEY)] })
     {
-        const auto color = Utils::ColorFromHexString(GetWstringFromJson(bgString));
+        const auto color = Utils::ColorFromHexString(bgString.asString());
         result._defaultBackground = color;
     }
 
     // Legacy Deserialization. Leave in place to allow forward compatibility
-    if (auto table{ json[TABLE_KEY.data()] })
+    if (auto table{ json[JsonKey(TABLE_KEY)] })
     {
         int i = 0;
 
-        for (auto tableEntry : table)
+        for (const auto& tableEntry : table)
         {
             if (tableEntry.isString())
             {
-                auto color = Utils::ColorFromHexString(GetWstringFromJson(tableEntry));
+                auto color = Utils::ColorFromHexString(tableEntry.asString());
                 result._table.at(i) = color;
             }
             i++;
@@ -152,9 +146,9 @@ ColorScheme ColorScheme::FromJson(Json::Value json)
     int i = 0;
     for (const auto& current : TABLE_COLORS)
     {
-        if (auto str{ json[current.data()] })
+        if (auto str{ json[JsonKey(current)] })
         {
-            const auto color = Utils::ColorFromHexString(GetWstringFromJson(str));
+            const auto color = Utils::ColorFromHexString(str.asString());
             result._table.at(i) = color;
         }
         i++;

@@ -36,7 +36,7 @@ public:
     void ApplyScheme(winrt::Microsoft::Terminal::Settings::TerminalSettings terminalSettings) const;
 
     Json::Value ToJson() const;
-    static ColorScheme FromJson(Json::Value json);
+    static ColorScheme FromJson(const Json::Value& json);
 
     std::wstring_view GetName() const noexcept;
     std::array<COLORREF, COLOR_TABLE_SIZE>& GetTable() noexcept;

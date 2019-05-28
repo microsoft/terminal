@@ -187,69 +187,66 @@ Json::Value Profile::ToJson() const
     Json::Value root;
 
     ///// Profile-specific settings /////
-    root[GUID_KEY.data()] = winrt::to_string(Utils::GuidToString(_guid));
-    root[NAME_KEY.data()] = winrt::to_string(_name);
+    root[JsonKey(GUID_KEY)] = winrt::to_string(Utils::GuidToString(_guid));
+    root[JsonKey(NAME_KEY)] = winrt::to_string(_name);
 
     ///// Core Settings /////
     if (_defaultForeground)
     {
-        const auto defaultForeground = winrt::to_string(Utils::ColorToHexString(_defaultForeground.value()));
-        root[FOREGROUND_KEY.data()] = defaultForeground;
+        root[JsonKey(FOREGROUND_KEY)] = Utils::ColorToHexString(_defaultForeground.value());
     }
     if (_defaultBackground)
     {
-        const auto defaultBackground = winrt::to_string(Utils::ColorToHexString(_defaultBackground.value()));
-        root[BACKGROUND_KEY.data()] = defaultBackground;
+        root[JsonKey(BACKGROUND_KEY)] = Utils::ColorToHexString(_defaultBackground.value());
     }
     if (_schemeName)
     {
         const auto scheme = winrt::to_string(_schemeName.value());
-        root[COLORSCHEME_KEY.data()] = scheme;
+        root[JsonKey(COLORSCHEME_KEY)] = scheme;
     }
     else
     {
         Json::Value tableArray{};
         for (auto& color : _colorTable)
         {
-            auto s = Utils::ColorToHexString(color);
-            tableArray.append(winrt::to_string(s));
+            tableArray.append(Utils::ColorToHexString(color));
         }
-        root[COLORTABLE_KEY.data()] = tableArray;
+        root[JsonKey(COLORTABLE_KEY)] = tableArray;
     }
-    root[HISTORYSIZE_KEY.data()] = _historySize;
-    root[SNAPONINPUT_KEY.data()] = _snapOnInput;
-    root[CURSORCOLOR_KEY.data()] = winrt::to_string(Utils::ColorToHexString(_cursorColor));
+    root[JsonKey(HISTORYSIZE_KEY)] = _historySize;
+    root[JsonKey(SNAPONINPUT_KEY)] = _snapOnInput;
+    root[JsonKey(CURSORCOLOR_KEY)] = Utils::ColorToHexString(_cursorColor);
     // Only add the cursor height property if we're a legacy-style cursor.
     if (_cursorShape == CursorStyle::Vintage)
     {
-        root[CURSORHEIGHT_KEY.data()] = _cursorHeight;
+        root[JsonKey(CURSORHEIGHT_KEY)] = _cursorHeight;
     }
-    root[CURSORSHAPE_KEY.data()] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
+    root[JsonKey(CURSORSHAPE_KEY)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
     ///// Control Settings /////
-    root[COMMANDLINE_KEY.data()] = winrt::to_string(_commandline);
-    root[FONTFACE_KEY.data()] = winrt::to_string(_fontFace);
-    root[FONTSIZE_KEY.data()] = _fontSize;
-    root[ACRYLICTRANSPARENCY_KEY.data()] = _acrylicTransparency;
-    root[USEACRYLIC_KEY.data()] = _useAcrylic;
-    root[CLOSEONEXIT_KEY.data()] = _closeOnExit;
-    root[PADDING_KEY.data()] = winrt::to_string(_padding);
+    root[JsonKey(COMMANDLINE_KEY)] = winrt::to_string(_commandline);
+    root[JsonKey(FONTFACE_KEY)] = winrt::to_string(_fontFace);
+    root[JsonKey(FONTSIZE_KEY)] = _fontSize;
+    root[JsonKey(ACRYLICTRANSPARENCY_KEY)] = _acrylicTransparency;
+    root[JsonKey(USEACRYLIC_KEY)] = _useAcrylic;
+    root[JsonKey(CLOSEONEXIT_KEY)] = _closeOnExit;
+    root[JsonKey(PADDING_KEY)] = winrt::to_string(_padding);
 
     if (_scrollbarState)
     {
         const auto scrollbarState = winrt::to_string(_scrollbarState.value());
-        root[SCROLLBARSTATE_KEY.data()] = scrollbarState;
+        root[JsonKey(SCROLLBARSTATE_KEY)] = scrollbarState;
     }
 
     if (_icon)
     {
         const auto icon = winrt::to_string(_icon.value());
-        root[ICON_KEY.data()] = icon;
+        root[JsonKey(ICON_KEY)] = icon;
     }
 
     if (_startingDirectory)
     {
-        root[STARTINGDIRECTORY_KEY.data()] = winrt::to_string(_startingDirectory.value());
+        root[JsonKey(STARTINGDIRECTORY_KEY)] = winrt::to_string(_startingDirectory.value());
     }
 
     return root;
@@ -261,112 +258,112 @@ Json::Value Profile::ToJson() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-Profile Profile::FromJson(Json::Value json)
+Profile Profile::FromJson(const Json::Value& json)
 {
     Profile result{};
 
     // Profile-specific Settings
-    if (auto name{ json[NAME_KEY.data()] })
+    if (auto name{ json[JsonKey(NAME_KEY)] })
     {
         result._name = GetWstringFromJson(name);
     }
-    if (auto guid{ json[GUID_KEY.data()] })
+    if (auto guid{ json[JsonKey(GUID_KEY)] })
     {
         result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
 
     // Core Settings
-    if (auto foreground{ json[FOREGROUND_KEY.data()] })
+    if (auto foreground{ json[JsonKey(FOREGROUND_KEY)] })
     {
-        const auto color = Utils::ColorFromHexString(GetWstringFromJson(foreground));
+        const auto color = Utils::ColorFromHexString(foreground.asString());
         result._defaultForeground = color;
     }
-    if (auto background{ json[BACKGROUND_KEY.data()] })
+    if (auto background{ json[JsonKey(BACKGROUND_KEY)] })
     {
-        const auto color = Utils::ColorFromHexString(GetWstringFromJson(background));
+        const auto color = Utils::ColorFromHexString(background.asString());
         result._defaultBackground = color;
     }
-    if (auto colorScheme{ json[COLORSCHEME_KEY.data()] })
+    if (auto colorScheme{ json[JsonKey(COLORSCHEME_KEY)] })
     {
         result._schemeName = GetWstringFromJson(colorScheme);
     }
     else
     {
-        if (auto colortable{ json[COLORTABLE_KEY.data()] })
+        if (auto colortable{ json[JsonKey(COLORTABLE_KEY)] })
         {
             int i = 0;
             for (auto tableEntry : colortable)
             {
                 if (tableEntry.isString())
                 {
-                    const auto color = Utils::ColorFromHexString(GetWstringFromJson(tableEntry));
+                    const auto color = Utils::ColorFromHexString(tableEntry.asString());
                     result._colorTable[i] = color;
                 }
                 i++;
             }
         }
     }
-    if (auto historySize{ json[HISTORYSIZE_KEY.data()] })
+    if (auto historySize{ json[JsonKey(HISTORYSIZE_KEY)] })
     {
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
         result._historySize = historySize.asInt();
     }
-    if (auto snapOnInput{ json[SNAPONINPUT_KEY.data()] })
+    if (auto snapOnInput{ json[JsonKey(SNAPONINPUT_KEY)] })
     {
         result._snapOnInput = snapOnInput.asBool();
     }
-    if (auto cursorColor{ json[CURSORCOLOR_KEY.data()] })
+    if (auto cursorColor{ json[JsonKey(CURSORCOLOR_KEY)] })
     {
-        const auto color = Utils::ColorFromHexString(GetWstringFromJson(cursorColor));
+        const auto color = Utils::ColorFromHexString(cursorColor.asString());
         result._cursorColor = color;
     }
-    if (auto cursorHeight{ json[CURSORHEIGHT_KEY.data()] })
+    if (auto cursorHeight{ json[JsonKey(CURSORHEIGHT_KEY)] })
     {
         result._cursorHeight = cursorHeight.asUInt();
     }
-    if (auto cursorShape{ json[CURSORSHAPE_KEY.data()] })
+    if (auto cursorShape{ json[JsonKey(CURSORSHAPE_KEY)] })
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
 
     // Control Settings
-    if (auto commandline{ json[COMMANDLINE_KEY.data()] })
+    if (auto commandline{ json[JsonKey(COMMANDLINE_KEY)] })
     {
         result._commandline = GetWstringFromJson(commandline);
     }
-    if (auto fontFace{ json[FONTFACE_KEY.data()] })
+    if (auto fontFace{ json[JsonKey(FONTFACE_KEY)] })
     {
         result._fontFace = GetWstringFromJson(fontFace);
     }
-    if (auto fontSize{ json[FONTSIZE_KEY.data()] })
+    if (auto fontSize{ json[JsonKey(FONTSIZE_KEY)] })
     {
         result._fontSize = fontSize.asInt();
     }
-    if (auto acrylicTransparency{ json[ACRYLICTRANSPARENCY_KEY.data()] })
+    if (auto acrylicTransparency{ json[JsonKey(ACRYLICTRANSPARENCY_KEY)] })
     {
         result._acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (auto useAcrylic{ json[USEACRYLIC_KEY.data()] })
+    if (auto useAcrylic{ json[JsonKey(USEACRYLIC_KEY)] })
     {
         result._useAcrylic = useAcrylic.asBool();
     }
-    if (auto closeOnExit{ json[CLOSEONEXIT_KEY.data()] })
+    if (auto closeOnExit{ json[JsonKey(CLOSEONEXIT_KEY)] })
     {
         result._closeOnExit = closeOnExit.asBool();
     }
-    if (auto padding{ json[PADDING_KEY.data()] })
+    if (auto padding{ json[JsonKey(PADDING_KEY)] })
     {
         result._padding = GetWstringFromJson(padding);
     }
-    if (auto scrollbarState{ json[SCROLLBARSTATE_KEY.data()] })
+    if (auto scrollbarState{ json[JsonKey(SCROLLBARSTATE_KEY)] })
     {
         result._scrollbarState = GetWstringFromJson(scrollbarState);
     }
-    if (auto startingDirectory{ json[STARTINGDIRECTORY_KEY.data()] })
+    if (auto startingDirectory{ json[JsonKey(STARTINGDIRECTORY_KEY)] })
     {
         result._startingDirectory = GetWstringFromJson(startingDirectory);
     }
-    if (auto icon{ json[ICON_KEY.data()] })
+    if (auto icon{ json[JsonKey(ICON_KEY)] })
     {
         result._icon = GetWstringFromJson(icon);
     }

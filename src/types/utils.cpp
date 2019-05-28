@@ -60,7 +60,7 @@ GUID Utils::CreateGuid()
 // - color: the COLORREF to create the string for
 // Return Value:
 // - a string representation of the color
-std::wstring Utils::ColorToHexString(const COLORREF color)
+std::wstring Utils::ColorToHexStringW(const COLORREF color)
 {
     std::wstringstream ss;
     ss << L"#" << std::uppercase << std::setfill(L'0') << std::hex;
@@ -77,7 +77,7 @@ std::wstring Utils::ColorToHexString(const COLORREF color)
 // Return Value:
 // - A COLORREF if the string could successfully be parsed. If the string is not
 //      the correct format, throws E_INVALIDARG
-COLORREF Utils::ColorFromHexString(const std::wstring wstr)
+COLORREF Utils::ColorFromHexStringW(const std::wstring wstr)
 {
     THROW_HR_IF(E_INVALIDARG, wstr.size() < 7 || wstr.size() >= 8);
     THROW_HR_IF(E_INVALIDARG, wstr[0] != L'#');
@@ -85,6 +85,45 @@ COLORREF Utils::ColorFromHexString(const std::wstring wstr)
     std::wstring rStr{ &wstr[1], 2 };
     std::wstring gStr{ &wstr[3], 2 };
     std::wstring bStr{ &wstr[5], 2 };
+
+    BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+
+    return RGB(r, g, b);
+}
+
+// Function Description:
+// - Creates a String representation of a color, in the format "#RRGGBB"
+// Arguments:
+// - color: the COLORREF to create the string for
+// Return Value:
+// - a string representation of the color
+std::string Utils::ColorToHexString(const COLORREF color)
+{
+    std::stringstream ss;
+    ss << "#" << std::uppercase << std::setfill('0') << std::hex;
+    ss << std::setw(2) << GetRValue(color);
+    ss << std::setw(2) << GetGValue(color);
+    ss << std::setw(2) << GetBValue(color);
+    return ss.str();
+}
+
+// Function Description:
+// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// Arguments:
+// - str: a string representation of the COLORREF to parse
+// Return Value:
+// - A COLORREF if the string could successfully be parsed. If the string is not
+//      the correct format, throws E_INVALIDARG
+COLORREF Utils::ColorFromHexString(const std::string str)
+{
+    THROW_HR_IF(E_INVALIDARG, str.size() < 7 || str.size() >= 8);
+    THROW_HR_IF(E_INVALIDARG, str[0] != '#');
+
+    std::string rStr{ &str[1], 2 };
+    std::string gStr{ &str[3], 2 };
+    std::string bStr{ &str[5], 2 };
 
     BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
