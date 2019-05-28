@@ -65,7 +65,7 @@ Other helpful information includes:
 * What tools and apps you're using (e.g. VS 2019, VSCode, etc.)
 * Don't assume we're experts in setting up YOUR environment and don't assume we are experts in `<your distro/tool of choice>`. Teach us to help you!
 * What steps do we need to take to reproduce the issue? Assume we love to read repro steps. As much detail as you can stand is probably _barely_ enough detail for us!
-* If you're reporting a particular character/glyph not rendering correctly, the specific Unicode codepoint would be MOST welcome
+* If you're reporting a particular character/glyph not rendering correctly, the specific Unicode codepoint would be MOST welcome (e.g. U+1F4AF, U+4382)
 * Prefer error message text where possible, or screenshots of errors if text cannot be captured
 
 👉Tip: We MUCH prefer text command-line script than screenshots of command-line script.
