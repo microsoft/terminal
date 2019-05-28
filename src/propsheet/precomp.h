@@ -48,12 +48,7 @@
 #include "strid.h"
 #include "..\propslib\conpropsp.hpp"
 
-// WIL
 #include <new>
-#include <wil/Common.h>
-#include <wil/Result.h>
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
 
 // This is currently bubbling up the source tree to our branch
 #ifndef WM_DPICHANGED_BEFOREPARENT

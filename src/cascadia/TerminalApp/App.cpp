@@ -211,7 +211,7 @@ namespace winrt::TerminalApp::implementation
         _root.Children().Append(dialog);
 
         // Display the dialog.
-        Controls::ContentDialogResult result = await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown.
@@ -295,12 +295,12 @@ namespace winrt::TerminalApp::implementation
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
                 auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
-                
+
                 // make sure we find one to display
                 if (profileKeyChord)
                 {
                     _SetAcceleratorForMenuItem(profileMenuItem, profileKeyChord);
-                }                
+                }
             }
 
             auto profileName = profile.GetName();
