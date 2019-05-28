@@ -52,7 +52,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // Parse the json data.
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-                std::string errs; // This string will recieve any error text from failing to parse.
+        std::string errs; // This string will recieve any error text from failing to parse.
 
         // `parse` will return false if it fails.
         if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
@@ -101,7 +101,7 @@ void CascadiaSettings::SaveAll() const
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
-    const auto serializedString = winrt::to_hstring(Json::writeString(wbuilder, json));
+    const auto serializedString = Json::writeString(wbuilder, json);
 
     if (_IsPackaged())
     {
@@ -238,7 +238,7 @@ bool CascadiaSettings::_IsPackaged()
 // - content: the given string of content to write to the file.
 // Return Value:
 // - <none>
-void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
+void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -249,11 +249,13 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
     auto file = file_async.get();
 
     DataWriter dw = DataWriter();
-
-    // DataWriter will convert UTF-16 string to UTF-8 (expected settings file encoding)
-    dw.UnicodeEncoding(UnicodeEncoding::Utf8);
-
-    dw.WriteString(content);
+    const char* firstChar = content.c_str();
+    const char* lastChar = firstChar + content.size();
+    // Manually cast to a uint8_t*, because the compiler is unhappy with a static_cast here.
+    const uint8_t* firstByte = (const uint8_t*)firstChar;
+    const uint8_t* lastByte = (const uint8_t*)lastChar;
+    winrt::array_view<const uint8_t> bytes{ firstByte, lastByte };
+    dw.WriteBytes(bytes);
 
     FileIO::WriteBufferAsync(file, dw.DetachBuffer()).get();
 }
@@ -267,11 +269,8 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
+void CascadiaSettings::_SaveAsUnpackagedApp(const std::string content)
 {
-    // convert UTF-16 to UTF-8
-    auto contentString = winrt::to_string(content);
-
     // Get path to output file
     // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
     std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
@@ -281,7 +280,7 @@ void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString.c_str(), gsl::narrow<DWORD>(contentString.length()), 0, 0));
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, content.c_str(), gsl::narrow<DWORD>(content.length()), 0, 0));
     CloseHandle(hOut);
 }
 
