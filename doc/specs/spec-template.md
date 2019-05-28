@@ -39,7 +39,7 @@ issue id: <github issue id>
 
 ## Potential Issues
 
-[comment]: # What are some of the things that might cause problems with the fixes/features proposed herein? Consider how the user might be negatively impacted.
+[comment]: # What are some of the things that might cause problems with the fixes/features proposed? Consider how the user might be negatively impacted.
 
 ## Future considerations
 
