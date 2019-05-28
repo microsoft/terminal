@@ -112,6 +112,12 @@ static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
     bindingsArray.append(jsonObject);
 }
 
+// Method Description:
+// - Serialize this AppKeyBindings to a json array of objects. Each object in
+//   the array represents a single keybinding, mapping a KeyChord to a
+//   ShortcutAction.
+// Return Value:
+// - a JsonArray which is an equivalent serialization of this object.
 Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKeyBindings& bindings)
 {
     Json::Value bindingsArray;
@@ -132,6 +138,17 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
     return bindingsArray;
 }
 
+// Method Description:
+// - Deserialize an AppKeyBindings from the key mappings that are in the array
+//   `json`. The json array should contain an array of objects with both a
+//   `command` string and a `keys` array, where `command` is one of the names
+//   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
+//   the array should contain a single string, which can be deserialized into a
+//   KeyChord.
+// Arguments:
+// - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
+// Return Value:
+// - the newly constructed AppKeyBindings object.
 winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const Json::Value& json)
 {
     winrt::TerminalApp::AppKeyBindings newBindings{};

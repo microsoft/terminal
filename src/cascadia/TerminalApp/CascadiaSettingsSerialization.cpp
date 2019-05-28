@@ -102,15 +102,15 @@ void CascadiaSettings::SaveAll() const
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
-    const auto s = winrt::to_hstring(Json::writeString(wbuilder, json2));
+    const auto serializedString = winrt::to_hstring(Json::writeString(wbuilder, json2));
 
     if (_IsPackaged())
     {
-        _SaveAsPackagedApp(s);
+        _SaveAsPackagedApp(serializedString);
     }
     else
     {
-        _SaveAsUnpackagedApp(s);
+        _SaveAsUnpackagedApp(serializedString);
     }
 }
 
@@ -123,10 +123,6 @@ void CascadiaSettings::SaveAll() const
 Json::Value CascadiaSettings::ToJson() const
 {
     Json::Value root;
-    // TODO: Globals
-
-    // TODO: put the keybindings in the globals (now that the order doesn't
-    // really matter).
 
     Json::Value profilesArray;
     for (const auto& profile : _profiles)
