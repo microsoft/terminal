@@ -5,6 +5,8 @@
 #include <argb.h>
 #include <conattrs.hpp>
 #include <fstream>
+#include <io.h>
+#include <fcntl.h>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 
@@ -165,37 +167,34 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
         PROCESS_INFORMATION pi{};
         std::wstring command = L"wsl.exe --list";
-        HRESULT hr = CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
+        bool processSuccess = CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
                                                         TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
-        if (SUCCEEDED(hr)) {
+        if (processSuccess) {
             WaitForSingleObject(pi.hProcess, INFINITE);
             DWORD exitCode;
+            HRESULT hr = 0;
             if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
                 hr = E_INVALIDARG;
             }
             if (SUCCEEDED(hr)) {
-                wchar_t buffer[500]; //arbitrary number.  Would like to evaluate other options for length of ouput
-                DWORD bytesRead;
-                PeekNamedPipe(readPipe, buffer, (sizeof(buffer) - 1), &bytesRead, nullptr, nullptr);
-                buffer[(bytesRead)/sizeof(wchar_t)] = ANSI_NULL;
-                std::wstringstream output{ buffer };
+                std::wifstream pipe{ _wfdopen( _open_osfhandle((intptr_t)readPipe, _O_WTEXT), L"r") };
                 std::wstring wline = L"";
-                std::getline(output, wline); //remove the header from the output.
-                while (std::getline(output, wline)) {
+                std::getline(pipe, wline); //remove the header from the output.
+                while (std::getline(pipe, wline)) {
                     std::wstringstream   wlinestream(wline);
                     std::wstring name = L"";
                     if (wlinestream) {
                         std::getline(wlinestream, name, L' ');
                         WSLDistro.SetCommandline(L"wsl.exe -d " + name);
-                        WSLDistro.SetColorScheme(L"Campbell");
+                        WSLDistro.SetColorScheme({ L"Campbell" });
                         WSLDistro.SetName(name);
                         _profiles.emplace_back(WSLDistro);
                     }
                 }
             }
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
         }
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
         CloseHandle(readPipe);
         CloseHandle(writePipe);
     }
