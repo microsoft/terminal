@@ -98,7 +98,7 @@ Team members will be happy to help review specs and guide them to completion.
 
 ## Help Wanted
 
-Once the team have approved a spec, development can proceed. If no developers are immediately available, the spec can be parked ready for a developer to get started. Parked specs' issues will be labelled "Help Wanted". To find a list of development opportunities waiting for developer involvement, visit the Issues and filter on [the Help Wanted label](https://github.com/microsoft/terminal/labels/Help-Wanted).
+Once the team have approved a spec, development can proceed. If no developers are immediately available, the spec can be parked ready for a developer to get started. Parked specs' issues will be labeled "Help Wanted". To find a list of development opportunities waiting for developer involvement, visit the Issues and filter on [the Help-Wanted label](https://github.com/microsoft/terminal/labels/Help-Wanted).
 
 ## Development: Fork, Branch and Create your PR
 
