@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(SolutionDir)\src\common.build.pre.props" />
+  <ItemGroup>
+    <ClCompile Include="JsonTests.cpp" />
+    <!-- <ClCompile Include="SelectionTest.cpp" /> -->
+    <ClCompile Include="precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\TerminalControl.vcxproj" /> -->
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
+    <!-- <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" /> -->
+    <!-- <ProjectReference Include="..\..\terminal\input\lib\terminalinput.vcxproj" /> -->
+    <!-- <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" /> -->
+    <!-- <ProjectReference Include="..\..\types\lib\types.vcxproj" /> -->
+    <!-- <ProjectReference Include="..\TerminalCore\lib\TerminalCore-lib.vcxproj" /> -->
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ProjectGuid>{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalAppUnitTests</RootNamespace>
+    <ProjectName>UnitTests_TerminalApp</ProjectName>
+    <TargetName>Terminal.App.Unit.Tests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
+
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- <AdditionalDependencies>WindowsApp.lib;$(OpenConsoleDir)\$(Platform)\$(Configuration)\TerminalApp\TerminalApp.lib%(AdditionalDependencies)</AdditionalDependencies> -->
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.dll.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.tests.props" />
+</Project>

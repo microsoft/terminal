@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../ColorScheme.h" />
+    <ClInclude Include="../GlobalAppSettings.h" />
+    <ClInclude Include="../Profile.h" />
+    <ClInclude Include="../CascadiaSettings.h" />
+    <ClInclude Include="../AppKeyBindingsSerialization.h" />
+    <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../Utils.h" />
+    <ClInclude Include="pch.h" />
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../ColorScheme.cpp" />
+    <ClCompile Include="../GlobalAppSettings.cpp" />
+    <ClCompile Include="../Profile.cpp" />
+    <ClCompile Include="../CascadiaSettings.cpp" />
+    <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
+    <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+  </ItemGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;"..\Generated Files\";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalApp</RootNamespace>
+    <ProjectName>TerminalAppLib</ProjectName>
+    <TargetName>TerminalAppLib</TargetName>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+  </PropertyGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.lib.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+  </Target>
+
+</Project>
