@@ -438,6 +438,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Start();
         }
         else
         {
@@ -859,7 +860,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _focused = true;
 
         if (_cursorTimer.has_value())
+        {
             _cursorTimer.value().Start();
+        }
     }
 
     // Method Description:
