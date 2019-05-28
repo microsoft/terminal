@@ -70,7 +70,10 @@ public:
     COORD GetCursorPosition() override;
     bool EraseCharacters(const unsigned int numChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
-    bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
+    bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
+    bool SetDefaultForeground(const COLORREF dwColor) override;
+    bool SetDefaultBackground(const COLORREF dwColor) override;
     #pragma endregion
 
     #pragma region ITerminalInput
@@ -112,8 +115,10 @@ public:
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
     void SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept;
     void SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept;
+    void SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept;
 
     void SetCursorVisible(const bool isVisible) noexcept;
+    bool IsCursorBlinkingAllowed() const noexcept;
 
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
@@ -129,6 +134,7 @@ public:
     std::function<void(std::wstring&)> _pfnWriteInput;
     std::function<void(const std::wstring_view&)> _pfnTitleChanged;
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
+    std::function<void(const uint32_t)> _pfnBackgroundColorChanged;
 
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
     std::unique_ptr<::Microsoft::Console::VirtualTerminal::TerminalInput> _terminalInput;

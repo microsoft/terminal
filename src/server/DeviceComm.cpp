@@ -41,12 +41,12 @@ HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pS
 // Return Value:
 // - HRESULT S_OK or suitable error.
 [[nodiscard]]
-HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
+HRESULT DeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
                            _Out_ CONSOLE_API_MSG* const pMessage) const
 {
     HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
-                            pCompletion,
-                            pCompletion == nullptr ? 0 : sizeof(*pCompletion),
+                            pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
+                            pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
                             &pMessage->Descriptor,
                             sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
 

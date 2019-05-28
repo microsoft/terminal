@@ -10,6 +10,8 @@
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
+#include "TermControl.g.cpp"
+
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
@@ -156,12 +158,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
-    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
-    //       from _settings.
-    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
-    //       respecting the opacity and stretch mode settings from _settings.
-    //   * Falls back to a solid color background from _settings if acrylic is not
-    //       enabled and no background image is present.
+    //   * Calls _BackgroundColorChanged to style the background of the control
     // - Core settings will be passed to the terminal in _InitializeTerminal
     // Arguments:
     // - <none>
@@ -169,58 +166,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_ApplyUISettings()
     {
-        winrt::Windows::UI::Color bgColor{};
         uint32_t bg = _settings.DefaultBackground();
-        const auto R = GetRValue(bg);
-        const auto G = GetGValue(bg);
-        const auto B = GetBValue(bg);
-        bgColor.R = R;
-        bgColor.G = G;
-        bgColor.B = B;
-        bgColor.A = 255;
-
-        if (_settings.UseAcrylic())
-        {
-            Media::AcrylicBrush acrylic{};
-            acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylic.FallbackColor(bgColor);
-            acrylic.TintColor(bgColor);
-            acrylic.TintOpacity(_settings.TintOpacity());
-            _root.Background(acrylic);
-
-            // If we're acrylic, we want to make sure that the default BG color
-            // is transparent, so we can see the acrylic effect on text with the
-            // default BG color.
-            _settings.DefaultBackground(ARGB(0, R, G, B));
-        }
-        else if (!_settings.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-            Media::Imaging::BitmapImage image(imageUri);
-
-            // Note that BitmapImage handles the image load asynchronously,
-            // which is especially important since the image 
-            // may well be both large and somewhere out on the
-            // internet.
-
-            Media::ImageBrush brush{};
-            brush.ImageSource(image);
-            brush.Stretch(_settings.BackgroundImageStretchMode());
-            brush.Opacity(_settings.BackgroundImageOpacity());
-
-            _root.Background(brush);
-
-            // Set the default background as transparent to prevent the
-            // DX layer from overwriting the background image
-            _settings.DefaultBackground(ARGB(0, R, G, B));
-        }
-        else
-        {
-            Media::SolidColorBrush solidColor{};
-            solidColor.Color(bgColor);
-            _root.Background(solidColor);
-            _settings.DefaultBackground(RGB(R, G, B));
-        }
+        _BackgroundColorChanged(bg);
 
         // Apply padding to the root Grid
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
@@ -237,6 +184,78 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+    }
+
+    // Method Description:
+    // - Style the background of the control with the provided background color
+    // - Respects the settings for acrylic, background image and opacity from
+    //   _settings
+    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
+    //       from _settings.
+    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
+    //       respecting the opacity and stretch mode settings from _settings.
+    //   * Falls back to a solid color background from _settings if acrylic is not
+    //       enabled and no background image is present.
+    // Arguments:
+    // - color: The background color to use as a uint32 (aka DWORD COLORREF)
+    // Return Value:
+    // - <none>
+    void TermControl::_BackgroundColorChanged(const uint32_t color)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
+            const auto R = GetRValue(color);
+            const auto G = GetGValue(color);
+            const auto B = GetBValue(color);
+
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = R;
+            bgColor.G = G;
+            bgColor.B = B;
+            bgColor.A = 255;
+
+            if (_settings.UseAcrylic())
+            {
+                Media::AcrylicBrush acrylic{};
+                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                acrylic.FallbackColor(bgColor);
+                acrylic.TintColor(bgColor);
+                acrylic.TintOpacity(_settings.TintOpacity());
+                _root.Background(acrylic);
+
+                // If we're acrylic, we want to make sure that the default BG color
+                // is transparent, so we can see the acrylic effect on text with the
+                // default BG color.
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
+            else if (!_settings.BackgroundImage().empty())
+            {
+                Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+                Media::Imaging::BitmapImage image(imageUri);
+
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image 
+                // may well be both large and somewhere out on the
+                // internet.
+
+                Media::ImageBrush brush{};
+                brush.ImageSource(image);
+                brush.Stretch(_settings.BackgroundImageStretchMode());
+                brush.Opacity(_settings.BackgroundImageOpacity());
+
+                _root.Background(brush);
+
+                // Set the default background as transparent to prevent the
+                // DX layer from overwriting the background image
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
+            else
+            {
+                Media::SolidColorBrush solidColor{};
+                solidColor.Color(bgColor);
+                _root.Background(solidColor);
+                _settings.DefaultBackground(RGB(R, G, B));
+            }
+        });
     }
 
     // Method Description:
@@ -429,6 +448,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
+        auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
+        _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
+
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
@@ -556,6 +578,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _terminal->SetCursorVisible(true);
                 _cursorTimer.value().Start();
             }
+        }
+
+        // Manually prevent keyboard navigation with tab. We want to send tab to
+        // the terminal, and we don't want to be able to escape focus of the
+        // control with tab.
+        if (e.OriginalKey() == VirtualKey::Tab)
+        {
+            handled = true;
         }
 
         e.Handled(handled);
@@ -933,6 +963,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
+        if (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible())
+        {
+            return;
+        }
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
@@ -1059,6 +1093,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::ScrollViewport(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
+    }
+
+    // Method Description:
+    // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
+    // Arguments:
+    // - viewTop: the viewTop to scroll to
+    // The difference between this function and ScrollViewport is that this one also 
+    // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
+    // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
+    void TermControl::KeyboardScrollViewport(int viewTop)
+    {
+        _terminal->UserScrollViewport(viewTop);
+        _lastScrollOffset = std::nullopt;
+        _scrollBar.Value(static_cast<int>(viewTop));
     }
 
     int TermControl::GetScrollOffset()

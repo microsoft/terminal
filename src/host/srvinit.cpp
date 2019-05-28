@@ -656,7 +656,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))

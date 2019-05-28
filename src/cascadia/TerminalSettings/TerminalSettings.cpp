@@ -5,6 +5,8 @@
 #include "TerminalSettings.h"
 #include <DefaultSettings.h>
 
+#include "TerminalSettings.g.cpp"
+
 namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     TerminalSettings::TerminalSettings() :

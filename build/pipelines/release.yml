@@ -16,6 +16,10 @@ variables:
 name: 'Terminal_$(date:yyMM).$(date:dd)$(rev:rrr)'
 
 jobs:
+  - template: ./templates/build-console-audit-job.yml
+    parameters:
+      platform: x64
+
   - template: ./templates/build-console-int.yml
     parameters:
       platform: x64
