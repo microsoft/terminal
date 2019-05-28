@@ -54,7 +54,7 @@ Other helpful information includes:
 * What device you're running (inc. CPU type, memory, disk, etc.)
 * What build of Windows your device is running
   
-  👉 Tip: run `ver` in PowerShell/Cmd, e.g.:
+  👉 Tip: run `ver` in PowerShell/Cmd, i.e.:
 
     ```powershell
     C:\> ver
