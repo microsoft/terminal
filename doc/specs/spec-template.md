@@ -25,7 +25,7 @@ issue id: <github issue id>
 
 ## Capabilities
 
-[comment]: # Discuss how the proposed fixes/features impact the following key consdierations:
+[comment]: # Discuss how the proposed fixes/features impact the following key considerations:
 
 ### Security
 
