@@ -30,18 +30,166 @@
 
 const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 
-HRESULT CreateConPty(const std::wstring& cmdline,       // _In_
-                     const unsigned short w,            // _In_
-                     const unsigned short h,            // _In_
-                     HANDLE* const hInput,              // _Out_
-                     HANDLE* const hOutput,             // _Out_
-                     HANDLE* const hSignal,             // _Out_
-                     PROCESS_INFORMATION* const piPty); // _Out_
+// A case-insensitive wide-character map is used to store environment variables
+// due to documented requirements:
+//
+//      "All strings in the environment block must be sorted alphabetically by name.
+//      The sort is case-insensitive, Unicode order, without regard to locale.
+//      Because the equal sign is a separator, it must not be used in the name of
+//      an environment variable."
+//      https://docs.microsoft.com/en-us/windows/desktop/ProcThread/changing-environment-variables
+//
+struct WStringCaseInsensitiveCompare
+{
+    [[nodiscard]]
+    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+    {
+        return (::_wcsicmp(lhs.c_str(), rhs.c_str()) < 0);
+    }
+};
+
+using EnvironmentVariableMapW = std::map<std::wstring, std::wstring, WStringCaseInsensitiveCompare>;
+
+[[nodiscard]]
+HRESULT CreateConPty(const std::wstring& cmdline,
+                     const unsigned short w,
+                     const unsigned short h,
+                     HANDLE* const hInput,
+                     HANDLE* const hOutput,
+                     HANDLE* const hSignal,
+                     PROCESS_INFORMATION* const piPty,
+                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept;
 
 bool SignalResizeWindow(const HANDLE hSignal,
                         const unsigned short w,
                         const unsigned short h);
 
+[[nodiscard]]
+HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept;
+
+[[nodiscard]]
+HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept;
+
+// Function Description:
+// - Updates an EnvironmentVariableMapW with the current process's unicode
+//   environment variables ignoring ones already set in the provided map.
+// Arguments:
+// - map: The map to populate with the current processes's environment variables.
+// Return Value:
+// - S_OK if we succeeded, or an appropriate HRESULT for failing
+[[nodiscard]]
+__declspec(noinline) inline
+HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
+{
+    LPWCH currentEnvVars{};
+    auto freeCurrentEnv = wil::scope_exit([&] {
+        if (currentEnvVars)
+        {
+            (void)FreeEnvironmentStringsW(currentEnvVars);
+            currentEnvVars = nullptr;
+        }
+    });
+
+    RETURN_IF_NULL_ALLOC(currentEnvVars = ::GetEnvironmentStringsW());
+
+    // Each entry is NULL-terminated; block is guaranteed to be double-NULL terminated at a minimum.
+    for (wchar_t const* lastCh{ currentEnvVars }; *lastCh != '\0'; ++lastCh)
+    {
+        // Copy current entry into temporary map.
+        const size_t cchEntry{ ::wcslen(lastCh) };
+        const std::wstring_view entry{ lastCh, cchEntry };
+
+        // Every entry is of the form "name=value\0".
+        auto pos = entry.find_first_of(L"=", 0, 1);
+        RETURN_HR_IF(E_UNEXPECTED, pos == std::wstring::npos);
+
+        std::wstring name{ entry.substr(0, pos) }; // portion before '='
+        std::wstring value{ entry.substr(pos + 1) }; // portion after '='
+
+        // Don't replace entries that already exist.
+        map.try_emplace(std::move(name), std::move(value));
+        lastCh += cchEntry;
+    }
+
+    return S_OK;
+}
+
+// Function Description:
+// - Creates a new environment block using the provided vector as appropriate
+//   (resizing if needed) based on the provided environment variable map
+//   matching the format of GetEnvironmentStringsW.
+// Arguments:
+// - map: The map to populate the new environment block vector with.
+// - newEnvVars: The vector that will be used to create the new environment block.
+// Return Value:
+// - S_OK if we succeeded, or an appropriate HRESULT for failing
+[[nodiscard]]
+__declspec(noinline) inline
+HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept
+{
+    // Clear environment block before use.
+    constexpr size_t cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
+
+    if (!newEnvVars.empty())
+    {
+        ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+    }
+
+    // Resize environment block to fit map.
+    size_t cchEnv{ 2 }; // For the block's double NULL-terminator.
+    for (const auto&[name, value] : map)
+    {
+        // Final form of "name=value\0".
+        cchEnv += name.size() + 1 + value.size() + 1;
+    }
+    newEnvVars.resize(cchEnv);
+
+    // Ensure new block is wiped if we exit due to failure.
+    auto zeroNewEnv = wil::scope_exit([&] {
+        ::SecureZeroMemory(newEnvVars.data(), newEnvVars.size() * cbChar);
+    });
+
+    // Transform each map entry and copy it into the new environment block.
+    LPWCH pEnvVars{ newEnvVars.data() };
+    size_t cbRemaining{ cchEnv * cbChar };
+    for (const auto&[name, value] : map)
+    {
+        // Final form of "name=value\0" for every entry.
+        {
+            const size_t cchSrc{ name.size() };
+            const size_t cbSrc{ cchSrc * cbChar };
+            RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, name.c_str(), cbSrc) != 0);
+            pEnvVars += cchSrc;
+            cbRemaining -= cbSrc;
+        }
+
+        RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"=", cbChar) != 0);
+        ++pEnvVars;
+        cbRemaining -= cbChar;
+
+        {
+            const size_t cchSrc{ value.size() };
+            const size_t cbSrc{ cchSrc * cbChar };
+            RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, value.c_str(), cbSrc) != 0);
+            pEnvVars += cchSrc;
+            cbRemaining -= cbSrc;
+        }
+
+        RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0", cbChar) != 0);
+        ++pEnvVars;
+        cbRemaining -= cbChar;
+    }
+
+    // Environment block only has to be NULL-terminated, but double NULL-terminate anyway.
+    RETURN_HR_IF(E_OUTOFMEMORY, memcpy_s(pEnvVars, cbRemaining, L"\0\0", cbChar * 2) != 0);
+    cbRemaining -= cbChar * 2;
+
+    RETURN_HR_IF(E_UNEXPECTED, cbRemaining != 0);
+
+    zeroNewEnv.release(); // success; don't wipe new environment block on exit
+
+    return S_OK;
+}
 
 // Function Description:
 // - Creates a headless conhost in "pty mode" and launches the given commandline
@@ -64,9 +212,13 @@ bool SignalResizeWindow(const HANDLE hSignal,
 // - hSignal: A handle to the pipe for writing signal messages to the pty.
 // - piPty: The PROCESS_INFORMATION of the pty process. NOTE: This is *not* the
 //      PROCESS_INFORMATION of the process that's created as a result the cmdline.
+// - extraEnvVars : A map of pairs of (Name, Value) representing additional
+//      environment variable strings and values to be set in the client process
+//      environment.  May override any already present in parent process.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing format the
 //      commandline or failing to launch the conhost
+[[nodiscard]]
 __declspec(noinline) inline
 HRESULT CreateConPty(const std::wstring& cmdline,
                      std::optional<std::wstring> startingDirectory,
@@ -75,7 +227,8 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                      HANDLE* const hInput,
                      HANDLE* const hOutput,
                      HANDLE* const hSignal,
-                     PROCESS_INFORMATION* const piPty)
+                     PROCESS_INFORMATION* const piPty,
+                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
 {
     // Create some anon pipes so we can pass handles down and into the console.
     // IMPORTANT NOTE:
@@ -142,14 +295,42 @@ HRESULT CreateConPty(const std::wstring& cmdline,
 
     LPCWSTR lpCurrentDirectory = startingDirectory.has_value() ? startingDirectory.value().c_str() : nullptr;
 
+    std::vector<wchar_t> newEnvVars;
+    auto zeroNewEnv = wil::scope_exit([&] {
+        ::SecureZeroMemory(newEnvVars.data(),
+                           newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
+    });
+
+    DWORD dwCreationFlags = 0;
+    if (!extraEnvVars.empty())
+    {
+        EnvironmentVariableMapW tempEnvMap{ extraEnvVars };
+        auto zeroEnvMap = wil::scope_exit([&] {
+            // Can't zero the keys, but at least we can zero the values.
+            for (auto&[name, value] : tempEnvMap)
+            {
+                ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
+            }
+
+            tempEnvMap.clear();
+        });
+
+        RETURN_IF_FAILED(UpdateEnvironmentMapW(tempEnvMap));
+        RETURN_IF_FAILED(EnvironmentMapToEnvironmentStringsW(tempEnvMap, newEnvVars));
+
+        // Required when using a unicode environment block.
+        dwCreationFlags |= CREATE_UNICODE_ENVIRONMENT;
+    }
+
+    LPWCH lpEnvironment = newEnvVars.empty() ? nullptr : newEnvVars.data();
     bool fSuccess = !!CreateProcessW(
         nullptr,
         mutableCommandline.get(),
         nullptr,                    // lpProcessAttributes
         nullptr,                    // lpThreadAttributes
         true,                       // bInheritHandles
-        0,                          // dwCreationFlags
-        nullptr,                    // lpEnvironment
+        dwCreationFlags,            // dwCreationFlags
+        lpEnvironment,              // lpEnvironment
         lpCurrentDirectory,         // lpCurrentDirectory
         &si,                        // lpStartupInfo
         piPty                       // lpProcessInformation

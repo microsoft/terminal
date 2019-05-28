@@ -77,7 +77,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 }
 
 // Method Description:
-// - Initializes the Temrinal from the given set of settings.
+// - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
@@ -443,6 +443,15 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 }
 
 // Method Description:
+// - Allows setting a callback for when the background color is changed
+// Arguments:
+// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
+void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+{
+    _pfnBackgroundColorChanged = pfn;
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
@@ -604,4 +613,10 @@ void Terminal::SetCursorVisible(const bool isVisible) noexcept
 {
     auto& cursor = _buffer->GetCursor();
     cursor.SetIsVisible(isVisible);
+}
+
+bool Terminal::IsCursorBlinkingAllowed() const noexcept
+{
+    const auto& cursor = _buffer->GetCursor();
+    return cursor.IsBlinkingAllowed();
 }

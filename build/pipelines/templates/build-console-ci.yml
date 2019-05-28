@@ -4,8 +4,8 @@ parameters:
   additionalBuildArguments: ''
 
 jobs:
-- job: Build${{ parameters.platform }}
-  displayName: Build ${{ parameters.platform }}
+- job: Build${{ parameters.platform }}${{ parameters.configuration }}
+  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}

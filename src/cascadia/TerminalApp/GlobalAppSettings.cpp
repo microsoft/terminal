@@ -13,28 +13,27 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
-static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
-static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-static const std::wstring INITIALROWS_KEY{ L"initialRows" };
-static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
-static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
-static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
+static constexpr std::wstring_view DEFAULTPROFILE_KEY{ L"defaultProfile" };
+static constexpr std::wstring_view ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
+static constexpr std::wstring_view INITIALROWS_KEY{ L"initialRows" };
+static constexpr std::wstring_view INITIALCOLS_KEY{ L"initialCols" };
+static constexpr std::wstring_view SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
+static constexpr std::wstring_view REQUESTED_THEME_KEY{ L"requestedTheme" };
+static constexpr std::wstring_view SHOW_TABS_IN_TITLEBAR_KEY{ L"showTabsInTitlebar" };
 
-static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
-
-static const std::wstring LIGHT_THEME_VALUE{ L"light" };
-static const std::wstring DARK_THEME_VALUE{ L"dark" };
-static const std::wstring SYSTEM_THEME_VALUE{ L"system" };
+static constexpr std::wstring_view LIGHT_THEME_VALUE{ L"light" };
+static constexpr std::wstring_view DARK_THEME_VALUE{ L"dark" };
+static constexpr std::wstring_view SYSTEM_THEME_VALUE{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
     _colorSchemes{},
     _defaultProfile{},
-    _alwaysShowTabs{ false },
+    _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ false },
+    _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default }
 {
 
@@ -242,7 +241,7 @@ ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noe
 // - theme: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given CursorStyle
-std::wstring GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
+std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
 {
     switch (theme)
     {

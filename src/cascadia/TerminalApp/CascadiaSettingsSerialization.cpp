@@ -6,8 +6,6 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
-#include <wil/com.h>
-#include <wil/filesystem.h>
 #include <shlobj.h>
 
 using namespace ::TerminalApp;
@@ -18,12 +16,12 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring PROFILES_KEY{ L"profiles" };
-static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-static const std::wstring SCHEMES_KEY{ L"schemes" };
+static constexpr std::wstring_view PROFILES_KEY{ L"profiles" };
+static constexpr std::wstring_view KEYBINDINGS_KEY{ L"keybindings" };
+static constexpr std::wstring_view SCHEMES_KEY{ L"schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -47,39 +45,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
-        JsonValue root{ nullptr };
-        bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
-        // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-        if (parsedSuccessfully)
-        {
-            JsonObject obj = root.GetObjectW();
-            resultPtr = FromJson(obj);
+        // If Parse fails, it'll throw a hresult_error
+        JsonObject root = JsonObject::Parse(actualData);
 
-            //  Update profile only if it has changed.
-            if (saveOnLoad)
+        resultPtr = FromJson(root);
+
+        //  Update profile only if it has changed.
+        if (saveOnLoad)
+        {
+            const JsonObject json = resultPtr->ToJson();
+            auto serializedSettings = json.Stringify();
+
+            if (actualData != serializedSettings)
             {
-                const JsonObject json = resultPtr->ToJson();
-                auto serializedSettings = json.Stringify();
-
-                if (actualData != serializedSettings)
-                {
-                    resultPtr->SaveAll();
-                }
+                resultPtr->SaveAll();
             }
-        }
-        else
-        {
-            // Until 20737698 is done, throw an error, so debugging can trace
-            //      the exception here, instead of later on in unrelated code
-            THROW_HR(E_INVALIDARG);
         }
     }
     else
     {
         resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->_CreateDefaults();
+        resultPtr->CreateDefaults();
 
-        // The settings file does not exist.  Let's commit one.
+        // The settings file does not exist. Let's commit one.
         resultPtr->SaveAll();
     }
 

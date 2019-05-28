@@ -12,10 +12,10 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
-static const std::wstring NAME_KEY{ L"name" };
-static const std::wstring TABLE_KEY{ L"colors" };
-static const std::wstring FOREGROUND_KEY{ L"foreground" };
-static const std::wstring BACKGROUND_KEY{ L"background" };
+static constexpr std::wstring_view NAME_KEY{ L"name" };
+static constexpr std::wstring_view TABLE_KEY{ L"colors" };
+static constexpr std::wstring_view FOREGROUND_KEY{ L"foreground" };
+static constexpr std::wstring_view BACKGROUND_KEY{ L"background" };
 static const std::array<std::wstring, 16> TABLE_COLORS =
 {
     L"black",

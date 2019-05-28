@@ -82,7 +82,6 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 ## Prerequisites
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
- - **As of May 2019** this build is only available through Windows Insider Program. You may register and configure Insider Program through your device's system settings.
 * You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
 * You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed.
 * You must install the following Workloads via the VS Installer. If you're running VS 2019, opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).

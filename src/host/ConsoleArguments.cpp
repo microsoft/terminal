@@ -7,19 +7,19 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
-const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
-const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
-const std::wstring ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
-const std::wstring ConsoleArguments::HANDLE_PREFIX = L"0x";
-const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
-const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
-const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
-const std::wstring ConsoleArguments::WIDTH_ARG = L"--width";
-const std::wstring ConsoleArguments::HEIGHT_ARG = L"--height";
-const std::wstring ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
-const std::wstring ConsoleArguments::FEATURE_ARG = L"--feature";
-const std::wstring ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
+const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
+const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
+const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
+const std::wstring_view ConsoleArguments::HANDLE_PREFIX = L"0x";
+const std::wstring_view ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
+const std::wstring_view ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
+const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
+const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
+const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
+const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
 ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdIn,
