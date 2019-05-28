@@ -41,8 +41,8 @@ static constexpr std::string_view SCHEMES_KEY{ "schemes" };
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
-    std::optional<winrt::hstring> fileData = _IsPackaged() ?
-                                             _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
+    std::optional<std::string> fileData = _IsPackaged() ?
+                                          _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
 
     const bool foundFile = fileData.has_value();
     if (foundFile)
@@ -52,11 +52,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // Parse the json data.
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-        const auto raw = winrt::to_string(actualData);
-        std::string errs; // This string will recieve any error text from failing to parse.
+                std::string errs; // This string will recieve any error text from failing to parse.
 
         // `parse` will return false if it fails.
-        if (!reader->parse(raw.c_str(), raw.c_str() + raw.size(), &root, &errs))
+        if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
         {
             // TODO:GH#990 display this exception text to the user, in a
             //      copy-pasteable way.
@@ -98,11 +97,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 // - <none>
 void CascadiaSettings::SaveAll() const
 {
-    const auto json2 = ToJson();
+    const auto json = ToJson();
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
-    const auto serializedString = winrt::to_hstring(Json::writeString(wbuilder, json2));
+    const auto serializedString = winrt::to_hstring(Json::writeString(wbuilder, json));
 
     if (_IsPackaged())
     {
@@ -324,7 +323,7 @@ std::wstring CascadiaSettings::_GetFullPathToUnpackagedSettingsFile()
 // Return Value:
 // - an optional with the content of the file if we were able to open it,
 //      otherwise the optional will be empty
-std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
+std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -338,7 +337,15 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     const auto storageFile = file.as<StorageFile>();
 
     // settings file is UTF-8 without BOM
-    return { FileIO::ReadTextAsync(storageFile, UnicodeEncoding::Utf8).get() };
+    auto buffer = FileIO::ReadBufferAsync(storageFile).get();
+    auto bufferData = buffer.data();
+    std::string resultString;
+    resultString.reserve(buffer.Length());
+    for (int i = 0; i < buffer.Length(); i++)
+    {
+        resultString.push_back(bufferData[i]);
+    }
+    return { resultString };
 }
 
 
@@ -351,7 +358,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 //      otherwise the optional will be empty.
 //   If the file exists, but we fail to read it, this can throw an exception
 //      from reading the file
-std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
+std::optional<std::string> CascadiaSettings::_LoadAsUnpackagedApp()
 {
     std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
     const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -376,10 +383,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     // convert buffer to UTF-8 string
     std::string utf8string(utf8buffer.get(), fileSize);
 
-    // UTF-8 to UTF-16
-    const winrt::hstring fileData = winrt::to_hstring(utf8string);
-
-    return { fileData };
+    return { utf8string };
 }
 
 // function Description:

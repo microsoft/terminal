@@ -13,44 +13,44 @@ using namespace winrt::TerminalApp;
 static constexpr std::string_view KEYS_KEY{ "keys" };
 static constexpr std::string_view COMMAND_KEY{ "command" };
 
-static constexpr std::wstring_view COPYTEXT_KEY{ L"copy" };
-static constexpr std::wstring_view PASTETEXT_KEY{ L"paste" };
-static constexpr std::wstring_view NEWTAB_KEY{ L"newTab" };
-static constexpr std::wstring_view NEWTABWITHPROFILE0_KEY{ L"newTabProfile0" };
-static constexpr std::wstring_view NEWTABWITHPROFILE1_KEY{ L"newTabProfile1" };
-static constexpr std::wstring_view NEWTABWITHPROFILE2_KEY{ L"newTabProfile2" };
-static constexpr std::wstring_view NEWTABWITHPROFILE3_KEY{ L"newTabProfile3" };
-static constexpr std::wstring_view NEWTABWITHPROFILE4_KEY{ L"newTabProfile4" };
-static constexpr std::wstring_view NEWTABWITHPROFILE5_KEY{ L"newTabProfile5" };
-static constexpr std::wstring_view NEWTABWITHPROFILE6_KEY{ L"newTabProfile6" };
-static constexpr std::wstring_view NEWTABWITHPROFILE7_KEY{ L"newTabProfile7" };
-static constexpr std::wstring_view NEWTABWITHPROFILE8_KEY{ L"newTabProfile8" };
-static constexpr std::wstring_view NEWWINDOW_KEY{ L"newWindow" };
-static constexpr std::wstring_view CLOSEWINDOW_KEY{ L"closeWindow" };
-static constexpr std::wstring_view CLOSETAB_KEY{ L"closeTab" };
-static constexpr std::wstring_view SWITCHTOTAB_KEY{ L"switchToTab" };
-static constexpr std::wstring_view NEXTTAB_KEY{ L"nextTab" };
-static constexpr std::wstring_view PREVTAB_KEY{ L"prevTab" };
-static constexpr std::wstring_view INCREASEFONTSIZE_KEY{ L"increaseFontSize" };
-static constexpr std::wstring_view DECREASEFONTSIZE_KEY{ L"decreaseFontSize" };
-static constexpr std::wstring_view SCROLLUP_KEY{ L"scrollUp" };
-static constexpr std::wstring_view SCROLLDOWN_KEY{ L"scrollDown" };
-static constexpr std::wstring_view SCROLLUPPAGE_KEY{ L"scrollUpPage" };
-static constexpr std::wstring_view SCROLLDOWNPAGE_KEY{ L"scrollDownPage" };
-static constexpr std::wstring_view SWITCHTOTAB0_KEY{ L"switchToTab0" };
-static constexpr std::wstring_view SWITCHTOTAB1_KEY{ L"switchToTab1" };
-static constexpr std::wstring_view SWITCHTOTAB2_KEY{ L"switchToTab2" };
-static constexpr std::wstring_view SWITCHTOTAB3_KEY{ L"switchToTab3" };
-static constexpr std::wstring_view SWITCHTOTAB4_KEY{ L"switchToTab4" };
-static constexpr std::wstring_view SWITCHTOTAB5_KEY{ L"switchToTab5" };
-static constexpr std::wstring_view SWITCHTOTAB6_KEY{ L"switchToTab6" };
-static constexpr std::wstring_view SWITCHTOTAB7_KEY{ L"switchToTab7" };
-static constexpr std::wstring_view SWITCHTOTAB8_KEY{ L"switchToTab8" };
-static constexpr std::wstring_view OPENSETTINGS_KEY{ L"openSettings" };
+static constexpr std::string_view COPYTEXT_KEY{ "copy" };
+static constexpr std::string_view PASTETEXT_KEY{ "paste" };
+static constexpr std::string_view NEWTAB_KEY{ "newTab" };
+static constexpr std::string_view NEWTABWITHPROFILE0_KEY{ "newTabProfile0" };
+static constexpr std::string_view NEWTABWITHPROFILE1_KEY{ "newTabProfile1" };
+static constexpr std::string_view NEWTABWITHPROFILE2_KEY{ "newTabProfile2" };
+static constexpr std::string_view NEWTABWITHPROFILE3_KEY{ "newTabProfile3" };
+static constexpr std::string_view NEWTABWITHPROFILE4_KEY{ "newTabProfile4" };
+static constexpr std::string_view NEWTABWITHPROFILE5_KEY{ "newTabProfile5" };
+static constexpr std::string_view NEWTABWITHPROFILE6_KEY{ "newTabProfile6" };
+static constexpr std::string_view NEWTABWITHPROFILE7_KEY{ "newTabProfile7" };
+static constexpr std::string_view NEWTABWITHPROFILE8_KEY{ "newTabProfile8" };
+static constexpr std::string_view NEWWINDOW_KEY{ "newWindow" };
+static constexpr std::string_view CLOSEWINDOW_KEY{ "closeWindow" };
+static constexpr std::string_view CLOSETAB_KEY{ "closeTab" };
+static constexpr std::string_view SWITCHTOTAB_KEY{ "switchToTab" };
+static constexpr std::string_view NEXTTAB_KEY{ "nextTab" };
+static constexpr std::string_view PREVTAB_KEY{ "prevTab" };
+static constexpr std::string_view INCREASEFONTSIZE_KEY{ "increaseFontSize" };
+static constexpr std::string_view DECREASEFONTSIZE_KEY{ "decreaseFontSize" };
+static constexpr std::string_view SCROLLUP_KEY{ "scrollUp" };
+static constexpr std::string_view SCROLLDOWN_KEY{ "scrollDown" };
+static constexpr std::string_view SCROLLUPPAGE_KEY{ "scrollUpPage" };
+static constexpr std::string_view SCROLLDOWNPAGE_KEY{ "scrollDownPage" };
+static constexpr std::string_view SWITCHTOTAB0_KEY{ "switchToTab0" };
+static constexpr std::string_view SWITCHTOTAB1_KEY{ "switchToTab1" };
+static constexpr std::string_view SWITCHTOTAB2_KEY{ "switchToTab2" };
+static constexpr std::string_view SWITCHTOTAB3_KEY{ "switchToTab3" };
+static constexpr std::string_view SWITCHTOTAB4_KEY{ "switchToTab4" };
+static constexpr std::string_view SWITCHTOTAB5_KEY{ "switchToTab5" };
+static constexpr std::string_view SWITCHTOTAB6_KEY{ "switchToTab6" };
+static constexpr std::string_view SWITCHTOTAB7_KEY{ "switchToTab7" };
+static constexpr std::string_view SWITCHTOTAB8_KEY{ "switchToTab8" };
+static constexpr std::string_view OPENSETTINGS_KEY{ "openSettings" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
-static const std::map<std::wstring_view, ShortcutAction> commandNames {
+static const std::map<std::string_view, ShortcutAction> commandNames {
     { COPYTEXT_KEY, ShortcutAction::CopyText },
     { PASTETEXT_KEY, ShortcutAction::PasteText },
     { NEWTAB_KEY, ShortcutAction::NewTab },
@@ -86,20 +86,24 @@ static const std::map<std::wstring_view, ShortcutAction> commandNames {
 };
 
 // Function Description:
-// - Small helper to insert a given KeyChord, ShortcutAction pair into the
-//   given json array
+// - Small helper to create a json value serialization of a single
+//   KeyBinding->Action maping. The created object is of schema:
+//   {
+//      keys:[String],
+//      command:String
+//   }
 // Arguments:
-// - bindingsArray: The JsonArray to insert the object into.
-// - chord: The KeyChord to serailize and place in the json array
+// - chord: The KeyChord to serialize
 // - actionName: the name of the ShortcutAction to use with this KeyChord
-static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
-                                     const KeyChord& chord,
-                                     const std::wstring_view& actionName)
+// Return Value:
+// - a Json::Value which is an equivalent serialization of this object.
+static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
+                                         const std::string_view& actionName)
 {
     const auto keyString = KeyChordSerialization::ToString(chord);
     if (keyString == L"")
     {
-        return;
+        return nullptr;
     }
 
     Json::Value jsonObject;
@@ -107,9 +111,9 @@ static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
     keysArray.append(winrt::to_string(keyString));
 
     jsonObject[KEYS_KEY.data()] = keysArray;
-    jsonObject[COMMAND_KEY.data()] = winrt::to_string(actionName);
+    jsonObject[COMMAND_KEY.data()] = actionName.data();
 
-    bindingsArray.append(jsonObject);
+    return jsonObject;
 }
 
 // Method Description:
@@ -117,7 +121,7 @@ static void _AddShortcutToJsonArray2(Json::Value& bindingsArray,
 //   the array represents a single keybinding, mapping a KeyChord to a
 //   ShortcutAction.
 // Return Value:
-// - a JsonArray which is an equivalent serialization of this object.
+// - a Json::Value which is an equivalent serialization of this object.
 Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKeyBindings& bindings)
 {
     Json::Value bindingsArray;
@@ -131,7 +135,11 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
         const auto chord = bindings.GetKeyBinding(searchedForAction);
         if (chord)
         {
-            _AddShortcutToJsonArray2(bindingsArray, chord, searchedForName);
+            const auto serialization = _ShortcutAsJsonObject(chord, searchedForName);
+            if (serialization)
+            {
+                bindingsArray.append(serialization);
+            }
         }
     }
 
@@ -170,7 +178,7 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
                 ShortcutAction action;
 
                 // Try matching the command to one we have
-                auto found = commandNames.find(GetWstringFromJson(commandString));
+                auto found = commandNames.find(commandString.asString());
                 if (found != commandNames.end())
                 {
                     action = found->second;
