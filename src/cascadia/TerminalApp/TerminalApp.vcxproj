@@ -22,9 +22,9 @@
       For any types that use XAML information, if their .idl and .h aren't
       marked DependentUpon the corresponding .xaml file, XamlTypeInfo.g.h won't
       pick it up correctly. -->
-    <ApplicationDefinition Include="App.xaml">
+    <!-- <ApplicationDefinition Include="App.xaml">
       <SubType>Designer</SubType>
-    </ApplicationDefinition>
+    </ApplicationDefinition> -->
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
   <!-- <ItemGroup>
@@ -40,12 +40,14 @@
     included in XamlTypeInfo.g.* correctly! Don't put other header files in
     here - put them in TerminalAppLib.vcxproj instead! -->
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AppKeyBindings.h">
+    <ClInclude Include="AppKeyBindings.h" />
+    <ClInclude Include="App.h" />
+    <!-- <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="App.h">
+    </ClInclude> -->
+    <!-- <ClInclude Include="App.h">
       <DependentUpon>App.xaml</DependentUpon>
-    </ClInclude>
+    </ClInclude> -->
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
@@ -59,10 +61,10 @@
 
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="App.idl">
+    <!-- <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="AppKeyBindings.idl" />
+    </Midl> -->
+    <!-- <Midl Include="AppKeyBindings.idl" /> -->
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->

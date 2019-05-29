@@ -14,6 +14,9 @@
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalApp.vcxproj -->
+    <ApplicationDefinition Include="..\App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -28,7 +31,9 @@
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
-    <ClInclude Include="../App.h" />
+    <ClInclude Include="../App.h" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClInclude>
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
@@ -46,7 +51,9 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="../AppKeyBindings.cpp" />
-    <ClCompile Include="../App.cpp" />
+    <ClCompile Include="../App.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -57,7 +64,9 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="../App.idl" />
+    <Midl Include="../App.idl" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </Midl>
     <Midl Include="../AppKeyBindings.idl" />
     <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
@@ -109,7 +118,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
       <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
       <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
