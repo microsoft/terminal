@@ -3,8 +3,6 @@
 
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <!-- <Import Project="$(SolutionDir)src\common.build.pre.props" /> -->
-
   <!-- ========================= CppWinRT Metadata ======================== -->
   <PropertyGroup>
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -15,21 +13,9 @@
 
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <!-- HERE BE DRAGONS:
-      For any types that use XAML information, if their .idl, .cpp, and .h
-      aren't all marked DependentUpon the corresponding .xaml file,
-      XamlTypeInfo.g.h won't pick it up correctly.
-    -->
-    <!-- <ApplicationDefinition Include="../App.xaml">
-      <SubType>Designer</SubType>
-    </ApplicationDefinition> -->
+    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
-  <!-- When we add other user controls, they should go in here as so: -->
-  <!-- <ItemGroup>
-    <Page Include="MyUserControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup> -->
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../Tab.h" />
@@ -41,13 +27,10 @@
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../AppKeyBindings.h">
-      <!-- <DependentUpon>../AppKeyBindings.idl</DependentUpon> -->
-    </ClInclude>
-    <ClInclude Include="../App.h">
-      <!-- <DependentUpon>../App.xaml</DependentUpon> -->
-    </ClInclude>
+    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../App.h" />
   </ItemGroup>
+
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../Tab.cpp" />
@@ -62,29 +45,28 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="../AppKeyBindings.cpp">
-      <!-- <DependentUpon>../AppKeyBindings.idl</DependentUpon> -->
-    </ClCompile>
-    <ClCompile Include="../App.cpp">
-      <!-- <DependentUpon>../App.xaml</DependentUpon> -->
-    </ClCompile>
+    <ClCompile Include="../AppKeyBindings.cpp" />
+    <ClCompile Include="../App.cpp" />
+
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <!-- <Midl Include="../App.idl">
-      <DependentUpon>../App.xaml</DependentUpon>
-    </Midl> -->
-    <!-- <Midl Include="../AppKeyBindings.idl" /> -->
+    <Midl Include="../App.idl" />
+    <Midl Include="../AppKeyBindings.idl" />
+    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
+
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <None Include="../packages.config" />
   </ItemGroup>
+
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -93,62 +75,37 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalsettings\terminalsettings.vcxproj" /> -->
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
-
-    <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
-      <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
-      <!-- <Private>true</Private> -->
-      <!-- <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies> -->
-    </ProjectReference>
-
     <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" /> -->
-    <!-- This is needed to be able to reference the XamlApplication type. -->
+    <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
   </ItemGroup>
 
   <PropertyGroup>
     <_BinRoot>$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
   </PropertyGroup>
 
-  <!-- <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'UAP'"> -->
   <ItemGroup>
-<!--     <Reference Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd">
-      <IsWinMDFile>true</IsWinMDFile>
-      <Implementation>Microsoft.UI.Xaml.Markup.dll</Implementation>
-    </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.dll" /> -->
-
-<!--     <Reference Include="$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd">
-      <IsWinMDFile>true</IsWinMDFile>
-      <Implementation>TerminalControl.dll</Implementation>
-    </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalControl\TerminalControl.dll" /> -->
-
-<!--     <Reference Include="$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd">
-      <IsWinMDFile>true</IsWinMDFile>
-      <Implementation>TerminalSettings.dll</Implementation>
-    </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalSettings\TerminalSettings.dll" /> -->
-
-  </ItemGroup>
-
-  <ItemGroup>
-<!--     <Reference Include="Microsoft.UI.Xaml.Markup">
-      <HintPath>..\..\..\..\x64\Debug\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-    </Reference>
     <Reference Include="Microsoft.Terminal.Settings">
-      <HintPath>..\..\..\..\x64\Debug\TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
+      <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
     </Reference>
+
     <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>..\..\..\..\x64\Debug\TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference> -->
+      <!-- <Private>false</Private> -->
+      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
+    </Reference>
+
+    <Reference Include="Microsoft.UI.Xaml.Markup">
+      <HintPath>$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <!-- <Private>false</Private> -->
+      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
+    </Reference>
   </ItemGroup>
 
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -160,6 +117,8 @@
       <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+
+  <!-- ========================= Globals ======================== -->
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -168,9 +127,7 @@
     <TargetName>TerminalAppLib</TargetName>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
-  <!-- <Import Project="$(SolutionDir)src\common.build.lib.props" /> -->
-  <!-- <Import Project="$(SolutionDir)src\common.build.post.props" /> -->
+
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -181,8 +138,6 @@
   </PropertyGroup>
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
-
-  <!-- <Import Project="$(SolutionDir)src\common.build.lib.props" /> -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
