@@ -9,7 +9,6 @@
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
-using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 

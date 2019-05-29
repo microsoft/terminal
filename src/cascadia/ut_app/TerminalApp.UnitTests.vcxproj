@@ -2,9 +2,15 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)\src\common.build.pre.props" />
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="precomp.h" />
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="JsonTests.cpp" />
-    <!-- <ClCompile Include="SelectionTest.cpp" /> -->
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -14,18 +20,14 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <!-- <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalControl\TerminalControl.vcxproj" /> -->
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
-    <!-- <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" /> -->
-    <!-- <ProjectReference Include="..\..\terminal\input\lib\terminalinput.vcxproj" /> -->
-    <!-- <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" /> -->
-    <!-- <ProjectReference Include="..\..\types\lib\types.vcxproj" /> -->
-    <!-- <ProjectReference Include="..\TerminalCore\lib\TerminalCore-lib.vcxproj" /> -->
+    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="precomp.h" />
-  </ItemGroup>
+
+  <!-- ========================= Globals ======================== -->
   <PropertyGroup>
     <ProjectGuid>{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -33,6 +35,8 @@
     <ProjectName>UnitTests_TerminalApp</ProjectName>
     <TargetName>Terminal.App.Unit.Tests</TargetName>
   </PropertyGroup>
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)\src\cascadia\TerminalApp\Generated Files";%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -43,7 +47,6 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <!-- <AdditionalDependencies>WindowsApp.lib;$(OpenConsoleDir)\$(Platform)\$(Configuration)\TerminalApp\TerminalApp.lib%(AdditionalDependencies)</AdditionalDependencies> -->
     </Link>
   </ItemDefinitionGroup>
 

@@ -10,7 +10,6 @@ using namespace TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
 static constexpr std::string_view NAME_KEY{ "name" };
