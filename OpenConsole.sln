@@ -233,6 +233,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_TerminalApp", "src\cascadia\ut_app\TerminalApp.UnitTests.vcxproj", "{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalAppLib", "src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj", "{CA5CAD1A-9A12-429C-B551-8562EC954746}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
+		{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907} = {CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907}
+		{015A0047-772D-4F1A-88C9-45C18F0ADFB6} = {015A0047-772D-4F1A-88C9-45C18F0ADFB6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

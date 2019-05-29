@@ -90,15 +90,47 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalsettings\terminalsettings.vcxproj" /> -->
-    <!-- <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalsettings\terminalsettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+
+    <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
       <Project>{015a0047-772d-4f1a-88c9-45c18f0adfb6}</Project>
-    </ProjectReference> -->
+      <!-- <Private>true</Private> -->
+      <!-- <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies> -->
+    </ProjectReference>
+
     <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" /> -->
     <!-- This is needed to be able to reference the XamlApplication type. -->
   </ItemGroup>
+
+  <PropertyGroup>
+    <_BinRoot>$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
+  <!-- <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'UAP'"> -->
   <ItemGroup>
-    <Reference Include="Microsoft.UI.Xaml.Markup">
+    <Reference Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd">
+      <IsWinMDFile>true</IsWinMDFile>
+      <Implementation>Microsoft.UI.Xaml.Markup.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.dll" />
+
+    <Reference Include="$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd">
+      <IsWinMDFile>true</IsWinMDFile>
+      <Implementation>TerminalControl.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalControl\TerminalControl.dll" />
+
+<!--     <Reference Include="$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd">
+      <IsWinMDFile>true</IsWinMDFile>
+      <Implementation>TerminalSettings.dll</Implementation>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalSettings\TerminalSettings.dll" /> -->
+
+  </ItemGroup>
+
+  <ItemGroup>
+<!--     <Reference Include="Microsoft.UI.Xaml.Markup">
       <HintPath>..\..\..\..\x64\Debug\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
     </Reference>
@@ -111,8 +143,9 @@
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
+    </Reference> -->
   </ItemGroup>
+
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
