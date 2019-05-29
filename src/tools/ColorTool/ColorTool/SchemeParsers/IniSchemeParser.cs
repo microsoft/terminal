@@ -124,7 +124,7 @@ namespace ColorTool.SchemeParsers
             if (colorTable != null)
             {
                 var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
-                return new ColorScheme(colorTable, consoleAttributes);
+                return new ColorScheme(schemeName.Substring(0, schemeName.Length - FileExtension.Length), colorTable, consoleAttributes);
             }
             else
             {

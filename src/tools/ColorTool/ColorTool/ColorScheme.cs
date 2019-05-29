@@ -14,12 +14,14 @@ namespace ColorTool
     /// </summary>
     public class ColorScheme
     {
-        public ColorScheme(uint[] colorTable, ConsoleAttributes consoleAttributes)
+        public ColorScheme(string name, uint[] colorTable, ConsoleAttributes consoleAttributes)
         {
+            Name = name;
             ColorTable = colorTable;
             ConsoleAttributes = consoleAttributes;
         }
 
+        public string Name { get; }
         public uint[] ColorTable { get; }
         public ConsoleAttributes ConsoleAttributes { get; }
 

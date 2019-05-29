@@ -98,7 +98,7 @@ namespace ColorTool.SchemeParsers
                 }
 
                 var consoleAttributes = new ConsoleAttributes(screenBackground, screenForeground, popupBackground, popupForeground);
-                return new ColorScheme(colorTable, consoleAttributes);
+                return new ColorScheme(schemeName.Substring(0, schemeName.Length - FileExtension.Length), colorTable, consoleAttributes);
             }
             catch (Exception /*e*/)
             {
