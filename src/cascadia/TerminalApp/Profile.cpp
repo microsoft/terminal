@@ -12,7 +12,6 @@ using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
-
 static constexpr std::wstring_view NAME_KEY{ L"name" };
 static constexpr std::wstring_view GUID_KEY{ L"guid" };
 static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorscheme" };
@@ -36,6 +35,9 @@ static constexpr std::wstring_view CLOSEONEXIT_KEY{ L"closeOnExit" };
 static constexpr std::wstring_view PADDING_KEY{ L"padding" };
 static constexpr std::wstring_view STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 static constexpr std::wstring_view ICON_KEY{ L"icon" };
+static constexpr std::wstring_view BACKGROUNDIMAGE_KEY{ L"backgroundImage" };
+static constexpr std::wstring_view BACKGROUNDIMAGEOPACITY_KEY{ L"backgroundImageOpacity" };
+static constexpr std::wstring_view BACKGROUNDIMAGESTRETCHMODE_KEY{ L"backgroundImageStretchMode" };
 
 // Possible values for Scrollbar state
 static constexpr std::wstring_view ALWAYS_VISIBLE{ L"visible" };
@@ -47,6 +49,12 @@ static constexpr std::wstring_view CURSORSHAPE_BAR{ L"bar" };
 static constexpr std::wstring_view CURSORSHAPE_UNDERSCORE{ L"underscore" };
 static constexpr std::wstring_view CURSORSHAPE_FILLEDBOX{ L"filledBox" };
 static constexpr std::wstring_view CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
+
+// Possible values for Image Stretch Mode
+static constexpr std::wstring_view IMAGESTRETCHMODE_NONE{ L"none" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_FILL{ L"fill" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_UNIFORM{ L"uniform" };
+static constexpr std::wstring_view IMAGESTRETCHMODE_UNIFORMTOFILL{ L"uniformToFill" };
 
 Profile::Profile() :
     Profile(Utils::CreateGuid())
@@ -76,7 +84,10 @@ Profile::Profile(const winrt::guid& guid):
     _scrollbarState{ },
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
-    _icon{ }
+    _icon{ },
+    _backgroundImage{ },
+    _backgroundImageOpacity{ },
+    _backgroundImageStretchMode{ }
 {
 }
 
@@ -171,6 +182,21 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     {
         ScrollbarState result = ParseScrollbarState(_scrollbarState.value());
         terminalSettings.ScrollState(result);
+    }
+
+    if (_backgroundImage)
+    {
+        terminalSettings.BackgroundImage(_backgroundImage.value());
+    }
+
+    if (_backgroundImageOpacity)
+    {
+        terminalSettings.BackgroundImageOpacity(_backgroundImageOpacity.value());
+    }
+
+    if (_backgroundImageStretchMode)
+    {
+        terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
     }
 
     return terminalSettings;
@@ -272,6 +298,25 @@ JsonObject Profile::ToJson() const
     {
         const auto icon = JsonValue::CreateStringValue(_icon.value());
         jsonObject.Insert(ICON_KEY, icon);
+    }
+
+    if (_backgroundImage)
+    {
+        const auto backgroundImage = JsonValue::CreateStringValue(_backgroundImage.value());
+        jsonObject.Insert(BACKGROUNDIMAGE_KEY, backgroundImage);
+    }
+
+    if (_backgroundImageOpacity)
+    {
+        const auto opacity = JsonValue::CreateNumberValue(_backgroundImageOpacity.value());
+        jsonObject.Insert(BACKGROUNDIMAGEOPACITY_KEY, opacity);
+    }
+
+    if (_backgroundImageStretchMode)
+    {
+        const auto imageStretchMode = JsonValue::CreateStringValue(
+            SerializeImageStretchMode(_backgroundImageStretchMode.value()));
+        jsonObject.Insert(BACKGROUNDIMAGESTRETCHMODE_KEY, imageStretchMode);
     }
 
     return jsonObject;
@@ -404,6 +449,19 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     if (json.HasKey(ICON_KEY))
     {
         result._icon = json.GetNamedString(ICON_KEY);
+    }
+    if (json.HasKey(BACKGROUNDIMAGE_KEY))
+    {
+        result._backgroundImage = json.GetNamedString(BACKGROUNDIMAGE_KEY);
+    }
+    if (json.HasKey(BACKGROUNDIMAGEOPACITY_KEY))
+    {
+        result._backgroundImageOpacity = json.GetNamedNumber(BACKGROUNDIMAGEOPACITY_KEY);
+    }
+    if (json.HasKey(BACKGROUNDIMAGESTRETCHMODE_KEY))
+    {
+        const auto stretchMode = json.GetNamedString(BACKGROUNDIMAGESTRETCHMODE_KEY);
+        result._backgroundImageStretchMode = ParseImageStretchMode(stretchMode.c_str());
     }
 
     return result;
@@ -550,6 +608,58 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
         return ScrollbarState::Visible;
     }
 }
+
+// Method Description:
+// - Helper function for converting a user-specified image stretch mode
+//   to the appropriate enum value
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const std::wstring& imageStretchMode)
+{
+    if (imageStretchMode == IMAGESTRETCHMODE_NONE)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::None;
+    }
+    else if (imageStretchMode == IMAGESTRETCHMODE_FILL)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::Fill;
+    }
+    else if (imageStretchMode == IMAGESTRETCHMODE_UNIFORM)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::Uniform;
+    }
+    else // Fall through to default behavior
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill;
+    }
+}
+
+// Method Description:
+// - Helper function for converting an ImageStretchMode to the 
+//   correct string value.
+// Arguments:
+// - imageStretchMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given ImageStretchMode
+std::wstring_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
+{
+    switch (imageStretchMode)
+    {
+    case winrt::Windows::UI::Xaml::Media::Stretch::None:
+        return IMAGESTRETCHMODE_NONE;
+    case winrt::Windows::UI::Xaml::Media::Stretch::Fill:
+        return IMAGESTRETCHMODE_FILL;
+    case winrt::Windows::UI::Xaml::Media::Stretch::Uniform:
+        return IMAGESTRETCHMODE_UNIFORM;
+    default:
+    case winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill:
+        return IMAGESTRETCHMODE_UNIFORMTOFILL;
+    }
+}
+
+
 
 // Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
