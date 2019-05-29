@@ -515,7 +515,7 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
 }
 
 // Routine Description:
-// - Adjusts the highligted line in a list of commands
+// - Adjusts the highlighted line in a list of commands
 // Arguments:
 // - OldCurrentCommand - The previous command highlighted
 // - NewCurrentCommand - The new command to be highlighted.

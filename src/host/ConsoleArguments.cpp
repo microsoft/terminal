@@ -102,7 +102,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the string at index+1
+//  pSetting: receives the string at index+1
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
@@ -132,7 +132,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the string at index+1
+//  pSetting: receives the string at index+1
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
@@ -163,7 +163,7 @@ HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the short at index+1
+//  pSetting: receives the short at index+1
 // Return Value:
 //  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
@@ -420,7 +420,7 @@ HRESULT ConsoleArguments::ParseCommandline()
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
         // TODO: handle invalid args
-        //  eg "conhost --foo bar" should not make the clientCommandline "--foo bar"
+        //  e.g. "conhost --foo bar" should not make the clientCommandline "--foo bar"
         else
         {
             // If we encounter something that doesn't match one of our other
@@ -547,7 +547,7 @@ bool ConsoleArguments::GetInheritCursor() const
 
 // Method Description:
 // - Tell us to use a different size than the one parsed as the size of the
-//      console. This is called by the PtySignalInputThread when it recieves a
+//      console. This is called by the PtySignalInputThread when it receives a
 //      resize before the first client has connected. Because there's no client,
 //      there's also no buffer yet, so it has nothing to resize.
 //      However, we shouldn't just discard that first resize message. Instead,
