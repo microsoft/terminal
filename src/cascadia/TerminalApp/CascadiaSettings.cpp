@@ -4,6 +4,9 @@
 #include "pch.h"
 #include <argb.h>
 #include <conattrs.hpp>
+#include <fstream>
+#include <io.h>
+#include <fcntl.h>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
@@ -227,6 +230,53 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+
+    HANDLE readPipe;
+    HANDLE writePipe;
+    SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
+    if (CreatePipe(&readPipe, &writePipe, &sa, 0)) {
+        STARTUPINFO si{};
+        si.cb = sizeof(si);
+        si.dwFlags = STARTF_USESTDHANDLES;
+        si.hStdOutput = writePipe;
+        si.hStdError = writePipe;
+
+        PROCESS_INFORMATION pi{};
+        std::wstring command = L"wsl.exe --list";
+        bool processSuccess = CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
+            TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
+        if (processSuccess) {
+            WaitForSingleObject(pi.hProcess, INFINITE);
+            DWORD exitCode;
+            HRESULT hr = 0;
+            if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
+                hr = E_INVALIDARG;
+            }
+            if (SUCCEEDED(hr)) {
+                DWORD bytesAvailable = 0;
+                PeekNamedPipe(readPipe, nullptr, NULL, nullptr, &bytesAvailable, nullptr);
+                std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe, _O_WTEXT | _O_RDONLY), L"r") };
+                std::wstring wline = L"";
+                std::getline(pipe, wline); //remove the header from the output.
+                while (pipe.tellp() < bytesAvailable) {
+                    std::getline(pipe, wline);
+                    std::wstringstream   wlinestream(wline);
+                    std::wstring name = L"";
+                    if (wlinestream) {
+                        std::getline(wlinestream, name, L' ');
+                        auto WSLDistro{ _CreateDefaultProfile(name) };
+                        WSLDistro.SetCommandline(L"wsl.exe -d " + name);
+                        WSLDistro.SetColorScheme({ L"Campbell" });
+                        _profiles.emplace_back(WSLDistro);
+                    }
+                }
+            }
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+        }
+        CloseHandle(readPipe);
+        CloseHandle(writePipe);
+    }
 }
 
 // Method Description:
