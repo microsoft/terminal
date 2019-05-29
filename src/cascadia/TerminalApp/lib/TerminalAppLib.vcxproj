@@ -17,9 +17,9 @@
       aren't all marked DependentUpon the corresponding .xaml file,
       XamlTypeInfo.g.h won't pick it up correctly.
     -->
-    <ApplicationDefinition Include="App.xaml">
+    <!-- <ApplicationDefinition Include="../App.xaml">
       <SubType>Designer</SubType>
-    </ApplicationDefinition>
+    </ApplicationDefinition> -->
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
   <!-- <ItemGroup>
@@ -38,11 +38,11 @@
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AppKeyBindings.h">
-      <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    <ClInclude Include="../AppKeyBindings.h">
+      <!-- <DependentUpon>../AppKeyBindings.idl</DependentUpon> -->
     </ClInclude>
-    <ClInclude Include="App.h">
-      <DependentUpon>App.xaml</DependentUpon>
+    <ClInclude Include="../App.h">
+      <!-- <DependentUpon>../App.xaml</DependentUpon> -->
     </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -59,11 +59,11 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="AppKeyBindings.cpp">
-      <DependentUpon>AppKeyBindings.idl</DependentUpon>
+    <ClCompile Include="../AppKeyBindings.cpp">
+      <!-- <DependentUpon>../AppKeyBindings.idl</DependentUpon> -->
     </ClCompile>
-    <ClCompile Include="App.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
+    <ClCompile Include="../App.cpp">
+      <!-- <DependentUpon>../App.xaml</DependentUpon> -->
     </ClCompile>
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -73,10 +73,10 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="App.idl">
-      <DependentUpon>App.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="AppKeyBindings.idl" />
+    <!-- <Midl Include="../App.idl">
+      <DependentUpon>../App.xaml</DependentUpon>
+    </Midl> -->
+    <!-- <Midl Include="../AppKeyBindings.idl" /> -->
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -90,7 +90,7 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalsettings\terminalsettings.vcxproj" />
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\terminalsettings\terminalsettings.vcxproj" /> -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
 
     <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj">
@@ -109,17 +109,17 @@
 
   <!-- <ItemGroup Condition="'$(TargetPlatformIdentifier)' == 'UAP'"> -->
   <ItemGroup>
-    <Reference Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd">
+<!--     <Reference Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd">
       <IsWinMDFile>true</IsWinMDFile>
       <Implementation>Microsoft.UI.Xaml.Markup.dll</Implementation>
     </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.dll" />
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.dll" /> -->
 
-    <Reference Include="$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd">
+<!--     <Reference Include="$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd">
       <IsWinMDFile>true</IsWinMDFile>
       <Implementation>TerminalControl.dll</Implementation>
     </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalControl\TerminalControl.dll" />
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)TerminalControl\TerminalControl.dll" /> -->
 
 <!--     <Reference Include="$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd">
       <IsWinMDFile>true</IsWinMDFile>
