@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- <Import Project="$(SolutionDir)src\common.build.pre.props" /> -->
+
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <!-- <Import Project="$(SolutionDir)src\common.build.pre.props" /> -->
+
   <!-- ========================= CppWinRT Metadata ======================== -->
   <PropertyGroup>
-    <!-- cppwinrt.build.pre.props depends on these settings: -->
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -176,8 +179,12 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+
+  <!-- <Import Project="$(SolutionDir)src\common.build.lib.props" /> -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
   <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

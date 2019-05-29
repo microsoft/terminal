@@ -7,6 +7,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:local="using:TerminalApp"
     xmlns:MSMarkup="using:Microsoft.UI.Xaml.Markup"
     xmlns:TA="using:TerminalApp"
+    xmlns:MUX="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
@@ -17,7 +18,7 @@ the MIT License. See LICENSE in the project root for license information. -->
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!-- Include the MUX Controls resources -->
-                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
+                <!-- <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/> -->
                 <ResourceDictionary>
 
                     <!-- We're going to apply this style to the root Grid acting
