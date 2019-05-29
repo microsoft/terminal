@@ -1,0 +1,64 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<MSMarkup:XamlApplication
+    x:Class="TerminalApp.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:MSMarkup="using:Microsoft.UI.Xaml.Markup"
+    xmlns:TA="using:TerminalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <!-- If you want to prove this works, then add `RequestedTheme="Light"` to
+    the properties on the XamlApplication -->
+    <MSMarkup:XamlApplication.Resources>
+
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Include the MUX Controls resources -->
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
+                <ResourceDictionary>
+
+                    <!-- We're going to apply this style to the root Grid acting
+                    as the tab row, because we need to be able to set its
+                    `Background` property to "{ThemeResource
+                    ApplicationPageBackgroundThemeBrush}" so it will be colored
+                    appropriately for the theme, regardless of what we set the
+                    RequestedTheme to -->
+                    <Style x:Name="BackgroundGridThemeStyle" TargetType="Grid">
+                        <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}" />
+                    </Style>
+
+                    <!-- Manually theme the CloseButton of a ContentDialog. We
+                    need to do this, because for whatever reason, if we show a
+                    ContentDialog when the app theme is opposite the system
+                    theme, the buttons will appear transparent. This only
+                    applies to the Close button of the dialog, since we're only
+                    using the Close button of the dialog. If we ever add other
+                    dialogs with more buttons, we'll probably want to make sure
+                    the buttons are styled differently. -->
+                    <Style TargetType="ContentDialog">
+                        <!-- the value `AccentButtonStyle` is taken straight
+                        from the ContentDialog source -->
+                        <Setter Target="CloseButtonStyle" Value="{StaticResource AccentButtonStyle}" />
+                    </Style>
+
+                    <ResourceDictionary.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Dark">
+                            <!-- Define resources for Dark mode here -->
+                        </ResourceDictionary>
+
+                        <ResourceDictionary x:Key="Light">
+                            <!-- Define resources for Light mode here -->
+                        </ResourceDictionary>
+
+                    </ResourceDictionary.ThemeDictionaries>
+
+                </ResourceDictionary>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+
+
+    </MSMarkup:XamlApplication.Resources>
+</MSMarkup:XamlApplication>
