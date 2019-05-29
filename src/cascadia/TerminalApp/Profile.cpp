@@ -15,7 +15,7 @@ using namespace ::Microsoft::Console;
 
 static constexpr std::wstring_view NAME_KEY{ L"name" };
 static constexpr std::wstring_view GUID_KEY{ L"guid" };
-static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorscheme" };
+static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorScheme" };
 
 static constexpr std::wstring_view FOREGROUND_KEY{ L"foreground" };
 static constexpr std::wstring_view BACKGROUND_KEY{ L"background" };
@@ -113,7 +113,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
-//      any colors from our colorscheme, if we have one.
+//      any colors from our color scheme, if we have one.
 // Arguments:
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
