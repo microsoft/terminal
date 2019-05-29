@@ -270,7 +270,7 @@ void CONSOLE_INFORMATION::SetTitle(const std::wstring_view newTitle)
 
 // Method Description:
 // - Set the console title's prefix, and trigger a renderer update of the title.
-//      This is the part of the title shuch as "Mark", "Select", or "Scroll"
+//      This is the part of the title such as "Mark", "Select", or "Scroll"
 // Arguments:
 // - newTitlePrefix: The new value to use for the title prefix
 // Return Value:
