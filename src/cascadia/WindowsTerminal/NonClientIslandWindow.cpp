@@ -49,9 +49,6 @@ void NonClientIslandWindow::OnSize()
     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
-    //RECT buttonsRect = {};
-    //::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
-    //const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
     const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
     const auto dragRegionWidth = static_cast<LONG>((_nonClientDragBarSize.Width - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
 
