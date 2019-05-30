@@ -24,7 +24,8 @@
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch)   (((wch) < L' ') || ((wch) == 0x007F))
 

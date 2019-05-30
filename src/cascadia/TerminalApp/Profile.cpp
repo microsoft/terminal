@@ -15,7 +15,8 @@ using namespace ::Microsoft::Console;
 
 static constexpr std::string_view NAME_KEY{ "name" };
 static constexpr std::string_view GUID_KEY{ "guid" };
-static constexpr std::string_view COLORSCHEME_KEY{ "colorscheme" };
+static constexpr std::string_view COLORSCHEME_KEY{ "colorScheme" };
+static constexpr std::string_view COLORSCHEME_KEY_OLD{ "colorscheme" };
 
 static constexpr std::string_view FOREGROUND_KEY{ "foreground" };
 static constexpr std::string_view BACKGROUND_KEY{ "background" };
@@ -125,7 +126,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
-//      any colors from our colorscheme, if we have one.
+//      any colors from our color scheme, if we have one.
 // Arguments:
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
@@ -329,20 +330,22 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._schemeName = GetWstringFromJson(colorScheme);
     }
-    else
+    else if (auto colorScheme{ json[JsonKey(COLORSCHEME_KEY_OLD)] })
     {
-        if (auto colortable{ json[JsonKey(COLORTABLE_KEY)] })
+        // TODO:GH#1069 deprecate old settings key
+        result._schemeName = GetWstringFromJson(colorScheme);
+    }
+    else if (auto colortable{ json[JsonKey(COLORTABLE_KEY)] })
+    {
+        int i = 0;
+        for (auto tableEntry : colortable)
         {
-            int i = 0;
-            for (auto tableEntry : colortable)
+            if (tableEntry.isString())
             {
-                if (tableEntry.isString())
-                {
-                    const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                    result._colorTable[i] = color;
-                }
-                i++;
+                const auto color = Utils::ColorFromHexString(tableEntry.asString());
+                result._colorTable[i] = color;
             }
+            i++;
         }
     }
     if (auto historySize{ json[JsonKey(HISTORYSIZE_KEY)] })

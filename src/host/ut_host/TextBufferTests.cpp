@@ -18,6 +18,8 @@
 #include "../renderer/inc/DummyRenderTarget.hpp"
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
