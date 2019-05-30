@@ -61,6 +61,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
 
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -96,11 +97,15 @@
     <Reference Include="Microsoft.Terminal.Settings">
       <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
 
     <Reference Include="Microsoft.Terminal.TerminalControl">
       <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <!-- <Private>false</Private> -->
       <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
     </Reference>
@@ -108,6 +113,8 @@
     <Reference Include="Microsoft.UI.Xaml.Markup">
       <HintPath>$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <!-- <Private>false</Private> -->
       <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
     </Reference>

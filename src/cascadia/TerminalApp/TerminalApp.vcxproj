@@ -56,7 +56,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <!-- <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" /> -->
   </ItemGroup>
 
   <!-- ========================= idl Files ======================== -->
@@ -95,6 +95,18 @@
     that, the midl compiler will get mad because it can't find
     TerminalAppLib.winmd (which TerminalAppLib doesn't build). -->
   </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="TerminalApp">
+      <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\TerminalApp.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <!-- <Private>false</Private> -->
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <!-- <Private>false</Private> -->
+      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
+    </Reference>
+  </ItemGroup>
+
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
