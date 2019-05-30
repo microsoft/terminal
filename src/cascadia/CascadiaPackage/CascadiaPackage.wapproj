@@ -139,12 +139,17 @@
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
     adjacent to WindowsTerminal.exe.
    -->
-  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
-    <ItemGroup><!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
-      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
-      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
-      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)"><!-- Override the filename for OpenConsole.exe (only) --><TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath><!-- Blank the SourceProject here to vend all files into the root of the pacakge. -->
-        <SourceProject></SourceProject>
-      </_FilteredNonWapProjProjectOutput>
-    </ItemGroup>
-  </Target></Project>
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+    <ItemGroup>
+      <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
+      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
+      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
+      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
+        <!-- Override the filename for OpenConsole.exe (only) -->
+        <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
+        <!-- Blank the SourceProject here to vend all files into the root of the package. -->
+        <SourceProject></SourceProject>
+      </_FilteredNonWapProjProjectOutput>
+    </ItemGroup>
+  </Target>
+</Project>
