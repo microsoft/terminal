@@ -103,6 +103,7 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
+        void _PasteText();
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);

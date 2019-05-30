@@ -21,6 +21,7 @@ namespace Microsoft.Terminal.Settings
     {
         Boolean UseAcrylic;
         Boolean CloseOnExit;
+		Boolean StripLineFeedsOnPaste;
         Double TintOpacity;
         ScrollbarState ScrollState; 
 

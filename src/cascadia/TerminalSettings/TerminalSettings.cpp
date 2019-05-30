@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _useAcrylic{ false },
         _closeOnExit{ true },
+        _stripLineFeedsOnPaste{ false },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
@@ -154,6 +155,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::CloseOnExit(bool value)
     {
         _closeOnExit = value;
+    }
+
+    bool TerminalSettings::StripLineFeedsOnPaste()
+    {
+        return _stripLineFeedsOnPaste;
+    }
+
+    void TerminalSettings::StripLineFeedsOnPaste(bool value)
+    {
+        _stripLineFeedsOnPaste = value;
     }
 
     double TerminalSettings::TintOpacity()

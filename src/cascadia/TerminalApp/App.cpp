@@ -428,6 +428,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.CopyText([this]() { _CopyText(true);  });
+        bindings.PasteText([this]() { _PasteText();  });
     }
 
     // Method Description:
@@ -873,6 +875,19 @@ namespace winrt::TerminalApp::implementation
 
         const auto control = focusedTab->GetTerminalControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
+    }
+
+    // Method Description:
+    // - Paste text from the Windows Clipboard to the focused terminal
+    // Arguments:
+    // - <none>
+    void App::_PasteText()
+    {
+        const int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+
+        const auto control = focusedTab->GetTerminalControl();
+        control.PasteTextFromClipboard();
     }
 
     // Method Description:

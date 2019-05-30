@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
 
         void ScrollViewport(int viewTop);
@@ -112,6 +113,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SendInputToConnection(const std::wstring& wstr);
+        void _SendPastedTextToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
