@@ -822,7 +822,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
         while (textLength > 0)
         {
             UINT32 mappedLength = 0;
-            IDWriteFont* mappedFont = nullptr;
+            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
             FLOAT scale = 0.0f;
 
             fallback->MapCharacters(source,
@@ -837,7 +837,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
                                     &mappedFont,
                                     &scale);
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont, scale));
+            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
 
             textPosition += mappedLength;
             textLength -= mappedLength;
@@ -860,7 +860,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
 [[nodiscard]]
 HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
                                                            UINT32 textLength,
-                                                           IDWriteFont* const font,
+                                                           _In_ IDWriteFont* const font,
                                                            FLOAT const scale)
 {
     try
