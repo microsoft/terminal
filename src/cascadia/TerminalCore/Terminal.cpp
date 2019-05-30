@@ -77,7 +77,7 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 }
 
 // Method Description:
-// - Initializes the Temrinal from the given set of settings.
+// - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
@@ -440,6 +440,15 @@ void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_vie
 void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, const int, const int)> pfn) noexcept
 {
     _pfnScrollPositionChanged = pfn;
+}
+
+// Method Description:
+// - Allows setting a callback for when the background color is changed
+// Arguments:
+// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
+void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+{
+    _pfnBackgroundColorChanged = pfn;
 }
 
 // Method Description:

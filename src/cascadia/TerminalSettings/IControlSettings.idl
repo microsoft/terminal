@@ -34,5 +34,8 @@ namespace Microsoft.Terminal.Settings
         String StartingDirectory;
         String EnvironmentVariables;
 
+        String BackgroundImage;
+        Double BackgroundImageOpacity;
+        Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
     };
 }

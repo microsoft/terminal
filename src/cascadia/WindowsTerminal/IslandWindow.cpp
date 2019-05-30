@@ -144,6 +144,7 @@ void IslandWindow::OnSize()
     }
 }
 
+[[nodiscard]]
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message) {
@@ -162,6 +163,13 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
             return 0; // eat the message
         }
     }
+    case WM_MENUCHAR:
+    {
+        // GH#891: return this LRESULT here to prevent the app from making a
+        // bell when alt+key is pressed. A menu is active and the user presses a
+        // key that does not correspond to any mnemonic or accelerator key,
+        return MAKELRESULT(0, MNC_CLOSE);
+    }
     }
 
     // TODO: handle messages here...
@@ -173,7 +181,7 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
 // Arguments:
 // - width: the new width of the window _in pixels_
 // - height: the new height of the window _in pixels_
-void IslandWindow::OnResize(const UINT width, const UINT height)
+void IslandWindow::OnResize(const UINT /*width*/, const UINT /*height*/)
 {
     OnSize();
 }
@@ -197,3 +205,4 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
 }
+

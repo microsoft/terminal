@@ -33,8 +33,6 @@ Revision History:
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
-using namespace Microsoft::Console::Render;
-
 class Globals
 {
 public:
@@ -63,9 +61,9 @@ public:
 
     std::vector<wchar_t> WordDelimiters;
 
-    IRenderer* pRender;
+    Microsoft::Console::Render::IRenderer* pRender;
 
-    IFontDefaultList* pFontDefaultList;
+    Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 

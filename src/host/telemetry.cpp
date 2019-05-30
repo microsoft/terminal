@@ -217,6 +217,7 @@ void Telemetry::FindDialogClosed()
 // disconnect when the conhost process exits.  So we have to remember the last process that connected.
 void Telemetry::TotalCodesForPreviousProcess()
 {
+    using namespace Microsoft::Console::VirtualTerminal;
     // Get the values even if we aren't recording the previously connected process, since we want to reset them to 0.
     unsigned int _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
     unsigned int _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
@@ -352,14 +353,14 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 // so we don't overwhelm our servers by sending a constant stream of telemetry while the console is being used.
 void Telemetry::WriteFinalTraceLog()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
         // Normally we would set the activity Id earlier, but since we know the parser only sends
         // one final log at the end, setting the activity this late should be fine.
-        TermTelemetry::Instance().SetActivityId(_activity.Id());
-        TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
+        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
+        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
 
         if (_fUserInteractiveForTelemetry)
         {

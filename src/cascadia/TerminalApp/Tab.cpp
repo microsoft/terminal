@@ -153,7 +153,7 @@ void Tab::Scroll(const int delta)
     auto control = GetFocusedTerminalControl();
     control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta](){
         const auto currentOffset = control.GetScrollOffset();
-        control.ScrollViewport(currentOffset + delta);
+        control.KeyboardScrollViewport(currentOffset + delta);
     });
 }
 

@@ -31,5 +31,8 @@ namespace Microsoft::Terminal::Core
         virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) = 0;
 
         virtual bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) = 0;
+
+        virtual bool SetDefaultForeground(const DWORD dwColor) = 0;
+        virtual bool SetDefaultBackground(const DWORD dwColor) = 0;
     };
 }
