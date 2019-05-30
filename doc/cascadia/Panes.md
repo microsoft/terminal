@@ -7,7 +7,7 @@ created on: 2019-May-16
 
 ## Abstract
 
-Panes are an abstraction by which the terminal can dislay multiple terminal
+Panes are an abstraction by which the terminal can display multiple terminal
 instances simultaneously in a single terminal window. While tabs allow for a
 single terminal window to have many terminal sessions running simultaneously
 within a single window, only one tab can be visible at a time. Panes, on the
