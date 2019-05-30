@@ -61,6 +61,13 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         int32_t FontSize();
         void FontSize(int32_t value);
 
+        hstring BackgroundImage();
+        void BackgroundImage(hstring const& value);
+        double BackgroundImageOpacity();
+        void BackgroundImageOpacity(double value);
+        winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode();
+        void BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value);
+
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
 
@@ -94,6 +101,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _fontFace;
         int32_t _fontSize;
         hstring _padding;
+        hstring _backgroundImage;
+        double _backgroundImageOpacity;
+        winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;

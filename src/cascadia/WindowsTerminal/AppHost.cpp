@@ -17,11 +17,10 @@ AppHost::AppHost() noexcept :
     _window{ nullptr }
 {
     _useNonClientArea = _app.GetShowTabsInTitlebar();
-    NonClientIslandWindow::NonClientDragBarWidth = _app.GetNonClientAreaDragBarWidth();
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>();
+        _window = std::make_unique<NonClientIslandWindow>(_app.GetNonClientAreaDragBarSize());
     }
     else
     {

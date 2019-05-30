@@ -12,6 +12,7 @@
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
@@ -56,14 +57,14 @@ namespace winrt::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
-    float App::GetNonClientAreaDragBarWidth() const noexcept
+    Windows::Foundation::Size App::GetNonClientAreaDragBarSize() const noexcept
     {
         if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
         {
-            return 0.0;
+            return {};
         }
 
-        return NON_CLIENT_DRAGBAR_WIDTH;
+        return { NON_CLIENT_DRAGBAR_WIDTH, NON_CLIENT_DRAGBAR_HEIGHT };
     }
 
     // Method Description:
@@ -135,6 +136,7 @@ namespace winrt::TerminalApp::implementation
 
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
+        _newTabButton.Height(NON_CLIENT_DRAGBAR_HEIGHT);
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
@@ -153,16 +155,15 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        const auto minDragBarWidth = GetNonClientAreaDragBarWidth();
-        _newTabButton.Margin({ 0, 0, minDragBarWidth, 0 });
+        const auto dragAreaWidth = GetNonClientAreaDragBarSize().Width;
+        _newTabButton.Margin({ 0, 0, dragAreaWidth, 0 });
         _tabRow.Children().Append(_newTabButton);
-
-        if (minDragBarWidth > 0)
+        if (dragAreaWidth > 0)
         {
             auto minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl();
             Controls::Grid::SetRow(minMaxCloseControl, 0);
             Controls::Grid::SetColumn(minMaxCloseControl, 1);
-            minMaxCloseControl.Margin({ minDragBarWidth, 0, 0, 0 });
+            minMaxCloseControl.Margin({ dragAreaWidth, 0, 0, 0 });
             _tabRow.Children().Append(minMaxCloseControl);
         }
 
@@ -304,6 +305,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
+        const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
@@ -331,6 +333,12 @@ namespace winrt::TerminalApp::implementation
             if (profile.HasIcon())
             {
                 profileMenuItem.Icon(_GetIconFromProfile(profile));
+            }
+
+            if (profile.GetGuid() == defaultProfileGuid)
+            {
+                // Contrast the default profile with others in font weight.
+                profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&){

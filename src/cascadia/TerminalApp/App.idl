@@ -29,7 +29,14 @@ namespace TerminalApp
 
         String GetTitle();
 
-        FLOAT GetNonClientAreaDragBarWidth();
+        // Method Description:
+        // - Returns the size of the dragable area of Xaml Island
+        // - This is used by NonClientIslandWindow to create a "hole" in the Island to allow dragging.
+        // Arguments:
+        // - <none>
+        // Return Value:
+        // - The minimum size of the draggable area in the top right corner of the window
+        Windows.Foundation.Size GetNonClientAreaDragBarSize();
 
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class

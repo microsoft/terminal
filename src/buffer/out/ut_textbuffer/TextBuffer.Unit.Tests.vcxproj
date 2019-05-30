@@ -21,8 +21,8 @@
     <ProjectGuid>{531C23E7-4B76-4C08-8BBD-04164CB628C9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>TextBufferUnitTests</RootNamespace>
-    <ProjectName>TextBuffer.UnitTests</ProjectName>
-    <TargetName>TextBuffer.UnitTests</TargetName>
+    <ProjectName>TextBuffer.Unit.Tests</ProjectName>
+    <TargetName>TextBuffer.Unit.Tests</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
