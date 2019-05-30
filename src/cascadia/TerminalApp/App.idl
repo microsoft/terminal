@@ -29,7 +29,7 @@ namespace TerminalApp
 
         String GetTitle();
 
-        FLOAT GetNonClientAreaDragBarWidth();
+        Windows.Foundation.Size GetNonClientAreaDragBarSize();
 
         // IXamlMetadataProvider, Xaml.Application:
         // Application's composing initializer will register the composing class

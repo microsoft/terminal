@@ -26,7 +26,7 @@ Author(s):
 class NonClientIslandWindow : public IslandWindow
 {
 public:
-    NonClientIslandWindow() noexcept;
+    NonClientIslandWindow(winrt::Windows::Foundation::Size dragBarSize) noexcept;
     virtual ~NonClientIslandWindow() override;
 
     virtual void OnSize() override;
@@ -36,12 +36,11 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
-    static double NonClientDragBarWidth;
-
 private:
 
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
+    winrt::Windows::Foundation::Size _nonClientDragBarSize;
 
     [[nodiscard]]
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;

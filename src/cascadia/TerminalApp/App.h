@@ -19,6 +19,7 @@
 namespace winrt::TerminalApp::implementation
 {
     const float NON_CLIENT_DRAGBAR_WIDTH = 175.0;
+    const float NON_CLIENT_DRAGBAR_HEIGHT = 36.0;
 
     // We dont use AppT as it does not provide access to protected constructors
     template <typename D, typename... I>
@@ -37,7 +38,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         bool GetShowTabsInTitlebar();
 
-        float GetNonClientAreaDragBarWidth() const noexcept;
+        Windows::Foundation::Size GetNonClientAreaDragBarSize() const noexcept;
 
         ~App();
 

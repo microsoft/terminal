@@ -57,14 +57,14 @@ namespace winrt::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
-    float App::GetNonClientAreaDragBarWidth() const noexcept
+    Windows::Foundation::Size App::GetNonClientAreaDragBarSize() const noexcept
     {
         if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
         {
-            return 0.0;
+            return {};
         }
 
-        return NON_CLIENT_DRAGBAR_WIDTH;
+        return { NON_CLIENT_DRAGBAR_WIDTH, NON_CLIENT_DRAGBAR_HEIGHT };
     }
 
     // Method Description:
@@ -136,6 +136,7 @@ namespace winrt::TerminalApp::implementation
 
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
+        _newTabButton.Height(NON_CLIENT_DRAGBAR_HEIGHT);
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
@@ -154,7 +155,8 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        _newTabButton.Margin({ 0, 0, GetNonClientAreaDragBarWidth(), 0 });
+        const auto dragAreaWidth = GetNonClientAreaDragBarSize().Width;
+        _newTabButton.Margin({ 0, 0, dragAreaWidth, 0 });
         _tabRow.Children().Append(_newTabButton);
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);

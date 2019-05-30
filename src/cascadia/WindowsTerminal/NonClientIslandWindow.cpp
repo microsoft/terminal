@@ -24,9 +24,10 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
     return pRect->bottom - pRect->top;
 }
 
-NonClientIslandWindow::NonClientIslandWindow() noexcept :
+NonClientIslandWindow::NonClientIslandWindow(winrt::Windows::Foundation::Size dragBarSize) noexcept :
     IslandWindow{ },
-    _isMaximized{ false }
+    _isMaximized{ false },
+    _nonClientDragBarSize(dragBarSize)
 {
 }
 
@@ -36,7 +37,6 @@ NonClientIslandWindow::~NonClientIslandWindow()
 
 const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
 const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
-double NonClientIslandWindow::NonClientDragBarWidth = 0.0; // Set by TerminalApp initialization
 
 // Method Description:
 // - called when the size of the window changes for any reason. Updates the
@@ -49,11 +49,11 @@ void NonClientIslandWindow::OnSize()
     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
-    RECT buttonsRect = {};
-    ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
-    const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
-    const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
-    const auto dragRegionWidth = static_cast<LONG>((NonClientDragBarWidth - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
+    //RECT buttonsRect = {};
+    //::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
+    //const auto minMaxWidth = (buttonsRect.right - buttonsRect.left);
+    const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
+    const auto dragRegionWidth = static_cast<LONG>((_nonClientDragBarSize.Width - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
 
     RECT windowRect = {};
     ::GetWindowRect(_window, &windowRect);
@@ -171,13 +171,12 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 // - A MARGINS struct containing the border dimensions we want.
 MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 {
+    const auto scale = GetCurrentDpiScale();
     const auto dpi = ::GetDpiForWindow(_window);
     const auto windowMarginSides = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
     const auto windowMarginBottom = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
-    RECT buttonsRect = {};
-    ::DwmGetWindowAttribute(_window, DWMWA_CAPTION_BUTTON_BOUNDS, &buttonsRect, sizeof(buttonsRect));
-    const auto nonClientHeight = (buttonsRect.bottom - buttonsRect.top);
+    const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
 
     MARGINS margins{ 0 };
     margins.cxLeftWidth = windowMarginSides;
