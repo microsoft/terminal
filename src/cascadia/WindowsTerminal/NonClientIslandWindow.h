@@ -29,7 +29,10 @@ public:
     NonClientIslandWindow() noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    virtual void OnSize() override;
+    virtual void OnSize() override
+    {
+        SetIslandSize(false);
+    }
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
@@ -38,6 +41,8 @@ public:
     static double NonClientDragBarWidth;
 
 private:
+
+    void SetIslandSize(bool setRegion);
 
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;

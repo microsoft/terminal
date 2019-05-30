@@ -1,0 +1,18 @@
+﻿<StackPanel
+    x:Class="TerminalApp.MinMaxCloseControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
+    Orientation="Horizontal"
+    d:DesignHeight="300"
+    d:DesignWidth="400">
+
+    <Button Height="40" Width="40" x:Name="Minimize">_</Button>
+    <Button Height="40" Width="40" x:Name="Maximize">-</Button>
+    <Button Height="40" Width="40" x:Name="Close">X</Button>
+</StackPanel>

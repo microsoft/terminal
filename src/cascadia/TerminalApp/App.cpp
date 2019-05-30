@@ -153,8 +153,18 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        _newTabButton.Margin({ 0, 0, GetNonClientAreaDragBarWidth(), 0 });
+        const auto minDragBarWidth = GetNonClientAreaDragBarWidth();
+        _newTabButton.Margin({ 0, 0, minDragBarWidth, 0 });
         _tabRow.Children().Append(_newTabButton);
+
+        if (minDragBarWidth > 0)
+        {
+            auto minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl();
+            Controls::Grid::SetRow(minMaxCloseControl, 0);
+            Controls::Grid::SetColumn(minMaxCloseControl, 1);
+            minMaxCloseControl.Margin({ minDragBarWidth, 0, 0, 0 });
+            _tabRow.Children().Append(minMaxCloseControl);
+        }
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);

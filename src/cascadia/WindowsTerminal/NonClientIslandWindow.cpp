@@ -41,7 +41,7 @@ double NonClientIslandWindow::NonClientDragBarWidth = 0.0; // Set by TerminalApp
 // Method Description:
 // - called when the size of the window changes for any reason. Updates the
 //   sizes of our child Xaml Islands to match our new sizing.
-void NonClientIslandWindow::OnSize()
+void NonClientIslandWindow::SetIslandSize(bool setRegion)
 {
     const auto scale = GetCurrentDpiScale();
     const auto dpi = ::GetDpiForWindow(_window);
@@ -87,16 +87,37 @@ void NonClientIslandWindow::OnSize()
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, NULL, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+    if (setRegion)
+    {
+        auto region = CreateRectRgn(0, 0, 0, 0);
+        //const auto regionType = GetWindowRgn(_interopWindowHandle, region);
+        //if (regionType != ERROR)
+        //{
+        //    winrt::check_bool(SetWindowRgn(_interopWindowHandle, NULL, true));
+        //    DeleteObject(region);
+        //    region = CreateRectRgn(0, 0, 0, 0);
+        //}
 
-    HRGN region = CreateRectRgn(0, 0, 0, 0);
-    HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
-    HRGN clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
+        auto nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
+        auto clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
+        winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
 
-    winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
-    winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
+        //DeleteObject(clientRegion);
+        //DeleteObject(nonClientRegion);
+        //DeleteObject(region);
+    }
+
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 
     _UpdateFrameMargins();
+
+
+    //HRGN nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
+    //HRGN clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
+
+    //winrt::check_bool(CombineRgn(m_region, nonClientRegion, clientRegion, RGN_OR));
+    //winrt::check_bool(SetWindowRgn(_interopWindowHandle, m_region, true));
 }
 
 // Method Description:
@@ -154,8 +175,8 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
     // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
     LRESULT hitTests[3][3] =
     {
-        { HTTOPLEFT,    fOnResizeBorder ? HTTOP : HTCAPTION,    HTTOPRIGHT },
-        { HTLEFT,       HTNOWHERE,     HTRIGHT },
+        { HTTOPLEFT,    /*fOnResizeBorder ? HTTOP : */ HTCAPTION,    HTTOPRIGHT },
+        { HTLEFT,       HTCAPTION,     HTRIGHT },
         { HTBOTTOMLEFT, HTBOTTOM, HTBOTTOMRIGHT },
     };
 
@@ -352,6 +373,45 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
         }
         break;
     }
+    case WM_EXITSIZEMOVE:
+    {
+        SetIslandSize(true);
+        break;
+    }
+    case WM_NCPAINT:
+    {
+        /*
+         * Get a window DC intersected with hrgnClip,
+         * but make sure that hrgnClip doesn't get deleted.
+         */
+        const auto hdc = GetDCEx(_window, (HRGN)wParam, /* DCX_USESTYLE |*/ DCX_WINDOW | DCX_INTERSECTRGN | /* DCX_NODELETERGN | */ DCX_LOCKWINDOWUPDATE);
+        if (hdc)
+        {
+            auto rect = GetWindowRect();
+            DrawEdge(hdc, &rect, EDGE_BUMP, BF_RECT);
+            //xxxDrawWindowFrame(pwnd,
+            //    hdc,
+            //    (TestWF(pwnd, WFFRAMEON) &&
+            //    (GETPTI(pwnd)->pq == gpqForeground)) ? DF_ACTIVE : 0);
+
+            ReleaseDC(_window, hdc);
+        }
+        break; //return 0;
+    }
+    case WM_LBUTTONDOWN:
+    {
+        POINT point1 = {};
+        ::GetCursorPos(&point1);
+        const auto region = HitTestNCA(point1);
+        if (region == HTCAPTION)
+        {
+            const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+            ::SetActiveWindow(_window);
+            ::PostMessage(_window, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, lParam);
+        }
+        break;
+    }
+
     case WM_WINDOWPOSCHANGING:
     {
         // Enforce maximum size here instead of WM_GETMINMAXINFO. If we return
