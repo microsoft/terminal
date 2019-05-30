@@ -12,6 +12,7 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:
@@ -109,7 +110,7 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
     unsigned char const uchComparison = (unsigned char)ch;
 
     int i = 0;
-    // this is ok because the the array is guaranteed to have 2
+    // this is ok because the array is guaranteed to have 2
     // null bytes at the end.
     while (pCPInfo->LeadByte[i])
     {

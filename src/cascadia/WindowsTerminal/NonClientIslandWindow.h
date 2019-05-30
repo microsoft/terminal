@@ -31,6 +31,7 @@ public:
 
     virtual void OnSize() override;
 
+    [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
     MARGINS GetFrameMargins() const noexcept;
@@ -42,7 +43,10 @@ private:
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
 
+    [[nodiscard]]
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+
+    [[nodiscard]]
     HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();

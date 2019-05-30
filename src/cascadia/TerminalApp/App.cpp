@@ -12,6 +12,7 @@
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
@@ -294,6 +295,7 @@ namespace winrt::TerminalApp::implementation
         auto newTabFlyout = Controls::MenuFlyout{};
         auto keyBindings = _settings->GetKeybindings();
 
+        const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
         for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
@@ -321,6 +323,12 @@ namespace winrt::TerminalApp::implementation
             if (profile.HasIcon())
             {
                 profileMenuItem.Icon(_GetIconFromProfile(profile));
+            }
+
+            if (profile.GetGuid() == defaultProfileGuid)
+            {
+                // Contrast the default profile with others in font weight.
+                profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
             profileMenuItem.Click([this, profileIndex](auto&&, auto&&){

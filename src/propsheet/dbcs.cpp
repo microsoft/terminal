@@ -23,7 +23,7 @@ Revision History:
 #include <strsafe.h>
 #pragma hdrstop
 
-NTSTATUS
+void
 MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD *AltFontSize,
@@ -63,10 +63,9 @@ MakeAltRasterFont(
     *AltFontFamily = FontInfo[*AltFontIndex].Family;
 
     DBGFONTS(("MakeAltRasterFont : AltFontIndex = %ld\n", *AltFontIndex));
-
-    return STATUS_SUCCESS;
 }
 
+[[nodiscard]]
 NTSTATUS
 InitializeDbcsMisc(
     VOID)
@@ -154,6 +153,7 @@ GetAltFaceName(
     return NULL;
 }
 
+[[nodiscard]]
 NTSTATUS
 DestroyDbcsMisc(
     VOID)
@@ -243,6 +243,7 @@ int LanguageDisplay(HWND hDlg, UINT CodePage)
 }
 
 // For a given codepage, determine what the default truetype font should be
+[[nodiscard]]
 NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,                  // the codepage to examine (note: not charset)
                                   _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
                                   const size_t cchFaceName)               // space available in pszFaceName

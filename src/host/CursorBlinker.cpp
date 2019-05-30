@@ -5,7 +5,9 @@
 #include "../host/scrolling.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #pragma hdrstop
+
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Interactivity;
 
 CursorBlinker::CursorBlinker() :
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),

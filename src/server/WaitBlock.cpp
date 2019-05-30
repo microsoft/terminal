@@ -213,7 +213,7 @@ bool ConsoleWaitBlock::Notify(const WaitTerminationReason TerminationReason)
 
         LOG_IF_FAILED(_WaitReplyMessage.ReleaseMessageBuffers());
 
-        LOG_IF_FAILED(ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
+        LOG_IF_FAILED(Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().pDeviceComm->CompleteIo(&_WaitReplyMessage.Complete));
 
         fRetVal = true;
     }

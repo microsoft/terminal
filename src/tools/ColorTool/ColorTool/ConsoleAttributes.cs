@@ -6,7 +6,7 @@
 namespace ColorTool
 {
     /// <summary>
-    /// Keeps track of the color table indices for the background/foreground in a colorscheme.
+    /// Keeps track of the color table indices for the background/foreground in a color scheme.
     /// </summary>
     public readonly struct ConsoleAttributes
     {

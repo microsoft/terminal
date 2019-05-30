@@ -10,6 +10,7 @@
 #include "..\types\inc\IInputEvent.hpp"
 
 using namespace WEX::Logging;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class InputBufferTests
 {

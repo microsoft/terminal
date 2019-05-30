@@ -16,9 +16,7 @@ Author(s):
 
 #include "..\renderer\inc\IFontDefaultList.hpp"
 
-using namespace Microsoft::Console::Render;
-
-class RenderFontDefaults sealed : public IFontDefaultList
+class RenderFontDefaults sealed : public Microsoft::Console::Render::IFontDefaultList
 {
 public:
     RenderFontDefaults();

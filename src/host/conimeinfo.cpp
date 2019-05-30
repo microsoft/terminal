@@ -16,6 +16,8 @@
 // Attributes flags:
 #define COMMON_LVB_GRID_SINGLEFLAG 0x2000   // DBCS: Grid attribute: use for ime cursor.
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 ConsoleImeInfo::ConsoleImeInfo() :
     _isSavedCursorVisible(false)
 {
