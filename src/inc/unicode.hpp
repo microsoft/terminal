@@ -15,15 +15,15 @@ Author(s):
 
 #pragma once
 
-#define CP_UTF8                65001
-#define CP_USA                 437
-#define CP_KOREAN              949
-#define CP_JAPANESE            932
-#define CP_CHINESE_SIMPLIFIED  936
+#define CP_UTF8 65001
+#define CP_USA 437
+#define CP_KOREAN 949
+#define CP_JAPANESE 932
+#define CP_CHINESE_SIMPLIFIED 936
 #define CP_CHINESE_TRADITIONAL 950
 
-#define IsBilingualCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN)
-#define IsEastAsianCP(cp) ((cp)==CP_JAPANESE || (cp)==CP_KOREAN || (cp)==CP_CHINESE_TRADITIONAL || (cp)==CP_CHINESE_SIMPLIFIED)
+#define IsBilingualCP(cp) ((cp) == CP_JAPANESE || (cp) == CP_KOREAN)
+#define IsEastAsianCP(cp) ((cp) == CP_JAPANESE || (cp) == CP_KOREAN || (cp) == CP_CHINESE_TRADITIONAL || (cp) == CP_CHINESE_SIMPLIFIED)
 
 // UNICODE_NULL is a Windows macro definition
 const wchar_t UNICODE_BACKSPACE = 0x8;

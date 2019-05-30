@@ -25,10 +25,11 @@ Revision History:
 #include "conime.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-    typedef RECT(*GetSuggestionWindowPos)();
+    typedef RECT (*GetSuggestionWindowPos)();
 
     BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition);
     void DeactivateTextServices();
@@ -37,4 +38,3 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-
