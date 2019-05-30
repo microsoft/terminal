@@ -71,7 +71,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Host.Tests.Unit", "src\host
 		{06EC74CB-9A12-429C-B551-8562EC954747} = {06EC74CB-9A12-429C-B551-8562EC954747}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextBuffer.Unit.Tests", "src\buffer\out\ut_textbuffer\TextBuffer.UnitTests.vcxproj", "{531C23E7-4B76-4C08-8BBD-04164CB628C9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TextBuffer.Unit.Tests", "src\buffer\out\ut_textbuffer\TextBuffer.Unit.Tests.vcxproj", "{531C23E7-4B76-4C08-8BBD-04164CB628C9}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0CF235BD-2DA0-407E-90EE-C467E8BBC714} = {0CF235BD-2DA0-407E-90EE-C467E8BBC714}
 	EndProjectSection
