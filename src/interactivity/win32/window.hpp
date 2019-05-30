@@ -121,10 +121,12 @@ namespace Microsoft::Console::Interactivity::Win32
         void _UpdateSystemMetrics() const;
 
         // Wndproc
+        [[nodiscard]]
         static LRESULT CALLBACK s_ConsoleWindowProc(_In_ HWND hwnd,
                                                     _In_ UINT uMsg,
                                                     _In_ WPARAM wParam,
                                                     _In_ LPARAM lParam);
+        [[nodiscard]]
         LRESULT CALLBACK ConsoleWindowProc(_In_ HWND,
                                             _In_ UINT uMsg,
                                             _In_ WPARAM wParam,
@@ -137,6 +139,7 @@ namespace Microsoft::Console::Interactivity::Win32
         void _HandleWindowPosChanged(const LPARAM lParam);
 
         // Accessibility/UI Automation
+        [[nodiscard]]
         LRESULT _HandleGetObject(const HWND hwnd,
                                     const WPARAM wParam,
                                     const LPARAM lParam);
@@ -144,9 +147,11 @@ namespace Microsoft::Console::Interactivity::Win32
         WindowUiaProvider* _pUiaProvider = nullptr;
 
         // Dynamic Settings helpers
+        [[nodiscard]]
         static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                 const BOOL fAutoPos,
                                                 const Window* const pWindow);
+        [[nodiscard]]
         static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
                                                     const Window* const pWindow);
 
