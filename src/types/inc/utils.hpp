@@ -19,8 +19,6 @@ namespace Microsoft::Console::Utils
     GUID GuidFromString(const std::wstring wstr);
     GUID CreateGuid();
 
-    std::wstring ColorToHexStringW(const COLORREF color);
-    COLORREF ColorFromHexStringW(const std::wstring wstr);
     std::string ColorToHexString(const COLORREF color);
     COLORREF ColorFromHexString(const std::string wstr);
 

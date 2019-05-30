@@ -51,7 +51,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
         std::string errs; // This string will recieve any error text from failing to parse.
-
         // `parse` will return false if it fails.
         if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
         {
@@ -236,7 +235,7 @@ bool CascadiaSettings::_IsPackaged()
 // - content: the given string of content to write to the file.
 // Return Value:
 // - <none>
-void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
+void CascadiaSettings::_SaveAsPackagedApp(const std::string& content)
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -249,9 +248,9 @@ void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
     DataWriter dw = DataWriter();
     const char* firstChar = content.c_str();
     const char* lastChar = firstChar + content.size();
-    // Manually cast to a uint8_t*, because the compiler is unhappy with a static_cast here.
-    const uint8_t* firstByte = (const uint8_t*)firstChar;
-    const uint8_t* lastByte = (const uint8_t*)lastChar;
+
+    const uint8_t* firstByte = reinterpret_cast<const uint8_t*>(firstChar);
+    const uint8_t* lastByte = reinterpret_cast<const uint8_t*>(lastChar);
     winrt::array_view<const uint8_t> bytes{ firstByte, lastByte };
     dw.WriteBytes(bytes);
 
@@ -267,7 +266,7 @@ void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_SaveAsUnpackagedApp(const std::string content)
+void CascadiaSettings::_SaveAsUnpackagedApp(const std::string& content)
 {
     // Get path to output file
     // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
@@ -336,12 +335,8 @@ std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
     // settings file is UTF-8 without BOM
     auto buffer = FileIO::ReadBufferAsync(storageFile).get();
     auto bufferData = buffer.data();
-    std::string resultString;
-    resultString.reserve(buffer.Length());
-    for (size_t i = 0; i < buffer.Length(); i++)
-    {
-        resultString.push_back(bufferData[i]);
-    }
+    std::vector<uint8_t> bytes{ bufferData, bufferData + buffer.Length() };
+    std::string resultString{ bytes.begin(), bytes.end() };
     return { resultString };
 }
 

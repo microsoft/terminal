@@ -50,7 +50,13 @@ static constexpr std::string_view OPENSETTINGS_KEY{ "openSettings" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
-static const std::map<std::string_view, ShortcutAction> commandNames {
+// HERE BE DRAGONS:
+// These are string_views that are being used as keys. These string_views are
+// just pointers to other strings. This could be dangerous, if the map outlived
+// the actual strings being pointed to. However, since both these strings and
+// the map are all const for the lifetime of the app, we have nothing to worry
+// about here.
+static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames {
     { COPYTEXT_KEY, ShortcutAction::CopyText },
     { PASTETEXT_KEY, ShortcutAction::PasteText },
     { NEWTAB_KEY, ShortcutAction::NewTab },
@@ -98,7 +104,7 @@ static const std::map<std::string_view, ShortcutAction> commandNames {
 // Return Value:
 // - a Json::Value which is an equivalent serialization of this object.
 static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
-                                         const std::string_view& actionName)
+                                         const std::string_view actionName)
 {
     const auto keyString = KeyChordSerialization::ToString(chord);
     if (keyString == L"")
@@ -132,11 +138,10 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
     {
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
-        const auto chord = bindings.GetKeyBinding(searchedForAction);
-        if (chord)
+
+        if (const auto chord{ bindings.GetKeyBinding(searchedForAction) })
         {
-            const auto serialization = _ShortcutAsJsonObject(chord, searchedForName);
-            if (serialization)
+            if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
             {
                 bindingsArray.append(serialization);
             }
@@ -178,7 +183,7 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
                 ShortcutAction action;
 
                 // Try matching the command to one we have
-                auto found = commandNames.find(commandString.asString());
+                const auto found = commandNames.find(commandString.asString());
                 if (found != commandNames.end())
                 {
                     action = found->second;
@@ -191,7 +196,7 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
                 // Try parsing the chord
                 try
                 {
-                    auto chord = KeyChordSerialization::FromString(keyChordString);
+                    const auto chord = KeyChordSerialization::FromString(keyChordString);
                     newBindings.SetKeyBinding(action, chord);
                 }
                 catch (...)
