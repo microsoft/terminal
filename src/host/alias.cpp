@@ -22,6 +22,8 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 struct case_insensitive_hash
 {
     std::size_t operator()(const std::wstring& key) const

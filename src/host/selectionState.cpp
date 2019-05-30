@@ -8,7 +8,7 @@
 #include "../types/inc/viewport.hpp"
 
 using namespace Microsoft::Console::Types;
-
+using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
 // - Determines whether the console is in a selecting state

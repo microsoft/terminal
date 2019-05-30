@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
+
 static const COORD c_coordZero = {0,0};
 
 static const PCWSTR pwszLongFontPath = L"%WINDIR%\\Fonts\\ltype.ttf";

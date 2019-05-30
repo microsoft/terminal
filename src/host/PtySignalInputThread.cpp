@@ -20,6 +20,7 @@ struct PTY_SIGNAL_RESIZE
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
