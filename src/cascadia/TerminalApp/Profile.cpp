@@ -14,7 +14,8 @@ using namespace ::Microsoft::Console;
 
 static constexpr std::wstring_view NAME_KEY{ L"name" };
 static constexpr std::wstring_view GUID_KEY{ L"guid" };
-static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorscheme" };
+static constexpr std::wstring_view COLORSCHEME_KEY{ L"colorScheme" };
+static constexpr std::wstring_view COLORSCHEME_KEY_OLD{ L"colorscheme" };
 
 static constexpr std::wstring_view FOREGROUND_KEY{ L"foreground" };
 static constexpr std::wstring_view BACKGROUND_KEY{ L"background" };
@@ -124,7 +125,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
-//      any colors from our colorscheme, if we have one.
+//      any colors from our color scheme, if we have one.
 // Arguments:
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
@@ -364,23 +365,25 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
     }
-    else
+    else if (json.HasKey(COLORSCHEME_KEY_OLD))
     {
-        if (json.HasKey(COLORTABLE_KEY))
+        // TODO: deprecate old settings key
+        result._schemeName = json.GetNamedString(COLORSCHEME_KEY_OLD);
+    }
+    else if (json.HasKey(COLORTABLE_KEY))
+    {
+        const auto table = json.GetNamedArray(COLORTABLE_KEY);
+        int i = 0;
+        for (auto v : table)
         {
-            const auto table = json.GetNamedArray(COLORTABLE_KEY);
-            int i = 0;
-            for (auto v : table)
+            if (v.ValueType() == JsonValueType::String)
             {
-                if (v.ValueType() == JsonValueType::String)
-                {
-                    const auto str = v.GetString();
-                    // TODO: MSFT:20737698 - if this fails, display an approriate error
-                    const auto color = Utils::ColorFromHexString(str.c_str());
-                    result._colorTable[i] = color;
-                }
-                i++;
+                const auto str = v.GetString();
+                // TODO: MSFT:20737698 - if this fails, display an approriate error
+                const auto color = Utils::ColorFromHexString(str.c_str());
+                result._colorTable[i] = color;
             }
+            i++;
         }
     }
     if (json.HasKey(HISTORYSIZE_KEY))
