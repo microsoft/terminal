@@ -7,8 +7,6 @@
 #include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
-#include <wil/com.h>
-#include <wil/filesystem.h>
 #include <shlobj.h>
 
 using namespace ::TerminalApp;

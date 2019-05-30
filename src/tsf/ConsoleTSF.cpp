@@ -79,7 +79,8 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
 
     // Setup some useful Cicero event sinks and callbacks.
-
+    // _spITfThreadMgr && _spITfInputContext must be non-null for checks above to have succeeded, so
+    // we're not going to check them again here. try_query will A/V if they're null.
     wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
     wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
 
@@ -120,39 +121,49 @@ void CConsoleTSF::Uninitialize()
     }
 
     // Detach Cicero event sinks.
-    wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
-    if (spSrcICS)
+    if (_spITfInputContext)
     {
-        spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
+        if (spSrcICS)
+        {
+            spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        }
     }
 
     // Associate the document\context with the console window.
 
-    wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
-    if (spSrcTIM)
+    if (_spITfThreadMgr)
     {
-        if (_dwUIElementSinkCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
+        if (spSrcTIM)
         {
-            spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
-        }
-        if (_dwActivationSinkCookie)
-        {
-            spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            if (_dwUIElementSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
+            }
+            if (_dwActivationSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            }
         }
     }
+
     _dwUIElementSinkCookie = 0;
     _dwActivationSinkCookie = 0;
 
-    wil::com_ptr_nothrow<ITfSource> spSrcIC(_spITfInputContext.try_query<ITfSource>());
-    if (spSrcIC)
+    if (_spITfInputContext)
     {
-        if (_dwContextOwnerCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcIC(_spITfInputContext.try_query<ITfSource>());
+        if (spSrcIC)
         {
-            spSrcIC->UnadviseSink(_dwContextOwnerCookie);
-        }
-        if (_dwTextEditSinkCookie)
-        {
-            spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            if (_dwContextOwnerCookie)
+            {
+                spSrcIC->UnadviseSink(_dwContextOwnerCookie);
+            }
+            if (_dwTextEditSinkCookie)
+            {
+                spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            }
         }
     }
     _dwContextOwnerCookie = 0;

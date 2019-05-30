@@ -95,6 +95,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _Create();
         void _ApplyUISettings();
+        void _InitializeBackgroundBrush();
+        void _BackgroundColorChanged(const uint32_t color);
         void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();

@@ -113,8 +113,8 @@
       <PreprocessorDefinitions>WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>
-    <!-- For our Audit mode -->
-   <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
+  <!-- For our Audit mode -->
+  <PropertyGroup Condition="'$(Configuration)'=='AuditMode'">
     <CodeAnalysisRuleSet>$(SolutionDir)\src\StaticAnalysis.ruleset</CodeAnalysisRuleSet>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
     <RunCodeAnalysis>true</RunCodeAnalysis>

@@ -31,8 +31,6 @@ STL_VER                 = STL_VER_CURRENT
 USE_NATIVE_EH           = 1
 
 BUILD_FOR_CORESYSTEM    = 1
-ATL_VER                 = 70
-USE_STATIC_ATL          = 1
 
 # -------------------------------------
 # Preprocessor Settings
@@ -63,7 +61,9 @@ PRECOMPILED_INCLUDE     =   stdafx.h
 SOURCES = \
     VTCommandFuzzer.cpp \
 
-
+INCLUDES = \
+    ..\..\..\inc \
+    $(INCLUDES) \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
