@@ -18,36 +18,16 @@
 
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <!-- HERE BE DRAGONS:
-      For any types that use XAML information, if their .idl and .h aren't
-      marked DependentUpon the corresponding .xaml file, XamlTypeInfo.g.h won't
-      pick it up correctly. -->
-    <!-- <ApplicationDefinition Include="App.xaml">
-      <SubType>Designer</SubType>
-    </ApplicationDefinition> -->
+    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
   </ItemGroup>
-  <!-- When we add other user controls, they should go in here as so: -->
-  <!-- <ItemGroup>
-    <Page Include="MyUserControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup> -->
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <!-- Only put headers for winrt types in here, and make sure they're
-    DependentUpon the appropriate idl/xaml files. If you don't, they won't be
-    included in XamlTypeInfo.g.* correctly! Don't put other header files in
-    here - put them in TerminalAppLib.vcxproj instead! -->
+    <!-- Only put headers for winrt types in here. Don't put other header files
+    in here - put them in TerminalAppLib.vcxproj instead! -->
     <ClInclude Include="pch.h" />
     <ClInclude Include="AppKeyBindings.h" />
     <ClInclude Include="App.h" />
-    <!-- <ClInclude Include="AppKeyBindings.h">
-      <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClInclude> -->
-    <!-- <ClInclude Include="App.h">
-      <DependentUpon>App.xaml</DependentUpon>
-    </ClInclude> -->
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
@@ -56,15 +36,11 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <!-- <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" /> -->
   </ItemGroup>
 
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <!-- <Midl Include="App.idl">
-      <DependentUpon>App.xaml</DependentUpon>
-    </Midl> -->
-    <!-- <Midl Include="AppKeyBindings.idl" /> -->
+    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->
@@ -91,19 +67,22 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
 
-    <!-- Don't include a ProjectReference to TerminalAppLib here. If you do
-    that, the midl compiler will get mad because it can't find
-    TerminalAppLib.winmd (which TerminalAppLib doesn't build). -->
+    <!-- Don't include a ProjectReference to TerminalAppLib here. For whatever
+    reason, that doesn't work. Instead, we'll be adding a reference to it's
+    winmd manually, so that we include it's winmd in our output as if we
+    generated it. We'll also be maunally linking against the lib from
+    TerminalAppLib.  -->
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Manually reference the TerminalApp winmd that the TerminalAppLib
+    project created. This will cause it to be binplaced in out output, so other
+    projects can reference this project with a ProjectReference and find the
+    winmd appropriately. -->
     <Reference Include="TerminalApp">
       <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\TerminalApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
-      <!-- <Private>false</Private> -->
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-      <!-- <Private>false</Private> -->
-      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
     </Reference>
   </ItemGroup>
 

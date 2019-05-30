@@ -13,11 +13,20 @@
 
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalApp.vcxproj -->
+    <!-- HERE BE DRAGONS:
+      For any types that use XAML information, if their .idl and .h aren't
+      marked DependentUpon the corresponding .xaml file, XamlTypeInfo.g.h won't
+      pick it up correctly. -->
     <ApplicationDefinition Include="..\App.xaml">
       <SubType>Designer</SubType>
     </ApplicationDefinition>
   </ItemGroup>
+  <!-- When we add other user controls, they should go in here as so: -->
+  <!-- <ItemGroup>
+    <Page Include="MyUserControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup> -->
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -65,11 +74,12 @@
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
+    <!-- If you add idl files here, make sure to include their implementation's
+    header in TerminalApp.vcxproj (as well as in this file) -->
     <Midl Include="../App.idl" >
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
-    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->
@@ -85,15 +95,24 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" /> -->
     <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
+
+    <!-- For whatever reason, we can't include the TerminalControl and
+    TerminalSettings projects' winmds via project references. So we'll have to
+    manually include the winmds as References below -->
   </ItemGroup>
 
   <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot>$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Manually add references to each of our dependent winmds. Mark them as
+    private=false and CopyLocalSatelliteAssemblies=false, so that we don't
+    propogate them upwards (which can make referencing this project result in
+    duplicate type definitions)-->
+
     <Reference Include="Microsoft.Terminal.Settings">
       <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -106,8 +125,6 @@
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <!-- <Private>false</Private> -->
-      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
     </Reference>
 
     <Reference Include="Microsoft.UI.Xaml.Markup">
@@ -115,11 +132,8 @@
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <!-- <Private>false</Private> -->
-      <!-- <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies> -->
     </Reference>
   </ItemGroup>
-
 
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
