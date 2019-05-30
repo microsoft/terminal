@@ -36,8 +36,6 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
-#include <winrt/windows.data.json.h>
-
 #include <winrt/Windows.System.h>
 #include <winrt/Windows.Storage.h>
 #include <winrt/Windows.Storage.Streams.h>
