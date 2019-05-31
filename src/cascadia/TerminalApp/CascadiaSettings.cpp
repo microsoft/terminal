@@ -231,52 +231,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
 
-    HANDLE readPipe;
-    HANDLE writePipe;
-    SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
-    if (CreatePipe(&readPipe, &writePipe, &sa, 0)) {
-        STARTUPINFO si{};
-        si.cb = sizeof(si);
-        si.dwFlags = STARTF_USESTDHANDLES;
-        si.hStdOutput = writePipe;
-        si.hStdError = writePipe;
-
-        PROCESS_INFORMATION pi{};
-        std::wstring command = L"wsl.exe --list";
-        bool processSuccess = CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
-            TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi);
-        if (processSuccess) {
-            WaitForSingleObject(pi.hProcess, INFINITE);
-            DWORD exitCode;
-            HRESULT hr = 0;
-            if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
-                hr = E_INVALIDARG;
-            }
-            if (SUCCEEDED(hr)) {
-                DWORD bytesAvailable = 0;
-                PeekNamedPipe(readPipe, nullptr, NULL, nullptr, &bytesAvailable, nullptr);
-                std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe, _O_WTEXT | _O_RDONLY), L"r") };
-                std::wstring wline = L"";
-                std::getline(pipe, wline); //remove the header from the output.
-                while (pipe.tellp() < bytesAvailable) {
-                    std::getline(pipe, wline);
-                    std::wstringstream   wlinestream(wline);
-                    std::wstring name = L"";
-                    if (wlinestream) {
-                        std::getline(wlinestream, name, L' ');
-                        auto WSLDistro{ _CreateDefaultProfile(name) };
-                        WSLDistro.SetCommandline(L"wsl.exe -d " + name);
-                        WSLDistro.SetColorScheme({ L"Campbell" });
-                        _profiles.emplace_back(WSLDistro);
-                    }
-                }
-            }
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-        }
-        CloseHandle(readPipe);
-        CloseHandle(writePipe);
-    }
+    _CreateWslProfiles(_profiles);
 }
 
 // Method Description:
@@ -515,6 +470,61 @@ bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view 
         }
     }
     return false;
+}
+
+// Function Description:
+// - Adds all of the WSL profiles to the provided container.
+// Arguments:
+// - A ref to the profiles container where the WSL profiles are to be added
+// Return Value:
+// - <none>
+void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& profileStorage)
+{
+    try
+    {
+        DWORD bytesAvailable = 0;
+        DWORD exitCode = 0;
+        std::wstring command = L"wsl.exe --list";
+        std::wstring wline = L"";
+        std::wstring distName = L"";
+        wil::unique_handle readPipe;
+        wil::unique_handle writePipe;
+        SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
+        THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
+        STARTUPINFO si{};
+        si.cb = sizeof(si);
+        si.dwFlags = STARTF_USESTDHANDLES;
+        si.hStdOutput = writePipe.get();
+        si.hStdError = writePipe.get();
+        wil::unique_process_information pi{};
+
+        THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
+                                                    TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
+        if (WaitForSingleObject(pi.hProcess, INFINITE) != NULL)
+        {
+            throw;
+        }
+        if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
+            THROW_HR(E_INVALIDARG);
+        }
+        THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
+        FILE* hPipe = _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r");
+            //don't call fclose on hPipe because the readPipe handle is managed by wil and this will cause an error.
+        std::wfstream pipe{ hPipe };
+        std::getline(pipe, wline); //remove the header from the output.
+        while (pipe.tellp() < bytesAvailable) {
+            std::getline(pipe, wline);
+            std::wstringstream   wlinestream(wline);
+            if (wlinestream) {
+                std::getline(wlinestream, distName, L' ');
+                auto WSLDistro{ _CreateDefaultProfile(distName) };
+                WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
+                WSLDistro.SetColorScheme({ L"Campbell" });
+                profileStorage.emplace_back(WSLDistro);
+            }
+        }
+    }
+    CATCH_LOG()
 }
 
 // Function Description:
