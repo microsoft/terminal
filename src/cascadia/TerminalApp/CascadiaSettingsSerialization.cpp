@@ -16,7 +16,7 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view FILENAME{ L"profiles.json" };
 static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
 static constexpr std::wstring_view PROFILES_KEY{ L"profiles" };
@@ -38,7 +38,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<winrt::hstring> fileData = _IsPackaged() ?
-                                             _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
+                                                 _LoadAsPackagedApp() :
+                                                 _LoadAsUnpackagedApp();
 
     const bool foundFile = fileData.has_value();
     if (foundFile)
@@ -322,7 +323,6 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     // settings file is UTF-8 without BOM
     return { FileIO::ReadTextAsync(storageFile, UnicodeEncoding::Utf8).get() };
 }
-
 
 // Method Description:
 // - Reads the content in UTF-8 enconding of our settings file using the Win32 APIs

@@ -8,7 +8,7 @@
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
 // We're just gonna manually define it for this prototyping code
 #ifndef STARTF_USESTDHANDLES
-#define STARTF_USESTDHANDLES       0x00000100
+#define STARTF_USESTDHANDLES 0x00000100
 #endif
 
 #include "ConhostConnection.g.cpp"
@@ -135,8 +135,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Close()
     {
-        if (!_connected) return;
-        if (_closing) return;
+        if (!_connected)
+        {
+            return;
+        }
+        if (_closing)
+        {
+            return;
+        }
         _closing = true;
         // TODO:
         //      terminate the output thread
@@ -181,12 +187,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     _disconnectHandlers();
                     return (DWORD)-1;
                 }
-
             }
-            if (dwRead == 0) continue;
+            if (dwRead == 0)
+            {
+                continue;
+            }
             // Convert buffer to hstring
             char* pchStr = (char*)(buffer);
-            std::string str{pchStr, dwRead};
+            std::string str{ pchStr, dwRead };
             auto hstr = winrt::to_hstring(str);
 
             // Pass the output to our registered event handlers

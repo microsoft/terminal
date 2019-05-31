@@ -49,13 +49,18 @@ void IslandWindow::MakeWindow() noexcept
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
-        L"Windows Terminal",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
-        nullptr, nullptr, wc.hInstance, this));
+                              L"Windows Terminal",
+                              WS_OVERLAPPEDWINDOW,
+                              CW_USEDEFAULT,
+                              CW_USEDEFAULT,
+                              CW_USEDEFAULT,
+                              CW_USEDEFAULT,
+                              nullptr,
+                              nullptr,
+                              wc.hInstance,
+                              this));
 
     WINRT_ASSERT(_window);
-
 }
 
 // Method Description:
@@ -146,8 +151,8 @@ void IslandWindow::OnSize()
 
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
-    switch (message) {
-
+    switch (message)
+    {
     case WM_CREATE:
     {
         _HandleCreateWindow(wparam, lparam);
@@ -204,4 +209,3 @@ void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
 }
-

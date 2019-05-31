@@ -12,6 +12,7 @@ static constexpr std::wstring_view ALT_KEY{ L"alt" };
 
 static constexpr int MAX_CHORD_PARTS = 4;
 
+// clang-format off
 static const std::unordered_map<int32_t, std::wstring_view> vkeyNamePairs {
     { VK_BACK       , L"backspace"},
     { VK_TAB        , L"tab"},
@@ -83,6 +84,7 @@ static const std::unordered_map<int32_t, std::wstring_view> vkeyNamePairs {
 // #define VK_OEM_6          0xDD  //  ']}' for US
 // #define VK_OEM_7          0xDE  //  ''"' for US
 };
+// clang-format on
 
 // Function Description:
 // - Deserializes the given string into a new KeyChord instance. If this
@@ -104,7 +106,7 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
     std::vector<std::wstring> parts;
     std::wstringstream wss(wstr);
 
-    while(std::getline(wss, temp, L'+'))
+    while (std::getline(wss, temp, L'+'))
     {
         parts.push_back(temp);
 

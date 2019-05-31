@@ -36,19 +36,16 @@ GlobalAppSettings::GlobalAppSettings() :
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default }
 {
-
 }
 
 GlobalAppSettings::~GlobalAppSettings()
 {
-
 }
 
 const std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
 }
-
 
 std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
 {
@@ -245,11 +242,11 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 {
     switch (theme)
     {
-        case ElementTheme::Light:
-            return LIGHT_THEME_VALUE;
-        case ElementTheme::Dark:
-            return DARK_THEME_VALUE;
-        default:
-            return SYSTEM_THEME_VALUE;
+    case ElementTheme::Light:
+        return LIGHT_THEME_VALUE;
+    case ElementTheme::Dark:
+        return DARK_THEME_VALUE;
+    default:
+        return SYSTEM_THEME_VALUE;
     }
 }

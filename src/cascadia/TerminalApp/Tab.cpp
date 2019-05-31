@@ -31,8 +31,8 @@ void Tab::_MakeTabViewItem()
 
     _tabViewItem.Header(title);
 
-    _control.TitleChanged([=](auto newTitle){
-        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+    _control.TitleChanged([=](auto newTitle) {
+        _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
             _tabViewItem.Header(newTitle);
         });
     });
@@ -47,7 +47,6 @@ winrt::Microsoft::UI::Xaml::Controls::TabViewItem Tab::GetTabViewItem()
 {
     return _tabViewItem;
 }
-
 
 bool Tab::IsFocused()
 {
@@ -85,7 +84,7 @@ void Tab::_Focus()
 // - <none>
 void Tab::Scroll(int delta)
 {
-    _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+    _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
         const auto currentOffset = _control.GetScrollOffset();
         _control.KeyboardScrollViewport(currentOffset + delta);
     });

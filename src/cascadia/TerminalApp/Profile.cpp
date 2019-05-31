@@ -61,13 +61,13 @@ Profile::Profile() :
 {
 }
 
-Profile::Profile(const winrt::guid& guid):
+Profile::Profile(const winrt::guid& guid) :
     _guid(guid),
     _name{ L"Default" },
     _schemeName{},
 
-    _defaultForeground{  },
-    _defaultBackground{  },
+    _defaultForeground{},
+    _defaultBackground{},
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
@@ -76,24 +76,23 @@ Profile::Profile(const winrt::guid& guid):
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
     _commandline{ L"cmd.exe" },
-    _startingDirectory{  },
+    _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
-    _scrollbarState{ },
+    _scrollbarState{},
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
-    _icon{ },
-    _backgroundImage{ },
-    _backgroundImageOpacity{ },
-    _backgroundImageStretchMode{ }
+    _icon{},
+    _backgroundImage{},
+    _backgroundImageOpacity{},
+    _backgroundImageStretchMode{}
 {
 }
 
 Profile::~Profile()
 {
-
 }
 
 GUID Profile::GetGuid() const noexcept
@@ -266,7 +265,6 @@ JsonObject Profile::ToJson() const
         }
 
         jsonObject.Insert(COLORTABLE_KEY, tableArray);
-
     }
     jsonObject.Insert(HISTORYSIZE_KEY, historySize);
     jsonObject.Insert(SNAPONINPUT_KEY, snapOnInput);
@@ -467,8 +465,6 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     return result;
 }
 
-
-
 void Profile::SetFontFace(std::wstring fontFace) noexcept
 {
     _fontFace = fontFace;
@@ -535,8 +531,8 @@ void Profile::SetIconPath(std::wstring_view path) noexcept
 std::wstring_view Profile::GetIconPath() const noexcept
 {
     return HasIcon() ?
-           std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
-           std::wstring_view{ L"", 0 };
+               std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
+               std::wstring_view{ L"", 0 };
 }
 
 // Method Description:
@@ -637,7 +633,7 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const st
 }
 
 // Method Description:
-// - Helper function for converting an ImageStretchMode to the 
+// - Helper function for converting an ImageStretchMode to the
 //   correct string value.
 // Arguments:
 // - imageStretchMode: The enum value to convert to a string.
@@ -658,8 +654,6 @@ std::wstring_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::X
         return IMAGESTRETCHMODE_UNIFORMTOFILL;
     }
 }
-
-
 
 // Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
@@ -705,16 +699,16 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {
-        case CursorStyle::Underscore:
-            return CURSORSHAPE_UNDERSCORE;
-        case CursorStyle::FilledBox:
-            return CURSORSHAPE_FILLEDBOX;
-        case CursorStyle::EmptyBox:
-            return CURSORSHAPE_EMPTYBOX;
-        case CursorStyle::Vintage:
-            return CURSORSHAPE_VINTAGE;
-        default:
-        case CursorStyle::Bar:
-            return CURSORSHAPE_BAR;
+    case CursorStyle::Underscore:
+        return CURSORSHAPE_UNDERSCORE;
+    case CursorStyle::FilledBox:
+        return CURSORSHAPE_FILLEDBOX;
+    case CursorStyle::EmptyBox:
+        return CURSORSHAPE_EMPTYBOX;
+    case CursorStyle::Vintage:
+        return CURSORSHAPE_VINTAGE;
+    default:
+    case CursorStyle::Bar:
+        return CURSORSHAPE_BAR;
     }
 }

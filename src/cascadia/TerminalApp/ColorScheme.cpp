@@ -16,8 +16,7 @@ static constexpr std::wstring_view NAME_KEY{ L"name" };
 static constexpr std::wstring_view TABLE_KEY{ L"colors" };
 static constexpr std::wstring_view FOREGROUND_KEY{ L"foreground" };
 static constexpr std::wstring_view BACKGROUND_KEY{ L"background" };
-static const std::array<std::wstring, 16> TABLE_COLORS =
-{
+static const std::array<std::wstring, 16> TABLE_COLORS = {
     L"black",
     L"red",
     L"green",
@@ -38,25 +37,22 @@ static const std::array<std::wstring, 16> TABLE_COLORS =
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
-    _table{  },
+    _table{},
     _defaultForeground{ RGB(242, 242, 242) },
     _defaultBackground{ RGB(12, 12, 12) }
 {
-
 }
 
 ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
     _schemeName{ name },
-    _table{  },
+    _table{},
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg }
 {
-
 }
 
 ColorScheme::~ColorScheme()
 {
-
 }
 
 // Method Description:
@@ -94,7 +90,7 @@ JsonObject ColorScheme::ToJson() const
     jsonObject.Insert(NAME_KEY, name);
     jsonObject.Insert(FOREGROUND_KEY, fg);
     jsonObject.Insert(BACKGROUND_KEY, bg);
- 
+
     int i = 0;
     for (const auto& current : TABLE_COLORS)
     {
