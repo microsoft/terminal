@@ -72,8 +72,7 @@ void TextAttributeTests::TestRoundtripLegacy()
 
 void TextAttributeTests::TestRoundtripMetaBits()
 {
-    WORD metaFlags[] =
-    {
+    WORD metaFlags[] = {
         COMMON_LVB_GRID_HORIZONTAL,
         COMMON_LVB_GRID_LVERTICAL,
         COMMON_LVB_GRID_RVERTICAL,
@@ -102,7 +101,7 @@ void TextAttributeTests::TestRoundtripExhaustive()
     //      each takes a lot longer than checking.
     // Only VERIFY if the comparison actually fails to speed up the test.
     Log::Comment(L"This test will check each possible legacy attribute to make "
-        "sure it roundtrips through the creation of a text attribute.");
+                 "sure it roundtrips through the creation of a text attribute.");
     Log::Comment(L"It will only log if it fails.");
     for (WORD wLegacy = 0; wLegacy < allAttrs; wLegacy++)
     {
@@ -123,8 +122,7 @@ void TextAttributeTests::TestRoundtripExhaustive()
         if (!(isLegacy && areEqual))
         {
             Log::Comment(NoThrowString().Format(
-                L"Failed on wLegacy=0x%x", wLegacy
-            ));
+                L"Failed on wLegacy=0x%x", wLegacy));
             VERIFY_IS_TRUE(attr.IsLegacy());
             VERIFY_ARE_EQUAL(wLegacy, attr.GetLegacyAttributes());
         }

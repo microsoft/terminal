@@ -4,14 +4,14 @@
 #include "precomp.h"
 #include "AttrRow.hpp"
 
- // Routine Description:
- // - constructor
- // Arguments:
- // - cchRowWidth - the length of the default text attribute
- // - attr - the default text attribute
- // Return Value:
- // - constructed object
- // Note: will throw exception if unable to allocate memory for text attribute storage
+// Routine Description:
+// - constructor
+// Arguments:
+// - cchRowWidth - the length of the default text attribute
+// - attr - the default text attribute
+// Return Value:
+// - constructed object
+// Note: will throw exception if unable to allocate memory for text attribute storage
 ATTR_ROW::ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr)
 {
     _list.push_back(TextAttributeRun(cchRowWidth, attr));
@@ -210,7 +210,6 @@ void ATTR_ROW::ReplaceLegacyAttrs(_In_ WORD wToBeReplacedAttr, _In_ WORD wReplac
     ReplaceAttrs(ToBeReplaced, ReplaceWith);
 }
 
-
 // Method Description:
 // - Replaces all runs in the row with the given toBeReplacedAttr with the new
 //      attribute replaceWith.
@@ -230,7 +229,6 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
     }
 }
 
-
 // Routine Description:
 // - Takes a array of attribute runs, and inserts them into this row from startIndex to endIndex.
 // - For example, if the current row was was [{4, BLUE}], the merge string
@@ -245,11 +243,10 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
 // Return Value:
 // - STATUS_NO_MEMORY if there wasn't enough memory to insert the runs
 //   otherwise STATUS_SUCCESS if we were successful.
-[[nodiscard]]
-HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
-                                 const size_t iStart,
-                                 const size_t iEnd,
-                                 const size_t cBufferWidth)
+[[nodiscard]] HRESULT ATTR_ROW::InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
+                                               const size_t iStart,
+                                               const size_t iEnd,
+                                               const size_t cBufferWidth)
 {
     // Definitions:
     // Existing Run = The run length encoded color array we're already storing in memory before this was called.
