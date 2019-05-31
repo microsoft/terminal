@@ -981,9 +981,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   appropriate terminal settings
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Check settings to see if we should be stripping
-        // out line feeds
-        if (_settings.StripLineFeedsOnPaste())
+        // Check settings to see if we should be converting line
+        // endings
+        if (_settings.ConvertPasteLineEndings())
         {
             std::wstring stripped(wstr);
 
@@ -991,7 +991,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Lament that the stl string does not have
             // a search/replace method
-            while ((pos = stripped.find(L'\r', pos)) != std::wstring::npos)
+            while ((pos = stripped.find(L'\r\n', pos)) != std::wstring::npos)
             {
                 stripped.replace(pos, 1, L"");
             }

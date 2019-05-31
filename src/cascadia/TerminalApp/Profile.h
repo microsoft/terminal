@@ -92,7 +92,7 @@ private:
 
     std::optional<std::wstring> _scrollbarState;
     bool _closeOnExit;
-    std::optional<bool> _stripLineFeedsOnPaste;
+    std::optional<bool> _convertPasteLineEndings;
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;

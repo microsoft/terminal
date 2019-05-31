@@ -51,8 +51,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void UseAcrylic(bool value);
         bool CloseOnExit();
         void CloseOnExit(bool value);
-        bool StripLineFeedsOnPaste();
-        void StripLineFeedsOnPaste(bool value);
+        bool ConvertPasteLineEndings();
+        void ConvertPasteLineEndings(bool value);
         double TintOpacity();
         void TintOpacity(double value);
         hstring Padding();
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         bool _useAcrylic;
         bool _closeOnExit;
-        bool _stripLineFeedsOnPaste;
+        bool _convertPasteLineEndings;
         double _tintOpacity;
         hstring _fontFace;
         int32_t _fontSize;

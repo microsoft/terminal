@@ -32,7 +32,7 @@ static constexpr std::wstring_view ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
 static constexpr std::wstring_view USEACRYLIC_KEY{ L"useAcrylic" };
 static constexpr std::wstring_view SCROLLBARSTATE_KEY{ L"scrollbarState" };
 static constexpr std::wstring_view CLOSEONEXIT_KEY{ L"closeOnExit" };
-static constexpr std::wstring_view STRIPLINEFEEDSONPASTE_KEY{ L"stripLineFeedsOnPaste" };
+static constexpr std::wstring_view CONVERTPASTELINEENDINGS_KEY{ L"convertPasteLineEndings" };
 static constexpr std::wstring_view PADDING_KEY{ L"padding" };
 static constexpr std::wstring_view STARTINGDIRECTORY_KEY{ L"startingDirectory" };
 static constexpr std::wstring_view ICON_KEY{ L"icon" };
@@ -84,7 +84,7 @@ Profile::Profile(const winrt::guid& guid):
     _useAcrylic{ false },
     _scrollbarState{ },
     _closeOnExit{ true },
-    _stripLineFeedsOnPaste{ },
+    _convertPasteLineEndings{ },
     _padding{ DEFAULT_PADDING },
     _icon{ },
     _backgroundImage{ },
@@ -150,9 +150,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     terminalSettings.UseAcrylic(_useAcrylic);
     terminalSettings.CloseOnExit(_closeOnExit);
 
-    if (_stripLineFeedsOnPaste)
+    if (_convertPasteLineEndings)
     {
-        terminalSettings.StripLineFeedsOnPaste(_stripLineFeedsOnPaste.value());
+        terminalSettings.ConvertPasteLineEndings(_convertPasteLineEndings.value());
     }
 
     terminalSettings.TintOpacity(_acrylicTransparency);
@@ -296,10 +296,10 @@ JsonObject Profile::ToJson() const
     jsonObject.Insert(CLOSEONEXIT_KEY, closeOnExit);
     jsonObject.Insert(PADDING_KEY, padding);
 
-    if (_stripLineFeedsOnPaste)
+    if (_convertPasteLineEndings)
     {
-        const auto stripLineFeedsOnPaste = JsonValue::CreateBooleanValue(_stripLineFeedsOnPaste.value());
-        jsonObject.Insert(STRIPLINEFEEDSONPASTE_KEY, stripLineFeedsOnPaste);
+        const auto convertPasteLineEndings = JsonValue::CreateBooleanValue(_convertPasteLineEndings.value());
+        jsonObject.Insert(CONVERTPASTELINEENDINGS_KEY, convertPasteLineEndings);
     }
 
     if (_scrollbarState)
@@ -448,9 +448,9 @@ Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
     {
         result._closeOnExit = json.GetNamedBoolean(CLOSEONEXIT_KEY);
     }
-    if (json.HasKey(STRIPLINEFEEDSONPASTE_KEY))
+    if (json.HasKey(CONVERTPASTELINEENDINGS_KEY))
     {
-        result._stripLineFeedsOnPaste = json.GetNamedBoolean(STRIPLINEFEEDSONPASTE_KEY);
+        result._convertPasteLineEndings = json.GetNamedBoolean(CONVERTPASTELINEENDINGS_KEY);
     }
     if (json.HasKey(PADDING_KEY))
     {

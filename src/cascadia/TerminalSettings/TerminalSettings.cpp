@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _useAcrylic{ false },
         _closeOnExit{ true },
-        _stripLineFeedsOnPaste{ false },
+        _convertPasteLineEndings{ false },
         _tintOpacity{ 0.5 },
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
@@ -157,14 +157,14 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _closeOnExit = value;
     }
 
-    bool TerminalSettings::StripLineFeedsOnPaste()
+    bool TerminalSettings::ConvertPasteLineEndings()
     {
-        return _stripLineFeedsOnPaste;
+        return _convertPasteLineEndings;
     }
 
-    void TerminalSettings::StripLineFeedsOnPaste(bool value)
+    void TerminalSettings::ConvertPasteLineEndings(bool value)
     {
-        _stripLineFeedsOnPaste = value;
+        _convertPasteLineEndings = value;
     }
 
     double TerminalSettings::TintOpacity()
