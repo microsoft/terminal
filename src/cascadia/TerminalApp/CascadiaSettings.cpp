@@ -482,11 +482,6 @@ void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& pro
 {
     try
     {
-        DWORD bytesAvailable = 0;
-        DWORD exitCode = 0;
-        std::wstring command = L"wsl.exe --list";
-        std::wstring wline = L"";
-        std::wstring distName = L"";
         wil::unique_handle readPipe;
         wil::unique_handle writePipe;
         SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
@@ -497,6 +492,7 @@ void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& pro
         si.hStdOutput = writePipe.get();
         si.hStdError = writePipe.get();
         wil::unique_process_information pi{};
+        std::wstring command = L"wsl.exe --list";
 
         THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
                                                     TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
@@ -504,18 +500,22 @@ void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& pro
         {
             throw;
         }
+        DWORD exitCode;
         if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
             THROW_HR(E_INVALIDARG);
         }
+        DWORD bytesAvailable;
         THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
         FILE* hPipe = _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r");
             //don't call fclose on hPipe because the readPipe handle is managed by wil and this will cause an error.
         std::wfstream pipe{ hPipe };
+        std::wstring wline;
         std::getline(pipe, wline); //remove the header from the output.
         while (pipe.tellp() < bytesAvailable) {
             std::getline(pipe, wline);
-            std::wstringstream   wlinestream(wline);
+            std::wstringstream wlinestream(wline);
             if (wlinestream) {
+                std::wstring distName;
                 std::getline(wlinestream, distName, L' ');
                 auto WSLDistro{ _CreateDefaultProfile(distName) };
                 WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
