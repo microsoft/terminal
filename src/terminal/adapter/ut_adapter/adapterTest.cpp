@@ -23,7 +23,6 @@ namespace Microsoft
     };
 };
 
-
 enum class CursorY
 {
     TOP,
@@ -312,8 +311,7 @@ public:
                 bool fBlue = (iXtermTableEntry & 0x04) > 0;
                 bool fBright = (iXtermTableEntry & 0x08) > 0;
                 WORD iWinEntry = (fRed ? 0x4 : 0x0) | (fGreen ? 0x2 : 0x0) | (fBlue ? 0x1 : 0x0) | (fBright ? 0x8 : 0x0);
-                _wAttribute = fIsForeground ? ((_wAttribute & 0xF0) | iWinEntry)
-                    : ((iWinEntry << 4) | (_wAttribute & 0x0F));
+                _wAttribute = fIsForeground ? ((_wAttribute & 0xF0) | iWinEntry) : ((iWinEntry << 4) | (_wAttribute & 0x0F));
             }
         }
 
@@ -421,17 +419,32 @@ public:
                     L"\tScrolling Rectangle (T: %d, B: %d, L: %d, R: %d) "
                     L"into new top-left coordinate (X: %d, Y:%d) with Fill ('%c', 0x%x) "
                     L"clipping to (T: %d, B: %d, L: %d, R: %d)...",
-                    pScrollRectangle->Top, pScrollRectangle->Bottom, pScrollRectangle->Left, pScrollRectangle->Right,
-                    dwDestinationOrigin.X, dwDestinationOrigin.Y, pFill->Char.UnicodeChar, pFill->Attributes,
-                    pClipRectangle->Top, pClipRectangle->Bottom, pClipRectangle->Left, pClipRectangle->Right));
+                    pScrollRectangle->Top,
+                    pScrollRectangle->Bottom,
+                    pScrollRectangle->Left,
+                    pScrollRectangle->Right,
+                    dwDestinationOrigin.X,
+                    dwDestinationOrigin.Y,
+                    pFill->Char.UnicodeChar,
+                    pFill->Attributes,
+                    pClipRectangle->Top,
+                    pClipRectangle->Bottom,
+                    pClipRectangle->Left,
+                    pClipRectangle->Right));
             }
             else
             {
                 Log::Comment(NoThrowString().Format(
                     L"\tScrolling Rectangle (T: %d, B: %d, L: %d, R: %d) "
                     L"into new top-left coordinate (X: %d, Y:%d) with Fill ('%c', 0x%x) ",
-                    pScrollRectangle->Top, pScrollRectangle->Bottom, pScrollRectangle->Left, pScrollRectangle->Right,
-                    dwDestinationOrigin.X, dwDestinationOrigin.Y, pFill->Char.UnicodeChar, pFill->Attributes));
+                    pScrollRectangle->Top,
+                    pScrollRectangle->Bottom,
+                    pScrollRectangle->Left,
+                    pScrollRectangle->Right,
+                    dwDestinationOrigin.X,
+                    dwDestinationOrigin.Y,
+                    pFill->Char.UnicodeChar,
+                    pFill->Attributes));
             }
 
             // allocate buffer space to hold scrolling rectangle
@@ -448,7 +461,6 @@ public:
                 // back up space and fill it with the fill.
                 for (SHORT iCharX = pScrollRectangle->Left; iCharX < pScrollRectangle->Right; iCharX++)
                 {
-
                     COORD coordTarget;
                     coordTarget.X = (SHORT)iCharX;
                     coordTarget.Y = iCharY;
@@ -465,7 +477,6 @@ public:
                         *pciStored = *pFill;
                     }
                 }
-
             }
             Log::Comment(NoThrowString().Format(L"\tCopied a total %zu chars", cciFilled));
             Log::Comment(L"\tCopying chars back");
@@ -1027,7 +1038,6 @@ public:
         {
             wchar_t const wch = pwszExpectedResponse[iInput / 2]; // the same portion of the string will be used twice. 0/2 = 0. 1/2 = 0. 2/2 = 1. 3/2 = 1. and so on.
 
-
             VERIFY_ARE_EQUAL(InputEventType::KeyEvent, _events[iInput]->EventType());
 
             const KeyEvent* const keyEvent = static_cast<const KeyEvent* const>(_events[iInput].get());
@@ -1242,10 +1252,9 @@ public:
     bool _IsInRegionInclusive(SMALL_RECT srRegion, short sRow, short sCol)
     {
         return srRegion.Left <= sCol &&
-            srRegion.Right >= sCol &&
-            srRegion.Top <= sRow &&
-            srRegion.Bottom >= sRow;
-
+               srRegion.Right >= sCol &&
+               srRegion.Top <= sRow &&
+               srRegion.Bottom >= sRow;
     }
 
     CHAR_INFO* _GetCharAt(size_t const iRow, size_t const iCol)
@@ -1355,7 +1364,7 @@ public:
 
     COORD _coordExpectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _srExpectedScreenBufferViewport{ 0, 0, 0, 0 };
-    WORD  _wExpectedAttributes = 0;
+    WORD _wExpectedAttributes = 0;
     BOOL _fPrivateSetCursorKeysModeResult = false;
     BOOL _fPrivateSetKeypadModeResult = false;
     bool _fCursorKeysApplicationMode = false;
@@ -1428,7 +1437,6 @@ class DummyAdapter : public AdaptDefaults
 class AdapterTest
 {
 public:
-
     TEST_CLASS(AdapterTest);
 
     TEST_METHOD_SETUP(SetupMethods)
@@ -1457,12 +1465,12 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1, 2, 3, 4, 5}") // These values align with the CursorDirection enum class to try all the directions.
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
+        Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
-        typedef bool(AdaptDispatch::*CursorMoveFunc)(unsigned int);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(unsigned int);
         CursorMoveFunc moveFunc = nullptr;
 
         // Modify variables based on directionality of this test
@@ -1676,8 +1684,7 @@ public:
         _testGetSet->_fGetConsoleScreenBufferInfoExResult = FALSE;
         _testGetSet->_fMoveCursorVerticallyResult = true;
         Log::Comment(NoThrowString().Format(
-            L"Cursor Up and Down don't need GetConsoleScreenBufferInfoEx, so they will succeed"
-        ));
+            L"Cursor Up and Down don't need GetConsoleScreenBufferInfoEx, so they will succeed"));
         if (direction == CursorDirection::UP || direction == CursorDirection::DOWN)
         {
             VERIFY_IS_TRUE((_pDispatch->*(moveFunc))(0));
@@ -1692,7 +1699,6 @@ public:
     TEST_METHOD(CursorPositionTest)
     {
         Log::Comment(L"Starting test...");
-
 
         Log::Comment(L"Test 1: Place cursor within the viewport. Start from top left, move to middle.");
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
@@ -1755,20 +1761,18 @@ public:
         _testGetSet->PrepData(CursorX::LEFT, CursorY::TOP);
 
         VERIFY_IS_FALSE(_pDispatch->CursorPosition(0, 0));
-
     }
 
     TEST_METHOD(CursorSingleDimensionMoveTest)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1}") // These values align with the CursorDirection enum class to try all the directions.
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
-
+        Log::Comment(L"Starting test...");
 
         //// Used to switch between the various function options.
-        typedef bool(AdaptDispatch::*CursorMoveFunc)(unsigned int);
+        typedef bool (AdaptDispatch::*CursorMoveFunc)(unsigned int);
         CursorMoveFunc moveFunc = nullptr;
         SHORT* psViewportEnd = nullptr;
         SHORT* psViewportStart = nullptr;
@@ -1875,7 +1879,6 @@ public:
     TEST_METHOD(CursorSaveRestoreTest)
     {
         Log::Comment(L"Starting test...");
-
 
         COORD coordExpected = { 0 };
 
@@ -2140,7 +2143,6 @@ public:
         srTestText.Left -= cchDeleteSize;
         srTestText.Right -= cchDeleteSize;
 
-
         // delete out 5 spots. this should shift the ABCDE text left by 5 and insert 5 spaces at the end of the line
         VERIFY_IS_TRUE(_pDispatch->DeleteCharacter(cchDeleteSize), L"Verify delete call was sucessful.");
 
@@ -2315,10 +2317,10 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiEraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
             TEST_METHOD_PROPERTY(L"Data:fEraseScreen", L"{FALSE, TRUE}") // corresponds to Line (FALSE) or Screen (TRUE)
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            // Modify variables based on type of this test
-            DispatchTypes::EraseType eraseType;
+        // Modify variables based on type of this test
+        DispatchTypes::EraseType eraseType;
         unsigned int uiEraseType;
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiEraseType", uiEraseType));
         eraseType = (DispatchTypes::EraseType)uiEraseType;
@@ -2491,7 +2493,6 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-
         Log::Comment(L"Test 1: Send no options.");
 
         _testGetSet->PrepData();
@@ -2513,7 +2514,7 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_fSetConsoleTextAttributeResult = FALSE;
         // Need at least one option in order for the call to be able to fail.
-        rgOptions[0] = (DispatchTypes::GraphicsOptions) 0;
+        rgOptions[0] = (DispatchTypes::GraphicsOptions)0;
         cOptions = 1;
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
     }
@@ -2522,9 +2523,9 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 4, 7, 24, 27, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
+        Log::Comment(L"Starting test...");
         _testGetSet->PrepData();
 
         // Modify variables based on type of this test
@@ -2934,7 +2935,7 @@ public:
 
         Log::Comment(L"Test 1: Verify failure when using bad status.");
         _testGetSet->PrepData();
-        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType) - 1));
+        VERIFY_IS_FALSE(_pDispatch->DeviceStatusReport((DispatchTypes::AnsiStatusType)-1));
     }
 
     TEST_METHOD(DeviceStatus_CursorPositionReportTests)
@@ -2986,12 +2987,12 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:uiDirection", L"{0, 1}") // These values align with the ScrollDirection enum class to try all the directions.
             TEST_METHOD_PROPERTY(L"Data:uiMagnitude", L"{1, 2, 5}") // These values align with the ScrollDirection enum class to try all the directions.
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            Log::Comment(L"Starting test...");
+        Log::Comment(L"Starting test...");
 
         // Used to switch between the various function options.
-        typedef bool(AdaptDispatch::*ScrollFunc)(const unsigned int);
+        typedef bool (AdaptDispatch::*ScrollFunc)(const unsigned int);
         ScrollFunc scrollFunc = nullptr;
 
         // Modify variables based on directionality of this test
@@ -3102,12 +3103,10 @@ public:
         coordTestText.X = srTestText.Left;
         coordTestText.Y = (fScrollUp) ? (srTestText.Top - sMagnitude) : (srTestText.Top + sMagnitude);
         VERIFY_IS_TRUE(_testGetSet->ValidateString(coordTestText, pwszTestText, wAttrTestText), L"String should have moved up/down by given magnitude.");
-
     }
 
     TEST_METHOD(CursorKeysModeTest)
     {
-
         Log::Comment(L"Starting test...");
 
         // success cases
@@ -3124,12 +3123,10 @@ public:
         _testGetSet->_fCursorKeysApplicationMode = true;
 
         VERIFY_IS_TRUE(_pDispatch->SetCursorKeysMode(true));
-
     }
 
     TEST_METHOD(KeypadModeTest)
     {
-
         Log::Comment(L"Starting test...");
 
         // success cases
@@ -3146,12 +3143,10 @@ public:
         _testGetSet->_fKeypadApplicationMode = true;
 
         VERIFY_IS_TRUE(_pDispatch->SetKeypadMode(true));
-
     }
 
     TEST_METHOD(AllowBlinkingTest)
     {
-
         Log::Comment(L"Starting test...");
 
         // success cases
@@ -3168,7 +3163,6 @@ public:
         _testGetSet->_fEnable = false;
 
         VERIFY_IS_TRUE(_pDispatch->EnableCursorBlinking(false));
-
     }
 
     TEST_METHOD(ScrollMarginsTest)
@@ -3212,7 +3206,6 @@ public:
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
         VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
-
         Log::Comment(L"Test 6: Verify Setting margins to (0, height) clears them");
         // First set,
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
@@ -3224,7 +3217,6 @@ public:
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
 
-
         Log::Comment(L"Test 7: Verify Setting margins to (1, height) clears them");
         // First set,
         _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
@@ -3235,9 +3227,7 @@ public:
         _testGetSet->_srExpectedScrollRegion.Bottom = 0;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
-
     }
-
 
     TEST_METHOD(TabSetClearTests)
     {
@@ -3260,12 +3250,10 @@ public:
 
         _testGetSet->_fExpectedClearAll = false;
         VERIFY_IS_TRUE(_pDispatch->TabClear(DispatchTypes::TabClearType::ClearCurrentColumn));
-
     }
 
     TEST_METHOD(SetConsoleTitleTest)
     {
-
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: set title to be non-null");
@@ -3281,7 +3269,6 @@ public:
         _testGetSet->_pwchExpectedWindowTitle = nullptr;
 
         VERIFY_IS_TRUE(_pDispatch->SetWindowTitle({}));
-
     }
 
     TEST_METHOD(TestMouseModes)
@@ -3337,7 +3324,6 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-
         DispatchTypes::GraphicsOptions rgOptions[16];
         size_t cOptions = 3;
 
@@ -3363,8 +3349,6 @@ public:
         _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 
-
-
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
@@ -3373,7 +3357,6 @@ public:
         _testGetSet->_fExpectedIsForeground = true;
         _testGetSet->_fUsingRgbColor = true;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-
 
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
@@ -3396,9 +3379,7 @@ public:
         _testGetSet->_fExpectedIsForeground = true;
         _testGetSet->_fUsingRgbColor = false;
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
-
     }
-
 
     TEST_METHOD(HardReset)
     {
@@ -3531,7 +3512,6 @@ public:
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch->SetColorTableEntry(15, testColor));
-
     }
 
 private:
