@@ -504,7 +504,7 @@ void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& pro
     case WAIT_TIMEOUT:
         THROW_HR(ERROR_CHILD_NOT_COMPLETE);
     case WAIT_FAILED:
-        //The function has failed. To get extended error information, call GetLastError. 
+        THROW_LAST_ERROR();
     default:
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
