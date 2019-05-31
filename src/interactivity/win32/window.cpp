@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 
-
 #include "ConsoleControl.hpp"
 #include "icon.hpp"
 #include "menu.hpp"
@@ -79,15 +78,14 @@ Window::~Window()
 // - pScreen - The initial screen rendering data to attach to (renders in the client area of this window)
 // Return Value:
 // - STATUS_SUCCESS or suitable NT error code
-[[nodiscard]]
-NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
-                                _In_ SCREEN_INFORMATION* const pScreen)
+[[nodiscard]] NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
+                                              _In_ SCREEN_INFORMATION* const pScreen)
 {
     NTSTATUS status = s_RegisterWindowClass();
 
     if (NT_SUCCESS(status))
     {
-        Window* pNewWindow = new(std::nothrow) Window();
+        Window* pNewWindow = new (std::nothrow) Window();
 
         status = NT_TESTNULL(pNewWindow);
 
@@ -113,8 +111,7 @@ NTSTATUS Window::CreateInstance(_In_ Settings* const pSettings,
 // - <none>
 // Return Value:
 // - STATUS_SUCCESS or failure from loading icons/registering class with the system
-[[nodiscard]]
-NTSTATUS Window::s_RegisterWindowClass()
+[[nodiscard]] NTSTATUS Window::s_RegisterWindowClass()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -190,9 +187,8 @@ void Window::_UpdateSystemMetrics() const
 // - pScreen - Attach to this screen for rendering the client area of the window
 // Return Value:
 // - STATUS_SUCCESS, invalid parameters, or various potential errors from calling CreateWindow
-[[nodiscard]]
-NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
-                             _In_ SCREEN_INFORMATION* const pScreen)
+[[nodiscard]] NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
+                                           _In_ SCREEN_INFORMATION* const pScreen)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
@@ -301,7 +297,7 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
             nullptr,
             nullptr,
             this // handle to this window class, passed to WM_CREATE to help dispatching to this instance
-            );
+        );
 
         if (hWnd == nullptr)
         {
@@ -390,8 +386,7 @@ void Window::_CloseWindow() const
 // - wShowWindow - See STARTUPINFO wShowWindow member: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 // Return Value:
 // - STATUS_SUCCESS or system errors from activating the window and setting its show states
-[[nodiscard]]
-NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
+[[nodiscard]] NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -441,7 +436,7 @@ void Window::ChangeViewport(const SMALL_RECT NewWindow)
         pSelection->HideSelection();
 
         // Fire off an event to let accessibility apps know we've scrolled.
-        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier != nullptr)
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(ScreenInfo.GetViewport().Left() - NewWindow.Left,
@@ -490,12 +485,12 @@ void Window::UpdateWindowSize(const COORD coordSizeInChars)
 void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 {
     SetWindowPos(GetWindowHandle(),
-        nullptr,
-        ptNewPos.x,
-        ptNewPos.y,
-        0,
-        0,
-        SWP_NOSIZE | SWP_NOZORDER);
+                 nullptr,
+                 ptNewPos.x,
+                 ptNewPos.y,
+                 0,
+                 0,
+                 SWP_NOSIZE | SWP_NOZORDER);
 }
 
 // This routine adds or removes the name to or from the beginning of the window title. The possible names are "Scroll", "Mark", and "Select"
@@ -504,15 +499,15 @@ void Window::UpdateWindowText()
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool fInScrollMode = Scrolling::s_IsInScrollMode();
 
-    Selection *pSelection = &Selection::Instance();
+    Selection* pSelection = &Selection::Instance();
     const bool fInKeyboardMarkMode = pSelection->IsInSelectingState() && pSelection->IsKeyboardMarkSelection();
     const bool fInMouseSelectMode = pSelection->IsInSelectingState() && pSelection->IsMouseInitiatedSelection();
 
     // should have at most one active mode
     FAIL_FAST_IF(!((fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode) ||
-                 (!fInKeyboardMarkMode && fInMouseSelectMode && !fInScrollMode) ||
-                 (!fInKeyboardMarkMode && !fInMouseSelectMode && fInScrollMode) ||
-                 (!fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode)));
+                   (!fInKeyboardMarkMode && fInMouseSelectMode && !fInScrollMode) ||
+                   (!fInKeyboardMarkMode && !fInMouseSelectMode && fInScrollMode) ||
+                   (!fInKeyboardMarkMode && !fInMouseSelectMode && !fInScrollMode)));
 
     // determine which message, if any, we want to use
     DWORD dwMsgId = 0;
@@ -572,12 +567,12 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
         ScreenInfo.InternalUpdateScrollBars();
 
         SetWindowPos(GetWindowHandle(),
-            nullptr,
-            0,
-            0,
-            sizeNew.cx,
-            sizeNew.cy,
-            SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME);
+                     nullptr,
+                     0,
+                     0,
+                     sizeNew.cx,
+                     sizeNew.cy,
+                     SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_DRAWFRAME);
     }
 }
 
@@ -589,8 +584,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
 // - <none> - All state is read from the attached screen buffer
 // Return Value:
 // - STATUS_SUCCESS or suitable error code
-[[nodiscard]]
-NTSTATUS Window::_InternalSetWindowSize()
+[[nodiscard]] NTSTATUS Window::_InternalSetWindowSize()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& siAttached = GetScreenInfo();
@@ -1165,12 +1159,12 @@ void Window::_ApplyWindowSize()
     const RECT rcNewSize = _fIsInFullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
 
     SetWindowPos(GetWindowHandle(),
-        HWND_TOP,
-        rcNewSize.left,
-        rcNewSize.top,
-        RECT_WIDTH(&rcNewSize),
-        RECT_HEIGHT(&rcNewSize),
-        SWP_FRAMECHANGED);
+                 HWND_TOP,
+                 rcNewSize.left,
+                 rcNewSize.top,
+                 RECT_WIDTH(&rcNewSize),
+                 RECT_HEIGHT(&rcNewSize),
+                 SWP_FRAMECHANGED);
 
     SCREEN_INFORMATION& siAttached = GetScreenInfo();
     siAttached.MakeCurrentCursorVisible();
@@ -1191,7 +1185,6 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                       const BOOL fAutoPos,
                                       const Window* const pWindow)
 {
-
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
     // Open the current user registry key.
@@ -1213,7 +1206,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
             const COORD coordScreenBufferSize = gci.GetActiveOutputBuffer().GetBufferSize().Dimensions();
             auto screenBufferWidth = coordScreenBufferSize.X;
             auto screenBufferHeight = coordScreenBufferSize.Y;
-            dwValue =  MAKELONG(screenBufferWidth, screenBufferHeight);
+            dwValue = MAKELONG(screenBufferWidth, screenBufferHeight);
             Status = RegistrySerialization::s_UpdateValue(hConsoleKey,
                                                           hTitleKey,
                                                           CONSOLE_REGISTRY_BUFFERSIZE,
@@ -1222,7 +1215,6 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                           static_cast<DWORD>(sizeof(dwValue)));
             if (NT_SUCCESS(Status))
             {
-
                 // Save window position
                 if (fAutoPos)
                 {
@@ -1305,8 +1297,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return _pUiaProvider;
 }
 
-[[nodiscard]]
-HRESULT Window::SignalUia(_In_ EVENTID id)
+[[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)
 {
     if (_pUiaProvider != nullptr)
     {
@@ -1315,8 +1306,7 @@ HRESULT Window::SignalUia(_In_ EVENTID id)
     return S_FALSE;
 }
 
-[[nodiscard]]
-HRESULT Window::UiaSetTextAreaFocus()
+[[nodiscard]] HRESULT Window::UiaSetTextAreaFocus()
 {
     if (_pUiaProvider != nullptr)
     {
