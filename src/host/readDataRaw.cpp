@@ -40,7 +40,6 @@ RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - Decrements count of readers waiting on the given handle.
 RAW_READ_DATA::~RAW_READ_DATA()
 {
-
 }
 
 // Routine Description:
@@ -83,7 +82,6 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
-
 
     *pNumBytes = 0;
     size_t NumBytes = 0;

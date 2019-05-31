@@ -253,8 +253,8 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
 {
     // determine popup dimensions
     COORD size = proposedSize;
-    size.X += 2;    // add borders
-    size.Y += 2;    // add borders
+    size.X += 2; // add borders
+    size.Y += 2; // add borders
 
     const COORD viewportSize = screenInfo.GetViewport().Dimensions();
 

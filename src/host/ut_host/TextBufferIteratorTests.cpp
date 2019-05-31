@@ -61,7 +61,7 @@ class TextBufferIteratorTests
         return true;
     }
 
-    template <typename T>
+    template<typename T>
     void BoolOperatorTestHelper()
     {
         const auto it = GetIterator<T>();
@@ -77,7 +77,7 @@ class TextBufferIteratorTests
     TEST_METHOD(BoolOperatorText);
     TEST_METHOD(BoolOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void EqualsOperatorTestHelper()
     {
         const auto it = GetIterator<T>();
@@ -89,7 +89,7 @@ class TextBufferIteratorTests
     TEST_METHOD(EqualsOperatorText);
     TEST_METHOD(EqualsOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void NotEqualsOperatorTestHelper()
     {
         const auto it = GetIterator<T>();
@@ -104,7 +104,7 @@ class TextBufferIteratorTests
     TEST_METHOD(NotEqualsOperatorText);
     TEST_METHOD(NotEqualsOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PlusEqualsOperatorTestHelper()
     {
         auto it = GetIterator<T>();
@@ -122,7 +122,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PlusEqualsOperatorText);
     TEST_METHOD(PlusEqualsOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void MinusEqualsOperatorTestHelper()
     {
         auto itExpected = GetIteratorWithAdvance<T>();
@@ -140,7 +140,7 @@ class TextBufferIteratorTests
     TEST_METHOD(MinusEqualsOperatorText);
     TEST_METHOD(MinusEqualsOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PrefixPlusPlusOperatorTestHelper()
     {
         auto itActual = GetIterator<T>();
@@ -157,7 +157,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PrefixPlusPlusOperatorText);
     TEST_METHOD(PrefixPlusPlusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PrefixMinusMinusOperatorTestHelper()
     {
         const auto itExpected = GetIteratorWithAdvance<T>();
@@ -174,7 +174,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PrefixMinusMinusOperatorText);
     TEST_METHOD(PrefixMinusMinusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PostfixPlusPlusOperatorTestHelper()
     {
         auto it = GetIterator<T>();
@@ -191,7 +191,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PostfixPlusPlusOperatorText);
     TEST_METHOD(PostfixPlusPlusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PostfixMinusMinusOperatorTestHelper()
     {
         const auto itExpected = GetIteratorWithAdvance<T>();
@@ -208,7 +208,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PostfixMinusMinusOperatorText);
     TEST_METHOD(PostfixMinusMinusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void PlusOperatorTestHelper()
     {
         auto it = GetIterator<T>();
@@ -226,7 +226,7 @@ class TextBufferIteratorTests
     TEST_METHOD(PlusOperatorText);
     TEST_METHOD(PlusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void MinusOperatorTestHelper()
     {
         auto itExpected = GetIteratorWithAdvance<T>();
@@ -244,7 +244,7 @@ class TextBufferIteratorTests
     TEST_METHOD(MinusOperatorText);
     TEST_METHOD(MinusOperatorCell);
 
-    template <typename T>
+    template<typename T>
     void DifferenceOperatorTestHelper()
     {
         const ptrdiff_t expected(3);
@@ -265,17 +265,22 @@ class TextBufferIteratorTests
 
     TEST_METHOD(ConstructedNoLimit);
     TEST_METHOD(ConstructedLimits);
-
 };
 
-template <typename T>
-T GetIterator() {}
+template<typename T>
+T GetIterator()
+{
+}
 
-template <typename T>
-T GetIteratorAt(COORD at) {}
+template<typename T>
+T GetIteratorAt(COORD at)
+{
+}
 
-template <typename T>
-T GetIteratorWithAdvance() {}
+template<typename T>
+T GetIteratorWithAdvance()
+{
+}
 
 template<>
 TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
@@ -329,7 +334,7 @@ void TextBufferIteratorTests::BoolOperatorCell()
     Log::Comment(L"For cells, also check incrementing past the end.");
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
     const auto size = outputBuffer.GetBufferSize().Dimensions();
-    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.X-1, size.Y-1 });
+    TextBufferCellIterator it(outputBuffer.GetTextBuffer(), { size.X - 1, size.Y - 1 });
     VERIFY_IS_TRUE(it);
     it++;
     VERIFY_IS_FALSE(it);
@@ -486,7 +491,6 @@ void TextBufferIteratorTests::DereferenceOperatorCell()
     m_state->FillTextBuffer();
     const auto it = GetIterator<TextBufferCellIterator>();
 
-
     const auto& outputBuffer = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer();
 
     const auto& row = outputBuffer._textBuffer->GetRowByOffset(it._pos.Y);
@@ -571,13 +575,14 @@ void TextBufferIteratorTests::ConstructedLimits()
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
                                                   { 0 },
                                                   viewport),
-                           wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
+                           wil::ResultException,
+                           [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 
     // Verify throws for limit not inside buffer
     const auto bufferSize = textBuffer.GetSize();
     VERIFY_THROWS_SPECIFIC(TextBufferCellIterator(textBuffer,
                                                   pos,
                                                   Microsoft::Console::Types::Viewport::FromInclusive(bufferSize.ToExclusive())),
-                           wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
-
+                           wil::ResultException,
+                           [](wil::ResultException& e) { return e.GetErrorCode() == E_INVALIDARG; });
 }

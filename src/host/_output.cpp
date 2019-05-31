@@ -67,11 +67,10 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 // - used - number of elements written
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                     const std::basic_string_view<WORD> attrs,
-                                                     const COORD target,
-                                                     size_t& used) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                                   const std::basic_string_view<WORD> attrs,
+                                                                   const COORD target,
+                                                                   size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
     used = 0;
@@ -108,11 +107,10 @@ HRESULT ApiRoutines::WriteConsoleOutputAttributeImpl(IConsoleOutputObject& OutCo
 // - used - number of elements written
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                      const std::wstring_view chars,
-                                                      const COORD target,
-                                                      size_t& used) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                                    const std::wstring_view chars,
+                                                                    const COORD target,
+                                                                    size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
     used = 0;
@@ -152,11 +150,10 @@ HRESULT ApiRoutines::WriteConsoleOutputCharacterWImpl(IConsoleOutputObject& OutC
 // - used - number of elements written
 // Return Value:
 // - S_OK, E_INVALIDARG or similar HRESULT error.
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                      const std::string_view chars,
-                                                      const COORD target,
-                                                      size_t& used) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                                    const std::string_view chars,
+                                                                    const COORD target,
+                                                                    size_t& used) noexcept
 {
     // Set used to 0 from the beginning in case we exit early.
     used = 0;
@@ -194,12 +191,11 @@ HRESULT ApiRoutines::WriteConsoleOutputCharacterAImpl(IConsoleOutputObject& OutC
 // - cellsModified - the number of elements written
 // Return Value:
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
-[[nodiscard]]
-HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
-                                                    const WORD attribute,
-                                                    const size_t lengthToWrite,
-                                                    const COORD startingCoordinate,
-                                                    size_t& cellsModified) noexcept
+[[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutContext,
+                                                                  const WORD attribute,
+                                                                  const size_t lengthToWrite,
+                                                                  const COORD startingCoordinate,
+                                                                  size_t& cellsModified) noexcept
 {
     // Set modified cells to 0 from the beginning.
     cellsModified = 0;
@@ -238,7 +234,6 @@ HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutCon
             {
                 useThisAttr = TextAttribute(screenBuffer.GetAttributes());
             }
-
         }
 
         const OutputCellIterator it(useThisAttr, lengthToWrite);
@@ -266,12 +261,11 @@ HRESULT ApiRoutines::FillConsoleOutputAttributeImpl(IConsoleOutputObject& OutCon
 // - cellsModified - the number of elements written
 // Return Value:
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
-[[nodiscard]]
-HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
-                                                     const wchar_t character,
-                                                     const size_t lengthToWrite,
-                                                     const COORD startingCoordinate,
-                                                     size_t& cellsModified) noexcept
+[[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
+                                                                   const wchar_t character,
+                                                                   const size_t lengthToWrite,
+                                                                   const COORD startingCoordinate,
+                                                                   size_t& cellsModified) noexcept
 {
     // Set modified cells to 0 from the beginning.
     cellsModified = 0;
@@ -318,12 +312,11 @@ HRESULT ApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutCo
 // - cellsModified - the number of elements written
 // Return Value:
 // - S_OK or suitable HRESULT code from failure to write (memory issues, invalid arg, etc.)
-[[nodiscard]]
-HRESULT ApiRoutines::FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
-                                                     const char character,
-                                                     const size_t lengthToWrite,
-                                                     const COORD startingCoordinate,
-                                                     size_t& cellsModified) noexcept
+[[nodiscard]] HRESULT ApiRoutines::FillConsoleOutputCharacterAImpl(IConsoleOutputObject& OutContext,
+                                                                   const char character,
+                                                                   const size_t lengthToWrite,
+                                                                   const COORD startingCoordinate,
+                                                                   size_t& cellsModified) noexcept
 {
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 

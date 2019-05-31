@@ -90,6 +90,5 @@ class InitTests
         {
             VERIFY_ARE_EQUAL(STATUS_NOT_SUPPORTED, status);
         }
-
     }
 };

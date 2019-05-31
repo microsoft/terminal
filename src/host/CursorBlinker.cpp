@@ -113,8 +113,8 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     // Don't blink the cursor for remote sessions.
     if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
          _uCaretBlinkTime == -1 ||
-        (!cursor.IsBlinkingAllowed())) &&
-       cursor.IsOn())
+         (!cursor.IsBlinkingAllowed())) &&
+        cursor.IsOn())
     {
         goto DoScroll;
     }

@@ -130,8 +130,7 @@ void ConversionAreaInfo::ClearArea() noexcept
     Paint();
 }
 
-[[nodiscard]]
-HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
+[[nodiscard]] HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
 {
     // attempt to resize underlying buffers
     RETURN_IF_NTSTATUS_FAILED(_screenBuffer->ResizeScreenBuffer(newSize, FALSE));
@@ -148,7 +147,6 @@ HRESULT ConversionAreaInfo::Resize(const COORD newSize) noexcept
 
     return S_OK;
 }
-
 
 void ConversionAreaInfo::SetWindowInfo(const SMALL_RECT view) noexcept
 {
@@ -183,7 +181,7 @@ void ConversionAreaInfo::SetViewPos(const COORD pos) noexcept
     {
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        SMALL_RECT OldRegion = _caInfo.rcViewCaWindow;;
+        SMALL_RECT OldRegion = _caInfo.rcViewCaWindow;
         OldRegion.Left += _caInfo.coordConView.X;
         OldRegion.Right += _caInfo.coordConView.X;
         OldRegion.Top += _caInfo.coordConView.Y;

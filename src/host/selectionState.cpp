@@ -9,7 +9,6 @@
 
 using namespace Microsoft::Console::Types;
 
-
 // Routine Description:
 // - Determines whether the console is in a selecting state
 // Arguments:
