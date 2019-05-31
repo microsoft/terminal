@@ -18,7 +18,6 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
     _ColorTable(ColorTable),
     _cColorTable(cColorTable)
 {
-
 }
 
 // Routine Description:
@@ -33,12 +32,11 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                              const COLORREF colorBackground,
-                                              const WORD /*legacyColorAttribute*/,
-                                              const bool isBold,
-                                              const bool /*isSettingDefaultBrushes*/) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                            const COLORREF colorBackground,
+                                                            const WORD /*legacyColorAttribute*/,
+                                                            const bool isBold,
+                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
 }
@@ -50,8 +48,7 @@ HRESULT WinTelnetEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 // - coord: location to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT WinTelnetEngine::_MoveCursor(COORD const coord) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
     // don't try and be clever about moving the cursor.
@@ -77,8 +74,7 @@ HRESULT WinTelnetEngine::_MoveCursor(COORD const coord) noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT WinTelnetEngine::ScrollFrame() noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::ScrollFrame() noexcept
 {
     // win-telnet doesn't know anything about scroll vt sequences
     // every frame, we're repainitng everything, always.
@@ -93,8 +89,7 @@ HRESULT WinTelnetEngine::ScrollFrame() noexcept
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) noexcept
 {
     // win-telnet assumes the client doesn't know anything about inserting or
     //  deleting lines.
@@ -109,8 +104,7 @@ HRESULT WinTelnetEngine::InvalidateScroll(const COORD* const /*pcoordDelta*/) no
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]]
-HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT WinTelnetEngine::WriteTerminalW(_In_ const std::wstring& wstr) noexcept
 {
     return VtEngine::_WriteTerminalAscii(wstr);
 }
