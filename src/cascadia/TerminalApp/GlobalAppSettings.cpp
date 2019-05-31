@@ -15,18 +15,18 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
-static constexpr std::string_view KEYBINDINGS_KEY{ "keybindings" };
-static constexpr std::string_view DEFAULTPROFILE_KEY{ "defaultProfile" };
-static constexpr std::string_view ALWAYS_SHOW_TABS_KEY{ "alwaysShowTabs" };
-static constexpr std::string_view INITIALROWS_KEY{ "initialRows" };
-static constexpr std::string_view INITIALCOLS_KEY{ "initialCols" };
-static constexpr std::string_view SHOW_TITLE_IN_TITLEBAR_KEY{ "showTerminalTitleInTitlebar" };
-static constexpr std::string_view REQUESTED_THEME_KEY{ "requestedTheme" };
-static constexpr std::string_view SHOW_TABS_IN_TITLEBAR_KEY{ "showTabsInTitlebar" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
+static constexpr std::string_view InitialRowsKey{ "initialRows" };
+static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
+static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
+static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 
-static constexpr std::wstring_view LIGHT_THEME_VALUE{ L"light" };
-static constexpr std::wstring_view DARK_THEME_VALUE{ L"dark" };
-static constexpr std::wstring_view SYSTEM_THEME_VALUE{ L"system" };
+static constexpr std::wstring_view LightThemeValue{ L"light" };
+static constexpr std::wstring_view DarkThemeValue{ L"dark" };
+static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
@@ -143,14 +143,14 @@ Json::Value GlobalAppSettings::ToJson() const
 {
     Json::Value jsonObject;
 
-    jsonObject[JsonKey(DEFAULTPROFILE_KEY)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
-    jsonObject[JsonKey(INITIALROWS_KEY)] = _initialRows;
-    jsonObject[JsonKey(INITIALCOLS_KEY)] = _initialCols;
-    jsonObject[JsonKey(ALWAYS_SHOW_TABS_KEY)] = _alwaysShowTabs;
-    jsonObject[JsonKey(SHOW_TITLE_IN_TITLEBAR_KEY)] = _showTitleInTitlebar;
-    jsonObject[JsonKey(SHOW_TABS_IN_TITLEBAR_KEY)] = _showTabsInTitlebar;
-    jsonObject[JsonKey(REQUESTED_THEME_KEY)] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    jsonObject[JsonKey(KEYBINDINGS_KEY)] = AppKeyBindingsSerialization::ToJson(_keybindings);
+    jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
+    jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
+    jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
+    jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
+    jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
+    jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
     return jsonObject;
 }
@@ -165,41 +165,41 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
     GlobalAppSettings result{};
 
-    if (auto defaultProfile{ json[JsonKey(DEFAULTPROFILE_KEY)] })
+    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
         auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
         result._defaultProfile = guid;
     }
 
-    if (auto alwaysShowTabs{ json[JsonKey(ALWAYS_SHOW_TABS_KEY)] })
+    if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
         result._alwaysShowTabs = alwaysShowTabs.asBool();
     }
-    if (auto initialRows{ json[JsonKey(INITIALROWS_KEY)] })
+    if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {
         result._initialRows = initialRows.asInt();
     }
-    if (auto initialCols{ json[JsonKey(INITIALCOLS_KEY)] })
+    if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
         result._initialCols = initialCols.asInt();
     }
 
-    if (auto showTitleInTitlebar{ json[JsonKey(SHOW_TITLE_IN_TITLEBAR_KEY)] })
+    if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
         result._showTitleInTitlebar = showTitleInTitlebar.asBool();
     }
 
-    if (auto showTabsInTitlebar{ json[JsonKey(SHOW_TABS_IN_TITLEBAR_KEY)] })
+    if (auto showTabsInTitlebar{ json[JsonKey(ShowTabsInTitlebarKey)] })
     {
         result._showTabsInTitlebar = showTabsInTitlebar.asBool();
     }
 
-    if (auto requestedTheme{ json[JsonKey(REQUESTED_THEME_KEY)] })
+    if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
     {
         result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
     }
 
-    if (auto keybindings{ json[JsonKey(KEYBINDINGS_KEY)] })
+    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
     }
@@ -217,15 +217,15 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 // - The corresponding enum value which maps to the string provided by the user
 ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
 {
-    if (themeString == LIGHT_THEME_VALUE)
+    if (themeString == LightThemeValue)
     {
         return ElementTheme::Light;
     }
-    else if (themeString == DARK_THEME_VALUE)
+    else if (themeString == DarkThemeValue)
     {
         return ElementTheme::Dark;
     }
-    // default behavior for invalid data or SYSTEM_THEME_VALUE
+    // default behavior for invalid data or SystemThemeValue
     return ElementTheme::Default;
 }
 
@@ -241,10 +241,10 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
     switch (theme)
     {
         case ElementTheme::Light:
-            return LIGHT_THEME_VALUE;
+            return LightThemeValue;
         case ElementTheme::Dark:
-            return DARK_THEME_VALUE;
+            return DarkThemeValue;
         default:
-            return SYSTEM_THEME_VALUE;
+            return SystemThemeValue;
     }
 }

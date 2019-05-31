@@ -5,7 +5,7 @@
 // - Profile.hpp
 //
 // Abstract:
-// - A coupler helper functions for serializing/deserializing an AppKeyBindings
+// - A couple helper functions for serializing/deserializing an AppKeyBindings
 //   to/from json. We need this to exist as external helper functions, rather
 //   than defining these as methods on the AppKeyBindings class, because
 //   AppKeyBindings is a winrt type. When we're working with a AppKeyBindings
