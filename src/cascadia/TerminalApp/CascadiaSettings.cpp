@@ -4,7 +4,6 @@
 #include "pch.h"
 #include <argb.h>
 #include <conattrs.hpp>
-#include <fstream>
 #include <io.h>
 #include <fcntl.h>
 #include "CascadiaSettings.h"
