@@ -11,6 +11,7 @@
 #include "../../../inc/DefaultSettings.h"
 
 #include "../TerminalApp/ColorScheme.h"
+#include "../TerminalApp/Tab.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -24,10 +25,17 @@ namespace TerminalAppUnitTests
         TEST_CLASS(JsonTests);
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
+        TEST_METHOD(CreateDummyTab);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
             reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
+            DebugBreak();
+
+            winrt::init_apartment(winrt::apartment_type::single_threaded);
+            // Initialize the Xaml Hosting Manager
+            auto manager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+            _source = winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource{};
             return true;
         }
 
@@ -36,6 +44,7 @@ namespace TerminalAppUnitTests
 
     private:
         std::unique_ptr<Json::CharReader> reader;
+        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
     };
 
     Json::Value JsonTests::VerifyParseSucceeded(std::string content)
@@ -100,5 +109,15 @@ namespace TerminalAppUnitTests
             const auto& actual = scheme.GetTable().at(i);
             VERIFY_ARE_EQUAL(expected, actual);
         }
+    }
+
+    void JsonTests::CreateDummyTab()
+    {
+        const auto profileGuid{ Utils::CreateGuid() };
+        winrt::Microsoft::Terminal::TerminalControl::TermControl term{ nullptr };
+
+        auto newTab = std::make_shared<Tab>(profileGuid, term);
+
+        VERIFY_IS_NOT_NULL(newTab);
     }
 }
