@@ -33,7 +33,8 @@ void SimpleColorDoPaint(const HWND hColor, PAINTSTRUCT& ps, const int ColorId)
 
     GetClientRect(hColor, &rColor);
     rgbBrush = GetNearestColor(ps.hdc, GetColorForItem(ColorId));
-    if ((hbr = CreateSolidBrush(rgbBrush)) != NULL) {
+    if ((hbr = CreateSolidBrush(rgbBrush)) != NULL)
+    {
         InflateRect(&rColor, -1, -1);
         FillRect(ps.hdc, &rColor, hbr);
         DeleteObject(hbr);
@@ -51,18 +52,19 @@ LRESULT CALLBACK SimpleColorControlProc(const HWND hColor, const UINT wMsg, cons
     ColorId = GetWindowLong(hColor, GWL_ID);
     hDlg = GetParent(hColor);
 
-    switch (wMsg) {
-        case WM_GETDLGCODE:
-            return DLGC_WANTARROWS | DLGC_WANTTAB;
-            break;
-        case WM_PAINT:
-            BeginPaint(hColor, &ps);
-            SimpleColorDoPaint(hColor, ps, ColorId);
-            EndPaint(hColor, &ps);
-            break;
-        default:
-            return DefWindowProc(hColor, wMsg, wParam, lParam);
-            break;
+    switch (wMsg)
+    {
+    case WM_GETDLGCODE:
+        return DLGC_WANTARROWS | DLGC_WANTTAB;
+        break;
+    case WM_PAINT:
+        BeginPaint(hColor, &ps);
+        SimpleColorDoPaint(hColor, ps, ColorId);
+        EndPaint(hColor, &ps);
+        break;
+    default:
+        return DefWindowProc(hColor, wMsg, wParam, lParam);
+        break;
     }
     return TRUE;
 }
