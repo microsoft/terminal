@@ -26,7 +26,7 @@ public:
     void UpdateFocus();
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
-    winrt::hstring GetFocusedTitle();
+    winrt::hstring GetFocusedTitle() const;
     void SetTabText(const winrt::hstring& text);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);

@@ -354,12 +354,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
-        if (_connection != nullptr)
+        if (_connection)
         {
             _connection.Close();
         }
 
-        if (_renderer != nullptr)
+        if (_renderer)
         {
             _renderer->TriggerTeardown();
         }

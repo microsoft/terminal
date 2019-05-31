@@ -21,12 +21,12 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
     // the UI will be consistent on bot light and dark modes.
-    auto res = Application::Current().Resources();
-    winrt::Windows::Foundation::IInspectable key = winrt::box_value(L"BackgroundGridThemeStyle");
+    const auto res = Application::Current().Resources();
+    const auto key = winrt::box_value(L"BackgroundGridThemeStyle");
     if (res.HasKey(key))
     {
-        winrt::Windows::Foundation::IInspectable g = res.Lookup(key);
-        winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
+        const auto g = res.Lookup(key);
+        const auto style = g.try_as<winrt::Windows::UI::Xaml::Style>();
         // try_as fails by returning nullptr
         if (style)
         {
@@ -150,24 +150,24 @@ bool Pane::_IsLeaf() const noexcept
 //   pane's descendants
 bool Pane::_HasFocusedChild() const noexcept
 {
-    const bool controlFocused = _control != nullptr &&
+    const auto controlFocused = _control &&
                                 _control.GetControl().FocusState() != FocusState::Unfocused;
-    const bool firstFocused = _firstChild != nullptr && _firstChild->_HasFocusedChild();
-    const bool secondFocused = _secondChild != nullptr && _secondChild->_HasFocusedChild();
+    const auto firstFocused = _firstChild && _firstChild->_HasFocusedChild();
+    const auto secondFocused = _secondChild && _secondChild->_HasFocusedChild();
 
     return controlFocused || firstFocused || secondFocused;
 }
 
 // Method Description:
-// - Update the focus state of this pane, and all it's descendants.
-//   * If this is a leaf node, and our control is actively focused, well mark
+// - Update the focus state of this pane, and all its descendants.
+//   * If this is a leaf node, and our control is actively focused, we'll mark
 //     ourselves as the _lastFocused.
 //   * If we're not a leaf, we'll recurse on our children to check them.
 void Pane::UpdateFocus()
 {
     if (_IsLeaf())
     {
-        const bool controlFocused = _control != nullptr &&
+        const auto controlFocused = _control &&
                                     _control.GetControl().FocusState() != FocusState::Unfocused;
 
         _lastFocused = controlFocused;

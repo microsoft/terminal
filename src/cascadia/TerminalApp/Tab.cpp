@@ -111,7 +111,7 @@ void Tab::_Focus()
 // Method Description:
 // - Update the focus state of this tab's tree of panes. If one of the controls
 //   under this tab is focused, then it will be marked as the last focused. If
-//   there are no focused panes, then there will not be a last focused contrl
+//   there are no focused panes, then there will not be a last focused control
 //   when this returns.
 void Tab::UpdateFocus()
 {
@@ -123,9 +123,9 @@ void Tab::UpdateFocus()
 //   Returns the empty string if there is no such control.
 // Return Value:
 // - the title string of the last focused terminal control in our tree.
-winrt::hstring Tab::GetFocusedTitle()
+winrt::hstring Tab::GetFocusedTitle() const
 {
-    auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
 }
 
