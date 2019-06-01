@@ -720,7 +720,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
                     // This is called when the clipboard data is loaded.
-                    auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+                    auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
                     auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
                     // send paste event up to TermApp
@@ -978,6 +978,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             _cursorTimer.value().Stop();
             _terminal->SetCursorVisible(false);
+        }
+    }
+
+    // Method Description:
+    // - Pre-process (if necessary) text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, respecting
+    //   appropriate terminal settings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Check settings to see if we should be converting line
+        // endings
+        if (_settings.ConvertPasteLineEndings())
+        {
+            std::wstring stripped(wstr);
+
+            std::wstring::size_type pos = 0;
+
+            // Lament that the stl string does not have
+            // a search/replace method
+            while ((pos = stripped.find(L'\r\n', pos)) != std::wstring::npos)
+            {
+                stripped.replace(pos, 1, L"");
+            }
+
+            _SendInputToConnection(stripped);
+        }
+        else
+        {
+            _SendInputToConnection(wstr);
         }
     }
 
