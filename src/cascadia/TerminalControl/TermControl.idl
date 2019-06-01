@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
         void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
 
         void ScrollViewport(Int32 viewTop);
