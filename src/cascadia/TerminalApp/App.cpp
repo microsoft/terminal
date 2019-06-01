@@ -631,11 +631,7 @@ namespace winrt::TerminalApp::implementation
 
     void App::_SetFocusedTabIndex(int tabIndex)
     {
-        auto tab = _tabs.at(tabIndex);
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
-            auto tabViewItem = tab->GetTabViewItem();
-            _tabView.SelectedItem(tabViewItem);
-        });
+        _tabView.SelectedIndex(tabIndex);
     }
 
     // Method Description:
