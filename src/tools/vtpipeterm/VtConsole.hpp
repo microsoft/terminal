@@ -57,9 +57,9 @@ private:
     PROCESS_INFORMATION _piPty;
     PROCESS_INFORMATION _piClient;
 
-    HANDLE _outPipe = nullptr;
-    HANDLE _inPipe = nullptr;
-    HANDLE _signalPipe = nullptr;
+    HANDLE _outPipe = INVALID_HANDLE_VALUE;
+    HANDLE _inPipe = INVALID_HANDLE_VALUE;
+    HANDLE _signalPipe = INVALID_HANDLE_VALUE;
 
     HPCON _hPC;
 

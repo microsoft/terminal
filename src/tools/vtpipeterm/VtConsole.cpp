@@ -19,13 +19,13 @@
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
                      bool const fHeadless,
                      bool const fUseConpty,
-                     COORD const initialSize)
+                     COORD const initialSize) :
+    _pfnReadCallback(pfnReadCallback),
+    _fHeadless(fHeadless),
+    _fUseConPty(fUseConpty),
+    _lastDimensions(initialSize)
 {
-    _pfnReadCallback = pfnReadCallback;
-    _fHeadless = fHeadless;
-    _fUseConPty = fUseConpty;
-    _lastDimensions = initialSize;
-
+    THROW_IF_NULL_ALLOC(pfnReadCallback);
 }
 
 void VtConsole::spawn()
