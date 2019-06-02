@@ -1158,8 +1158,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     // Method Description:
     // - Initiate a paste operation.
-    // Arguments:
-    // - <none>
     void TermControl::PasteTextFromClipboard()
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
