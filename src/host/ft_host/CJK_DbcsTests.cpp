@@ -278,8 +278,6 @@ class DbcsTests
     END_TEST_METHOD()
 };
 
-HANDLE hScreen = INVALID_HANDLE_VALUE;
-
 bool DbcsTests::DbcsTestSetup()
 {
     return true;

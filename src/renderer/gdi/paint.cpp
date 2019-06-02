@@ -22,7 +22,7 @@ using namespace Microsoft::Console::Render;
 HRESULT GdiEngine::StartPaint() noexcept
 {
     // If we have no handle, we don't need to paint. Return quickly.
-    RETURN_HR_IF(S_FALSE, INVALID_HANDLE_VALUE == _hwndTargetWindow);
+    RETURN_HR_IF(S_FALSE, !_IsWindowValid());
 
     // If we're already painting, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, _fPaintStarted);

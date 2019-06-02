@@ -19,11 +19,7 @@
 VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
                      bool const fHeadless,
                      bool const fUseConpty,
-                     COORD const initialSize) :
-    _signalPipe(INVALID_HANDLE_VALUE),
-    _outPipe(INVALID_HANDLE_VALUE),
-    _inPipe(INVALID_HANDLE_VALUE),
-    _dwOutputThreadId(0)
+                     COORD const initialSize)
 {
     _pfnReadCallback = pfnReadCallback;
     _fHeadless = fHeadless;

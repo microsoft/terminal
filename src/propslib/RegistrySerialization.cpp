@@ -192,8 +192,8 @@ NTSTATUS RegistrySerialization::s_LoadRegString(const HKEY hKey, const _RegPrope
 NTSTATUS RegistrySerialization::s_OpenConsoleKey(_Out_ HKEY* phCurrentUserKey, _Out_ HKEY* phConsoleKey)
 {
     // Always set an output value. It will be made valid before the end if everything succeeds.
-    *phCurrentUserKey = static_cast<HKEY>(INVALID_HANDLE_VALUE);
-    *phConsoleKey = static_cast<HKEY>(INVALID_HANDLE_VALUE);
+    *phCurrentUserKey = nullptr;
+    *phConsoleKey = nullptr;
 
     wil::unique_hkey currentUserKey;
     wil::unique_hkey consoleKey;
