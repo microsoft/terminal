@@ -54,4 +54,4 @@ COLORREF g_fakeForegroundColor = RGB(242, 242, 242); // Default bright white
 COLORREF g_fakeBackgroundColor = RGB(12, 12, 12); // Default black
 COLORREF g_fakeCursorColor = RGB(242, 242, 242); // Default bright white
 
-HWND g_hTerminalDlg = nullptr;
+HWND g_hTerminalDlg = static_cast<HWND>(INVALID_HANDLE_VALUE);

@@ -19,9 +19,9 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - An instance of a Renderer.
 GdiEngine::GdiEngine() :
-    _hwndTargetWindow(nullptr)),
+    _hwndTargetWindow((HWND)INVALID_HANDLE_VALUE),
 #if DBG
-    _debugWindow(nullptr),
+    _debugWindow((HWND)INVALID_HANDLE_VALUE),
 #endif
     _iCurrentDpi(s_iBaseDpi),
     _hbitmapMemorySurface(nullptr),
@@ -30,7 +30,7 @@ GdiEngine::GdiEngine() :
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
     _fPaintStarted(false),
-    _hfont(nullptr)
+    _hfont((HFONT)INVALID_HANDLE_VALUE)
 {
     ZeroMemory(_pPolyText, sizeof(POLYTEXTW) * s_cPolyTextCache);
     _rcInvalid = { 0 };
@@ -135,7 +135,7 @@ HRESULT GdiEngine::SetHwnd(const HWND hwnd) noexcept
     }
 
 #if DBG
-    if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != nullptr)
+    if (_debugWindow != INVALID_HANDLE_VALUE && _debugWindow != 0)
     {
         RECT rc = { 0 };
         THROW_IF_WIN32_BOOL_FALSE(GetWindowRect(_hwndTargetWindow, &rc));

@@ -314,7 +314,7 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         // Set the cursor to legacy style
         gpStateInfo->CursorType = 0;
         // Check the legacy radio button on the terminal page
-        if (g_hTerminalDlg)
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
                              IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
@@ -327,7 +327,7 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         // Set the cursor to legacy style
         gpStateInfo->CursorType = 0;
         // Check the legacy radio button on the terminal page
-        if (g_hTerminalDlg)
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
                              IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
@@ -340,7 +340,7 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         // Set the cursor to legacy style
         gpStateInfo->CursorType = 0;
         // Check the legacy radio button on the terminal page
-        if (g_hTerminalDlg)
+        if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
                              IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,

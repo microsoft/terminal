@@ -38,7 +38,7 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _glyphCell{ 0 },
     _haveDeviceResources{ false },
-    _hwndTarget{ nullptr },
+    _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
