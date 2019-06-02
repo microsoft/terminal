@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _root = root;
         _acrylicLayer = container;
-        _backgroundImageLayer = backgroundImageLayer;
+        _bgImageLayer = backgroundImageLayer;
 
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
@@ -268,7 +268,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Check if the existing brush is an image brush, and if not
             // construct a new one
-            auto brush = _backgroundImageLayer.Background().try_as<Media::ImageBrush>();
+            auto brush = _bgImageLayer.Background().try_as<Media::ImageBrush>();
 
             if (brush == nullptr)
             {
@@ -297,14 +297,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             brush.Opacity(_settings.BackgroundImageOpacity());
 
             // Apply brush if it isn't already there
-            if (_backgroundImageLayer.Background() != brush)
+            if (_bgImageLayer.Background() != brush)
             {
-                _backgroundImageLayer.Background(brush);
+                _bgImageLayer.Background(brush);
             }
         }
         else
         {
-            _backgroundImageLayer.Background(nullptr);
+            _bgImageLayer.Background(nullptr);
         }
 
         if (!_settings.UseAcrylic())
