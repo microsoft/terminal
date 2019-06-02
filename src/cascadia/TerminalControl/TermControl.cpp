@@ -93,15 +93,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Controls::Grid::SetColumn(swapChainPanel, 0);
         Controls::Grid::SetColumn(_scrollBar, 1);
 
-        // Setup two dummy containers, so we can apply different background
-        // brush for each layer
-        Controls::Grid root{}, bgImageLayer{};
-        bgImageLayer.Children().Append(container);
+        Controls::Grid root{};
+        Controls::Image bgImageLayer{};
         root.Children().Append(bgImageLayer);
+        root.Children().Append(container);
 
-        // _root holds _acrylicLayer & _acrylicLayer holds _bgImageLayer
-        // _root's background is responsible for solid bg color
-        // The other two are self-explanatory
         _root = root;
         _acrylicLayer = container;
         _bgImageLayer = bgImageLayer;
@@ -267,19 +263,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
 
-            // Check if the existing brush is an image brush, and if not
-            // construct a new one
-            auto brush = _bgImageLayer.Background().try_as<Media::ImageBrush>();
-
-            if (brush == nullptr)
-            {
-                brush = Media::ImageBrush{};
-            }
-
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
             // set a new image source for the brush
-            auto imageSource = brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+            auto imageSource = _bgImageLayer.Source().try_as<Media::Imaging::BitmapImage>();
 
             if (imageSource == nullptr ||
                 imageSource.UriSource() == nullptr ||
@@ -290,22 +277,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
-                brush.ImageSource(image);
+                _bgImageLayer.Source(image);
+                _bgImageLayer.HorizontalAlignment(HorizontalAlignment::Center);
+                _bgImageLayer.VerticalAlignment(VerticalAlignment::Center);
             }
 
             // Apply stretch and opacity settings
-            brush.Stretch(_settings.BackgroundImageStretchMode());
-            brush.Opacity(_settings.BackgroundImageOpacity());
+            _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
+            _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
 
-            // Apply brush if it isn't already there
-            if (_bgImageLayer.Background() != brush)
-            {
-                _bgImageLayer.Background(brush);
-            }
         }
         else
         {
-            _bgImageLayer.Background(nullptr);
+            _bgImageLayer.Source(nullptr);
         }
 
         if (!_settings.UseAcrylic())
