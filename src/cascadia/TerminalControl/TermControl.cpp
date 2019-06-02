@@ -93,13 +93,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Controls::Grid::SetColumn(swapChainPanel, 0);
         Controls::Grid::SetColumn(_scrollBar, 1);
 
-        Controls::Grid root{}, backgroundImageLayer{};
-        backgroundImageLayer.Children().Append(container);
-        root.Children().Append(backgroundImageLayer);
+        // Setup two dummy containers, so we can apply different background
+        // brush for each layer
+        Controls::Grid root{}, bgImageLayer{};
+        bgImageLayer.Children().Append(container);
+        root.Children().Append(bgImageLayer);
 
+        // _root holds _acrylicLayer & _acrylicLayer holds _bgImageLayer
+        // _root's background is responsible for solid bg color
+        // The other two are self-explanatory
         _root = root;
         _acrylicLayer = container;
-        _bgImageLayer = backgroundImageLayer;
+        _bgImageLayer = bgImageLayer;
 
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
@@ -197,15 +202,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Set up the brush used to display the control's background.
+    // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
-    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
-    //       from _settings.
-    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
-    //       respecting the opacity and stretch mode settings from _settings.
-    //   * Falls back to a solid color background from _settings if acrylic is not
-    //       enabled and no background image is present.
+    //   * If acrylic is not enabled, setup a solid color background, otherwise
+    //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
     // - Does not apply background color outside of acrylic mode;
@@ -353,9 +354,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (!_settings.BackgroundImage().empty())
             {
-                // This currently applies no changes to the image background
-                // brush itself.
-
                 if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
                 {
                     solidColor.Color(bgColor);
