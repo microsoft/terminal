@@ -18,11 +18,6 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-static constexpr short _ClampToShortMax(int value, short min)
-{
-    return static_cast<short>(std::clamp(value, static_cast<int>(min), SHRT_MAX));
-}
-
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
@@ -70,7 +65,8 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const COORD bufferSize { viewportSize.X,
+                             ::Microsoft::Console::Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
@@ -84,9 +80,10 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ _ClampToShortMax(settings.InitialCols(), 1), _ClampToShortMax(settings.InitialRows(), 1) };
+    const COORD viewportSize{ ::Microsoft::Console::Utils::ClampToShortMax(settings.InitialCols(), 1),
+                              ::Microsoft::Console::Utils::ClampToShortMax(settings.InitialRows(), 1) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, _ClampToShortMax(settings.HistorySize(), 0), renderTarget);
+    Create(viewportSize, ::Microsoft::Console::Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
 }
