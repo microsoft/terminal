@@ -14,8 +14,8 @@
     d:DesignWidth="400">
 
     <Grid x:Name="Content" ></Grid>
-    <Border Height="36.0" MinWidth="175.0" x:Name="DragBar" Background="Red" DoubleTapped="DragBar_DoubleTapped"/>
-    <Button Height="36.0" Width="36.0" x:Name="Minimize" Click="Minimize_Click">_</Button>
-    <Button Height="36.0" Width="36.0" x:Name="Maximize" Click="Maximize_Click">-</Button>
-    <Button Height="36.0" Width="36.0" x:Name="Close" Click="Close_Click">X</Button>
+    <Border Height="36.0" MinWidth="175.0" x:Name="DragBar" DoubleTapped="DragBar_DoubleTapped"/>
+    <Button Height="36.0" Width="40.0" x:Name="Minimize" Click="Minimize_Click">_</Button>
+    <Button Height="36.0" Width="40.0" x:Name="Maximize" Click="Maximize_Click">-</Button>
+    <Button Height="36.0" Width="40.0" x:Name="Close" Click="Close_Click">X</Button>
 </StackPanel>

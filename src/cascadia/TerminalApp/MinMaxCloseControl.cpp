@@ -53,5 +53,5 @@ void winrt::TerminalApp::implementation::MinMaxCloseControl::Minimize_Click(winr
 
 void winrt::TerminalApp::implementation::MinMaxCloseControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
 {
-    ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE | HTCLOSE, 0);
+    ::PostQuitMessage(0);
 }

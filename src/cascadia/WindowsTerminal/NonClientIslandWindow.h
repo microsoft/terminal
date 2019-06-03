@@ -29,7 +29,7 @@ public:
     NonClientIslandWindow(winrt::Windows::Foundation::Size dragBarSize) noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    virtual void OnSize() override;
+    virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -45,6 +45,8 @@ private:
     winrt::Windows::Foundation::Size _nonClientDragBarSize;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
+    RECT GetDragAreaRect() const noexcept;
+
     [[nodiscard]]
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;
 
@@ -53,6 +55,8 @@ private:
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+
+    void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
 };

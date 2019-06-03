@@ -128,11 +128,10 @@ void IslandWindow::Initialize()
     _source.Content(_rootGrid);
 }
 
-void IslandWindow::OnSize()
+void IslandWindow::OnSize(const UINT width, const UINT height)
 {
-    const auto physicalSize = GetPhysicalSize();
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0, 0, 0, physicalSize.cx, physicalSize.cy, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, 0, 0, 0, width, height, SWP_SHOWWINDOW);
 
     if (_rootGrid)
     {
@@ -179,11 +178,11 @@ LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LP
 // Arguments:
 // - width: the new width of the window _in pixels_
 // - height: the new height of the window _in pixels_
-void IslandWindow::OnResize(const UINT /*width*/, const UINT /*height*/)
+void IslandWindow::OnResize(const UINT width, const UINT height)
 {
     if (_interopWindowHandle)
     {
-        OnSize();
+        OnSize(width, height);
     }
 }
 
@@ -207,6 +206,7 @@ void IslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
     _rootGrid.Children().Append(app.GetRoot());
 
     // Do a quick resize to force the island to paint
-    OnSize();
+    const auto size = GetPhysicalSize();
+    OnSize(size.cx, size.cy);
 }
 

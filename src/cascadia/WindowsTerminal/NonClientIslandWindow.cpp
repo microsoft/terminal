@@ -35,33 +35,55 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
+void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs)
+{
+    InvalidateRect(_window, NULL, TRUE);
+    ForceResize();
+}
+
 void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
 {
     _dragBar = app.GetDragBar();
+    _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+
     __super::OnAppInitialized(app);
 }
 
-const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
-const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
+RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
+{
+    if (_dragBar)
+    {
+        const auto scale = GetCurrentDpiScale();
+        const auto transform = _dragBar.TransformToVisual(_rootGrid);
+        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{ 0.0f, 0.0f, static_cast<float>(_dragBar.ActualWidth()), static_cast<float>(_dragBar.ActualHeight()) };
+        const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+        RECT dragBarRect = {
+            static_cast<LONG>(clientDragBarRect.X * scale),
+            static_cast<LONG>(clientDragBarRect.Y * scale),
+            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+        };
+        return dragBarRect;
+    }
+
+    return RECT{};
+}
 
 // Method Description:
 // - called when the size of the window changes for any reason. Updates the
 //   sizes of our child Xaml Islands to match our new sizing.
-void NonClientIslandWindow::OnSize()
+void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 {
+    if (!_interopWindowHandle)
+    {
+        return;
+    }
+
     const auto scale = GetCurrentDpiScale();
     const auto dpi = ::GetDpiForWindow(_window);
 
     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-
-    RECT windowRect = {};
-    ::GetWindowRect(_window, &windowRect);
-
-    RECT clientRect = {};
-    GetClientRect(_window, &clientRect);
-    const auto clientAreaWidth = clientRect.right - clientRect.left;
-    const auto clientAreaHeight = clientRect.bottom - clientRect.top;
 
     // If we're maximized, we don't want to use the frame as our margins,
     // instead we want to use the margins from the maximization. If we included
@@ -75,35 +97,28 @@ void NonClientIslandWindow::OnSize()
         (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
         (dragY * 2);
 
-    const auto windowsWidth = clientAreaWidth - bordersWidth;
-    const auto windowsHeight = clientAreaHeight - bordersHeight;
+    const auto windowsWidth = width - bordersWidth;
+    const auto windowsHeight = height - bordersHeight;
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 
     if (_rootGrid)
     {
         winrt::Windows::Foundation::Size size{ (windowsWidth / scale) + 0.5f, (windowsHeight / scale) + 0.5f };
         _rootGrid.Height(size.Height);
         _rootGrid.Width(size.Width);
+        _rootGrid.Measure(size);
         winrt::Windows::Foundation::Rect finalRect{};
         _rootGrid.Arrange(finalRect);
     }
 
     if (_dragBar)
     {
-        const auto transform = _dragBar.TransformToVisual(_rootGrid);
-        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{ 0.0f, 0.0f, static_cast<float>(_dragBar.ActualWidth()), static_cast<float>(_dragBar.ActualHeight()) };
-        const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
-        RECT dragBarRect = {
-            static_cast<LONG>(clientDragBarRect.X * scale),
-            static_cast<LONG>(clientDragBarRect.Y * scale),
-            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
-            static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
-        };
-        //const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
+        RECT dragBarRect = GetDragAreaRect();
         const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
 
-        //auto nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
         auto nonClientRegion = CreateRectRgn(0, 0, 0, 0);
         auto nonClientLeftRegion = CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight);
         auto nonClientRightRegion = CreateRectRgn(dragBarRect.right, 0, windowsWidth, nonClientHeight);
@@ -114,8 +129,6 @@ void NonClientIslandWindow::OnSize()
         winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
     }
-
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 
     _UpdateFrameMargins();
 }
@@ -375,26 +388,40 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
         }
         break;
     }
-    //case WM_NCPAINT:
-    //{
-    //    /*
-    //     * Get a window DC intersected with hrgnClip,
-    //     * but make sure that hrgnClip doesn't get deleted.
-    //     */
-    //    const auto hdc = GetDCEx(_window, (HRGN)wParam, /* DCX_USESTYLE |*/ DCX_WINDOW | DCX_INTERSECTRGN | /* DCX_NODELETERGN | */ DCX_LOCKWINDOWUPDATE);
-    //    if (hdc)
-    //    {
-    //        auto rect = GetWindowRect();
-    //        DrawEdge(hdc, &rect, EDGE_BUMP, BF_RECT);
-    //        //xxxDrawWindowFrame(pwnd,
-    //        //    hdc,
-    //        //    (TestWF(pwnd, WFFRAMEON) &&
-    //        //    (GETPTI(pwnd)->pq == gpqForeground)) ? DF_ACTIVE : 0);
+    case WM_EXITSIZEMOVE:
+    {
+        ForceResize();
+        break;
+    }
+    case WM_NCACTIVATE:
+    case WM_NCPAINT:
+    {
+        const auto hdc = GetDC(_window);
+        if (hdc)
+        {
+            const auto scale = GetCurrentDpiScale();
+            const auto dpi = ::GetDpiForWindow(_window);
+            const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+            const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+            const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
+            const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
-    //        ReleaseDC(_window, hdc);
-    //    }
-    //    break; //return 0;
-    //}
+            static HBRUSH hOrange = CreateSolidBrush(RGB(255, 180, 0));
+
+            RECT windowRect = {};
+            ::GetWindowRect(_window, &windowRect);
+
+            RECT dragBarRect = GetDragAreaRect();
+            dragBarRect.left += xPos;
+            dragBarRect.right += xPos;
+            dragBarRect.bottom += yPos;
+            dragBarRect.top += yPos;
+            FillRect(hdc, &dragBarRect, hOrange);
+
+            ReleaseDC(_window, hdc);
+        }
+        return 0;
+    }
     case WM_LBUTTONDOWN:
     {
         POINT point1 = {};
