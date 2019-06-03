@@ -76,13 +76,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create(uint64_t hWnd)
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create(hWnd);
+        _Create();
     }
 
     App::~App()
@@ -96,7 +96,7 @@ namespace winrt::TerminalApp::implementation
     //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    void App::_Create(uint64_t parentHwnd)
+    void App::_Create()
     {
         _tabView = MUX::Controls::TabView{};
 
@@ -128,8 +128,6 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
         _root.Children().Append(_tabRow);
-        _root.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
-
         Controls::Grid::SetRow(_tabRow, 0);
 
         _root.Children().Append(_tabContent);
@@ -157,20 +155,22 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
+<<<<<<< HEAD
+        const auto minDragBarWidth = GetNonClientAreaDragBarWidth();
+        _newTabButton.Margin({ 0, 0, minDragBarWidth, 0 });
+=======
         const auto dragAreaWidth = GetNonClientAreaDragBarSize().Width;
-        if (dragAreaWidth > 0)
+        _newTabButton.Margin({ 0, 0, dragAreaWidth, 0 });
+>>>>>>> de9cbfa2a62814f3a606c73b6679f9a4ce695efd
+        _tabRow.Children().Append(_newTabButton);
+
+        if (minDragBarWidth > 0)
         {
-            auto minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
+            auto minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl();
             Controls::Grid::SetRow(minMaxCloseControl, 0);
             Controls::Grid::SetColumn(minMaxCloseControl, 1);
-            minMaxCloseControl.Content().Children().Append(_newTabButton);
-            _tabRow.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
-
+            minMaxCloseControl.Margin({ minDragBarWidth, 0, 0, 0 });
             _tabRow.Children().Append(minMaxCloseControl);
-        }
-        else
-        {
-            _tabRow.Children().Append(_newTabButton);
         }
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);

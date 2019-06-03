@@ -1,4 +1,5 @@
 ﻿<StackPanel
+    Background="Transparent"
     x:Class="TerminalApp.MinMaxCloseControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -12,7 +13,9 @@
     d:DesignHeight="300"
     d:DesignWidth="400">
 
-    <Button Height="40" Width="40" x:Name="Minimize">_</Button>
-    <Button Height="40" Width="40" x:Name="Maximize">-</Button>
-    <Button Height="40" Width="40" x:Name="Close">X</Button>
+    <Grid x:Name="Content" ></Grid>
+    <Border Height="36.0" MinWidth="175.0" x:Name="DragBar" Background="Red" DoubleTapped="DragBar_DoubleTapped"/>
+    <Button Height="36.0" Width="36.0" x:Name="Minimize" Click="Minimize_Click">_</Button>
+    <Button Height="36.0" Width="36.0" x:Name="Maximize" Click="Maximize_Click">-</Button>
+    <Button Height="36.0" Width="36.0" x:Name="Close" Click="Close_Click">X</Button>
 </StackPanel>

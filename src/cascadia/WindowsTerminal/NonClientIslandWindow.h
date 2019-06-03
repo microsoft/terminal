@@ -29,10 +29,7 @@ public:
     NonClientIslandWindow(winrt::Windows::Foundation::Size dragBarSize) noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    virtual void OnSize() override
-    {
-        SetIslandSize(false);
-    }
+    virtual void OnSize() override;
 
     [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
@@ -40,8 +37,6 @@ public:
     MARGINS GetFrameMargins() const noexcept;
 
 private:
-
-    void SetIslandSize(bool setRegion);
 
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;

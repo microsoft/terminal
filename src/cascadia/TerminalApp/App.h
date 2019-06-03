@@ -32,7 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
-        void Create();
+        void Create(uint64_t hParentWnd);
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
 
         wil::unique_folder_change_reader_nothrow _reader;
 
-        void _Create();
+        void _Create(uint64_t parentHWnd);
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);

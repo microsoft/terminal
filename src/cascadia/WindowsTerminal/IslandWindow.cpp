@@ -124,6 +124,7 @@ void IslandWindow::Initialize()
     interop->get_WindowHandle(&_interopWindowHandle);
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
+    _rootGrid.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
     _source.Content(_rootGrid);
 
     // Do a quick resize to force the island to paint
