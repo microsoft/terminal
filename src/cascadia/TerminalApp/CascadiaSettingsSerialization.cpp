@@ -238,7 +238,7 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 
     dw.WriteString(content);
 
-    FileIO::WriteBufferAsync(file, dw.DetachBuffer()).get();
+    FileIO::WriteBufferAsync(file, dw.DetachBuffer());
 }
 
 // Method Description:
