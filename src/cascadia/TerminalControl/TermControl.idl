@@ -33,7 +33,7 @@ namespace Microsoft.Terminal.TerminalControl
         String Title { get; };
         void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void Close();
-        Boolean CloseOnExit { get; };
+        Boolean ShouldCloseOnExit { get; };
 
         void ScrollViewport(Int32 viewTop);
         void KeyboardScrollViewport(Int32 viewTop);

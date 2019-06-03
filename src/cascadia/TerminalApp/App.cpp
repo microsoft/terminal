@@ -633,7 +633,7 @@ namespace winrt::TerminalApp::implementation
     //   bubble this title to any listeners of our TitleChanged event.
     // Arguments:
     // - tab: the Tab to update the title for.
-    void App::_CheckTitleUpdate(std::shared_ptr<Tab> tab)
+    void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
 
@@ -645,7 +645,6 @@ namespace winrt::TerminalApp::implementation
         {
             _titleChangeHandlers(newTabTitle);
         }
-
     }
 
     // Method Description:
@@ -797,7 +796,7 @@ namespace winrt::TerminalApp::implementation
             // The title of the control changed, but not necessarily the title
             // of the tab. Get the title of the focused pane of the tab, and set
             // the tab's text to the focused panes' text.
-            _CheckTitleUpdate(tab);
+            _UpdateTitle(tab);
         });
 
         term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&)
@@ -812,7 +811,7 @@ namespace winrt::TerminalApp::implementation
 
             // Possibly update the title of the tab, window to match the newly
             // focused pane.
-            _CheckTitleUpdate(tab);
+            _UpdateTitle(tab);
 
             // Possibly update the icon of the tab.
             _UpdateTabIcon(tab);
@@ -1132,7 +1131,7 @@ namespace winrt::TerminalApp::implementation
     //   this is nullopt, use the default profile.
     void App::_SplitVertical(const std::optional<GUID>& profileGuid)
     {
-        _SplitPane(false, profileGuid);
+        _SplitPane(Pane::SplitState::Vertical, profileGuid);
     }
 
     // Method Description:
@@ -1143,32 +1142,39 @@ namespace winrt::TerminalApp::implementation
     //   this is nullopt, use the default profile.
     void App::_SplitHorizontal(const std::optional<GUID>& profileGuid)
     {
-        _SplitPane(true, profileGuid);
+        _SplitPane(Pane::SplitState::Horizontal, profileGuid);
     }
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
+    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
-    // - splitHorizontal: if true, split the pane horizontally. Else split
-    //   vertically.
+    // - splitType: one value from the Pane::SplitState enum, indicating how the
+    //   new pane should be split from its parent.
     // - profile: The profile GUID to associate with the newly created pane. If
     //   this is nullopt, use the default profile.
-    void App::_SplitPane(const bool splitHorizontal, const std::optional<GUID>& profileGuid)
+    void App::_SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid)
     {
-        const GUID realGuid = profileGuid ? profileGuid.value() :
+        // No nothing if we're requesting no split.
+        if (splitType == Pane::SplitState::None)
+        {
+            return;
+        }
+
+        const auto realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
-        auto controlSettings = _settings->MakeSettings(realGuid);
+        const auto controlSettings = _settings->MakeSettings(realGuid);
         TermControl newControl{ controlSettings };
 
-        int focusedTabIndex = _GetFocusedTabIndex();
+        const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
         // Hookp our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return splitHorizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
-                                 focusedTab->AddVerticalSplit(realGuid, newControl);
+        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
+                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
     }
 
     // Method Description:

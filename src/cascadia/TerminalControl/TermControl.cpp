@@ -254,7 +254,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 || imageSource.UriSource().RawUri() != imageUri.RawUri())
             {
                 // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image 
+                // which is especially important since the image
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
@@ -1197,7 +1197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also 
+    // The difference between this function and ScrollViewport is that this one also
     // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
     // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
     void TermControl::KeyboardScrollViewport(int viewTop)
@@ -1375,7 +1375,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                              (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
     }
 
-    bool TermControl::CloseOnExit() const noexcept
+    // Method Description:
+    // - Returns true if this control should close when its connection is closed.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff the control should close when the connection is closed.
+    bool TermControl::ShouldCloseOnExit() const noexcept
     {
         return _settings.CloseOnExit();
     }
