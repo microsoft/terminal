@@ -410,6 +410,8 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
 
             RECT windowRect = {};
             ::GetWindowRect(_window, &windowRect);
+            RECT clientRect = { 0,0,windowRect.right - windowRect.left,windowRect.bottom - windowRect.top };
+            DrawEdge(hdc, &clientRect, EDGE_ETCHED, BF_RECT | BF_FLAT | BF_MONO);
 
             RECT dragBarRect = GetDragAreaRect();
             dragBarRect.left += xPos;
