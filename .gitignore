@@ -276,3 +276,4 @@ MSG*.bin
 **/Unmerged/*
 profiles.json
 *.metaproj
+*.swp
