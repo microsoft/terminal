@@ -51,9 +51,15 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 * What device you're running (inc. CPU type, memory, disk, etc.)
 * What build of Windows your device is running
 
-  👉 Tip: run `ver` in PowerShell/Cmd, i.e.:
-
+  👉 Tip: Run the following in PowerShell
     ```powershell
+    C:\> $PSVersionTable.OS
+    Microsoft Windows 10.0.18909
+    ```
+
+    ... or Cmd:
+
+    ```cmd
     C:\> ver
 
     Microsoft Windows [Version 10.0.18900.1001]
