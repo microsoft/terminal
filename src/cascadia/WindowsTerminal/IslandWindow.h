@@ -21,7 +21,7 @@ public:
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
-    void SetRootContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual void OnAppInitialized(winrt::TerminalApp::App app);
 
     void Initialize();
 

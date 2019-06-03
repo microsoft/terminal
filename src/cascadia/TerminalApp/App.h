@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
+        Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
         void Create(uint64_t hParentWnd);
         void LoadSettings();
 
@@ -62,6 +63,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 

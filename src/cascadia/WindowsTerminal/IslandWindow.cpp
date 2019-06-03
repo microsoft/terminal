@@ -126,9 +126,6 @@ void IslandWindow::Initialize()
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _rootGrid.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
     _source.Content(_rootGrid);
-
-    // Do a quick resize to force the island to paint
-    OnSize();
 }
 
 void IslandWindow::OnSize()
@@ -204,9 +201,12 @@ void IslandWindow::OnRestore()
     // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
 }
 
-void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
+void IslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
 {
     _rootGrid.Children().Clear();
-    _rootGrid.Children().Append(content);
+    _rootGrid.Children().Append(app.GetRoot());
+
+    // Do a quick resize to force the island to paint
+    OnSize();
 }
 

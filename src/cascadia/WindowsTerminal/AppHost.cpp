@@ -63,7 +63,7 @@ void AppHost::Initialize()
 
     AppTitleChanged(_app.GetTitle());
 
-    _window->SetRootContent(_app.GetRoot());
+    _window->OnAppInitialized(_app);
 }
 
 // Method Description:

@@ -20,6 +20,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.UIElement GetRoot();
         Windows.UI.Xaml.UIElement GetTabs();
+        Windows.UI.Xaml.Controls.Border GetDragBar{ get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();

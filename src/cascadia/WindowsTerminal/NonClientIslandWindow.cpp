@@ -35,6 +35,12 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
+void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
+{
+    _dragBar = app.GetDragBar();
+    __super::OnAppInitialized(app);
+}
+
 const double XAML_FOCUSRECT_THICKNESS_LEFT = 2;
 const double XAML_MOUSEHOOVER_THICKNESS_LEFT = 1;
 
@@ -48,9 +54,6 @@ void NonClientIslandWindow::OnSize()
 
     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-
-    const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
-    const auto dragRegionWidth = static_cast<LONG>((_nonClientDragBarSize.Width - XAML_MOUSEHOOVER_THICKNESS_LEFT - XAML_FOCUSRECT_THICKNESS_LEFT) * scale);
 
     RECT windowRect = {};
     ::GetWindowRect(_window, &windowRect);
@@ -74,21 +77,43 @@ void NonClientIslandWindow::OnSize()
 
     const auto windowsWidth = clientAreaWidth - bordersWidth;
     const auto windowsHeight = clientAreaHeight - bordersHeight;
-
-    if (_rootGrid)
-    {
-        _rootGrid.Height((windowsHeight / scale) + 0.5);
-        _rootGrid.Width((windowsWidth / scale) + 0.5);
-    }
-
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
-    auto region = CreateRectRgn(0, 0, 0, 0);
-    auto nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
-    auto clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
-    winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
-    winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
+    if (_rootGrid)
+    {
+        winrt::Windows::Foundation::Size size{ (windowsWidth / scale) + 0.5f, (windowsHeight / scale) + 0.5f };
+        _rootGrid.Height(size.Height);
+        _rootGrid.Width(size.Width);
+        winrt::Windows::Foundation::Rect finalRect{};
+        _rootGrid.Arrange(finalRect);
+    }
+
+    if (_dragBar)
+    {
+        const auto transform = _dragBar.TransformToVisual(_rootGrid);
+        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{ 0.0f, 0.0f, static_cast<float>(_dragBar.ActualWidth()), static_cast<float>(_dragBar.ActualHeight()) };
+        const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
+        RECT dragBarRect = {
+            static_cast<LONG>(clientDragBarRect.X * scale),
+            static_cast<LONG>(clientDragBarRect.Y * scale),
+            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
+        };
+        //const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
+        const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
+
+        //auto nonClientRegion = CreateRectRgn(0, 0, windowsWidth - dragRegionWidth, nonClientHeight);
+        auto nonClientRegion = CreateRectRgn(0, 0, 0, 0);
+        auto nonClientLeftRegion = CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight);
+        auto nonClientRightRegion = CreateRectRgn(dragBarRect.right, 0, windowsWidth, nonClientHeight);
+        winrt::check_bool(CombineRgn(nonClientRegion, nonClientLeftRegion, nonClientRightRegion, RGN_OR));
+
+        auto region = CreateRectRgn(0, 0, 0, 0);
+        auto clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
+        winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
+    }
 
     winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 

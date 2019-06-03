@@ -36,11 +36,14 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
+    void OnAppInitialized(winrt::TerminalApp::App app) override;
+
 private:
 
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
     winrt::Windows::Foundation::Size _nonClientDragBarSize;
+    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
     [[nodiscard]]
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;

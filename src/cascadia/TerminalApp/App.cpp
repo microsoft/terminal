@@ -160,13 +160,13 @@ namespace winrt::TerminalApp::implementation
         const auto dragAreaWidth = GetNonClientAreaDragBarSize().Width;
         if (dragAreaWidth > 0)
         {
-            auto minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
-            Controls::Grid::SetRow(minMaxCloseControl, 0);
-            Controls::Grid::SetColumn(minMaxCloseControl, 1);
-            minMaxCloseControl.Content().Children().Append(_newTabButton);
+            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
+            Controls::Grid::SetRow(_minMaxCloseControl, 0);
+            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
+            _minMaxCloseControl.Content().Children().Append(_newTabButton);
             _tabRow.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
 
-            _tabRow.Children().Append(minMaxCloseControl);
+            _tabRow.Children().Append(_minMaxCloseControl);
         }
         else
         {
@@ -428,6 +428,16 @@ namespace winrt::TerminalApp::implementation
                                      const RoutedEventArgs&)
     {
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
+    }
+
+    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
+    {
+        if (_minMaxCloseControl)
+        {
+            return _minMaxCloseControl.DragBar();
+        }
+
+        return nullptr;
     }
 
     // Method Description:
