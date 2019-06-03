@@ -223,7 +223,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             }
 
-            // Initialize background color so we don't get a
+            // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
             uint32_t color = _settings.DefaultBackground();
             winrt::Windows::UI::Color bgColor{};
