@@ -68,6 +68,8 @@ private:
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
 
+    std::shared_mutex _createCloseLock{};
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
@@ -76,4 +78,5 @@ private:
     void _CloseChild(const bool closeFirst);
 
     void _FocusFirstChild();
+    void _ControlClosedHandler();
 };

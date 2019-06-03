@@ -46,13 +46,29 @@ void Pane::_AddControlToRoot(TermControl control)
 {
     _root.Children().Append(control.GetControl());
 
-    _connectionClosedToken = control.ConnectionClosed([this]() {
-        if (_control.ShouldCloseOnExit())
-        {
-            // Fire our Closed event to tell our parent that we should be removed.
-            _closedHandlers();
-        }
-    });
+    _connectionClosedToken = control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+}
+
+void Pane::_ControlClosedHandler()
+{
+    std::unique_lock lock{ _createCloseLock };
+    // It's possible that this event handler started being executed, then before
+    // we got the lock, another thread created another child. So our control is
+    // actually no longer _our_ control, and instead could be a descendant.
+    //
+    // When the control's new Pane takes ownership of the control, the new
+    // parent will register it's own event handler. That event handler will get
+    // fired after this handler returns, and will properly cleanup state.
+    if (!_IsLeaf())
+    {
+        return;
+    }
+
+    if (_control.ShouldCloseOnExit())
+    {
+        // Fire our Closed event to tell our parent that we should be removed.
+        _closedHandlers();
+    }
 }
 
 // Method Description:
@@ -247,21 +263,41 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
 // - <none>
 void Pane::_CloseChild(const bool closeFirst)
 {
+    // Lock the create/close lock so that another operation won't concurrently
+    // modify our tree
+    std::unique_lock lock{ _createCloseLock };
+
+    // If we're a leaf, then chances are both our children closed in close
+    // succession. We waited on the lock while the other child was closed, so
+    // now we don't have a child to close anymore. Return here. When we moved
+    // the non-closed child into us, we also set up event handlers that will be
+    // triggered when we return from this.
+    if (_IsLeaf())
+    {
+        return;
+    }
+
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
-        // Revoke the old event handlers.
+        // take the control and profile of the pane that _wasn't_ closed.
+        _control = remainingChild->_control;
+        _profile = remainingChild->_profile;
+
+        // TODO: Add our new event handler before revoking the old one.
+        _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+
+        // Revoke the old event handlers. Remove both the handlers for the panes
+        // themselves closing, and remove their handlers for their controls
+        // closing. At this point, if the remaining child's control is closed,
+        // they'll trigger only our event handler for the control's close.
         _firstChild->Closed(_firstClosedToken);
         _secondChild->Closed(_secondClosedToken);
         closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
         remainingChild->_control.ConnectionClosed(remainingChild->_connectionClosedToken);
-
-        // take the control and profile of the pane that _wasn't_ closed.
-        _control = closeFirst ? _secondChild->_control : _firstChild->_control;
-        _profile = closeFirst ? _secondChild->_profile : _firstChild->_profile;
 
         // If either of our children was focused, we want to take that focus from
         // them.
@@ -294,15 +330,24 @@ void Pane::_CloseChild(const bool closeFirst)
     }
     else
     {
-        // Revoke the old event handlers.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
+        // First stash away references to the old panes and their tokens
+        const auto oldFirstToken = _firstClosedToken;
+        const auto oldSecondToken = _secondClosedToken;
+        const auto oldFirst = _firstChild;
+        const auto oldSecond = _secondClosedToken;
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
         _separatorRoot = remainingChild->_separatorRoot;
         _firstChild = remainingChild->_firstChild;
         _secondChild = remainingChild->_secondChild;
+
+        // Set up new close handlers on the children
+        _SetupChildCloseHandlers();
+
+        // Revoke the old event handlers.
+        _firstChild->Closed(_firstClosedToken);
+        _secondChild->Closed(_secondClosedToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -334,9 +379,6 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_separatorRoot);
         _root.Children().Append(_secondChild->GetRootElement());
 
-        // Set up new close handlers on the children, so thay'll notify us
-        // instead of their old parent.
-        _SetupChildCloseHandlers();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastFocused)
@@ -352,7 +394,7 @@ void Pane::_CloseChild(const bool closeFirst)
 }
 
 // Method Description:
-// - Adds event handlers to our chilcren to handle their close events.
+// - Adds event handlers to our children to handle their close events.
 // Arguments:
 // - <none>
 // Return Value:
@@ -397,6 +439,9 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 
         return;
     }
+    // Lock the create/close lock so that another operation won't concurrently
+    // modify our tree
+    std::unique_lock lock{ _createCloseLock };
 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionClosed(_connectionClosedToken);
@@ -470,6 +515,9 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 
         return;
     }
+    // Lock the create/close lock so that another operation won't concurrently
+    // modify our tree
+    std::unique_lock lock{ _createCloseLock };
 
     // revoke our handler - the child will take care of the control now.
     _control.ConnectionClosed(_connectionClosedToken);
