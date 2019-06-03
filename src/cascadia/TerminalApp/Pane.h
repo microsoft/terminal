@@ -73,7 +73,6 @@ private:
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
-    void _AddControlToRoot(winrt::Microsoft::Terminal::TerminalControl::TermControl control);
 
     void _CloseChild(const bool closeFirst);
 

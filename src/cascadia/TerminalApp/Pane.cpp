@@ -16,7 +16,8 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
-    _AddControlToRoot(_control);
+    _root.Children().Append(_control.GetControl());
+    _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
@@ -36,19 +37,15 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
 }
 
 // Method Description:
-// - Adds a given Terminal Control to our root Grid. Also registers an event
-//   handler to know when that control closed.
+// - Called when our attached control is closed. Triggers listeners to our close
+//   event, if we're a leaf pane.
+// - If this was called, and we became a parent pane (due to work on another
+//   thread), this function will do nothing (allowing the control's new parent
+//   to handle the event instead).
 // Arguments:
-// - control: The new TermControl to use as the content of our root Grid.
+// - <none>
 // Return Value:
 // - <none>
-void Pane::_AddControlToRoot(TermControl control)
-{
-    _root.Children().Append(control.GetControl());
-
-    _connectionClosedToken = control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
-}
-
 void Pane::_ControlClosedHandler()
 {
     std::unique_lock lock{ _createCloseLock };
@@ -287,7 +284,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
 
-        // TODO: Add our new event handler before revoking the old one.
+        // Add our new event handler before revoking the old one.
         _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
@@ -315,7 +312,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _separatorRoot = { nullptr };
 
         // Reattach the TermControl to our grid.
-        _AddControlToRoot(_control);
+        _root.Children().Append(_control.GetControl());
 
         if (_lastFocused)
         {
