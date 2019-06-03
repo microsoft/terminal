@@ -7,16 +7,36 @@ Set-Item -force -path "env:OpenConsoleRoot" -value "$PSScriptRoot\.."
 # them into the Powershell environment.
 function Set-MsbuildDevEnvironment()
 {
-    $path = "$env:VS140COMNTOOLS\..\.."
-    pushd $path
-    cmd /c "vcvarsall.bat&set" | foreach {
-        if ($_ -match "=")
+    $vswhere = ${env:ProgramFiles(x86)} + '\Microsoft Visual Studio\Installer\vswhere.exe'
+    if (-not (Test-Path $vswhere -PathType Leaf))
+    {
+        throw "Visual Studio is not installed on this system"
+    }
+    $install_path = ( `
+        & $vswhere -latest -products * `
+        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
+        -property installationPath)
+    $vcvarsall = '"' + $install_path + '\VC\Auxiliary\Build\vcvarsall.bat"'
+
+    if (-not (Test-Path $vswhere -PathType Leaf))
+    {
+        throw "Visual C++ is not installed on this system"
+    }
+
+    switch ($env:PROCESSOR_ARCHITECTURE) {
+        "amd64" { $arch = "x64" }
+        "x86" { $arch = "x86" }
+        default { throw "Unknown architecture: $switch" }
+    }
+
+    cmd /c ("$vcvarsall $arch & set") | foreach {
+        if ($_ -match '=')
         {
             $s = $_.Split("=");
             Set-Item -force -path "env:\$($s[0])" -value "$($s[1])"
         }
     }
-    popd
+
     Write-Host "Dev environment variables set" -ForegroundColor Green
 }
 
