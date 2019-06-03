@@ -20,6 +20,8 @@ We drive the bot by tagging issues with specific labels which cause the bot engi
 
 Therefore, if you do file issues, or create PRs, please keep an eye on your GitHub notifications. If you do not respond to requests for information, your issues/PRs may be closed automatically.
 
+---
+
 ## Before you start, file an issue
 
 Please follow this simple rule to help us eliminate any unnecessary wasted effort & frustration, and ensure an efficient and effective use of everyone's time - yours, ours, and other community members':
@@ -52,18 +54,19 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 * What build of Windows your device is running
 
   👉 Tip: Run the following in PowerShell
-    ```powershell
+
+  ```powershell
     C:\> $PSVersionTable.OS
     Microsoft Windows 10.0.18909
     ```
 
-    ... or Cmd:
+  ... or Cmd:
 
-    ```cmd
+  ```cmd
     C:\> ver
 
     Microsoft Windows [Version 10.0.18900.1001]
-    ```
+  ```
 
 * What tools and apps you're using (e.g. VS 2019, VSCode, etc.)
 * Don't assume we're experts in setting up YOUR environment and don't assume we are experts in `<your distro/tool of choice>`. Teach us to help you!
@@ -78,6 +81,8 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 > ⚠ DO NOT post "+1", "me too", or similar comments - they just add noise to an issue.
 
 If you don't have any additional info/context to add but would like to indicate that you're affected by the issue, upvote the original issue by clicking its [+😊] button and hitting 👍 (+1) icon. This way we can actually measure how impactful an issue is.
+
+---
 
 ## Contributing fixes / features
 
@@ -105,9 +110,11 @@ Specs are written in markdown, stored under the `\doc\spec` folder and named `[i
 
 Team members will be happy to help review specs and guide them to completion.
 
-## Help Wanted
+### Help Wanted
 
 Once the team have approved an issue/spec, development can proceed. If no developers are immediately available, the spec can be parked ready for a developer to get started. Parked specs' issues will be labeled "Help Wanted". To find a list of development opportunities waiting for developer involvement, visit the Issues and filter on [the Help-Wanted label](https://github.com/microsoft/terminal/labels/Help-Wanted).
+
+---
 
 ## Development
 
@@ -130,6 +137,8 @@ When you'd like the team to take a look, (even if the work is not yet fully-comp
 ### Merge
 
 Once your code has been reviewed and approved by the requisite number of team members, it will be merged into the master branch. Once merged, your PR will be automatically closed.
+
+---
 
 ## Thank you
 
