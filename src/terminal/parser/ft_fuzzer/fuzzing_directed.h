@@ -454,8 +454,7 @@ namespace fuzz
         // AddFuzzArrayEntry function can be used to add additional fuzz map
         // entries without removing the existing map.  Returns E_INVALIDARG in the
         // event that the total percentages add up to more than 100%.
-        [[nodiscard]]
-        __inline HRESULT SetFuzzArrayMap(
+        [[nodiscard]] __inline HRESULT SetFuzzArrayMap(
             __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae) throw()
         {
@@ -471,8 +470,7 @@ namespace fuzz
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
-        [[nodiscard]]
-        HRESULT AddFuzzArrayEntry(
+        [[nodiscard]] HRESULT AddFuzzArrayEntry(
             __in unsigned int uiPercentage,
             __in std::function<_Type1*(_Type1*, _Type2&, _Args...)> pfnFuzz,
             __in std::function<void(_Type1*)> pfnDealloc = nullptr) throw()
@@ -569,8 +567,7 @@ namespace fuzz
             return CallFuzzMapFunction(pfnFuzz, t1, t2, tup, variadic::gen_seq<sizeof...(_Args)>{});
         }
 
-        [[nodiscard]]
-        HRESULT Init(
+        [[nodiscard]] HRESULT Init(
             __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae)
         {
@@ -782,8 +779,7 @@ namespace fuzz
         // AddFuzzArrayEntry function can be used to add additional fuzz map
         // entries without removing the existing map.  Returns E_INVALIDARG in the
         // event that the total percentages add up to more than 100%.
-        [[nodiscard]]
-        __inline HRESULT SetFuzzTypeMap(
+        [[nodiscard]] __inline HRESULT SetFuzzTypeMap(
             __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...>* rgfte,
             __in ULONG cfte) throw()
         {
@@ -802,8 +798,7 @@ namespace fuzz
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
-        [[nodiscard]]
-        HRESULT AddFuzzTypeEntry(
+        [[nodiscard]] HRESULT AddFuzzTypeEntry(
             __in unsigned int uiPercentage,
             __in std::function<_Type(_Type, _Args...)> pfnFuzz,
             __in std::function<void(_Type)> pfnDealloc = nullptr) throw()

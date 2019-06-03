@@ -835,11 +835,10 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 // - font - the font that applies to the substring range
 // - scale - the scale of the font to apply
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                           UINT32 textLength,
-                                                           _In_ IDWriteFont* const font,
-                                                           FLOAT const scale)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
+                                                                         UINT32 textLength,
+                                                                         _In_ IDWriteFont* const font,
+                                                                         FLOAT const scale)
 {
     try
     {

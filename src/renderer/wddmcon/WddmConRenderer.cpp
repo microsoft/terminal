@@ -315,8 +315,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+[[nodiscard]] HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
     return GetProposedFont(fiFontInfoDesired, fiFontInfo, USER_DEFAULT_SCREEN_DPI);
 }
@@ -338,20 +337,19 @@ HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& fiFontInfoDesired, Font
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
-                                       FontInfo& fiFontInfo,
-                                       int const /*iDpi*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
+                                                     FontInfo& fiFontInfo,
+                                                     int const /*iDpi*/) noexcept
 {
     COORD coordSize = { 0 };
     LOG_IF_FAILED(GetFontSize(&coordSize));
 
     fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
-        fiFontInfo.GetFamily(),
-        fiFontInfo.GetWeight(),
-        fiFontInfo.IsTrueTypeFont(),
-        coordSize,
-        coordSize);
+                             fiFontInfo.GetFamily(),
+                             fiFontInfo.GetWeight(),
+                             fiFontInfo.IsTrueTypeFont(),
+                             coordSize,
+                             coordSize);
 
     return S_OK;
 }

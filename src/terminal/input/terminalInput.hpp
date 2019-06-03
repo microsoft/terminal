@@ -21,7 +21,6 @@ namespace Microsoft::Console::VirtualTerminal
 {
     class TerminalInput final
     {
-
     public:
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
 
@@ -93,13 +92,13 @@ namespace Microsoft::Console::VirtualTerminal
         static const size_t s_cSimpleModifedKeyMapping;
 
         bool _SearchKeyMapping(const KeyEvent& keyEvent,
-                                _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                const size_t cKeyMapping,
-                                _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
+                               _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                               const size_t cKeyMapping,
+                               _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
 
         bool _TranslateDefaultMapping(const KeyEvent& keyEvent,
-                                        _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                        const size_t cKeyMapping) const;
+                                      _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                      const size_t cKeyMapping) const;
 
         bool _SearchWithModifier(const KeyEvent& keyEvent) const;
 

@@ -320,7 +320,7 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
+            profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
                 this->_OpenNewTab({ profileIndex });
             });
             newTabFlyout.Items().Append(profileMenuItem);

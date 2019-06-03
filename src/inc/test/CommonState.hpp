@@ -221,8 +221,7 @@ public:
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
-    [[nodiscard]]
-    NTSTATUS GetTextBufferInfoInitResult()
+    [[nodiscard]] NTSTATUS GetTextBufferInfoInitResult()
     {
         return m_ntstatusTextBufferInfo;
     }

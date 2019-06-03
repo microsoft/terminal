@@ -1043,14 +1043,13 @@ Return Value:
 
 /* ----- Preview routines ----- */
 
-[[nodiscard]]
-LRESULT
-CALLBACK
-FontPreviewWndProc(
-    HWND hWnd,
-    UINT wMessage,
-    WPARAM wParam,
-    LPARAM lParam)
+[[nodiscard]] LRESULT
+    CALLBACK
+    FontPreviewWndProc(
+        HWND hWnd,
+        UINT wMessage,
+        WPARAM wParam,
+        LPARAM lParam)
 
 /*  FontPreviewWndProc
  *      Handles the font preview window

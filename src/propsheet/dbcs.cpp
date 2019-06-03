@@ -23,8 +23,7 @@ Revision History:
 #include <strsafe.h>
 #pragma hdrstop
 
-void
-MakeAltRasterFont(
+void MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD* AltFontSize,
     __out BYTE* AltFontFamily,
@@ -63,10 +62,9 @@ MakeAltRasterFont(
     DBGFONTS(("MakeAltRasterFont : AltFontIndex = %ld\n", *AltFontIndex));
 }
 
-[[nodiscard]]
-NTSTATUS
-InitializeDbcsMisc(
-    VOID)
+[[nodiscard]] NTSTATUS
+    InitializeDbcsMisc(
+        VOID)
 {
     return TrueTypeFontList::s_Initialize();
 }
@@ -159,10 +157,9 @@ GetAltFaceName(
     return NULL;
 }
 
-[[nodiscard]]
-NTSTATUS
-DestroyDbcsMisc(
-    VOID)
+[[nodiscard]] NTSTATUS
+    DestroyDbcsMisc(
+        VOID)
 {
     return TrueTypeFontList::s_Destroy();
 }
@@ -246,10 +243,9 @@ int LanguageDisplay(HWND hDlg, UINT CodePage)
 }
 
 // For a given codepage, determine what the default truetype font should be
-[[nodiscard]]
-NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,                  // the codepage to examine (note: not charset)
-                                  _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
-                                  const size_t cchFaceName) // space available in pszFaceName
+[[nodiscard]] NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage, // the codepage to examine (note: not charset)
+                                                _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
+                                                const size_t cchFaceName) // space available in pszFaceName
 {
     return TrueTypeFontList::s_SearchByCodePage(uiCodePage, pszFaceName, cchFaceName);
 }

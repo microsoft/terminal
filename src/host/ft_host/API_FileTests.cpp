@@ -7,8 +7,8 @@
 
 #include <future>
 
-using WEX::TestExecution::TestData;
 using WEX::Logging::Log;
+using WEX::TestExecution::TestData;
 using namespace WEX::Common;
 
 // This class is intended to test:

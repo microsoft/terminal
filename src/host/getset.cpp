@@ -1454,8 +1454,7 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // <none>
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateHorizontalTabSet()
+[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1479,8 +1478,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 // fForward - whether to tab forward or backwards
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
+[[nodiscard]] NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1508,8 +1506,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
+[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, true);
 }
@@ -1521,8 +1518,7 @@ NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
+[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, false);
 }

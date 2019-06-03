@@ -22,7 +22,6 @@
 #include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

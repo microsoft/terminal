@@ -19,9 +19,7 @@
 
 #include "../types/inc/convert.hpp"
 
-
 #pragma hdrstop
-
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;

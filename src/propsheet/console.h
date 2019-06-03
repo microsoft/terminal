@@ -60,16 +60,14 @@ Revision History:
 #define IDS_TOOLTIP_INTERCEPT_COPY_PASTE    18
 // clang-format on
 
-void
-MakeAltRasterFont(
+void MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD* AltFontSize,
     __out BYTE* AltFontFamily,
     __out ULONG* AltFontIndex,
     __out_ecount(LF_FACESIZE) LPTSTR AltFaceName);
 
-[[nodiscard]]
-NTSTATUS InitializeDbcsMisc(VOID);
+[[nodiscard]] NTSTATUS InitializeDbcsMisc(VOID);
 
 BYTE CodePageToCharSet(
     UINT CodePage);
@@ -85,11 +83,9 @@ SearchTTFont(
 BOOL IsAvailableTTFont(
     LPCTSTR ptszFace);
 
-BOOL
-IsAvailableTTFontCP(
+BOOL IsAvailableTTFontCP(
     LPCTSTR ptszFace,
-    UINT CodePage
-    );
+    UINT CodePage);
 
 BOOL IsDisableBoldTTFont(
     LPCTSTR ptszFace);
@@ -98,8 +94,7 @@ LPTSTR
 GetAltFaceName(
     LPCTSTR ptszFace);
 
-[[nodiscard]]
-NTSTATUS DestroyDbcsMisc(VOID);
+[[nodiscard]] NTSTATUS DestroyDbcsMisc(VOID);
 
 int LanguageListCreate(
     HWND hDlg,
@@ -141,15 +136,13 @@ VOID SetRegistryValues(
     PCONSOLE_STATE_INFO StateInfo,
     DWORD dwPage);
 
-[[nodiscard]]
-LRESULT CALLBACK FontPreviewWndProc(
+[[nodiscard]] LRESULT CALLBACK FontPreviewWndProc(
     HWND hWnd,
     UINT wMsg,
     WPARAM wParam,
     LPARAM lParam);
 
-[[nodiscard]]
-LRESULT CALLBACK PreviewWndProc(
+[[nodiscard]] LRESULT CALLBACK PreviewWndProc(
     HWND hWnd,
     UINT wMsg,
     WPARAM wParam,
@@ -167,8 +160,7 @@ BOOL UpdateStateInfo(
 BOOL InitializeConsoleState();
 void UninitializeConsoleState();
 void UpdateApplyButton(const HWND hDlg);
-[[nodiscard]]
-HRESULT FindFontAndUpdateState();
+[[nodiscard]] HRESULT FindFontAndUpdateState();
 
 BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const size_t cPsps, const BOOL fRegisterCallbacks);
 

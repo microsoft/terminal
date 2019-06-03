@@ -1215,7 +1215,7 @@ const Microsoft::Console::Types::Viewport& UiaTextRange::_getViewport()
 // window.
 Microsoft::Console::Interactivity::IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
 {
-	using namespace Microsoft::Console::Interactivity;
+    using namespace Microsoft::Console::Interactivity;
     IConsoleWindow* const pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
     THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
     return pIConsoleWindow;

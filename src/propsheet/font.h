@@ -89,8 +89,7 @@ VOID
 VOID
     DestroyFonts(VOID);
 
-[[nodiscard]]
-NTSTATUS
+[[nodiscard]] NTSTATUS
 EnumerateFonts(DWORD Flags);
 
 int FindCreateFont(
@@ -106,10 +105,9 @@ BOOL DoFontEnum(
     __in_ecount_opt(nTTPoints) PSHORT pTTPoints,
     __in UINT nTTPoints);
 
-[[nodiscard]]
-NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,
-                                  _Out_writes_(cchFaceName) PWSTR pszFaceName,
-                                  const size_t cchFaceName);
+[[nodiscard]] NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,
+                                                _Out_writes_(cchFaceName) PWSTR pszFaceName,
+                                                const size_t cchFaceName);
 
 bool IsFontSizeCustom(__in PCWSTR pwszFaceName, __in const SHORT sSize);
 void CreateSizeForAllTTFonts(__in const SHORT sSize);

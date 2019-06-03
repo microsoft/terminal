@@ -337,14 +337,13 @@ VOID PreviewPaint(
     DeleteDC(hDC);
 }
 
-[[nodiscard]]
-LRESULT
-CALLBACK
-PreviewWndProc(
-    HWND hWnd,
-    UINT wMessage,
-    WPARAM wParam,
-    LPARAM lParam)
+[[nodiscard]] LRESULT
+    CALLBACK
+    PreviewWndProc(
+        HWND hWnd,
+        UINT wMessage,
+        WPARAM wParam,
+        LPARAM lParam)
 
 /*
  * PreviewWndProc

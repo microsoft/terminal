@@ -17,7 +17,7 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
+WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';

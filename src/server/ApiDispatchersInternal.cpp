@@ -16,8 +16,7 @@
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 
-[[nodiscard]]
-HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+[[nodiscard]] HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // log if we hit a deprecated API.
     RETURN_HR_MSG(E_NOTIMPL, "Deprecated API attempted: 0x%08x", m->Descriptor.Function);

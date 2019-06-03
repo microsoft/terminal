@@ -209,8 +209,7 @@ void NonClientIslandWindow::OnSize()
 // NOTE:
 // Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-[[nodiscard]]
-LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
     // Get the window rectangle.
     RECT rcWindow = BaseWindow::GetWindowRect();
@@ -286,8 +285,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - <none>
 // Return Value:
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
-[[nodiscard]]
-HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
+[[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     // Get the size of the borders we want to use. The sides and bottom will
     // just be big enough for resizing, but the top will be as big as we need
@@ -390,10 +388,9 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 // Return Value:
 // - The return value is the result of the message processing and depends on the
 //   message sent.
-[[nodiscard]]
-LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
-                                              WPARAM const wParam,
-                                              LPARAM const lParam) noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
+                                                            WPARAM const wParam,
+                                                            LPARAM const lParam) noexcept
 {
     LRESULT lRet = 0;
 

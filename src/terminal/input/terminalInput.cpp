@@ -219,7 +219,7 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& k
         return (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
 
-	return (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
+    return (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
 }
 
 // Routine Description:

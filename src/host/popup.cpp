@@ -333,8 +333,7 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-[[nodiscard]]
-NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
 {
     return _userInputFunction(cookedReadData, popupKey, modifiers, wch);
 }
@@ -347,11 +346,10 @@ NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, 
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-[[nodiscard]]
-NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
-                                      bool& popupKey,
-                                      DWORD& modifiers,
-                                      wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+                                                    bool& popupKey,
+                                                    DWORD& modifiers,
+                                                    wchar_t& wch) noexcept
 {
     InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
     NTSTATUS Status = GetChar(pInputBuffer,

@@ -246,13 +246,13 @@ public:
     void InitializeCursorRowAttributes();
 
 private:
-    SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics *pMetrics,
-                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier,
+    SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
+                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
-    Microsoft::Console::Interactivity::IWindowMetrics *_pConsoleWindowMetrics;
-    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier* _pAccessibilityNotifier;
 
     [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
                                                     const COORD coordBufferOld,
