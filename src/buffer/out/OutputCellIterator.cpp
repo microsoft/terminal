@@ -411,7 +411,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
                                                   const TextAttribute attr,
                                                   const TextAttributeBehavior behavior)
 {
-    auto glyph = Utf16Parser::ParseNext(view);
+    const auto glyph = Utf16Parser::ParseNext(view);
     DbcsAttribute dbcsAttr;
     if (IsGlyphFullWidth(glyph))
     {
