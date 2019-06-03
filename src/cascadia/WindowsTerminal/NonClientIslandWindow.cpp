@@ -37,7 +37,7 @@ NonClientIslandWindow::~NonClientIslandWindow()
 
 void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs)
 {
-    InvalidateRect(_window, NULL, TRUE);
+    InvalidateRect(NULL, NULL, TRUE);
     ForceResize();
 }
 
