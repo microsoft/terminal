@@ -25,14 +25,13 @@ namespace Microsoft::Console::Render
         RenderThread();
         virtual ~RenderThread() override;
 
-        [[nodiscard]]
-        HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
+        [[nodiscard]] HRESULT Initialize(_In_ IRenderer* const pRendererParent) noexcept;
 
         void NotifyPaint() override;
 
         void EnablePainting() override;
         void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
-        
+
     private:
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
         DWORD WINAPI _ThreadProc();

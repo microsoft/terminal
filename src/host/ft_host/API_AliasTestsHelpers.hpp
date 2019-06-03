@@ -135,8 +135,7 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         ZeroMemory(ptchTargetBuffer, cbTargetBuffer);
     }
 
-    auto freeTargetBuffer = wil::scope_exit([&]()
-    {
+    auto freeTargetBuffer = wil::scope_exit([&]() {
         if (ptchTargetBuffer != nullptr)
         {
             delete[] ptchTargetBuffer;
@@ -192,10 +191,10 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         // If the target isn't enough space, insufficient buffer.
         dwExpectedResult = cbTargetBuffer;
 
-        // For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
-        // even if the final result will be ANSI.
-        // Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
-        #pragma warning(suppress:4127) // This is a constant, but conditionally compiled twice so we need the check.
+// For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
+// even if the final result will be ANSI.
+// Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
+#pragma warning(suppress : 4127) // This is a constant, but conditionally compiled twice so we need the check.
         if (1 == sizeof(TCH))
         {
             dwExpectedResult *= sizeof(wchar_t);

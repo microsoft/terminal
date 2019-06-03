@@ -7,7 +7,6 @@
 
 class Tab
 {
-
 public:
     Tab(GUID profile, winrt::Microsoft::Terminal::TerminalControl::TermControl control);
     ~Tab();

@@ -18,9 +18,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
-
     // We dont use AppT as it does not provide access to protected constructors
-    template <typename D, typename... I>
+    template<typename D, typename... I>
     using AppT_Override = App_base<D, I...>;
 
     struct App : AppT_Override<App>
@@ -76,8 +75,7 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
-        [[nodiscard]]
-        HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
+        [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
 

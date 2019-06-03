@@ -48,5 +48,4 @@ public:
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
-
 };

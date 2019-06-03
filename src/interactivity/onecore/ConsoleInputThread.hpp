@@ -26,9 +26,9 @@ namespace Microsoft::Console::Interactivity::OneCore
     public:
         HANDLE Start();
 
-        ConIoSrvComm *GetConIoSrvComm();
+        ConIoSrvComm* GetConIoSrvComm();
 
     private:
-        ConIoSrvComm *_pConIoSrvComm;
+        ConIoSrvComm* _pConIoSrvComm;
     };
 }

@@ -26,10 +26,10 @@ namespace Microsoft::Console::Interactivity
         virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
 
     protected:
-        IConsoleControl() { }
+        IConsoleControl() {}
 
         IConsoleControl(IConsoleControl const&) = delete;
-        IConsoleControl& operator=(IConsoleControl const &) = delete;
+        IConsoleControl& operator=(IConsoleControl const&) = delete;
     };
 
     inline IConsoleControl::~IConsoleControl() {}

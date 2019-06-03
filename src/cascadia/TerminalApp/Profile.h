@@ -23,7 +23,6 @@ namespace TerminalApp
 
 class TerminalApp::Profile final
 {
-
 public:
     Profile(const winrt::guid& guid);
     Profile();
@@ -55,7 +54,6 @@ public:
     bool GetCloseOnExit() const noexcept;
 
 private:
-
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);

@@ -24,22 +24,18 @@ Revision History:
 #include "screenInfo.hpp"
 #include "readDataCooked.hpp"
 
-
 #define MINIMUM_COMMAND_PROMPT_SIZE 5
-
 
 class CommandHistory;
 
 class Popup
 {
 public:
-
     using UserInputFunction = std::function<NTSTATUS(COOKED_READ_DATA&, bool&, DWORD&, wchar_t&)>;
 
     Popup(SCREEN_INFORMATION& screenInfo, const COORD proposedSize);
     virtual ~Popup();
-    [[nodiscard]]
-    virtual NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept = 0;
+    [[nodiscard]] virtual NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept = 0;
 
     void Draw();
 
@@ -70,10 +66,9 @@ protected:
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
 
-
-    SMALL_RECT _region;  // region popup occupies
+    SMALL_RECT _region; // region popup occupies
     SCREEN_INFORMATION& _screenInfo;
-    TextAttribute _attributes;    // text attributes
+    TextAttribute _attributes; // text attributes
 
 private:
     COORD _CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD proposedSize);

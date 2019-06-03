@@ -42,7 +42,6 @@ public:
     void SetNonClientHeight(const int contentHeight) noexcept;
 
 private:
-
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
 
     HWND _nonClientInteropWindowHandle;
@@ -68,5 +67,5 @@ private:
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
 
-    RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+    RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 };

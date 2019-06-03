@@ -4,16 +4,16 @@
 #pragma once
 
 // Custom window messages
-#define CM_UPDATE_TITLE          (WM_USER)
+#define CM_UPDATE_TITLE (WM_USER)
 
-template <typename T>
+template<typename T>
 class BaseWindow
 {
 public:
     virtual ~BaseWindow() = 0;
     static T* GetThisFromHandle(HWND const window) noexcept
     {
-        return reinterpret_cast<T *>(GetWindowLongPtr(window, GWLP_USERDATA));
+        return reinterpret_cast<T*>(GetWindowLongPtr(window, GWLP_USERDATA));
     }
 
     static LRESULT __stdcall WndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
@@ -22,7 +22,7 @@ public:
 
         if (WM_NCCREATE == message)
         {
-            auto cs = reinterpret_cast<CREATESTRUCT *>(lparam);
+            auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
             T* that = static_cast<T*>(cs->lpCreateParams);
             WINRT_ASSERT(that);
             WINRT_ASSERT(!that->_window);
@@ -42,7 +42,8 @@ public:
 
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
-        switch (message) {
+        switch (message)
+        {
         case WM_DPICHANGED:
         {
             return HandleDpiChange(_window, wparam, lparam);
@@ -109,9 +110,7 @@ public:
             // Resize the window
             auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
 
-            SetWindowPos(hWnd, nullptr, lprcNewScale->left, lprcNewScale->top,
-                lprcNewScale->right - lprcNewScale->left, lprcNewScale->bottom - lprcNewScale->top,
-                SWP_NOZORDER | SWP_NOACTIVATE);
+            SetWindowPos(hWnd, nullptr, lprcNewScale->left, lprcNewScale->top, lprcNewScale->right - lprcNewScale->left, lprcNewScale->bottom - lprcNewScale->top, SWP_NOZORDER | SWP_NOACTIVATE);
 
             _currentDpi = uDpi;
         }
@@ -199,5 +198,7 @@ protected:
     bool _minimized = false;
 };
 
-template <typename T>
-inline BaseWindow<T>::~BaseWindow() { }
+template<typename T>
+inline BaseWindow<T>::~BaseWindow()
+{
+}

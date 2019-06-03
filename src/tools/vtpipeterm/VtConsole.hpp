@@ -14,14 +14,13 @@ Author(s):
 - Mike Griese (MiGrie) 2017
 --*/
 
-
 #include <windows.h>
 #include <wil\result.h>
 #include <wil\resource.h>
 
 #include <string>
 
-typedef void(*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
+typedef void (*PipeReadCallback)(BYTE* buffer, DWORD dwRead);
 
 class VtConsole
 {
@@ -80,5 +79,4 @@ private:
     void _spawn(const std::wstring& command);
 
     DWORD _OutputThread();
-
 };

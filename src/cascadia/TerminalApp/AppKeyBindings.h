@@ -41,6 +41,7 @@ namespace winrt::TerminalApp::implementation
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
+        // clang-format off
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
         DECLARE_EVENT(NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
@@ -58,11 +59,11 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
         DECLARE_EVENT(ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
         DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
+        // clang-format on
 
     private:
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
-
     };
 }
 
