@@ -150,7 +150,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 #define WC_DELAY_EOL_WRAP 0x80
 
 // Word delimiters
-bool IsWordDelim(const WCHAR wch);
+bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;

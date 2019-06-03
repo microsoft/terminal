@@ -11,7 +11,7 @@
 #include <algorithm>
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Handles a keyboard event for extending the current selection
 // - Must be called when the console is in selecting state.

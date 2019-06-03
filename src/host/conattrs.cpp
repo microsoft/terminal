@@ -32,7 +32,7 @@ struct _HSL
 
         const auto diff = max - min;
         const auto sum = max + min;
-        // Luminence
+        // Luminance
         l = max / 255.0;
 
         // Saturation
@@ -147,7 +147,7 @@ WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry) noexcept
 }
 
 // Function Description:
-// - Converts the value of a pair of xterm color table indicies to the legacy attr equivalent.
+// - Converts the value of a pair of xterm color table indices to the legacy attr equivalent.
 // Arguments:
 // - xtermForeground: the xterm color table foreground index
 // - xtermBackground: the xterm color table background index
@@ -190,7 +190,7 @@ bool FindTableIndex(const COLORREF Color,
 // - Get a COLORREF for the foreground component of the given legacy attributes.
 // Arguments:
 // - wLegacyAttrs - The legacy attributes to get the foreground color from.
-// - ColorTable - The array of colors to to get the color from.
+// - ColorTable - The array of colors to get the color from.
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the foreground component
@@ -209,7 +209,7 @@ COLORREF ForegroundColor(const WORD wLegacyAttrs,
 // - Get a COLORREF for the background component of the given legacy attributes.
 // Arguments:
 // - wLegacyAttrs - The legacy attributes to get the background color from.
-// - ColorTable - The array of colors to to get the color from.
+// - ColorTable - The array of colors to get the color from.
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the background component

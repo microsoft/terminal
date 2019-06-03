@@ -13,6 +13,9 @@
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::TerminalInput;
+
 // Routine Description:
 // - This method creates an input buffer.
 // Arguments:

@@ -13,6 +13,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 ConversionAreaBufferInfo::ConversionAreaBufferInfo(const COORD coordBufferSize) :
     coordCaBuffer(coordBufferSize),

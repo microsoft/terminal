@@ -723,6 +723,7 @@ void UnregisterClasses(HINSTANCE hModule)
     UnregisterClass(TEXT("WOAFontPreview"), hModule);
 }
 
+[[nodiscard]]
 HRESULT FindFontAndUpdateState()
 {
     g_currentFontIndex = FindCreateFont(gpStateInfo->FontFamily,

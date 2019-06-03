@@ -14,6 +14,8 @@
 
 #define SET_FIELD_AND_SIZE(x) FIELD_OFFSET(Settings, (x)), RTL_FIELD_SIZE(Settings, (x))
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 Registry::Registry(_In_ Settings* const pSettings) :
     _pSettings(pSettings)
 {

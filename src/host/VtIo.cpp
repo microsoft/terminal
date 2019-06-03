@@ -15,9 +15,11 @@
 #include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Utils;
+using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
@@ -102,10 +104,11 @@ VtIo::VtIo() :
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
-[[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
-                                        const HANDLE OutHandle,
-                                        const std::wstring& VtMode,
-                                        const HANDLE SignalHandle)
+[[nodiscard]]
+HRESULT VtIo::_Initialize(const HANDLE InHandle,
+                          const HANDLE OutHandle,
+                          const std::wstring& VtMode,
+                          _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
 

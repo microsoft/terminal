@@ -800,7 +800,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
         while (textLength > 0)
         {
             UINT32 mappedLength = 0;
-            IDWriteFont* mappedFont = nullptr;
+            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
             FLOAT scale = 0.0f;
 
             fallback->MapCharacters(source,
@@ -815,7 +815,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
                                     &mappedFont,
                                     &scale);
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont, scale));
+            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
 
             textPosition += mappedLength;
             textLength -= mappedLength;
@@ -835,10 +835,11 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 // - font - the font that applies to the substring range
 // - scale - the scale of the font to apply
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                                         UINT32 textLength,
-                                                                         IDWriteFont* const font,
-                                                                         FLOAT const scale)
+[[nodiscard]]
+HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
+                                                           UINT32 textLength,
+                                                           _In_ IDWriteFont* const font,
+                                                           FLOAT const scale)
 {
     try
     {

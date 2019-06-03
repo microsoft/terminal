@@ -12,6 +12,8 @@
 #define DEFAULT_NUMBER_OF_COMMANDS 25
 #define DEFAULT_NUMBER_OF_BUFFERS 4
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 Settings::Settings() :
     _dwHotKey(0),
     _dwStartupFlags(0),

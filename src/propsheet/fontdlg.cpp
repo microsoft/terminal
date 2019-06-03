@@ -254,7 +254,7 @@ FontDlgProc(
 
         if (g_fHostedInFileProperties || gpStateInfo->Defaults)
         {
-            FindFontAndUpdateState();
+            LOG_IF_FAILED(FindFontAndUpdateState());
         }
 
         // IMPORTANT NOTE: When the propsheet and conhost disagree on a font (e.g. user has switched charsets and forgot
@@ -725,7 +725,10 @@ int FontListCreate(
     /*
      * This only enumerates face names and font sizes if necessary.
      */
-    EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT);
+    if (!NT_SUCCESS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
+    {
+        return LB_ERR;
+    }
 
     /* init the TTFaceNames */
 
@@ -1040,6 +1043,7 @@ Return Value:
 
 /* ----- Preview routines ----- */
 
+[[nodiscard]]
 LRESULT
 CALLBACK
 FontPreviewWndProc(

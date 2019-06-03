@@ -52,7 +52,7 @@ public:
 
     void InitEvents()
     {
-        ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset);
+        Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInputEvent.create(wil::EventOptions::ManualReset);
     }
 
     void PrepareReadHandle()
@@ -83,7 +83,7 @@ public:
 
     void PrepareGlobalScreenBuffer()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordWindowSize;
         coordWindowSize.X = s_csWindowWidth;
         coordWindowSize.Y = s_csWindowHeight;
@@ -105,25 +105,25 @@ public:
 
     void CleanupGlobalScreenBuffer()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         delete gci.pCurrentScreenBuffer;
     }
 
     void PrepareGlobalInputBuffer()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.pInputBuffer = new InputBuffer();
     }
 
     void CleanupGlobalInputBuffer()
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         delete gci.pInputBuffer;
     }
 
     void PrepareCookedReadData()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         auto* readData = new COOKED_READ_DATA(gci.pInputBuffer,
                                               m_readHandle.get(),
                                               gci.GetActiveOutputBuffer(),
@@ -138,14 +138,14 @@ public:
 
     void CleanupCookedReadData()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         delete &gci.CookedReadData();
         gci.SetCookedReadData(nullptr);
     }
 
     void PrepareNewTextBufferInfo()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         COORD coordScreenBufferSize;
         coordScreenBufferSize.X = s_csBufferWidth;
         coordScreenBufferSize.Y = s_csBufferHeight;
@@ -177,7 +177,7 @@ public:
 
     void CleanupNewTextBufferInfo()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         VERIFY_IS_TRUE(gci.HasActiveOutputBuffer());
 
         gci.pCurrentScreenBuffer->_textBuffer.swap(m_backupTextBufferInfo);
@@ -185,7 +185,7 @@ public:
 
     void FillTextBuffer()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some assorted text that doesn't consume the whole row
         const SHORT cRowsToFill = 4;
 
@@ -204,7 +204,7 @@ public:
 
     void FillTextBufferBisect()
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // fill with some text that fills the whole row and has bisecting double byte characters
         const SHORT cRowsToFill = s_csBufferHeight;
 
@@ -221,6 +221,7 @@ public:
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
+    [[nodiscard]]
     NTSTATUS GetTextBufferInfoInitResult()
     {
         return m_ntstatusTextBufferInfo;
@@ -292,7 +293,7 @@ private:
 
     void FillBisect(ROW* pRow)
     {
-        const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // length 80 string of text with bisecting characters at the beginning and end.
         // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
         PWCHAR pwszText =

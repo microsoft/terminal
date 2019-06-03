@@ -331,7 +331,7 @@ using namespace Microsoft::Console::Interactivity;
 //      function is used to create an invisible window for that scenario, so
 //      that GetConsoleWindow returns a real value.
 // Arguments:
-// - hwnd: Recieves the value of the newly created window's HWND.
+// - hwnd: Receives the value of the newly created window's HWND.
 // Return Value:
 // - STATUS_SUCCESS on success, otherwise an appropriate error.
 [[nodiscard]] NTSTATUS InteractivityFactory::CreatePseudoWindow(HWND& hwnd)

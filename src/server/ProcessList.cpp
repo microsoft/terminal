@@ -11,6 +11,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Interactivity;
+
 // Routine Description:
 // - Allocates and stores in a list the process information given.
 // - Will not create a new entry in the list given information matches a known process. Will instead return existing entry.

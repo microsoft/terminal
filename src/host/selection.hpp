@@ -23,8 +23,6 @@ Revision History:
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
 #include "..\interactivity\inc\IConsoleWindow.hpp"
 
-using namespace Microsoft::Console::Interactivity;
-
 class Selection
 {
 public:

@@ -22,6 +22,8 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 // I need to be a list because we rearrange elements inside to maintain a
 // "least recently used" state. Doing many rearrangement operations with
 // a list will maintain the iterator pointers as valid to the elements
@@ -760,7 +762,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryLengthWImpl(const std::wstring_view
 }
 
 // Routine Description:
-// - Retrieves a the full command history for a given EXE name known to the console.
+// - Retrieves the full command history for a given EXE name known to the console.
 // - It is permitted to call this function without having a target buffer. Use the result to allocate
 //   the appropriate amount of space and call again.
 // - This behavior exists to allow the A version of the function to help allocate the right temp buffer for conversion of
@@ -835,7 +837,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
 }
 
 // Routine Description:
-// - Retrieves a the full command history for a given EXE name known to the console.
+// - Retrieves the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
 // - exeName - The client EXE application attached to the host whose set we should check
@@ -899,7 +901,7 @@ HRESULT ApiRoutines::GetConsoleCommandHistoryAImpl(const std::string_view exeNam
 }
 
 // Routine Description:
-// - Retrieves a the full command history for a given EXE name known to the console.
+// - Retrieves the full command history for a given EXE name known to the console.
 // - Converts inputs from A to W, calls the W version of this method, and then converts the resulting text W to A.
 // Arguments:
 // - exeName - The client EXE application attached to the host whose set we should check

@@ -31,7 +31,6 @@ public:
 
     [[nodiscard]] HRESULT ParseCommandline();
 
-    bool IsUsingVtPipe() const;
     bool HasVtHandles() const;
     bool InConptyMode() const noexcept;
     bool IsHeadless() const;

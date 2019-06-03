@@ -342,7 +342,7 @@ void CommandListPopup::_drawList()
         WriteCoord.Y += 1i16;
     }
 
-    auto& api = ServiceLocator::LocateGlobals().api;
+    auto& api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
     WriteCoord.Y = _region.Top + 1i16;
     SHORT i = std::max(gsl::narrow<SHORT>(_bottomIndex - Height() + 1), 0i16);
@@ -512,7 +512,7 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
 }
 
 // Routine Description:
-// - Adjusts the highligted line in a list of commands
+// - Adjusts the highlighted line in a list of commands
 // Arguments:
 // - OldCurrentCommand - The previous command highlighted
 // - NewCurrentCommand - The new command to be highlighted.

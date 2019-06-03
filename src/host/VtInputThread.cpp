@@ -16,7 +16,8 @@
 #include "handle.h"
 
 using namespace Microsoft::Console;
-
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:

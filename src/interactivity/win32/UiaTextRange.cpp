@@ -14,6 +14,7 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
+using namespace Microsoft::Console::Interactivity;
 
 // toggle these for additional logging in a debug build
 //#define UIATEXTRANGE_DEBUG_MSGS 1
@@ -1212,8 +1213,9 @@ const Microsoft::Console::Types::Viewport& UiaTextRange::_getViewport()
 // Return Value:
 // - The current window. May return nullptr if there is no current
 // window.
-IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
+Microsoft::Console::Interactivity::IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
 {
+	using namespace Microsoft::Console::Interactivity;
     IConsoleWindow* const pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
     THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
     return pIConsoleWindow;

@@ -161,7 +161,7 @@ bool ConsoleHandleData::IsWriteShared() const
 // - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
 [[nodiscard]] HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     if (_IsInput())
     {
         InputBuffer* const pObj = static_cast<InputBuffer*>(_pvClientPointer);

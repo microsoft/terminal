@@ -22,6 +22,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 // Routine Description:
 // - This routine writes a screen buffer region to the screen.

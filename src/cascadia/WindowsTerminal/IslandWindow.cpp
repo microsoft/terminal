@@ -149,6 +149,7 @@ void IslandWindow::OnSize()
     }
 }
 
+[[nodiscard]]
 LRESULT IslandWindow::MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)

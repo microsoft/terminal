@@ -10,6 +10,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 bool IsValidSmallRect(_In_ PSMALL_RECT const Rect)
 {

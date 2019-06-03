@@ -55,7 +55,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     // This rundown happens before the final destruction of any outstanding handles or resources.
     // If someone is waiting on one of those handles or resources outside our process, they're stuck waiting
     // for our terminate rundown and can't continue execution until we're done.
-    // We don't want to have other execution in the system get stuck , so this is a great
+    // We don't want to have other execution in the system get stuck, so this is a great
     // place to clean up and notify any objects or threads in the system that have to cleanup safely before
     // we head into TerminateProcess and tear everything else down less gracefully.
 

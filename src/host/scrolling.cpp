@@ -9,6 +9,9 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+using Microsoft::Console::VirtualTerminal::StateMachine;
+using namespace Microsoft::Console::Interactivity;
+
 ULONG Scrolling::s_ucWheelScrollLines = 0;
 ULONG Scrolling::s_ucWheelScrollChars = 0;
 

@@ -23,6 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class CONSOLE_INFORMATION;
 
@@ -559,7 +560,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // Arguments:
 // - pInputBuffer - the input buffer to write to. Currently unused, as
 //      HandleGenericKeyEvent just gets the global input buffer, but all
-//      ConGetSet API's require a input or output object.
+//      ConGetSet API's require an input or output object.
 // - key - The keyevent to send to the console.
 // Return Value:
 // - HRESULT indicating success or failure
@@ -851,7 +852,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
         auto sourceIter = storageBuffer.GetCellDataAt(sourcePoint, clippedRequestRectangle);
 
         // Walk through every cell of the target, advancing the buffer.
-        // Validate that we always still have a valid iterator to the backgin store,
+        // Validate that we always still have a valid iterator to the backing store,
         // that we always are writing inside the user's buffer (before the end)
         // and we're always targeting the user's buffer inside its original bounds.
         while (sourceIter && targetIter < targetBuffer.end())

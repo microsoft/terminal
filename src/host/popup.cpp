@@ -21,7 +21,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Creates an object representing an interactive popup overlay during cooked mode command line editing.
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)
@@ -333,6 +333,7 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
+[[nodiscard]]
 NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
 {
     return _userInputFunction(cookedReadData, popupKey, modifiers, wch);
@@ -346,6 +347,7 @@ NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, 
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
+[[nodiscard]]
 NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
                                       bool& popupKey,
                                       DWORD& modifiers,

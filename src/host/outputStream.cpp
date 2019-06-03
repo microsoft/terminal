@@ -12,7 +12,9 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
+
 using namespace Microsoft::Console;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },

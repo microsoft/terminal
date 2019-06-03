@@ -15,7 +15,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 static constexpr size_t BUFFER_SIZE = 256;
 static constexpr UINT s_NumberOfHistoryBuffers = 4;
 static constexpr UINT s_HistoryBufferSize = 50;

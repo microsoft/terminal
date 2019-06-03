@@ -16,6 +16,7 @@ public:
         return reinterpret_cast<T*>(GetWindowLongPtr(window, GWLP_USERDATA));
     }
 
+    [[nodiscard]]
     static LRESULT __stdcall WndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         WINRT_ASSERT(window);
@@ -40,6 +41,7 @@ public:
         return DefWindowProc(window, message, wparam, lparam);
     }
 
+    [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
     {
         switch (message)
@@ -99,6 +101,7 @@ public:
     }
 
     // DPI Change handler. on WM_DPICHANGE resize the window
+    [[nodiscard]]
     LRESULT HandleDpiChange(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
     {
         _inDpiChange = true;

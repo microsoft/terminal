@@ -19,10 +19,15 @@
 
 #include "../types/inc/convert.hpp"
 
+
 #pragma hdrstop
+
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 #pragma region Construct_Destruct
 

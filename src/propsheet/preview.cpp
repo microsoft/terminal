@@ -337,6 +337,7 @@ VOID PreviewPaint(
     DeleteDC(hDC);
 }
 
+[[nodiscard]]
 LRESULT
 CALLBACK
 PreviewWndProc(

@@ -30,6 +30,7 @@
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
@@ -126,7 +127,7 @@ void ApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& con
                                                              &data.dwMaximumWindowSize,
                                                              &data.wPopupAttributes,
                                                              data.ColorTable);
-        // Callers of this function expect to recieve an exclusive rect, not an inclusive one.
+        // Callers of this function expect to receive an exclusive rect, not an inclusive one.
         data.srWindow.Right += 1;
         data.srWindow.Bottom += 1;
     }
@@ -200,7 +201,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 }
 
 // Routine Description:
-// - Retrieves information about the a known font based on index
+// - Retrieves information about a known font based on index
 // Arguments:
 // - context - The output buffer concerned
 // - index - We only accept 0 now as we don't keep a list of fonts in memory.
@@ -829,7 +830,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         //      attributes, they likely wanted to use the full version of
         //      our current attributes, whether that be RGB or _default_ colored.
         // This could create a scenario where someone emitted RGB with VT,
-        //      THEN used the API to ScrollConsoleOutput with the legacy  attrs,
+        //      THEN used the API to ScrollConsoleOutput with the legacy attrs,
         //      and DIDN'T want the RGB color. As in FillConsoleOutputAttribute,
         //      this scenario is highly unlikely, and we can reasonably do this
         //      on their behalf.
@@ -1422,7 +1423,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 }
 
 // Routine Description:
-// - A private API call for swaping to the alternate screen buffer. In virtual terminals, there exists both a "main"
+// - A private API call for swapping to the alternate screen buffer. In virtual terminals, there exists both a "main"
 //     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
 //     existing alternate, it is discarded.
 // Parameters:
@@ -1452,8 +1453,9 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // Parameters:
 // <none>
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet()
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]]
+NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1471,13 +1473,14 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private helper for excecuting a number of tabs.
+// - A private helper for executing a number of tabs.
 // Parameters:
 // sNumTabs - The number of tabs to execute
 // fForward - whether to tab forward or backwards
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]]
+NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1504,8 +1507,9 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // Parameters:
 // - sNumTabs - The number of tabs to perform.
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]]
+NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, true);
 }
@@ -1516,8 +1520,9 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // Parameters:
 // - sNumTabs - The number of tabs to perform.
 // Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an approriate status code indicating the error.
-[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
+// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
+[[nodiscard]]
+NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, false);
 }
@@ -1526,7 +1531,7 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // - A private API call for clearing the VT tabs that have been set.
 // Parameters:
 // - fClearAll - If false, only clears the tab in the current column (if it exists)
-//      otherwise clears all set tabs. (and reverts to lecacy 8-char tabs behavior.)
+//      otherwise clears all set tabs. (and reverts to legacy 8-char tabs behavior.)
 // Return value:
 // - None
 void DoSrvPrivateTabClear(const bool fClearAll)
@@ -2010,7 +2015,7 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 // Routine Description:
 // - An API call for checking if the console host is acting as a pty.
 // Parameters:
-// - isPty: recieves the bool indicating whether or not we're in pty mode.
+// - isPty: receives the bool indicating whether or not we're in pty mode.
 // Return value:
 //  <none>
 void DoSrvIsConsolePty(_Out_ bool* const pIsPty)
@@ -2109,7 +2114,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Return Value:
 // - E_INVALIDARG if index is >= 256, else S_OK
 // Notes:
-//  Does not take a buffer paramenter. The color table for a console and for
+//  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
 [[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
 {
