@@ -27,15 +27,23 @@ issue id: <github issue id>
 
 [comment]: # Discuss how the proposed fixes/features impact the following key considerations:
 
+### Accessibility
+
+[comment]: # How will the proposed change impact accessibility for users of screen readers, assistive input devices, etc.
+
 ### Security
+
+[comment]: # How will the proposed change impact security?
 
 ### Reliability
 
+[comment]: # Will the proposed change improve reliabilty? If not, why make the change?
+
+### Compatibility
+
+[comment]: # Will the proposed change break existing code/behaviors? If so, how, and is the breaking change "worth it"?
+
 ### Performance, Power, and Efficiency
-
-### Accessibility
-
-[comment]: # Be sure to carefully consider how this feature may be affect, impact, help, or hinder accessibilty.
 
 ## Potential Issues
 
@@ -43,7 +51,7 @@ issue id: <github issue id>
 
 ## Future considerations
 
-[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios? 
+[comment]: # What are some of the things that the fixes/features might unlock in the future? Does the implementation of this spec enable scenarios?
 
 ## Resources
 
