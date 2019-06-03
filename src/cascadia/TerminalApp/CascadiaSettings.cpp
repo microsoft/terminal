@@ -231,7 +231,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.emplace_back(cmdProfile);
     try
     {
-        _CreateWslProfiles(_profiles);
+        _AppendWslProfiles(_profiles);
     }
     CATCH_LOG()
 }
@@ -480,7 +480,7 @@ bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view 
 // - A ref to the profiles container where the WSL profiles are to be added
 // Return Value:
 // - <none>
-void CascadiaSettings::_CreateWslProfiles(std::vector<TerminalApp::Profile>& profileStorage)
+void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage)
 {
     wil::unique_handle readPipe;
     wil::unique_handle writePipe;
