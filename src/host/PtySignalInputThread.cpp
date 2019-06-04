@@ -179,7 +179,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

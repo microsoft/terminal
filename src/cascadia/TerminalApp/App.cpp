@@ -627,6 +627,8 @@ namespace winrt::TerminalApp::implementation
 
     void App::_SetFocusedTabIndex(int tabIndex)
     {
+        // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
+        //          sometimes set focus to an incorrect tab after removing some tabs
         auto tab = _tabs.at(tabIndex);
         _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this]() {
             auto tabViewItem = tab->GetTabViewItem();
@@ -811,7 +813,14 @@ namespace winrt::TerminalApp::implementation
     // - the index of the currently focused tab if there is one, else -1
     int App::_GetFocusedTabIndex() const
     {
-        return _tabView.SelectedIndex();
+        // GH#1117: This is a workaround because _tabView.SelectedIndex()
+        //          sometimes return incorrect result after removing some tabs
+        uint32_t focusedIndex;
+        if (_tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex))
+        {
+            return focusedIndex;
+        }
+        return -1;
     }
 
     void App::_OpenSettings()
