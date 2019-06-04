@@ -10,6 +10,10 @@
 #define ENGLISH_US_CP 437u
 #define JAPANESE_CP 932u
 
+using WEX::TestExecution::TestData;
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 namespace DbcsWriteRead
 {
     enum WriteMode
@@ -273,8 +277,6 @@ class DbcsTests
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
     END_TEST_METHOD()
 };
-
-HANDLE hScreen = INVALID_HANDLE_VALUE;
 
 bool DbcsTests::DbcsTestSetup()
 {

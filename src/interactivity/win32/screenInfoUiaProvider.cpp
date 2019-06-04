@@ -15,7 +15,7 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
-
+using namespace Microsoft::Console::Interactivity;
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {

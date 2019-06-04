@@ -389,7 +389,7 @@ VOID
 InitializeFonts(
     VOID)
 {
-    EnumerateFonts(EF_DEFFACE);  // Just the Default font
+    LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE));  // Just the Default font
 }
 
 
@@ -838,6 +838,7 @@ void CreateSizeForAllTTFonts(__in const SHORT sSize)
     }
 }
 
+[[nodiscard]]
 NTSTATUS
 EnumerateFonts(
     DWORD Flags)

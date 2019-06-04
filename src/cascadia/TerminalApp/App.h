@@ -62,7 +62,6 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
-        std::unique_ptr<TerminalApp::AppKeyBindings> _keyBindings;
 
         HRESULT _settingsLoadedResult;
 

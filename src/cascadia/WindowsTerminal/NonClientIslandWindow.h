@@ -31,6 +31,7 @@ public:
 
     virtual void OnSize() override;
 
+    [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
     void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
@@ -62,7 +63,10 @@ private:
     MARGINS _maximizedMargins;
     bool _isMaximized;
 
+    [[nodiscard]]
     LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+
+    [[nodiscard]]
     HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();

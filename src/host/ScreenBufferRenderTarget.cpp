@@ -5,6 +5,7 @@
 #include "ScreenBufferRenderTarget.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
     _owner{ owner }
 {
@@ -12,6 +13,7 @@ ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
 
 void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
 {
+
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
     const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     if (pRenderer != nullptr && pActive == &_owner)

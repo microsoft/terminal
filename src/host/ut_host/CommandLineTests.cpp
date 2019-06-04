@@ -15,6 +15,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 constexpr size_t PROMPT_SIZE = 512;
 
