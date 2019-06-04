@@ -543,4 +543,38 @@ namespace WEX::TestExecution
         }
     };
 
+
+    template<>
+    class VerifyOutputTraits < std::wstring_view >
+    {
+    public:
+        static WEX::Common::NoThrowString ToString(const std::wstring_view& view)
+        {
+            return WEX::Common::NoThrowString(view.data(), gsl::narrow<int>(view.size()));
+        }
+    };
+
+    template<>
+    class VerifyCompareTraits < std::wstring_view, std::wstring_view >
+    {
+    public:
+        static bool AreEqual(const std::wstring_view& expected, const std::wstring_view& actual)
+        {
+            return expected == actual;
+        }
+
+        static bool AreSame(const std::wstring_view& expected, const std::wstring_view& actual)
+        {
+            return expected.data() == actual.data();
+        }
+
+        static bool IsLessThan(const std::wstring_view&, const std::wstring_view&) = delete;
+
+        static bool IsGreaterThan(const std::wstring_view&, const std::wstring_view&) = delete;
+
+        static bool IsNull(const std::wstring_view& object)
+        {
+            return object.size() == 0;
+        }
+    };
 }
