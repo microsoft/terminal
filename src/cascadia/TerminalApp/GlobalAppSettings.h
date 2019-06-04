@@ -49,8 +49,8 @@ public:
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
-    winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson() const;
+    static GlobalAppSettings FromJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 

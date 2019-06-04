@@ -32,14 +32,12 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        static TerminalApp::AppKeyBindings FromJson(Windows::Data::Json::JsonArray const& json);
-        Windows::Data::Json::JsonArray ToJson();
-        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
-        static winrt::hstring FormatOverrideShortcutText(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
-
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
+
+        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
+        static winrt::hstring FormatOverrideShortcutText(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
         // clang-format off
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
