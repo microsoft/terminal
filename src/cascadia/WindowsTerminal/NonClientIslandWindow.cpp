@@ -188,7 +188,7 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
     // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
     LRESULT hitTests[3][3] =
     {
-        { HTTOPLEFT,    /*fOnResizeBorder ? HTTOP : */ HTCAPTION,    HTTOPRIGHT },
+        { HTTOPLEFT,    fOnResizeBorder ? HTTOP : HTCAPTION,    HTTOPRIGHT },
         { HTLEFT,       HTCAPTION,     HTRIGHT },
         { HTBOTTOMLEFT, HTBOTTOM, HTBOTTOMRIGHT },
     };
