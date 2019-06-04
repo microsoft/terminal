@@ -53,19 +53,29 @@ When you hit "New Issue", select the type of issue closest to what you want to r
 * What device you're running (inc. CPU type, memory, disk, etc.)
 * What build of Windows your device is running
 
-  👉 Tip: Run the following in PowerShell
+  👉 Tip: Run the following in PowerShell Core
 
   ```powershell
-    C:\> $PSVersionTable.OS
-    Microsoft Windows 10.0.18909
-    ```
+  C:\> $PSVersionTable.OS
+  Microsoft Windows 10.0.18909
+  ```
+
+  ... or in Windows PowerShell
+
+  ```powershell
+  C:\> $PSVersionTable.BuildVersion
+
+  Major  Minor  Build  Revision
+  -----  -----  -----  --------
+  10     0      18912  1001
+  ```
 
   ... or Cmd:
 
   ```cmd
-    C:\> ver
+  C:\> ver
 
-    Microsoft Windows [Version 10.0.18900.1001]
+  Microsoft Windows [Version 10.0.18900.1001]
   ```
 
 * What tools and apps you're using (e.g. VS 2019, VSCode, etc.)
