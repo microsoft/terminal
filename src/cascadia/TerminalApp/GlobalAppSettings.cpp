@@ -5,6 +5,8 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "AppKeyBindingsSerialization.h"
+#include "Utils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -13,17 +15,18 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
-static constexpr std::wstring_view DEFAULTPROFILE_KEY{ L"defaultProfile" };
-static constexpr std::wstring_view ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-static constexpr std::wstring_view INITIALROWS_KEY{ L"initialRows" };
-static constexpr std::wstring_view INITIALCOLS_KEY{ L"initialCols" };
-static constexpr std::wstring_view SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
-static constexpr std::wstring_view REQUESTED_THEME_KEY{ L"requestedTheme" };
-static constexpr std::wstring_view SHOW_TABS_IN_TITLEBAR_KEY{ L"showTabsInTitlebar" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
+static constexpr std::string_view InitialRowsKey{ "initialRows" };
+static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
+static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
+static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 
-static constexpr std::wstring_view LIGHT_THEME_VALUE{ L"light" };
-static constexpr std::wstring_view DARK_THEME_VALUE{ L"dark" };
-static constexpr std::wstring_view SYSTEM_THEME_VALUE{ L"system" };
+static constexpr std::wstring_view LightThemeValue{ L"light" };
+static constexpr std::wstring_view DarkThemeValue{ L"dark" };
+static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
@@ -136,30 +139,18 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject GlobalAppSettings::ToJson() const
+Json::Value GlobalAppSettings::ToJson() const
 {
-    winrt::Windows::Data::Json::JsonObject jsonObject;
+    Json::Value jsonObject;
 
-    const auto guidStr = Utils::GuidToString(_defaultProfile);
-    const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
-    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
-    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
-
-    jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
-    jsonObject.Insert(INITIALROWS_KEY, initialRows);
-    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
-    jsonObject.Insert(ALWAYS_SHOW_TABS_KEY,
-                      JsonValue::CreateBooleanValue(_alwaysShowTabs));
-    jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTitleInTitlebar));
-
-    jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-    jsonObject.Insert(REQUESTED_THEME_KEY,
-                      JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
-
-    // We'll add the keybindings later in CascadiaSettings, because if we do it
-    // here, they'll appear before the profiles.
+    jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
+    jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
+    jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
+    jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
+    jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
+    jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
     return jsonObject;
 }
@@ -170,48 +161,52 @@ JsonObject GlobalAppSettings::ToJson() const
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonObject json)
+GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
     GlobalAppSettings result{};
 
-    if (json.HasKey(DEFAULTPROFILE_KEY))
+    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
-        auto guidString = json.GetNamedString(DEFAULTPROFILE_KEY);
-        auto guid = Utils::GuidFromString(guidString.c_str());
+        auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
         result._defaultProfile = guid;
     }
 
-    if (json.HasKey(ALWAYS_SHOW_TABS_KEY))
+    if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
-        result._alwaysShowTabs = json.GetNamedBoolean(ALWAYS_SHOW_TABS_KEY);
+        result._alwaysShowTabs = alwaysShowTabs.asBool();
     }
-    if (json.HasKey(INITIALROWS_KEY))
+    if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {
-        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
+        result._initialRows = initialRows.asInt();
     }
-    if (json.HasKey(INITIALCOLS_KEY))
+    if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
-        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
-    }
-
-    if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
-    {
-        result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
+        result._initialCols = initialCols.asInt();
     }
 
-    if (json.HasKey(SHOW_TABS_IN_TITLEBAR_KEY))
+    if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
-        result._showTabsInTitlebar = json.GetNamedBoolean(SHOW_TABS_IN_TITLEBAR_KEY);
+        result._showTitleInTitlebar = showTitleInTitlebar.asBool();
     }
 
-    if (json.HasKey(REQUESTED_THEME_KEY))
+    if (auto showTabsInTitlebar{ json[JsonKey(ShowTabsInTitlebarKey)] })
     {
-        const auto themeStr = json.GetNamedString(REQUESTED_THEME_KEY);
-        result._requestedTheme = _ParseTheme(themeStr.c_str());
+        result._showTabsInTitlebar = showTabsInTitlebar.asBool();
+    }
+
+    if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
+    {
+        result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+    }
+
+    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
+    {
+        result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
     }
 
     return result;
 }
+
 
 // Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
@@ -222,15 +217,15 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
 // - The corresponding enum value which maps to the string provided by the user
 ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
 {
-    if (themeString == LIGHT_THEME_VALUE)
+    if (themeString == LightThemeValue)
     {
         return ElementTheme::Light;
     }
-    else if (themeString == DARK_THEME_VALUE)
+    else if (themeString == DarkThemeValue)
     {
         return ElementTheme::Dark;
     }
-    // default behavior for invalid data or SYSTEM_THEME_VALUE
+    // default behavior for invalid data or SystemThemeValue
     return ElementTheme::Default;
 }
 
@@ -246,10 +241,10 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
     switch (theme)
     {
         case ElementTheme::Light:
-            return LIGHT_THEME_VALUE;
+            return LightThemeValue;
         case ElementTheme::Dark:
-            return DARK_THEME_VALUE;
+            return DarkThemeValue;
         default:
-            return SYSTEM_THEME_VALUE;
+            return SystemThemeValue;
     }
 }
