@@ -7,6 +7,20 @@
 using namespace Microsoft::Console;
 
 // Function Description:
+// - Clamps a long in between `min` and `SHRT_MAX` 
+// Arguments:
+// - value: the value to clamp
+// - min: the minimum value to clamp to
+// Return Value:
+// - The clamped value as a short.
+short Utils::ClampToShortMax(const long value, const short min)
+{
+    return static_cast<short>(std::clamp(value,
+        static_cast<long>(min),
+        static_cast<long>(SHRT_MAX)));
+}
+
+// Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
 // Arguments:
