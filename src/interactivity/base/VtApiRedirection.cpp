@@ -9,6 +9,8 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Interactivity;
+
 UINT VTRedirMapVirtualKeyW(_In_ UINT uCode, _In_ UINT uMapType)
 {
     return ServiceLocator::LocateInputServices()->MapVirtualKeyW(uCode, uMapType);
