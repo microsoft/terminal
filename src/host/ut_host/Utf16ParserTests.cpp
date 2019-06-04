@@ -86,4 +86,127 @@ class Utf16ParserTests
             VERIFY_ARE_EQUAL(result.at(0).at(i), SunglassesEmoji.at(i));
         }
     }
+
+    const std::wstring_view Replacement{ &UNICODE_REPLACEMENT, 1 };
+
+    TEST_METHOD(ParseNextLeadOnly)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(0) };
+
+        const auto expected = Replacement;
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextTrailOnly)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(1) };
+
+        const auto expected = Replacement;
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextSingleOnly)
+    {
+        std::wstring wstr{ CyrillicChar.at(0) };
+
+        const auto expected = std::wstring_view{ CyrillicChar.data(), CyrillicChar.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextLeadLead)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(0) };
+        wstr += SunglassesEmoji.at(0);
+
+        const auto expected = Replacement;
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextLeadTrail)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(0) };
+        wstr += SunglassesEmoji.at(1);
+
+        const auto expected = std::wstring_view{ SunglassesEmoji.data(), SunglassesEmoji.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextTrailTrail)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(1) };
+        wstr += SunglassesEmoji.at(1);
+
+        const auto expected = Replacement;
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextLeadSingle)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(0) };
+        wstr += LatinChar.at(0);
+
+        const auto expected = std::wstring_view{ LatinChar.data(), LatinChar.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextTrailSingle)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(1) };
+        wstr += LatinChar.at(0);
+
+        const auto expected = std::wstring_view{ LatinChar.data(), LatinChar.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextLeadLeadTrail)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(0) };
+        wstr += SunglassesEmoji.at(0);
+        wstr += SunglassesEmoji.at(1);
+
+        const auto expected = std::wstring_view{ SunglassesEmoji.data(), SunglassesEmoji.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextTrailLeadTrail)
+    {
+        std::wstring wstr{ SunglassesEmoji.at(1) };
+        wstr += SunglassesEmoji.at(0);
+        wstr += SunglassesEmoji.at(1);
+
+        const auto expected = std::wstring_view{ SunglassesEmoji.data(), SunglassesEmoji.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
+
+    TEST_METHOD(ParseNextSingleLeadTrail)
+    {
+        std::wstring wstr{ GaelicChar.at(0) };
+        wstr += SunglassesEmoji.at(0);
+        wstr += SunglassesEmoji.at(1);
+
+        const auto expected = std::wstring_view{ GaelicChar.data(), GaelicChar.size() };
+        const auto actual = Utf16Parser::ParseNext(wstr);
+
+        VERIFY_ARE_EQUAL(expected, actual);
+    }
 };
