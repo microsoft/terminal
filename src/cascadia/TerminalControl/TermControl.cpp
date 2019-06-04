@@ -202,8 +202,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //       enabled and no background image is present.
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
-    // - Does not apply background color; _BackgroundColorChanged must be called
-    //   to do so.
+    // - Does not apply background color outside of acrylic mode;
+    //   _BackgroundColorChanged must be called to do so.
     // Arguments:
     // - <none>
     // Return Value:
@@ -222,6 +222,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 acrylic = Media::AcrylicBrush{};
                 acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
             }
+
+            // see GH#1082: Initialize background color so we don't get a
+            // fade/flash when _BackgroundColorChanged is called
+            uint32_t color = _settings.DefaultBackground();
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = GetRValue(color);
+            bgColor.G = GetGValue(color);
+            bgColor.B = GetBValue(color);
+            bgColor.A = 255;
+
+            acrylic.FallbackColor(bgColor);
+            acrylic.TintColor(bgColor);
 
             // Apply brush settings
             acrylic.TintOpacity(_settings.TintOpacity());

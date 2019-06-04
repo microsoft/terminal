@@ -32,8 +32,8 @@ public:
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
 
-    winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static Profile FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson() const;
+    static Profile FromJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
@@ -59,8 +59,8 @@ private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
-    static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::wstring& imageStretchMode);
-    static std::wstring_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
+    static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
+    static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
