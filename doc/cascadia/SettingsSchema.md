@@ -11,10 +11,10 @@
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
 | `experimental_showTabsInTitlebar` | Optional | Boolean | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
 | **profiles** | | **Array[Object]** | **Properties listed below are specific to each unique profile.** |
-| `acrylicOpacity` | _Required_ | Number | When `useAcrylic` is set to `true`, it sets the transparency of the window for the profile. Accepts values from 0-1. |
+| `acrylicOpacity` | _Required_ | Number | When `useAcrylic` is set to `true`, it sets the transparency of the window for the profile. Accepts floating point values from 0-1. |
 | `background` | _Required_ | String | Sets the background color of the profile. Overrides `background` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `closeOnExit` | _Required_ | Boolean | When set to `true`, the selected tab closes when `exit` is typed. When set to `false`, the tab will remain open when `exit` is typed. |
-| `colorscheme` | _Required_ | String | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
+| `colorScheme` | _Required_ | String | Name of the terminal color scheme to use. Color schemes are defined under `schemes`. |
 | `commandline` | _Required_ | String | Executable used in the profile. |
 | `cursorColor` | _Required_ | String | Sets the cursor color for the profile. Uses hex color format: `"#rrggbb"`. |
 | `cursorShape` | _Required_ | String | Sets the cursor shape for the profile. Possible values: `"vintage"`, `"bar"`, `"underscore"`, `"filledBox"`, `"emptyBox"` |
@@ -28,7 +28,7 @@
 | `startingDirectory` | _Required_ | String | The directory the shell starts in when it is loaded. |
 | `useAcrylic` | _Required_ | Boolean | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
 | `colorTable` | Optional | Array[String] | Array of colors used in the profile if `colorscheme` is not set. Colors use hex color format: `"#rrggbb"`. Ordering is as follows: `[black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]` |
-| `cursorHeight` | Optional | Integer | Sets the height of the cursor. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
+| `cursorHeight` | Optional | Integer | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `foreground` | Optional | String | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `icon` | Optional | String | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `scrollbarState` | Optional | String | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
