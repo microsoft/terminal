@@ -7,21 +7,41 @@ Set-Item -force -path "env:OpenConsoleRoot" -value "$PSScriptRoot\.."
 # them into the Powershell environment.
 function Set-MsbuildDevEnvironment()
 {
-    $vswhere = ${env:ProgramFiles(x86)} + '\Microsoft Visual Studio\Installer\vswhere.exe'
-    if (-not (Test-Path $vswhere -PathType Leaf))
-    {
-        throw "Visual Studio is not installed on this system"
-    }
-    $install_path = ( `
-        & $vswhere -latest -products * `
-        -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 `
-        -property installationPath)
-    $vcvarsall = '"' + $install_path + '\VC\Auxiliary\Build\vcvarsall.bat"'
+    $ErrorActionPreference = 'Stop'
 
-    if (-not (Test-Path $vswhere -PathType Leaf))
+    # VSSetup acts similarly to vswhere, but with a powershell interface
+    $need_vssetup = $null -eq (Get-Module -Name 'VSSetup')
+
+    if ($need_vssetup)
     {
+        $vssetup_path = `
+            Join-Path $env:Temp ([System.IO.Path]::GetRandomFileName())
+
+        New-Item -Path $vssetup_path -ItemType 'directory' | Out-Null
+
+        $vssetup_module = Find-Module 'VSSetup'
+        $vssetup_version = $vssetup_module.Version
+        Save-Module -InputObject $vssetup_module -Path $vssetup_path
+        Import-Module "$vssetup_path\VSSetup\$vssetup_version\VSSetup.psd1"
+    }
+
+    $vsinfo = `
+        Get-VSSetupInstance  -All `
+        | Select-VSSetupInstance `
+            -Latest -Product * `
+            -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' `
+
+    if ($null -eq $vsinfo) {
         throw "Visual C++ is not installed on this system"
     }
+
+    $vspath = $vsinfo.InstallationPath
+
+    if ($need_vssetup)
+    {
+        Remove-Module -Name 'VSSetup'
+    }
+
 
     switch ($env:PROCESSOR_ARCHITECTURE) {
         "amd64" { $arch = "x64" }
@@ -29,7 +49,9 @@ function Set-MsbuildDevEnvironment()
         default { throw "Unknown architecture: $switch" }
     }
 
-    cmd /c ("$vcvarsall $arch & set") | foreach {
+    $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
+
+    cmd /c ("`"$vcvarsall`" $arch & set") | foreach {
         if ($_ -match '=')
         {
             $s = $_.Split("=");
