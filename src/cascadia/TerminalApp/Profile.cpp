@@ -660,16 +660,16 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {
-        case CursorStyle::Underscore:
-            return CursorShapeUnderscore;
-        case CursorStyle::FilledBox:
-            return CursorShapeFilledbox;
-        case CursorStyle::EmptyBox:
-            return CursorShapeEmptybox;
-        case CursorStyle::Vintage:
-            return CursorShapeVintage;
-        default:
-        case CursorStyle::Bar:
-            return CursorShapeBar;
+    case CursorStyle::Underscore:
+        return CursorShapeUnderscore;
+    case CursorStyle::FilledBox:
+        return CursorShapeFilledbox;
+    case CursorStyle::EmptyBox:
+        return CursorShapeEmptybox;
+    case CursorStyle::Vintage:
+        return CursorShapeVintage;
+    default:
+    case CursorStyle::Bar:
+        return CursorShapeBar;
     }
 }

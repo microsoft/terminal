@@ -40,7 +40,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<std::string> fileData = _IsPackaged() ?
-                                          _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
+                                              _LoadAsPackagedApp() :
+                                              _LoadAsUnpackagedApp();
 
     const bool foundFile = fileData.has_value();
     if (foundFile)

@@ -204,7 +204,6 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
     return result;
 }
 
-
 // Method Description:
 // - Helper function for converting a user-specified cursor style corresponding
 //   CursorStyle enum value
@@ -237,11 +236,11 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 {
     switch (theme)
     {
-        case ElementTheme::Light:
-            return LightThemeValue;
-        case ElementTheme::Dark:
-            return DarkThemeValue;
-        default:
-            return SystemThemeValue;
+    case ElementTheme::Light:
+        return LightThemeValue;
+    case ElementTheme::Dark:
+        return DarkThemeValue;
+    default:
+        return SystemThemeValue;
     }
 }
