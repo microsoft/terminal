@@ -25,7 +25,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine is called when the user changes the screen/popup colors.
 // - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
@@ -720,7 +720,7 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
                 // LastWord is currently pointing to the last character
                 // of the previous word, unless it backed up to the beginning
                 // of the buffer.
-                // Let's increment LastWord so that it points to the expeced
+                // Let's increment LastWord so that it points to the expected
                 // insertion point.
                 ++LastWord;
             }

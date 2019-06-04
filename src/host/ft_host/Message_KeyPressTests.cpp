@@ -23,6 +23,10 @@
 #define SLEEP_WAIT_TIME (2 * 1000)
 #define GERMAN_KEYBOARD_LAYOUT (MAKELANGID(LANG_GERMAN, SUBLANG_GERMAN))
 
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
+
 class KeyPressTests
 {
     BEGIN_TEST_CLASS(KeyPressTests)
