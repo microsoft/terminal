@@ -91,7 +91,7 @@ class Utf16ParserTests
 
     TEST_METHOD(ParseNextLeadOnly)
     {
-        std::wstring wstr{ SunglassesEmoji.at(0)};
+        std::wstring wstr{ SunglassesEmoji.at(0) };
 
         const auto expected = Replacement;
         const auto actual = Utf16Parser::ParseNext(wstr);
