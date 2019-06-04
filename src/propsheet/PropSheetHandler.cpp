@@ -18,7 +18,14 @@ static CONSOLE_STATE_INFO g_csi;
 using namespace Microsoft::WRL;
 
 // This class exposes console property sheets for use when launching the filesystem shortcut properties dialog.
-[uuid(D2942F8E - 478E-41D3 - 870A - 35A16238F4EE)] class ConsolePropertySheetHandler WrlFinal : public RuntimeClass<RuntimeClassFlags<ClassicCom>, IShellExtInit, IShellPropSheetExt, IPersist, FtmBase>
+// clang-format off
+[uuid(D2942F8E-478E-41D3-870A-35A16238F4EE)]
+class ConsolePropertySheetHandler WrlFinal : public RuntimeClass<RuntimeClassFlags<ClassicCom>,
+                                                                 IShellExtInit,
+                                                                 IShellPropSheetExt,
+                                                                 IPersist,
+                                                                 FtmBase>
+// clang-format on
 {
 public:
     HRESULT RuntimeClassInitialize()
