@@ -815,7 +815,9 @@ namespace winrt::TerminalApp::implementation
     // - the index of the currently focused tab if there is one, else -1
     int App::_GetFocusedTabIndex() const
     {
-        return _tabView.SelectedIndex();
+        uint32_t focusedIndex;
+        _tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex);
+        return focusedIndex;
     }
 
     void App::_OpenSettings()
