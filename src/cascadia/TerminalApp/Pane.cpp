@@ -412,6 +412,74 @@ void Pane::_SetupChildCloseHandlers()
 }
 
 // Method Description:
+// - Initializes our UI for a new split in this pane. Sets up row/column
+//   definitions, and initializes the separator grid. Does nothing if our split
+//   state is currently set to SplitState::None
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_CreateSplitContent()
+{
+    if (_splitState == SplitState::Vertical)
+    {
+        // Create three columns in this grid: one for each pane, and one for the separator.
+        auto separatorColDef = Controls::ColumnDefinition();
+        separatorColDef.Width(GridLengthHelper::Auto());
+
+        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+        _root.ColumnDefinitions().Append(separatorColDef);
+        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+
+        // Create the pane separator
+        _separatorRoot = Controls::Grid{};
+        _separatorRoot.Width(PaneSeparatorSize);
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _separatorRoot.Height(NAN);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        // Create three rows in this grid: one for each pane, and one for the separator.
+        auto separatorRowDef = Controls::RowDefinition();
+        separatorRowDef.Height(GridLengthHelper::Auto());
+
+        _root.RowDefinitions().Append(Controls::RowDefinition{});
+        _root.RowDefinitions().Append(separatorRowDef);
+        _root.RowDefinitions().Append(Controls::RowDefinition{});
+
+        // Create the pane separator
+        _separatorRoot = Controls::Grid{};
+        _separatorRoot.Height(PaneSeparatorSize);
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _separatorRoot.Width(NAN);
+    }
+}
+
+// Method Description:
+// - Sets the row/column of our child UI elements, to match our current split type.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_ApplySplitDefinitions()
+{
+    if (_splitState == SplitState::Vertical)
+    {
+        Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
+        Controls::Grid::SetColumn(_separatorRoot, 1);
+        Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
+
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
+        Controls::Grid::SetRow(_separatorRoot, 1);
+        Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
+    }
+}
+
+
+// Method Description:
 // - Vertically split the focused pane in our tree of panes, and place the given
 //   TermControl into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
@@ -436,56 +504,8 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 
         return;
     }
-    // Lock the create/close lock so that another operation won't concurrently
-    // modify our tree
-    std::unique_lock lock{ _createCloseLock };
 
-    // revoke our handler - the child will take care of the control now.
-    _control.ConnectionClosed(_connectionClosedToken);
-    _connectionClosedToken.value = 0;
-
-    _splitState = SplitState::Vertical;
-
-    // Create three columns in this grid: one for each pane, and one for the separator.
-    auto separatorColDef = Controls::ColumnDefinition();
-    separatorColDef.Width(GridLengthHelper::Auto());
-
-    _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-    _root.ColumnDefinitions().Append(separatorColDef);
-    _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-
-    // Remove any children we currently have. We can't add the existing
-    // TermControl to a new grid until we do this.
-    _root.Children().Clear();
-
-    // Create two new Panes
-    //   Move our control, guid into the first one.
-    //   Move the new guid, control into the second.
-    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
-    _profile = std::nullopt;
-    _control = { nullptr };
-    _secondChild = std::make_shared<Pane>(profile, control);
-
-    // add the first pane to row 0
-    _root.Children().Append(_firstChild->GetRootElement());
-    Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
-
-    // Create the pane separator, and place it in column 1
-    _separatorRoot = Controls::Grid{};
-    _separatorRoot.Width(PaneSeparatorSize);
-    // NaN is the special value XAML uses for "Auto" sizing.
-    _separatorRoot.Height(NAN);
-    _root.Children().Append(_separatorRoot);
-    Controls::Grid::SetColumn(_separatorRoot, 1);
-
-    // add the second pane to column 2
-    _root.Children().Append(_secondChild->GetRootElement());
-    Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
-
-    // Register event handlers on our children to handle their Close events
-    _SetupChildCloseHandlers();
-
-    _lastFocused = false;
+    _DoSplit(SplitState::Vertical, profile, control);
 }
 
 // Method Description:
@@ -512,6 +532,21 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 
         return;
     }
+
+    _DoSplit(SplitState::Horizontal, profile, control);
+}
+
+// Method Description:
+// - Does the bulk of the work of creating a new split. Initializes our UI,
+//   creates a new Pane to host the control, registers event handlers.
+// Arguments:
+// - splitType: what type of split we should create.
+// - profile: The profile GUID to associate with the newly created pane.
+// - control: A TermControl to use in the new pane.
+// Return Value:
+// - <none>
+void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl& control)
+{
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
@@ -520,16 +555,12 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
     _control.ConnectionClosed(_connectionClosedToken);
     _connectionClosedToken.value = 0;
 
-    _splitState = SplitState::Horizontal;
+    _splitState = splitType;
 
-    // Create three rows in this grid: one for each pane, and one for the separator.
-    auto separatorRowDef = Controls::RowDefinition();
-    separatorRowDef.Height(GridLengthHelper::Auto());
+    _CreateSplitContent();
 
-    _root.RowDefinitions().Append(Controls::RowDefinition{});
-    _root.RowDefinitions().Append(separatorRowDef);
-    _root.RowDefinitions().Append(Controls::RowDefinition{});
-
+    // Remove any children we currently have. We can't add the existing
+    // TermControl to a new grid until we do this.
     _root.Children().Clear();
 
     // Create two new Panes
@@ -540,21 +571,13 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
     _control = { nullptr };
     _secondChild = std::make_shared<Pane>(profile, control);
 
-    // add the first pane to row 0
     _root.Children().Append(_firstChild->GetRootElement());
-    Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
-
-    _separatorRoot = Controls::Grid{};
-    _separatorRoot.Height(PaneSeparatorSize);
-    // NaN is the special value XAML uses for "Auto" sizing.
-    _separatorRoot.Width(NAN);
     _root.Children().Append(_separatorRoot);
-    Controls::Grid::SetRow(_separatorRoot, 1);
-
-    // add the second pane to row 1
     _root.Children().Append(_secondChild->GetRootElement());
-    Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
 
+    _ApplySplitDefinitions();
+
+    // Register event handlers on our children to handle their Close events
     _SetupChildCloseHandlers();
 
     _lastFocused = false;

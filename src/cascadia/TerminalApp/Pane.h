@@ -74,6 +74,10 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
+    void _DoSplit(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _CreateSplitContent();
+    void _ApplySplitDefinitions();
+
     void _CloseChild(const bool closeFirst);
 
     void _FocusFirstChild();
