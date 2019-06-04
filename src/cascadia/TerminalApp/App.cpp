@@ -820,8 +820,11 @@ namespace winrt::TerminalApp::implementation
         // GH#1117: This is a workaround because _tabView.SelectedIndex()
         //          sometimes return incorrect result after removing some tabs
         uint32_t focusedIndex;
-        _tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex);
-        return focusedIndex;
+        if (_tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex))
+        {
+            return focusedIndex;
+        }
+        return -1;
     }
 
     void App::_OpenSettings()
