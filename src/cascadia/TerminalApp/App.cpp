@@ -57,16 +57,6 @@ namespace winrt::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
-    Windows::Foundation::Size App::GetNonClientAreaDragBarSize() const noexcept
-    {
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
-        {
-            return {};
-        }
-
-        return { NON_CLIENT_DRAGBAR_WIDTH, NON_CLIENT_DRAGBAR_HEIGHT };
-    }
-
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
@@ -128,7 +118,6 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
         _root.Children().Append(_tabRow);
-        _root.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
 
         Controls::Grid::SetRow(_tabRow, 0);
 
@@ -138,7 +127,6 @@ namespace winrt::TerminalApp::implementation
 
         // Create the new tab button.
         _newTabButton = Controls::SplitButton{};
-        _newTabButton.Height(NON_CLIENT_DRAGBAR_HEIGHT);
         Controls::SymbolIcon newTabIco{};
         newTabIco.Symbol(Controls::Symbol::Add);
         _newTabButton.Content(newTabIco);
@@ -157,14 +145,12 @@ namespace winrt::TerminalApp::implementation
 
         _tabRow.Children().Append(_tabView);
 
-        const auto dragAreaWidth = GetNonClientAreaDragBarSize().Width;
-        if (dragAreaWidth > 0)
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
             _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
             Controls::Grid::SetRow(_minMaxCloseControl, 0);
             Controls::Grid::SetColumn(_minMaxCloseControl, 1);
             _minMaxCloseControl.Content().Children().Append(_newTabButton);
-            _tabRow.Background(winrt::Windows::UI::Xaml::Media::SolidColorBrush(winrt::Windows::UI::Colors::Transparent()));
 
             _tabRow.Children().Append(_minMaxCloseControl);
         }

@@ -1,5 +1,4 @@
 ﻿<StackPanel
-    Background="Transparent"
     x:Class="TerminalApp.MinMaxCloseControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -7,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     HorizontalAlignment="Left"
     VerticalAlignment="Top"
     Orientation="Horizontal"
@@ -14,8 +14,8 @@
     d:DesignWidth="400">
 
     <Grid x:Name="Content" ></Grid>
-    <Border Height="36.0" MinWidth="175.0" x:Name="DragBar" DoubleTapped="DragBar_DoubleTapped"/>
-    <Button Height="36.0" Width="40.0" x:Name="Minimize" Click="Minimize_Click">_</Button>
-    <Button Height="36.0" Width="40.0" x:Name="Maximize" Click="Maximize_Click">-</Button>
-    <Button Height="36.0" Width="40.0" x:Name="Close" Click="Close_Click">X</Button>
+    <Border Height="36.0" MinWidth="175.0" x:Name="DragBar" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" DoubleTapped="DragBar_DoubleTapped"/>
+    <Button Height="36.0" Width="40.0" x:Name="Minimize" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Click="Minimize_Click">_</Button>
+    <Button Height="36.0" Width="40.0" x:Name="Maximize" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Click="Maximize_Click">-</Button>
+    <Button Height="36.0" Width="40.0" x:Name="Close" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Click="Close_Click">X</Button>
 </StackPanel>

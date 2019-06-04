@@ -24,10 +24,9 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
     return pRect->bottom - pRect->top;
 }
 
-NonClientIslandWindow::NonClientIslandWindow(winrt::Windows::Foundation::Size dragBarSize) noexcept :
+NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{ },
-    _isMaximized{ false },
-    _nonClientDragBarSize(dragBarSize)
+    _isMaximized{ false }
 {
 }
 
@@ -116,7 +115,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
 
     if (_dragBar)
     {
-        RECT dragBarRect = GetDragAreaRect();
+        const auto dragBarRect = GetDragAreaRect();
         const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
 
         auto nonClientRegion = CreateRectRgn(0, 0, 0, 0);
@@ -210,7 +209,8 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     const auto windowMarginSides = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
     const auto windowMarginBottom = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
-    const auto nonClientHeight = static_cast<LONG>(_nonClientDragBarSize.Height * scale);
+    const auto dragBarRect = GetDragAreaRect();
+    const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
 
     MARGINS margins{ 0 };
     margins.cxLeftWidth = windowMarginSides;
@@ -396,6 +396,11 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
     case WM_NCACTIVATE:
     case WM_NCPAINT:
     {
+        if (!_dragBar)
+        {
+            return 0;
+        }
+
         const auto hdc = GetDC(_window);
         if (hdc)
         {
@@ -406,19 +411,25 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
             const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
             const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
-            static HBRUSH hOrange = CreateSolidBrush(RGB(255, 180, 0));
+            const auto backgroundBrush = _dragBar.Background();
+            const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            const auto backgroundColor = backgroundSolidBrush.Color();
+            const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+            static HBRUSH hColor = CreateSolidBrush(color);
 
             RECT windowRect = {};
             ::GetWindowRect(_window, &windowRect);
-            RECT clientRect = { 0,0,windowRect.right - windowRect.left,windowRect.bottom - windowRect.top };
-            DrawEdge(hdc, &clientRect, EDGE_ETCHED, BF_RECT | BF_FLAT | BF_MONO);
+            RECT clientRect = { 0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
+            ::SetDCPenColor(hdc, color);
+            ::SetDCBrushColor(hdc, color);
+            ::DrawEdge(hdc, &clientRect, EDGE_ETCHED, BF_RECT | BF_FLAT | BF_MONO | BDR_OUTER);
 
             RECT dragBarRect = GetDragAreaRect();
             dragBarRect.left += xPos;
             dragBarRect.right += xPos;
             dragBarRect.bottom += yPos;
             dragBarRect.top += yPos;
-            FillRect(hdc, &dragBarRect, hOrange);
+            ::FillRect(hdc, &dragBarRect, hColor);
 
             ReleaseDC(_window, hdc);
         }

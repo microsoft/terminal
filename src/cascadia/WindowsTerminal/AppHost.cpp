@@ -20,7 +20,7 @@ AppHost::AppHost() noexcept :
 
     if (_useNonClientArea)
     {
-        _window = std::make_unique<NonClientIslandWindow>(_app.GetNonClientAreaDragBarSize());
+        _window = std::make_unique<NonClientIslandWindow>();
     }
     else
     {
