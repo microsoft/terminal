@@ -428,7 +428,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.CopyText([this]() { _CopyText(true); });
+        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         bindings.PasteText([this]() { _PasteText(); });
     }
 

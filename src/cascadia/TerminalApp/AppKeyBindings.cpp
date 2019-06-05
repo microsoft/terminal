@@ -15,6 +15,7 @@ static constexpr std::wstring_view KEYS_KEY{ L"keys" };
 static constexpr std::wstring_view COMMAND_KEY{ L"command" };
 
 static constexpr std::wstring_view COPYTEXT_KEY{ L"copy" };
+static constexpr std::wstring_view COPYTEXTWITHOUTNEWLINES_KEY{ L"copyTextWithoutNewlines" };
 static constexpr std::wstring_view PASTETEXT_KEY{ L"paste" };
 static constexpr std::wstring_view NEWTAB_KEY{ L"newTab" };
 static constexpr std::wstring_view NEWTABWITHPROFILE0_KEY{ L"newTabProfile0" };
@@ -53,6 +54,7 @@ static constexpr std::wstring_view OPENSETTINGS_KEY{ L"openSettings" };
 // iterate over these entries in-order when we're serializing the keybindings.
 static const std::map<std::wstring_view, ShortcutAction> commandNames {
     { COPYTEXT_KEY, ShortcutAction::CopyText },
+    { COPYTEXTWITHOUTNEWLINES_KEY, ShortcutAction::CopyTextWithoutNewlines },
     { PASTETEXT_KEY, ShortcutAction::PasteText },
     { NEWTAB_KEY, ShortcutAction::NewTab },
     { NEWTABWITHPROFILE0_KEY, ShortcutAction::NewTabProfile0 },
@@ -120,7 +122,10 @@ namespace winrt::TerminalApp::implementation
         switch (action)
         {
             case ShortcutAction::CopyText:
-                _CopyTextHandlers();
+                _CopyTextHandlers(true);
+                return true;
+            case ShortcutAction::CopyTextWithoutNewlines:
+                _CopyTextHandlers(false);
                 return true;
             case ShortcutAction::PasteText:
                 _PasteTextHandlers();
