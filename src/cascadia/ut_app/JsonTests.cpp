@@ -22,20 +22,19 @@ namespace TerminalAppUnitTests
 {
     class JsonTests
     {
-        TEST_CLASS(JsonTests);
+        BEGIN_TEST_CLASS(JsonTests)
+            TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
+        END_TEST_CLASS()
+
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(CreateDummyTab);
+        TEST_METHOD(TryInitXamlIslands);
+        TEST_METHOD(CreateDummyWinRTType);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
             reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
-            DebugBreak();
-
-            winrt::init_apartment(winrt::apartment_type::single_threaded);
-            // Initialize the Xaml Hosting Manager
-            auto manager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-            _source = winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource{};
             return true;
         }
 
@@ -44,7 +43,8 @@ namespace TerminalAppUnitTests
 
     private:
         std::unique_ptr<Json::CharReader> reader;
-        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
+        // TODO: Add this back as a member variable, once the test works
+        // winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
     };
 
     Json::Value JsonTests::VerifyParseSucceeded(std::string content)
@@ -120,4 +120,25 @@ namespace TerminalAppUnitTests
 
         VERIFY_IS_NOT_NULL(newTab);
     }
+
+    void JsonTests::TryInitXamlIslands()
+    {
+        DebugBreak();
+        winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
+        winrt::init_apartment(winrt::apartment_type::single_threaded);
+        // Initialize the Xaml Hosting Manager
+        auto manager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+        _source = winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource{};
+    }
+
+    void JsonTests::CreateDummyWinRTType()
+    {
+        winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+        VERIFY_IS_NOT_NULL(settings);
+        auto oldFontSize = settings.FontSize();
+        settings.FontSize(oldFontSize + 5);
+        auto newFontSize = settings.FontSize();
+        VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
+    }
+
 }
