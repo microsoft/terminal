@@ -1294,7 +1294,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             case 2:
                 width += paddingArr[0] * 2;
                 height += paddingArr[1] * 2;
-            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+            // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
             case 4:
                 width += paddingArr[0] + paddingArr[2];
                 height += paddingArr[1] + paddingArr[3];
@@ -1306,15 +1306,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Parse the given padding props to an array.
+    // - Parse the given padding props to a std::vector.
     // Arguments:
     // - padding: 2D padding values
     //      Single Double value provides uniform padding
     //      Two Double values provide isometric horizontal & vertical padding
     //      Four Double values provide independent padding for 4 sides of the bounding rectangle
-    // - paddingPropIndex:
     // Return Value:
-    // - std::array<double, 4> object
+    // - A std::vector object
+    // - If parsed successfully the vector will have the same size as the number of padding values.
+    // - If parsing failed the vector will be empty.
     std::vector<double> TermControl::_ParsePadding(const hstring padding)
     {
         const wchar_t singleCharDelim = L',';
@@ -1342,7 +1343,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         catch (...)
         {
-            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
+            // If something goes wrong, even if due to a single bad padding value, we'll clear the vector & return default 0 padding
             paddingArr.clear();
             LOG_CAUGHT_EXCEPTION();
         }
@@ -1368,7 +1369,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             case 1: return ThicknessHelper::FromUniformLength(thicknessArr[0]);
             case 2: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
-            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+            // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
             case 4: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
             default: return Thickness();
         }
