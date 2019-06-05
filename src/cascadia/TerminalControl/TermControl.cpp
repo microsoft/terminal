@@ -1294,10 +1294,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             case 2:
                 width += paddingArr[0] * 2;
                 height += paddingArr[1] * 2;
+                break;
             // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
             case 4:
                 width += paddingArr[0] + paddingArr[2];
                 height += paddingArr[1] + paddingArr[3];
+                break;
             default:
                 break;
         }
