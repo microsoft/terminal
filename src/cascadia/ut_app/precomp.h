@@ -35,3 +35,9 @@ Author(s):
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
+
+// Common includes for most tests:
+#include "../../../inc/argb.h"
+#include "../../../inc/conattrs.hpp"
+#include "../../../types/inc/utils.hpp"
+#include "../../../inc/DefaultSettings.h"

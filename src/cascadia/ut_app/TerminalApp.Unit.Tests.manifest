@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+
+  <!-- This file is copied into ut_app/TerminalApp.Unit.Tests.manifest as part
+  of the pre-build step for that project. Changes should only be made to the
+  WindowsTerminal version of the file. -->
+
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
       <maxversiontested Id="10.0.18362.0"/>
