@@ -1,20 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
-
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO terminalcore-common.vcxproj -->
   <Import Project="$(OpenConsoleDir)src\cascadia\TerminalCore\terminalcore-common.vcxproj" />
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-ABCD-429C-B551-8562EC954746}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <ProjectName>TerminalCore</ProjectName>
     <TargetName>TerminalCore</TargetName>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
-    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <RootNamespace>Microsoft.Terminal.Core</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='AuditMode|x64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='AuditMode|ARM64'">
+    <PlatformToolset>v142</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" Condition="'$(Configuration)|$(Platform)'=='AuditMode|Win32'">
+    <PlatformToolset>v142</PlatformToolset>
   </PropertyGroup>
   <!-- ============================ References ============================  -->
   <ItemGroup>
@@ -34,7 +58,6 @@
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -48,8 +71,6 @@
       <AdditionalIncludeDirectories>$(WinRT_IncludePath)\..\cppwinrt\winrt;"$(OpenConsoleDir)src\cascadia\TerminalSettings\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
-
-
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.lib.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />

@@ -1028,6 +1028,7 @@ NTSTATUS COOKED_READ_DATA::_handlePostCharInputLoop(const bool isUnicode, size_t
                 CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
                 LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength / sizeof(wchar_t) },
                                                     WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
+                ::MessageBox(NULL, _backupLimit, L"command", MB_OK);
             }
 
             // check for alias
