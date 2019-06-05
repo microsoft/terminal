@@ -3,45 +3,69 @@
 Set-Item -force -path "env:OpenConsoleRoot" -value "$PSScriptRoot\.."
 
 #.SYNOPSIS
-# Grabs all environment variable set after vcvarsall.bat is called and pulls
-# them into the Powershell environment.
-function Set-MsbuildDevEnvironment()
+# Finds and imports a module that should be local to the project
+#.PARAMETER ModuleName
+# The name of the module to import
+function Import-LocalModule
 {
+    [CmdletBinding()]
+    param(
+        [parameter(Mandatory=$true, Position=0)]
+        [string]$Name
+    )
+
     $ErrorActionPreference = 'Stop'
 
-    # VSSetup acts similarly to vswhere, but with a powershell interface
-    $need_vssetup = $null -eq (Get-Module -Name 'VSSetup')
+    $modules_root = "$env:OpenConsoleRoot\.PowershellModules"
 
-    if ($need_vssetup)
+    $local = $null -eq (Get-Module -Name $Name)
+
+    if (-not $local)
     {
-        $vssetup_path = `
-            Join-Path $env:Temp ([System.IO.Path]::GetRandomFileName())
-
-        New-Item -Path $vssetup_path -ItemType 'directory' | Out-Null
-
-        $vssetup_module = Find-Module 'VSSetup'
-        $vssetup_version = $vssetup_module.Version
-        Save-Module -InputObject $vssetup_module -Path $vssetup_path
-        Import-Module "$vssetup_path\VSSetup\$vssetup_version\VSSetup.psd1"
+        return
     }
 
+    if (-not (Test-Path $modules_root)) {
+        New-Item $modules_root -ItemType 'directory' | Out-Null
+    }
+
+    if (-not (Test-Path "$modules_root\$Name")) {
+        Write-Verbose "$Name not downloaded -- downloading now"
+        $module = Find-Module 'VSSetup'
+        $version = $module.Version
+
+        Write-Verbose "Saving $Name to $modules_root"
+        Save-Module -InputObject $module -Path $modules_root
+        Import-Module "$modules_root\$Name\$version\$Name.psd1"
+    } else {
+        Write-Verbose "$Name already downloaded"
+        $versions = `
+            Get-ChildItem "$modules_root\$Name" | Sort-Object
+
+        Get-ChildItem -Path $versions[0] '$Name.psd1' | Import-Module
+    }
+}
+
+#.SYNOPSIS
+# Grabs all environment variable set after vcvarsall.bat is called and pulls
+# them into the Powershell environment.
+function Set-MsbuildDevEnvironment
+{
+    [CmdletBinding()]
+    param()
+
+    $ErrorActionPreference = 'Stop'
+
+    Import-LocalModule -Name 'VSSetup'
+
+    Write-Verbose 'Searching for VC++ instances'
     $vsinfo = `
         Get-VSSetupInstance  -All `
         | Select-VSSetupInstance `
             -Latest -Product * `
-            -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64' `
-
-    if ($null -eq $vsinfo) {
-        throw "Visual C++ is not installed on this system"
-    }
+            -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
 
     $vspath = $vsinfo.InstallationPath
-
-    if ($need_vssetup)
-    {
-        Remove-Module -Name 'VSSetup'
-    }
-
 
     switch ($env:PROCESSOR_ARCHITECTURE) {
         "amd64" { $arch = "x64" }
@@ -51,6 +75,7 @@ function Set-MsbuildDevEnvironment()
 
     $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
 
+    Write-Verbose 'Setting up environment variables'
     cmd /c ("`"$vcvarsall`" $arch & set") | foreach {
         if ($_ -match '=')
         {
