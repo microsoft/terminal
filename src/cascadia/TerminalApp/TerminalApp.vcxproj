@@ -41,7 +41,9 @@
     <ClInclude Include="GlobalAppSettings.h" />
     <ClInclude Include="Profile.h" />
     <ClInclude Include="CascadiaSettings.h" />
+    <ClInclude Include="AppKeyBindingsSerialization.h" />
     <ClInclude Include="KeyChordSerialization.h" />
+    <ClInclude Include="Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="AppKeyBindings.h">
       <DependentUpon>AppKeyBindings.idl</DependentUpon>
@@ -59,7 +61,9 @@
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
+    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -70,6 +74,13 @@
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
   </ItemGroup>
 
   <!-- ========================= idl Files ======================== -->
@@ -117,6 +128,10 @@
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+
     <Link>
       <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

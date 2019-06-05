@@ -44,6 +44,8 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
 Window* Window::s_Instance = nullptr;

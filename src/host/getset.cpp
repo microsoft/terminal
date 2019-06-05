@@ -30,6 +30,7 @@
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)

@@ -15,9 +15,11 @@
 #include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Utils;
+using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),

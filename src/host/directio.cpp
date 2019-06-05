@@ -23,6 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class CONSOLE_INFORMATION;
 

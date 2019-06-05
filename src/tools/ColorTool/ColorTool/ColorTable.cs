@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace ColorTool
 {
     /// <summary>
-    /// Displays the color table that demonstrates the current colorscheme.
+    /// Displays the color table that demonstrates the current color scheme.
     /// </summary>
     static class ColorTable
     {

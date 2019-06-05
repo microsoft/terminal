@@ -4,12 +4,14 @@
 #include "pch.h"
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/Utils.hpp"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
 // The tabs are 34.8px tall. This is their default height - we're not
@@ -131,8 +133,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     auto initialSize = _app.GetLaunchDimensions(dpix);
 
-    const short _currentWidth = gsl::narrow<short>(ceil(initialSize.X));
-    const short _currentHeight = gsl::narrow<short>(ceil(initialSize.Y));
+    const short _currentWidth = Utils::ClampToShortMax(
+        static_cast<long>(ceil(initialSize.X)), 1);
+    const short _currentHeight = Utils::ClampToShortMax(
+        static_cast<long>(ceil(initialSize.Y)), 1);
 
     // Create a RECT from our requested client size
     auto nonClient = Viewport::FromDimensions({ _currentWidth,
@@ -172,8 +176,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };
-    const COORD dimensions{ gsl::narrow<short>(adjustedWidth),
-                            gsl::narrow<short>(adjustedHeight) };
+    const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                            Utils::ClampToShortMax(adjustedHeight, 1) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
 
