@@ -1274,19 +1274,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        float width = gsl::narrow<float>(cols * fFontWidth);
+        double width = cols * fFontWidth;
+        double height = rows * fFontHeight;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (settings.ScrollState() == ScrollbarState::Visible)
         {
             width += scrollbarSize;
         }
-        float height = gsl::narrow<float>(rows * fFontHeight);
-
+        
         // Reserve space for padding
-        uint8_t paddingPropIndex;
-        const auto paddingArr = _ParsePadding(settings.Padding(), paddingPropIndex);
-        switch (paddingPropIndex)
+        const auto paddingArr = _ParsePadding(settings.Padding());
+        switch (paddingArr.size())
         {
             case 1:
                 width += paddingArr[0] * 2;
@@ -1303,7 +1302,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 break;
         }
         
-        return { width, height };
+        return { static_cast<float>(width), static_cast<float>(height) };
     }
 
     // Method Description:
@@ -1316,13 +1315,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - paddingPropIndex:
     // Return Value:
     // - std::array<double, 4> object
-    std::array<double, 4> TermControl::_ParsePadding(const hstring padding, uint8_t& paddingPropIndex)
+    std::vector<double> TermControl::_ParsePadding(const hstring padding)
     {
         const wchar_t singleCharDelim = L',';
         std::wstringstream tokenStream(padding.c_str());
         std::wstring token;
-        paddingPropIndex = 0;
-        std::array<double, 4> paddingArr = {};
+        std::vector<double> paddingArr = {};
         size_t* idx = nullptr;
 
         // Get padding values till we run out of delimiter separated values in the stream
@@ -1333,19 +1331,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
         try
         {
-            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < paddingArr.size()); paddingPropIndex++)
+            for (uint8_t paddingPropIndex = 0; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < 4); paddingPropIndex++)
             {
                 // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                paddingArr[paddingPropIndex] = std::stod(token, idx);
+                paddingArr.push_back(std::stod(token, idx));
             }
         }
         catch (...)
         {
             // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
-            paddingPropIndex = 0;
+            paddingArr.clear();
             LOG_CAUGHT_EXCEPTION();
         }
 
@@ -1364,10 +1362,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Windows::UI::Xaml::Thickness object
     Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
     {
-        uint8_t paddingPropIndex;
-        const auto thicknessArr = _ParsePadding(padding, paddingPropIndex);
+        const auto thicknessArr = _ParsePadding(padding);
 
-        switch (paddingPropIndex)
+        switch (thicknessArr.size())
         {
             case 1: return ThicknessHelper::FromUniformLength(thicknessArr[0]);
             case 2: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
