@@ -23,7 +23,7 @@
 | `guid` | _Required_ | String | Unique identifier of the profile. Written in registry format: `"{00000000-0000-0000-0000-000000000000}"`. |
 | `historySize` | _Required_ | Integer | The number of lines above the ones displayed in the window you can scroll back to. |
 | `name` | _Required_ | String | Name of the profile. Displays in the dropdown menu. |
-| `padding` | _Required_ | String | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for top-bottom and right-left, and `"#, #, #, #"` sets the padding individually for top, right, bottom, and left. |
+| `padding` | _Required_ | String | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
 | `snapOnInput` | _Required_ | Boolean | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `startingDirectory` | _Required_ | String | The directory the shell starts in when it is loaded. |
 | `useAcrylic` | _Required_ | Boolean | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
@@ -33,6 +33,8 @@
 | `icon` | Optional | String | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `scrollbarState` | Optional | String | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
 | **schemes** | | **Array[Object]** | **Properties listed below are specific to each color scheme.** |
+| `name` | _Required_ | String | Name of the color scheme. |
+| `foreground` | _Required_ | String | Sets the foreground color of the color scheme. Uses hex color format: `"#rrggbb"`. |
 | `background` | _Required_ | String | Sets the background color of the color scheme. Uses hex color format: `"#rrggbb"`. |
 | `black` | _Required_ | String | Sets the color used as ANSI black. Uses hex color format: `"#rrggbb"`. |
 | `blue` | _Required_ | String | Sets the color used as ANSI blue. Uses hex color format: `"#rrggbb"`. |
@@ -45,9 +47,7 @@
 | `brightWhite` | _Required_ | String | Sets the color used as ANSI bright white. Uses hex color format: `"#rrggbb"`. |
 | `brightYellow` | _Required_ | String | Sets the color used as ANSI bright yellow. Uses hex color format: `"#rrggbb"`. |
 | `cyan` | _Required_ | String | Sets the color used as ANSI cyan. Uses hex color format: `"#rrggbb"`. |
-| `foreground` | _Required_ | String | Sets the foreground color of the color scheme. Uses hex color format: `"#rrggbb"`. |
 | `green` | _Required_ | String | Sets the color used as ANSI green. Uses hex color format: `"#rrggbb"`. |
-| `name` | _Required_ | String | Name of the color scheme. |
 | `purple` | _Required_ | String | Sets the color used as ANSI purple. Uses hex color format: `"#rrggbb"`. |
 | `red` | _Required_ | String | Sets the color used as ANSI red. Uses hex color format: `"#rrggbb"`. |
 | `white` | _Required_ | String | Sets the color used as ANSI white. Uses hex color format: `"#rrggbb"`. |
