@@ -19,9 +19,9 @@ Abstract:
 class CommandHistory
 {
 public:
-    static CommandHistory* s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
-    static CommandHistory* s_Find(const HANDLE processHandle);
-    static CommandHistory* s_FindByExe(const std::wstring_view appName);
+    static std::shared_ptr<CommandHistory> s_Allocate(const std::wstring_view appName, const HANDLE processHandle);
+    static std::shared_ptr<CommandHistory> s_Find(const HANDLE processHandle);
+    static std::shared_ptr<CommandHistory> s_FindByExe(const std::wstring_view appName);
     static void s_ReallocExeToFront(const std::wstring_view appName, const size_t commands);
     static void s_Free(const HANDLE processHandle);
     static void s_ResizeAll(const size_t commands);
@@ -93,7 +93,7 @@ private:
     std::wstring _appName;
     HANDLE _processHandle;
 
-    static std::list<CommandHistory> s_historyLists;
+    static std::list<std::shared_ptr<CommandHistory>> s_historyLists;
 
 public:
     DWORD Flags;

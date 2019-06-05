@@ -25,7 +25,7 @@ class CommandListPopupTests
     TEST_CLASS(CommandListPopupTests);
 
     std::unique_ptr<CommonState> m_state;
-    CommandHistory* m_pHistory;
+    std::shared_ptr<CommandHistory> m_pHistory;
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -86,7 +86,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -127,7 +127,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -164,7 +164,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
         popup._currentCommand = 0;
@@ -203,7 +203,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
         popup._currentCommand = 0;
@@ -241,7 +241,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -277,7 +277,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitLongHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -313,7 +313,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitLongHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
         popup._currentCommand = 0;
@@ -342,7 +342,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
         // set the current command selection to the top of the list
         popup._currentCommand = 0;
@@ -373,7 +373,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -413,7 +413,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -450,7 +450,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData
@@ -493,7 +493,7 @@ class CommandListPopupTests
         auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         // prepare popup
         PopupTestHelper::InitHistory(*m_pHistory);
-        CommandListPopup popup{ gci.GetActiveOutputBuffer(), *m_pHistory };
+        CommandListPopup popup{ gci.GetActiveOutputBuffer(), m_pHistory };
         popup.SetUserInputFunction(fn);
 
         // prepare cookedReadData

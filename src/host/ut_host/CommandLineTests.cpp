@@ -21,7 +21,7 @@ constexpr size_t PROMPT_SIZE = 512;
 class CommandLineTests
 {
     std::unique_ptr<CommonState> m_state;
-    CommandHistory* m_pHistory;
+    std::shared_ptr<CommandHistory> m_pHistory;
 
     TEST_CLASS(CommandLineTests);
 
@@ -72,7 +72,7 @@ class CommandLineTests
     }
 
     void InitCookedReadData(CookedRead& cookedReadData,
-                            CommandHistory* pHistory,
+                            std::shared_ptr<CommandHistory> pHistory,
                             const std::wstring prompt)
     {
         cookedReadData._pCommandHistory = pHistory;

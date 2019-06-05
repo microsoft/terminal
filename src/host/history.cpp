@@ -28,16 +28,16 @@
 // (where other collections like deque do not.)
 // If CommandHistory::s_Allocate and friends stop shuffling elements
 // for maintaining LRU, then this datatype can be changed.
-std::list<CommandHistory> CommandHistory::s_historyLists;
+std::list<std::shared_ptr<CommandHistory>> CommandHistory::s_historyLists;
 
-CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
+std::shared_ptr<CommandHistory> CommandHistory::s_Find(const HANDLE processHandle)
 {
-    for (auto& historyList : s_historyLists)
+    for (auto historyList : s_historyLists)
     {
-        if (historyList._processHandle == processHandle)
+        if (historyList->_processHandle == processHandle)
         {
-            FAIL_FAST_IF(WI_IsFlagClear(historyList.Flags, CLE_ALLOCATED));
-            return &historyList;
+            FAIL_FAST_IF(WI_IsFlagClear(historyList->Flags, CLE_ALLOCATED));
+            return historyList;
         }
     }
 
@@ -50,7 +50,7 @@ CommandHistory* CommandHistory::s_Find(const HANDLE processHandle)
 // - processHandle - handle to client process.
 void CommandHistory::s_Free(const HANDLE processHandle)
 {
-    CommandHistory* const History = CommandHistory::s_Find(processHandle);
+    std::shared_ptr<CommandHistory> History = CommandHistory::s_Find(processHandle);
     if (History)
     {
         WI_ClearFlag(History->Flags, CLE_ALLOCATED);
@@ -66,7 +66,7 @@ void CommandHistory::s_ResizeAll(const size_t commands)
 
     for (auto& historyList : s_historyLists)
     {
-        historyList.Realloc(commands);
+        historyList->Realloc(commands);
     }
 }
 
@@ -297,10 +297,10 @@ void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const 
 {
     for (auto it = s_historyLists.begin(); it != s_historyLists.end(); it++)
     {
-        if (WI_IsFlagSet(it->Flags, CLE_ALLOCATED) && it->IsAppNameMatch(appName))
+        if (WI_IsFlagSet((*it)->Flags, CLE_ALLOCATED) && (*it)->IsAppNameMatch(appName))
         {
-            CommandHistory backup = *it;
-            backup.Realloc(commands);
+            std::shared_ptr<CommandHistory> backup = *it;
+            backup->Realloc(commands);
 
             s_historyLists.erase(it);
             s_historyLists.push_front(backup);
@@ -310,13 +310,13 @@ void CommandHistory::s_ReallocExeToFront(const std::wstring_view appName, const 
     }
 }
 
-CommandHistory* CommandHistory::s_FindByExe(const std::wstring_view appName)
+std::shared_ptr<CommandHistory> CommandHistory::s_FindByExe(const std::wstring_view appName)
 {
-    for (auto& historyList : s_historyLists)
+    for (auto historyList : s_historyLists)
     {
-        if (WI_IsFlagSet(historyList.Flags, CLE_ALLOCATED) && historyList.IsAppNameMatch(appName))
+        if (WI_IsFlagSet(historyList->Flags, CLE_ALLOCATED) && historyList->IsAppNameMatch(appName))
         {
-            return &historyList;
+            return historyList;
         }
     }
     return nullptr;
@@ -332,21 +332,21 @@ size_t CommandHistory::s_CountOfHistories()
 // Arguments:
 // - Console - pointer to console.
 // Return Value:
-// - Pointer to command history buffer.  if none are available, returns nullptr.
-CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, const HANDLE processHandle)
+// - Shared pointer to command history buffer.  if none are available, returns nullptr.
+std::shared_ptr<CommandHistory> CommandHistory::s_Allocate(const std::wstring_view appName, const HANDLE processHandle)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // Reuse a history buffer.  The buffer must be !CLE_ALLOCATED.
     // If possible, the buffer should have the same app name.
-    std::optional<CommandHistory> BestCandidate;
+    std::shared_ptr<CommandHistory> BestCandidate = nullptr;
     bool SameApp = false;
 
     for (auto it = s_historyLists.cbegin(); it != s_historyLists.cend(); it++)
     {
-        if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
+        if (WI_IsFlagClear((*it)->Flags, CLE_ALLOCATED))
         {
             // use LRU history buffer with same app name
-            if (it->IsAppNameMatch(appName))
+            if ((*it)->IsAppNameMatch(appName))
             {
                 BestCandidate = *it;
                 SameApp = true;
@@ -360,21 +360,21 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     // command history buffers hasn't been allocated, allocate a new one.
     if (!SameApp && s_historyLists.size() < gci.GetNumberOfHistoryBuffers())
     {
-        CommandHistory History;
+        std::shared_ptr<CommandHistory> History = std::make_shared<CommandHistory>();
 
-        History._appName = appName;
-        History.Flags = CLE_ALLOCATED;
-        History.LastDisplayed = -1;
-        History._maxCommands = gsl::narrow<SHORT>(gci.GetHistoryBufferSize());
-        History._processHandle = processHandle;
-        return &s_historyLists.emplace_front(History);
+        History->_appName = appName;
+        History->Flags = CLE_ALLOCATED;
+        History->LastDisplayed = -1;
+        History->_maxCommands = gsl::narrow<SHORT>(gci.GetHistoryBufferSize());
+        History->_processHandle = processHandle;
+        return s_historyLists.emplace_front(History);
     }
-    else if (!BestCandidate.has_value() && s_historyLists.size() > 0)
+    else if (BestCandidate == nullptr && s_historyLists.size() > 0)
     {
         // If we have no candidate already and we need one, take the LRU (which is the back/last one) which isn't allocated.
         for (auto it = s_historyLists.crbegin(); it != s_historyLists.crend(); it++)
         {
-            if (WI_IsFlagClear(it->Flags, CLE_ALLOCATED))
+            if (WI_IsFlagClear((*it)->Flags, CLE_ALLOCATED))
             {
                 BestCandidate = *it;
                 s_historyLists.erase(std::next(it).base()); // trickery to turn reverse iterator into forward iterator for erase.
@@ -385,7 +385,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
     }
 
     // If the app name doesn't match, copy in the new app name and free the old commands.
-    if (BestCandidate.has_value())
+    if (BestCandidate)
     {
         if (!SameApp)
         {
@@ -397,7 +397,7 @@ CommandHistory* CommandHistory::s_Allocate(const std::wstring_view appName, cons
         BestCandidate->_processHandle = processHandle;
         WI_SetFlag(BestCandidate->Flags, CLE_ALLOCATED);
 
-        return &s_historyLists.emplace_front(BestCandidate.value());
+        return s_historyLists.emplace_front(BestCandidate);
     }
 
     return nullptr;
@@ -678,7 +678,7 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    CommandHistory* const pCommandHistory = CommandHistory::s_FindByExe(exeName);
+    const std::shared_ptr<CommandHistory> pCommandHistory = CommandHistory::s_FindByExe(exeName);
     if (nullptr != pCommandHistory)
     {
         size_t cchNeeded = 0;
@@ -783,7 +783,7 @@ HRESULT GetConsoleCommandHistoryWImplHelper(const std::wstring_view exeName,
         historyBuffer.at(0) = UNICODE_NULL;
     }
 
-    CommandHistory* const CommandHistory = CommandHistory::s_FindByExe(exeName);
+    const std::shared_ptr<CommandHistory> CommandHistory = CommandHistory::s_FindByExe(exeName);
 
     if (nullptr != CommandHistory)
     {

@@ -254,7 +254,7 @@ void SetCurrentCommandLine(CookedRead& cookedReadData, _In_ SHORT Index) // inde
 NTSTATUS CommandLine::_startCommandListPopup(CookedRead& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
-        cookedReadData.History().GetNumberOfCommands())
+        cookedReadData.History()->GetNumberOfCommands())
     {
         try
         {
@@ -336,7 +336,7 @@ NTSTATUS CommandLine::_startCopyToCharPopup(CookedRead& cookedReadData)
 HRESULT CommandLine::StartCommandNumberPopup(CookedRead& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
-        cookedReadData.History().GetNumberOfCommands() &&
+        cookedReadData.History()->GetNumberOfCommands() &&
         cookedReadData.ScreenInfo().GetBufferSize().Width() >= MINIMUM_COMMAND_PROMPT_SIZE + 2)
     {
         try
@@ -380,12 +380,12 @@ void CommandLine::_processHistoryCycling(CookedRead& cookedReadData,
         return;
     }
     else if (searchDirection == CommandHistory::SearchDirection::Previous
-             && cookedReadData.History().AtFirstCommand())
+             && cookedReadData.History()->AtFirstCommand())
     {
         return;
     }
     else if (searchDirection == CommandHistory::SearchDirection::Next
-             && cookedReadData.History().AtLastCommand())
+             && cookedReadData.History()->AtLastCommand())
     {
         return;
     }
@@ -543,8 +543,8 @@ void CommandLine::_deleteCommandHistory(CookedRead& cookedReadData) noexcept
 {
     if (cookedReadData.HasHistory())
     {
-        cookedReadData.History().Empty();
-        cookedReadData.History().Flags |= CLE_ALLOCATED;
+        cookedReadData.History()->Empty();
+        cookedReadData.History()->Flags |= CLE_ALLOCATED;
     }
 }
 

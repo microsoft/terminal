@@ -102,7 +102,7 @@ void CommandNumberPopup::_handleEscape(CookedRead& cookedReadData) noexcept
 void CommandNumberPopup::_handleReturn(CookedRead& cookedReadData) noexcept
 {
     const short commandNumber = gsl::narrow<short>(std::min(static_cast<size_t>(_parse()),
-                                                             cookedReadData.History().GetNumberOfCommands() - 1));
+                                                             cookedReadData.History()->GetNumberOfCommands() - 1));
 
     CommandLine::Instance().EndAllPopups();
     SetCurrentCommandLine(cookedReadData, commandNumber);
