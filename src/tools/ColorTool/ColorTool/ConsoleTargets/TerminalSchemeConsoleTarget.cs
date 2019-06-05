@@ -38,7 +38,7 @@ namespace ColorTool.ConsoleTargets
                 uint r = color & (0x000000ff);
                 uint g = (color & (0x0000ff00)) >> 8;
                 uint b = (color & (0x00ff0000)) >> 16;
-                Console.WriteLine($"    \"{name}\": \"#{r.ToString("X2")}{g.ToString("X2")}{b.ToString("X2")}\"{(last ? "" : ",")}");
+                Console.WriteLine($"    \"{name}\": \"#{r:X2}{g:X2}{b:X2}\"{(last ? "" : ",")}");
             };
             if (colorScheme.ConsoleAttributes.Foreground.HasValue)
             {
