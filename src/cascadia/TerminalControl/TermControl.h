@@ -123,7 +123,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseTransparencyHandler(const double delta);
 
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
-        Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+        static std::array<double, 4> _ParsePadding(const hstring padding, uint8_t& paddingPropIndex);
+        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 

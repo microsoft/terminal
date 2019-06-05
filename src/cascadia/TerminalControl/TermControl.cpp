@@ -1281,10 +1281,75 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             width += scrollbarSize;
         }
+        float height = gsl::narrow<float>(rows * fFontHeight);
 
-        const float height = gsl::narrow<float>(rows * fFontHeight);
-
+        // Reserve space for padding
+        uint8_t paddingPropIndex;
+        const auto paddingArr = _ParsePadding(settings.Padding(), paddingPropIndex);
+        switch (paddingPropIndex)
+        {
+            case 1:
+                width += paddingArr[0] * 2;
+                height += paddingArr[0] * 2;
+                break;
+            case 2:
+                width += paddingArr[0] * 2;
+                height += paddingArr[1] * 2;
+            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+            case 4:
+                width += paddingArr[0] + paddingArr[2];
+                height += paddingArr[1] + paddingArr[3];
+            default:
+                break;
+        }
+        
         return { width, height };
+    }
+
+    // Method Description:
+    // - Parse the given padding props to an array.
+    // Arguments:
+    // - padding: 2D padding values
+    //      Single Double value provides uniform padding
+    //      Two Double values provide isometric horizontal & vertical padding
+    //      Four Double values provide independent padding for 4 sides of the bounding rectangle
+    // - paddingPropIndex:
+    // Return Value:
+    // - std::array<double, 4> object
+    std::array<double, 4> TermControl::_ParsePadding(const hstring padding, uint8_t& paddingPropIndex)
+    {
+        const wchar_t singleCharDelim = L',';
+        std::wstringstream tokenStream(padding.c_str());
+        std::wstring token;
+        paddingPropIndex = 0;
+        std::array<double, 4> paddingArr = {};
+        size_t* idx = nullptr;
+
+        // Get padding values till we run out of delimiter separated values in the stream
+        //  or we hit max number of allowable values (= 4) for the bounding rectangle
+        // Non-numeral values detected will default to 0
+        // std::getline will not throw exception unless flags are set on the wstringstream
+        // std::stod will throw invalid_argument expection if the input is an invalid double value
+        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
+        try
+        {
+            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < paddingArr.size()); paddingPropIndex++)
+            {
+                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                //  & stops the scan when first char outside the range of radix is encountered
+                // We'll be permissive till the extent that stod function allows us to be by default
+                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+                paddingArr[paddingPropIndex] = std::stod(token, idx);
+            }
+        }
+        catch (...)
+        {
+            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
+            paddingPropIndex = 0;
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        return paddingArr;
     }
 
     // Method Description:
@@ -1299,36 +1364,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Windows::UI::Xaml::Thickness object
     Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
     {
-        const wchar_t singleCharDelim = L',';
-        std::wstringstream tokenStream(padding.c_str());
-        std::wstring token;
-        uint8_t paddingPropIndex = 0;
-        std::array<double, 4> thicknessArr = {};
-        size_t* idx = nullptr;
-
-        // Get padding values till we run out of delimiter separated values in the stream
-        //  or we hit max number of allowable values (= 4) for the bounding rectangle
-        // Non-numeral values detected will default to 0
-        // std::getline will not throw exception unless flags are set on the wstringstream
-        // std::stod will throw invalid_argument expection if the input is an invalid double value
-        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
-        try
-        {
-            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
-            {
-                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
-                //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex] = std::stod(token, idx);
-            }
-        }
-        catch (...)
-        {
-            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
-            paddingPropIndex = 0;
-            LOG_CAUGHT_EXCEPTION();
-        }
+        uint8_t paddingPropIndex;
+        const auto thicknessArr = _ParsePadding(padding, paddingPropIndex);
 
         switch (paddingPropIndex)
         {
