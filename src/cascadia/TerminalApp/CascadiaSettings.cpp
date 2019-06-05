@@ -23,6 +23,7 @@ static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
+static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -496,7 +497,8 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
 
     THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
                                                 TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
-    switch (WaitForSingleObject(pi.hProcess, INFINITE)) {
+    switch (WaitForSingleObject(pi.hProcess, INFINITE))
+    {
     case WAIT_OBJECT_0:
         break;
     case WAIT_ABANDONED:
@@ -508,7 +510,8 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
     DWORD exitCode;
-    if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0)) {
+    if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0))
+    {
         THROW_HR(E_INVALIDARG);
     }
     DWORD bytesAvailable;
@@ -518,16 +521,22 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     std::wfstream pipe{ hPipe };
     std::wstring wline;
     std::getline(pipe, wline); //remove the header from the output.
-    while (pipe.tellp() < bytesAvailable) {
+    while (pipe.tellp() < bytesAvailable)
+    {
         std::getline(pipe, wline);
         std::wstringstream wlinestream(wline);
-        if (wlinestream) {
+        if (wlinestream)
+        {
             std::wstring distName;
             std::getline(wlinestream, distName, L' ');
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetStartingDirectory(L"~");
             WSLDistro.SetColorScheme({ L"Campbell" });
+            std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
+            iconPath.append(DEFAULT_LINUX_ICON_GUID);
+            iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
+            WSLDistro.SetIconPath(iconPath);
             profileStorage.emplace_back(WSLDistro);
         }
     }
