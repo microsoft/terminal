@@ -76,7 +76,7 @@
 
   <ItemGroup>
     <!-- Manually reference the TerminalApp winmd that the TerminalAppLib
-    project created. This will cause it to be binplaced in out output, so other
+    project created. This will cause it to be binplaced in our output, so other
     projects can reference this project with a ProjectReference and find the
     winmd appropriately. -->
     <Reference Include="TerminalApp">

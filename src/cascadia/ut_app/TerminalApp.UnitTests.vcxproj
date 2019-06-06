@@ -88,8 +88,8 @@
 
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <!-- Manually copy the manifest to our outdir, because the test will need
-      to find it adjacent to us. -->
+      <!-- Manually copy the Windows Terminal manifest to our project directory,
+      so we only need to have one version for the entire solution. -->
       <Command>
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.manifest&quot; &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest*&quot; )
       </Command>
@@ -112,12 +112,12 @@
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
 
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y $(_CppWinrtBinRoot)TerminalControl\TerminalControl.dll &quot;$(OutDir)\TerminalControl.dll*&quot; )
 
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.dll&quot; &quot;$(OutDir)\Microsoft.UI.Xaml.dll*&quot; )
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.pri&quot; &quot;$(OutDir)\Microsoft.UI.Xaml.pri*&quot; )
+        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.dll &quot;$(OutDir)\Microsoft.UI.Xaml.dll*&quot; )
+        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.pri &quot;$(OutDir)\Microsoft.UI.Xaml.pri*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

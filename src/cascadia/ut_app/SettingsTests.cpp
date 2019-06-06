@@ -28,11 +28,11 @@ namespace TerminalAppUnitTests
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
         END_TEST_CLASS()
 
-        TEST_METHOD(CreateDummyWinRTType);
+        TEST_METHOD(TryCreateWinRTType);
 
     };
 
-    void SettingsTests::CreateDummyWinRTType()
+    void SettingsTests::TryCreateWinRTType()
     {
         winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
         VERIFY_IS_NOT_NULL(settings);

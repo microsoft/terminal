@@ -45,8 +45,6 @@ namespace TerminalAppUnitTests
 
         TEST_CLASS_SETUP(ClassSetup)
         {
-            reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
-
             winrt::init_apartment(winrt::apartment_type::single_threaded);
             // Initialize the Xaml Hosting Manager
             _manager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
@@ -56,8 +54,6 @@ namespace TerminalAppUnitTests
         }
 
     private:
-        std::unique_ptr<Json::CharReader> reader;
-
         winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _manager{ nullptr };
         winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source{ nullptr };
     };
