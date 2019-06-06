@@ -1282,7 +1282,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             width += scrollbarSize;
         }
 
-        double height =rows * fFontHeight;
+        double height = rows * fFontHeight;
         auto thickness = _ParseThicknessFromPadding(settings.Padding());
         width += thickness.Left + thickness.Right;
         height += thickness.Top + thickness.Bottom;
