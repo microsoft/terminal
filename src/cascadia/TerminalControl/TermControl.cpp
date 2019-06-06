@@ -1288,17 +1288,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         switch (paddingArr.size())
         {
             case 1:
-                width += paddingArr[0] * 2;
-                height += paddingArr[0] * 2;
+                width += paddingArr.at(0) * 2;
+                height += paddingArr.at(0) * 2;
                 break;
             case 2:
-                width += paddingArr[0] * 2;
-                height += paddingArr[1] * 2;
+                width += paddingArr.at(0) * 2;
+                height += paddingArr.at(1) * 2;
                 break;
             // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
             case 4:
-                width += paddingArr[0] + paddingArr[2];
-                height += paddingArr[1] + paddingArr[3];
+                width += paddingArr.at(0) + paddingArr.at(2);
+                height += paddingArr.at(1) + paddingArr.at(3);
                 break;
             default:
                 break;
@@ -1323,8 +1323,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const wchar_t singleCharDelim = L',';
         std::wstringstream tokenStream(padding.c_str());
         std::wstring token;
-        std::vector<double> paddingArr = {};
-        size_t* idx = nullptr;
+        std::vector<double> paddingArr;
 
         // Get padding values till we run out of delimiter separated values in the stream
         //  or we hit max number of allowable values (= 4) for the bounding rectangle
@@ -1340,7 +1339,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                paddingArr.push_back(std::stod(token, idx));
+                paddingArr.push_back(std::stod(token));
             }
         }
         catch (...)
