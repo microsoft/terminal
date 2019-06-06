@@ -3,15 +3,9 @@
 
 namespace Microsoft.UI.Xaml.Markup
 {
-    interface IXamlMetadataProviderContainer
-    {
-        Windows.Foundation.Collections.IVector<Windows.UI.Xaml.Markup.IXamlMetadataProvider> Providers { get; };
-    };
-
     [default_interface]
-    unsealed runtimeclass XamlApplication : Windows.UI.Xaml.Application, IXamlMetadataProviderContainer
+    unsealed runtimeclass XamlApplication : Windows.UI.Xaml.Application
     {
-        XamlApplication();
         protected XamlApplication(Windows.UI.Xaml.Markup.IXamlMetadataProvider parentProvider);
     }
 }

@@ -9,22 +9,11 @@
 
 namespace xaml = ::winrt::Windows::UI::Xaml;
 
-extern "C" {
-    WINBASEAPI HMODULE WINAPI LoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags);
-    WINBASEAPI HMODULE WINAPI GetModuleHandleW(_In_opt_ LPCWSTR lpModuleName);
-    WINUSERAPI BOOL WINAPI PeekMessageW(_Out_ LPMSG lpMsg, _In_opt_ HWND hWnd, _In_ UINT wMsgFilterMin, _In_ UINT wMsgFilterMax, _In_ UINT wRemoveMsg);
-    WINUSERAPI LRESULT WINAPI DispatchMessageW(_In_ CONST MSG* lpMsg);
-}
-
 namespace winrt::Microsoft::UI::Xaml::Markup::implementation
 {
     XamlApplication::XamlApplication(winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider parentProvider)
     {
         m_providers.Append(parentProvider);
-    }
-
-    XamlApplication::XamlApplication()
-    {
     }
 
     XamlApplication::~XamlApplication()
@@ -73,11 +62,13 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
 
         return winrt::com_array<xaml::Markup::XmlnsDefinition>(definitions.begin(), definitions.end());
     }
+}
 
-    winrt::Windows::Foundation::Collections::IVector<xaml::Markup::IXamlMetadataProvider> XamlApplication::Providers()
-    {
-        return m_providers;
-    }
+extern "C" {
+    WINBASEAPI HMODULE WINAPI LoadLibraryExW(_In_ LPCWSTR lpLibFileName, _Reserved_ HANDLE hFile, _In_ DWORD dwFlags);
+    WINBASEAPI HMODULE WINAPI GetModuleHandleW(_In_opt_ LPCWSTR lpModuleName);
+    WINUSERAPI BOOL WINAPI PeekMessageW(_Out_ LPMSG lpMsg, _In_opt_ HWND hWnd, _In_ UINT wMsgFilterMin, _In_ UINT wMsgFilterMax, _In_ UINT wRemoveMsg);
+    WINUSERAPI LRESULT WINAPI DispatchMessageW(_In_ CONST MSG* lpMsg);
 }
 
 namespace winrt::Microsoft::UI::Xaml::Markup::factory_implementation
