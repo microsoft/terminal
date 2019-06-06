@@ -5,7 +5,7 @@ namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
     [default_interface]
-    runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication
+    runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication, Windows.Foundation.IClosable
     {
         App();
 

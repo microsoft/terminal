@@ -67,6 +67,27 @@ namespace winrt::TerminalApp::implementation
         _windowsXamlManager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
     }
 
+    void App::Close()
+    {
+        if (_bIsClosed)
+        {
+            return;
+        }
+
+        _bIsClosed = true;
+
+        _windowsXamlManager.Close();
+
+        Exit();
+        {
+            MSG msg = {};
+            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+            {
+                ::DispatchMessageW(&msg);
+            }
+        }
+    }
+
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings
@@ -88,6 +109,7 @@ namespace winrt::TerminalApp::implementation
     App::~App()
     {
         TraceLoggingUnregister(g_hTerminalAppProvider);
+        Close();
     }
 
     // Method Description:

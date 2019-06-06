@@ -39,6 +39,7 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
+    _app.Close();
 }
 
 // Method Description:

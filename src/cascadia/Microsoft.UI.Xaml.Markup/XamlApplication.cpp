@@ -27,30 +27,8 @@ namespace winrt::Microsoft::UI::Xaml::Markup::implementation
     {
     }
 
-    void XamlApplication::Close()
-    {
-        if (m_bIsClosed)
-        {
-            return;
-        }
-
-        m_bIsClosed = true;
-
-        m_providers.Clear();
-
-        Exit();
-        {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
-        }
-    }
-
     XamlApplication::~XamlApplication()
     {
-        Close();
     }
 
     xaml::Markup::IXamlType XamlApplication::GetXamlType(xaml::Interop::TypeName const& type)
