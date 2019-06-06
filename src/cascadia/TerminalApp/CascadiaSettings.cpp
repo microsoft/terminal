@@ -493,7 +493,10 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     si.hStdOutput = writePipe.get();
     si.hStdError = writePipe.get();
     wil::unique_process_information pi{};
-    std::wstring command = L"wsl.exe --list";
+    wil::unique_cotaskmem_string systemPath;
+    THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
+    std::wstring command(systemPath.get());
+    command += L"\\wsl.exe --list";
 
     THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
                                                 TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
@@ -510,15 +513,18 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
     DWORD exitCode;
-    if ((GetExitCodeProcess(pi.hProcess, &exitCode) == false) || (exitCode != 0))
+    if (GetExitCodeProcess(pi.hProcess, &exitCode) == false)
     {
         THROW_HR(E_INVALIDARG);
     }
+    else if (exitCode != 0)
+    {
+        return;
+    }
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
-    FILE* hPipe = _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r");
-        //don't call fclose on hPipe because the readPipe handle is managed by wil and this will cause an error.
-    std::wfstream pipe{ hPipe };
+    std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
+        //don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil and closing the file handle will cause an error.
     std::wstring wline;
     std::getline(pipe, wline); //remove the header from the output.
     while (pipe.tellp() < bytesAvailable)
