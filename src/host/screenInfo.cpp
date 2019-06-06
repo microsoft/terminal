@@ -19,12 +19,16 @@
 
 #include "../types/inc/convert.hpp"
 
+
 #pragma hdrstop
+#pragma region Construct/Destruct
+
+
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
-
-#pragma region Construct/Destruct
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 SCREEN_INFORMATION::SCREEN_INFORMATION(
     _In_ IWindowMetrics *pMetrics,
@@ -678,7 +682,7 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
         }
 
         pWindow->UpdateScrollBar(true,
-                                 _IsAltBuffer() | gci.IsTerminalScrolling(),
+                                 _IsAltBuffer() || gci.IsTerminalScrolling(),
                                  _viewport.Height(),
                                  gci.IsTerminalScrolling() ? _virtualBottom : buffer.BottomInclusive(),
                                  _viewport.Top());
@@ -724,14 +728,14 @@ void SCREEN_INFORMATION::SetViewportSize(const COORD* const pcoordSize)
 
 // Method Description:
 // - Update the origin of the buffer's viewport. You can either move the
-//      viewport with a delta relative to it's current location, or set it's
+//      viewport with a delta relative to its current location, or set its
 //      absolute origin. Either way leaves the dimensions of the viewport
 //      unchanged. Also potentially updates our "virtual bottom", the last real
 //      location of the viewport in the buffer.
-//  Also notifies the window implementation to update it's scrollbars.
+//  Also notifies the window implementation to update its scrollbars.
 // Arguments:
 // - fAbsolute: If true, coordWindowOrigin is the absolute location of the origin of the new viewport.
-//      If false, coordWindowOrigin is a delta to move the viewport relative to it's current position.
+//      If false, coordWindowOrigin is a delta to move the viewport relative to its current position.
 // - coordWindowOrigin: Either the new absolute position of the origin of the
 //      viewport, or a delta to add to the current viewport location.
 // - updateBottom: If true, update our virtual bottom position. This should be
@@ -1280,7 +1284,7 @@ void SCREEN_INFORMATION::_AdjustViewportSize(const RECT* const prcClientNew,
 
     const Viewport oldViewport = Viewport(_viewport);
 
-    _InternalSetViewportSize(pcoordSize, fResizeFromLeft, fResizeFromTop);
+    _InternalSetViewportSize(pcoordSize, fResizeFromTop, fResizeFromLeft);
 
     // MSFT 13194969, related to 12092729.
     // If we're in virtual terminal mode, and the viewport dimensions change,
@@ -1820,7 +1824,7 @@ void SCREEN_INFORMATION::SetCursorType(const CursorType Type, const bool setMain
 
 // Routine Description:
 // - This routine sets a flag saying whether the cursor should be displayed
-//   with it's default size or it should be modified to indicate the
+//   with its default size or it should be modified to indicate the
 //   insert/overtype mode has changed.
 // Arguments:
 // - ScreenInfo - pointer to screen info structure.
@@ -2120,7 +2124,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
-        // deleting the alt buffer will give the GetSet back to it's main
+        // deleting the alt buffer will give the GetSet back to its main
 
         // Tell the VT MouseInput handler that we're in the main buffer now
         gci.terminalMouseInput.UseMainScreenBuffer();
@@ -2823,7 +2827,7 @@ void SCREEN_INFORMATION::MoveToBottom()
 }
 
 // Method Description:
-// - Returns the "virtual" Viewport - the viewport with it's bottom at
+// - Returns the "virtual" Viewport - the viewport with its bottom at
 //      `_virtualBottom`. For VT operations, this is essentially the mutable
 //      section of the buffer.
 // Arguments:

@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void Close();
 
         void ScrollViewport(int viewTop);
+        void KeyboardScrollViewport(int viewTop);
         int GetScrollOffset();
         int GetViewHeight() const;
 
@@ -69,12 +70,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
 
-        ::Microsoft::Terminal::Core::Terminal* _terminal;
+        std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer;
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
+        bool _focused;
         bool _closing;
 
         FontInfoDesired _desiredFont;
@@ -93,6 +95,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _Create();
         void _ApplyUISettings();
+        void _InitializeBackgroundBrush();
+        void _BackgroundColorChanged(const uint32_t color);
         void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
@@ -123,6 +127,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
+        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };
 }
 

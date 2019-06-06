@@ -16,9 +16,8 @@ public:
     void Close();
     virtual void OnSize();
 
+    [[nodiscard]]
     virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
-    void ApplyCorrection(double scaleFactor);
-    void NewScale(UINT dpi) override;
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
@@ -29,18 +28,13 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
 protected:
-    unsigned int _currentWidth;
-    unsigned int _currentHeight;
-
     HWND _interopWindowHandle;
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
 
-    winrt::Windows::UI::Xaml::Media::ScaleTransform _scale;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     std::function<void(const HWND, const RECT)> _pfnCreateCallback;
 
-    void _InitXamlContent();
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

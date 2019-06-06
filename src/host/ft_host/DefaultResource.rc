@@ -10,3 +10,5 @@
 #define VER_ORIGINALFILENAME_STR    ___TARGETNAME
 
 #include "common.ver"
+
+#include "Host.Tests.Feature.rc"

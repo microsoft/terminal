@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profile.h"
+#include "Utils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
@@ -12,44 +13,58 @@ using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 using namespace ::Microsoft::Console;
 
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view GuidKey{ "guid" };
+static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
+static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 
-static const std::wstring NAME_KEY{ L"name" };
-static const std::wstring GUID_KEY{ L"guid" };
-static const std::wstring COLORSCHEME_KEY{ L"colorscheme" };
+static constexpr std::string_view ForegroundKey{ "foreground" };
+static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::string_view ColorTableKey{ "colorTable" };
+static constexpr std::string_view HistorySizeKey{ "historySize" };
+static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
+static constexpr std::string_view CursorColorKey{ "cursorColor" };
+static constexpr std::string_view CursorShapeKey{ "cursorShape" };
+static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
 
-static const std::wstring FOREGROUND_KEY{ L"foreground" };
-static const std::wstring BACKGROUND_KEY{ L"background" };
-static const std::wstring COLORTABLE_KEY{ L"colorTable" };
-static const std::wstring HISTORYSIZE_KEY{ L"historySize" };
-static const std::wstring SNAPONINPUT_KEY{ L"snapOnInput" };
-static const std::wstring CURSORCOLOR_KEY{ L"cursorColor" };
-static const std::wstring CURSORSHAPE_KEY{ L"cursorShape" };
-static const std::wstring CURSORHEIGHT_KEY{ L"cursorHeight" };
-
-static const std::wstring COMMANDLINE_KEY{ L"commandline" };
-static const std::wstring FONTFACE_KEY{ L"fontFace" };
-static const std::wstring FONTSIZE_KEY{ L"fontSize" };
-static const std::wstring ACRYLICTRANSPARENCY_KEY{ L"acrylicOpacity" };
-static const std::wstring USEACRYLIC_KEY{ L"useAcrylic" };
-static const std::wstring SCROLLBARSTATE_KEY{ L"scrollbarState" };
-static const std::wstring CLOSEONEXIT_KEY{ L"closeOnExit" };
-static const std::wstring PADDING_KEY{ L"padding" };
-static const std::wstring STARTINGDIRECTORY_KEY{ L"startingDirectory" };
-static const std::wstring ICON_KEY{ L"icon" };
+static constexpr std::string_view CommandlineKey{ "commandline" };
+static constexpr std::string_view FontFaceKey{ "fontFace" };
+static constexpr std::string_view FontSizeKey{ "fontSize" };
+static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
+static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
+static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
+static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
+static constexpr std::string_view PaddingKey{ "padding" };
+static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
+static constexpr std::string_view IconKey{ "icon" };
+static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
+static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
+static constexpr std::string_view BackgroundimageStretchModeKey{ "backgroundImageStretchMode" };
 
 // Possible values for Scrollbar state
-static const std::wstring ALWAYS_VISIBLE{ L"visible" };
-static const std::wstring ALWAYS_HIDE{ L"hidden" };
+static constexpr std::wstring_view AlwaysVisible{ L"visible" };
+static constexpr std::wstring_view AlwaysHide{ L"hidden" };
 
 // Possible values for Cursor Shape
-static const std::wstring CURSORSHAPE_VINTAGE{ L"vintage" };
-static const std::wstring CURSORSHAPE_BAR{ L"bar" };
-static const std::wstring CURSORSHAPE_UNDERSCORE{ L"underscore" };
-static const std::wstring CURSORSHAPE_FILLEDBOX{ L"filledBox" };
-static const std::wstring CURSORSHAPE_EMPTYBOX{ L"emptyBox" };
+static constexpr std::wstring_view CursorShapeVintage{ L"vintage" };
+static constexpr std::wstring_view CursorShapeBar{ L"bar" };
+static constexpr std::wstring_view CursorShapeUnderscore{ L"underscore" };
+static constexpr std::wstring_view CursorShapeFilledbox{ L"filledBox" };
+static constexpr std::wstring_view CursorShapeEmptybox{ L"emptyBox" };
+
+// Possible values for Image Stretch Mode
+static constexpr std::string_view ImageStretchModeNone{ "none" };
+static constexpr std::string_view ImageStretchModeFill{ "fill" };
+static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
+static constexpr std::string_view ImageStretchModeUniformTofill{ "uniformToFill" };
 
 Profile::Profile() :
-    _guid{},
+    Profile(Utils::CreateGuid())
+{
+}
+
+Profile::Profile(const winrt::guid& guid):
+    _guid(guid),
     _name{ L"Default" },
     _schemeName{},
 
@@ -71,9 +86,11 @@ Profile::Profile() :
     _scrollbarState{ },
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
-    _icon{ }
+    _icon{ },
+    _backgroundImage{ },
+    _backgroundImageOpacity{ },
+    _backgroundImageStretchMode{ }
 {
-    UuidCreate(&_guid);
 }
 
 Profile::~Profile()
@@ -109,7 +126,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
-//      any colors from our colorscheme, if we have one.
+//      any colors from our color scheme, if we have one.
 // Arguments:
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
@@ -169,6 +186,21 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.ScrollState(result);
     }
 
+    if (_backgroundImage)
+    {
+        terminalSettings.BackgroundImage(_backgroundImage.value());
+    }
+
+    if (_backgroundImageOpacity)
+    {
+        terminalSettings.BackgroundImageOpacity(_backgroundImageOpacity.value());
+    }
+
+    if (_backgroundImageStretchMode)
+    {
+        terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
+    }
+
     return terminalSettings;
 }
 
@@ -178,99 +210,89 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject Profile::ToJson() const
+Json::Value Profile::ToJson() const
 {
-    winrt::Windows::Data::Json::JsonObject jsonObject;
+    Json::Value root;
 
-    // Profile-specific settings
-    const auto guidStr = Utils::GuidToString(_guid);
-    const auto guid = JsonValue::CreateStringValue(guidStr);
-    const auto name = JsonValue::CreateStringValue(_name);
+    ///// Profile-specific settings /////
+    root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid));
+    root[JsonKey(NameKey)] = winrt::to_string(_name);
 
-    // Core Settings
-    const auto historySize = JsonValue::CreateNumberValue(_historySize);
-    const auto snapOnInput = JsonValue::CreateBooleanValue(_snapOnInput);
-    const auto cursorColor = JsonValue::CreateStringValue(Utils::ColorToHexString(_cursorColor));
-
-    // Control Settings
-    const auto cmdline = JsonValue::CreateStringValue(_commandline);
-    const auto fontFace = JsonValue::CreateStringValue(_fontFace);
-    const auto fontSize = JsonValue::CreateNumberValue(_fontSize);
-    const auto acrylicTransparency = JsonValue::CreateNumberValue(_acrylicTransparency);
-    const auto useAcrylic = JsonValue::CreateBooleanValue(_useAcrylic);
-    const auto closeOnExit = JsonValue::CreateBooleanValue(_closeOnExit);
-    const auto padding = JsonValue::CreateStringValue(_padding);
-
-    if (_startingDirectory)
-    {
-        const auto startingDirectory = JsonValue::CreateStringValue(_startingDirectory.value());
-        jsonObject.Insert(STARTINGDIRECTORY_KEY, startingDirectory);
-    }
-
-    jsonObject.Insert(GUID_KEY, guid);
-    jsonObject.Insert(NAME_KEY, name);
-
-    // Core Settings
+    ///// Core Settings /////
     if (_defaultForeground)
     {
-        const auto defaultForeground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground.value()));
-        jsonObject.Insert(FOREGROUND_KEY, defaultForeground);
+        root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground.value());
     }
     if (_defaultBackground)
     {
-        const auto defaultBackground = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground.value()));
-        jsonObject.Insert(BACKGROUND_KEY, defaultBackground);
+        root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground.value());
     }
     if (_schemeName)
     {
-        const auto scheme = JsonValue::CreateStringValue(_schemeName.value());
-        jsonObject.Insert(COLORSCHEME_KEY, scheme);
+        const auto scheme = winrt::to_string(_schemeName.value());
+        root[JsonKey(ColorSchemeKey)] = scheme;
     }
     else
     {
-        JsonArray tableArray{};
+        Json::Value tableArray{};
         for (auto& color : _colorTable)
         {
-            auto s = Utils::ColorToHexString(color);
-            tableArray.Append(JsonValue::CreateStringValue(s));
+            tableArray.append(Utils::ColorToHexString(color));
         }
-
-        jsonObject.Insert(COLORTABLE_KEY, tableArray);
-
+        root[JsonKey(ColorTableKey)] = tableArray;
     }
-    jsonObject.Insert(HISTORYSIZE_KEY, historySize);
-    jsonObject.Insert(SNAPONINPUT_KEY, snapOnInput);
-    jsonObject.Insert(CURSORCOLOR_KEY, cursorColor);
-
+    root[JsonKey(HistorySizeKey)] = _historySize;
+    root[JsonKey(SnapOnInputKey)] = _snapOnInput;
+    root[JsonKey(CursorColorKey)] = Utils::ColorToHexString(_cursorColor);
     // Only add the cursor height property if we're a legacy-style cursor.
     if (_cursorShape == CursorStyle::Vintage)
     {
-        jsonObject.Insert(CURSORHEIGHT_KEY, JsonValue::CreateNumberValue(_cursorHeight));
+        root[JsonKey(CursorHeightKey)] = _cursorHeight;
     }
-    jsonObject.Insert(CURSORSHAPE_KEY, JsonValue::CreateStringValue(_SerializeCursorStyle(_cursorShape)));
+    root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
 
-    // Control Settings
-    jsonObject.Insert(COMMANDLINE_KEY, cmdline);
-    jsonObject.Insert(FONTFACE_KEY, fontFace);
-    jsonObject.Insert(FONTSIZE_KEY, fontSize);
-    jsonObject.Insert(ACRYLICTRANSPARENCY_KEY, acrylicTransparency);
-    jsonObject.Insert(USEACRYLIC_KEY, useAcrylic);
-    jsonObject.Insert(CLOSEONEXIT_KEY, closeOnExit);
-    jsonObject.Insert(PADDING_KEY, padding);
+    ///// Control Settings /////
+    root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
+    root[JsonKey(FontFaceKey)] = winrt::to_string(_fontFace);
+    root[JsonKey(FontSizeKey)] = _fontSize;
+    root[JsonKey(AcrylicTransparencyKey)] = _acrylicTransparency;
+    root[JsonKey(UseAcrylicKey)] = _useAcrylic;
+    root[JsonKey(CloseOnExitKey)] = _closeOnExit;
+    root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
     if (_scrollbarState)
     {
-        const auto scrollbarState = JsonValue::CreateStringValue(_scrollbarState.value());
-        jsonObject.Insert(SCROLLBARSTATE_KEY, scrollbarState);
+        const auto scrollbarState = winrt::to_string(_scrollbarState.value());
+        root[JsonKey(ScrollbarStateKey)] = scrollbarState;
     }
 
     if (_icon)
     {
-        const auto icon = JsonValue::CreateStringValue(_icon.value());
-        jsonObject.Insert(ICON_KEY, icon);
+        const auto icon = winrt::to_string(_icon.value());
+        root[JsonKey(IconKey)] = icon;
     }
 
-    return jsonObject;
+    if (_startingDirectory)
+    {
+        root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
+    }
+
+    if (_backgroundImage)
+    {
+        root[JsonKey(BackgroundImageKey)] = winrt::to_string(_backgroundImage.value());
+    }
+
+    if (_backgroundImageOpacity)
+    {
+        root[JsonKey(BackgroundImageOpacityKey)] = _backgroundImageOpacity.value();
+    }
+
+    if (_backgroundImageStretchMode)
+    {
+        root[JsonKey(BackgroundimageStretchModeKey)] = SerializeImageStretchMode(_backgroundImageStretchMode.value()).data();
+    }
+
+    return root;
 }
 
 // Method Description:
@@ -279,133 +301,132 @@ JsonObject Profile::ToJson() const
 // - json: an object which should be a serialization of a Profile object.
 // Return Value:
 // - a new Profile instance created from the values in `json`
-Profile Profile::FromJson(winrt::Windows::Data::Json::JsonObject json)
+Profile Profile::FromJson(const Json::Value& json)
 {
     Profile result{};
 
     // Profile-specific Settings
-    if (json.HasKey(NAME_KEY))
+    if (auto name{ json[JsonKey(NameKey)] })
     {
-        result._name = json.GetNamedString(NAME_KEY);
+        result._name = GetWstringFromJson(name);
     }
-    if (json.HasKey(GUID_KEY))
+    if (auto guid{ json[JsonKey(GuidKey)] })
     {
-        const auto guidString = json.GetNamedString(GUID_KEY);
-        // TODO: MSFT:20737698 - if this fails, display an approriate error
-        const auto guid = Utils::GuidFromString(guidString.c_str());
-        result._guid = guid;
+        result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
 
     // Core Settings
-    if (json.HasKey(FOREGROUND_KEY))
+    if (auto foreground{ json[JsonKey(ForegroundKey)] })
     {
-        const auto fgString = json.GetNamedString(FOREGROUND_KEY);
-        // TODO: MSFT:20737698 - if this fails, display an approriate error
-        const auto color = Utils::ColorFromHexString(fgString.c_str());
+        const auto color = Utils::ColorFromHexString(foreground.asString());
         result._defaultForeground = color;
     }
-    if (json.HasKey(BACKGROUND_KEY))
+    if (auto background{ json[JsonKey(BackgroundKey)] })
     {
-        const auto bgString = json.GetNamedString(BACKGROUND_KEY);
-        // TODO: MSFT:20737698 - if this fails, display an approriate error
-        const auto color = Utils::ColorFromHexString(bgString.c_str());
+        const auto color = Utils::ColorFromHexString(background.asString());
         result._defaultBackground = color;
     }
-    if (json.HasKey(COLORSCHEME_KEY))
+    if (auto colorScheme{ json[JsonKey(ColorSchemeKey)] })
     {
-        result._schemeName = json.GetNamedString(COLORSCHEME_KEY);
+        result._schemeName = GetWstringFromJson(colorScheme);
     }
-    else
+    else if (auto colorScheme{ json[JsonKey(ColorSchemeKeyOld)] })
     {
-        if (json.HasKey(COLORTABLE_KEY))
+        // TODO:GH#1069 deprecate old settings key
+        result._schemeName = GetWstringFromJson(colorScheme);
+    }
+    else if (auto colortable{ json[JsonKey(ColorTableKey)] })
+    {
+        int i = 0;
+        for (const auto& tableEntry : colortable)
         {
-            const auto table = json.GetNamedArray(COLORTABLE_KEY);
-            int i = 0;
-            for (auto v : table)
+            if (tableEntry.isString())
             {
-                if (v.ValueType() == JsonValueType::String)
-                {
-                    const auto str = v.GetString();
-                    // TODO: MSFT:20737698 - if this fails, display an approriate error
-                    const auto color = Utils::ColorFromHexString(str.c_str());
-                    result._colorTable[i] = color;
-                }
-                i++;
+                const auto color = Utils::ColorFromHexString(tableEntry.asString());
+                result._colorTable[i] = color;
             }
+            i++;
         }
     }
-    if (json.HasKey(HISTORYSIZE_KEY))
+    if (auto historySize{ json[JsonKey(HistorySizeKey)] })
     {
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        result._historySize = static_cast<int32_t>(json.GetNamedNumber(HISTORYSIZE_KEY));
+        result._historySize = historySize.asInt();
     }
-    if (json.HasKey(SNAPONINPUT_KEY))
+    if (auto snapOnInput{ json[JsonKey(SnapOnInputKey)] })
     {
-        result._snapOnInput = json.GetNamedBoolean(SNAPONINPUT_KEY);
+        result._snapOnInput = snapOnInput.asBool();
     }
-    if (json.HasKey(CURSORCOLOR_KEY))
+    if (auto cursorColor{ json[JsonKey(CursorColorKey)] })
     {
-        const auto cursorString = json.GetNamedString(CURSORCOLOR_KEY);
-        // TODO: MSFT:20737698 - if this fails, display an approriate error
-        const auto color = Utils::ColorFromHexString(cursorString.c_str());
+        const auto color = Utils::ColorFromHexString(cursorColor.asString());
         result._cursorColor = color;
     }
-    if (json.HasKey(CURSORHEIGHT_KEY))
+    if (auto cursorHeight{ json[JsonKey(CursorHeightKey)] })
     {
-        result._cursorHeight = static_cast<uint32_t>(json.GetNamedNumber(CURSORHEIGHT_KEY));
+        result._cursorHeight = cursorHeight.asUInt();
     }
-    if (json.HasKey(CURSORSHAPE_KEY))
+    if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
     {
-        const auto shapeString = json.GetNamedString(CURSORSHAPE_KEY);
-        result._cursorShape = _ParseCursorShape(shapeString.c_str());
+        result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
 
     // Control Settings
-    if (json.HasKey(COMMANDLINE_KEY))
+    if (auto commandline{ json[JsonKey(CommandlineKey)] })
     {
-        result._commandline = json.GetNamedString(COMMANDLINE_KEY);
+        result._commandline = GetWstringFromJson(commandline);
     }
-    if (json.HasKey(FONTFACE_KEY))
+    if (auto fontFace{ json[JsonKey(FontFaceKey)] })
     {
-        result._fontFace = json.GetNamedString(FONTFACE_KEY);
+        result._fontFace = GetWstringFromJson(fontFace);
     }
-    if (json.HasKey(FONTSIZE_KEY))
+    if (auto fontSize{ json[JsonKey(FontSizeKey)] })
     {
-        result._fontSize = static_cast<int32_t>(json.GetNamedNumber(FONTSIZE_KEY));
+        result._fontSize = fontSize.asInt();
     }
-    if (json.HasKey(ACRYLICTRANSPARENCY_KEY))
+    if (auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] })
     {
-        result._acrylicTransparency = json.GetNamedNumber(ACRYLICTRANSPARENCY_KEY);
+        result._acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (json.HasKey(USEACRYLIC_KEY))
+    if (auto useAcrylic{ json[JsonKey(UseAcrylicKey)] })
     {
-        result._useAcrylic = json.GetNamedBoolean(USEACRYLIC_KEY);
+        result._useAcrylic = useAcrylic.asBool();
     }
-    if (json.HasKey(CLOSEONEXIT_KEY))
+    if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
     {
-        result._closeOnExit = json.GetNamedBoolean(CLOSEONEXIT_KEY);
+        result._closeOnExit = closeOnExit.asBool();
     }
-    if (json.HasKey(PADDING_KEY))
+    if (auto padding{ json[JsonKey(PaddingKey)] })
     {
-        result._padding = json.GetNamedString(PADDING_KEY);
+        result._padding = GetWstringFromJson(padding);
     }
-    if (json.HasKey(SCROLLBARSTATE_KEY))
+    if (auto scrollbarState{ json[JsonKey(ScrollbarStateKey)] })
     {
-        result._scrollbarState = json.GetNamedString(SCROLLBARSTATE_KEY);
+        result._scrollbarState = GetWstringFromJson(scrollbarState);
     }
-    if (json.HasKey(STARTINGDIRECTORY_KEY))
+    if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
     {
-        result._startingDirectory = json.GetNamedString(STARTINGDIRECTORY_KEY);
+        result._startingDirectory = GetWstringFromJson(startingDirectory);
     }
-    if (json.HasKey(ICON_KEY))
+    if (auto icon{ json[JsonKey(IconKey)] })
     {
-        result._icon = json.GetNamedString(ICON_KEY);
+        result._icon = GetWstringFromJson(icon);
+    }
+    if (auto backgroundImage{ json[JsonKey(BackgroundImageKey)] })
+    {
+        result._backgroundImage = GetWstringFromJson(backgroundImage);
+    }
+    if (auto backgroundImageOpacity{ json[JsonKey(BackgroundImageOpacityKey)] })
+    {
+        result._backgroundImageOpacity = backgroundImageOpacity.asFloat();
+    }
+    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundimageStretchModeKey)] })
+    {
+        result._backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
     }
 
     return result;
 }
-
-
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
 {
@@ -455,6 +476,15 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 bool Profile::HasIcon() const noexcept
 {
     return _icon.has_value();
+}
+
+// Method Description:
+// - Sets this profile's icon path.
+// Arguments:
+// - path: the path
+void Profile::SetIconPath(std::wstring_view path) noexcept
+{
+    _icon.emplace(path);
 }
 
 // Method Description:
@@ -523,18 +553,67 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 // - The corresponding enum value which maps to the string provided by the user
 ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 {
-    if (scrollbarState == ALWAYS_VISIBLE)
+    if (scrollbarState == AlwaysVisible)
     {
         return ScrollbarState::Visible;
     }
-    else if (scrollbarState == ALWAYS_HIDE)
+    else if (scrollbarState == AlwaysHide)
     {
         return ScrollbarState::Hidden;
     }
     else
     {
-        // default behavior for invalid data
         return ScrollbarState::Visible;
+    }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified image stretch mode
+//   to the appropriate enum value
+// Arguments:
+// - The value from the profiles.json file
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
+{
+    if (imageStretchMode == ImageStretchModeNone)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::None;
+    }
+    else if (imageStretchMode == ImageStretchModeFill)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::Fill;
+    }
+    else if (imageStretchMode == ImageStretchModeUniform)
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::Uniform;
+    }
+    else // Fall through to default behavior
+    {
+        return winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill;
+    }
+}
+
+// Method Description:
+// - Helper function for converting an ImageStretchMode to the
+//   correct string value.
+// Arguments:
+// - imageStretchMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given ImageStretchMode
+std::string_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
+{
+    switch (imageStretchMode)
+    {
+    case winrt::Windows::UI::Xaml::Media::Stretch::None:
+        return ImageStretchModeNone;
+    case winrt::Windows::UI::Xaml::Media::Stretch::Fill:
+        return ImageStretchModeFill;
+    case winrt::Windows::UI::Xaml::Media::Stretch::Uniform:
+        return ImageStretchModeUniform;
+    default:
+    case winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill:
+        return ImageStretchModeUniformTofill;
     }
 }
 
@@ -547,23 +626,23 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The corresponding enum value which maps to the string provided by the user
 CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
 {
-    if (cursorShapeString == CURSORSHAPE_VINTAGE)
+    if (cursorShapeString == CursorShapeVintage)
     {
         return CursorStyle::Vintage;
     }
-    else if (cursorShapeString == CURSORSHAPE_BAR)
+    else if (cursorShapeString == CursorShapeBar)
     {
         return CursorStyle::Bar;
     }
-    else if (cursorShapeString == CURSORSHAPE_UNDERSCORE)
+    else if (cursorShapeString == CursorShapeUnderscore)
     {
         return CursorStyle::Underscore;
     }
-    else if (cursorShapeString == CURSORSHAPE_FILLEDBOX)
+    else if (cursorShapeString == CursorShapeFilledbox)
     {
         return CursorStyle::FilledBox;
     }
-    else if (cursorShapeString == CURSORSHAPE_EMPTYBOX)
+    else if (cursorShapeString == CursorShapeEmptybox)
     {
         return CursorStyle::EmptyBox;
     }
@@ -572,26 +651,26 @@ CursorStyle Profile::_ParseCursorShape(const std::wstring& cursorShapeString)
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to it's corresponding string
+// - Helper function for converting a CursorStyle to its corresponding string
 //   value.
 // Arguments:
 // - cursorShape: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given CursorStyle
-std::wstring Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
+std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {
         case CursorStyle::Underscore:
-            return CURSORSHAPE_UNDERSCORE;
+            return CursorShapeUnderscore;
         case CursorStyle::FilledBox:
-            return CURSORSHAPE_FILLEDBOX;
+            return CursorShapeFilledbox;
         case CursorStyle::EmptyBox:
-            return CURSORSHAPE_EMPTYBOX;
+            return CursorShapeEmptybox;
         case CursorStyle::Vintage:
-            return CURSORSHAPE_VINTAGE;
+            return CursorShapeVintage;
         default:
         case CursorStyle::Bar:
-            return CURSORSHAPE_BAR;
+            return CursorShapeBar;
     }
 }

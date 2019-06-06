@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
+#include "Utils.h"
 
 using namespace TerminalApp;
 using namespace ::Microsoft::Console;
@@ -12,28 +13,28 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace winrt::Windows::Data::Json;
 
-static const std::wstring NAME_KEY{ L"name" };
-static const std::wstring TABLE_KEY{ L"colors" };
-static const std::wstring FOREGROUND_KEY{ L"foreground" };
-static const std::wstring BACKGROUND_KEY{ L"background" };
-static const std::array<std::wstring, 16> TABLE_COLORS =
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view TableKey{ "colors" };
+static constexpr std::string_view ForegroundKey{ "foreground" };
+static constexpr std::string_view BackgroundKey{ "background" };
+static constexpr std::array<std::string_view, 16> TableColors =
 {
-    L"black",
-    L"red",
-    L"green",
-    L"yellow",
-    L"blue",
-    L"purple",
-    L"cyan",
-    L"white",
-    L"brightBlack",
-    L"brightRed",
-    L"brightGreen",
-    L"brightYellow",
-    L"brightBlue",
-    L"brightPurple",
-    L"brightCyan",
-    L"brightWhite"
+    "black",
+    "red",
+    "green",
+    "yellow",
+    "blue",
+    "purple",
+    "cyan",
+    "white",
+    "brightBlack",
+    "brightRed",
+    "brightGreen",
+    "brightYellow",
+    "brightBlue",
+    "brightPurple",
+    "brightCyan",
+    "brightWhite"
 };
 
 ColorScheme::ColorScheme() :
@@ -83,29 +84,22 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject ColorScheme::ToJson() const
+Json::Value ColorScheme::ToJson() const
 {
-    winrt::Windows::Data::Json::JsonObject jsonObject;
+    Json::Value root;
+    root[JsonKey(NameKey)] = winrt::to_string(_schemeName);
+    root[JsonKey(ForegroundKey)] = Utils::ColorToHexString(_defaultForeground);
+    root[JsonKey(BackgroundKey)] = Utils::ColorToHexString(_defaultBackground);
 
-    auto fg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultForeground));
-    auto bg = JsonValue::CreateStringValue(Utils::ColorToHexString(_defaultBackground));
-    auto name = JsonValue::CreateStringValue(_schemeName);
-
-    jsonObject.Insert(NAME_KEY, name);
-    jsonObject.Insert(FOREGROUND_KEY, fg);
-    jsonObject.Insert(BACKGROUND_KEY, bg);
- 
     int i = 0;
-    for (const auto& current : TABLE_COLORS)
+    for (const auto& colorName : TableColors)
     {
-        auto& color = _table.at(i);
-        auto s = JsonValue::CreateStringValue(Utils::ColorToHexString(color));
-
-        jsonObject.Insert(current, s);
+        auto& colorValue = _table.at(i);
+        root[JsonKey(colorName)] = Utils::ColorToHexString(colorValue);
         i++;
     }
 
-    return jsonObject;
+    return root;
 }
 
 // Method Description:
@@ -114,39 +108,35 @@ JsonObject ColorScheme::ToJson() const
 // - json: an object which should be a serialization of a ColorScheme object.
 // Return Value:
 // - a new ColorScheme instance created from the values in `json`
-ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
+ColorScheme ColorScheme::FromJson(const Json::Value& json)
 {
     ColorScheme result{};
 
-    if (json.HasKey(NAME_KEY))
+    if (auto name{ json[JsonKey(NameKey)] })
     {
-        result._schemeName = json.GetNamedString(NAME_KEY);
+        result._schemeName = winrt::to_hstring(name.asString());
     }
-    if (json.HasKey(FOREGROUND_KEY))
+    if (auto fgString{ json[JsonKey(ForegroundKey)] })
     {
-        const auto fgString = json.GetNamedString(FOREGROUND_KEY);
-        const auto color = Utils::ColorFromHexString(fgString.c_str());
+        const auto color = Utils::ColorFromHexString(fgString.asString());
         result._defaultForeground = color;
     }
-    if (json.HasKey(BACKGROUND_KEY))
+    if (auto bgString{ json[JsonKey(BackgroundKey)] })
     {
-        const auto bgString = json.GetNamedString(BACKGROUND_KEY);
-        const auto color = Utils::ColorFromHexString(bgString.c_str());
+        const auto color = Utils::ColorFromHexString(bgString.asString());
         result._defaultBackground = color;
     }
 
     // Legacy Deserialization. Leave in place to allow forward compatibility
-    if (json.HasKey(TABLE_KEY))
+    if (auto table{ json[JsonKey(TableKey)] })
     {
-        const auto table = json.GetNamedArray(TABLE_KEY);
         int i = 0;
 
-        for (auto v : table)
+        for (const auto& tableEntry : table)
         {
-            if (v.ValueType() == JsonValueType::String)
+            if (tableEntry.isString())
             {
-                auto str = v.GetString();
-                auto color = Utils::ColorFromHexString(str.c_str());
+                auto color = Utils::ColorFromHexString(tableEntry.asString());
                 result._table.at(i) = color;
             }
             i++;
@@ -154,12 +144,11 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
     }
 
     int i = 0;
-    for (const auto& current : TABLE_COLORS)
+    for (const auto& current : TableColors)
     {
-        if (json.HasKey(current))
+        if (auto str{ json[JsonKey(current)] })
         {
-            const auto str = json.GetNamedString(current);
-            const auto color = Utils::ColorFromHexString(str.c_str());
+            const auto color = Utils::ColorFromHexString(str.asString());
             result._table.at(i) = color;
         }
         i++;
@@ -167,6 +156,7 @@ ColorScheme ColorScheme::FromJson(winrt::Windows::Data::Json::JsonObject json)
 
     return result;
 }
+
 
 std::wstring_view ColorScheme::GetName() const noexcept
 {

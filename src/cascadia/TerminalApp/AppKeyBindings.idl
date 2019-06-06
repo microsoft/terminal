@@ -64,6 +64,7 @@ namespace TerminalApp
         AppKeyBindings();
 
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+        Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
 
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;

@@ -107,6 +107,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL MoveToBottom() const = 0;
 
         virtual BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
+        virtual BOOL PrivateSetDefaultForeground(const COLORREF value) const = 0;
+        virtual BOOL PrivateSetDefaultBackground(const COLORREF value) const = 0;
 
     };
 }

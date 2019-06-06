@@ -32,7 +32,6 @@ public:
     [[nodiscard]]
     HRESULT ParseCommandline();
 
-    bool IsUsingVtPipe() const;
     bool HasVtHandles() const;
     bool InConptyMode() const noexcept;
     bool IsHeadless() const;
@@ -55,19 +54,19 @@ public:
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
-    static const std::wstring VT_MODE_ARG;
-    static const std::wstring HEADLESS_ARG;
-    static const std::wstring SERVER_HANDLE_ARG;
-    static const std::wstring SIGNAL_HANDLE_ARG;
-    static const std::wstring HANDLE_PREFIX;
-    static const std::wstring CLIENT_COMMANDLINE_ARG;
-    static const std::wstring FORCE_V1_ARG;
-    static const std::wstring FILEPATH_LEADER_PREFIX;
-    static const std::wstring WIDTH_ARG;
-    static const std::wstring HEIGHT_ARG;
-    static const std::wstring INHERIT_CURSOR_ARG;
-    static const std::wstring FEATURE_ARG;
-    static const std::wstring FEATURE_PTY_ARG;
+    static const std::wstring_view VT_MODE_ARG;
+    static const std::wstring_view HEADLESS_ARG;
+    static const std::wstring_view SERVER_HANDLE_ARG;
+    static const std::wstring_view SIGNAL_HANDLE_ARG;
+    static const std::wstring_view HANDLE_PREFIX;
+    static const std::wstring_view CLIENT_COMMANDLINE_ARG;
+    static const std::wstring_view FORCE_V1_ARG;
+    static const std::wstring_view FILEPATH_LEADER_PREFIX;
+    static const std::wstring_view WIDTH_ARG;
+    static const std::wstring_view HEIGHT_ARG;
+    static const std::wstring_view INHERIT_CURSOR_ARG;
+    static const std::wstring_view FEATURE_ARG;
+    static const std::wstring_view FEATURE_PTY_ARG;
 
 private:
 #ifdef UNIT_TESTING

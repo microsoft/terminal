@@ -152,7 +152,7 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
-    ServiceLocator::LocateGlobals().hInstance = hInstance;
+    Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
 

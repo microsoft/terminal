@@ -32,7 +32,7 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
     _fCoInitialized = TRUE;
 
-    hr = _spITfThreadMgr.CoCreateInstance(CLSID_TF_ThreadMgr);
+    hr = ::CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&_spITfThreadMgr));
     Init_CheckResult();
 
     hr = _spITfThreadMgr->Activate(&_tid);
@@ -52,17 +52,20 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
 
     // Set the context owner before attaching the context to the doc.
-    CComQIPtr<ITfSource> spSrcIC(_spITfInputContext);
+    wil::com_ptr_nothrow<ITfSource> spSrcIC;
+    hr = _spITfInputContext.query_to(&spSrcIC);
+    Init_CheckResult();
+
     hr = spSrcIC->AdviseSink(IID_ITfContextOwner, static_cast<ITfContextOwner*>(this), &_dwContextOwnerCookie);
     Init_CheckResult();
 
-    hr = _spITfDocumentMgr->Push(_spITfInputContext);
+    hr = _spITfDocumentMgr->Push(_spITfInputContext.get());
     Init_CheckResult();
 
     // Collect the active keyboard layout info.
 
-    CComPtr<ITfInputProcessorProfileMgr> spITfProfilesMgr;
-    hr = spITfProfilesMgr.CoCreateInstance(CLSID_TF_InputProcessorProfiles);
+    wil::com_ptr_nothrow<ITfInputProcessorProfileMgr> spITfProfilesMgr;
+    hr = ::CoCreateInstance(CLSID_TF_InputProcessorProfiles, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&spITfProfilesMgr));
     if (SUCCEEDED(hr))
     {
         TF_INPUTPROCESSORPROFILE ipp;
@@ -76,9 +79,10 @@ HRESULT CConsoleTSF::Initialize()
     Init_CheckResult();
 
     // Setup some useful Cicero event sinks and callbacks.
-
-    CComQIPtr<ITfSource> spSrcTIM(_spITfThreadMgr);
-    CComQIPtr<ITfSourceSingle> spSrcICS(_spITfInputContext);
+    // _spITfThreadMgr && _spITfInputContext must be non-null for checks above to have succeeded, so
+    // we're not going to check them again here. try_query will A/V if they're null.
+    wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
+    wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
 
     hr = (spSrcTIM && spSrcIC && spSrcICS) ? S_OK : E_FAIL;
     Init_CheckResult();
@@ -117,39 +121,49 @@ void CConsoleTSF::Uninitialize()
     }
 
     // Detach Cicero event sinks.
-    CComQIPtr<ITfSourceSingle> spSrcICS(_spITfInputContext);
-    if (spSrcICS)
+    if (_spITfInputContext)
     {
-        spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
+        if (spSrcICS)
+        {
+            spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        }
     }
 
     // Associate the document\context with the console window.
 
-    CComQIPtr<ITfSource> spSrcTIM(_spITfThreadMgr);
-    if (spSrcTIM)
+    if (_spITfThreadMgr)
     {
-        if (_dwUIElementSinkCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
+        if (spSrcTIM)
         {
-            spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
-        }
-        if (_dwActivationSinkCookie)
-        {
-            spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            if (_dwUIElementSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
+            }
+            if (_dwActivationSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            }
         }
     }
+
     _dwUIElementSinkCookie = 0;
     _dwActivationSinkCookie = 0;
 
-    CComQIPtr<ITfSource> spSrcIC(_spITfInputContext);
-    if (spSrcIC)
+    if (_spITfInputContext)
     {
-        if (_dwContextOwnerCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcIC(_spITfInputContext.try_query<ITfSource>());
+        if (spSrcIC)
         {
-            spSrcIC->UnadviseSink(_dwContextOwnerCookie);
-        }
-        if (_dwTextEditSinkCookie)
-        {
-            spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            if (_dwContextOwnerCookie)
+            {
+                spSrcIC->UnadviseSink(_dwContextOwnerCookie);
+            }
+            if (_dwTextEditSinkCookie)
+            {
+                spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            }
         }
     }
     _dwContextOwnerCookie = 0;
@@ -159,7 +173,7 @@ void CConsoleTSF::Uninitialize()
 
     if (_spITfThreadMgr && _spITfDocumentMgr)
     {
-        CComPtr<ITfDocumentMgr> spDocMgr;
+        wil::com_ptr_nothrow<ITfDocumentMgr> spDocMgr;
         _spITfThreadMgr->AssociateFocus(_hwndConsole, NULL, &spDocMgr);
     }
 
@@ -170,15 +184,15 @@ void CConsoleTSF::Uninitialize()
         _spITfDocumentMgr->Pop(TF_POPF_ALL);
     }
 
-    _spITfInputContext.Release();
-    _spITfDocumentMgr.Release();
+    _spITfInputContext.reset();
+    _spITfDocumentMgr.reset();
 
     // Deactivate per-thread Cicero and uninitialize COM.
 
     if (_spITfThreadMgr)
     {
         _spITfThreadMgr->Deactivate();
-        _spITfThreadMgr.Release();
+        _spITfThreadMgr.reset();
     }
     if (_fCoInitialized)
     {
@@ -268,24 +282,22 @@ STDMETHODIMP CConsoleTSF::OnCleanupContext(TfEditCookie ecWrite, ITfContext* pic
     //
     // Remove GUID_PROP_COMPOSING
     //
-    CComPtr<ITfProperty> prop;
+    wil::com_ptr_nothrow<ITfProperty> prop;
     if (SUCCEEDED(pic->GetProperty(GUID_PROP_COMPOSING, &prop)))
     {
-        CComPtr<IEnumTfRanges> enumranges;
-        CComPtr<ITfRange> rangeFull;
-        if (SUCCEEDED(prop->EnumRanges(ecWrite, &enumranges, rangeFull)))
+        wil::com_ptr_nothrow<IEnumTfRanges> enumranges;
+        if (SUCCEEDED(prop->EnumRanges(ecWrite, &enumranges, nullptr)))
         {
-            CComPtr<ITfRange> rangeTmp;
+            wil::com_ptr_nothrow<ITfRange> rangeTmp;
             while (enumranges->Next(1, &rangeTmp, NULL) == S_OK)
             {
                 VARIANT var;
                 VariantInit(&var);
-                prop->GetValue(ecWrite, rangeTmp, &var);
+                prop->GetValue(ecWrite, rangeTmp.get(), &var);
                 if ((var.vt == VT_I4) && (var.lVal != 0))
                 {
-                    prop->Clear(ecWrite, rangeTmp);
+                    prop->Clear(ecWrite, rangeTmp.get());
                 }
-                rangeTmp.Release();
             }
         }
     }
@@ -447,8 +459,8 @@ STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
     // Associate the document\context with the console window.
     if (!fHadConvArea)
     {
-        CComPtr<ITfDocumentMgr> spPrevDocMgr;
-        _spITfThreadMgr->AssociateFocus(_hwndConsole, _pConversionArea ? _spITfDocumentMgr : NULL, &spPrevDocMgr);
+        wil::com_ptr_nothrow<ITfDocumentMgr> spPrevDocMgr;
+        _spITfThreadMgr->AssociateFocus(_hwndConsole, _pConversionArea ? _spITfDocumentMgr.get() : NULL, &spPrevDocMgr);
     }
 
     return _pConversionArea;

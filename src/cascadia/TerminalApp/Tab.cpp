@@ -20,7 +20,7 @@ Tab::~Tab()
 {
     // When we're destructed, winrt will automatically decrement the refcount
     // of our terminalcontrol.
-    // Assuming that refcount hits 0, it'll destruct it on it's own, including
+    // Assuming that refcount hits 0, it'll destruct it on its own, including
     //      calling Close on the terminal and connection.
 }
 
@@ -87,6 +87,6 @@ void Tab::Scroll(int delta)
 {
     _control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
         const auto currentOffset = _control.GetScrollOffset();
-        _control.ScrollViewport(currentOffset + delta);
+        _control.KeyboardScrollViewport(currentOffset + delta);
     });
 }

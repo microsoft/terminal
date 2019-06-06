@@ -44,6 +44,8 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 
 ATOM Window::s_atomWindowClass = 0;
 Window* Window::s_Instance = nullptr;
@@ -239,133 +241,129 @@ NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
 
     if (NT_SUCCESS(status))
     {
-        if (NT_SUCCESS(status))
+        SCREEN_INFORMATION& siAttached = GetScreenInfo();
+
+        siAttached.RefreshFontWithRenderer();
+
+        // Save reference to settings
+        _pSettings = pSettings;
+
+        // Figure out coordinates and how big to make the window from the desired client viewport size
+        // Put left, top, right and bottom into rectProposed for checking against monitor screens below
+        RECT rectProposed = { pSettings->GetWindowOrigin().X, pSettings->GetWindowOrigin().Y, 0, 0 };
+        _CalculateWindowRect(pSettings->GetWindowSize(), &rectProposed); //returns with rectangle filled out
+
+        if (!WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION))
         {
-            SCREEN_INFORMATION& siAttached = GetScreenInfo();
-
-            siAttached.RefreshFontWithRenderer();
-
-            // Save reference to settings
-            _pSettings = pSettings;
-
-            // Figure out coordinates and how big to make the window from the desired client viewport size
-            // Put left, top, right and bottom into rectProposed for checking against monitor screens below
-            RECT rectProposed = { pSettings->GetWindowOrigin().X, pSettings->GetWindowOrigin().Y, 0, 0 };
-            _CalculateWindowRect(pSettings->GetWindowSize(), &rectProposed); //returns with rectangle filled out
-
-            if (!WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION))
+            //if launched from a shortcut, ensure window is visible on screen
+            if (pSettings->IsStartupTitleIsLinkNameSet())
             {
-                //if launched from a shortcut, ensure window is visible on screen
-                if (pSettings->IsStartupTitleIsLinkNameSet())
+                // if window would be fully OFFscreen, change position so it is ON screen.
+                // This doesn't change the actual coordinates
+                // stored in the link, just the starting position
+                // of the window.
+                // When the user reconnects the other monitor, the
+                // window will be where he left it. Great for take
+                // home laptop scenario.
+                if (!MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONULL))
                 {
-                    // if window would be fully OFFscreen, change position so it is ON screen.
-                    // This doesn't change the actual coordinates
-                    // stored in the link, just the starting position
-                    // of the window.
-                    // When the user reconnects the other monitor, the
-                    // window will be where he left it. Great for take
-                    // home laptop scenario.
-                    if (!MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONULL))
-                    {
-                        //Monitor we'll move to
-                        HMONITOR hMon = MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONEAREST);
-                        MONITORINFO mi = { 0 };
+                    //Monitor we'll move to
+                    HMONITOR hMon = MonitorFromRect(&rectProposed, MONITOR_DEFAULTTONEAREST);
+                    MONITORINFO mi = { 0 };
 
-                        //get origin of monitor's workarea
-                        mi.cbSize = sizeof(MONITORINFO);
-                        GetMonitorInfo(hMon, &mi);
+                    //get origin of monitor's workarea
+                    mi.cbSize = sizeof(MONITORINFO);
+                    GetMonitorInfo(hMon, &mi);
 
-                        //Adjust right and bottom to new positions, relative to monitor workarea's origin
-                        //Need to do this before adjusting left/top so RECT_* calculations are correct
-                        rectProposed.right = mi.rcWork.left + RECT_WIDTH(&rectProposed);
-                        rectProposed.bottom = mi.rcWork.top + RECT_HEIGHT(&rectProposed);
+                    //Adjust right and bottom to new positions, relative to monitor workarea's origin
+                    //Need to do this before adjusting left/top so RECT_* calculations are correct
+                    rectProposed.right = mi.rcWork.left + RECT_WIDTH(&rectProposed);
+                    rectProposed.bottom = mi.rcWork.top + RECT_HEIGHT(&rectProposed);
 
-                        // Move origin to top left of nearest
-                        // monitor's WORKAREA (accounting for taskbar
-                        // and any app toolbars)
-                        rectProposed.left = mi.rcWork.left;
-                        rectProposed.top = mi.rcWork.top;
-                    }
+                    // Move origin to top left of nearest
+                    // monitor's WORKAREA (accounting for taskbar
+                    // and any app toolbars)
+                    rectProposed.left = mi.rcWork.left;
+                    rectProposed.top = mi.rcWork.top;
                 }
             }
+        }
 
-            // Attempt to create window
-            HWND hWnd = CreateWindowExW(
-                CONSOLE_WINDOW_EX_FLAGS,
-                CONSOLE_WINDOW_CLASS,
-                gci.GetTitle().c_str(),
-                CONSOLE_WINDOW_FLAGS,
-                WI_IsFlagSet(gci.Flags,
-                             CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
-                rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
-                RECT_WIDTH(&rectProposed),
-                RECT_HEIGHT(&rectProposed),
-                HWND_DESKTOP,
-                nullptr,
-                nullptr,
-                this // handle to this window class, passed to WM_CREATE to help dispatching to this instance
-                );
+        // Attempt to create window
+        HWND hWnd = CreateWindowExW(
+            CONSOLE_WINDOW_EX_FLAGS,
+            CONSOLE_WINDOW_CLASS,
+            gci.GetTitle().c_str(),
+            CONSOLE_WINDOW_FLAGS,
+            WI_IsFlagSet(gci.Flags, CONSOLE_AUTO_POSITION) ? CW_USEDEFAULT : rectProposed.left,
+            rectProposed.top, // field is ignored if CW_USEDEFAULT was chosen above
+            RECT_WIDTH(&rectProposed),
+            RECT_HEIGHT(&rectProposed),
+            HWND_DESKTOP,
+            nullptr,
+            nullptr,
+            this // handle to this window class, passed to WM_CREATE to help dispatching to this instance
+            );
 
-            if (hWnd == nullptr)
+        if (hWnd == nullptr)
+        {
+            DWORD const gle = GetLastError();
+            RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
+            status = NTSTATUS_FROM_WIN32(gle);
+        }
+
+        if (NT_SUCCESS(status))
+        {
+            _hWnd = hWnd;
+
+            if (useDx)
             {
-                DWORD const gle = GetLastError();
-                RIPMSG1(RIP_WARNING, "CreateWindow failed with gle = 0x%x", gle);
-                status = NTSTATUS_FROM_WIN32(gle);
+                status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+
+                if (NT_SUCCESS(status))
+                {
+                    status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                }
+            }
+            else
+            {
+                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
             }
 
             if (NT_SUCCESS(status))
             {
-                _hWnd = hWnd;
+                // Set alpha on window if requested
+                ApplyWindowOpacity();
 
-                if (useDx)
-                {
-                    status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
-
-                    if (NT_SUCCESS(status))
-                    {
-                        status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
-                    }
-                }
-                else
-                {
-                    status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
-                }
+                status = Menu::CreateInstance(hWnd);
 
                 if (NT_SUCCESS(status))
                 {
-                    // Set alpha on window if requested
-                    ApplyWindowOpacity();
+                    gci.ConsoleIme.RefreshAreaAttributes();
 
-                    status = Menu::CreateInstance(hWnd);
+                    // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
+                    LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
 
-                    if (NT_SUCCESS(status))
+                    // Set up the hot key for this window.
+                    if (gci.GetHotKey() != 0)
                     {
-                        gci.ConsoleIme.RefreshAreaAttributes();
-
-                        // Do WM_GETICON workaround. Must call WM_SETICON once or apps calling WM_GETICON will get null.
-                        LOG_IF_FAILED(Icon::Instance().ApplyWindowMessageWorkaround(hWnd));
-
-                        // Set up the hot key for this window.
-                        if (gci.GetHotKey() != 0)
-                        {
-                            SendMessageW(hWnd, WM_SETHOTKEY, gci.GetHotKey(), 0);
-                        }
-
-                        ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
-
-                        // Post a window size update so that the new console window will size itself correctly once it's up and
-                        // running. This works around chicken & egg cases involving window size calculations having to do with font
-                        // sizes, DPI, and non-primary monitors (see MSFT #2367234).
-                        siAttached.PostUpdateWindowSize();
-
-                        // Locate window theming modules and try to set the dark mode.
-                        try
-                        {
-                            WindowTheme theme;
-                            LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
-                        }
-                        CATCH_LOG();
+                        SendMessageW(hWnd, WM_SETHOTKEY, gci.GetHotKey(), 0);
                     }
+
+                    ServiceLocator::LocateHighDpiApi<WindowDpiApi>()->EnableChildWindowDpiMessage(_hWnd, TRUE /*fEnable*/);
+
+                    // Post a window size update so that the new console window will size itself correctly once it's up and
+                    // running. This works around chicken & egg cases involving window size calculations having to do with font
+                    // sizes, DPI, and non-primary monitors (see MSFT #2367234).
+                    siAttached.PostUpdateWindowSize();
+
+                    // Locate window theming modules and try to set the dark mode.
+                    try
+                    {
+                        WindowTheme theme;
+                        LOG_IF_FAILED(theme.TrySetDarkMode(_hWnd));
+                    }
+                    CATCH_LOG();
                 }
             }
         }
@@ -1191,6 +1189,7 @@ void Window::s_ReinitializeFontsForDPIChange()
     gci.GetActiveOutputBuffer().RefreshFontWithRenderer();
 }
 
+[[nodiscard]]
 LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                       const BOOL fAutoPos,
                                       const Window* const pWindow)
@@ -1257,6 +1256,7 @@ LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
     return Status;
 }
 
+[[nodiscard]]
 LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
 {
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;

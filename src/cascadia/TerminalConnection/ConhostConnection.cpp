@@ -11,28 +11,35 @@
 #define STARTF_USESTDHANDLES       0x00000100
 #endif
 
+#include "ConhostConnection.g.cpp"
+
 #include <conpty-universal.h>
+#include "../../types/inc/Utils.hpp"
+
+using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
-    ConhostConnection::ConhostConnection(hstring const& commandline,
-                                         hstring const& startingDirectory,
-                                        uint32_t initialRows,
-                                        uint32_t initialCols) :
-        _connected{ false },
-        _inPipe{ INVALID_HANDLE_VALUE },
-        _outPipe{ INVALID_HANDLE_VALUE },
-        _signalPipe{ INVALID_HANDLE_VALUE },
-        _outputThreadId{ 0 },
-        _hOutputThread{ INVALID_HANDLE_VALUE },
-        _piConhost{ 0 },
-        _closing{ false }
+    ConhostConnection::ConhostConnection(const hstring& commandline,
+                                         const hstring& startingDirectory,
+                                         const uint32_t initialRows,
+                                         const uint32_t initialCols,
+                                         const guid& initialGuid) :
+        _initialRows{ initialRows },
+        _initialCols{ initialCols },
+        _commandline{ commandline },
+        _startingDirectory{ startingDirectory },
+        _guid{ initialGuid }
     {
-        _commandline = commandline;
-        _startingDirectory = startingDirectory;
-        _initialRows = initialRows;
-        _initialCols = initialCols;
+        if (_guid == guid())
+        {
+            _guid = Utils::CreateGuid();
+        }
+    }
 
+    winrt::guid ConhostConnection::Guid() const noexcept
+    {
+        return _guid;
     }
 
     winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
@@ -57,27 +64,41 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Start()
     {
-        std::wstring cmdline = _commandline.c_str();
+        std::wstring cmdline{ _commandline.c_str() };
         std::optional<std::wstring> startingDirectory;
         if (!_startingDirectory.empty())
         {
             startingDirectory = _startingDirectory;
         }
 
-        CreateConPty(cmdline,
-                     startingDirectory,
-                     static_cast<short>(_initialCols),
-                     static_cast<short>(_initialRows),
-                     &_inPipe,
-                     &_outPipe,
-                     &_signalPipe,
-                     &_piConhost);
+        EnvironmentVariableMapW extraEnvVars;
+        {
+            // Convert connection Guid to string and ignore the enclosing '{}'.
+            std::wstring wsGuid{ Utils::GuidToString(_guid) };
+            wsGuid.pop_back();
+
+            const wchar_t* const pwszGuid{ wsGuid.data() + 1 };
+
+            // Ensure every connection has the unique identifier in the environment.
+            extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
+        }
+
+        THROW_IF_FAILED(
+            CreateConPty(cmdline,
+                         startingDirectory,
+                         static_cast<short>(_initialCols),
+                         static_cast<short>(_initialRows),
+                         &_inPipe,
+                         &_outPipe,
+                         &_signalPipe,
+                         &_piConhost,
+                         extraEnvVars));
 
         _connected = true;
 
         // Create our own output handling thread
-        // Each console needs to make sure to drain the output from it's backing host.
-        _outputThreadId = (DWORD)-1;
+        // Each console needs to make sure to drain the output from its backing host.
+        _outputThreadId = static_cast<DWORD>(-1);
         _hOutputThread = CreateThread(nullptr,
                                       0,
                                       StaticOutputThreadProc,

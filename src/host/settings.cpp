@@ -12,6 +12,8 @@
 #define DEFAULT_NUMBER_OF_COMMANDS 25
 #define DEFAULT_NUMBER_OF_BUFFERS 4
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 Settings::Settings() :
     _dwHotKey(0),
     _dwStartupFlags(0),
@@ -769,7 +771,7 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
     if (attributes.IsRgb())
     {
         // If the attribute doesn't have a "default" colored *ground, look up
-        //  the nearest color table value for it's *ground.
+        //  the nearest color table value for its *ground.
         const COLORREF rgbForeground = LookupForegroundColor(attributes);
         fgIndex = attributes.ForegroundIsDefault() ?
                              fgIndex :

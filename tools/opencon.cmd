@@ -16,10 +16,10 @@ set _r=%random%
 set _last_build=%OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%
 set copy_dir=OpenConsole\%_r%
 
-(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe) > nul
-(echo f | xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\conhost.exe) > nul
-(echo f | xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe) > nul
-(echo f | xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe) > nul
-(echo f | xcopy /Y %_last_build%\console.dll %TEMP%\%copy_dir%\console.dll) > nul
+(xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\OpenConsole.exe*) > nul
+(xcopy /Y %_last_build%\OpenConsole.exe %TEMP%\%copy_dir%\conhost.exe*) > nul
+(xcopy /Y %_last_build%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe*) > nul
+(xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe*) > nul
+(xcopy /Y %_last_build%\console.dll %TEMP%\%copy_dir%\console.dll*) > nul
 
 start %TEMP%\%copy_dir%\OpenConsole.exe %*

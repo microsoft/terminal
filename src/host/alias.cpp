@@ -22,6 +22,8 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 struct case_insensitive_hash
 {
     std::size_t operator()(const std::wstring& key) const
@@ -294,7 +296,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
     CATCH_RETURN();
 }
 
-// These variables define the seperator character and the length of the string.
+// These variables define the separator character and the length of the string.
 // They will be used to as the joiner between source and target strings when returning alias data in list form.
 static std::wstring aliasesSeparator(L"=");
 
@@ -325,11 +327,11 @@ HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
 
         size_t cchNeeded = 0;
 
-        // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
+        // Each of the aliases will be made up of the source, a separator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
         size_t const cchNull = 1;
         size_t cchSeperator = aliasesSeparator.size();
-        // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
+        // If we're counting how much multibyte space will be needed, trial convert the separator before we add.
         if (!countInUnicode)
         {
             cchSeperator = GetALengthFromW(codepage, aliasesSeparator);
@@ -465,7 +467,7 @@ HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
     LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    // Each of the alises will be made up of the source, a seperator, the target, then a null character.
+    // Each of the alises will be made up of the source, a separator, the target, then a null character.
     // They are of the form "Source=Target" when returned.
     size_t const cchNull = 1;
 

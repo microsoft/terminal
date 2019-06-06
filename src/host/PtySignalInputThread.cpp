@@ -20,6 +20,7 @@ struct PTY_SIGNAL_RESIZE
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
@@ -180,7 +181,7 @@ HRESULT PtySignalInputThread::Start() noexcept
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

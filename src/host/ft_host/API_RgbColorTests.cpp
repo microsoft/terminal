@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+using namespace WEX::Common;
+
 HANDLE g_hOut = INVALID_HANDLE_VALUE;
 CONSOLE_SCREEN_BUFFER_INFOEX g_sbiex_backup = { 0 };
 COORD g_cWriteSize = {16, 16};

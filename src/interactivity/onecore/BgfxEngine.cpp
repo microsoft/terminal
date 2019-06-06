@@ -17,6 +17,7 @@
 #define DEFAULT_COLOR_ATTRIBUTE (0xC)
 
 using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWidth, LONG FontWidth, LONG FontHeight)

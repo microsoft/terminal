@@ -4,10 +4,9 @@
 #include "pch.h"
 #include <argb.h>
 #include "CascadiaSettings.h"
+#include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
-#include <wil/com.h>
-#include <wil/filesystem.h>
 #include <shlobj.h>
 
 using namespace ::TerminalApp;
@@ -18,12 +17,13 @@ using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static const std::wstring FILENAME { L"profiles.json" };
-static const std::wstring SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view FILENAME { L"profiles.json" };
+static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static const std::wstring PROFILES_KEY{ L"profiles" };
-static const std::wstring KEYBINDINGS_KEY{ L"keybindings" };
-static const std::wstring SCHEMES_KEY{ L"schemes" };
+static constexpr std::string_view ProfilesKey{ "profiles" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view GlobalsKey{ "globals" };
+static constexpr std::string_view SchemesKey{ "schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -39,47 +39,45 @@ static const std::wstring SCHEMES_KEY{ L"schemes" };
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
-    std::optional<winrt::hstring> fileData = _IsPackaged() ?
-                                             _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
+    std::optional<std::string> fileData = _IsPackaged() ?
+                                          _LoadAsPackagedApp() : _LoadAsUnpackagedApp();
 
     const bool foundFile = fileData.has_value();
     if (foundFile)
     {
         const auto actualData = fileData.value();
 
-        JsonValue root{ nullptr };
-        bool parsedSuccessfully = JsonValue::TryParse(actualData, root);
-        // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-        if (parsedSuccessfully)
+        // Parse the json data.
+        Json::Value root;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+        std::string errs; // This string will recieve any error text from failing to parse.
+        // `parse` will return false if it fails.
+        if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
         {
-            JsonObject obj = root.GetObjectW();
-            resultPtr = FromJson(obj);
-
-            //  Update profile only if it has changed.
-            if (saveOnLoad)
-            {
-                const JsonObject json = resultPtr->ToJson();
-                auto serializedSettings = json.Stringify();
-
-                if (actualData != serializedSettings)
-                {
-                    resultPtr->SaveAll();
-                }
-            }
+            // TODO:GH#990 display this exception text to the user, in a
+            //      copy-pasteable way.
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
-        else
+        resultPtr = FromJson(root);
+
+        if (saveOnLoad)
         {
-            // Until 20737698 is done, throw an error, so debugging can trace
-            //      the exception here, instead of later on in unrelated code
-            THROW_HR(E_INVALIDARG);
+            // Logically compare the json we've parsed from the file to what
+            // we'd serialize at runtime. If the values are different, then
+            // write the updated schema back out.
+            const Json::Value reserialized = resultPtr->ToJson();
+            if (reserialized != root)
+            {
+                resultPtr->SaveAll();
+            }
         }
     }
     else
     {
         resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->_CreateDefaults();
+        resultPtr->CreateDefaults();
 
-        // The settings file does not exist.  Let's commit one.
+        // The settings file does not exist. Let's commit one.
         resultPtr->SaveAll();
     }
 
@@ -96,16 +94,19 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 // - <none>
 void CascadiaSettings::SaveAll() const
 {
-    const JsonObject json = ToJson();
-    auto serializedSettings = json.Stringify();
+    const auto json = ToJson();
+    Json::StreamWriterBuilder wbuilder;
+    // Use 4 spaces to indent instead of \t
+    wbuilder.settings_["indentation"] = "    ";
+    const auto serializedString = Json::writeString(wbuilder, json);
 
     if (_IsPackaged())
     {
-        _SaveAsPackagedApp(serializedSettings);
+        _SaveAsPackagedApp(serializedString);
     }
     else
     {
-        _SaveAsUnpackagedApp(serializedSettings);
+        _SaveAsUnpackagedApp(serializedString);
     }
 }
 
@@ -115,29 +116,28 @@ void CascadiaSettings::SaveAll() const
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject CascadiaSettings::ToJson() const
+Json::Value CascadiaSettings::ToJson() const
 {
-    // _globals.ToJson will initialize the settings object will all the global
-    // settings in the root of the object.
-    winrt::Windows::Data::Json::JsonObject jsonObject = _globals.ToJson();
+    Json::Value root;
 
-    JsonArray schemesArray{};
+    Json::Value profilesArray;
+    for (const auto& profile : _profiles)
+    {
+        profilesArray.append(profile.ToJson());
+    }
+
+    Json::Value schemesArray;
     const auto& colorSchemes = _globals.GetColorSchemes();
     for (auto& scheme : colorSchemes)
     {
-        schemesArray.Append(scheme.ToJson());
+        schemesArray.append(scheme.ToJson());
     }
 
-    JsonArray profilesArray{};
-    for (auto& profile : _profiles)
-    {
-        profilesArray.Append(profile.ToJson());
-    }
+    root[GlobalsKey.data()] = _globals.ToJson();
+    root[ProfilesKey.data()] = profilesArray;
+    root[SchemesKey.data()] = schemesArray;
 
-    jsonObject.Insert(PROFILES_KEY, profilesArray);
-    jsonObject.Insert(SCHEMES_KEY, schemesArray);
-
-    return jsonObject;
+    return root;
 }
 
 // Method Description:
@@ -146,11 +146,33 @@ JsonObject CascadiaSettings::ToJson() const
 // - json: an object which should be a serialization of a CascadiaSettings object.
 // Return Value:
 // - a new CascadiaSettings instance created from the values in `json`
-std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    resultPtr->_globals = GlobalAppSettings::FromJson(json);
+    if (auto globals{ json[GlobalsKey.data()] })
+    {
+        if (globals.isObject())
+        {
+            resultPtr->_globals = GlobalAppSettings::FromJson(globals);
+        }
+    }
+    else
+    {
+        // If there's no globals key in the root object, then try looking at the
+        // root object for those properties instead, to gracefully upgrade.
+        // This will attempt to do the legacy keybindings loading too
+        resultPtr->_globals = GlobalAppSettings::FromJson(json);
+
+        // If we didn't find keybindings in the legacy path, then they probably
+        // don't exist in the file. Create the default keybindings if we
+        // couldn't find any keybindings.
+        auto keybindings{ json[KeybindingsKey.data()] };
+        if (!keybindings)
+        {
+            resultPtr->_CreateDefaultKeybindings();
+        }
+    }
 
     // TODO:MSFT:20737698 - Display an error if we failed to parse settings
     // What should we do here if these keys aren't found?For default profile,
@@ -162,37 +184,29 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(JsonObject json)
     //      Or should we just recreate the default profiles?
 
     auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
-    if (json.HasKey(SCHEMES_KEY))
+    if (auto schemes{ json[SchemesKey.data()] })
     {
-        auto schemes = json.GetNamedArray(SCHEMES_KEY);
         for (auto schemeJson : schemes)
         {
-            if (schemeJson.ValueType() == JsonValueType::Object)
+            if (schemeJson.isObject())
             {
-                auto schemeObj = schemeJson.GetObjectW();
-                auto scheme = ColorScheme::FromJson(schemeObj);
+                auto scheme = ColorScheme::FromJson(schemeJson);
                 resultSchemes.emplace_back(std::move(scheme));
             }
         }
     }
 
-    if (json.HasKey(PROFILES_KEY))
+    if (auto profiles{ json[ProfilesKey.data()] })
     {
-        auto profiles = json.GetNamedArray(PROFILES_KEY);
         for (auto profileJson : profiles)
         {
-            if (profileJson.ValueType() == JsonValueType::Object)
+            if (profileJson.isObject())
             {
-                auto profileObj = profileJson.GetObjectW();
-                auto profile = Profile::FromJson(profileObj);
-                resultPtr->_profiles.emplace_back(std::move(profile));
+                auto profile = Profile::FromJson(profileJson);
+                resultPtr->_profiles.emplace_back(profile);
             }
         }
     }
-
-    // TODO:MSFT:20700157
-    // Load the keybindings from the file as well
-    resultPtr->_CreateDefaultKeybindings();
 
     return resultPtr;
 }
@@ -221,7 +235,7 @@ bool CascadiaSettings::_IsPackaged()
 // - content: the given string of content to write to the file.
 // Return Value:
 // - <none>
-void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
+void CascadiaSettings::_SaveAsPackagedApp(const std::string& content)
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -232,11 +246,13 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
     auto file = file_async.get();
 
     DataWriter dw = DataWriter();
+    const char* firstChar = content.c_str();
+    const char* lastChar = firstChar + content.size();
 
-    // DataWriter will convert UTF-16 string to UTF-8 (expected settings file encoding)
-    dw.UnicodeEncoding(UnicodeEncoding::Utf8);
-
-    dw.WriteString(content);
+    const uint8_t* firstByte = reinterpret_cast<const uint8_t*>(firstChar);
+    const uint8_t* lastByte = reinterpret_cast<const uint8_t*>(lastChar);
+    winrt::array_view<const uint8_t> bytes{ firstByte, lastByte };
+    dw.WriteBytes(bytes);
 
     FileIO::WriteBufferAsync(file, dw.DetachBuffer()).get();
 }
@@ -250,11 +266,8 @@ void CascadiaSettings::_SaveAsPackagedApp(const winrt::hstring content)
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
+void CascadiaSettings::_SaveAsUnpackagedApp(const std::string& content)
 {
-    // convert UTF-16 to UTF-8
-    auto contentString = winrt::to_string(content);
-
     // Get path to output file
     // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
     std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
@@ -264,7 +277,7 @@ void CascadiaSettings::_SaveAsUnpackagedApp(const winrt::hstring content)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut, contentString.c_str(), gsl::narrow<DWORD>(contentString.length()), 0, 0));
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, content.c_str(), gsl::narrow<DWORD>(content.length()), 0, 0));
     CloseHandle(hOut);
 }
 
@@ -306,7 +319,7 @@ std::wstring CascadiaSettings::_GetFullPathToUnpackagedSettingsFile()
 // Return Value:
 // - an optional with the content of the file if we were able to open it,
 //      otherwise the optional will be empty
-std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
+std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -320,7 +333,11 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
     const auto storageFile = file.as<StorageFile>();
 
     // settings file is UTF-8 without BOM
-    return { FileIO::ReadTextAsync(storageFile, UnicodeEncoding::Utf8).get() };
+    auto buffer = FileIO::ReadBufferAsync(storageFile).get();
+    auto bufferData = buffer.data();
+    std::vector<uint8_t> bytes{ bufferData, bufferData + buffer.Length() };
+    std::string resultString{ bytes.begin(), bytes.end() };
+    return { resultString };
 }
 
 
@@ -333,7 +350,7 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsPackagedApp()
 //      otherwise the optional will be empty.
 //   If the file exists, but we fail to read it, this can throw an exception
 //      from reading the file
-std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
+std::optional<std::string> CascadiaSettings::_LoadAsUnpackagedApp()
 {
     std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
     const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -358,15 +375,12 @@ std::optional<winrt::hstring> CascadiaSettings::_LoadAsUnpackagedApp()
     // convert buffer to UTF-8 string
     std::string utf8string(utf8buffer.get(), fileSize);
 
-    // UTF-8 to UTF-16
-    const winrt::hstring fileData = winrt::to_hstring(utf8string);
-
-    return { fileData };
+    return { utf8string };
 }
 
 // function Description:
 // - Returns the full path to the settings file, either within the application
-//   package, or in it's unpackaged location.
+//   package, or in its unpackaged location.
 // Arguments:
 // - <none>
 // Return Value:
@@ -378,7 +392,7 @@ winrt::hstring CascadiaSettings::GetSettingsPath()
 }
 
 // Function Description:
-// - Get the full path to settings file in it's packaged location.
+// - Get the full path to settings file in its packaged location.
 // Arguments:
 // - <none>
 // Return Value:

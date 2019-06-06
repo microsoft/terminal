@@ -25,7 +25,7 @@ Author:
 
 class InvalidCharInfoConversionException : public std::exception
 {
-    const char* what() noexcept
+    const char* what() const noexcept
     {
         return "Cannot convert to CHAR_INFO without explicit TextAttribute";
     }

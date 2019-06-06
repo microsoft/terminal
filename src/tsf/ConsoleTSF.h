@@ -131,7 +131,7 @@ public:
 public:
     CConversionArea* CreateConversionArea();
     CConversionArea* GetConversionArea() { return _pConversionArea; }
-    ITfContext* GetInputContext() { return _spITfInputContext; }
+    ITfContext* GetInputContext() { return _spITfInputContext.get(); }
     HWND GetConsoleHwnd() { return _hwndConsole; }
     TfClientId GetTfClientId() { return _tid; }
     BOOL IsInComposition() { return (_cCompositions > 0); }
@@ -148,10 +148,13 @@ public:
         if (!fSet && _cCompositions)
         {
             // Close (terminate) any open compositions when losing the input focus.
-            CComQIPtr<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext);
-            if (spCompositionServices)
+            if (_spITfInputContext)
             {
-                spCompositionServices->TerminateComposition(NULL);
+                wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
+                if (spCompositionServices)
+                {
+                    spCompositionServices->TerminateComposition(NULL);
+                }
             }
         }
     }
@@ -180,9 +183,9 @@ private:
 
     // Cicero stuff.
     TfClientId              _tid;
-    CComPtr<ITfThreadMgrEx> _spITfThreadMgr;
-    CComPtr<ITfDocumentMgr> _spITfDocumentMgr;
-    CComPtr<ITfContext>     _spITfInputContext;
+    wil::com_ptr_nothrow<ITfThreadMgrEx> _spITfThreadMgr;
+    wil::com_ptr_nothrow<ITfDocumentMgr> _spITfDocumentMgr;
+    wil::com_ptr_nothrow<ITfContext>     _spITfInputContext;
 
     // Event sink cookies.
     DWORD   _dwContextOwnerCookie = 0;

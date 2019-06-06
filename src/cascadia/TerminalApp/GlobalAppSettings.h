@@ -35,6 +35,7 @@ public:
     GUID GetDefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
+    void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
@@ -42,13 +43,15 @@ public:
     bool GetShowTitleInTitlebar() const noexcept;
     void SetShowTitleInTitlebar(const bool showTitleInTitlebar) noexcept;
 
+    void SetRequestedTheme(const winrt::Windows::UI::Xaml::ElementTheme requestedTheme) noexcept;
+
     bool GetShowTabsInTitlebar() const noexcept;
     void SetShowTabsInTitlebar(const bool showTabsInTitlebar) noexcept;
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
-    winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson() const;
+    static GlobalAppSettings FromJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
@@ -69,6 +72,6 @@ private:
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
-    static std::wstring _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+    static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
 };

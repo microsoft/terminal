@@ -53,7 +53,7 @@ if not defined MSBUILD (
     goto :EXIT
 )
 
-set PATH=%PATH%"%MSBUILD%\..";
+set PATH=%PATH%%MSBUILD%\..;
 
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
     set ARCH=x64

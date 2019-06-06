@@ -697,8 +697,10 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
     case OscActionCodes::SetColor:
         fSuccess = _GetOscSetColorTable(pwchOscStringBuffer, cchOscString, &tableIndex, &dwColor);
         break;
+    case OscActionCodes::SetForegroundColor:
+    case OscActionCodes::SetBackgroundColor:
     case OscActionCodes::SetCursorColor:
-        fSuccess = _GetOscSetCursorColor(pwchOscStringBuffer, cchOscString, &dwColor);
+        fSuccess = _GetOscSetColor(pwchOscStringBuffer, cchOscString, &dwColor);
         break;
     case OscActionCodes::ResetCursorColor:
         // the console uses 0xffffffff as an "invalid color" value
@@ -723,6 +725,14 @@ bool OutputStateMachineEngine::ActionOscDispatch(const wchar_t /*wch*/,
         case OscActionCodes::SetColor:
             fSuccess = _dispatch->SetColorTableEntry(tableIndex, dwColor);
             TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCCT);
+            break;
+        case OscActionCodes::SetForegroundColor:
+            fSuccess = _dispatch->SetDefaultForeground(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCFG);
+            break;
+        case OscActionCodes::SetBackgroundColor:
+            fSuccess = _dispatch->SetDefaultBackground(dwColor);
+            TermTelemetry::Instance().Log(TermTelemetry::Codes::OSCBG);
             break;
         case OscActionCodes::SetCursorColor:
             fSuccess = _dispatch->SetCursorColor(dwColor);
@@ -1162,7 +1172,7 @@ bool OutputStateMachineEngine::_VerifyDeviceAttributesParams(_In_reads_(cParams)
 // - Null terminates, then returns, the string that we've collected as part of the OSC string.
 // Arguments:
 // - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pcchTitle  - a pointer place the length of ppwchTitle into.
 // Return Value:
 // - True if there was a title to output. (a title with length=0 is still valid)
 _Success_(return)
@@ -1277,7 +1287,7 @@ bool OutputStateMachineEngine::_GetDesignateType(const wchar_t wchIntermediate, 
 // Routine Description:
 // - Returns true if the engine should dispatch on the last charater of a string
 //      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist it's state across calls to
+//   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
@@ -1302,7 +1312,7 @@ bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
 }
 
 // Routine Description:
-// - Converts a hex character to it's equivalent integer value.
+// - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.
 // - puiValue - recieves the int value of the char
@@ -1476,10 +1486,12 @@ bool OutputStateMachineEngine::s_ParseColorSpec(_In_reads_(cchBuffer) const wcha
 //          "rgb:<red>/<green>/<blue>"
 //          where <color> is two hex digits
 // Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pwchOscStringBuffer - a pointer to the Osc String to parse
+// - cchOscString - the length of the Osc String
+// - pTableIndex - a pointer that recieves the table index
+// - pRgb - a pointer that recieves the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
+// - True if a table index and color was parsed successfully. False otherwise.
 bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                                     const size_t cchOscString,
                                                     _Out_ size_t* const pTableIndex,
@@ -1548,16 +1560,17 @@ bool OutputStateMachineEngine::_GetOscSetColorTable(_In_reads_(cchOscString) con
 }
 
 // Routine Description:
-// - OSC 12 ; spec ST
+// - OSC 10, 11, 12 ; spec ST
 //      spec: a color in the following format:
 //          "rgb:<red>/<green>/<blue>"
 //          where <color> is two hex digits
 // Arguments:
-// - ppwchTitle - a pointer to point to the Osc String to use as a title.
-// - pcchTitleLength - a pointer place the length of ppwchTitle into.
+// - pwchOscStringBuffer - a pointer to the Osc String to parse
+// - cchOscString - the length of the Osc String
+// - pRgb - a pointer that recieves the color that we parsed in the format: 0x00BBGGRR
 // Return Value:
-// - True if there was a title to output. (a title with length=0 is still valid)
-bool OutputStateMachineEngine::_GetOscSetCursorColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
+// - True if a table index and color was parsed successfully. False otherwise.
+bool OutputStateMachineEngine::_GetOscSetColor(_In_reads_(cchOscString) const wchar_t* const pwchOscStringBuffer,
                                                      const size_t cchOscString,
                                                      _Out_ DWORD* const pRgb) const
 {

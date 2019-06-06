@@ -7,19 +7,19 @@
 #include <shellapi.h>
 using namespace Microsoft::Console::Utils;
 
-const std::wstring ConsoleArguments::VT_MODE_ARG = L"--vtmode";
-const std::wstring ConsoleArguments::HEADLESS_ARG = L"--headless";
-const std::wstring ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
-const std::wstring ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
-const std::wstring ConsoleArguments::HANDLE_PREFIX = L"0x";
-const std::wstring ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
-const std::wstring ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
-const std::wstring ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
-const std::wstring ConsoleArguments::WIDTH_ARG = L"--width";
-const std::wstring ConsoleArguments::HEIGHT_ARG = L"--height";
-const std::wstring ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
-const std::wstring ConsoleArguments::FEATURE_ARG = L"--feature";
-const std::wstring ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::VT_MODE_ARG = L"--vtmode";
+const std::wstring_view ConsoleArguments::HEADLESS_ARG = L"--headless";
+const std::wstring_view ConsoleArguments::SERVER_HANDLE_ARG = L"--server";
+const std::wstring_view ConsoleArguments::SIGNAL_HANDLE_ARG = L"--signal";
+const std::wstring_view ConsoleArguments::HANDLE_PREFIX = L"0x";
+const std::wstring_view ConsoleArguments::CLIENT_COMMANDLINE_ARG = L"--";
+const std::wstring_view ConsoleArguments::FORCE_V1_ARG = L"-ForceV1";
+const std::wstring_view ConsoleArguments::FILEPATH_LEADER_PREFIX = L"\\??\\";
+const std::wstring_view ConsoleArguments::WIDTH_ARG = L"--width";
+const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
+const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
+const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
+const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
 ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdIn,
@@ -86,7 +86,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 
 // Routine Description:
 //  Given the commandline of tokens `args`, tries to find the argument at
-//      index+1, and places it's value into pSetting.
+//      index+1, and places its value into pSetting.
 //  If there aren't enough args, then returns E_INVALIDARG.
 //  If we found a value, then we take the elements at both index and index+1 out
 //      of args. We'll also decrement index, so that a caller who is using index
@@ -102,7 +102,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the string at index+1
+//  pSetting: receives the string at index+1
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
@@ -132,7 +132,7 @@ HRESULT ConsoleArguments::s_GetArgumentValue(_Inout_ std::vector<std::wstring>& 
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the string at index+1
+//  pSetting: receives the string at index+1
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating
 //      failure.
@@ -157,13 +157,13 @@ HRESULT ConsoleArguments::s_HandleFeatureValue(_Inout_ std::vector<std::wstring>
 // Method Description:
 // Routine Description:
 //  Given the commandline of tokens `args`, tries to find the argument at
-//      index+1, and places it's value into pSetting. See above for examples.
+//      index+1, and places its value into pSetting. See above for examples.
 //  This implementation attempts to parse a short from the argument.
 // Arguments:
 //  args: A collection of wstrings representing command-line arguments
 //  index: the index of the argument of which to get the value for. The value
 //      should be at (index+1). index will be decremented by one on success.
-//  pSetting: recieves the short at index+1
+//  pSetting: receives the short at index+1
 // Return Value:
 //  S_OK if we parsed the short successfully, otherwise E_INVALIDARG indicating
 //      failure. This could be the case for non-numeric arguments, or for >SHORT_MAX args.
@@ -420,7 +420,7 @@ HRESULT ConsoleArguments::ParseCommandline()
         }
         // TODO: handle the rest of the possible params (MSFT:13271366, MSFT:13631640)
         // TODO: handle invalid args
-        //  eg "conhost --foo bar" should not make the clientCommandline "--foo bar"
+        //  e.g. "conhost --foo bar" should not make the clientCommandline "--foo bar"
         else
         {
             // If we encounter something that doesn't match one of our other
@@ -547,7 +547,7 @@ bool ConsoleArguments::GetInheritCursor() const
 
 // Method Description:
 // - Tell us to use a different size than the one parsed as the size of the
-//      console. This is called by the PtySignalInputThread when it recieves a
+//      console. This is called by the PtySignalInputThread when it receives a
 //      resize before the first client has connected. Because there's no client,
 //      there's also no buffer yet, so it has nothing to resize.
 //      However, we shouldn't just discard that first resize message. Instead,

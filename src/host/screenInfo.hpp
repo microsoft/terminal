@@ -48,10 +48,6 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
-
-using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::VirtualTerminal;
-
 class ConversionAreaInfo; // forward decl window. circular reference
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
@@ -188,8 +184,8 @@ public:
 
     bool IsActiveScreenBuffer() const;
 
-    const StateMachine& GetStateMachine() const;
-    StateMachine& GetStateMachine();
+    const Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() const;
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine();
 
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
@@ -255,13 +251,13 @@ public:
     void InitializeCursorRowAttributes();
 
 private:
-    SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
-                       _In_ IAccessibilityNotifier *pNotifier,
+    SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics *pMetrics,
+                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier *pNotifier,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
-    IWindowMetrics *_pConsoleWindowMetrics;
-    IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IWindowMetrics *_pConsoleWindowMetrics;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier *_pAccessibilityNotifier;
 
     [[nodiscard]]
     HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
@@ -294,7 +290,7 @@ private:
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
 
-    std::shared_ptr<StateMachine> _stateMachine;
+    std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 

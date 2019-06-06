@@ -134,7 +134,7 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 
         // only care if this TT font's name matches
         if ((0 != lstrcmp(FontInfo[i].FaceName, pwszTTFace)) && // wrong face name and
-            (pwszAltTTFace != NULL ||                           // either pwszAltTTFace is NULL or
+            (pwszAltTTFace == NULL ||                           // either pwszAltTTFace is NULL or
              (0 != lstrcmp(FontInfo[i].FaceName, pwszAltTTFace)))) // pwszAltTTFace is wrong too
         {
             // A TrueType font, but not the one we're interested in
@@ -259,7 +259,7 @@ FontDlgProc(
 
         if (g_fHostedInFileProperties || gpStateInfo->Defaults)
         {
-            FindFontAndUpdateState();
+            LOG_IF_FAILED(FindFontAndUpdateState());
         }
 
         // IMPORTANT NOTE: When the propsheet and conhost disagree on a font (e.g. user has switched charsets and forgot
@@ -685,7 +685,10 @@ FontListCreate(
     /*
      * This only enumerates face names and font sizes if necessary.
      */
-    EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT);
+    if (!NT_SUCCESS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
+    {
+        return LB_ERR;
+    }
 
     /* init the TTFaceNames */
 
@@ -978,6 +981,7 @@ Return Value:
 
 /* ----- Preview routines ----- */
 
+[[nodiscard]]
 LRESULT
 CALLBACK
 FontPreviewWndProc(

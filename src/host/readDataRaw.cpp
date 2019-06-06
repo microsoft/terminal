@@ -79,7 +79,7 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // on the same console as we're reading from.
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    FAIL_FAST_IF(!ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;

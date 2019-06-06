@@ -23,7 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.
@@ -622,7 +622,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
     //   not in screen buffer coordinates. It expects the top left to always be 0,0
-    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on it's own.)
+    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on its own.)
     // Mouse events with shift pressed will ignore this and fall through to the default handler.
     //   This is in line with PuTTY's behavior and vim's own documentation:
     //   "The xterm handling of the mouse buttons can still be used by keeping the shift key pressed." - `:help 'mouse'`, vim.

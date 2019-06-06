@@ -20,16 +20,12 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
                      bool const fHeadless,
                      bool const fUseConpty,
                      COORD const initialSize) :
-    _signalPipe(INVALID_HANDLE_VALUE),
-    _outPipe(INVALID_HANDLE_VALUE),
-    _inPipe(INVALID_HANDLE_VALUE),
-    _dwOutputThreadId(0)
+    _pfnReadCallback(pfnReadCallback),
+    _fHeadless(fHeadless),
+    _fUseConPty(fUseConpty),
+    _lastDimensions(initialSize)
 {
-    _pfnReadCallback = pfnReadCallback;
-    _fHeadless = fHeadless;
-    _fUseConPty = fUseConpty;
-    _lastDimensions = initialSize;
-
+    THROW_IF_NULL_ALLOC(pfnReadCallback);
 }
 
 void VtConsole::spawn()
@@ -145,7 +141,7 @@ void VtConsole::_spawn(const std::wstring& command)
     _connected = true;
 
     // Create our own output handling thread
-    // Each console needs to make sure to drain the output from it's backing host.
+    // Each console needs to make sure to drain the output from its backing host.
     _dwOutputThreadId = (DWORD)-1;
     _hOutputThread = CreateThread(nullptr,
                                   0,
@@ -368,7 +364,8 @@ bool VtConsole::Repaint()
 
 bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
-    if (_fUseConPty) {
+    if (_fUseConPty)
+    {
         return SUCCEEDED(ResizePseudoConsole(_hPC, {(SHORT)cols, (SHORT)rows}));
     }
     else

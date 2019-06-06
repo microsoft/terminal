@@ -12,6 +12,15 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
+using namespace Microsoft::Console;
+
+// {2bde4a90-d05f-401c-9492-e40884ead1d8}
+// uuidv5 properties: name format is UTF-16LE bytes
+static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
+{ 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -32,8 +41,8 @@ ColorScheme _CreateCampbellScheme()
                                  RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
-    Microsoft::Console::Utils::InitializeCampbellColorTable(campbellSpan);
-    Microsoft::Console::Utils::SetColorTableAlpha(campbellSpan, 0xff);
+    Utils::InitializeCampbellColorTable(campbellSpan);
+    Utils::SetColorTableAlpha(campbellSpan, 0xff);
 
     return campbellScheme;
 }
@@ -64,7 +73,7 @@ ColorScheme _CreateOneHalfDarkScheme()
     oneHalfDarkTable[13] = RGB(198, 120, 221); // magenta
     oneHalfDarkTable[14] = RGB( 86, 182, 194); // cyan
     oneHalfDarkTable[15] = RGB(220, 223, 228); // white
-    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
+    Utils::SetColorTableAlpha(oneHalfDarkSpan, 0xff);
 
     return oneHalfDarkScheme;
 }
@@ -94,7 +103,7 @@ ColorScheme _CreateOneHalfLightScheme()
     oneHalfLightTable[13] = RGB(197, 119, 221); // magenta
     oneHalfLightTable[14] = RGB( 86, 181, 193); // cyan
     oneHalfLightTable[15] = RGB(255, 255, 255); // white
-    Microsoft::Console::Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
+    Utils::SetColorTableAlpha(oneHalfLightSpan, 0xff);
 
     return oneHalfLightScheme;
 }
@@ -122,7 +131,7 @@ ColorScheme _CreateSolarizedDarkScheme()
     solarizedDarkTable[13] = RGB(108, 113, 196);
     solarizedDarkTable[14] = RGB(147, 161, 161);
     solarizedDarkTable[15] = RGB(253, 246, 227);
-    Microsoft::Console::Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
+    Utils::SetColorTableAlpha(solarizedDarkSpan, 0xff);
 
     return solarizedDarkScheme;
 }
@@ -150,7 +159,7 @@ ColorScheme _CreateSolarizedLightScheme()
     solarizedLightTable[13] = RGB(108, 113, 196);
     solarizedLightTable[14] = RGB(147, 161, 161);
     solarizedLightTable[15] = RGB(253, 246, 227);
-    Microsoft::Console::Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
+    Utils::SetColorTableAlpha(solarizedLightSpan, 0xff);
 
     return solarizedLightScheme;
 }
@@ -174,48 +183,50 @@ void CascadiaSettings::_CreateDefaultSchemes()
 
 // Method Description:
 // - Create a set of profiles to use as the "default" profiles when initializing
-//      the terminal. Currently, we create two profiles: one for cmd.exe, and
-//      one for powershell.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
+//   the terminal. Currently, we create two or three profiles:
+//    * one for cmd.exe
+//    * one for powershell.exe (inbox Windows Powershell)
+//    * if Powershell Core (pwsh.exe) is installed, we'll create another for
+//      Powershell Core.
 void CascadiaSettings::_CreateDefaultProfiles()
 {
-    Profile cmdProfile{};
+    auto cmdProfile{ _CreateDefaultProfile(L"cmd") };
     cmdProfile.SetFontFace(L"Consolas");
     cmdProfile.SetCommandline(L"cmd.exe");
     cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
-    cmdProfile.SetName(L"cmd");
 
-    Profile powershellProfile{};
-    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
-    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
-    std::wstring psCmdline = L"powershell.exe";
-    std::filesystem::path psCoreCmdline{};
-    if (_IsPowerShellCoreInstalled(L"%ProgramFiles%", psCoreCmdline))
-    {
-        psCmdline = psCoreCmdline;
-    }
-    else if (_IsPowerShellCoreInstalled(L"%ProgramFiles(x86)%", psCoreCmdline))
-    {
-        psCmdline = psCoreCmdline;
-    }
-    powershellProfile.SetFontFace(L"Courier New");
-    powershellProfile.SetCommandline(psCmdline);
+    auto powershellProfile{ _CreateDefaultProfile(L"Windows PowerShell") };
+    powershellProfile.SetCommandline(L"powershell.exe");
     powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     powershellProfile.SetColorScheme({ L"Campbell" });
-    powershellProfile.SetDefaultBackground(RGB(1, 36, 86));
+    powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
-    powershellProfile.SetName(L"PowerShell");
+
+    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
+    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
+    std::filesystem::path psCoreCmdline{};
+    if (_isPowerShellCoreInstalled(psCoreCmdline))
+    {
+        auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
+        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        pwshProfile.SetColorScheme({ L"Campbell" });
+
+        // If powershell core is installed, we'll use that as the default.
+        // Otherwise, we'll use normal Windows Powershell as the default.
+        _profiles.emplace_back(pwshProfile);
+        _globals.SetDefaultProfile(pwshProfile.GetGuid());
+    }
+    else
+    {
+        _globals.SetDefaultProfile(powershellProfile.GetGuid());
+    }
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-
-    _globals.SetDefaultProfile(powershellProfile.GetGuid());
 }
 
 // Method Description:
@@ -326,7 +337,7 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_CreateDefaults()
+void CascadiaSettings::CreateDefaults()
 {
     _CreateDefaultProfiles();
     _CreateDefaultSchemes();
@@ -416,13 +427,27 @@ GlobalAppSettings& CascadiaSettings::GlobalSettings()
 }
 
 // Function Description:
+// - Returns true if the user has installed PowerShell Core. This will check
+//   both %ProgramFiles% and %ProgramFiles(x86)%, and will return true if
+//   powershell core was installed in either location.
+// Arguments:
+// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
+// Return Value:
+// - true iff powershell core (pwsh.exe) is present.
+bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline)
+{
+    return _isPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ||
+           _isPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
+}
+
+// Function Description:
 // - Returns true if the user has installed PowerShell Core.
 // Arguments:
 // - A string that contains an environment-variable string in the form: %variableName%.
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
-// - true or false.
-bool CascadiaSettings::_IsPowerShellCoreInstalled(std::wstring_view programFileEnv, std::filesystem::path& cmdline)
+// - true iff powershell core (pwsh.exe) is present in the given path
+bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
     psCorePath /= L"PowerShell";
@@ -461,4 +486,27 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     // Trim the terminating null character
     result.resize(requiredSize-1);
     return result;
+}
+
+// Method Description:
+// - Helper function for creating a skeleton default profile with a pre-populated
+//   guid and name.
+// Arguments:
+// - name: the name of the new profile.
+// Return Value:
+// - A Profile, ready to be filled in
+Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
+{
+    auto profileGuid{ Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name))) };
+    Profile newProfile{ profileGuid };
+
+    newProfile.SetName(static_cast<std::wstring>(name));
+
+    std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
+    iconPath.append(Utils::GuidToString(profileGuid));
+    iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
+
+    newProfile.SetIconPath(iconPath);
+
+    return newProfile;
 }

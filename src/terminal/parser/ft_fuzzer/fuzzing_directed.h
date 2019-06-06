@@ -21,12 +21,14 @@
 
 #include <vector>
 #include <limits>
-#include <atlcoll.h>
 #include <assert.h>
 #include <strsafe.h>
 
+#pragma warning(disable:4505)
+#include "memallocator.h"
+
 #ifndef __FUZZING_ALLOCATOR
-#define __FUZZING_ALLOCATOR CComAllocator
+#define __FUZZING_ALLOCATOR fuzz::CFuzzCRTAllocator
 #endif
 
 namespace variadic
@@ -444,6 +446,7 @@ namespace fuzz
         // AddFuzzArrayEntry function can be used to add additional fuzz map 
         // entries without removing the existing map.  Returns E_INVALIDARG in the 
         // event that the total percentages add up to more than 100%.
+        [[nodiscard]]
         __inline HRESULT SetFuzzArrayMap(
             __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
             __in ULONG cfae) throw()
@@ -460,6 +463,7 @@ namespace fuzz
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
+        [[nodiscard]]
         HRESULT AddFuzzArrayEntry(
             __in unsigned int uiPercentage,
             __in std::function<_Type1* (_Type1*, _Type2&, _Args...)> pfnFuzz,
@@ -556,6 +560,7 @@ namespace fuzz
             return CallFuzzMapFunction(pfnFuzz, t1, t2, tup, variadic::gen_seq < sizeof...(_Args) > {});
         }
 
+        [[nodiscard]]
         HRESULT Init(
             __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
             __in ULONG cfae)
@@ -569,7 +574,7 @@ namespace fuzz
             // correctly.  The intended purpose is to catch users of this
             // codebase who have incorrectly specified fuzz maps that add up
             // to more than 100%.
-            HRESULT hr = hr = SetFuzzArrayMap(rgfae, cfae);
+            HRESULT hr = SetFuzzArrayMap(rgfae, cfae);
             if (FAILED(hr) && (m_traits & TRAIT_THROW_ON_INIT_FAILURE))
             {
                 throw CFuzzRangeException();
@@ -766,22 +771,27 @@ namespace fuzz
         // AddFuzzArrayEntry function can be used to add additional fuzz map 
         // entries without removing the existing map.  Returns E_INVALIDARG in the 
         // event that the total percentages add up to more than 100%.
+        [[nodiscard]]
         __inline HRESULT SetFuzzTypeMap(
             __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...> *rgfte,
             __in ULONG cfte) throw()
         {
             ClearFuzzTypeEntries();
-            for (ULONG i = 0; i < cfte; i++)
+
+            bool fInvalidEntry{};
+            for (ULONG i{}; i < cfte; ++i)
             {
-                AddFuzzTypeEntry(rgfte[i].uiPercentage, rgfte[i].pfnFuzz, rgfte[i].pfnDealloc);
+                // Process all entries; failure will be returned at the end.
+                fInvalidEntry |= FAILED(AddFuzzTypeEntry(rgfte[i].uiPercentage, rgfte[i].pfnFuzz, rgfte[i].pfnDealloc));
             }
 
-            return (m_iPercentageTotal >= 0) ? S_OK : E_INVALIDARG;
+            return (fInvalidEntry || (m_iPercentageTotal >= 0)) ? S_OK : E_INVALIDARG;
         }
 
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
+        [[nodiscard]]
         HRESULT AddFuzzTypeEntry(
             __in unsigned int uiPercentage,
             __in std::function<_Type(_Type, _Args...)> pfnFuzz,

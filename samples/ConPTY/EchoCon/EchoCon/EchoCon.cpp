@@ -1,5 +1,5 @@
-// EchoCon.cpp : Entry point for the EchoCon Pseudo-Consle sample application.
-// Copyright © 2018, Microsoft
+// EchoCon.cpp : Entry point for the EchoCon Pseudo-Console sample application.
+// Copyright Â© 2018, Microsoft
 
 #include "stdafx.h"
 #include <Windows.h>

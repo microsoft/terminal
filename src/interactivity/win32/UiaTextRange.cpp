@@ -15,12 +15,13 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
+using namespace Microsoft::Console::Interactivity;
 
 // toggle these for additional logging in a debug build
 //#define UIATEXTRANGE_DEBUG_MSGS 1
 #undef UIATEXTRANGE_DEBUG_MSGS
 
-IdType UiaTextRange::id = 0;
+IdType UiaTextRange::id = 1;
 
 UiaTextRange::MoveState::MoveState(const UiaTextRange& range,
                                    const MovementDirection direction) :
@@ -466,7 +467,7 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     }
     // tracing
     ApiMsgCompare apiMsg;
-    apiMsg.OtherId = other->GetId();
+    apiMsg.OtherId = other == nullptr ? InvalidId : other->GetId();
     apiMsg.Equal = !!*pRetVal;
     Tracing::s_TraceUia(this, ApiCall::Compare, &apiMsg);
 
@@ -964,7 +965,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     }
 
     ApiMsgMoveEndpointByRange apiMsg;
-    apiMsg.OriginalEnd = _start;
+    apiMsg.OriginalStart = _start;
     apiMsg.OriginalEnd = _end;
     apiMsg.Endpoint = endpoint;
     apiMsg.TargetEndpoint = targetEndpoint;
@@ -1227,8 +1228,9 @@ const Microsoft::Console::Types::Viewport& UiaTextRange::_getViewport()
 // Return Value:
 // - The current window. May return nullptr if there is no current
 // window.
-IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
+Microsoft::Console::Interactivity::IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
 {
+	using namespace Microsoft::Console::Interactivity;
     IConsoleWindow* const pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
     THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
     return pIConsoleWindow;

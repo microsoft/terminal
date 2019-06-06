@@ -1389,7 +1389,7 @@ bool AdaptDispatch::UseMainScreenBuffer()
 //Arguments:
 // - None
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::HorizontalTabSet()
 {
     return !!_conApi->PrivateHorizontalTabSet();
@@ -1403,7 +1403,7 @@ bool AdaptDispatch::HorizontalTabSet()
 //Arguments:
 // - sNumTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 {
     return !!_conApi->PrivateForwardTab(sNumTabs);
@@ -1415,7 +1415,7 @@ bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 //Arguments:
 // - sNumTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 {
     return !!_conApi->PrivateBackwardsTab(sNumTabs);
@@ -1428,7 +1428,7 @@ bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 //Arguments:
 // - sClearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::TabClear(const SHORT sClearType)
 {
     bool fSuccess = false;
@@ -1453,7 +1453,7 @@ bool AdaptDispatch::TabClear(const SHORT sClearType)
 //Arguments:
 // - wchCharset - The character indicating the charset we should switch to.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 {
     return _TermOutput.DesignateCharset(wchCharset);
@@ -1489,7 +1489,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
     bool fSuccess = CursorVisibility(true); // Cursor enabled.
@@ -1542,7 +1542,7 @@ bool AdaptDispatch::SoftReset()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
     // Clears the screen - Needs to be done in two operations.
@@ -1581,7 +1581,7 @@ bool AdaptDispatch::HardReset()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseScrollback()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -1667,7 +1667,7 @@ bool AdaptDispatch::_EraseScrollback()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseAll()
 {
     return !!_conApi->PrivateEraseAll();
@@ -1678,7 +1678,7 @@ bool AdaptDispatch::_EraseAll()
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableVT200MouseMode(fEnabled);
@@ -1686,11 +1686,11 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
@@ -1698,11 +1698,11 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
@@ -1713,7 +1713,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableButtonEventMouseMode(fEnabled);
@@ -1725,7 +1725,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableAnyEventMouseMode(fEnabled);
@@ -1737,7 +1737,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableAlternateScroll(fEnabled);
@@ -1749,7 +1749,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 //Arguments:
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     bool isPty = false;
@@ -1808,7 +1808,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
     bool isPty = false;
@@ -1827,9 +1827,8 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
 // Return Value:
-// True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
-                                       const DWORD dwColor)
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
 
     bool fSuccess = tableIndex < 256;
@@ -1838,6 +1837,56 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
         const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
         fSuccess = !! _conApi->PrivateSetColorTableEntry(realIndex, dwColor);
     }
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Sets the default foreground color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+    fSuccess = !!_conApi->PrivateSetDefaultForeground(dwColor);
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Sets the default background color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+    fSuccess = !!_conApi->PrivateSetDefaultBackground(dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -1864,7 +1913,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
 // - rgusParams - Additional parameters to pass to the function
 // - cParams - size of rgusParams
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        const size_t cParams)
