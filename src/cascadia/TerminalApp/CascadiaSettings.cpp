@@ -537,7 +537,6 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             std::getline(wlinestream, distName, L' ');
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
-            WSLDistro.SetStartingDirectory(L"~");
             WSLDistro.SetColorScheme({ L"Campbell" });
             std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
             iconPath.append(DEFAULT_LINUX_ICON_GUID);
