@@ -22,6 +22,7 @@ Author(s):
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <windowsx.h>
+#include <wil\resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -39,6 +40,9 @@ public:
     void OnAppInitialized(winrt::TerminalApp::App app) override;
 
 private:
+
+    wil::unique_hbrush _backgroundBrush;
+    wil::unique_hrgn _dragBarRegion;
 
     MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;

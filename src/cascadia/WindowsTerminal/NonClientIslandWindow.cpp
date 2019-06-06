@@ -118,15 +118,15 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         const auto dragBarRect = GetDragAreaRect();
         const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
 
-        auto nonClientRegion = CreateRectRgn(0, 0, 0, 0);
-        auto nonClientLeftRegion = CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight);
-        auto nonClientRightRegion = CreateRectRgn(dragBarRect.right, 0, windowsWidth, nonClientHeight);
-        winrt::check_bool(CombineRgn(nonClientRegion, nonClientLeftRegion, nonClientRightRegion, RGN_OR));
+        auto nonClientRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+        auto nonClientLeftRegion = wil::unique_hrgn(CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight));
+        auto nonClientRightRegion = wil::unique_hrgn(CreateRectRgn(dragBarRect.right, 0, windowsWidth, nonClientHeight));
+        winrt::check_bool(CombineRgn(nonClientRegion.get(), nonClientLeftRegion.get(), nonClientRightRegion.get(), RGN_OR));
 
-        auto region = CreateRectRgn(0, 0, 0, 0);
-        auto clientRegion = CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight);
-        winrt::check_bool(CombineRgn(region, nonClientRegion, clientRegion, RGN_OR));
-        winrt::check_bool(SetWindowRgn(_interopWindowHandle, region, true));
+        _dragBarRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
+        auto clientRegion = wil::unique_hrgn(CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight));
+        winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
+        winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
 
     _UpdateFrameMargins();
@@ -401,8 +401,8 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
             return 0;
         }
 
-        const auto hdc = GetDC(_window);
-        if (hdc)
+        const auto hdc = wil::GetDC(_window);
+        if (hdc.get())
         {
             const auto scale = GetCurrentDpiScale();
             const auto dpi = ::GetDpiForWindow(_window);
@@ -415,23 +415,31 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
             const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
             const auto backgroundColor = backgroundSolidBrush.Color();
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-            static HBRUSH hColor = CreateSolidBrush(color);
+            _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
             RECT windowRect = {};
             ::GetWindowRect(_window, &windowRect);
-            RECT clientRect = { 0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
-            ::SetDCPenColor(hdc, color);
-            ::SetDCBrushColor(hdc, color);
-            ::DrawEdge(hdc, &clientRect, EDGE_ETCHED, BF_RECT | BF_FLAT | BF_MONO | BDR_OUTER);
+            const auto cx = windowRect.right - windowRect.left;
+            const auto cy = windowRect.bottom - windowRect.top;
+
+            RECT clientRect = { 0, 0, cx, yPos };
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+            clientRect = { 0, 0, xPos, cy };
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+            clientRect = { 0, cy - yPos, cx, cy };
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+            clientRect = { cx - xPos, 0, cx, cy };
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
             RECT dragBarRect = GetDragAreaRect();
             dragBarRect.left += xPos;
             dragBarRect.right += xPos;
             dragBarRect.bottom += yPos;
             dragBarRect.top += yPos;
-            ::FillRect(hdc, &dragBarRect, hColor);
-
-            ReleaseDC(_window, hdc);
+            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
         }
         return 0;
     }
@@ -442,9 +450,9 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
         const auto region = HitTestNCA(point1);
         if (region == HTCAPTION)
         {
-            const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+            const auto longParam = MAKELPARAM(point1.x, point1.y);
             ::SetActiveWindow(_window);
-            ::PostMessage(_window, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, lParam);
+            ::PostMessage(_window, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
         }
         break;
     }
