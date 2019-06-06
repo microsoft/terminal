@@ -9,7 +9,7 @@
 | `initialRows` | _Required_ | Integer | The number of rows displayed in the window upon first load. |
 | `requestedTheme` | _Required_ | String | Sets the theme of the application. Possible values: `"light"`, `"dark"`, `"system"` |
 | `showTerminalTitleInTitlebar` | _Required_ | Boolean | When set to `true`, titlebar displays the title of the selected tab. When set to `false`, titlebar displays "Windows Terminal". |
-| `experimental_showTabsInTitlebar` | Optional | Boolean | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
+| `showTabsInTitlebar` | Optional | Boolean | When set to `true`, the tabs are moved into the titlebar and the titlebar disappears. When set to `false`, the titlebar sits above the tabs. |
 | **profiles** | | **Array[Object]** | **Properties listed below are specific to each unique profile.** |
 | `acrylicOpacity` | _Required_ | Number | When `useAcrylic` is set to `true`, it sets the transparency of the window for the profile. Accepts floating point values from 0-1. |
 | `background` | _Required_ | String | Sets the background color of the profile. Overrides `background` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
