@@ -26,6 +26,7 @@ IslandWindow::IslandWindow() noexcept :
 
 IslandWindow::~IslandWindow()
 {
+    _source.Close();
 }
 
 // Method Description:
