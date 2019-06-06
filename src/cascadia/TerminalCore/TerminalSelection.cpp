@@ -65,15 +65,15 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT x_pos, const SHORT y_pos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT xPos, const SHORT yPos) const noexcept
 {
     // don't change the value if at/outside the boundary
-    if (x_pos <= 0 || x_pos >= _buffer->GetSize().RightInclusive())
+    if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
     {
-        return x_pos;
+        return xPos;
     }
 
-    COORD position{x_pos, y_pos};
+    COORD position{xPos, yPos};
     const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
     if (attr.IsTrailing())
     {
@@ -90,15 +90,15 @@ const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT x_pos, const SH
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelection_Right(const SHORT x_pos, const SHORT y_pos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelection_Right(const SHORT xPos, const SHORT yPos) const noexcept
 {
     // don't change the value if at/outside the boundary
-    if (x_pos <= 0 || x_pos >= _buffer->GetSize().RightInclusive())
+    if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
     {
-        return x_pos;
+        return xPos;
     }
 
-    COORD position{ x_pos, y_pos };
+    COORD position{ xPos, yPos };
     const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
     if (attr.IsLeading())
     {
