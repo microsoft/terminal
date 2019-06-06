@@ -1275,81 +1275,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
         double width = cols * fFontWidth;
-        double height = rows * fFontHeight;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (settings.ScrollState() == ScrollbarState::Visible)
         {
             width += scrollbarSize;
         }
-        
-        // Reserve space for padding
-        const auto paddingArr = _ParsePadding(settings.Padding());
-        switch (paddingArr.size())
-        {
-            case 1:
-                width += paddingArr.at(0) * 2;
-                height += paddingArr.at(0) * 2;
-                break;
-            case 2:
-                width += paddingArr.at(0) * 2;
-                height += paddingArr.at(1) * 2;
-                break;
-            // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
-            case 4:
-                width += paddingArr.at(0) + paddingArr.at(2);
-                height += paddingArr.at(1) + paddingArr.at(3);
-                break;
-            default:
-                break;
-        }
-        
-        return { static_cast<float>(width), static_cast<float>(height) };
-    }
 
-    // Method Description:
-    // - Parse the given padding props to a std::vector.
-    // Arguments:
-    // - padding: 2D padding values
-    //      Single Double value provides uniform padding
-    //      Two Double values provide isometric horizontal & vertical padding
-    //      Four Double values provide independent padding for 4 sides of the bounding rectangle
-    // Return Value:
-    // - A std::vector object
-    // - If parsed successfully the vector will have the same size as the number of padding values.
-    // - If parsing failed the vector will be empty.
-    std::vector<double> TermControl::_ParsePadding(const hstring padding)
-    {
-        const wchar_t singleCharDelim = L',';
-        std::wstringstream tokenStream(padding.c_str());
-        std::wstring token;
-        std::vector<double> paddingArr;
+        double height =rows * fFontHeight;
+        auto thickness = _ParseThicknessFromPadding(settings.Padding());
+        width += thickness.Left + thickness.Right;
+        height += thickness.Top + thickness.Bottom;
 
-        // Get padding values till we run out of delimiter separated values in the stream
-        //  or we hit max number of allowable values (= 4) for the bounding rectangle
-        // Non-numeral values detected will default to 0
-        // std::getline will not throw exception unless flags are set on the wstringstream
-        // std::stod will throw invalid_argument expection if the input is an invalid double value
-        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
-        try
-        {
-            for (uint8_t paddingPropIndex = 0; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < 4); paddingPropIndex++)
-            {
-                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
-                //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                paddingArr.push_back(std::stod(token));
-            }
-        }
-        catch (...)
-        {
-            // If something goes wrong, even if due to a single bad padding value, we'll clear the vector & return default 0 padding
-            paddingArr.clear();
-            LOG_CAUGHT_EXCEPTION();
-        }
-
-        return paddingArr;
+        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
     // Method Description:
@@ -1364,13 +1302,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Windows::UI::Xaml::Thickness object
     Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
     {
-        const auto thicknessArr = _ParsePadding(padding);
+        const wchar_t singleCharDelim = L',';
+        std::wstringstream tokenStream(padding.c_str());
+        std::wstring token;
+        uint8_t paddingPropIndex = 0;
+        std::array<double, 4> thicknessArr = {};
+        size_t* idx = nullptr;
 
-        switch (thicknessArr.size())
+        // Get padding values till we run out of delimiter separated values in the stream
+        //  or we hit max number of allowable values (= 4) for the bounding rectangle
+        // Non-numeral values detected will default to 0
+        // std::getline will not throw exception unless flags are set on the wstringstream
+        // std::stod will throw invalid_argument expection if the input is an invalid double value
+        // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
+        try
+        {
+            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
+            {
+                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                //  & stops the scan when first char outside the range of radix is encountered
+                // We'll be permissive till the extent that stod function allows us to be by default
+                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
+                thicknessArr[paddingPropIndex] = std::stod(token, idx);
+            }
+        }
+        catch (...)
+        {
+            // If something goes wrong, even if due to a single bad padding value, we'll reset the index & return default 0 padding
+            paddingPropIndex = 0;
+            LOG_CAUGHT_EXCEPTION();
+        }
+
+        switch (paddingPropIndex)
         {
             case 1: return ThicknessHelper::FromUniformLength(thicknessArr[0]);
             case 2: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
-            // No case for 3 padding values, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
             case 4: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
             default: return Thickness();
         }
