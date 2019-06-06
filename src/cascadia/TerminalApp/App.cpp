@@ -57,6 +57,16 @@ namespace winrt::TerminalApp::implementation
         // registered?" when it definitely is.
     }
 
+    void App::Initialize()
+    {
+        if (this->outer())
+        {
+            this->outer()->AddRef();
+        }
+
+        _windowsXamlManager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
+    }
+
     // Method Description:
     // - Build the UI for the terminal app. Before this method is called, it
     //   should not be assumed that the TerminalApp is usable. The Settings

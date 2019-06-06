@@ -14,6 +14,7 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 namespace winrt::TerminalApp::implementation
@@ -26,6 +27,8 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         App();
+
+        void Initialize();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
@@ -120,6 +123,9 @@ namespace winrt::TerminalApp::implementation
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
+
+        bool _bIsClosed = false;
+        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager{ nullptr };
     };
 }
 
