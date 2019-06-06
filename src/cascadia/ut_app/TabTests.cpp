@@ -20,6 +20,8 @@ namespace TerminalAppUnitTests
     {
         BEGIN_TEST_CLASS(TabTests)
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
+            TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"PackagedCwaFullTrust")
+            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
         END_TEST_CLASS()
 
         TEST_METHOD(CreateDummyTab);
