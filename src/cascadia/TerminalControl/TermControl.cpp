@@ -230,14 +230,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         _closing = true;
         // Don't let anyone else do something to the buffer.
-        auto lock = _terminal->LockForWriting();
+        std::unique_lock<std::shared_mutex> lock;
+        if (_terminal)
+        {
+            lock = _terminal->LockForWriting();
+        }
 
         if (_connection != nullptr)
         {
             _connection.Close();
         }
 
-        _renderer->TriggerTeardown();
+        if (_renderer != nullptr)
+        {
+            _renderer->TriggerTeardown();
+        }
 
         _swapChainPanel = nullptr;
         _root = nullptr;
@@ -551,9 +558,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            // Ignore mouse events while the terminal does not have focus. 
-            // This prevents the user from selecting and copying text if they 
-            // click inside the current tab to refocus the terminal window. 
+            // Ignore mouse events while the terminal does not have focus.
+            // This prevents the user from selecting and copying text if they
+            // click inside the current tab to refocus the terminal window.
             if (!_focused)
             {
                 args.Handled(true);
@@ -1046,7 +1053,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also 
+    // The difference between this function and ScrollViewport is that this one also
     // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
     // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
     void TermControl::KeyboardScrollViewport(int viewTop)
@@ -1240,11 +1247,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
             static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
         };
-        
+
         const auto fontSize = _actualFont.GetSize();
         FAIL_FAST_IF(fontSize.X == 0);
         FAIL_FAST_IF(fontSize.Y == 0);
-        
+
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;

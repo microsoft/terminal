@@ -36,6 +36,9 @@
     <RootNamespace>TerminalAppUnitTests</RootNamespace>
     <ProjectName>UnitTests_TerminalApp</ProjectName>
     <TargetName>Terminal.App.Unit.Tests</TargetName>
+    <!-- <SkipMicrosoftUIXamlCheckTargetPlatformVersion>true</SkipMicrosoftUIXamlCheckTargetPlatformVersion> -->
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <!-- ====================== Compiler & Linker Flags ===================== -->
@@ -60,6 +63,12 @@
     <Manifest Include="TerminalApp.Unit.Tests.manifest" />
   </ItemGroup>
 
+  <!-- From Microsoft.UI.Xaml.targets -->
+  <PropertyGroup>
+    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
+    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
+  </PropertyGroup>
+
   <ItemDefinitionGroup>
     <PreBuildEvent>
       <!-- Manually copy the manifest to our outdir, because the test will need
@@ -78,9 +87,18 @@
       <Command>
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
+
+        (xcopy /Y &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalConnection\TerminalConnection.dll&quot; &quot;$(OutDir)\TerminalConnection.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalSettings\TerminalSettings.dll&quot; &quot;$(OutDir)\TerminalSettings.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalControl\TerminalControl.dll&quot; &quot;$(OutDir)\TerminalControl.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll&quot; &quot;$(OutDir)\Microsoft.UI.Xaml.dll*&quot; )
+        (xcopy /Y &quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri&quot; &quot;$(OutDir)\Microsoft.UI.Xaml.pri*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
+
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
 
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
