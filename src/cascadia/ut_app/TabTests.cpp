@@ -18,17 +18,30 @@ namespace TerminalAppUnitTests
 {
     class TabTests
     {
+        // For this set of tests, we need to activate some XAML content. To do
+        // that, we need to be able to activate Xaml Islands(XI), using the Xaml
+        // Hosting APIs. Because XI looks at the manifest of the exe running, we
+        // can't just use the TerminalApp.Unit.Tests.manifest as our
+        // ActivationContext. XI is going to inspect `te.exe`s manifest to try
+        // and find the maxversiontested property, but te.exe hasn't set that.
+        // Instead, this test will run as a UAP application, as a packaged
+        // centenial (win32) app. We'll specify our own AppxManifest, so that
+        // we'll be able to also load all the dll's for the types we've defined
+        // (and want to use here). This does come with a minor caveat, as
+        // deploying the appx takes a bit, so use sparingly (though it will
+        // deploy once per class when used like this.)
         BEGIN_TEST_CLASS(TabTests)
-            // TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
-            // TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"PackagedCwaFullTrust")
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.Unit.Tests.AppxManifest.xml")
         END_TEST_CLASS()
 
+        // These four tests act as canary tests. If one of them fails, then they
+        // can help you identify if something much lower in the stack has
+        // failed.
         TEST_METHOD(TryInitXamlIslands);
-        TEST_METHOD(CreateLocalWinRTType);
-        TEST_METHOD(CreateXamlObjects);
-        TEST_METHOD(CreateDummyTab);
+        TEST_METHOD(TryCreateLocalWinRTType);
+        TEST_METHOD(TryCreateXamlObjects);
+        TEST_METHOD(TryCreateTab);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -56,9 +69,10 @@ namespace TerminalAppUnitTests
         VERIFY_IS_NOT_NULL(_source);
     }
 
-    void TabTests::CreateLocalWinRTType()
+    void TabTests::TryCreateLocalWinRTType()
     {
         // Verify we can create a WinRT type we authored
+        // Just creating it is enough to know that everything is working.
         winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
@@ -67,9 +81,10 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
-    void TabTests::CreateXamlObjects()
+    void TabTests::TryCreateXamlObjects()
     {
         // Verify we can create a some XAML objects
+        // Just creating all of them is enough to know that everything is working.
         winrt::Windows::UI::Xaml::Controls::UserControl controlRoot;
         VERIFY_IS_NOT_NULL(controlRoot);
         winrt::Windows::UI::Xaml::Controls::Grid root;
@@ -80,8 +95,13 @@ namespace TerminalAppUnitTests
         VERIFY_IS_NOT_NULL(scrollBar);
     }
 
-    void TabTests::CreateDummyTab()
+    void TabTests::TryCreateTab()
     {
+        // Just try creating all of:
+        // 1. one of our pure c++ types (Profile)
+        // 2. one of our c++winrt types (TermControl)
+        // 3. one of our types that uses MUX/Xaml (Tab).
+        // Just creating all of them is enough to know that everything is working.
         const auto profileGuid{ Utils::CreateGuid() };
         winrt::Microsoft::Terminal::TerminalControl::TermControl term{};
         VERIFY_IS_NOT_NULL(term);

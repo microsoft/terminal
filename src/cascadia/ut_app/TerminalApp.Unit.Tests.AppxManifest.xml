@@ -1,8 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Package xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities" xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10" xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10" IgnorableNamespaces="uap">
-  <!-- This manifest was used because UAP:AppxManifest was set to "PackagedCwaFullTrust".
-       If you want to customize this manifest, you should rename the file and change the
-       UAP:AppxManifest value to the new name of the file. -->
+
+  <!-- This file is used as the Appxmanifest for tests that _need_ to run in a
+  packaged environment. It will be copied to the test's OutDir as part of the
+  PostBuid step. It's highly similar to the "PackagedCwaFullTrust" manifest that
+  TAEF ships with, with the following modifications:
+
+  1. All of our winrt types are included in this manifest, including types from
+     MUX.dll. Should this list of types ever change, we'll need to manually
+     update this file. The easiest way of doing that is deploying the app from
+     VS, then copying the Extensions from the Appxmandifest.xml that's generated
+     under `src/cascadia/CascadiaPackage/bin/$(platform)/$(configuration)/appx`.
+
+  2. We also _NEED_ the two vclibs listed under the `PackageDependency` block.
+
+  If your test fails for whatever reason, it's likely possible you're testing a
+  type that's _not_ included in this file for some reason. So, here be dragons. -->
+
   <Identity Name="TerminalApp.Unit.Tests.Package"
           ProcessorArchitecture="neutral"
           Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
