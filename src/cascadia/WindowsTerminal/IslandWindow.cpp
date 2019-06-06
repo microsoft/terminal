@@ -104,11 +104,11 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
 
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window, rc);
+        _pfnCreateCallback(_window.get(), rc);
     }
 
-    ShowWindow(_window, SW_SHOW);
-    UpdateWindow(_window);
+    ShowWindow(_window.get(), SW_SHOW);
+    UpdateWindow(_window.get());
 }
 
 void IslandWindow::Initialize()
@@ -118,7 +118,7 @@ void IslandWindow::Initialize()
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(_window));
+    winrt::check_hresult(interop->AttachToWindow(_window.get()));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);

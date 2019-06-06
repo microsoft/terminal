@@ -79,7 +79,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     }
 
     const auto scale = GetCurrentDpiScale();
-    const auto dpi = ::GetDpiForWindow(_window);
+    const auto dpi = ::GetDpiForWindow(_window.get());
 
     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
@@ -205,7 +205,7 @@ LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 {
     const auto scale = GetCurrentDpiScale();
-    const auto dpi = ::GetDpiForWindow(_window);
+    const auto dpi = ::GetDpiForWindow(_window.get());
     const auto windowMarginSides = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
     const auto windowMarginBottom = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
@@ -235,7 +235,7 @@ HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
     // for the non-client content.
     MARGINS margins = GetFrameMargins();
     // Extend the frame into the client area.
-    return DwmExtendFrameIntoClientArea(_window, &margins);
+    return DwmExtendFrameIntoClientArea(_window.get(), &margins);
 }
 
 // Routine Description:
@@ -278,7 +278,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     else
     {
         // Otherwise, get the monitor from the window handle.
-        hMonitor = MonitorFromWindow(_window, MONITOR_DEFAULTTONEAREST);
+        hMonitor = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     }
 
     // If for whatever reason there is no monitor, we're going to give back whatever we got since we can't figure anything out.
@@ -299,7 +299,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     // We need to pad the work rectangle with the border dimensions to represent the actual max outer edges of the window rect.
     WINDOWINFO wi = { 0 };
     wi.cbSize = sizeof(WINDOWINFO);
-    GetWindowInfo(_window, &wi);
+    GetWindowInfo(_window.get(), &wi);
 
     // In non-full screen, we want to only use the work area (avoiding the task bar space)
     rc = MonitorInfo.rcWork;
@@ -314,7 +314,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         }
         else
         {
-            *pDpiSuggested = GetDpiForWindow(_window);
+            *pDpiSuggested = GetDpiForWindow(_window.get());
         }
     }
 
@@ -339,7 +339,7 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
 
     // First call DwmDefWindowProc. This might handle things like the
     // min/max/close buttons for us.
-    const bool dwmHandledMessage = DwmDefWindowProc(_window, message, wParam, lParam, &lRet);
+    const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
 
     switch (message)
     {
@@ -401,11 +401,11 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
             return 0;
         }
 
-        const auto hdc = wil::GetDC(_window);
+        const auto hdc = wil::GetDC(_window.get());
         if (hdc.get())
         {
             const auto scale = GetCurrentDpiScale();
-            const auto dpi = ::GetDpiForWindow(_window);
+            const auto dpi = ::GetDpiForWindow(_window.get());
             const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
             const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
             const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
@@ -418,7 +418,7 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
             RECT windowRect = {};
-            ::GetWindowRect(_window, &windowRect);
+            ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
@@ -451,8 +451,8 @@ LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
         if (region == HTCAPTION)
         {
             const auto longParam = MAKELPARAM(point1.x, point1.y);
-            ::SetActiveWindow(_window);
-            ::PostMessage(_window, WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
+            ::SetActiveWindow(_window.get());
+            ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
         }
         break;
     }
@@ -561,7 +561,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         }
     }
 
-    const auto windowStyle = GetWindowStyle(_window);
+    const auto windowStyle = GetWindowStyle(_window.get());
     const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
 
     // If we're about to maximize the window, determine how much we're about to
