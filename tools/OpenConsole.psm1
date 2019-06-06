@@ -31,7 +31,7 @@ function Import-LocalModule
 
     if (-not (Test-Path "$modules_root\$Name")) {
         Write-Verbose "$Name not downloaded -- downloading now"
-        $module = Find-Module 'VSSetup'
+        $module = Find-Module '$Name'
         $version = $module.Version
 
         Write-Verbose "Saving $Name to $modules_root"
