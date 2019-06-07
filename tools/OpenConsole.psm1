@@ -239,31 +239,35 @@ function Debug-OpenConsole()
 }
 
 #.SYNOPSIS
-# runs clang-format on a file
+# runs clang-format on list of files
 #
-#.PARAMETER Filename
-# The full path to the file to format
-function Invoke-ClangFormat() {
-    param (
-        [parameter(Mandatory=$true)]
-        [string]$Filename
+#.PARAMETER Path
+# The full paths to the files to format
+function Invoke-ClangFormat {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string[]]$Path
     )
-    & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $Filename
+
+    Process {
+        ForEach($_ in $Path) {
+            Try {
+                $n = Get-Item $_ -ErrorAction Stop | Select -Expand FullName
+                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $n
+            } Catch {
+                Write-Error $_
+            }
+        }
+    }
 }
 
 #.SYNOPSIS
 # runs code formatting on all c++ files
 function Invoke-CodeFormat() {
-    $files = gci -r "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h
-
-    foreach ($file in $files) {
-        if ($file.FullName -notlike "*Generated Files*")
-        {
-            $filename = $file.FullName
-            write-host $filename
-            Invoke-ClangFormat $filename
-        }
-    }
+    Get-ChildItem -Recurse "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h |
+      Where FullName -NotLike "*Generated Files*" |
+      Invoke-ClangFormat
 }
 
 Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat
