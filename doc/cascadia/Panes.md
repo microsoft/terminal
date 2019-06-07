@@ -48,7 +48,7 @@ pane, with it's own terminal control that it displays, or it could be a parent
 pane, where it has two children, each with their own terminal control.
 
 When a pane is a parent, its two children are either split vertically or
-horizontally. Parent nodes don't have a terminal of their own, the merely
+horizontally. Parent nodes don't have a terminal of their own, they merely
 display the terminals of their children.
 
  * If a Pane is split vertically, the two panes are seperated by a vertical
@@ -150,11 +150,11 @@ default settings profile.
 
 When a tab has multiple panes open, only one is the "active" pane. This is the
 pane that was last focused in the tab. If the tab is the currently open tab,
-then this is the pane with the currectly focused terminal control. When the user
+then this is the pane with the currently focused terminal control. When the user
 brings the tab into focus, the last focused pane is the pane that should become
 focused again.
 
-The Tab's state will be updated to reflect the state of it's focused pane. The
+The tab's state will be updated to reflect the state of it's focused pane. The
 title text and icon of the tab will reflect that of the focused pane. Should the
 focus switch from one pane to another, the tab's text and icon should update to
 reflect the newly focused control. Any additional state that the tab would
@@ -167,8 +167,8 @@ match.
 
 ### Closing a pane
 
-A pane can either be close by the user manually, or when the terminal it's
-attached to raises it's ConnectionClosed event. When this happens, we should
+A pane can either be closed by the user manually, or when the terminal it's
+attached to raises its ConnectionClosed event. When this happens, we should
 remove this pane from the tree. The parent of the closing pane will have to
 remove the pane as one of it's children. If the sibling of the closing pane is a
 leaf, then the parent should just take all of the state from the remaining pane.
@@ -207,7 +207,7 @@ no means a comprehensive list.
 
 ## Footnotes
 
-### Why not top-Level Panes, and nested tabs?
+### Why not top-level panes, and nested tabs?
 
 If each pane were to have it's own set of tabs, then each pane would need to
 reserve screen real estate for a row of tabs. As a user continued to split the
