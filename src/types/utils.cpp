@@ -7,7 +7,7 @@
 using namespace Microsoft::Console;
 
 // Function Description:
-// - Clamps a long in between `min` and `SHRT_MAX` 
+// - Clamps a long in between `min` and `SHRT_MAX`
 // Arguments:
 // - value: the value to clamp
 // - min: the minimum value to clamp to
@@ -16,8 +16,8 @@ using namespace Microsoft::Console;
 short Utils::ClampToShortMax(const long value, const short min)
 {
     return static_cast<short>(std::clamp(value,
-        static_cast<long>(min),
-        static_cast<long>(SHRT_MAX)));
+                                         static_cast<long>(min),
+                                         static_cast<long>(SHRT_MAX)));
 }
 
 // Function Description:

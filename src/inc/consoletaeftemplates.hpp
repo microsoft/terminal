@@ -544,9 +544,8 @@ namespace WEX::TestExecution
         }
     };
 
-
     template<>
-    class VerifyOutputTraits < std::wstring_view >
+    class VerifyOutputTraits<std::wstring_view>
     {
     public:
         static WEX::Common::NoThrowString ToString(const std::wstring_view& view)
@@ -556,7 +555,7 @@ namespace WEX::TestExecution
     };
 
     template<>
-    class VerifyCompareTraits < std::wstring_view, std::wstring_view >
+    class VerifyCompareTraits<std::wstring_view, std::wstring_view>
     {
     public:
         static bool AreEqual(const std::wstring_view& expected, const std::wstring_view& actual)
