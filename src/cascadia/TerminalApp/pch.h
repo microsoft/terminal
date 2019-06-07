@@ -49,3 +49,6 @@
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);
 #include <telemetry\ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
+
+// JsonCpp
+#include <json.h>
