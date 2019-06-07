@@ -165,8 +165,8 @@ void Tab::SetTabText(const winrt::hstring& text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [textCopy](){
-        _tabViewItem.Header(textCopy);
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this](){
+        _tabViewItem.Header(text);
     });
 }
 
