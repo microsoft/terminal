@@ -29,6 +29,7 @@
 #include <winrt/Windows.Data.Json.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
+#include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ui.xaml.media.h>

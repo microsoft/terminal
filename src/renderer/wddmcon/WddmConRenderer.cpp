@@ -339,19 +339,9 @@ HRESULT WddmConEngine::UpdateDrawingBrushes(COLORREF const /*colorForeground*/,
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& fiFontInfo) noexcept
+HRESULT WddmConEngine::UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
-    COORD coordSize = {0};
-    LOG_IF_FAILED(GetFontSize(&coordSize));
-
-    fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
-                             fiFontInfo.GetFamily(),
-                             fiFontInfo.GetWeight(),
-                             fiFontInfo.IsTrueTypeFont(),
-                             coordSize,
-                             coordSize);
-
-    return S_OK;
+    return GetProposedFont(fiFontInfoDesired, fiFontInfo, USER_DEFAULT_SCREEN_DPI);
 }
 
 [[nodiscard]]
@@ -374,10 +364,20 @@ HRESULT WddmConEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexce
 }
 
 [[nodiscard]]
-HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*pfiFontInfoDesired*/,
-                                       FontInfo& /*pfiFontInfo*/,
+HRESULT WddmConEngine::GetProposedFont(const FontInfoDesired& /*fiFontInfoDesired*/,
+                                       FontInfo& fiFontInfo,
                                        int const /*iDpi*/) noexcept
 {
+    COORD coordSize = { 0 };
+    LOG_IF_FAILED(GetFontSize(&coordSize));
+
+    fiFontInfo.SetFromEngine(fiFontInfo.GetFaceName(),
+        fiFontInfo.GetFamily(),
+        fiFontInfo.GetWeight(),
+        fiFontInfo.IsTrueTypeFont(),
+        coordSize,
+        coordSize);
+
     return S_OK;
 }
 

@@ -71,7 +71,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();

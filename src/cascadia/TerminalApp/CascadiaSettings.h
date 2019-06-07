@@ -62,8 +62,8 @@ private:
     void _CreateDefaultProfiles();
 
     static bool _IsPackaged();
-    static void _SaveAsPackagedApp(const std::string content);
-    static void _SaveAsUnpackagedApp(const std::string content);
+    static void _SaveAsPackagedApp(const std::string& content);
+    static void _SaveAsUnpackagedApp(const std::string& content);
     static std::wstring _GetFullPathToUnpackagedSettingsFile();
     static winrt::hstring _GetPackagedSettingsPath();
     static std::optional<std::string> _LoadAsPackagedApp();

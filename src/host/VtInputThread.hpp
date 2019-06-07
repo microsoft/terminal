@@ -41,7 +41,7 @@ namespace Microsoft::Console
         bool _exitRequested;
         HRESULT _exitResult;
 
-        std::unique_ptr<StateMachine> _pInputStateMachine;
+        std::unique_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _pInputStateMachine;
         Utf8ToWideCharParser _utf8Parser;
     };
 }

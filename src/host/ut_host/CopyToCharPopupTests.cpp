@@ -12,7 +12,7 @@
 
 #include "../CopyToCharPopup.hpp"
 
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;

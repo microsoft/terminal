@@ -209,6 +209,7 @@ void NonClientIslandWindow::OnSize()
 // NOTE:
 // Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
+[[nodiscard]]
 LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
     // Get the window rectangle.
@@ -284,6 +285,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - <none>
 // Return Value:
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
+[[nodiscard]]
 HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
     // Get the size of the borders we want to use. The sides and bottom will
@@ -387,6 +389,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT * const prcSugge
 // Return Value:
 // - The return value is the result of the message processing and depends on the
 //   message sent.
+[[nodiscard]]
 LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
                                               WPARAM const wParam,
                                               LPARAM const lParam) noexcept
@@ -489,7 +492,7 @@ void NonClientIslandWindow::_HandleActivateWindow()
     // _titlebarUnscaledContentHeight is set with SetNonClientHeight by the app
     // hosting us.
 
-    _UpdateFrameMargins();
+    THROW_IF_FAILED(_UpdateFrameMargins());
 }
 
 // Method Description:
@@ -633,7 +636,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             _maximizedMargins.cyBottomHeight = -offset;
 
             _isMaximized = true;
-            _UpdateFrameMargins();
+            THROW_IF_FAILED(_UpdateFrameMargins());
         }
     }
     else
@@ -647,7 +650,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         // keep this here _in general_ for dragging across DPI boundaries.
         if (!_isMaximized)
         {
-            _UpdateFrameMargins();
+            THROW_IF_FAILED(_UpdateFrameMargins());
         }
 
         _isMaximized = false;

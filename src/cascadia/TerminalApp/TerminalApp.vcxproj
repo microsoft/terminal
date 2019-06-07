@@ -95,6 +95,10 @@
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
   <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+
     <Link>
       <!-- Manually link with the TerminalAppLib.lib we've built. -->
       <AdditionalLibraryDirectories>$(OpenConsoleDir)\$(Platform)\$(Configuration)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>

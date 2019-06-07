@@ -25,11 +25,6 @@ TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<
     _pfnWriteEvents = pfn;
 }
 
-TerminalInput::~TerminalInput()
-{
-
-}
-
 // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-PC-Style-Function-Keys
 //    For the source for these tables.
 // Also refer to the values in terminfo for kcub1, kcud1, kcuf1, kcuu1, kend, khome.
@@ -215,31 +210,22 @@ void TerminalInput::ChangeCursorKeysMode(const bool fApplicationMode)
 
 const size_t TerminalInput::GetKeyMappingLength(const KeyEvent& keyEvent) const
 {
-    size_t length = 0;
     if (keyEvent.IsCursorKey())
     {
-        length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
     }
-    else
-    {
-        length = (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
-    }
-    return length;
+ 
+    return (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
 }
 
 const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& keyEvent) const
 {
-    const TerminalInput::_TermKeyMap* mapping = nullptr;
-
     if (keyEvent.IsCursorKey())
     {
-        mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
-    else
-    {
-        mapping = (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
-    }
-    return mapping;
+   
+	return (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
 }
 
 // Routine Description:
@@ -375,11 +361,10 @@ bool TerminalInput::_TranslateDefaultMapping(const KeyEvent& keyEvent,
                                              const size_t cKeyMapping) const
 {
     const TerminalInput::_TermKeyMap* pMatchingMapping;
-    bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
+    const bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
     if (fSuccess)
     {
         _SendInputSequence(pMatchingMapping->pwszSequence);
-        fSuccess = true;
     }
     return fSuccess;
 }
@@ -392,7 +377,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() == InputEventType::KeyEvent)
     {
-        KeyEvent keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
+        auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
         if (keyEvent.IsKeyDown())
@@ -427,7 +412,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+                auto wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)

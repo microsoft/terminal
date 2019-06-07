@@ -164,7 +164,7 @@ HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
 [[nodiscard]]
 HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     if (_IsInput())
     {
         InputBuffer* const pObj = static_cast<InputBuffer*>(_pvClientPointer);

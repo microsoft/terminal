@@ -57,9 +57,9 @@ private:
     PROCESS_INFORMATION _piPty;
     PROCESS_INFORMATION _piClient;
 
-    HANDLE _outPipe;
-    HANDLE _inPipe;
-    HANDLE _signalPipe;
+    HANDLE _outPipe = INVALID_HANDLE_VALUE;
+    HANDLE _inPipe = INVALID_HANDLE_VALUE;
+    HANDLE _signalPipe = INVALID_HANDLE_VALUE;
 
     HPCON _hPC;
 
@@ -70,8 +70,8 @@ private:
 
     PipeReadCallback _pfnReadCallback;
 
-    DWORD _dwOutputThreadId;
-    HANDLE _hOutputThread = INVALID_HANDLE_VALUE;
+    DWORD _dwOutputThreadId = 0;
+    HANDLE _hOutputThread = nullptr;
 
     void _createPseudoConsole(const std::wstring& command);
     void _createConptyManually(const std::wstring& command);

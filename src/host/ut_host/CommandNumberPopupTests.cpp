@@ -17,6 +17,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 static constexpr size_t BUFFER_SIZE = 256;
 

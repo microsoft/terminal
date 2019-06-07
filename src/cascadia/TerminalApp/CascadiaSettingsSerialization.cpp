@@ -7,8 +7,6 @@
 #include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
-#include <wil/com.h>
-#include <wil/filesystem.h>
 #include <shlobj.h>
 
 using namespace ::TerminalApp;
@@ -22,10 +20,10 @@ using namespace ::Microsoft::Console;
 static constexpr std::wstring_view FILENAME { L"profiles.json" };
 static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
 
-static constexpr std::string_view PROFILES_KEY{ "profiles" };
-static constexpr std::string_view KEYBINDINGS_KEY{ "keybindings" };
-static constexpr std::string_view GLOBALS_KEY{ "globals" };
-static constexpr std::string_view SCHEMES_KEY{ "schemes" };
+static constexpr std::string_view ProfilesKey{ "profiles" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view GlobalsKey{ "globals" };
+static constexpr std::string_view SchemesKey{ "schemes" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -53,7 +51,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
         std::string errs; // This string will recieve any error text from failing to parse.
-
         // `parse` will return false if it fails.
         if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
         {
@@ -136,9 +133,9 @@ Json::Value CascadiaSettings::ToJson() const
         schemesArray.append(scheme.ToJson());
     }
 
-    root[GLOBALS_KEY.data()] = _globals.ToJson();
-    root[PROFILES_KEY.data()] = profilesArray;
-    root[SCHEMES_KEY.data()] = schemesArray;
+    root[GlobalsKey.data()] = _globals.ToJson();
+    root[ProfilesKey.data()] = profilesArray;
+    root[SchemesKey.data()] = schemesArray;
 
     return root;
 }
@@ -153,7 +150,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    if (auto globals{ json[GLOBALS_KEY.data()] })
+    if (auto globals{ json[GlobalsKey.data()] })
     {
         if (globals.isObject())
         {
@@ -170,7 +167,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         // If we didn't find keybindings in the legacy path, then they probably
         // don't exist in the file. Create the default keybindings if we
         // couldn't find any keybindings.
-        auto keybindings{ json[KEYBINDINGS_KEY.data()] };
+        auto keybindings{ json[KeybindingsKey.data()] };
         if (!keybindings)
         {
             resultPtr->_CreateDefaultKeybindings();
@@ -187,7 +184,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
     //      Or should we just recreate the default profiles?
 
     auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
-    if (auto schemes{ json[SCHEMES_KEY.data()] })
+    if (auto schemes{ json[SchemesKey.data()] })
     {
         for (auto schemeJson : schemes)
         {
@@ -199,7 +196,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         }
     }
 
-    if (auto profiles{ json[PROFILES_KEY.data()] })
+    if (auto profiles{ json[ProfilesKey.data()] })
     {
         for (auto profileJson : profiles)
         {
@@ -238,7 +235,7 @@ bool CascadiaSettings::_IsPackaged()
 // - content: the given string of content to write to the file.
 // Return Value:
 // - <none>
-void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
+void CascadiaSettings::_SaveAsPackagedApp(const std::string& content)
 {
     auto curr = ApplicationData::Current();
     auto folder = curr.RoamingFolder();
@@ -251,9 +248,9 @@ void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
     DataWriter dw = DataWriter();
     const char* firstChar = content.c_str();
     const char* lastChar = firstChar + content.size();
-    // Manually cast to a uint8_t*, because the compiler is unhappy with a static_cast here.
-    const uint8_t* firstByte = (const uint8_t*)firstChar;
-    const uint8_t* lastByte = (const uint8_t*)lastChar;
+
+    const uint8_t* firstByte = reinterpret_cast<const uint8_t*>(firstChar);
+    const uint8_t* lastByte = reinterpret_cast<const uint8_t*>(lastChar);
     winrt::array_view<const uint8_t> bytes{ firstByte, lastByte };
     dw.WriteBytes(bytes);
 
@@ -269,7 +266,7 @@ void CascadiaSettings::_SaveAsPackagedApp(const std::string content)
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_SaveAsUnpackagedApp(const std::string content)
+void CascadiaSettings::_SaveAsUnpackagedApp(const std::string& content)
 {
     // Get path to output file
     // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
@@ -338,12 +335,8 @@ std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
     // settings file is UTF-8 without BOM
     auto buffer = FileIO::ReadBufferAsync(storageFile).get();
     auto bufferData = buffer.data();
-    std::string resultString;
-    resultString.reserve(buffer.Length());
-    for (size_t i = 0; i < buffer.Length(); i++)
-    {
-        resultString.push_back(bufferData[i]);
-    }
+    std::vector<uint8_t> bytes{ bufferData, bufferData + buffer.Length() };
+    std::string resultString{ bytes.begin(), bytes.end() };
     return { resultString };
 }
 

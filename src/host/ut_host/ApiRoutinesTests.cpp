@@ -17,6 +17,7 @@
 using namespace Microsoft::Console::Types;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class ApiRoutinesTests
 {

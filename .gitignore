@@ -18,7 +18,6 @@
 x64/
 x86/
 ARM64/
-build/
 bld/
 [Bb]in/
 [Oo]bj/
@@ -276,3 +275,4 @@ MSG*.bin
 **/Unmerged/*
 profiles.json
 *.metaproj
+*.swp
