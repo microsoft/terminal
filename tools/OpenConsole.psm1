@@ -31,7 +31,7 @@ function Import-LocalModule
 
     if (-not (Test-Path "$modules_root\$Name")) {
         Write-Verbose "$Name not downloaded -- downloading now"
-        $module = Find-Module '$Name'
+        $module = Find-Module "$Name"
         $version = $module.Version
 
         Write-Verbose "Saving $Name to $modules_root"
@@ -39,10 +39,9 @@ function Import-LocalModule
         Import-Module "$modules_root\$Name\$version\$Name.psd1"
     } else {
         Write-Verbose "$Name already downloaded"
-        $versions = `
-            Get-ChildItem "$modules_root\$Name" | Sort-Object
+        $versions = Get-ChildItem "$modules_root\$Name" | Sort-Object
 
-        Get-ChildItem -Path $versions[0] '$Name.psd1' | Import-Module
+        Get-ChildItem -Path $versions[0] "$Name.psd1" | Import-Module
     }
 }
 
@@ -76,7 +75,7 @@ function Set-MsbuildDevEnvironment
     $vcvarsall = "$vspath\VC\Auxiliary\Build\vcvarsall.bat"
 
     Write-Verbose 'Setting up environment variables'
-    cmd /c ("`"$vcvarsall`" $arch & set") | foreach {
+    cmd /c ("`"$vcvarsall`" $arch & set") | ForEach-Object {
         if ($_ -match '=')
         {
             $s = $_.Split("=");
