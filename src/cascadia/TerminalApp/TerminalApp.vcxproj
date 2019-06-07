@@ -70,7 +70,7 @@
     <!-- Don't include a ProjectReference to TerminalAppLib here. For whatever
     reason, that doesn't work. Instead, we'll be adding a reference to it's
     winmd manually, so that we include it's winmd in our output as if we
-    generated it. We'll also be maunally linking against the lib from
+    generated it. We'll also be manually linking against the lib from
     TerminalAppLib.  -->
   </ItemGroup>
 
@@ -83,6 +83,7 @@
       <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\TerminalApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <Private>false</Private>
     </Reference>
   </ItemGroup>
 
@@ -109,7 +110,7 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <!-- <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" /> -->
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
