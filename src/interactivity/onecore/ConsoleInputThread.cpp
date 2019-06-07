@@ -13,6 +13,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 DWORD WINAPI ConsoleInputThreadProcOneCore(LPVOID /*lpParam*/)

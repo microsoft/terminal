@@ -21,6 +21,7 @@
 extern void LockConsole();
 extern void UnlockConsole();
 
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity::OneCore;
 
 ConIoSrvComm::ConIoSrvComm() :
@@ -238,7 +239,7 @@ ConIoSrvComm::~ConIoSrvComm()
 VOID ConIoSrvComm::ServiceInputPipe()
 {
     // Save off a handle to the thread that is coming in here in case it gets blocked and we need to tear down.
-    THROW_HR_IF(E_NOT_VALID_STATE, _inputPipeThreadHandle); // We can't store two of them, so it's invalid if there are two.
+    THROW_HR_IF(E_NOT_VALID_STATE, !!_inputPipeThreadHandle); // We can't store two of them, so it's invalid if there are two.
     THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(),
                                               GetCurrentThread(),
                                               GetCurrentProcess(),
