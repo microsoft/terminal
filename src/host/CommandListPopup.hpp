@@ -21,7 +21,7 @@ Author:
 class CommandListPopup : public Popup
 {
 public:
-    CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history);
+    CommandListPopup(SCREEN_INFORMATION& screenInfo, const std::shared_ptr<CommandHistory>& history);
 
     [[nodiscard]]
     NTSTATUS Process(CookedRead& cookedReadData) noexcept override;
@@ -48,7 +48,7 @@ private:
 
     SHORT _currentCommand;
     SHORT _bottomIndex;  // number of command displayed on last line of popup
-    const CommandHistory& _history;
+    const std::shared_ptr<CommandHistory>& _history;
 
 #ifdef UNIT_TESTING
     friend class CommandListPopupTests;

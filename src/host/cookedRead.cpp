@@ -17,7 +17,7 @@
 CookedRead::CookedRead(InputBuffer* const pInputBuffer,
                        INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                        SCREEN_INFORMATION& screenInfo,
-                       CommandHistory* pCommandHistory,
+                       std::shared_ptr<CommandHistory> pCommandHistory,
                        wchar_t* userBuffer,
                        const size_t cchUserBuffer,
                        const ULONG ctrlWakeupMask,
@@ -55,9 +55,9 @@ bool CookedRead::HasHistory() const noexcept
     return _pCommandHistory != nullptr;
 }
 
-CommandHistory& CookedRead::History() noexcept
+std::shared_ptr<CommandHistory> CookedRead::History() noexcept
 {
-    return *_pCommandHistory;
+    return _pCommandHistory;
 }
 
 void CookedRead::Erase()

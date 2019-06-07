@@ -25,7 +25,7 @@ class CommandNumberPopupTests
     TEST_CLASS(CommandNumberPopupTests);
 
     std::unique_ptr<CommonState> m_state;
-    CommandHistory* m_pHistory;
+    std::shared_ptr<CommandHistory> m_pHistory;
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -122,7 +122,7 @@ class CommandNumberPopupTests
 
         // add popups to CommandLine
         auto& commandLine = CommandLine::Instance();
-        commandLine._popups.emplace_front(std::make_unique<CommandListPopup>(gci.GetActiveOutputBuffer(), *m_pHistory));
+        commandLine._popups.emplace_front(std::make_unique<CommandListPopup>(gci.GetActiveOutputBuffer(), m_pHistory));
         commandLine._popups.emplace_front(std::make_unique<CommandNumberPopup>(gci.GetActiveOutputBuffer()));
         auto& numberPopup = *commandLine._popups.front();
         numberPopup.SetUserInputFunction(fn);
