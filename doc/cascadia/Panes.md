@@ -139,7 +139,7 @@ focused (they don't have their own terminal). When a user decides to add a new
 pane, the child will:
 
  1. Convert into a parent
- 2. Move its terminal into it's first child
+ 2. Move its terminal into its first child
  3. Split its UI in half, and display each child in one half.
 
 It's up to the app hosting the panes to tell the pane what kind of terminal in

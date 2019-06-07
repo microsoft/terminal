@@ -163,8 +163,10 @@ winrt::hstring Tab::GetFocusedTitle() const
 // - <none>
 void Tab::SetTabText(const winrt::hstring& text)
 {
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
-        _tabViewItem.Header(text);
+    // Copy the hstring, so we don't capture a dead reference
+    winrt::hstring textCopy{ text };
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [textCopy](){
+        _tabViewItem.Header(textCopy);
     });
 }
 
