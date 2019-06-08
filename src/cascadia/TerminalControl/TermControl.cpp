@@ -266,7 +266,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 || imageSource.UriSource().RawUri() != imageUri.RawUri())
             {
                 // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image 
+                // which is especially important since the image
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
@@ -711,8 +711,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
 
             const auto modifiers = args.KeyModifiers();
-            const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
-            const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+            // TODO
+            // const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
+            // const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+            const auto altEnabled = false;
+            const auto shiftEnabled = false;
+
 
             if (point.Properties().IsLeftButtonPressed())
             {
@@ -847,9 +851,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         auto delta = args.GetCurrentPoint(_root).Properties().MouseWheelDelta();
         // Get the state of the Ctrl & Shift keys
-        const auto modifiers = args.KeyModifiers();
-        const auto ctrlPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control);
-        const auto shiftPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+        // TODO
+        // const auto modifiers = args.KeyModifiers();
+        // const auto ctrlPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control);
+        const auto ctrlPressed = false;
+        // const auto shiftPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+        const auto shiftPressed = false;
 
         if (ctrlPressed && shiftPressed)
         {

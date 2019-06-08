@@ -72,6 +72,12 @@
     winmd manually, so that we include it's winmd in our output as if we
     generated it. We'll also be manually linking against the lib from
     TerminalAppLib.  -->
+
+    <!-- <ProjectReference Include="lib/TerminalAppLib.vcxproj" >
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>false</Private>
+    </ProjectReference> -->
+
   </ItemGroup>
 
   <ItemGroup>
@@ -79,12 +85,15 @@
     project created. This will cause it to be binplaced in our output, so other
     projects can reference this project with a ProjectReference and find the
     winmd appropriately. -->
-    <Reference Include="TerminalApp">
+
+    <!-- <Reference Include="TerminalApp">
       <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\TerminalApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
       <Private>false</Private>
-    </Reference>
+    </Reference> -->
+
+
   </ItemGroup>
 
   <PropertyGroup>
