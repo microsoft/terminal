@@ -535,6 +535,7 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         {
             std::wstring distName;
             std::getline(wlinestream, distName, L' ');
+            distName.erase(std::remove(distName.begin(), distName.end(), L'\r'), distName.end());
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
