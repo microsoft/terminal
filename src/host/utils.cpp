@@ -9,6 +9,8 @@
 
 #include "srvinit.h"
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 short CalcWindowSizeX(const SMALL_RECT& rect) noexcept
 {
     return rect.Right - rect.Left + 1;

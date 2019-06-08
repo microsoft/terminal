@@ -158,6 +158,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
+    //   * Calls _InitializeBackgroundBrush to set up the Xaml brush responsible
+    //     for the control's background
     //   * Calls _BackgroundColorChanged to style the background of the control
     // - Core settings will be passed to the terminal in _InitializeTerminal
     // Arguments:
@@ -166,6 +168,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_ApplyUISettings()
     {
+        _InitializeBackgroundBrush();
+
         uint32_t bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
@@ -187,8 +191,107 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Set up the brush used to display the control's background.
+    // - Respects the settings for acrylic, background image and opacity from
+    //   _settings.
+    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
+    //       from _settings.
+    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
+    //       respecting the opacity and stretch mode settings from _settings.
+    //   * Falls back to a solid color background from _settings if acrylic is not
+    //       enabled and no background image is present.
+    // - Avoids image flickering and acrylic brush redraw if settings are changed
+    //   but the appropriate brush is still in place.
+    // - Does not apply background color outside of acrylic mode;
+    //   _BackgroundColorChanged must be called to do so.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_InitializeBackgroundBrush()
+    {
+        if (_settings.UseAcrylic())
+        {
+            // See if we've already got an acrylic background brush
+            // to avoid the flicker when setting up a new one
+            auto acrylic = _root.Background().try_as<Media::AcrylicBrush>();
+
+            // Instantiate a brush if there's not already one there
+            if (acrylic == nullptr)
+            {
+                acrylic = Media::AcrylicBrush{};
+                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            }
+
+            // see GH#1082: Initialize background color so we don't get a
+            // fade/flash when _BackgroundColorChanged is called
+            uint32_t color = _settings.DefaultBackground();
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = GetRValue(color);
+            bgColor.G = GetGValue(color);
+            bgColor.B = GetBValue(color);
+            bgColor.A = 255;
+
+            acrylic.FallbackColor(bgColor);
+            acrylic.TintColor(bgColor);
+
+            // Apply brush settings
+            acrylic.TintOpacity(_settings.TintOpacity());
+
+            // Apply brush to control if it's not already there
+            if (_root.Background() != acrylic)
+            {
+                _root.Background(acrylic);
+            }
+        }
+        else if (!_settings.BackgroundImage().empty())
+        {
+            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+
+            // Check if the existing brush is an image brush, and if not
+            // construct a new one
+            auto brush = _root.Background().try_as<Media::ImageBrush>();
+
+            if (brush == nullptr)
+            {
+                brush = Media::ImageBrush{};
+            }
+
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr || imageSource.UriSource() == nullptr
+                || imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                brush.ImageSource(image);
+            }
+
+            // Apply stretch and opacity settings
+            brush.Stretch(_settings.BackgroundImageStretchMode());
+            brush.Opacity(_settings.BackgroundImageOpacity());
+
+            // Apply brush if it isn't already there
+            if (_root.Background() != brush)
+            {
+                _root.Background(brush);
+            }
+        }
+        else
+        {
+            Media::SolidColorBrush solidColor{};
+            _root.Background(solidColor);
+        }
+    }
+
+    // Method Description:
     // - Style the background of the control with the provided background color
-    // - Respects the settings for acrylic and opacity from _settings
     // Arguments:
     // - color: The background color to use as a uint32 (aka DWORD COLORREF)
     // Return Value:
@@ -208,23 +311,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_settings.UseAcrylic())
             {
-                Media::AcrylicBrush acrylic{};
-                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-                acrylic.FallbackColor(bgColor);
-                acrylic.TintColor(bgColor);
-                acrylic.TintOpacity(_settings.TintOpacity());
-                _root.Background(acrylic);
+                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
+                {
+                    acrylic.FallbackColor(bgColor);
+                    acrylic.TintColor(bgColor);
+                }
 
                 // If we're acrylic, we want to make sure that the default BG color
                 // is transparent, so we can see the acrylic effect on text with the
                 // default BG color.
                 _settings.DefaultBackground(ARGB(0, R, G, B));
             }
+            else if (!_settings.BackgroundImage().empty())
+            {
+                // This currently applies no changes to the image background
+                // brush itself.
+
+                // Set the default background as transparent to prevent the
+                // DX layer from overwriting the background image
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
             else
             {
-                Media::SolidColorBrush solidColor{};
-                solidColor.Color(bgColor);
-                _root.Background(solidColor);
+                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
+                {
+                    solidColor.Color(bgColor);
+                }
+
                 _settings.DefaultBackground(RGB(R, G, B));
             }
         });
@@ -246,12 +359,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Don't let anyone else do something to the buffer.
         auto lock = _terminal->LockForWriting();
 
-        if (_connection != nullptr)
+        // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+        if (_cursorTimer)
+        {
+            _cursorTimer.value().Stop();
+            _cursorTimer = std::nullopt;
+        }
+
+        if (_connection)
         {
             _connection.Close();
         }
 
-        _renderer->TriggerTeardown();
+        if (_renderer)
+        {
+            _renderer->TriggerTeardown();
+        }
 
         _swapChainPanel = nullptr;
         _root = nullptr;
@@ -581,9 +704,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            // Ignore mouse events while the terminal does not have focus. 
-            // This prevents the user from selecting and copying text if they 
-            // click inside the current tab to refocus the terminal window. 
+            // Ignore mouse events while the terminal does not have focus.
+            // This prevents the user from selecting and copying text if they
+            // click inside the current tab to refocus the terminal window.
             if (!_focused)
             {
                 args.Handled(true);
@@ -857,6 +980,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = true;
 
         if (_cursorTimer.has_value())
@@ -871,6 +998,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = false;
 
         if (_cursorTimer.has_value())
@@ -942,7 +1073,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible())
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
         {
             return;
         }
@@ -1078,7 +1209,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also 
+    // The difference between this function and ScrollViewport is that this one also
     // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
     // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
     void TermControl::KeyboardScrollViewport(int viewTop)
@@ -1233,7 +1364,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
@@ -1256,6 +1388,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Returns true if this control should close when its connection is closed.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff the control should close when the connection is closed.
+    bool TermControl::ShouldCloseOnExit() const noexcept
+    {
+        return _settings.CloseOnExit();
+    }
+
+    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1272,11 +1415,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
             static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
         };
-        
+
         const auto fontSize = _actualFont.GetSize();
         FAIL_FAST_IF(fontSize.X == 0);
         FAIL_FAST_IF(fontSize.Y == 0);
-        
+
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;

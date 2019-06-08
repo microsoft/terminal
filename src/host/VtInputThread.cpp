@@ -16,7 +16,8 @@
 #include "handle.h"
 
 using namespace Microsoft::Console;
-
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:
@@ -172,7 +173,7 @@ HRESULT VtInputThread::Start()
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

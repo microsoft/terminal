@@ -15,6 +15,8 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Interactivity;
+
 INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM lParam)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

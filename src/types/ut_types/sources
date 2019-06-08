@@ -15,6 +15,7 @@ DLLDEF                  =
 SOURCES = \
     $(SOURCES) \
     UuidTests.cpp \
+    UtilsTests.cpp \
     DefaultResource.rc \
 
 INCLUDES = \

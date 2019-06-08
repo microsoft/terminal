@@ -15,12 +15,14 @@ namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;
 
+    short ClampToShortMax(const long value, const short min);
+
     std::wstring GuidToString(const GUID guid);
     GUID GuidFromString(const std::wstring wstr);
     GUID CreateGuid();
 
-    std::wstring ColorToHexString(const COLORREF color);
-    COLORREF ColorFromHexString(const std::wstring wstr);
+    std::string ColorToHexString(const COLORREF color);
+    COLORREF ColorFromHexString(const std::string wstr);
 
     void InitializeCampbellColorTable(gsl::span<COLORREF>& table);
     void Initialize256ColorTable(gsl::span<COLORREF>& table);

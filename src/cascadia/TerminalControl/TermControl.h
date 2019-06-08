@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         hstring Title();
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
         void Close();
+        bool ShouldCloseOnExit() const noexcept;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
@@ -95,6 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void _Create();
         void _ApplyUISettings();
+        void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
         void _ApplyConnectionSettings();
         void _InitializeTerminal();

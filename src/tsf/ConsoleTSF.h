@@ -148,10 +148,13 @@ public:
         if (!fSet && _cCompositions)
         {
             // Close (terminate) any open compositions when losing the input focus.
-            wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
-            if (spCompositionServices)
+            if (_spITfInputContext)
             {
-                spCompositionServices->TerminateComposition(NULL);
+                wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
+                if (spCompositionServices)
+                {
+                    spCompositionServices->TerminateComposition(NULL);
+                }
             }
         }
     }
