@@ -31,6 +31,7 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../Pane.h" />
     <ClInclude Include="../ColorScheme.h" />
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
@@ -48,6 +49,7 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../Pane.cpp" />
     <ClCompile Include="../ColorScheme.cpp" />
     <ClCompile Include="../GlobalAppSettings.cpp" />
     <ClCompile Include="../Profile.cpp" />

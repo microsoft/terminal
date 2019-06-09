@@ -363,12 +363,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             lock = _terminal->LockForWriting();
         }
 
-        if (_connection != nullptr)
+        // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+        if (_cursorTimer)
+        {
+            _cursorTimer.value().Stop();
+            _cursorTimer = std::nullopt;
+        }
+
+        if (_connection)
         {
             _connection.Close();
         }
 
-        if (_renderer != nullptr)
+        if (_renderer)
         {
             _renderer->TriggerTeardown();
         }
@@ -982,6 +989,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = true;
 
         if (_cursorTimer.has_value())
@@ -996,6 +1007,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = false;
 
         if (_cursorTimer.has_value())
@@ -1067,7 +1082,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible())
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
         {
             return;
         }
@@ -1358,7 +1373,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
@@ -1378,6 +1394,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
                              (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
                              (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
+    }
+
+    // Method Description:
+    // - Returns true if this control should close when its connection is closed.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff the control should close when the connection is closed.
+    bool TermControl::ShouldCloseOnExit() const noexcept
+    {
+        return _settings.CloseOnExit();
     }
 
     // Method Description:
