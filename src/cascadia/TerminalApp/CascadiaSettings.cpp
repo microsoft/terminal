@@ -535,7 +535,7 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         {
             std::wstring distName;
             std::getline(wlinestream, distName, L'\r');
-            size_t firstChar = distName.find_first_of(L"( \r");
+            size_t firstChar = distName.find_first_of(L"( ");
             if (firstChar < distName.size()) {
                 distName.resize(firstChar);
             }
