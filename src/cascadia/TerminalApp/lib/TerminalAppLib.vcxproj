@@ -170,7 +170,12 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
-  <!-- <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" /> -->
+  <!-- Manually include MUX here, instead of importing its targets file. We need
+  to reference its winmd, but very specifically with the
+  CopyLocalSatelliteAssemblies and Private properties set to false, as to not
+  have projects including us double-including MUX's .winmd. The following blob
+  is taken straight from the MUX build targets, with the afformentioned
+  changes.-->
   <PropertyGroup>
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
@@ -186,7 +191,7 @@
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
   </ItemGroup>
-
+  <!-- End MUX import -->
 
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

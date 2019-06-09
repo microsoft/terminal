@@ -10,6 +10,13 @@ going to cover the steps that I took to get the Windows Terminal updated to be
 able to test not only our C++/WinRT components, but also pure c++ classes that
 were used in the application, and components that used XAML UI elements.
 
+## Prerequisites
+
+Make sure you're using at least the 2.0.190605.7 version of the CppWinRT nuget
+package. Prior to this version, there are some bugs with C++/WinRT's detection
+of static lib dependencies. You might be able to get your build working with
+Visual Studio on earlier versions, but not straight from MsBuild.
+
 ## Move the C++/WinRT implementation to a static lib
 
 By default, most (newly authored) C++/WinRT components are authored as a dll
@@ -109,27 +116,10 @@ dir to your `AdditionalLibraryDirectories`, and adding the lib to your
   </ItemDefinitionGroup>
 ```
 
-Additionally, we need to add a manual reference to the winmd from the static
-lib. That way, any projects that use a `ProjectReference` to include the dll
-project will think that the `.winmd` produced by the static lib project is the
-`.winmd` for the dll project (which it is). This can be done like so:
-
-```xml
-  <ItemGroup>
-    <!-- Manually reference the TerminalApp winmd that the TerminalAppLib
-    project created. This will cause it to be binplaced in our output, so other
-    projects can reference this project with a ProjectReference and find the
-    winmd appropriately. -->
-    <Reference Include="TerminalApp">
-      <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\TerminalApp.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-    </Reference>
-  </ItemGroup>
-```
-
-Notably, make sure you set `CopyLocalSatelliteAssemblies` to true, otherwise the
-file won't be copied.
+We are NOT adding a reference to the static lib project's .winmd here. As of the
+2.0.190605.7 CppWinRT nuget package, this is enough for MsBuild and Visual
+Studio to be ale to determine that the static lib's  `.winmd` should be included
+in this package.
 
 At this point, you might have some mdmerge errors, which complain about
 duplicate types in one of your dependencies. This might especially happen if one
