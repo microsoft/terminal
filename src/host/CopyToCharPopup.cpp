@@ -70,7 +70,7 @@ NTSTATUS CopyToCharPopup::Process(CookedRead& cookedReadData) noexcept
     }
 
     // copy up to specified char
-    const auto lastCommand = cookedReadData.History()->GetLastCommand();
+    const auto lastCommand = cookedReadData.History().GetLastCommand();
     if (!lastCommand.empty())
     {
         _copyToChar(cookedReadData, lastCommand, wch);

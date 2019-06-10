@@ -50,10 +50,10 @@ static COORD calculatePopupSize(const CommandHistory& history)
     return { gsl::narrow<short>(width), height };
 }
 
-CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const std::shared_ptr<CommandHistory>& history) :
-    Popup(screenInfo, calculatePopupSize(*history)),
+CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, CommandHistory& history) :
+    Popup(screenInfo, calculatePopupSize(history)),
     _history{ history },
-    _currentCommand{ std::min(history->LastDisplayed, static_cast<SHORT>(history->GetNumberOfCommands() - 1)) }
+    _currentCommand{ std::min(history.LastDisplayed, static_cast<SHORT>(history.GetNumberOfCommands() - 1)) }
 {
     FAIL_FAST_IF(_currentCommand < 0);
     _setBottomIndex();
@@ -106,11 +106,11 @@ NTSTATUS CommandListPopup::_handlePopupKeys(CookedRead& cookedReadData, const wc
             break;
         case VK_END:
             // Move waaay forward, UpdateCommandListPopup() can handle it.
-            _update((SHORT)(cookedReadData.History()->GetNumberOfCommands()));
+            _update((SHORT)(cookedReadData.History().GetNumberOfCommands()));
             break;
         case VK_HOME:
             // Move waaay back, UpdateCommandListPopup() can handle it.
-            _update(-(SHORT)(cookedReadData.History()->GetNumberOfCommands()));
+            _update(-(SHORT)(cookedReadData.History().GetNumberOfCommands()));
             break;
         case VK_PRIOR:
             _update(-(SHORT)Height());
@@ -136,13 +136,13 @@ NTSTATUS CommandListPopup::_handlePopupKeys(CookedRead& cookedReadData, const wc
 
 void CommandListPopup::_setBottomIndex()
 {
-    if (_currentCommand < (SHORT)(_history->GetNumberOfCommands() - Height()))
+    if (_currentCommand < (SHORT)(_history.GetNumberOfCommands() - Height()))
     {
         _bottomIndex = std::max(_currentCommand, gsl::narrow<SHORT>(Height() - 1i16));
     }
     else
     {
-        _bottomIndex = (SHORT)(_history->GetNumberOfCommands() - 1);
+        _bottomIndex = (SHORT)(_history.GetNumberOfCommands() - 1);
     }
 }
 
@@ -152,17 +152,17 @@ NTSTATUS CommandListPopup::_deleteSelection(CookedRead& cookedReadData) noexcept
     try
     {
         auto history = cookedReadData.History();
-        history->Remove(static_cast<short>(_currentCommand));
+        history.Remove(static_cast<short>(_currentCommand));
         _setBottomIndex();
 
-        if (history->GetNumberOfCommands() == 0)
+        if (history.GetNumberOfCommands() == 0)
         {
             // close the popup
             return CONSOLE_STATUS_READ_COMPLETE;
         }
-        else if (_currentCommand >= static_cast<short>(history->GetNumberOfCommands()))
+        else if (_currentCommand >= static_cast<short>(history.GetNumberOfCommands()))
         {
-            _currentCommand = static_cast<short>(history->GetNumberOfCommands() - 1);
+            _currentCommand = static_cast<short>(history.GetNumberOfCommands() - 1);
             _bottomIndex = _currentCommand;
         }
 
@@ -183,11 +183,11 @@ NTSTATUS CommandListPopup::_swapUp(CookedRead& cookedReadData) noexcept
     {
         auto history = cookedReadData.History();
 
-        if (history->GetNumberOfCommands() <= 1 || _currentCommand == 0)
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == 0)
         {
             return STATUS_SUCCESS;
         }
-        history->Swap(_currentCommand, _currentCommand - 1);
+        history.Swap(_currentCommand, _currentCommand - 1);
         _update(-1);
         _drawList();
     }
@@ -206,11 +206,11 @@ NTSTATUS CommandListPopup::_swapDown(CookedRead& cookedReadData) noexcept
     {
         auto history = cookedReadData.History();
 
-        if (history->GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history->GetNumberOfCommands()) - 1i16)
+        if (history.GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history.GetNumberOfCommands()) - 1i16)
         {
             return STATUS_SUCCESS;
         }
-        history->Swap(_currentCommand, _currentCommand + 1);
+        history.Swap(_currentCommand, _currentCommand + 1);
         _update(1);
         _drawList();
     }
@@ -229,7 +229,7 @@ void CommandListPopup::_handleReturn(CookedRead& cookedReadData)
 void CommandListPopup::_cycleSelectionToMatchingCommands(CookedRead& cookedReadData, const wchar_t wch)
 {
     short Index = 0;
-    if (cookedReadData.History()->FindMatchingCommand({ &wch, 1 },
+    if (cookedReadData.History().FindMatchingCommand({ &wch, 1 },
                                                      _currentCommand,
                                                      Index,
                                                      CommandHistory::MatchOptions::JustLooking))
@@ -346,7 +346,7 @@ void CommandListPopup::_drawList()
                                                            CommandNumberLength));
 
         // write command to screen
-        auto command = _history->GetNth(i);
+        auto command = _history.GetNth(i);
         lStringLength = command.size();
         {
             size_t lTmpStringLength = lStringLength;
@@ -423,13 +423,13 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
     if (wrap)
     {
         // Modulo the number of commands to "circle" around if we went off the end.
-        NewCmdNum %= _history->GetNumberOfCommands();
+        NewCmdNum %= _history.GetNumberOfCommands();
     }
     else
     {
-        if (NewCmdNum >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
+        if (NewCmdNum >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
         {
-            NewCmdNum = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
+            NewCmdNum = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1i16;
         }
         else if (NewCmdNum < 0)
         {
@@ -452,9 +452,9 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
     else if (NewCmdNum > _bottomIndex)
     {
         _bottomIndex += delta;
-        if (_bottomIndex >= gsl::narrow<SHORT>(_history->GetNumberOfCommands()))
+        if (_bottomIndex >= gsl::narrow<SHORT>(_history.GetNumberOfCommands()))
         {
-            _bottomIndex = gsl::narrow<SHORT>(_history->GetNumberOfCommands()) - 1i16;
+            _bottomIndex = gsl::narrow<SHORT>(_history.GetNumberOfCommands()) - 1i16;
         }
         Scroll = true;
     }

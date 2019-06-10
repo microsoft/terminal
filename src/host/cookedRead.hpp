@@ -69,7 +69,7 @@ public:
 
     SCREEN_INFORMATION& ScreenInfo();
 
-    std::shared_ptr<CommandHistory> History() noexcept;
+    CommandHistory& History() noexcept;
     bool HasHistory() const noexcept;
 
     void BufferInput(const wchar_t wch);
@@ -112,7 +112,7 @@ private:
     COORD _promptStartLocation;
     // the location of the cursor before a popup is launched
     COORD _beforePopupCursorPosition;
-    std::shared_ptr<CommandHistory> _pCommandHistory; // shared pointer
+    std::shared_ptr<CommandHistory> _pCommandHistory; // CommandHistory pointer
     // mask of control keys that if pressed will end the cooked read early
     const ULONG _ctrlWakeupMask;
     // current state of the CookedRead

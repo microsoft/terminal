@@ -55,9 +55,9 @@ bool CookedRead::HasHistory() const noexcept
     return _pCommandHistory != nullptr;
 }
 
-std::shared_ptr<CommandHistory> CookedRead::History() noexcept
+CommandHistory& CookedRead::History() noexcept
 {
-    return _pCommandHistory;
+    return *_pCommandHistory;
 }
 
 void CookedRead::Erase()
