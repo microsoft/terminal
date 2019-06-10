@@ -91,7 +91,11 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" /> -->
+    <!-- Don't add a ProjectReference to TerminalApp here. If you do, the
+    packaging project will find the TerminalApp.pri from both the TerminalAppLib
+    and TerminalApp project, and we only want this lib project's pri file. We'll
+    manually add a reference to the TerminalApp winmd and dll below, because we
+    still need those. -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
 
@@ -99,6 +103,7 @@
 
 
   <ItemGroup>
+    <!-- Manually reference TerminalApp, since we can't use a ProjectReference. -->
     <Reference Include="TerminalApp">
       <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\TerminalApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
