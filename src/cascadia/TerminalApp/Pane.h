@@ -61,12 +61,16 @@ private:
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
+    std::optional<double> _firstPercent{ std::nullopt };
+    std::optional<double> _secondPercent{ std::nullopt };
 
     bool _lastFocused{ false };
     std::optional<GUID> _profile{ std::nullopt };
     winrt::event_token _connectionClosedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
+
+    winrt::event_token _resizedToken{ 0 };
 
     std::shared_mutex _createCloseLock{};
 

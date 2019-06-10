@@ -9,7 +9,7 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int PaneSeparatorSize = 4;
+static const int PaneSeparatorSize = 0;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -34,6 +34,33 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             _root.Style(style);
         }
     }
+
+    _resizedToken = _root.SizeChanged([&](auto&& s, auto&& e){
+        auto newSize = e.NewSize();
+        if (_splitState == SplitState::Vertical)
+        {
+            auto width = newSize.Width;
+            auto height = newSize.Height;
+
+            _root.ColumnDefinitions().Clear();
+
+            // Create three columns in this grid: one for each pane, and one for the separator.
+            auto separatorColDef = Controls::ColumnDefinition();
+            separatorColDef.Width(GridLengthHelper::Auto());
+
+            auto firstColDef = Controls::ColumnDefinition();
+            firstColDef.Width(GridLengthHelper::FromPixels(width * _firstPercent.value()));
+
+            auto secondColDef = Controls::ColumnDefinition();
+            secondColDef.Width(GridLengthHelper::FromPixels(width * _secondPercent.value()));
+
+            _root.ColumnDefinitions().Append(firstColDef);
+            // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+            _root.ColumnDefinitions().Append(separatorColDef);
+            _root.ColumnDefinitions().Append(secondColDef);
+            // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+        }
+    });
 }
 
 // Method Description:
@@ -427,9 +454,20 @@ void Pane::_CreateSplitContent()
         auto separatorColDef = Controls::ColumnDefinition();
         separatorColDef.Width(GridLengthHelper::Auto());
 
-        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+        auto rootActualWidth = _root.ActualWidth();
+        auto rootWidth = _root.Width();
+
+        auto firstColDef = Controls::ColumnDefinition();
+        firstColDef.Width(GridLengthHelper::FromPixels(_root.ActualWidth() * _firstPercent.value()));
+
+        auto secondColDef = Controls::ColumnDefinition();
+        secondColDef.Width(GridLengthHelper::FromPixels(_root.ActualWidth() * _secondPercent.value()));
+
+        _root.ColumnDefinitions().Append(firstColDef);
+        // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
         _root.ColumnDefinitions().Append(separatorColDef);
-        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
+        _root.ColumnDefinitions().Append(secondColDef);
+        // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
 
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
@@ -556,6 +594,9 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
     _connectionClosedToken.value = 0;
 
     _splitState = splitType;
+
+    _firstPercent = { .50 };
+    _secondPercent = { .50 };
 
     _CreateSplitContent();
 
