@@ -12,6 +12,8 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+#define TIMESTAMP uint64_t
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct PasteFromClipboardEventArgs :
@@ -94,6 +96,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
+        TIMESTAMP _lastMouseClick;
+        bool _doubleClickOccurred;
+        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
+
         void _Create();
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
@@ -129,6 +135,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const bool _IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const;
+        const bool _IsTripleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const;
     };
 }
 

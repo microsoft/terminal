@@ -618,3 +618,138 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
 }
+
+// Method Description:
+// - Select the sequence between delimiters defined in Settings
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+void Terminal::DoubleClickSelection(const COORD position)
+{
+    // if you double click a delimiter, just select that one cell
+    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    if (_DoubleClickDelimiterCheck(cellChar))
+    {
+        SetSelectionAnchor(position);
+        return;
+    }
+
+    // scan leftwards until delimiter is found and
+    // set selection anchor to one right of that spot
+    _ExpandDoubleClickSelection_Left(position);
+
+    // scan rightwards until delimiter is found and
+    // set endSelectionPosition to one left of that spot
+    _ExpandDoubleClickSelection_Right(position);
+}
+ 
+// Method Description:
+// - Select the entire row of the position clicked
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+void Terminal::TripleClickSelection(const COORD position)
+{
+    SetSelectionAnchor({ 0, position.Y });
+    SetEndSelectionPosition({ _buffer->GetSize().RightInclusive(), position.Y });
+}
+
+// Method Description:
+// - expand the double click selection to the left (stopped by delimiter)
+// Arguments:
+// - position: viewport coordinate for selection
+// Return Value:
+// - update _selectionAnchor to new expanded location
+void Terminal::_ExpandDoubleClickSelection_Left(const COORD position)
+{
+    // don't change the value if at/outside the boundary
+    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
+    {
+        return;
+    }
+
+    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    while (positionWithOffsets.X != 0 && !_DoubleClickDelimiterCheck(cellChar))
+    {
+        _mutableViewport.DecrementInBounds(positionWithOffsets);
+        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    }
+
+    if (positionWithOffsets.X != 0 || _DoubleClickDelimiterCheck(cellChar))
+    {
+        // move off of delimiter to highlight properly
+        _mutableViewport.IncrementInBounds(positionWithOffsets);
+    }
+
+    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    _selectionAnchor = positionWithOffsets;
+    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionActive = true;
+}
+
+// Method Description:
+// - expand the double click selection to the right (stopped by delimiter)
+// Arguments:
+// - position: viewport coordinate for selection
+// Return Value:
+// - update _endSelectionPosition to new expanded location
+void Terminal::_ExpandDoubleClickSelection_Right(const COORD position)
+{
+    // don't change the value if at/outside the boundary
+    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
+    {
+        return;
+    }
+
+    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_DoubleClickDelimiterCheck(cellChar))
+    {
+        _mutableViewport.IncrementInBounds(positionWithOffsets);
+        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    }
+
+    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    _endSelectionPosition = positionWithOffsets;
+    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+}
+
+// Method Description:
+// - check if buffer cell data contains delimiter for double click selection
+// Arguments:
+// - cellChar: the char saved to the buffer cell under observation
+// Return Value:
+// - true if cell data contains the delimiter.
+const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
+{
+    // TODO: hook up delimiters to Settings
+    std::wstring_view delimiters[] =
+    {
+        std::wstring_view(L" "),
+        std::wstring_view(L"/"),
+        std::wstring_view(L"\\")
+    };
+
+    for (auto delimiter : delimiters)
+    {
+        if (cellChar == delimiter)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Method Description:
+// - convert viewport position to the corresponding location on the buffer
+// Arguments:
+// - viewportPos: a coordinate on the viewport
+// Return Value:
+// - the corresponding location on the buffer
+const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
+{
+    COORD positionWithOffsets = viewportPos;
+    THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
+    THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
+    return positionWithOffsets;
+}

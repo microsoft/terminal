@@ -722,13 +722,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-                // save location before rendering
-                _terminal->SetSelectionAnchor(terminalPosition);
-
                 // handle ALT key
                 _terminal->SetBoxSelection(altEnabled);
 
-                _renderer->TriggerSelection();
+                if (_IsTripleClick(cursorPosition, point.Timestamp()))
+                {
+                    _terminal->TripleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                    _doubleClickOccurred = true;
+                }
+                else if (_IsDoubleClick(cursorPosition, point.Timestamp()))
+                {
+                    _terminal->DoubleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                    _doubleClickOccurred = true;
+                }
+                else
+                {
+                    // save location before rendering
+                    _terminal->SetSelectionAnchor(terminalPosition);
+
+                    _renderer->TriggerSelection();
+                    _lastMouseClick = point.Timestamp();
+                    _lastMouseClickPos = cursorPosition;
+                    _doubleClickOccurred = false;
+                }
             }
             else if (point.Properties().IsRightButtonPressed())
             {
@@ -1425,6 +1443,52 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         terminalPosition.Y /= fontSize.Y;
 
         return terminalPosition;
+    }
+
+    // Method Description:
+    // - Checks if a double click occurred
+    // Arguments:
+    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    //    NOTE: origin (0,0) is top-left.
+    // - clickTime: the timestamp that the click occurred
+    // Return Value:
+    // - true if the new click was at the same location within the time delta
+    const bool TermControl::_IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const
+    {
+        if (clickPos == _lastMouseClickPos)
+        {
+            const TIMESTAMP threshold = 500000;
+            TIMESTAMP delta;
+            UInt64Sub(clickTime, _lastMouseClick, &delta);
+            if (delta < threshold)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - Checks if a triple click occurred
+    // Arguments:
+    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    //    NOTE: origin (0,0) is top-left.
+    // - clickTime: the timestamp that the click occurred
+    // Return Value:
+    // - true if the new click was at the same location within the time delta after a double click having occurred
+    const bool TermControl::_IsTripleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const
+    {
+        if (_doubleClickOccurred && clickPos == _lastMouseClickPos)
+        {
+            const TIMESTAMP threshold = 500000;
+            TIMESTAMP delta;
+            UInt64Sub(clickTime, _lastMouseClick, &delta);
+            if (delta < threshold)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

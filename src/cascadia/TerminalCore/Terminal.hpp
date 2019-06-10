@@ -122,6 +122,8 @@ public:
 
     #pragma region TextSelection
     const bool IsSelectionActive() const noexcept;
+    void DoubleClickSelection(const COORD position);
+    void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
@@ -154,6 +156,10 @@ public:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
+    void _ExpandDoubleClickSelection_Left(const COORD position);
+    void _ExpandDoubleClickSelection_Right(const COORD position);
+    const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
+    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 
     std::shared_mutex _readWriteLock;
 
