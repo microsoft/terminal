@@ -273,6 +273,30 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
 
+    TEST_METHOD(TestLeadingZeroCsiParam)
+    {
+        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        }
+        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        }
+        VERIFY_ARE_EQUAL(*mach._pusActiveParam, 12345);
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
     TEST_METHOD(TestCsiIgnore)
     {
         StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
@@ -429,6 +453,35 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
+
+    TEST_METHOD(TestLeadingZeroOscParam)
+    {
+        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L']');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        }
+        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        }
+        VERIFY_ARE_EQUAL(mach._sOscParam, 12345);
+        mach.ProcessCharacter(L';');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L's');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(AsciiChars::BEL);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
     TEST_METHOD(TestLongOscParam)
     {
         StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
