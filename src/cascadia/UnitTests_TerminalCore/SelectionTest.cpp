@@ -178,5 +178,106 @@ namespace TerminalCoreUnitTests
                 rowValue++;
             }
         }
+
+        TEST_METHOD(SelectWideGlyph_Trailing)
+        {
+            Terminal term = Terminal();
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Insert wide glyph at position (4,10)
+            term.SetCursorPosition(4, 10);
+            term.Write(L"\xF0\x9F\x98\x83");
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.SetSelectionAnchor(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            // Selection should expand one to the left to get the leading half of the wide glyph
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, 10, 10, 5 }, selection);
+        }
+
+        TEST_METHOD(SelectWideGlyph_Leading)
+        {
+            Terminal term = Terminal();
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Insert wide glyph at position (4,10)
+            term.SetCursorPosition(4, 10);
+            term.Write(L"\xF0\x9F\x98\x83");
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 4, 10 };
+            term.SetSelectionAnchor(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            // Selection should expand one to the left to get the leading half of the wide glyph
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, 10, 10, 5 }, selection);
+        }
+
+        TEST_METHOD(SelectWideGlyphsInBoxSelection)
+        {
+            Terminal term = Terminal();
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Insert wide glyph at position (4,10)
+            term.SetCursorPosition(4, 10);
+            term.Write(L"\xF0\x9F\x98\x83");
+
+            // Insert wide glyph at position (7,11)
+            term.SetCursorPosition(7, 11);
+            term.Write(L"\xF0\x9F\x98\x83");
+
+            // Simulate ALT + click at (x,y) = (5,8)
+            term.SetSelectionAnchor({ 5, 8 });
+            term.SetBoxSelection(true);
+
+            // Simulate move to (x,y) = (7,12)
+            term.SetEndSelectionPosition({ 7, 12 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(5));
+
+            auto viewport = term.GetViewport();
+            SHORT rowValue = 8;
+            for (auto selectionRect : selectionRects)
+            {
+                auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
+
+                if (rowValue == 10)
+                {
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, rowValue, 7, rowValue }, selection);
+                }
+                else if (rowValue == 11)
+                {
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 8, rowValue }, selection);
+                }
+                else
+                {
+                    // Verify all lines
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 7, rowValue }, selection);
+                }
+
+                rowValue++;
+            }
+        }
     };
 }
