@@ -91,10 +91,24 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+    <!-- <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" /> -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
   </ItemGroup>
+
+
+  <ItemGroup>
+    <Reference Include="TerminalApp">
+      <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\TerminalApp.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\TerminalApp.dll" />
+
+  </ItemGroup>
+
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application
