@@ -117,6 +117,13 @@ namespace winrt::TerminalApp::implementation
                 _PrevTabHandlers();
                 return true;
 
+            case ShortcutAction::SplitVertical:
+                _SplitVerticalHandlers();
+                return true;
+            case ShortcutAction::SplitHorizontal:
+                _SplitHorizontalHandlers();
+                return true;
+
             case ShortcutAction::SwitchToTab0:
                 _SwitchToTabHandlers(0);
                 return true;
@@ -214,6 +221,8 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, SplitVertical,     _SplitVerticalHandlers,     TerminalApp::SplitVerticalEventArgs);
+    DEFINE_EVENT(AppKeyBindings, SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
     DEFINE_EVENT(AppKeyBindings, IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);

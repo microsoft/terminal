@@ -4,6 +4,8 @@
 #include "pch.h"
 #include <argb.h>
 #include <conattrs.hpp>
+#include <io.h>
+#include <fcntl.h>
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
@@ -21,6 +23,7 @@ static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
+static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
@@ -227,6 +230,11 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+    try
+    {
+        _AppendWslProfiles(_profiles);
+    }
+    CATCH_LOG()
 }
 
 // Method Description:
@@ -474,6 +482,85 @@ bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view 
         }
     }
     return false;
+}
+
+// Function Description:
+// - Adds all of the WSL profiles to the provided container.
+// Arguments:
+// - A ref to the profiles container where the WSL profiles are to be added
+// Return Value:
+// - <none>
+void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage)
+{
+    wil::unique_handle readPipe;
+    wil::unique_handle writePipe;
+    SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
+    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
+    STARTUPINFO si{};
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESTDHANDLES;
+    si.hStdOutput = writePipe.get();
+    si.hStdError = writePipe.get();
+    wil::unique_process_information pi{};
+    wil::unique_cotaskmem_string systemPath;
+    THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
+    std::wstring command(systemPath.get());
+    command += L"\\wsl.exe --list";
+
+    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
+                                                TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
+    switch (WaitForSingleObject(pi.hProcess, INFINITE))
+    {
+    case WAIT_OBJECT_0:
+        break;
+    case WAIT_ABANDONED:
+    case WAIT_TIMEOUT:
+        THROW_HR(ERROR_CHILD_NOT_COMPLETE);
+    case WAIT_FAILED:
+        THROW_LAST_ERROR();
+    default:
+        THROW_HR(ERROR_UNHANDLED_EXCEPTION);
+    }
+    DWORD exitCode;
+    if (GetExitCodeProcess(pi.hProcess, &exitCode) == false)
+    {
+        THROW_HR(E_INVALIDARG);
+    }
+    else if (exitCode != 0)
+    {
+        return;
+    }
+    DWORD bytesAvailable;
+    THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
+    std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
+        //don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil and closing the file handle will cause an error.
+    std::wstring wline;
+    std::getline(pipe, wline); //remove the header from the output.
+    while (pipe.tellp() < bytesAvailable)
+    {
+        std::getline(pipe, wline);
+        std::wstringstream wlinestream(wline);
+        if (wlinestream)
+        {
+            std::wstring distName;
+            std::getline(wlinestream, distName, L'\r');
+            size_t firstChar = distName.find_first_of(L"( ");
+            // Some localizations don't have a space between the name and "(Default)"
+            // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
+            if (firstChar < distName.size())
+            {
+                distName.resize(firstChar);
+            }
+            auto WSLDistro{ _CreateDefaultProfile(distName) };
+            WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
+            WSLDistro.SetColorScheme({ L"Campbell" });
+            std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
+            iconPath.append(DEFAULT_LINUX_ICON_GUID);
+            iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
+            WSLDistro.SetIconPath(iconPath);
+            profileStorage.emplace_back(WSLDistro);
+        }
+    }
 }
 
 // Function Description:

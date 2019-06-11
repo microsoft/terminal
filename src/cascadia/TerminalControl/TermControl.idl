@@ -34,6 +34,7 @@ namespace Microsoft.Terminal.TerminalControl
         void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
+        Boolean ShouldCloseOnExit { get; };
 
         void ScrollViewport(Int32 viewTop);
         void KeyboardScrollViewport(Int32 viewTop);

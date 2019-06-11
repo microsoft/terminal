@@ -42,6 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
+        bool ShouldCloseOnExit() const noexcept;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
