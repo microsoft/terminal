@@ -53,5 +53,5 @@ INCLUDES = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(OBJ_PATH)\..\lib\$(O)\ConTermParser.lib \
