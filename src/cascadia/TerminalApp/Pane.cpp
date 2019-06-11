@@ -38,6 +38,16 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     }
 }
 
+// Method Description:
+// - Update the size of this pane. Resizes each of our columns so they have the
+//   same relative sizes, given the newSize.
+// - Because we're just manually setting the row/column sizes in pixels, we have
+//   to be told our new size, we can't just use our own OnSized event, because
+//   that _won't fire when we get smaller_.
+// Arguments:
+// - newSize: the amount of space that this pane has to fill now.
+// Return Value:
+// - <none>
 void Pane::ResizeContent(const Size& newSize)
 {
     const auto width = newSize.Width;
@@ -65,6 +75,16 @@ void Pane::ResizeContent(const Size& newSize)
     }
 }
 
+// Method Description:
+// - Adjust our child percentages to increase the size of one of our children
+//   and decrease the size of the other.
+// - Adjusts the separation amount by 5%
+// Arguments:
+// - direction: the direction to move our separator. If it's down or right,
+//   we'll be increasing the size of the first of our children. Else, we'll be
+//   decreasing the size of our first child.
+// Return Value:
+// - <none>
 void Pane::_DoResize(const Direction& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
@@ -78,41 +98,63 @@ void Pane::_DoResize(const Direction& direction)
         amount *= -1.0f;
     }
 
-    _firstPercent = _firstPercent.value() - amount;
+    // Make sure we're not making a pane explode here by resizing it to 0
+    _firstPercent = std::clamp(_firstPercent.value() - amount, .05f, .95f);
+    // Update the other child to fill the remaining percent
     _secondPercent = 1.0f - _firstPercent.value();
 
-
-    Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                     gsl::narrow_cast<float>(_root.ActualHeight()) };
-    if (_splitState == SplitState::Vertical)
-    {
-        ResizeContent(actualSize);
-    }
-    else if (_splitState == SplitState::Horizontal)
-    {
-        ResizeContent(actualSize);
-    }
+    // Resize our columns to match the new percentages.
+    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                           gsl::narrow_cast<float>(_root.ActualHeight()) };
+    ResizeContent(actualSize);
 }
 
+// Method Description:
+// - Moves the separator between panes, as to resize each child on either size
+//   of the separator. Tries to move a separator in the given direction. The
+//   separatior moved is the separator that's closest depth-wise to the
+//   currently focused pane, that's also in the correct direction to be moved.
+//   If there isn't such a separator, then this method returns false, as we
+//   couldn't handle the resize.
+// Arguments:
+// - direction: The direction to move the separator in.
+// Return Value:
+// - true if we or a child handled this resize request.
 bool Pane::ResizePane(const Direction& direction)
 {
+    // If we're a leaf, do nothing. We can't possibly have a descentant with a
+    // separator the correct direction.
     if (_IsLeaf())
     {
         return false;
     }
+
+    // Check if either our first or second child is the currently focused leaf.
+    // If it is, and the requested resize direction matches our separator, then
+    // we're the pane that needs to adjust its separator.
+    // If our separator is the wrong direction, then we can't handle it.
     const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
     if (firstIsFocused || secondIsFocused)
     {
         if (Pane::DirectionMatchesSplit(direction, _splitState))
         {
-            this->_DoResize(direction);
+            _DoResize(direction);
             return true;
         }
         return false;
     }
     else
     {
+        // If neither of our children were the focused leaf, then recurse into
+        // our children and see if they can handle the resize.
+        // For each child, if it has a focused descendant, try having that child
+        // handle the resize.
+        // If the child wasn't able to handle the resize, it's possible that
+        // there were no descendants with a separator the correct direction. If
+        // our separator _is_ the correct direction, then we should be the pane
+        // to resize. Otherwise, just return false, as we couldn't handle it
+        // either.
         if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
         {
             const bool handled = _firstChild->ResizePane(direction);
@@ -122,7 +164,7 @@ bool Pane::ResizePane(const Direction& direction)
             }
             else if (Pane::DirectionMatchesSplit(direction, _splitState))
             {
-                this->_DoResize(direction);
+                _DoResize(direction);
                 return true;
             }
             return false;
@@ -136,7 +178,7 @@ bool Pane::ResizePane(const Direction& direction)
             }
             else if (Pane::DirectionMatchesSplit(direction, _splitState))
             {
-                this->_DoResize(direction);
+                _DoResize(direction);
                 return true;
             }
             return false;
@@ -520,6 +562,17 @@ void Pane::_SetupChildCloseHandlers()
     });
 }
 
+// Method Description:
+// - Sets up row/column definitions for this pane. There are three total
+//   row/cols. The middle one is for the separator. The first and third are for
+//   each of the child panes, and are given a size in pixels, based off the
+//   availiable space, and the percent of the space they respectively consume,
+//   which is stored in _firstPercent and _secondPercent.
+// - Does nothing if our split state is currently set to SplitState::None
+// Arguments:
+// - rootSize: The dimensions in pixels that this pane (and its children should consume.)
+// Return Value:
+// - <none>
 void Pane::_CreateRowColDefinitions(const Size& rootSize)
 {
     if (_splitState == SplitState::Vertical)
@@ -728,6 +781,16 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
     _lastFocused = false;
 }
 
+// Method Description:
+// - Gets the size in pixels of each of our children, given the full size they
+//   should fill. Accounts for the size of the separator that should be between
+//   them as well.
+// Arguments:
+// - fullSize: the amount of space in pixels that should be filled by our
+//   children and their separator
+// Return Value:
+// - a pair with the size of our first child and the size of our second child,
+//   respectively.
 std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
 {
     if (_IsLeaf())

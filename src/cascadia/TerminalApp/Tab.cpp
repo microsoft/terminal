@@ -213,11 +213,25 @@ void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
     _rootPane->SplitHorizontal(profile, control);
 }
 
+// Method Description:
+// - Update the size of our panes to fill the new given size. This happens when
+//   the window is resized.
+// Arguments:
+// - newSize: the amount of space that the panes have to fill now.
+// Return Value:
+// - <none>
 void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
 {
     _rootPane->ResizeContent(newSize);
 }
 
+// Method Description:
+// - Attempt to move a separator between panes, as to resize each child on
+//   either size of the separator. See Pane::ResizePane for details.
+// Arguments:
+// - direction: The direction to move the separator in.
+// Return Value:
+// - <none>
 void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 {
     _rootPane->ResizePane(direction);

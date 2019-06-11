@@ -92,6 +92,20 @@ private:
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 
+    // Function Description:
+    // - Returns true if the given direction can be used with the given split
+    //   type.
+    // - This is used fow pane resizing (which will need a pane separator
+    //   that's perpendicular to the direction to be able to move the separator
+    //   in that direction).
+    // - Additionally, it will be used for moving focus between panes, which
+    //   again happens _across_ a separator.
+    // Arguments:
+    // - direction: The Direction to compare
+    // - splitType: The SplitState to compare
+    // Return Value:
+    // - true iff the direction is perpendicular to the splitType. False for
+    //   SplitState::None.
     static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
                                                 const SplitState& splitType)
     {

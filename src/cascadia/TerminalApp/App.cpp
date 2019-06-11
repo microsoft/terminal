@@ -1195,7 +1195,15 @@ namespace winrt::TerminalApp::implementation
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
     }
 
-    void App::_OnContentSizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    // Method Description:
+    // - Called when our tab content size changes. This updates each tab with
+    //   the new size, so they have a chance to update each of their panes with
+    //   the new size.
+    // Arguments:
+    // - e: the SizeChangedEventArgs with the new size of the tab content area.
+    // Return Value:
+    // - <none>
+    void App::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
         const auto newSize = e.NewSize();
         for (auto& tab : _tabs)
