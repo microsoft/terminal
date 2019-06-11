@@ -9,6 +9,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::TerminalApp;
 
 static const int PaneSeparatorSize = 4;
 
@@ -62,7 +63,86 @@ void Pane::ResizeContent(const Size& newSize)
         _firstChild->ResizeContent(firstSize);
         _secondChild->ResizeContent(secondSize);
     }
+}
 
+void Pane::_DoResize(const Direction& direction)
+{
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        return;
+    }
+
+    float amount = .05f;
+    if (direction == Direction::Right || direction == Direction::Down)
+    {
+        amount *= -1.0f;
+    }
+
+    _firstPercent = _firstPercent.value() - amount;
+    _secondPercent = 1.0f - _firstPercent.value();
+
+
+    Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                     gsl::narrow_cast<float>(_root.ActualHeight()) };
+    if (_splitState == SplitState::Vertical)
+    {
+        ResizeContent(actualSize);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        ResizeContent(actualSize);
+    }
+}
+
+bool Pane::ResizePane(const Direction& direction)
+{
+    if (_IsLeaf())
+    {
+        return false;
+    }
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    if (firstIsFocused || secondIsFocused)
+    {
+        if (Pane::DirectionMatchesSplit(direction, _splitState))
+        {
+            this->_DoResize(direction);
+            return true;
+        }
+        return false;
+    }
+    else
+    {
+        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
+        {
+            const bool handled = _firstChild->ResizePane(direction);
+            if (handled)
+            {
+                return true;
+            }
+            else if (Pane::DirectionMatchesSplit(direction, _splitState))
+            {
+                this->_DoResize(direction);
+                return true;
+            }
+            return false;
+        }
+        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+        {
+            const bool handled = _secondChild->ResizePane(direction);
+            if (handled)
+            {
+                return true;
+            }
+            else if (Pane::DirectionMatchesSplit(direction, _splitState))
+            {
+                this->_DoResize(direction);
+                return true;
+            }
+            return false;
+        }
+    }
+    return false;
 }
 
 // Method Description:

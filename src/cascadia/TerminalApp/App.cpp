@@ -432,6 +432,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
     }
 
     // Method Description:
@@ -924,6 +925,12 @@ namespace winrt::TerminalApp::implementation
         const auto control = _GetFocusedControl();
         const auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
+    }
+
+    void App::_ResizePane(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->ResizePane(direction);
     }
 
     // Method Description:

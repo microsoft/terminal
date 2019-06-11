@@ -21,6 +21,7 @@
 
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 class Pane : public std::enable_shared_from_this<Pane>
@@ -48,6 +49,7 @@ public:
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
+    bool ResizePane(const winrt::TerminalApp::Direction& direction);
 
     void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
@@ -81,6 +83,7 @@ private:
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
+    void _DoResize(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
 
@@ -88,4 +91,24 @@ private:
     void _ControlClosedHandler();
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
+
+    static constexpr bool DirectionMatchesSplit(const winrt::TerminalApp::Direction& direction,
+                                                const SplitState& splitType)
+    {
+        if (splitType == SplitState::None)
+        {
+            return false;
+        }
+        else if (splitType == SplitState::Horizontal)
+        {
+            return direction == winrt::TerminalApp::Direction::Up ||
+                   direction == winrt::TerminalApp::Direction::Down;
+        }
+        else if (splitType == SplitState::Vertical)
+        {
+            return direction == winrt::TerminalApp::Direction::Left ||
+                   direction == winrt::TerminalApp::Direction::Right;
+        }
+        return false;
+    }
 };

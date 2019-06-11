@@ -218,5 +218,9 @@ void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
     _rootPane->ResizeContent(newSize);
 }
 
+void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+{
+    _rootPane->ResizePane(direction);
+}
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);
