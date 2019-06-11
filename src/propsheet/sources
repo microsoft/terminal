@@ -77,8 +77,8 @@ INCLUDES = \
     ..\host; \
 
 TARGETLIBS = \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
-    $(ONECORE_SDK_LIB_VPATH)\onecoreuap.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecoreuap.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecoreuap_internal.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
