@@ -22,16 +22,12 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         static Icon& Instance();
 
-        [[nodiscard]]
-        HRESULT GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon);
-        [[nodiscard]]
-        HRESULT SetIcons(const HICON hIcon, const HICON hSmIcon);
+        [[nodiscard]] HRESULT GetIcons(_Out_opt_ HICON* const phIcon, _Out_opt_ HICON* const phSmIcon);
+        [[nodiscard]] HRESULT SetIcons(const HICON hIcon, const HICON hSmIcon);
 
-        [[nodiscard]]
-        HRESULT LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex);
+        [[nodiscard]] HRESULT LoadIconsFromPath(_In_ PCWSTR pwszIconLocation, const int nIconIndex);
 
-        [[nodiscard]]
-        HRESULT ApplyWindowMessageWorkaround(const HWND hwnd);
+        [[nodiscard]] HRESULT ApplyWindowMessageWorkaround(const HWND hwnd);
 
     protected:
         Icon();
@@ -40,18 +36,14 @@ namespace Microsoft::Console::Interactivity::Win32
         void operator=(Icon const&) = delete;
 
     private:
-        [[nodiscard]]
-        HRESULT _Initialize();
+        [[nodiscard]] HRESULT _Initialize();
 
         void _DestroyNonDefaultIcons();
 
         // Helper methods
-        [[nodiscard]]
-        HRESULT _GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& hDefaultIconRef, _Out_ HICON* const phIcon);
-        [[nodiscard]]
-        HRESULT _GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* const phIcon);
-        [[nodiscard]]
-        HRESULT _SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon);
+        [[nodiscard]] HRESULT _GetAvailableIconFromReference(_In_ HICON& hIconRef, _In_ HICON& hDefaultIconRef, _Out_ HICON* const phIcon);
+        [[nodiscard]] HRESULT _GetDefaultIconFromReference(_In_ HICON& hIconRef, _Out_ HICON* const phIcon);
+        [[nodiscard]] HRESULT _SetIconFromReference(_In_ HICON& hIconRef, const HICON hNewIcon);
         void _FreeIconFromReference(_In_ HICON& hIconRef);
 
         bool _fInitialized;

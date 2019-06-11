@@ -23,7 +23,6 @@ namespace Microsoft::Console::VirtualTerminal
     class InteractDispatch : public IInteractDispatch
     {
     public:
-
         InteractDispatch(ConGetSet* const pConApi);
 
         ~InteractDispatch() = default;
@@ -36,9 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
                                 const size_t cParams) override; // DTTERM_WindowManipulation
         bool MoveCursor(const unsigned int row,
                         const unsigned int col) override;
+
     private:
-
         std::unique_ptr<ConGetSet> _pConApi;
-
     };
 }

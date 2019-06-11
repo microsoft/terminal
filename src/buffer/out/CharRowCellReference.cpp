@@ -5,7 +5,6 @@
 #include "UnicodeStorage.hpp"
 #include "CharRow.hpp"
 
-
 // Routine Description:
 // - assignment operator. will store extended glyph data in a separate storage location
 // Arguments:
@@ -96,7 +95,6 @@ CharRowCellReference::const_iterator CharRowCellReference::end() const
 {
     if (_cellData().DbcsAttr().IsGlyphStored())
     {
-
         const auto& chars = _parent.GetUnicodeStorage().GetText(_parent.GetStorageKey(_index));
         return chars.data() + chars.size();
     }

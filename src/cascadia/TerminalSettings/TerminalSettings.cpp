@@ -32,7 +32,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
-
     }
 
     uint32_t TerminalSettings::DefaultForeground()

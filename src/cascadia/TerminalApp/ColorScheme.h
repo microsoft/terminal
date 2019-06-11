@@ -26,7 +26,6 @@ namespace TerminalApp
 
 class TerminalApp::ColorScheme
 {
-
 public:
     ColorScheme();
     ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg);

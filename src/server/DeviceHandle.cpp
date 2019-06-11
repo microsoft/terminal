@@ -6,7 +6,7 @@
 
 #include "WinNTControl.h"
 
-#define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
+#define FILE_SYNCHRONOUS_IO_NONALERT 0x00000020
 
 /*++
 Routine Description:
@@ -24,8 +24,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the client was successfully created.
 --*/
-[[nodiscard]]
-NTSTATUS
+[[nodiscard]] NTSTATUS
 DeviceHandle::CreateClientHandle(
     _Out_ PHANDLE Handle,
     _In_ HANDLE ServerHandle,
@@ -51,8 +50,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the console was successfully created.
 --*/
-[[nodiscard]]
-NTSTATUS
+[[nodiscard]] NTSTATUS
 DeviceHandle::CreateServerHandle(
     _Out_ PHANDLE Handle,
     _In_ BOOLEAN Inheritable)
@@ -82,8 +80,7 @@ Arguments:
 Return Value:
 - NTSTATUS indicating if the handle was successfully created.
 --*/
-[[nodiscard]]
-NTSTATUS
+[[nodiscard]] NTSTATUS
 DeviceHandle::_CreateHandle(
     _Out_ PHANDLE Handle,
     _In_ PCWSTR DeviceName,

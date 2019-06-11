@@ -267,25 +267,25 @@ void Cursor::CopyProperties(const Cursor& OtherCursor)
     // We shouldn't copy the position as it will be already rearranged by the resize operation.
     //_cPosition                    = pOtherCursor->_cPosition;
 
-    _fHasMoved                    = OtherCursor._fHasMoved;
-    _fIsVisible                   = OtherCursor._fIsVisible;
-    _fIsOn                        = OtherCursor._fIsOn;
-    _fIsDouble                    = OtherCursor._fIsDouble;
-    _fBlinkingAllowed             = OtherCursor._fBlinkingAllowed;
-    _fDelay                       = OtherCursor._fDelay;
-    _fIsConversionArea            = OtherCursor._fIsConversionArea;
+    _fHasMoved = OtherCursor._fHasMoved;
+    _fIsVisible = OtherCursor._fIsVisible;
+    _fIsOn = OtherCursor._fIsOn;
+    _fIsDouble = OtherCursor._fIsDouble;
+    _fBlinkingAllowed = OtherCursor._fBlinkingAllowed;
+    _fDelay = OtherCursor._fDelay;
+    _fIsConversionArea = OtherCursor._fIsConversionArea;
 
     // A resize operation should invalidate the delayed end of line status, so do not copy.
     //_fDelayedEolWrap              = OtherCursor._fDelayedEolWrap;
     //_coordDelayedAt               = OtherCursor._coordDelayedAt;
 
-    _fDeferCursorRedraw           = OtherCursor._fDeferCursorRedraw;
-    _fHaveDeferredCursorRedraw    = OtherCursor._fHaveDeferredCursorRedraw;
+    _fDeferCursorRedraw = OtherCursor._fDeferCursorRedraw;
+    _fHaveDeferredCursorRedraw = OtherCursor._fHaveDeferredCursorRedraw;
 
     // Size will be handled seperately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
-    _cursorType                   = OtherCursor._cursorType;
-    _color                        = OtherCursor._color;
+    _cursorType = OtherCursor._cursorType;
+    _color = OtherCursor._color;
 }
 
 void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
@@ -296,7 +296,7 @@ void Cursor::DelayEOLWrap(const COORD coordDelayedAt)
 
 void Cursor::ResetDelayEOLWrap()
 {
-    _coordDelayedAt = {0};
+    _coordDelayedAt = { 0 };
     _fDelayedEolWrap = false;
 }
 

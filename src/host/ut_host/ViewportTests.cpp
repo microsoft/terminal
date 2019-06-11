@@ -202,7 +202,9 @@ class ViewportTests
         VERIFY_ARE_EQUAL(1, v.Height());
         VERIFY_ARE_EQUAL(1, v.Width());
         VERIFY_ARE_EQUAL(origin, v.Origin());
+        // clang-format off
         VERIFY_ARE_EQUAL(COORD({ 1, 1, }), v.Dimensions());
+        // clang-format on
     }
 
     TEST_METHOD(ToRect)
@@ -379,7 +381,6 @@ class ViewportTests
         view.Clamp(pos);
         VERIFY_ARE_EQUAL(before, pos, L"Verify clamp did nothing for position in top right corner.");
 
-
         COORD expected;
         expected.X = rect.Right;
         expected.Y = rect.Top;
@@ -431,7 +432,8 @@ class ViewportTests
 
         Viewport invalidView = Viewport::Empty();
         VERIFY_THROWS_SPECIFIC(invalidView.Clamp(pos),
-                               wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_NOT_VALID_STATE; });
+                               wil::ResultException,
+                               [](wil::ResultException& e) { return e.GetErrorCode() == E_NOT_VALID_STATE; });
     }
 
     TEST_METHOD(ClampViewport)
@@ -795,7 +797,8 @@ class ViewportTests
         adjust = { SHORT_MAX, SHORT_MAX };
 
         VERIFY_THROWS_SPECIFIC(const auto vp = Viewport::Offset(original, adjust),
-            wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW); });
+                               wil::ResultException,
+                               [](wil::ResultException& e) { return e.GetErrorCode() == HRESULT_FROM_WIN32(ERROR_ARITHMETIC_OVERFLOW); });
     }
 
     TEST_METHOD(Union)

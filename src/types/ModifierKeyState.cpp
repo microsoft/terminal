@@ -28,45 +28,45 @@ std::unordered_set<ModifierKeyState> FromVkKeyScan(const short vkKeyScanFlags)
 
     switch (vkKeyScanFlags)
     {
-        case VkKeyScanModState::None:
-            break;
-        case VkKeyScanModState::ShiftPressed:
-            keyState.insert(ModifierKeyState::Shift);
-            break;
-        case VkKeyScanModState::CtrlPressed:
-            keyState.insert(ModifierKeyState::LeftCtrl);
-            keyState.insert(ModifierKeyState::RightCtrl);
-            break;
-        case VkKeyScanModState::ShiftAndCtrlPressed:
-            keyState.insert(ModifierKeyState::Shift);
-            keyState.insert(ModifierKeyState::LeftCtrl);
-            keyState.insert(ModifierKeyState::RightCtrl);
-            break;
-        case VkKeyScanModState::AltPressed:
-            keyState.insert(ModifierKeyState::LeftAlt);
-            keyState.insert(ModifierKeyState::RightAlt);
-            break;
-        case VkKeyScanModState::ShiftAndAltPressed:
-            keyState.insert(ModifierKeyState::Shift);
-            keyState.insert(ModifierKeyState::LeftAlt);
-            keyState.insert(ModifierKeyState::RightAlt);
-            break;
-        case VkKeyScanModState::CtrlAndAltPressed:
-            keyState.insert(ModifierKeyState::LeftCtrl);
-            keyState.insert(ModifierKeyState::RightCtrl);
-            keyState.insert(ModifierKeyState::LeftAlt);
-            keyState.insert(ModifierKeyState::RightAlt);
-            break;
-        case VkKeyScanModState::ModPressed:
-            keyState.insert(ModifierKeyState::Shift);
-            keyState.insert(ModifierKeyState::LeftCtrl);
-            keyState.insert(ModifierKeyState::RightCtrl);
-            keyState.insert(ModifierKeyState::LeftAlt);
-            keyState.insert(ModifierKeyState::RightAlt);
-            break;
-        default:
-            THROW_HR(E_INVALIDARG);
-            break;
+    case VkKeyScanModState::None:
+        break;
+    case VkKeyScanModState::ShiftPressed:
+        keyState.insert(ModifierKeyState::Shift);
+        break;
+    case VkKeyScanModState::CtrlPressed:
+        keyState.insert(ModifierKeyState::LeftCtrl);
+        keyState.insert(ModifierKeyState::RightCtrl);
+        break;
+    case VkKeyScanModState::ShiftAndCtrlPressed:
+        keyState.insert(ModifierKeyState::Shift);
+        keyState.insert(ModifierKeyState::LeftCtrl);
+        keyState.insert(ModifierKeyState::RightCtrl);
+        break;
+    case VkKeyScanModState::AltPressed:
+        keyState.insert(ModifierKeyState::LeftAlt);
+        keyState.insert(ModifierKeyState::RightAlt);
+        break;
+    case VkKeyScanModState::ShiftAndAltPressed:
+        keyState.insert(ModifierKeyState::Shift);
+        keyState.insert(ModifierKeyState::LeftAlt);
+        keyState.insert(ModifierKeyState::RightAlt);
+        break;
+    case VkKeyScanModState::CtrlAndAltPressed:
+        keyState.insert(ModifierKeyState::LeftCtrl);
+        keyState.insert(ModifierKeyState::RightCtrl);
+        keyState.insert(ModifierKeyState::LeftAlt);
+        keyState.insert(ModifierKeyState::RightAlt);
+        break;
+    case VkKeyScanModState::ModPressed:
+        keyState.insert(ModifierKeyState::Shift);
+        keyState.insert(ModifierKeyState::LeftCtrl);
+        keyState.insert(ModifierKeyState::RightCtrl);
+        keyState.insert(ModifierKeyState::LeftAlt);
+        keyState.insert(ModifierKeyState::RightAlt);
+        break;
+    default:
+        THROW_HR(E_INVALIDARG);
+        break;
     }
 
     return keyState;
@@ -74,8 +74,7 @@ std::unordered_set<ModifierKeyState> FromVkKeyScan(const short vkKeyScanFlags)
 
 using ModifierKeyStateMapping = std::pair<ModifierKeyState, DWORD>;
 
-constexpr static ModifierKeyStateMapping ModifierKeyStateTranslationTable[] =
-{
+constexpr static ModifierKeyStateMapping ModifierKeyStateTranslationTable[] = {
     { ModifierKeyState::RightAlt, RIGHT_ALT_PRESSED },
     { ModifierKeyState::LeftAlt, LEFT_ALT_PRESSED },
     { ModifierKeyState::RightCtrl, RIGHT_CTRL_PRESSED },

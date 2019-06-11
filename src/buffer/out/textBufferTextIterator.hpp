@@ -28,7 +28,6 @@ public:
     const std::wstring_view* operator->() const;
 
 protected:
-
 #if UNIT_TESTING
     friend class TextBufferIteratorTests;
 #endif

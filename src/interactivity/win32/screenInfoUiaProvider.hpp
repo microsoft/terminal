@@ -30,27 +30,29 @@ namespace Microsoft::Console::Interactivity::Win32
 
     class WindowUiaProvider;
 
-    class ScreenInfoUiaProvider final : public IRawElementProviderSimple,
-                                        public IRawElementProviderFragment,
-                                        public ITextProvider
+    class ScreenInfoUiaProvider final :
+        public IRawElementProviderSimple,
+        public IRawElementProviderFragment,
+        public ITextProvider
     {
     public:
         ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
-        [[nodiscard]]
-        HRESULT Signal(_In_ EVENTID id);
+        [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
 
         // IUnknown methods
-        IFACEMETHODIMP_(ULONG) AddRef();
-        IFACEMETHODIMP_(ULONG) Release();
+        IFACEMETHODIMP_(ULONG)
+        AddRef();
+        IFACEMETHODIMP_(ULONG)
+        Release();
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                        _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface);
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
         IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                            _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
         IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
                                         _Out_ VARIANT* pVariant);
         IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
@@ -68,14 +70,13 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
         IFACEMETHODIMP GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
         IFACEMETHODIMP RangeFromChild(_In_ IRawElementProviderSimple* childElement,
-                                        _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP RangeFromPoint(_In_ UiaPoint point,
-                                        _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
     private:
-
         // Ref counter for COM object
         ULONG _cRefs;
 

@@ -73,11 +73,11 @@ public:
     bool GetLineSelection() const;
     void SetLineSelection(const bool bLineSelection);
 
-    bool GetWrapText () const;
-    void SetWrapText (const bool bWrapText );
+    bool GetWrapText() const;
+    void SetWrapText(const bool bWrapText);
 
-    bool GetCtrlKeyShortcutsDisabled () const;
-    void SetCtrlKeyShortcutsDisabled (const bool fCtrlKeyShortcutsDisabled );
+    bool GetCtrlKeyShortcutsDisabled() const;
+    void SetCtrlKeyShortcutsDisabled(const bool fCtrlKeyShortcutsDisabled);
 
     BYTE GetWindowAlpha() const;
     void SetWindowAlpha(const BYTE bWindowAlpha);
@@ -252,8 +252,6 @@ private:
     friend class RegistrySerialization;
 
 public:
-
     WORD GenerateLegacyAttributes(const TextAttribute attributes) const;
     WORD FindNearestTableIndex(const COLORREF Color) const;
-
 };
