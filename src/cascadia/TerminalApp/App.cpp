@@ -1036,7 +1036,10 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    return _GetFocusedControl().Title();
+                    if (auto focusedControl{ _GetFocusedControl() })
+                    {
+                        return focusedControl.Title();
+                    }
                 }
                 CATCH_LOG();
             }
