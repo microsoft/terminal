@@ -80,12 +80,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
 
-        swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
-        swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
+        _sizeChangedRevoker = swapChainPanel.SizeChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainSizeChanged });
+        _compositionScaleChangedRevoker = swapChainPanel.CompositionScaleChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainScaleChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        swapChainPanel.Loaded([this] (auto /*s*/, auto /*e*/){
+        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this] (auto /*s*/, auto /*e*/){
             _InitializeTerminal();
         });
 
@@ -355,34 +355,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     TermControl::~TermControl()
     {
-        _closing = true;
-        // Don't let anyone else do something to the buffer.
-        std::unique_lock<std::shared_mutex> lock;
-        if (_terminal)
-        {
-            lock = _terminal->LockForWriting();
-        }
-
-        // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
-        if (_cursorTimer)
-        {
-            _cursorTimer.value().Stop();
-            _cursorTimer = std::nullopt;
-        }
-
-        if (_connection)
-        {
-            _connection.Close();
-        }
-
-        if (_renderer)
-        {
-            _renderer->TriggerTeardown();
-        }
-
-        _swapChainPanel = nullptr;
-        _root = nullptr;
-        _connection = nullptr;
+        Close();
     }
 
     UIElement TermControl::GetRoot()
@@ -573,8 +546,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
-        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
+        _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
+        _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -1203,9 +1176,39 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::Close()
     {
-        if (!_closing)
+        if (!_closing.exchange(true))
         {
-            this->~TermControl();
+            // Stop accepting new output before we disconnect everything.
+            _connection.TerminalOutput(_connectionOutputEventToken);
+
+            // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+            if (auto localCursorTimer{std::exchange(_cursorTimer, std::nullopt)})
+            {
+                localCursorTimer->Stop();
+                // cursorTimer timer, now stopped, is destroyed.
+            }
+
+            if (auto localConnection{std::exchange(_connection, nullptr)})
+            {
+                localConnection.Close();
+                // connection is destroyed.
+            }
+
+            if (auto localRenderEngine{std::exchange(_renderEngine, nullptr)})
+            {
+                if (auto localRenderer{std::exchange(_renderer, nullptr)})
+                {
+                    localRenderer->TriggerTeardown();
+                    // renderer is destroyed
+                }
+                // renderEngine is destroyed
+            }
+
+            if (auto localTerminal{std::exchange(_terminal, nullptr)})
+            {
+                _initializedTerminal = false;
+                // terminal is destroyed.
+            }
         }
     }
 
