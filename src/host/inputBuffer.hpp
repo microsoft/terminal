@@ -41,12 +41,6 @@ public:
     // storage API for partial dbcs bytes being read from the buffer
     bool IsReadPartialByteSequenceAvailable();
     std::unique_ptr<IInputEvent> FetchReadPartialByteSequence(_In_ bool peek);
-
-
-
-
-
-
     void StoreReadPartialByteSequence(std::unique_ptr<IInputEvent> event);
 
     // storage API for partial dbcs bytes being written to the buffer
