@@ -64,7 +64,8 @@ class AliasTests
             TEST_METHOD_PROPERTY(L"Data:exeName", L"{test.exe}")
             TEST_METHOD_PROPERTY(L"Data:aliasName", L"{foo}")
             TEST_METHOD_PROPERTY(L"Data:originalString", L"{ foo one two three four five six seven eight nine ten eleven twelve }")
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{" // Each of these is a human-generated test of macro before and after.
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{" // Each of these is a human-generated test of macro before and after.
                                  L"bar=bar%," // The character % will be turned into an \r\n
                                  L"bar $1=bar one%,"
                                  L"bar $2=bar two%,"
@@ -92,10 +93,10 @@ class AliasTests
                                  L"IEndInA$=IEndInA$%," // Ending in a $ is copied through.
                                  L"megamix $7$Gfun $1 $b test $9 $L $2.txt$tall$$the$$things $*$tat$g$gonce.log=megamix seven>fun one | test nine < two.txt%all$$the$$things one two three four five six seven eight nine ten eleven twelve%at>>once.log%"
                                  L"}")
-            END_TEST_METHOD_PROPERTIES()
+        END_TEST_METHOD_PROPERTIES()
 
-            // Get test parameters
-            String exeName;
+        // Get test parameters
+        String exeName;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"exeName", exeName));
 
         String aliasName;
@@ -318,7 +319,6 @@ class AliasTests
         std::wstring target(L"someTarget");
         Alias::s_TestAddAlias(exe, source, target);
 
-
         Alias::s_MatchAndCopyAliasLegacy(pwszSource,
                                          cbSource,
                                          rgwchTarget.get(),
@@ -374,7 +374,8 @@ class AliasTests
     TEST_METHOD(TrimTrailing)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"bar%=bar," // The character % will be turned into an \r\n
                                  L"bar=bar"
                                  L"}")
@@ -430,10 +431,11 @@ class AliasTests
     TEST_METHOD(GetArgString)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
-                                L"alias arg1 arg2 arg3=arg1 arg2 arg3,"
-                                L"aliasOnly="
-                                L"}")
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
+                                 L"alias arg1 arg2 arg3=arg1 arg2 arg3,"
+                                 L"aliasOnly="
+                                 L"}")
         END_TEST_METHOD_PROPERTIES()
 
         std::wstring target;
@@ -448,7 +450,8 @@ class AliasTests
     TEST_METHOD(NumberedArgMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"1=one,"
                                  L"2=two,"
                                  L"3=three,"
@@ -493,7 +496,8 @@ class AliasTests
     TEST_METHOD(WildcardArgMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"*=one two three,"
                                  L"A=,"
                                  L"0=,"
@@ -519,7 +523,8 @@ class AliasTests
     TEST_METHOD(InputRedirMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"L=<,"
                                  L"l=<,"
                                  L"A=,"
@@ -545,7 +550,8 @@ class AliasTests
     TEST_METHOD(OutputRedirMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"G=>,"
                                  L"g=>,"
                                  L"A=,"
@@ -571,7 +577,8 @@ class AliasTests
     TEST_METHOD(PipeRedirMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"B=|,"
                                  L"b=|,"
                                  L"A=,"
@@ -597,7 +604,8 @@ class AliasTests
     TEST_METHOD(NextCommandMacro)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair", L"{"
+            TEST_METHOD_PROPERTY(L"Data:targetExpectedPair",
+                                 L"{"
                                  L"T=%,"
                                  L"t=%,"
                                  L"A=,"

@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "..\inc\FontInfoDesired.hpp"
@@ -28,14 +27,14 @@ FontInfoDesired::FontInfoDesired(_In_ PCWSTR const pwszFaceName,
                                  const LONG lWeight,
                                  const COORD coordSizeDesired,
                                  const UINT uiCodePage) :
-                                 FontInfoBase(pwszFaceName, bFamily, lWeight, false, uiCodePage),
-                                 _coordSizeDesired(coordSizeDesired)
+    FontInfoBase(pwszFaceName, bFamily, lWeight, false, uiCodePage),
+    _coordSizeDesired(coordSizeDesired)
 {
 }
 
 FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) :
-                                 FontInfoBase(fiFont),
-                                 _coordSizeDesired(fiFont.GetUnscaledSize())
+    FontInfoBase(fiFont),
+    _coordSizeDesired(fiFont.GetUnscaledSize())
 {
 }
 
@@ -48,5 +47,5 @@ bool FontInfoDesired::IsDefaultRasterFont() const
     // OR the face name is empty with a size of 0x0 or 8x12.
     return WasDefaultRasterSetFromEngine() || (wcsnlen_s(GetFaceName(), LF_FACESIZE) == 0 &&
                                                ((_coordSizeDesired.X == 0 && _coordSizeDesired.Y == 0) ||
-                                                   (_coordSizeDesired.X == 8 && _coordSizeDesired.Y == 12)));
+                                                (_coordSizeDesired.X == 8 && _coordSizeDesired.Y == 12)));
 }

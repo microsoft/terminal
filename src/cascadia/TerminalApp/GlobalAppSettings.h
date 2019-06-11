@@ -24,7 +24,6 @@ namespace TerminalApp
 
 class TerminalApp::GlobalAppSettings final
 {
-
 public:
     GlobalAppSettings();
     ~GlobalAppSettings();
@@ -73,5 +72,4 @@ private:
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
-
 };

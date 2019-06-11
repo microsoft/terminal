@@ -19,9 +19,8 @@ using namespace Microsoft::Console::Render;
 // - isDisabled - TRUE if we do not snap to nearest pixels. FALSE otherwise.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext*/,
-                                                    _Out_ BOOL* isDisabled)
+[[nodiscard]] HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext*/,
+                                                                  _Out_ BOOL* isDisabled)
 {
     *isDisabled = false;
     return S_OK;
@@ -37,9 +36,8 @@ HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext
 // - pixelsPerDip - The number of pixels per DIP. 96 is standard DPI.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
-                                            _Out_ FLOAT* pixelsPerDip)
+[[nodiscard]] HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
+                                                          _Out_ FLOAT* pixelsPerDip)
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -51,16 +49,15 @@ HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
 
 // Routine Description:
 // - Implementation of IDWritePixelSnapping::GetCurrentTransform
-// - Retrieves the the matrix transform to be used while laying pixels onto the 
+// - Retrieves the the matrix transform to be used while laying pixels onto the
 //   drawing context
 // Arguments:
 // - clientDrawingContext - Pointer to structure of information required to draw
 // - transform - The matrix transform to use to adapt DIP representations into real monitor coordinates.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
-                                                DWRITE_MATRIX* transform)
+[[nodiscard]] HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
+                                                              DWRITE_MATRIX* transform)
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -86,12 +83,11 @@ HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect to pass along for rendering
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT CustomTextRenderer::DrawUnderline(void* clientDrawingContext,
-                                          FLOAT baselineOriginX,
-                                          FLOAT baselineOriginY,
-                                          _In_ const DWRITE_UNDERLINE* underline,
-                                          IUnknown* clientDrawingEffect)
+[[nodiscard]] HRESULT CustomTextRenderer::DrawUnderline(void* clientDrawingContext,
+                                                        FLOAT baselineOriginX,
+                                                        FLOAT baselineOriginY,
+                                                        _In_ const DWRITE_UNDERLINE* underline,
+                                                        IUnknown* clientDrawingEffect)
 {
     _FillRectangle(clientDrawingContext,
                    clientDrawingEffect,
@@ -119,12 +115,11 @@ HRESULT CustomTextRenderer::DrawUnderline(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect to pass along for rendering
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT CustomTextRenderer::DrawStrikethrough(void* clientDrawingContext,
-                                              FLOAT baselineOriginX,
-                                              FLOAT baselineOriginY,
-                                              _In_ const DWRITE_STRIKETHROUGH* strikethrough,
-                                              IUnknown* clientDrawingEffect)
+[[nodiscard]] HRESULT CustomTextRenderer::DrawStrikethrough(void* clientDrawingContext,
+                                                            FLOAT baselineOriginX,
+                                                            FLOAT baselineOriginY,
+                                                            _In_ const DWRITE_STRIKETHROUGH* strikethrough,
+                                                            IUnknown* clientDrawingEffect)
 {
     _FillRectangle(clientDrawingContext,
                    clientDrawingEffect,
@@ -187,14 +182,13 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect passed along for rendering
 // Return Value:
 // - S_OK or appropriate error from the delegated inline object's draw call
-[[nodiscard]]
-HRESULT CustomTextRenderer::DrawInlineObject(void* clientDrawingContext,
-                                             FLOAT originX,
-                                             FLOAT originY,
-                                             IDWriteInlineObject* inlineObject,
-                                             BOOL isSideways,
-                                             BOOL isRightToLeft,
-                                             IUnknown* clientDrawingEffect)
+[[nodiscard]] HRESULT CustomTextRenderer::DrawInlineObject(void* clientDrawingContext,
+                                                           FLOAT originX,
+                                                           FLOAT originY,
+                                                           IDWriteInlineObject* inlineObject,
+                                                           BOOL isSideways,
+                                                           BOOL isRightToLeft,
+                                                           IUnknown* clientDrawingEffect)
 {
     return inlineObject->Draw(clientDrawingContext,
                               this,
@@ -223,8 +217,7 @@ HRESULT CustomTextRenderer::DrawInlineObject(void* clientDrawingContext,
 // - clientDrawingEffect - any special effect passed along for rendering
 // Return Value:
 // - S_OK, GSL/WIL/STL error, or appropriate DirectX/Direct2D/DirectWrite based error while drawing.
-[[nodiscard]]
-HRESULT CustomTextRenderer::DrawGlyphRun(
+[[nodiscard]] HRESULT CustomTextRenderer::DrawGlyphRun(
     void* clientDrawingContext,
     FLOAT baselineOriginX,
     FLOAT baselineOriginY,
@@ -345,8 +338,8 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                     d2dContext4->DrawSvgGlyphRun(currentBaselineOrigin,
                                                  &colorRun->glyphRun,
                                                  drawingContext->foregroundBrush,
-                                                 nullptr,                // svgGlyphStyle
-                                                 0,                      // colorPaletteIndex
+                                                 nullptr, // svgGlyphStyle
+                                                 0, // colorPaletteIndex
                                                  measuringMode);
                 }
                 break;
@@ -377,7 +370,6 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
                         {
                             // This run specifies its own color.
                             tempBrush->SetColor(colorRun->runColor);
-
                         }
                         layerBrush = tempBrush.Get();
                     }
@@ -410,13 +402,12 @@ HRESULT CustomTextRenderer::DrawGlyphRun(
 }
 #pragma endregion
 
-[[nodiscard]]
-HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
-                                               D2D1_POINT_2F baselineOrigin,
-                                               DWRITE_MEASURING_MODE measuringMode,
-                                               _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                               _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                               ID2D1Brush* brush)
+[[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
+                                                             D2D1_POINT_2F baselineOrigin,
+                                                             DWRITE_MEASURING_MODE measuringMode,
+                                                             _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                             _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                             ID2D1Brush* brush)
 {
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
     RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
@@ -424,7 +415,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingCont
     // Using the context is the easiest/default way of drawing.
     d2dContext4->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
 
-    // However, we could probably add options here and switch out to one of these other drawing methods (making it 
+    // However, we could probably add options here and switch out to one of these other drawing methods (making it
     // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:
 
     //_DrawBasicGlyphRunManually(clientDrawingContext, baselineOrigin, measuringMode, glyphRun, glyphRunDescription);
@@ -433,12 +424,11 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRun(DrawingContext* clientDrawingCont
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
-                                                       D2D1_POINT_2F baselineOrigin,
-                                                       DWRITE_MEASURING_MODE /*measuringMode*/,
-                                                       _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                       _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+[[nodiscard]] HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
+                                                                     D2D1_POINT_2F baselineOrigin,
+                                                                     DWRITE_MEASURING_MODE /*measuringMode*/,
+                                                                     _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                                     _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
 {
     // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
@@ -458,8 +448,7 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
         glyphRun->glyphCount,
         glyphRun->isSideways,
         glyphRun->bidiLevel % 2,
-        geometrySink.Get()
-    );
+        geometrySink.Get());
 
     geometrySink->Close();
 
@@ -475,12 +464,11 @@ HRESULT CustomTextRenderer::_DrawBasicGlyphRunManually(DrawingContext* clientDra
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
-                                              D2D1_POINT_2F baselineOrigin,
-                                              DWRITE_MEASURING_MODE /*measuringMode*/,
-                                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                              _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+[[nodiscard]] HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
+                                                            D2D1_POINT_2F baselineOrigin,
+                                                            DWRITE_MEASURING_MODE /*measuringMode*/,
+                                                            _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                            _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
 {
     // This is glow text manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
@@ -500,8 +488,7 @@ HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingConte
         glyphRun->glyphCount,
         glyphRun->isSideways,
         glyphRun->bidiLevel % 2,
-        geometrySink.Get()
-    );
+        geometrySink.Get());
 
     geometrySink->Close();
 
@@ -511,7 +498,6 @@ HRESULT CustomTextRenderer::_DrawGlowGlyphRun(DrawingContext* clientDrawingConte
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),
                                           &matrixAlign,
                                           transformedGeometry.GetAddressOf());
-
 
     ::Microsoft::WRL::ComPtr<ID2D1TransformedGeometry> alignedGeometry;
     d2dFactory->CreateTransformedGeometry(pathGeometry.Get(),

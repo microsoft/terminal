@@ -316,10 +316,10 @@ bool AdaptDispatch::s_IsDefaultColorOption(const DispatchTypes::GraphicsOptions 
 //     3 - true, parsed an xterm index to a color
 //     5 - true, parsed an RGB color.
 bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
-                          const size_t cOptions,
-                          _Out_ COLORREF* const prgbColor,
-                          _Out_ bool* const pfIsForeground,
-                          _Out_ size_t* const pcOptionsConsumed)
+                                        const size_t cOptions,
+                                        _Out_ COLORREF* const prgbColor,
+                                        _Out_ bool* const pfIsForeground,
+                                        _Out_ size_t* const pcOptionsConsumed)
 {
     bool fSuccess = false;
     *pcOptionsConsumed = 1;
@@ -342,9 +342,9 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTypes
         {
             *pcOptionsConsumed = 5;
             // ensure that each value fits in a byte
-            unsigned int red = rgOptions[2] > 255? 255 : rgOptions[2];
-            unsigned int green = rgOptions[3] > 255? 255 : rgOptions[3];
-            unsigned int blue = rgOptions[4] > 255? 255 : rgOptions[4];
+            unsigned int red = rgOptions[2] > 255 ? 255 : rgOptions[2];
+            unsigned int green = rgOptions[3] > 255 ? 255 : rgOptions[3];
+            unsigned int blue = rgOptions[4] > 255 ? 255 : rgOptions[4];
 
             *prgbColor = RGB(red, green, blue);
 
@@ -424,7 +424,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
                 size_t cOptionsConsumed = 0;
 
                 // _SetRgbColorsHelper will call the appropriate ConApi function
-                fSuccess = _SetRgbColorsHelper(&(rgOptions[i]), cOptions-i, &rgbColor, &fIsForeground, &cOptionsConsumed);
+                fSuccess = _SetRgbColorsHelper(&(rgOptions[i]), cOptions - i, &rgbColor, &fIsForeground, &cOptionsConsumed);
 
                 i += (cOptionsConsumed - 1); // cOptionsConsumed includes the opt we're currently on.
             }
@@ -444,7 +444,6 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
                 _fChangedMetaAttrs = false;
             }
         }
-
     }
 
     return fSuccess;

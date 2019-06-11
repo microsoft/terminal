@@ -40,15 +40,12 @@ public:
     ConsoleHandleData& operator=(const ConsoleHandleData&) & = delete;
     ConsoleHandleData& operator=(ConsoleHandleData&&) & = delete;
 
-    [[nodiscard]]
-    HRESULT GetInputBuffer(const ACCESS_MASK amRequested,
-                           _Outptr_ InputBuffer** const ppInputBuffer) const;
-    [[nodiscard]]
-    HRESULT GetScreenBuffer(const ACCESS_MASK amRequested,
-                            _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
+    [[nodiscard]] HRESULT GetInputBuffer(const ACCESS_MASK amRequested,
+                                         _Outptr_ InputBuffer** const ppInputBuffer) const;
+    [[nodiscard]] HRESULT GetScreenBuffer(const ACCESS_MASK amRequested,
+                                          _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const;
 
-    [[nodiscard]]
-    HRESULT GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const;
+    [[nodiscard]] HRESULT GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const;
 
     INPUT_READ_HANDLE_DATA* GetClientInput() const;
 
@@ -73,10 +70,8 @@ private:
     bool _IsInput() const;
     bool _IsOutput() const;
 
-    [[nodiscard]]
-    HRESULT _CloseInputHandle();
-    [[nodiscard]]
-    HRESULT _CloseOutputHandle();
+    [[nodiscard]] HRESULT _CloseInputHandle();
+    [[nodiscard]] HRESULT _CloseOutputHandle();
 
     ULONG const _ulHandleType;
     ACCESS_MASK const _amAccess;

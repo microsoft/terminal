@@ -18,13 +18,12 @@ Author(s):
 #include <optional>
 #include <bitset>
 
-
 class Utf16Parser final
 {
 private:
     static constexpr unsigned short IndicatorBitCount = 6;
     static constexpr unsigned short WcharShiftAmount = sizeof(wchar_t) * 8 - IndicatorBitCount;
-    static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 };  // 110 110 indicates a leading surrogate
+    static constexpr std::bitset<IndicatorBitCount> LeadingSurrogateMask = { 54 }; // 110 110 indicates a leading surrogate
     static constexpr std::bitset<IndicatorBitCount> TrailingSurrogateMask = { 55 }; // 110 111 indicates a trailing surrogate
 
 public:

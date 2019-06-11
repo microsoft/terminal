@@ -19,7 +19,6 @@ WinNTControl::WinNTControl() :
 // - Destructs an instance of the NTDLL method-invoking class.
 WinNTControl::~WinNTControl()
 {
-
 }
 
 // Routine Description:
@@ -41,13 +40,12 @@ WinNTControl& WinNTControl::GetInstance()
 // - See definitions at MSDN
 // Return Value:
 // - See definitions at MSDN
-[[nodiscard]]
-NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
-                                  _In_ ACCESS_MASK DesiredAccess,
-                                  _In_ POBJECT_ATTRIBUTES ObjectAttributes,
-                                  _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-                                  _In_ ULONG ShareAccess,
-                                  _In_ ULONG OpenOptions)
+[[nodiscard]] NTSTATUS WinNTControl::NtOpenFile(_Out_ PHANDLE FileHandle,
+                                                _In_ ACCESS_MASK DesiredAccess,
+                                                _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+                                                _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+                                                _In_ ULONG ShareAccess,
+                                                _In_ ULONG OpenOptions)
 {
     try
     {

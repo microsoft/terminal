@@ -47,6 +47,8 @@ static constexpr std::string_view SwitchToTab6Key{ "switchToTab6" };
 static constexpr std::string_view SwitchToTab7Key{ "switchToTab7" };
 static constexpr std::string_view SwitchToTab8Key{ "switchToTab8" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" };
+static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" };
+static constexpr std::string_view SplitVerticalKey{ "splitVertical" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -56,7 +58,7 @@ static constexpr std::string_view OpenSettingsKey{ "openSettings" };
 // the actual strings being pointed to. However, since both these strings and
 // the map are all const for the lifetime of the app, we have nothing to worry
 // about here.
-static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames {
+static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames{
     { CopyTextKey, ShortcutAction::CopyText },
     { PasteTextKey, ShortcutAction::PasteText },
     { NewTabKey, ShortcutAction::NewTab },
@@ -89,6 +91,8 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { SwitchToTab6Key, ShortcutAction::SwitchToTab6 },
     { SwitchToTab7Key, ShortcutAction::SwitchToTab7 },
     { SwitchToTab8Key, ShortcutAction::SwitchToTab8 },
+    { SplitHorizontalKey, ShortcutAction::SplitHorizontal },
+    { SplitVerticalKey, ShortcutAction::SplitVertical },
 };
 
 // Function Description:
@@ -207,5 +211,4 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
         }
     }
     return newBindings;
-
 }

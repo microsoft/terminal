@@ -39,9 +39,9 @@ namespace TerminalCoreUnitTests
 
             // Validate selection area
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-            
+
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VerifyCompareTraits<SMALL_RECT>::AreEqual({5, 10, 10, 5}, selection);
+            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, 10, 5 }, selection);
         }
 
         TEST_METHOD(SelectArea)
@@ -73,20 +73,20 @@ namespace TerminalCoreUnitTests
             {
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
 
-                if (rowValue == 10) 
+                if (rowValue == 10)
                 {
                     // Verify top line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({5, 10, rightBoundary, 10}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, rightBoundary, 10 }, selection);
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({0, 20, 15, 20}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, 20, 15, 20 }, selection);
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({0, rowValue, rightBoundary, rowValue}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, rowValue, rightBoundary, rowValue }, selection);
                 }
 
                 rowValue++;
@@ -123,7 +123,7 @@ namespace TerminalCoreUnitTests
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
 
                 // Verify all lines
-                VerifyCompareTraits<SMALL_RECT>::AreEqual({5, rowValue, 15, rowValue}, selection);
+                VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 15, rowValue }, selection);
 
                 rowValue++;
             }
@@ -135,7 +135,7 @@ namespace TerminalCoreUnitTests
             DummyRenderTarget emptyRT;
             SHORT scrollbackLines = 5;
             term.Create({ 100, 100 }, scrollbackLines, emptyRT);
-            
+
             // Used for two things:
             //    - click y-pos
             //    - keep track of row we're verifying
@@ -162,17 +162,17 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     // Verify top line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({5, 10, rightBoundary, 10}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, rightBoundary, 10 }, selection);
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({0, 20, 15, 20}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, 20, 15, 20 }, selection);
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({0, rowValue, rightBoundary, rowValue}, selection);
+                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, rowValue, rightBoundary, rowValue }, selection);
                 }
 
                 rowValue++;

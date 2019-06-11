@@ -29,24 +29,24 @@ static wchar_t* s_pwszInputExpected;
 
 static wchar_t s_pwszExpectedBuffer[BYTE_MAX]; // big enough for anything
 
-static COORD s_rgTestCoords [] = {
-    {0, 0},
-    {0, 1},
-    {1, 1},
-    {2, 2},
-    {94, 94}, // 94+1+32 = 127
-    {95, 95}, // 95+1+32 = 128, this is the ascii boundary
-    {96, 96},
-    {127,127},
-    {128,128},
-    {SHORT_MAX-33,SHORT_MAX-33},
-    {SHORT_MAX-32,SHORT_MAX-32},
+static COORD s_rgTestCoords[] = {
+    { 0, 0 },
+    { 0, 1 },
+    { 1, 1 },
+    { 2, 2 },
+    { 94, 94 }, // 94+1+32 = 127
+    { 95, 95 }, // 95+1+32 = 128, this is the ascii boundary
+    { 96, 96 },
+    { 127, 127 },
+    { 128, 128 },
+    { SHORT_MAX - 33, SHORT_MAX - 33 },
+    { SHORT_MAX - 32, SHORT_MAX - 32 },
 };
 
 // Note: We're going to be changing the value of the third char (the space) of
 //      these strings as we test things with this array, to alter the expected button value.
 // The default value is the button=WM_LBUTTONDOWN case, which is element[3]=' '
-static wchar_t* s_rgDefaultTestOutput [] = {
+static wchar_t* s_rgDefaultTestOutput[] = {
     L"\x1b[M !!",
     L"\x1b[M !\"",
     L"\x1b[M \"\"",
@@ -64,7 +64,7 @@ static wchar_t* s_rgDefaultTestOutput [] = {
 //      these strings as we test things with this array, to alter the expected button value.
 // The default value is the button=WM_LBUTTONDOWN case, which is element[3]='0'
 // We're also going to change the last element, for button-down (M) vs button-up (m)
-static wchar_t* s_rgSgrTestOutput [] = {
+static wchar_t* s_rgSgrTestOutput[] = {
     L"\x1b[<%d;1;1M",
     L"\x1b[<%d;1;2M",
     L"\x1b[<%d;2;2M",
@@ -83,7 +83,6 @@ static int s_iTestCoordsLength = ARRAYSIZE(s_rgTestCoords);
 class MouseInputTest
 {
 public:
-
     TEST_CLASS(MouseInputTest);
 
     static void s_MouseInputTestCallback(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events)
@@ -101,10 +100,7 @@ public:
             {
                 KeyEvent expectedKeyEvent(TRUE, 1, 0, 0, s_pwszInputExpected[i], 0);
                 KeyEvent testKeyEvent = *static_cast<const KeyEvent* const>(events[i].get());
-                VERIFY_ARE_EQUAL(expectedKeyEvent, testKeyEvent,
-                                 NoThrowString().Format(L"Chars='%c','%c'",
-                                                        s_pwszInputExpected[i],
-                                                        testKeyEvent.GetCharData()));
+                VERIFY_ARE_EQUAL(expectedKeyEvent, testKeyEvent, NoThrowString().Format(L"Chars='%c','%c'", s_pwszInputExpected[i], testKeyEvent.GetCharData()));
             }
         }
     }
@@ -142,7 +138,6 @@ public:
     //      correctly filled in to match uiButton.
     wchar_t* BuildSGRTestOutput(wchar_t* pwchTestOutput, unsigned int uiButton, short sModifierKeystate, short sScrollDelta)
     {
-
         ClearTestBuffer();
 
         // Copy the expected output into the buffer
@@ -151,7 +146,7 @@ public:
         size_t cchInputExpected = 0;
         VERIFY_SUCCEEDED(StringCchLengthW(s_pwszExpectedBuffer, STRSAFE_MAX_CCH, &cchInputExpected));
 
-        s_pwszExpectedBuffer[cchInputExpected-1] = IsButtonDown(uiButton)? L'M' : L'm';
+        s_pwszExpectedBuffer[cchInputExpected - 1] = IsButtonDown(uiButton) ? L'M' : L'm';
 
         Log::Comment(NoThrowString().Format(L"Expected Input:\'%s\'", s_pwszExpectedBuffer));
         return s_pwszExpectedBuffer;
@@ -163,33 +158,33 @@ public:
         Log::Comment(NoThrowString().Format(L"uiButton '%d'", uiButton));
         switch (uiButton)
         {
-            case WM_LBUTTONDBLCLK:
-            case WM_LBUTTONDOWN:
-                wch = L' ';
-                break;
-            case WM_LBUTTONUP:
-            case WM_MBUTTONUP:
-            case WM_RBUTTONUP:
-                wch = L'#';
-                break;
-            case WM_RBUTTONDOWN:
-            case WM_RBUTTONDBLCLK:
-                wch = L'\"';
-                break;
-            case WM_MBUTTONDOWN:
-            case WM_MBUTTONDBLCLK:
-                wch = L'!';
-                break;
-            case WM_MOUSEWHEEL:
-            case WM_MOUSEHWHEEL:
-                Log::Comment(NoThrowString().Format(L"MOUSEWHEEL"));
-                wch = L'`' + (sScrollDelta > 0? 0 : 1);
-                break;
-            case WM_MOUSEMOVE:
-            default:
-                Log::Comment(NoThrowString().Format(L"DEFAULT"));
-                wch = L'\x0';
-                break;
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDOWN:
+            wch = L' ';
+            break;
+        case WM_LBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_RBUTTONUP:
+            wch = L'#';
+            break;
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONDBLCLK:
+            wch = L'\"';
+            break;
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONDBLCLK:
+            wch = L'!';
+            break;
+        case WM_MOUSEWHEEL:
+        case WM_MOUSEHWHEEL:
+            Log::Comment(NoThrowString().Format(L"MOUSEWHEEL"));
+            wch = L'`' + (sScrollDelta > 0 ? 0 : 1);
+            break;
+        case WM_MOUSEMOVE:
+        default:
+            Log::Comment(NoThrowString().Format(L"DEFAULT"));
+            wch = L'\x0';
+            break;
         }
         // MK_SHIFT is ignored by the translator
         wch += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
@@ -201,31 +196,31 @@ public:
         int result = 0;
         switch (uiButton)
         {
-            case WM_LBUTTONDBLCLK:
-            case WM_LBUTTONDOWN:
-            case WM_LBUTTONUP:
-                result = 0;
-                break;
-            case WM_MBUTTONUP:
-            case WM_MBUTTONDOWN:
-            case WM_MBUTTONDBLCLK:
-                result = 1;
-                break;
-            case WM_RBUTTONUP:
-            case WM_RBUTTONDOWN:
-            case WM_RBUTTONDBLCLK:
-                result = 2;
-                break;
-            case WM_MOUSEMOVE:
-                result = 3 + 0x20; // we add 0x20 to hover events, which are all encoded as WM_MOUSEMOVE events
-                break;
-            case WM_MOUSEWHEEL:
-            case WM_MOUSEHWHEEL:
-                result = (sScrollDelta > 0? 64 : 65);
-                break;
-            default:
-                result = 0;
-                break;
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+            result = 0;
+            break;
+        case WM_MBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONDBLCLK:
+            result = 1;
+            break;
+        case WM_RBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONDBLCLK:
+            result = 2;
+            break;
+        case WM_MOUSEMOVE:
+            result = 3 + 0x20; // we add 0x20 to hover events, which are all encoded as WM_MOUSEMOVE events
+            break;
+        case WM_MOUSEWHEEL:
+        case WM_MOUSEHWHEEL:
+            result = (sScrollDelta > 0 ? 64 : 65);
+            break;
+        default:
+            result = 0;
+            break;
         }
         // MK_SHIFT and MK_ALT is ignored by the translator
         result += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
@@ -237,16 +232,16 @@ public:
         bool fIsDown = false;
         switch (uiButton)
         {
-            case WM_LBUTTONDBLCLK:
-            case WM_LBUTTONDOWN:
-            case WM_RBUTTONDOWN:
-            case WM_RBUTTONDBLCLK:
-            case WM_MBUTTONDOWN:
-            case WM_MBUTTONDBLCLK:
-            case WM_MOUSEWHEEL:
-            case WM_MOUSEHWHEEL:
-                fIsDown = true;
-                break;
+        case WM_LBUTTONDBLCLK:
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONDBLCLK:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONDBLCLK:
+        case WM_MOUSEWHEEL:
+        case WM_MOUSEHWHEEL:
+            fIsDown = true;
+            break;
         }
         return fIsDown;
     }
@@ -297,7 +292,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({0,0}, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
 
         mouseInput->EnableDefaultTracking(true);
 
@@ -310,7 +305,11 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -324,7 +323,11 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -338,10 +341,13 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
-
     }
     TEST_METHOD(Utf8ModeTests)
     {
@@ -365,7 +371,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({0,0}, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
 
         mouseInput->SetUtf8ExtendedMode(true);
 
@@ -381,9 +387,12 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
 
         mouseInput->EnableButtonEventTracking(true);
@@ -396,9 +405,12 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
 
         mouseInput->EnableAnyEventTracking(true);
@@ -411,9 +423,12 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
     }
 
@@ -438,7 +453,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({0,0}, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
 
         mouseInput->SetSGRExtendedMode(true);
 
@@ -458,7 +473,6 @@ public:
             VERIFY_ARE_EQUAL(fExpectedKeyHandled,
                              mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
 
         mouseInput->EnableButtonEventTracking(true);
@@ -470,9 +484,12 @@ public:
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
 
         fExpectedKeyHandled = true;
@@ -485,9 +502,12 @@ public:
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
     }
 
@@ -512,7 +532,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({0,0}, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
 
         // Default Tracking, Default Encoding
         mouseInput->EnableDefaultTracking(true);
@@ -526,9 +546,12 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
 
         // Default Tracking, UTF8 Encoding
@@ -543,11 +566,13 @@ public:
             s_pwszInputExpected = BuildDefaultTestOutput(s_rgDefaultTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
-
 
         // Default Tracking, SGR Encoding
         mouseInput->SetSGRExtendedMode(true);
@@ -560,9 +585,12 @@ public:
             s_pwszInputExpected = BuildSGRTestOutput(s_rgSgrTestOutput[i], uiButton, sModifierKeystate, sScrollDelta);
 
             // validate translation
-            VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+            VERIFY_ARE_EQUAL(fExpectedKeyHandled,
+                             mouseInput->HandleMouse(Coord,
+                                                     uiButton,
+                                                     sModifierKeystate,
+                                                     sScrollDelta),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
-
         }
     }
 };

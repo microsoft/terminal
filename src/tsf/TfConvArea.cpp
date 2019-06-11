@@ -28,10 +28,9 @@ Notes:
 // CConversionArea
 //----------------------------------------------------------------------------
 
-[[nodiscard]]
-HRESULT CConversionArea::DrawComposition(const std::wstring_view CompStr,
-                                         const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
-                                         const DWORD CompCursorPos)
+[[nodiscard]] HRESULT CConversionArea::DrawComposition(const std::wstring_view CompStr,
+                                                       const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
+                                                       const DWORD CompCursorPos)
 {
     // Set up colors.
     static const std::array<WORD, CONIME_ATTRCOLOR_SIZE> colors{ DEFAULT_COMP_ENTERED,
@@ -41,8 +40,7 @@ HRESULT CConversionArea::DrawComposition(const std::wstring_view CompStr,
                                                                  DEFAULT_COMP_INPUT_ERROR,
                                                                  DEFAULT_COMP_INPUT_ERROR,
                                                                  DEFAULT_COMP_INPUT_ERROR,
-                                                                 DEFAULT_COMP_INPUT_ERROR
-                                                               };
+                                                                 DEFAULT_COMP_INPUT_ERROR };
 
     const auto encodedAttributes = _DisplayAttributesToEncodedAttributes(DisplayAttributes,
                                                                          CompCursorPos);
@@ -53,21 +51,18 @@ HRESULT CConversionArea::DrawComposition(const std::wstring_view CompStr,
     return ImeComposeData(CompStr, attributes, colorArray);
 }
 
-[[nodiscard]]
-HRESULT CConversionArea::ClearComposition()
+[[nodiscard]] HRESULT CConversionArea::ClearComposition()
 {
     return ImeClearComposeData();
 }
 
-[[nodiscard]]
-HRESULT CConversionArea::DrawResult(const std::wstring_view ResultStr)
+[[nodiscard]] HRESULT CConversionArea::DrawResult(const std::wstring_view ResultStr)
 {
     return ImeComposeResult(ResultStr);
 }
 
-[[nodiscard]]
-std::vector<BYTE> CConversionArea::_DisplayAttributesToEncodedAttributes(const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
-                                                                         const DWORD CompCursorPos)
+[[nodiscard]] std::vector<BYTE> CConversionArea::_DisplayAttributesToEncodedAttributes(const std::vector<TF_DISPLAYATTRIBUTE>& DisplayAttributes,
+                                                                                       const DWORD CompCursorPos)
 {
     std::vector<BYTE> encodedAttrs;
     for (const auto& da : DisplayAttributes)
@@ -96,11 +91,11 @@ std::vector<BYTE> CConversionArea::_DisplayAttributesToEncodedAttributes(const s
     {
         if (CompCursorPos == 0)
         {
-            encodedAttrs[CompCursorPos] |= (BYTE)CONIME_CURSOR_LEFT;   // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
+            encodedAttrs[CompCursorPos] |= (BYTE)CONIME_CURSOR_LEFT; // special handling for ConSrv... 0x20 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_LVERTICAL
         }
         else if (CompCursorPos - 1 < DisplayAttributes.size())
         {
-            encodedAttrs[CompCursorPos - 1] |= (BYTE)CONIME_CURSOR_RIGHT;   // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
+            encodedAttrs[CompCursorPos - 1] |= (BYTE)CONIME_CURSOR_RIGHT; // special handling for ConSrv... 0x10 = COMMON_LVB_GRID_SINGLEFLAG + COMMON_LVB_GRID_RVERTICAL
         }
     }
 

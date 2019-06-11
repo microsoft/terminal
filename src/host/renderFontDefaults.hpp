@@ -22,8 +22,7 @@ public:
     RenderFontDefaults();
     ~RenderFontDefaults();
 
-    [[nodiscard]]
-    HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
-                                               _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                               const size_t cchFaceName);
+    [[nodiscard]] HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
+                                                             _Out_writes_(cchFaceName) PWSTR pwszFaceName,
+                                                             const size_t cchFaceName);
 };

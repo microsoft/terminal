@@ -13,7 +13,7 @@
 void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range(MAX_PATH, MAX_PATH) DWORD ScratchBufferSize)
 {
     ACTCTXW actctx = { 0 };
-    
+
     // Account for the fact that sidebyside stuff happens in CreateProcess
     // but conhost is run with RtlCreateUserProcess.
 
@@ -98,8 +98,7 @@ void InitEnvironmentVariables()
     {
         LPCWSTR szRegValue;
         LPCWSTR szVariable;
-    } EnvProgFiles[] =
-    {
+    } EnvProgFiles[] = {
         { L"ProgramFilesDir", L"ProgramFiles" },
         { L"CommonFilesDir", L"CommonProgramFiles" },
 #if BUILD_WOW64_ENABLED
