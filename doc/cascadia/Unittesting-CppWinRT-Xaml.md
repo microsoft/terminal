@@ -17,6 +17,19 @@ package. Prior to this version, there are some bugs with C++/WinRT's detection
 of static lib dependencies. You might be able to get your build working with
 Visual Studio on earlier versions, but not straight from MsBuild.
 
+Also, if you're going to be running your tests in a CI build of some sort, make
+sure that your tests are running on a machine running at least Windows 18362. If
+your CI isn't running that version, then this doesn't matter at all.
+
+Furthermore, you may need an updated TAEF package as well. Our CI uses the TAEF
+VsTest adapter to allow ADO to run TAEF tests in CI. However, there's a bug in
+the tests adapter that prevents it from running tests in a UAP context. The
+`10.38.190605002` TAEF is the most recent release at the time of writing,
+however, that doesn't have the fix necessary. Fortunately, the TAEF team was
+kind enough to prototype a fix for us, which is the version
+`10.38.190610001-uapadmin`, which we're using in this repo until an official
+release with the fix is available.
+
 ## Move the C++/WinRT implementation to a static lib
 
 By default, most (newly authored) C++/WinRT components are authored as a dll
