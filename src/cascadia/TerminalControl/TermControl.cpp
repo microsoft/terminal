@@ -997,9 +997,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Lament that the stl string does not have
             // a search/replace method
-            while ((pos = stripped.find(L'\r\n', pos)) != std::wstring::npos)
+            while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
             {
-                stripped.replace(pos, 1, L"");
+                stripped.replace(pos + 1, 1, L"");
+                pos++;
             }
 
             _SendInputToConnection(stripped);
