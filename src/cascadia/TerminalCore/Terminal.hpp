@@ -156,8 +156,8 @@ public:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
-    void _ExpandDoubleClickSelection_Left(const COORD position);
-    void _ExpandDoubleClickSelection_Right(const COORD position);
+    void _ExpandDoubleClickSelectionLeft(const COORD position);
+    void _ExpandDoubleClickSelectionRight(const COORD position);
     const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 

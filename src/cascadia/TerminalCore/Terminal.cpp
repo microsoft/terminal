@@ -636,11 +636,11 @@ void Terminal::DoubleClickSelection(const COORD position)
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
-    _ExpandDoubleClickSelection_Left(position);
+    _ExpandDoubleClickSelectionLeft(position);
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
-    _ExpandDoubleClickSelection_Right(position);
+    _ExpandDoubleClickSelectionRight(position);
 }
  
 // Method Description:
@@ -659,7 +659,7 @@ void Terminal::TripleClickSelection(const COORD position)
 // - position: viewport coordinate for selection
 // Return Value:
 // - update _selectionAnchor to new expanded location
-void Terminal::_ExpandDoubleClickSelection_Left(const COORD position)
+void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
 {
     // don't change the value if at/outside the boundary
     if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
@@ -668,17 +668,18 @@ void Terminal::_ExpandDoubleClickSelection_Left(const COORD position)
     }
 
     COORD positionWithOffsets = _ConvertToBufferCell(position);
+    const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     while (positionWithOffsets.X != 0 && !_DoubleClickDelimiterCheck(cellChar))
     {
-        _mutableViewport.DecrementInBounds(positionWithOffsets);
+        bufferViewport.DecrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
     if (positionWithOffsets.X != 0 || _DoubleClickDelimiterCheck(cellChar))
     {
         // move off of delimiter to highlight properly
-        _mutableViewport.IncrementInBounds(positionWithOffsets);
+        bufferViewport.IncrementInBounds(positionWithOffsets);
     }
 
     THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
@@ -693,7 +694,7 @@ void Terminal::_ExpandDoubleClickSelection_Left(const COORD position)
 // - position: viewport coordinate for selection
 // Return Value:
 // - update _endSelectionPosition to new expanded location
-void Terminal::_ExpandDoubleClickSelection_Right(const COORD position)
+void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 {
     // don't change the value if at/outside the boundary
     if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
@@ -702,10 +703,11 @@ void Terminal::_ExpandDoubleClickSelection_Right(const COORD position)
     }
 
     COORD positionWithOffsets = _ConvertToBufferCell(position);
+    const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_DoubleClickDelimiterCheck(cellChar))
     {
-        _mutableViewport.IncrementInBounds(positionWithOffsets);
+        bufferViewport.IncrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
@@ -725,9 +727,9 @@ const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) cons
     // TODO: hook up delimiters to Settings
     std::wstring_view delimiters[] =
     {
-        std::wstring_view(L" "),
-        std::wstring_view(L"/"),
-        std::wstring_view(L"\\")
+        L" ",
+        L"/",
+        L"\\"
     };
 
     for (auto delimiter : delimiters)
