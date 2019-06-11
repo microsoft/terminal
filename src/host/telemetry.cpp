@@ -195,8 +195,9 @@ void Telemetry::LogFindDialogNextClicked(const unsigned int uiStringLength, cons
 // Find dialog was closed, now send out the telemetry.
 void Telemetry::FindDialogClosed()
 {
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+    // clang-format on
     TraceLoggingWriteTagged(_activity,
                             "FindDialogUsed",
                             TraceLoggingValue(_fpFindStringLengthAverage, "StringLengthAverage"),
@@ -370,8 +371,9 @@ void Telemetry::WriteFinalTraceLog()
             // Send this back using "measures" since we want a good sampling of our entire userbase.
             time_t tEndedAt;
             time(&tEndedAt);
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
                                     "SessionEnding",
                                     TraceLoggingBool(_fBashUsed, "BashUsed"),
@@ -405,8 +407,9 @@ void Telemetry::WriteFinalTraceLog()
 
             // Always send this back.  We could only send this back when they click "OK" in the settings dialog, but sending it
             // back every time should give us a good idea of their current, final settings, and not just only when they change a setting.
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
                                     "Settings",
                                     TraceLoggingBool(gci.GetAutoPosition(), "AutoPosition"),
@@ -454,8 +457,9 @@ void Telemetry::WriteFinalTraceLog()
 
             // I could use the TraceLoggingUIntArray, but then we would have to know the order of the enums on the backend.
             // So just log each enum count separately with its string representation which makes it more human readable.
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
                                     "ApiUsed",
                                     TraceLoggingUInt32(_rguiTimesApiUsed[AddConsoleAlias], "AddConsoleAlias"),
@@ -526,8 +530,9 @@ void Telemetry::WriteFinalTraceLog()
                     // Ansi specific API's are used less, so check if we have anything to send back.
                     // Also breaking it up into a separate TraceLoggingWriteTagged fixes a compilation warning that
                     // the heap is too small.
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+                    // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+                    // clang-format on
                     TraceLoggingWriteTagged(_activity,
                                             "ApiAnsiUsed",
                                             TraceLoggingUInt32(_rguiTimesApiUsedAnsi[AddConsoleAlias], "AddConsoleAlias"),
@@ -574,8 +579,9 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
 
     if (cCharsWritten > 0)
     {
-#pragma prefast(suppress \
-                : __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+        // clang-format on
         TraceLoggingWriteTagged(_activity,
                                 "RipMessage",
                                 TraceLoggingString(szMessageEvaluated, "Message"));

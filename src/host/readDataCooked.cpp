@@ -549,8 +549,9 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
                 if (wch == UNICODE_BACKSPACE && _processedInput)
                 {
                     _bytesRead -= sizeof(WCHAR);
-#pragma prefast(suppress \
-                : __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
+                    // clang-format off
+#pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine")
+                    // clang-format on
                     *_bufPtr = (WCHAR)' ';
                     _bufPtr -= 1;
                     _currentPosition -= 1;
@@ -707,8 +708,9 @@ bool COOKED_READ_DATA::ProcessInput(const wchar_t wchOrig,
             CursorPosition.X = (SHORT)(CursorPosition.X + NumSpaces);
 
             // clear the current command line from the screen
-#pragma prefast(suppress \
-                : __WARNING_BUFFER_OVERFLOW, "Not sure why prefast doesn't like this call.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "Not sure why prefast doesn't like this call.")
+            // clang-format on
             DeleteCommandLine(*this, FALSE);
 
             // write the new command line to the screen
@@ -1064,8 +1066,9 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                 }
             }
 
-#pragma prefast(suppress \
-                : __WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "LineCount > 1 means there's a UNICODE_LINEFEED")
+            // clang-format on
             for (Tmp = _backupLimit; *Tmp != UNICODE_LINEFEED; Tmp++)
             {
                 FAIL_FAST_IF(!(Tmp < (_backupLimit + _bytesRead)));

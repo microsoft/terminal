@@ -1064,8 +1064,9 @@ COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noe
     if (!cookedReadData.AtEol())
     {
         // Delete commandline.
-#pragma prefast(suppress \
-                : __WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
+        // clang-format on
         DeleteCommandLine(cookedReadData, false);
 
         // Delete char.

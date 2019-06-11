@@ -416,8 +416,9 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             inputBuffer.StoreReadPartialByteSequence(std::move(partialEvent));
         }
 
-#pragma prefast(suppress \
-                : __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_POTENTIAL_BUFFER_OVERFLOW_HIGH_PRIORITY, "This access is fine but prefast can't follow it, evidently")
+        // clang-format on
         memmove(pBuffer, tempBuffer.get(), NumToWrite);
 
         if (fAddDbcsLead)
