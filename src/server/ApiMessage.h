@@ -61,21 +61,16 @@ public:
     ConsoleProcessHandle* GetProcessHandle() const;
     ConsoleHandleData* GetObjectHandle() const;
 
-    [[nodiscard]]
-    HRESULT ReadMessageInput(const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, const ULONG cbSize);
-    [[nodiscard]]
-    HRESULT GetAugmentedOutputBuffer(const ULONG cbFactor,
-                                      _Outptr_result_bytebuffer_(*pcbSize) PVOID * ppvBuffer,
-                                      _Out_ PULONG pcbSize);
-    [[nodiscard]]
-    HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
-    [[nodiscard]]
-    HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
+    [[nodiscard]] HRESULT ReadMessageInput(const ULONG cbOffset, _Out_writes_bytes_(cbSize) PVOID pvBuffer, const ULONG cbSize);
+    [[nodiscard]] HRESULT GetAugmentedOutputBuffer(const ULONG cbFactor,
+                                                   _Outptr_result_bytebuffer_(*pcbSize) PVOID* ppvBuffer,
+                                                   _Out_ PULONG pcbSize);
+    [[nodiscard]] HRESULT GetOutputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
+    [[nodiscard]] HRESULT GetInputBuffer(_Outptr_result_bytebuffer_(*pcbSize) void** const ppvBuffer, _Out_ ULONG* const pcbSize);
 
-    [[nodiscard]]
-    HRESULT ReleaseMessageBuffers();
+    [[nodiscard]] HRESULT ReleaseMessageBuffers();
 
     void SetReplyStatus(const NTSTATUS Status);
     void SetReplyInformation(const ULONG_PTR pInformation);
 
-} CONSOLE_API_MSG, *PCONSOLE_API_MSG, *const PCCONSOLE_API_MSG;
+} CONSOLE_API_MSG, *PCONSOLE_API_MSG, * const PCCONSOLE_API_MSG;

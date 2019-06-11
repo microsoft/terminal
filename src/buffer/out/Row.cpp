@@ -87,8 +87,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]]
-HRESULT ROW::Resize(const size_t width)
+[[nodiscard]] HRESULT ROW::Resize(const size_t width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -151,11 +150,11 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const
 // - setWrap - set the wrap flags if we hit the end of the row while writing and there's still more data in the iterator.
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
-// - iterator to first cell that was not written to this row. 
+// - iterator to first cell that was not written to this row.
 OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
-    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size()); 
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
     size_t currentIndex = index;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.

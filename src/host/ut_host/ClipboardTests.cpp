@@ -19,13 +19,13 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
-using namespace WEX::Common;
-using namespace WEX::Logging;
-using namespace WEX::TestExecution;
-
 #include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 
+using namespace WEX::Common;
+using namespace WEX::Logging;
+using namespace WEX::TestExecution;
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 
 static const WORD altScanCode = 0x38;
@@ -87,11 +87,12 @@ class ClipboardTests
 
         return Clipboard::Instance().RetrieveTextFromBuffer(screenInfo,
                                                             fLineSelection,
-                                                            selection).text;
+                                                            selection)
+            .text;
     }
 
 #pragma prefast(push)
-#pragma prefast(disable:26006, "Specifically trying to check unterminated strings in this test.")
+#pragma prefast(disable : 26006, "Specifically trying to check unterminated strings in this test.")
     TEST_METHOD(TestRetrieveFromBuffer)
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
@@ -129,7 +130,6 @@ class ClipboardTests
     {
         // NOTE: This test requires innate knowledge of how the common buffer text is emitted in order to test all cases
         // Please see CommonState.hpp for information on the buffer state per row, the row contents, etc.
-
 
         std::vector<SMALL_RECT> selection;
         const auto text = SetupRetrieveFromBuffers(true, selection);
@@ -199,7 +199,6 @@ class ClipboardTests
         }
         std::deque<std::unique_ptr<IInputEvent>> events = Clipboard::Instance().TextToKeyEvents(wstr.c_str(),
                                                                                                 wstr.size());
-
 
         VERIFY_ARE_EQUAL((wstr.size() + uppercaseCount) * 2, events.size());
         IInputServices* pInputServices = ServiceLocator::LocateInputServices();
@@ -316,11 +315,11 @@ class ClipboardTests
         VERIFY_ARE_EQUAL(convertedSize, events.size());
 
         std::deque<KeyEvent> expectedEvents;
-        expectedEvents.push_back({ TRUE, 1,  VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1,  0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1,  0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ TRUE, 1,  0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
-        expectedEvents.push_back({ FALSE, 1,  0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, VK_MENU, altScanCode, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ FALSE, 1, 0x66, 0x4D, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ TRUE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
+        expectedEvents.push_back({ FALSE, 1, 0x63, 0x51, L'\0', LEFT_ALT_PRESSED });
         expectedEvents.push_back({ FALSE, 1, VK_MENU, altScanCode, wstr[0], 0 });
 
         for (size_t i = 0; i < events.size(); ++i)
@@ -329,4 +328,4 @@ class ClipboardTests
             VERIFY_ARE_EQUAL(expectedEvents[i], currentKeyEvent, NoThrowString().Format(L"i == %d", i));
         }
     }
-    };
+};

@@ -15,7 +15,6 @@ using namespace WEX::TestExecution;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
-
 // UiaTextRange takes an object that implements
 // IRawElementProviderSimple as a constructor argument. Making a real
 // one would involve setting up the window which we don't want to do
@@ -26,8 +25,17 @@ class DummyElementProvider final : public IRawElementProviderSimple
 {
 public:
     // IUnknown methods
-    IFACEMETHODIMP_(ULONG) AddRef() { return 1; }
-    IFACEMETHODIMP_(ULONG) Release() { return 1; }
+    IFACEMETHODIMP_(ULONG)
+    AddRef()
+    {
+        return 1;
+    }
+
+    IFACEMETHODIMP_(ULONG)
+    Release()
+    {
+        return 1;
+    }
     IFACEMETHODIMP QueryInterface(_In_ REFIID /*riid*/,
                                   _COM_Outptr_result_maybenull_ void** /*ppInterface*/)
     {
@@ -58,7 +66,6 @@ public:
     }
 };
 
-
 class UiaTextRangeTests
 {
     TEST_CLASS(UiaTextRangeTests);
@@ -71,7 +78,7 @@ class UiaTextRangeTests
 
     TEST_METHOD_SETUP(MethodSetup)
     {
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // set up common state
         _state = new CommonState();
         _state->PrepareGlobalFont();
@@ -94,8 +101,7 @@ class UiaTextRangeTests
         }
 
         // set up default range
-        _range = new UiaTextRange
-        {
+        _range = new UiaTextRange{
             &_dummyProvider,
             0,
             0,
@@ -121,14 +127,13 @@ class UiaTextRangeTests
     const size_t _getRowWidth() const
     {
         const CharRow& charRow = _pTextBuffer->_GetFirstRow().GetCharRow();
-        return charRow.MeasureRight()- charRow.MeasureLeft() ;
+        return charRow.MeasureRight() - charRow.MeasureLeft();
     }
 
     TEST_METHOD(DegenerateRangesDetected)
     {
         // make a degenerate range and verify that it reports degenerate
-        UiaTextRange degenerate
-        {
+        UiaTextRange degenerate{
             &_dummyProvider,
             20,
             19,
@@ -139,8 +144,7 @@ class UiaTextRangeTests
         VERIFY_ARE_EQUAL(degenerate._start, degenerate._end);
 
         // make a non-degenerate range and verify that it reports as such
-        UiaTextRange notDegenerate1
-        {
+        UiaTextRange notDegenerate1{
             &_dummyProvider,
             20,
             20,
@@ -178,8 +182,7 @@ class UiaTextRangeTests
         viewport.Top = 0;
         viewport.Bottom = 10;
 
-        std::vector<std::pair<int, int>> viewportSizes =
-        {
+        std::vector<std::pair<int, int>> viewportSizes = {
             { 0, 10 }, // viewport at top
             { 2, 10 }, // shifted viewport
             { totalRows - 5, totalRows + 3 } // viewport with 0th row
@@ -220,7 +223,7 @@ class UiaTextRangeTests
         {
             VERIFY_ARE_EQUAL(i * rowWidth, _range->_textBufferRowToEndpoint(i));
             // make sure that the translation is reversible
-            VERIFY_ARE_EQUAL(i , _range->_endpointToTextBufferRow(_range->_textBufferRowToEndpoint(i)));
+            VERIFY_ARE_EQUAL(i, _range->_endpointToTextBufferRow(_range->_textBufferRowToEndpoint(i)));
         }
     }
 
@@ -229,7 +232,7 @@ class UiaTextRangeTests
         const auto rowWidth = _getRowWidth();
         for (unsigned int i = 0; i < 5; ++i)
         {
-            VERIFY_ARE_EQUAL(i , _range->_textBufferRowToScreenInfoRow(_range->_screenInfoRowToTextBufferRow(i)));
+            VERIFY_ARE_EQUAL(i, _range->_textBufferRowToScreenInfoRow(_range->_screenInfoRowToTextBufferRow(i)));
         }
     }
 
@@ -259,14 +262,13 @@ class UiaTextRangeTests
     TEST_METHOD(CanNormalizeRow)
     {
         const int totalRows = _pTextBuffer->TotalRowCount();
-        std::vector<std::pair<unsigned int, unsigned int>> rowMappings =
-        {
+        std::vector<std::pair<unsigned int, unsigned int>> rowMappings = {
             { 0, 0 },
             { totalRows / 2, totalRows / 2 },
             { totalRows - 1, totalRows - 1 },
             { totalRows, 0 },
             { totalRows + 1, 1 },
-            { -1, totalRows - 1}
+            { -1, totalRows - 1 }
         };
 
         for (auto it = rowMappings.begin(); it != rowMappings.end(); ++it)
@@ -306,8 +308,7 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanCompareScreenCoords)
     {
-        const std::vector<std::tuple<ScreenInfoRow, Column, ScreenInfoRow, Column, int>> testData =
-        {
+        const std::vector<std::tuple<ScreenInfoRow, Column, ScreenInfoRow, Column, int>> testData = {
             { 0, 0, 0, 0, 0 },
             { 5, 0, 5, 0, 0 },
             { 2, 3, 2, 3, 0 },
@@ -321,10 +322,11 @@ class UiaTextRangeTests
 
         for (auto data : testData)
         {
-            VERIFY_ARE_EQUAL(std::get<4>(data), UiaTextRange::_compareScreenCoords(std::get<0>(data),
-                                                                                   std::get<1>(data),
-                                                                                   std::get<2>(data),
-                                                                                   std::get<3>(data)));
+            VERIFY_ARE_EQUAL(std::get<4>(data),
+                             UiaTextRange::_compareScreenCoords(std::get<0>(data),
+                                                                std::get<1>(data),
+                                                                std::get<2>(data),
+                                                                std::get<3>(data)));
         }
     }
 
@@ -335,6 +337,7 @@ class UiaTextRangeTests
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
+        // clang-format off
         const std::vector<std::tuple<std::wstring,
                                      UiaTextRange::MoveState,
                                      int, // amount to move
@@ -445,6 +448,7 @@ class UiaTextRangeTests
                 UiaTextRange::_screenInfoRowToEndpoint(topRow) + (lastColumnIndex - 4)
             }
         };
+        // clang-format on
 
         for (auto data : testData)
         {
@@ -457,7 +461,6 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(std::get<3>(data), amountMoved);
             VERIFY_ARE_EQUAL(std::get<4>(data), newEndpoints.first);
             VERIFY_ARE_EQUAL(std::get<5>(data), newEndpoints.second);
-
         }
     }
 
@@ -468,6 +471,7 @@ class UiaTextRangeTests
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
+        // clang-format off
         const std::vector<std::tuple<std::wstring,
                                      UiaTextRange::MoveState,
                                      int, // amount to move
@@ -578,6 +582,7 @@ class UiaTextRangeTests
                 UiaTextRange::_screenInfoRowToEndpoint(bottomRow) + firstColumnIndex
             }
         };
+        // clang-format on
 
         for (auto data : testData)
         {
@@ -600,6 +605,7 @@ class UiaTextRangeTests
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
+        // clang-format off
         const std::vector<std::tuple<std::wstring,
                                      UiaTextRange::MoveState,
                                      int, // amount to move
@@ -762,6 +768,7 @@ class UiaTextRangeTests
                 true
             },
         };
+        // clang-format on
 
         for (auto data : testData)
         {
@@ -787,6 +794,7 @@ class UiaTextRangeTests
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
+        // clang-format off
         const std::vector<std::tuple<std::wstring,
                                      UiaTextRange::MoveState,
                                      int, // amount to move
@@ -986,8 +994,8 @@ class UiaTextRangeTests
                 UiaTextRange::_screenInfoRowToEndpoint(topRow) + firstColumnIndex,
                 true
             }
-
         };
+        // clang-format on
 
         for (auto data : testData)
         {
@@ -1004,8 +1012,6 @@ class UiaTextRangeTests
             VERIFY_ARE_EQUAL(std::get<6>(data), std::get<1>(result));
             VERIFY_ARE_EQUAL(std::get<7>(data), std::get<2>(result));
         }
-
-
     }
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
@@ -1015,6 +1021,7 @@ class UiaTextRangeTests
         const ScreenInfoRow topRow = 0;
         const ScreenInfoRow bottomRow = _pTextBuffer->TotalRowCount() - 1;
 
+        // clang-format off
         const std::vector<std::tuple<std::wstring,
                                      UiaTextRange::MoveState,
                                      int, // amount to move
@@ -1139,6 +1146,7 @@ class UiaTextRangeTests
                 true
             }
         };
+        // clang-format on
 
         for (auto data : testData)
         {

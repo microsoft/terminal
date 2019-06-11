@@ -164,7 +164,8 @@ private:
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
     friend class TextAttributeTests;
-    template<typename TextAttribute> friend class WEX::TestExecution::VerifyOutputTraits;
+    template<typename TextAttribute>
+    friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
 
@@ -210,13 +211,15 @@ constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noe
 
 #ifdef UNIT_TESTING
 
-#define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format(\
+#define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
     L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
-namespace WEX {
-    namespace TestExecution {
+namespace WEX
+{
+    namespace TestExecution
+    {
         template<>
-        class VerifyOutputTraits < TextAttribute >
+        class VerifyOutputTraits<TextAttribute>
         {
         public:
             static WEX::Common::NoThrowString ToString(const TextAttribute& attr)
@@ -226,8 +229,7 @@ namespace WEX {
                     VerifyOutputTraits<TextColor>::ToString(attr._foreground).GetBuffer(),
                     VerifyOutputTraits<TextColor>::ToString(attr._background).GetBuffer(),
                     attr.IsBold(),
-                    attr._wAttrLegacy
-                );
+                    attr._wAttrLegacy);
             }
         };
     }

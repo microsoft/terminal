@@ -14,12 +14,13 @@
 #include "../types/inc/Utf16Parser.hpp"
 
 // Attributes flags:
-#define COMMON_LVB_GRID_SINGLEFLAG 0x2000   // DBCS: Grid attribute: use for ime cursor.
+#define COMMON_LVB_GRID_SINGLEFLAG 0x2000 // DBCS: Grid attribute: use for ime cursor.
+
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 ConsoleImeInfo::ConsoleImeInfo() :
     _isSavedCursorVisible(false)
 {
-
 }
 
 // Routine Description:
@@ -119,8 +120,7 @@ void ConsoleImeInfo::ClearAllAreas()
 // - newSize - New size for conversion areas
 // Return Value:
 // - S_OK or appropriate failure HRESULT.
-[[nodiscard]]
-HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
+[[nodiscard]] HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
 {
     for (auto& area : ConvAreaCompStr)
     {
@@ -142,8 +142,7 @@ HRESULT ConsoleImeInfo::ResizeAllAreas(const COORD newSize)
 // - <none>
 // Return Value:
 // - Status successful or appropriate HRESULT response.
-[[nodiscard]]
-HRESULT ConsoleImeInfo::_AddConversionArea()
+[[nodiscard]] HRESULT ConsoleImeInfo::_AddConversionArea()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -454,11 +453,11 @@ void ConsoleImeInfo::_InsertConvertedString(const std::wstring_view text)
     const DWORD dwControlKeyState = GetControlKeyState(0);
     std::deque<std::unique_ptr<IInputEvent>> inEvents;
     KeyEvent keyEvent{ TRUE, // keydown
-        1, // repeatCount
-        0, // virtualKeyCode
-        0, // virtualScanCode
-        0, // charData
-        dwControlKeyState }; // activeModifierKeys
+                       1, // repeatCount
+                       0, // virtualKeyCode
+                       0, // virtualScanCode
+                       0, // charData
+                       dwControlKeyState }; // activeModifierKeys
 
     for (const auto& ch : text)
     {

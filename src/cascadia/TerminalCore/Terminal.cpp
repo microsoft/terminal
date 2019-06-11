@@ -14,19 +14,15 @@
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-static constexpr short _ClampToShortMax(int value, short min)
-{
-    return static_cast<short>(std::clamp(value, static_cast<int>(min), SHRT_MAX));
-}
-
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
-    for(auto& ev : inEventsToWrite)
+    for (auto& ev : inEventsToWrite)
     {
         if (ev->EventType() == InputEventType::KeyEvent)
         {
@@ -39,7 +35,7 @@ static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& i
 }
 
 Terminal::Terminal() :
-    _mutableViewport{Viewport::Empty()},
+    _mutableViewport{ Viewport::Empty() },
     _title{ L"" },
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
@@ -50,13 +46,15 @@ Terminal::Terminal() :
     _boxSelection{ false },
     _selectionActive{ false },
     _selectionAnchor{ 0, 0 },
-    _endSelectionPosition { 0, 0 }
+    _endSelectionPosition{ 0, 0 }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
-    {
-        if(!_pfnWriteInput) return;
+    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
+        if (!_pfnWriteInput)
+        {
+            return;
+        }
         std::wstring wstr = _KeyEventsToText(inEventsToWrite);
         _pfnWriteInput(wstr);
     };
@@ -68,9 +66,10 @@ Terminal::Terminal() :
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
 {
-    _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
+    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const COORD bufferSize{ viewportSize.X,
+                            Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
@@ -82,11 +81,12 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-            Microsoft::Console::Render::IRenderTarget& renderTarget)
+                                  Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ _ClampToShortMax(settings.InitialCols(), 1), _ClampToShortMax(settings.InitialRows(), 1) };
+    const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
+                              Utils::ClampToShortMax(settings.InitialRows(), 1) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, _ClampToShortMax(settings.HistorySize(), 0), renderTarget);
+    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
 }
@@ -104,22 +104,22 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())
     {
-        case CursorStyle::Underscore:
-            cursorShape = CursorType::Underscore;
-            break;
-        case CursorStyle::FilledBox:
-            cursorShape = CursorType::FullBox;
-            break;
-        case CursorStyle::EmptyBox:
-            cursorShape = CursorType::EmptyBox;
-            break;
-        case CursorStyle::Vintage:
-            cursorShape = CursorType::Legacy;
-            break;
-        default:
-        case CursorStyle::Bar:
-            cursorShape = CursorType::VerticalBar;
-            break;
+    case CursorStyle::Underscore:
+        cursorShape = CursorType::Underscore;
+        break;
+    case CursorStyle::FilledBox:
+        cursorShape = CursorType::FullBox;
+        break;
+    case CursorStyle::EmptyBox:
+        cursorShape = CursorType::EmptyBox;
+        break;
+    case CursorStyle::Vintage:
+        cursorShape = CursorType::Legacy;
+        break;
+    default:
+    case CursorStyle::Bar:
+        cursorShape = CursorType::VerticalBar;
+        break;
     }
 
     _buffer->GetCursor().SetStyle(settings.CursorHeight(),
@@ -148,8 +148,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]]
-HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)
@@ -214,11 +213,10 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         _NotifyScrollEvent();
     }
 
-    DWORD modifiers = 0
-                      | (ctrlPressed? LEFT_CTRL_PRESSED : 0)
-                      | (altPressed? LEFT_ALT_PRESSED : 0)
-                      | (shiftPressed? SHIFT_PRESSED : 0)
-                      ;
+    DWORD modifiers = 0 |
+                      (ctrlPressed ? LEFT_CTRL_PRESSED : 0) |
+                      (altPressed ? LEFT_ALT_PRESSED : 0) |
+                      (shiftPressed ? SHIFT_PRESSED : 0);
 
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
@@ -243,7 +241,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     const bool manuallyHandled = ch != UNICODE_NULL;
 
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
+    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers };
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;
@@ -254,8 +252,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]]
-std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
 {
     return std::shared_lock<std::shared_mutex>(_readWriteLock);
 }
@@ -265,12 +262,10 @@ std::shared_lock<std::shared_mutex> Terminal::LockForReading()
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]]
-std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
 {
     return std::unique_lock<std::shared_mutex>(_readWriteLock);
 }
-
 
 Viewport Terminal::_GetMutableViewport() const noexcept
 {
@@ -347,7 +342,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             // This is not great but I need it demoable. Fix by making a buffer stream writer.
             if (wch >= 0xD800 && wch <= 0xDFFF)
             {
-                OutputCellIterator it{ stringView.substr(i, 2) , _buffer->GetCurrentAttributes() };
+                OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 i += cellDistance - 1;
@@ -355,7 +350,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
             else
             {
-                OutputCellIterator it{ stringView.substr(i, 1) , _buffer->GetCurrentAttributes() };
+                OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
@@ -366,7 +361,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         if (newRows > 0)
         {
-            for(auto dy = 0; dy < newRows; dy++)
+            for (auto dy = 0; dy < newRows; dy++)
             {
                 _buffer->IncrementCircularBuffer();
                 proposedCursorPosition.Y--;
@@ -386,7 +381,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
             if (newViewTop != _mutableViewport.Top())
             {
-                _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
+                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
                 notifyScroll = true;
             }
         }
@@ -499,11 +494,11 @@ void Terminal::_InitializeColorTable()
 {
     gsl::span<COLORREF> tableView = { &_colorTable[0], gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     // First set up the basic 256 colors
-    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
+    Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    Utils::InitializeCampbellColorTable(tableView);
     // Then make sure all the values have an alpha of 255
-    ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
+    Utils::SetColorTableAlpha(tableView, 0xff);
 }
 
 // Method Description:
@@ -529,8 +524,12 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD &higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
-    const COORD &lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
+    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
+                                   selectionAnchorWithOffset :
+                                   endSelectionPositionWithOffset;
+    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ?
+                                  selectionAnchorWithOffset :
+                                  endSelectionPositionWithOffset;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
@@ -570,8 +569,8 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 void Terminal::ClearSelection() noexcept
 {
     _selectionActive = false;
-    _selectionAnchor = {0, 0};
-    _endSelectionPosition = {0, 0};
+    _selectionAnchor = { 0, 0 };
+    _endSelectionPosition = { 0, 0 };
     _selectionAnchor_YOffset = 0;
     _endSelectionPosition_YOffset = 0;
 

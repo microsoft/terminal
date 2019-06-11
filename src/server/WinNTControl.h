@@ -19,13 +19,12 @@ Revision History:
 class WinNTControl
 {
 public:
-    [[nodiscard]]
-    static NTSTATUS NtOpenFile(_Out_ PHANDLE FileHandle,
-                               _In_ ACCESS_MASK DesiredAccess,
-                               _In_ POBJECT_ATTRIBUTES ObjectAttributes,
-                               _Out_ PIO_STATUS_BLOCK IoStatusBlock,
-                               _In_ ULONG ShareAccess,
-                               _In_ ULONG OpenOptions);
+    [[nodiscard]] static NTSTATUS NtOpenFile(_Out_ PHANDLE FileHandle,
+                                             _In_ ACCESS_MASK DesiredAccess,
+                                             _In_ POBJECT_ATTRIBUTES ObjectAttributes,
+                                             _Out_ PIO_STATUS_BLOCK IoStatusBlock,
+                                             _In_ ULONG ShareAccess,
+                                             _In_ ULONG OpenOptions);
 
     ~WinNTControl();
 
@@ -41,5 +40,4 @@ private:
 
     typedef NTSTATUS(NTAPI* PfnNtOpenFile)(PHANDLE, ACCESS_MASK, POBJECT_ATTRIBUTES, PIO_STATUS_BLOCK, ULONG, ULONG);
     PfnNtOpenFile const _NtOpenFile;
-
 };

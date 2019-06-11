@@ -1,3 +1,4 @@
+#include "Common.hpp"
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
@@ -72,11 +73,11 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     {
     case 0:
         ptszSource = nullptr;
-        Log::Comment(L"Using null source arg.");
+        WEX::Logging::Log::Comment(L"Using null source arg.");
         break;
     case 1:
         ptszSource = ptszSourceGiven;
-        Log::Comment(String().Format(L"Using source arg: '" TSTRFORMAT "'", ptszSource));
+        WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using source arg: '" TSTRFORMAT "'", ptszSource));
         break;
     default:
         VERIFY_FAIL(L"Unknown type.");
@@ -86,11 +87,11 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     {
     case 0:
         ptszExeName = nullptr;
-        Log::Comment(L"Using null exe name.");
+        WEX::Logging::Log::Comment(L"Using null exe name.");
         break;
     case 1:
         ptszExeName = ptszExeNameGiven;
-        Log::Comment(String().Format(L"Using exe name arg: '" TSTRFORMAT "'", ptszExeName));
+        WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using exe name arg: '" TSTRFORMAT "'", ptszExeName));
         break;
     default:
         VERIFY_FAIL(L"Unknown type.");
@@ -135,15 +136,14 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         ZeroMemory(ptchTargetBuffer, cbTargetBuffer);
     }
 
-    auto freeTargetBuffer = wil::scope_exit([&]()
-    {
+    auto freeTargetBuffer = wil::scope_exit([&]() {
         if (ptchTargetBuffer != nullptr)
         {
             delete[] ptchTargetBuffer;
         }
     });
 
-    Log::Comment(String().Format(L"Using target buffer size: '%d'", cbTargetBuffer));
+    WEX::Logging::Log::Comment(WEX::Common::String().Format(L"Using target buffer size: '%d'", cbTargetBuffer));
 
     // Set the alias if we're supposed to and prepare for cleanup later.
     if (bSetFirst)
@@ -192,10 +192,10 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
         // If the target isn't enough space, insufficient buffer.
         dwExpectedResult = cbTargetBuffer;
 
-        // For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
-        // even if the final result will be ANSI.
-        // Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
-        #pragma warning(suppress:4127) // This is a constant, but conditionally compiled twice so we need the check.
+// For some reason, the console API *ALWAYS* says it needs enough space as if we were copying Unicode,
+// even if the final result will be ANSI.
+// Therefore, if we're mathing based on a char size buffer, multiple the expected result by 2.
+#pragma warning(suppress : 4127) // This is a constant, but conditionally compiled twice so we need the check.
         if (1 == sizeof(TCH))
         {
             dwExpectedResult *= sizeof(wchar_t);
@@ -245,12 +245,12 @@ void TestGetConsoleAliasHelper(TCH* ptszSourceGiven,
     VERIFY_ARE_EQUAL(dwExpectedResult, dwActualResult, L"Ensure result code/return value matches expected.");
     VERIFY_ARE_EQUAL(dwExpectedLastError, dwActualLastError, L"Ensure last error code matches expected.");
 
-    Log::Comment(L"Compare target buffer character by character...");
+    WEX::Logging::Log::Comment(L"Compare target buffer character by character...");
     for (size_t i = 0; i < (cbTargetBuffer / sizeof(TCH)); i++)
     {
         if (ptchExpectedTarget[i] != ptchTargetBuffer[i])
         {
-            VERIFY_FAIL(String().Format(L"Target mismatch at %d. Expected: '" TCHFORMAT "'  Actual: '" TCHFORMAT "'", i, ptchExpectedTarget[i], ptchTargetBuffer[i]));
+            VERIFY_FAIL(WEX::Common::String().Format(L"Target mismatch at %d. Expected: '" TCHFORMAT "'  Actual: '" TCHFORMAT "'", i, ptchExpectedTarget[i], ptchTargetBuffer[i]));
         }
     }
 }

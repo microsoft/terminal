@@ -27,29 +27,30 @@ namespace Microsoft::Console::Interactivity::Win32
     class Window;
     class ScreenInfoUiaProvider;
 
-    class WindowUiaProvider final : public IRawElementProviderSimple,
-                                    public IRawElementProviderFragment,
-                                    public IRawElementProviderFragmentRoot
+    class WindowUiaProvider final :
+        public IRawElementProviderSimple,
+        public IRawElementProviderFragment,
+        public IRawElementProviderFragmentRoot
     {
     public:
         static WindowUiaProvider* Create();
         virtual ~WindowUiaProvider();
 
-        [[nodiscard]]
-        HRESULT Signal(_In_ EVENTID id);
-        [[nodiscard]]
-        HRESULT SetTextAreaFocus();
+        [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
+        [[nodiscard]] HRESULT SetTextAreaFocus();
 
         // IUnknown methods
-        IFACEMETHODIMP_(ULONG) AddRef();
-        IFACEMETHODIMP_(ULONG) Release();
+        IFACEMETHODIMP_(ULONG)
+        AddRef();
+        IFACEMETHODIMP_(ULONG)
+        Release();
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                        _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface);
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
         IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                            _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
         IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
                                         _Out_ VARIANT* pVariant);
         IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
@@ -73,10 +74,8 @@ namespace Microsoft::Console::Interactivity::Win32
         WindowUiaProvider();
 
         HWND _GetWindowHandle() const;
-        [[nodiscard]]
-        HRESULT _EnsureValidHwnd() const;
+        [[nodiscard]] HRESULT _EnsureValidHwnd() const;
         static IConsoleWindow* const _getIConsoleWindow();
-
 
         // this is used to prevent the object from
         // signaling an event while it is already in the

@@ -24,15 +24,14 @@ WindowTheme::WindowTheme()
 }
 
 // Routine Description:
-// - Attempts to set the dark mode on the given HWND. 
+// - Attempts to set the dark mode on the given HWND.
 // - Will check the system for user preferences and high contrast to see if it's a good idea
 //   before setting it.
 // Arguments:
 // - hwnd - Window to apply dark mode to
 // Return Value:
 // - S_OK or suitable HRESULT from theming or DWM engines.
-[[nodiscard]]
-HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const noexcept
+[[nodiscard]] HRESULT WindowTheme::TrySetDarkMode(HWND hwnd) const noexcept
 {
     // I have to be a big B BOOL or DwnSetWindowAttribute will be upset (E_INVALIDARG) when I am passed in.
     const BOOL isDarkMode = !!_IsDarkMode();
@@ -97,7 +96,7 @@ bool WindowTheme::_ShouldAppsUseDarkMode() const noexcept
 {
     if (_module.get() != nullptr)
     {
-        typedef bool(WINAPI *PfnShouldAppsUseDarkMode)();
+        typedef bool(WINAPI * PfnShouldAppsUseDarkMode)();
 
         static bool tried = false;
         static PfnShouldAppsUseDarkMode pfn = nullptr;

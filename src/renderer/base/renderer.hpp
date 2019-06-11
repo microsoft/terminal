@@ -35,20 +35,17 @@ namespace Microsoft::Console::Render
                  const size_t cEngines,
                  std::unique_ptr<IRenderThread> thread);
 
-        [[nodiscard]]
-        static HRESULT s_CreateInstance(IRenderData* pData,
-                                        _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                        const size_t cEngines,
-                                        _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
+                                                      _In_reads_(cEngines) IRenderEngine** const rgpEngines,
+                                                      const size_t cEngines,
+                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
-        [[nodiscard]]
-        static HRESULT s_CreateInstance(IRenderData* pData,
-                                        _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
+        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
+                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
 
         virtual ~Renderer() override;
 
-        [[nodiscard]]
-        HRESULT PaintFrame();
+        [[nodiscard]] HRESULT PaintFrame();
 
         void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
@@ -68,10 +65,9 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;
 
-        [[nodiscard]]
-        HRESULT GetProposedFont(const int iDpi,
-                                const FontInfoDesired& FontInfoDesired,
-                                _Out_ FontInfo& FontInfo) override;
+        [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
+                                              const FontInfoDesired& FontInfoDesired,
+                                              _Out_ FontInfo& FontInfo) override;
 
         bool IsGlyphWideByFont(const std::wstring_view glyph) override;
 
@@ -90,13 +86,11 @@ namespace Microsoft::Console::Render
 
         void _NotifyPaintFrame();
 
-        [[nodiscard]]
-        HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PaintFrameForEngine(_In_ IRenderEngine* const pEngine);
 
         bool _CheckViewportAndScroll();
 
-        [[nodiscard]]
-        HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PaintBackground(_In_ IRenderEngine* const pEngine);
 
         void _PaintBufferOutput(_In_ IRenderEngine* const pEngine);
 
@@ -117,19 +111,16 @@ namespace Microsoft::Console::Render
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
 
-        [[nodiscard]]
-        HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
+        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
 
-        [[nodiscard]]
-        HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
         SMALL_RECT _srViewportPrevious;
 
         std::vector<SMALL_RECT> _GetSelectionRects() const;
         std::vector<SMALL_RECT> _previousSelection;
 
-        [[nodiscard]]
-        HRESULT _PaintTitle(IRenderEngine* const pEngine);
+        [[nodiscard]] HRESULT _PaintTitle(IRenderEngine* const pEngine);
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.

@@ -16,6 +16,8 @@
 
 #define KEY_ENHANCED 0x01000000
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 bool IsInProcessedInputMode()
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -32,16 +34,16 @@ BOOL IsSystemKey(const WORD wVirtualKeyCode)
 {
     switch (wVirtualKeyCode)
     {
-        case VK_SHIFT:
-        case VK_CONTROL:
-        case VK_MENU:
-        case VK_PAUSE:
-        case VK_CAPITAL:
-        case VK_LWIN:
-        case VK_RWIN:
-        case VK_NUMLOCK:
-        case VK_SCROLL:
-            return TRUE;
+    case VK_SHIFT:
+    case VK_CONTROL:
+    case VK_MENU:
+    case VK_PAUSE:
+    case VK_CAPITAL:
+    case VK_LWIN:
+    case VK_RWIN:
+    case VK_NUMLOCK:
+    case VK_SCROLL:
+        return TRUE;
     }
     return FALSE;
 }
@@ -126,7 +128,6 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
             }
         }
 
-
         // Check for ctrl-break.
         else if (keyEvent.GetVirtualKeyCode() == VK_CANCEL)
         {
@@ -168,7 +169,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
                 EventsWritten = gci.pInputBuffer->Write(std::make_unique<KeyEvent>(keyEvent));
             }
         }
-        catch(...)
+        catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
         }
@@ -214,7 +215,6 @@ void HandleMenuEvent(const DWORD wParam)
         {
             RIPMSG0(RIP_WARNING, "PutInputInBuffer: EventsWritten != 1, 1 expected");
         }
-
     }
     catch (...)
     {
@@ -227,17 +227,17 @@ void HandleCtrlEvent(const DWORD EventType)
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     switch (EventType)
     {
-        case CTRL_C_EVENT:
-            gci.CtrlFlags |= CONSOLE_CTRL_C_FLAG;
-            break;
-        case CTRL_BREAK_EVENT:
-            gci.CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
-            break;
-        case CTRL_CLOSE_EVENT:
-            gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
-            break;
-        default:
-            RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
+    case CTRL_C_EVENT:
+        gci.CtrlFlags |= CONSOLE_CTRL_C_FLAG;
+        break;
+    case CTRL_BREAK_EVENT:
+        gci.CtrlFlags |= CONSOLE_CTRL_BREAK_FLAG;
+        break;
+    case CTRL_CLOSE_EVENT:
+        gci.CtrlFlags |= CONSOLE_CTRL_CLOSE_FLAG;
+        break;
+    default:
+        RIPMSG1(RIP_ERROR, "Invalid EventType: 0x%x", EventType);
     }
 }
 
@@ -258,11 +258,11 @@ void ProcessCtrlEvents()
     size_t cProcessHandleList;
 
     HRESULT hr = gci.ProcessHandleList
-                    .GetTerminationRecordsByGroupId(LimitingProcessId,
-                                                    WI_IsFlagSet(gci.CtrlFlags,
-                                                              CONSOLE_CTRL_CLOSE_FLAG),
-                                                    &rgProcessHandleList,
-                                                    &cProcessHandleList);
+                     .GetTerminationRecordsByGroupId(LimitingProcessId,
+                                                     WI_IsFlagSet(gci.CtrlFlags,
+                                                                  CONSOLE_CTRL_CLOSE_FLAG),
+                                                     &rgProcessHandleList,
+                                                     &cProcessHandleList);
 
     if (FAILED(hr) || cProcessHandleList == 0)
     {
@@ -287,29 +287,28 @@ void ProcessCtrlEvents()
     //        CONSOLE_CTRL_LOGOFF_FLAG
     //        CONSOLE_CTRL_SHUTDOWN_FLAG
 
-    DWORD EventType = (DWORD) - 1;
+    DWORD EventType = (DWORD)-1;
     switch (CtrlFlags & (CONSOLE_CTRL_CLOSE_FLAG | CONSOLE_CTRL_BREAK_FLAG | CONSOLE_CTRL_C_FLAG | CONSOLE_CTRL_LOGOFF_FLAG | CONSOLE_CTRL_SHUTDOWN_FLAG))
     {
+    case CONSOLE_CTRL_CLOSE_FLAG:
+        EventType = CTRL_CLOSE_EVENT;
+        break;
 
-        case CONSOLE_CTRL_CLOSE_FLAG:
-            EventType = CTRL_CLOSE_EVENT;
-            break;
+    case CONSOLE_CTRL_BREAK_FLAG:
+        EventType = CTRL_BREAK_EVENT;
+        break;
 
-        case CONSOLE_CTRL_BREAK_FLAG:
-            EventType = CTRL_BREAK_EVENT;
-            break;
+    case CONSOLE_CTRL_C_FLAG:
+        EventType = CTRL_C_EVENT;
+        break;
 
-        case CONSOLE_CTRL_C_FLAG:
-            EventType = CTRL_C_EVENT;
-            break;
+    case CONSOLE_CTRL_LOGOFF_FLAG:
+        EventType = CTRL_LOGOFF_EVENT;
+        break;
 
-        case CONSOLE_CTRL_LOGOFF_FLAG:
-            EventType = CTRL_LOGOFF_EVENT;
-            break;
-
-        case CONSOLE_CTRL_SHUTDOWN_FLAG:
-            EventType = CTRL_SHUTDOWN_EVENT;
-            break;
+    case CONSOLE_CTRL_SHUTDOWN_FLAG:
+        EventType = CTRL_SHUTDOWN_EVENT;
+        break;
     }
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -327,10 +326,11 @@ void ProcessCtrlEvents()
         if (NT_SUCCESS(Status))
         {
             Status = ServiceLocator::LocateConsoleControl()
-                ->EndTask((HANDLE)rgProcessHandleList[i].dwProcessID,
-                          EventType,
-                          CtrlFlags);
-            if (rgProcessHandleList[i].hProcess == nullptr) {
+                         ->EndTask((HANDLE)rgProcessHandleList[i].dwProcessID,
+                                   EventType,
+                                   CtrlFlags);
+            if (rgProcessHandleList[i].hProcess == nullptr)
+            {
                 Status = STATUS_SUCCESS;
             }
         }

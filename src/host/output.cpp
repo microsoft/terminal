@@ -15,12 +15,13 @@
 #include "../types/inc/convert.hpp"
 
 #pragma hdrstop
+
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 
 // This routine figures out what parameters to pass to CreateScreenBuffer based on the data from STARTUPINFO and the
 // registry defaults, and then calls CreateScreenBuffer.
-[[nodiscard]]
-NTSTATUS DoCreateScreenBuffer()
+[[nodiscard]] NTSTATUS DoCreateScreenBuffer()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -270,7 +271,7 @@ static void _ScrollScreen(SCREEN_INFORMATION& screenInfo, const Viewport& source
 {
     if (screenInfo.IsActiveScreenBuffer())
     {
-        IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+        IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
         if (pNotifier != nullptr)
         {
             pNotifier->NotifyConsoleUpdateScrollEvent(target.Origin().X - source.Left(), target.Origin().Y - source.RightInclusive());
@@ -304,7 +305,7 @@ bool StreamScrollRegion(SCREEN_INFORMATION& screenInfo)
             COORD coordDelta = { 0 };
             coordDelta.Y = -1;
 
-            IAccessibilityNotifier *pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+            IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
             if (pNotifier)
             {
                 // Notify accessibility that a scroll has occurred.

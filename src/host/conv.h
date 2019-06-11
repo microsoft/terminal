@@ -25,7 +25,5 @@ Revision History:
 void WriteConvRegionToScreen(const SCREEN_INFORMATION& ScreenInfo,
                              const Microsoft::Console::Types::Viewport& convRegion);
 
-[[nodiscard]]
-HRESULT ConsoleImeResizeCompStrView();
-[[nodiscard]]
-HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize);
+[[nodiscard]] HRESULT ConsoleImeResizeCompStrView();
+[[nodiscard]] HRESULT ConsoleImeResizeCompStrScreenBuffer(const COORD coordNewScreenSize);

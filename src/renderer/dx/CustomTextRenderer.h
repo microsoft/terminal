@@ -35,87 +35,78 @@ namespace Microsoft::Console::Render
         D2D1_DRAW_TEXT_OPTIONS options;
     };
 
-    class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom |
-        ::Microsoft::WRL::InhibitFtmBase>,
-        IDWriteTextRenderer>
+    class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextRenderer>
     {
     public:
-
         // http://www.charlespetzold.com/blog/2014/01/Character-Formatting-Extensions-with-DirectWrite.html
         // https://docs.microsoft.com/en-us/windows/desktop/DirectWrite/how-to-implement-a-custom-text-renderer
 
         // IDWritePixelSnapping methods
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE IsPixelSnappingDisabled(void* clientDrawingContext,
-                                                                  _Out_ BOOL* isDisabled) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE IsPixelSnappingDisabled(void* clientDrawingContext,
+                                                                                _Out_ BOOL* isDisabled) override;
 
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE GetPixelsPerDip(void* clientDrawingContext,
-                                                          _Out_ FLOAT* pixelsPerDip) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetPixelsPerDip(void* clientDrawingContext,
+                                                                        _Out_ FLOAT* pixelsPerDip) override;
 
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE GetCurrentTransform(void* clientDrawingContext,
-                                                              _Out_ DWRITE_MATRIX* transform) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetCurrentTransform(void* clientDrawingContext,
+                                                                            _Out_ DWRITE_MATRIX* transform) override;
 
         // IDWriteTextRenderer methods
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE DrawGlyphRun(void* clientDrawingContext,
-                                                       FLOAT baselineOriginX,
-                                                       FLOAT baselineOriginY,
-                                                       DWRITE_MEASURING_MODE measuringMode,
-                                                       _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                       _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                                       IUnknown* clientDrawingEffect) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE DrawGlyphRun(void* clientDrawingContext,
+                                                                     FLOAT baselineOriginX,
+                                                                     FLOAT baselineOriginY,
+                                                                     DWRITE_MEASURING_MODE measuringMode,
+                                                                     _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                                     _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                                     IUnknown* clientDrawingEffect) override;
 
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE DrawUnderline(void* clientDrawingContext,
-                                                        FLOAT baselineOriginX,
-                                                        FLOAT baselineOriginY,
-                                                        _In_ const DWRITE_UNDERLINE* underline,
-                                                        IUnknown* clientDrawingEffect) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE DrawUnderline(void* clientDrawingContext,
+                                                                      FLOAT baselineOriginX,
+                                                                      FLOAT baselineOriginY,
+                                                                      _In_ const DWRITE_UNDERLINE* underline,
+                                                                      IUnknown* clientDrawingEffect) override;
 
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE DrawStrikethrough(void* clientDrawingContext,
-                                                            FLOAT baselineOriginX,
-                                                            FLOAT baselineOriginY,
-                                                            _In_ const DWRITE_STRIKETHROUGH * strikethrough,
-                                                            IUnknown* clientDrawingEffect) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE DrawStrikethrough(void* clientDrawingContext,
+                                                                          FLOAT baselineOriginX,
+                                                                          FLOAT baselineOriginY,
+                                                                          _In_ const DWRITE_STRIKETHROUGH* strikethrough,
+                                                                          IUnknown* clientDrawingEffect) override;
 
-        [[nodiscard]]
-        virtual HRESULT STDMETHODCALLTYPE DrawInlineObject(void* clientDrawingContext,
-                                                           FLOAT originX,
-                                                           FLOAT originY,
-                                                           IDWriteInlineObject* inlineObject,
-                                                           BOOL isSideways,
-                                                           BOOL isRightToLeft,
-                                                           IUnknown* clientDrawingEffect) override;
+        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE DrawInlineObject(void* clientDrawingContext,
+                                                                         FLOAT originX,
+                                                                         FLOAT originY,
+                                                                         IDWriteInlineObject* inlineObject,
+                                                                         BOOL isSideways,
+                                                                         BOOL isRightToLeft,
+                                                                         IUnknown* clientDrawingEffect) override;
+
     private:
         void _FillRectangle(void* clientDrawingContext,
                             IUnknown* clientDrawingEffect,
-                            float x, float y, float width, float thickness,
+                            float x,
+                            float y,
+                            float width,
+                            float thickness,
                             DWRITE_READING_DIRECTION readingDirection,
                             DWRITE_FLOW_DIRECTION flowDirection);
 
-        [[nodiscard]]
-        HRESULT _DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
-                                   D2D1_POINT_2F baselineOrigin,
-                                   DWRITE_MEASURING_MODE measuringMode,
-                                   _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                   _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
-                                   ID2D1Brush* brush);
+        [[nodiscard]] HRESULT _DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
+                                                 D2D1_POINT_2F baselineOrigin,
+                                                 DWRITE_MEASURING_MODE measuringMode,
+                                                 _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                 _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                 ID2D1Brush* brush);
 
-        [[nodiscard]]
-        HRESULT _DrawBasicGlyphRunManually(DrawingContext*clientDrawingContext,
-                                           D2D1_POINT_2F baselineOrigin,
-                                           DWRITE_MEASURING_MODE measuringMode,
-                                           _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                           _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
+        [[nodiscard]] HRESULT _DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
+                                                         D2D1_POINT_2F baselineOrigin,
+                                                         DWRITE_MEASURING_MODE measuringMode,
+                                                         _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                         _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
 
-        [[nodiscard]]
-        HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
-                                  D2D1_POINT_2F baselineOrigin,
-                                  DWRITE_MEASURING_MODE measuringMode,
-                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                  _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
+        [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
+                                                D2D1_POINT_2F baselineOrigin,
+                                                DWRITE_MEASURING_MODE measuringMode,
+                                                _In_ const DWRITE_GLYPH_RUN* glyphRun,
+                                                _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
     };
 }

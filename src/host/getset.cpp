@@ -30,6 +30,7 @@
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
@@ -82,8 +83,7 @@ void ApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context, ULONG& m
 // - event - The count of events in the queue
 // Return Value:
 //  - S_OK or math failure.
-[[nodiscard]]
-HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context, ULONG& events) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context, ULONG& events) noexcept
 {
     try
     {
@@ -208,10 +208,9 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 // - size - The X by Y pixel size of the font
 // Return Value:
 // - S_OK, E_INVALIDARG or code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
-                                            const DWORD index,
-                                            COORD& size) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
+                                                          const DWORD index,
+                                                          COORD& size) noexcept
 {
     try
     {
@@ -242,10 +241,9 @@ HRESULT ApiRoutines::GetConsoleFontSizeImpl(const SCREEN_INFORMATION& context,
 // - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
 // Return Value:
 // - S_OK, string copy failure code or code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
-                                                 const bool isForMaximumWindowSize,
-                                                 CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& context,
+                                                               const bool isForMaximumWindowSize,
+                                                               CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {
     try
     {
@@ -286,10 +284,9 @@ HRESULT ApiRoutines::GetCurrentConsoleFontExImpl(const SCREEN_INFORMATION& conte
 // - consoleFontInfoEx - structure containing font information like size, family, weight, etc.
 // Return Value:
 // - S_OK, string copy failure code or code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
-                                                 const bool /*isForMaximumWindowSize*/,
-                                                 const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
+                                                               const bool /*isForMaximumWindowSize*/,
+                                                               const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept
 {
     try
     {
@@ -323,8 +320,7 @@ HRESULT ApiRoutines::SetCurrentConsoleFontExImpl(IConsoleOutputObject& context,
 // - mode - flags that change behavior of the buffer
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG mode) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG mode) noexcept
 {
     try
     {
@@ -385,8 +381,7 @@ HRESULT ApiRoutines::SetConsoleInputModeImpl(InputBuffer& context, const ULONG m
 // - mode - flags that change behavior of the buffer
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const ULONG mode) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const ULONG mode) noexcept
 {
     try
     {
@@ -404,7 +399,8 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const
         screenInfo.OutputMode = dwNewMode;
 
         // if we're moving from VT on->off
-        if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) && WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+        if (WI_IsFlagClear(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) &&
+            WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
         {
             // jiggle the handle
             screenInfo.GetStateMachine().ResetState();
@@ -425,7 +421,7 @@ HRESULT ApiRoutines::SetConsoleOutputModeImpl(SCREEN_INFORMATION& context, const
         // but only do this if we're not in conpty mode.
         if (!gci.IsInVtIoMode() &&
             (WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) != WI_IsFlagSet(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||
-             WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE)) )
+             WI_IsFlagSet(dwNewMode, ENABLE_LVB_GRID_WORLDWIDE) != WI_IsFlagSet(dwOldMode, ENABLE_LVB_GRID_WORLDWIDE)))
         {
             auto* pRender = ServiceLocator::LocateGlobals().pRender;
             if (pRender)
@@ -498,9 +494,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 // - size - size in character rows and columns
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
-                                                    const COORD size) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
+                                                                  const COORD size) noexcept
 {
     try
     {
@@ -514,11 +509,13 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
         if (!ServiceLocator::LocateGlobals().IsHeadless())
         {
             COORD const coordMin = screenInfo.GetMinWindowSizeInCharacters();
+            // clang-format off
             // Make sure requested screen buffer size isn't smaller than the window.
             RETURN_HR_IF(E_INVALIDARG, (size.X < screenInfo.GetViewport().Width() ||
                                         size.Y < screenInfo.GetViewport().Height() ||
                                         size.Y < coordMin.Y ||
                                         size.X < coordMin.X));
+            // clang-format on
         }
 
         // Ensure the requested size isn't larger than we can handle in our data type.
@@ -543,16 +540,17 @@ HRESULT ApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
 // - data - metadata information structure like buffer size, viewport size, colors, and more.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
-                                                      const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
+                                                                    const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
     try
     {
+        // clang-format off
         RETURN_HR_IF(E_INVALIDARG, (data.dwSize.X == 0 ||
                                     data.dwSize.Y == 0 ||
                                     data.dwSize.X == SHRT_MAX ||
                                     data.dwSize.Y == SHRT_MAX));
+        // clang-format on
 
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -624,9 +622,8 @@ HRESULT ApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& contex
 // - position - The X/Y (row/column) position in the buffer to place the cursor
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
-                                                  const COORD position) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
+                                                                const COORD position) noexcept
 {
     try
     {
@@ -636,10 +633,12 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
         const COORD coordScreenBufferSize = context.GetBufferSize().Dimensions();
+        // clang-format off
         RETURN_HR_IF(E_INVALIDARG, (position.X >= coordScreenBufferSize.X ||
                                     position.Y >= coordScreenBufferSize.Y ||
                                     position.X < 0 ||
                                     position.Y < 0));
+        // clang-format on
 
         // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
         RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
@@ -687,10 +686,9 @@ HRESULT ApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
 // - isVisible - Whether or not the cursor should be displayed
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
-                                              const ULONG size,
-                                              const bool isVisible) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
+                                                            const ULONG size,
+                                                            const bool isVisible) noexcept
 {
     try
     {
@@ -716,10 +714,9 @@ HRESULT ApiRoutines::SetConsoleCursorInfoImpl(SCREEN_INFORMATION& context,
 // - windowRect - Updated viewport rectangle information
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
-                                              const bool isAbsolute,
-                                              const SMALL_RECT& windowRect) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
+                                                            const bool isAbsolute,
+                                                            const SMALL_RECT& windowRect) noexcept
 {
     try
     {
@@ -753,7 +750,6 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
         {
             COORD const coordMax = context.GetMaxWindowSizeInCharacters();
             RETURN_HR_IF(E_INVALIDARG, (NewWindowSize.X > coordMax.X || NewWindowSize.Y > coordMax.Y));
-
         }
         else if (g.getConsoleInformation().IsInVtIoMode())
         {
@@ -785,13 +781,12 @@ HRESULT ApiRoutines::SetConsoleWindowInfoImpl(SCREEN_INFORMATION& context,
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
-                                                    const SMALL_RECT& source,
-                                                    const COORD target,
-                                                    std::optional<SMALL_RECT> clip,
-                                                    const char fillCharacter,
-                                                    const WORD fillAttribute) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
+                                                                  const SMALL_RECT& source,
+                                                                  const COORD target,
+                                                                  std::optional<SMALL_RECT> clip,
+                                                                  const char fillCharacter,
+                                                                  const WORD fillAttribute) noexcept
 {
     try
     {
@@ -813,19 +808,17 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferAImpl(SCREEN_INFORMATION& context,
 // - fillAttribute - Fills in the region left behind when the source is "lifted" out of its original location. The color to use.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
-                                                    const SMALL_RECT& source,
-                                                    const COORD target,
-                                                    std::optional<SMALL_RECT> clip,
-                                                    const wchar_t fillCharacter,
-                                                    const WORD fillAttribute) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
+                                                                  const SMALL_RECT& source,
+                                                                  const COORD target,
+                                                                  std::optional<SMALL_RECT> clip,
+                                                                  const wchar_t fillCharacter,
+                                                                  const WORD fillAttribute) noexcept
 {
     try
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
 
         TextAttribute useThisAttr(fillAttribute);
 
@@ -867,9 +860,8 @@ HRESULT ApiRoutines::ScrollConsoleScreenBufferWImpl(SCREEN_INFORMATION& context,
 // - attribute - Color information
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
-                                                 const WORD attribute) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
+                                                               const WORD attribute) noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     try
@@ -979,8 +971,7 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 // - codepage - The codepage
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
 {
     try
     {
@@ -1011,8 +1002,7 @@ HRESULT ApiRoutines::SetConsoleOutputCodePageImpl(const ULONG codepage) noexcept
 // - codepage - The codepage
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
 {
     try
     {
@@ -1198,10 +1188,9 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 // NOTE:
 // - This was in private.c, but turns out to be a public API:
 // - See: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686028(v=vs.85).aspx
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
-                                               const ULONG flags,
-                                               COORD& newSize) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
+                                                             const ULONG flags,
+                                                             COORD& newSize) noexcept
 {
     try
     {
@@ -1212,7 +1201,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
         {
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-            SCREEN_INFORMATION&  screenInfo = context.GetActiveBuffer();
+            SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
 
             newSize = screenInfo.GetBufferSize().Dimensions();
             RETURN_HR_IF(E_INVALIDARG, !(screenInfo.IsActiveScreenBuffer()));
@@ -1250,8 +1239,7 @@ HRESULT ApiRoutines::SetConsoleDisplayModeImpl(SCREEN_INFORMATION& context,
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return value:
 // - True if handled successfully. False otherwise.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
+[[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.pInputBuffer == nullptr)
@@ -1269,8 +1257,7 @@ NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
 // - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return value:
 // - True if handled successfully. False otherwise.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
+[[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.pInputBuffer == nullptr)
@@ -1318,8 +1305,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 //     left and right margins in the future.
 // Return value:
 // - True if handled successfully. False otherwise.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins)
+[[nodiscard]] NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT* const psrScrollMargins)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1345,8 +1331,7 @@ NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SM
 // - screenInfo - a pointer to the screen buffer that should perform the reverse line feed
 // Return value:
 // - True if handled successfully. False otherwise.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
+[[nodiscard]] NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1408,8 +1393,7 @@ NTSTATUS DoSrvPrivateReverseLineFeed(SCREEN_INFORMATION& screenInfo)
 // - lines - The number of lines to move the cursor. Up is negative, down positive.
 // Return value:
 // - S_OK if handled successfully. Otherwise an appropriate HRESULT for failing to clamp.
-[[nodiscard]]
-HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
+[[nodiscard]] HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
 {
     auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
     const int currentCursorY = cursor.GetPosition().Y;
@@ -1446,8 +1430,7 @@ HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short li
 // - screenInfo - a reference to the screen buffer that should use an alternate buffer
 // Return value:
 // - True if handled successfully. False otherwise.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
+[[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
 {
     return screenInfo.GetActiveBuffer().UseAlternateScreenBuffer();
 }
@@ -1471,8 +1454,7 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // <none>
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateHorizontalTabSet()
+[[nodiscard]] NTSTATUS DoSrvPrivateHorizontalTabSet()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1496,8 +1478,7 @@ NTSTATUS DoSrvPrivateHorizontalTabSet()
 // fForward - whether to tab forward or backwards
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
+[[nodiscard]] NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& _screenBuffer = gci.GetActiveOutputBuffer().GetActiveBuffer();
@@ -1525,8 +1506,7 @@ NTSTATUS DoPrivateTabHelper(const SHORT sNumTabs, _In_ bool fForward)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
+[[nodiscard]] NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, true);
 }
@@ -1538,8 +1518,7 @@ NTSTATUS DoSrvPrivateForwardTab(const SHORT sNumTabs)
 // - sNumTabs - The number of tabs to perform.
 // Return value:
 // - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate status code indicating the error.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
+[[nodiscard]] NTSTATUS DoSrvPrivateBackwardsTab(const SHORT sNumTabs)
 {
     return DoPrivateTabHelper(sNumTabs, false);
 }
@@ -1645,8 +1624,7 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 //  The ScreenBuffer to perform the erase on.
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION&  screenInfo)
+[[nodiscard]] NTSTATUS DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
     return NTSTATUS_FROM_HRESULT(screenInfo.GetActiveBuffer().VtEraseAll());
 }
@@ -1673,8 +1651,7 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
 // - pwAttributes - Pointer to space that will receive color attributes data
 // Return Value:
 // - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
-[[nodiscard]]
-NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo, _Out_ WORD* const pwAttributes)
+[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo, _Out_ WORD* const pwAttributes)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1719,11 +1696,10 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
 // - isOriginal - If true, gets the title when we booted up. If false, gets whatever it is set to right now.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
-                                   size_t& written,
-                                   size_t& needed,
-                                   const bool isOriginal) noexcept
+[[nodiscard]] HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
+                                                 size_t& written,
+                                                 size_t& needed,
+                                                 const bool isOriginal) noexcept
 {
     try
     {
@@ -1783,11 +1759,10 @@ HRESULT GetConsoleTitleWImplHelper(std::optional<gsl::span<wchar_t>> title,
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
 
-[[nodiscard]]
-HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
-                                   size_t& written,
-                                   size_t& needed,
-                                   const bool isOriginal) noexcept
+[[nodiscard]] HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
+                                                 size_t& written,
+                                                 size_t& needed,
+                                                 const bool isOriginal) noexcept
 {
     try
     {
@@ -1833,7 +1808,6 @@ HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
             // Copy safely to output buffer
             HRESULT const hr = StringCchCopyNA(title.data(), title.size(), converted.data(), converted.size());
 
-
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
@@ -1862,7 +1836,6 @@ HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
         return S_OK;
     }
     CATCH_RETURN();
-
 }
 
 // Routine Description:
@@ -1874,10 +1847,9 @@ HRESULT GetConsoleTitleAImplHelper(gsl::span<char> title,
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
-                                          size_t& written,
-                                          size_t& needed) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
+                                                        size_t& written,
+                                                        size_t& needed) noexcept
 {
     try
     {
@@ -1898,10 +1870,9 @@ HRESULT ApiRoutines::GetConsoleTitleAImpl(gsl::span<char> title,
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
-                                          size_t& written,
-                                          size_t& needed) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
+                                                        size_t& written,
+                                                        size_t& needed) noexcept
 {
     try
     {
@@ -1922,10 +1893,9 @@ HRESULT ApiRoutines::GetConsoleTitleWImpl(gsl::span<wchar_t> title,
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
-                                                  size_t& written,
-                                                  size_t& needed) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
+                                                                size_t& written,
+                                                                size_t& needed) noexcept
 {
     try
     {
@@ -1946,10 +1916,9 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleAImpl(gsl::span<char> title,
 // - needed - The number of characters we would need to completely write out the title.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
-                                                  size_t& written,
-                                                  size_t& needed) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
+                                                                size_t& written,
+                                                                size_t& needed) noexcept
 {
     try
     {
@@ -1967,8 +1936,7 @@ HRESULT ApiRoutines::GetConsoleOriginalTitleWImpl(gsl::span<wchar_t> title,
 // - title - The new title to store and display on the console window.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -1987,8 +1955,7 @@ HRESULT ApiRoutines::SetConsoleTitleAImpl(const std::string_view title) noexcept
 // - title - The new title to store and display on the console window.
 // Return Value:
 // - S_OK, E_INVALIDARG, or failure code from thrown exception
-[[nodiscard]]
-HRESULT ApiRoutines::SetConsoleTitleWImpl(const std::wstring_view title) noexcept
+[[nodiscard]] HRESULT ApiRoutines::SetConsoleTitleWImpl(const std::wstring_view title) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -1996,8 +1963,7 @@ HRESULT ApiRoutines::SetConsoleTitleWImpl(const std::wstring_view title) noexcep
     return DoSrvSetConsoleTitleW(title);
 }
 
-[[nodiscard]]
-HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
+[[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -2035,8 +2001,7 @@ HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
 //  <none>
 // Return value:
 // - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]]
-NTSTATUS DoSrvPrivateSuppressResizeRepaint()
+[[nodiscard]] NTSTATUS DoSrvPrivateSuppressResizeRepaint()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(!(gci.IsInVtIoMode()));
@@ -2147,8 +2112,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 // Notes:
 //  Does not take a buffer parameter. The color table for a console and for
 //      terminals as well is global, not per-screen-buffer.
-[[nodiscard]]
-HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, index >= 256);
     try
@@ -2168,7 +2132,6 @@ HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) 
         return S_OK;
     }
     CATCH_RETURN();
-
 }
 
 // Method Description:
@@ -2177,8 +2140,7 @@ HRESULT DoSrvPrivateSetColorTableEntry(const short index, const COLORREF value) 
 // - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
 {
     try
     {
@@ -2205,8 +2167,7 @@ HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
 // - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
 {
     try
     {

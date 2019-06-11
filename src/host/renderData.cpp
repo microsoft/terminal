@@ -13,7 +13,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
 // Return Value:
@@ -177,9 +177,9 @@ COLORREF RenderData::GetCursorColor() const noexcept
 //  (the highest overlay should be given last)
 // Return Value:
 // - Iterable set of overlays
-const std::vector<RenderOverlay> RenderData::GetOverlays() const noexcept
+const std::vector<Microsoft::Console::Render::RenderOverlay> RenderData::GetOverlays() const noexcept
 {
-    std::vector<RenderOverlay> overlays;
+    std::vector<Microsoft::Console::Render::RenderOverlay> overlays;
 
     try
     {
@@ -203,7 +203,7 @@ const std::vector<RenderOverlay> RenderData::GetOverlays() const noexcept
                 // (e.g. 0,0 is the origin of the text buffer above, not the placement within the visible viewport)
                 const auto used = Viewport::FromInclusive(composition.GetAreaBufferInfo().rcViewCaWindow);
 
-                overlays.emplace_back(RenderOverlay{ textBuffer, origin, used });
+                overlays.emplace_back(Microsoft::Console::Render::RenderOverlay{ textBuffer, origin, used });
             }
         }
     }

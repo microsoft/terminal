@@ -16,7 +16,8 @@
 #include "handle.h"
 
 using namespace Microsoft::Console;
-
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 // Constructor Description:
 // - Creates the VT Input Thread.
 // Arguments:
@@ -55,8 +56,7 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
 // - cch - number of UTF-8 characters in charBuffer
 // Return Value:
 // - S_OK on success, otherwise an appropriate failure.
-[[nodiscard]]
-HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
+[[nodiscard]] HRESULT VtInputThread::_HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch)
 {
     // Make sure to call the GLOBAL Lock/Unlock, not the gci's lock/unlock.
     // Only the global unlock attempts to dispatch ctrl events. If you use the
@@ -156,11 +156,10 @@ DWORD VtInputThread::_InputThread()
 
 // Method Description:
 // - Starts the VT input thread.
-[[nodiscard]]
-HRESULT VtInputThread::Start()
+[[nodiscard]] HRESULT VtInputThread::Start()
 {
     RETURN_HR_IF(E_HANDLE, !_hFile);
-    
+
     HANDLE hThread = nullptr;
     // 0 is the right value, https://blogs.msdn.microsoft.com/oldnewthing/20040223-00/?p=40503
     DWORD dwThreadId = 0;
@@ -172,7 +171,7 @@ HRESULT VtInputThread::Start()
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

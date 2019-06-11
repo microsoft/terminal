@@ -17,6 +17,7 @@
 using namespace Microsoft::Console::Types;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class ApiRoutinesTests
 {
@@ -148,9 +149,9 @@ class ApiRoutinesTests
     {
         Log::Comment(L"Turn on insert mode with cooked read data.");
         m_state->PrepareReadHandle();
-        auto cleanupReadHandle = wil::scope_exit([&](){ m_state->CleanupReadHandle(); });
+        auto cleanupReadHandle = wil::scope_exit([&]() { m_state->CleanupReadHandle(); });
         m_state->PrepareCookedReadData();
-        auto cleanupCookedRead = wil::scope_exit([&](){ m_state->CleanupCookedReadData(); });
+        auto cleanupCookedRead = wil::scope_exit([&]() { m_state->CleanupCookedReadData(); });
 
         PrepVerifySetConsoleInputModeImpl(0);
         Log::Comment(L"Success code should result from setting valid flags.");
@@ -594,7 +595,7 @@ class ApiRoutinesTests
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"data:checkClipped", L"{false, true}")
-            END_TEST_METHOD_PROPERTIES();
+        END_TEST_METHOD_PROPERTIES();
 
         bool checkClipped;
         VERIFY_SUCCEEDED(TestData::TryGetValue(L"checkClipped", checkClipped), L"Get whether or not we should check all the options using a clipping rectangle.");
@@ -659,7 +660,7 @@ class ApiRoutinesTests
             // for scrolling left and right, we're going to clip to only modify the top half of the buffer
             COORD clipRectDimensions = bufferSize.Dimensions();
             clipRectDimensions.Y /= 2;
-            
+
             clipViewport = Viewport::FromDimensions({ 0, 0 }, clipRectDimensions);
             clipRectangle = clipViewport.value().ToInclusive();
         }

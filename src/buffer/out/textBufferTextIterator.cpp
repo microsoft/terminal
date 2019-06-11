@@ -38,4 +38,3 @@ const std::wstring_view* TextBufferTextIterator::operator->() const
 {
     return &_view.Chars();
 }
-

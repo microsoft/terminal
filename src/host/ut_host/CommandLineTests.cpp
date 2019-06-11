@@ -11,10 +11,10 @@
 
 #include "../cmdline.h"
 
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 constexpr size_t PROMPT_SIZE = 512;
 
@@ -260,7 +260,6 @@ class CommandLineTests
         VERIFY_ARE_EQUAL(cursorPos.X, gsl::narrow<short>(expectedCursorPos));
         VERIFY_ARE_EQUAL(cookedReadData._currentPosition, expectedCursorPos);
         VERIFY_ARE_EQUAL(cookedReadData._bufPtr, expectedBufferPos);
-
     }
 
     TEST_METHOD(CanMoveCursorToStartOfPrompt)

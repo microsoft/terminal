@@ -36,7 +36,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-
     App::App() :
         App(winrt::TerminalApp::XamlMetaDataProvider())
     {
@@ -44,8 +43,8 @@ namespace winrt::TerminalApp::implementation
 
     App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
         base_type(parentProvider),
-        _settings{  },
-        _tabs{  },
+        _settings{},
+        _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
         _dialogLock{}
@@ -138,7 +137,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
 
         // When the new tab button is clicked, open the default profile
-        _newTabButton.Click([this](auto&&, auto&&){
+        _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);
         });
 
@@ -263,7 +262,6 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
-
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
@@ -322,7 +320,7 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
+            profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
                 this->_OpenNewTab({ profileIndex });
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -391,7 +389,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void App::_SettingsButtonOnClick(const IInspectable&,
-                                         const RoutedEventArgs&)
+                                     const RoutedEventArgs&)
     {
         LaunchSettings();
     }
@@ -424,6 +422,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDown([this]() { _Scroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
         bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
+        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
         bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
@@ -438,8 +438,7 @@ namespace winrt::TerminalApp::implementation
     //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
-    [[nodiscard]]
-    HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
+    [[nodiscard]] HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
         HRESULT hr = E_FAIL;
 
@@ -512,32 +511,33 @@ namespace winrt::TerminalApp::implementation
         std::filesystem::path fileParser = localPathCopy.c_str();
         const auto folder = fileParser.parent_path();
 
-        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::All,
-            [this](wil::FolderChangeEvent event, PCWSTR fileModified)
-        {
-            // We want file modifications, AND when files are renamed to be
-            // profiles.json. This second case will oftentimes happen with text
-            // editors, who will write a temp file, then rename it to be the
-            // actual file you wrote. So listen for that too.
-            if (!(event == wil::FolderChangeEvent::Modified ||
-                  event == wil::FolderChangeEvent::RenameNewName))
-            {
-                return;
-            }
+        _reader.create(folder.c_str(),
+                       false,
+                       wil::FolderChangeEvents::All,
+                       [this](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                           // We want file modifications, AND when files are renamed to be
+                           // profiles.json. This second case will oftentimes happen with text
+                           // editors, who will write a temp file, then rename it to be the
+                           // actual file you wrote. So listen for that too.
+                           if (!(event == wil::FolderChangeEvent::Modified ||
+                                 event == wil::FolderChangeEvent::RenameNewName))
+                           {
+                               return;
+                           }
 
-            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-            std::filesystem::path settingsParser = localPathCopy.c_str();
-            std::filesystem::path modifiedParser = fileModified;
+                           const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+                           std::filesystem::path settingsParser = localPathCopy.c_str();
+                           std::filesystem::path modifiedParser = fileModified;
 
-            // Getting basename (filename.ext)
-            const auto settingsBasename = settingsParser.filename();
-            const auto modifiedBasename = modifiedParser.filename();
+                           // Getting basename (filename.ext)
+                           const auto settingsBasename = settingsParser.filename();
+                           const auto modifiedBasename = modifiedParser.filename();
 
-            if (settingsBasename == modifiedBasename)
-            {
-                this->_ReloadSettings();
-            }
-        });
+                           if (settingsBasename == modifiedBasename)
+                           {
+                               this->_ReloadSettings();
+                           }
+                       });
     }
 
     // Method Description:
@@ -572,30 +572,23 @@ namespace winrt::TerminalApp::implementation
         // Refresh UI elements
 
         auto profiles = _settings->GetProfiles();
-        for (auto &profile : profiles)
+        for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
             TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
-            for (auto &tab : _tabs)
+            for (auto& tab : _tabs)
             {
-                const auto term = tab->GetTerminalControl();
-                const GUID tabProfile = tab->GetProfile();
-
-                if (profileGuid == tabProfile)
-                {
-                    term.UpdateSettings(settings);
-
-                    // Update the icons of the tabs with this profile open.
-                    auto tabViewItem = tab->GetTabViewItem();
-                    tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [profile, tabViewItem]() {
-                        // _GetIconFromProfile has to run on the main thread
-                        tabViewItem.Icon(App::_GetIconFromProfile(profile));
-                    });
-                }
+                // Attempt to reload the settings of any panes with this profile
+                tab->UpdateSettings(settings, profileGuid);
             }
         }
 
+        // Update the icon of the tab for the currently focused profile in that tab.
+        for (auto& tab : _tabs)
+        {
+            _UpdateTabIcon(tab);
+        }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Refresh the UI theme
@@ -605,7 +598,50 @@ namespace winrt::TerminalApp::implementation
             // profile, which might have changed
             _CreateNewTabFlyout();
         });
+    }
 
+    // Method Description:
+    // - Get the icon of the currently focused terminal control, and set its
+    //   tab's icon to that icon.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void App::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+    {
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
+        {
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+
+            auto tabViewItem = tab->GetTabViewItem();
+            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
+                // _GetIconFromProfile has to run on the main thread
+                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+                if (matchingProfile)
+                {
+                    tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
+                }
+            });
+        }
+    }
+
+    // Method Description:
+    // - Get the title of the currently focused terminal control, and set it's
+    //   tab's text to that text. If this tab is the focused tab, then also
+    //   bubble this title to any listeners of our TitleChanged event.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void App::_UpdateTitle(std::shared_ptr<Tab> tab)
+    {
+        auto newTabTitle = tab->GetFocusedTitle();
+
+        // TODO #608: If the settings don't want the terminal's text in the
+        // tab, then display something else.
+        tab->SetTabText(newTabTitle);
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
+        {
+            _titleChangeHandlers(newTabTitle);
+        }
     }
 
     // Method Description:
@@ -631,8 +667,10 @@ namespace winrt::TerminalApp::implementation
 
     void App::_SetFocusedTabIndex(int tabIndex)
     {
+        // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
+        //          sometimes set focus to an incorrect tab after removing some tabs
         auto tab = _tabs.at(tabIndex);
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
+        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this]() {
             auto tabViewItem = tab->GetTabViewItem();
             _tabView.SelectedItem(tabViewItem);
         });
@@ -726,6 +764,59 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Connects event handlers to the TermControl for events that we want to
+    //   handle. This includes:
+    //    * the Copy and Paste events, for setting and retrieving clipboard data
+    //      on the right thread
+    //    * the TitleChanged event, for changing the text of the tab
+    //    * the GotFocus event, for changing the title/icon in the tab when a new
+    //      control is focused
+    // Arguments:
+    // - term: The newly created TermControl to connect the events for
+    // - hostingTab: The Tab that's hosting this TermControl instance
+    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
+    {
+        // Add an event handler when the terminal's selection wants to be copied.
+        // When the text buffer data is retrieved, we'll copy the data into the Clipboard
+        term.CopyToClipboard({ this, &App::_CopyToClipboardHandler });
+
+        // Add an event handler when the terminal wants to paste data from the Clipboard.
+        term.PasteFromClipboard({ this, &App::_PasteFromClipboardHandler });
+
+        // Don't capture a strong ref to the tab. If the tab is removed as this
+        // is called, we don't really care anymore about handling the event.
+        std::weak_ptr<Tab> weakTabPtr = hostingTab;
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
+            // The title of the control changed, but not necessarily the title
+            // of the tab. Get the title of the focused pane of the tab, and set
+            // the tab's text to the focused panes' text.
+            _UpdateTitle(tab);
+        });
+
+        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
+            auto tab = weakTabPtr.lock();
+            if (!tab)
+            {
+                return;
+            }
+            // Update the focus of the tab's panes
+            tab->UpdateFocus();
+
+            // Possibly update the title of the tab, window to match the newly
+            // focused pane.
+            _UpdateTitle(tab);
+
+            // Possibly update the icon of the tab.
+            _UpdateTabIcon(tab);
+        });
+    }
+
+    // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
     // Arguments:
@@ -735,41 +826,11 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
         TermControl term{ settings };
 
-        // Add an event handler when the terminal's selection wants to be copied.
-        // When the text buffer data is retrieved, we'll copy the data into the Clipboard
-        term.CopyToClipboard([=](auto copiedData) {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
-                DataPackage dataPack = DataPackage();
-                dataPack.RequestedOperation(DataPackageOperation::Copy);
-                dataPack.SetText(copiedData);
-                Clipboard::SetContent(dataPack);
-
-                // TODO: MSFT 20642290 and 20642291
-                // rtf copy and html copy
-            });
-        });
-
-        // Add an event handler when the terminal wants to paste data from the Clipboard.
-        term.PasteFromClipboard([=](auto /*sender*/, auto eventArgs) {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
-                PasteFromClipboard(eventArgs);
-            });
-        });
-
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
-        // Add an event handler when the terminal's title changes. When the
-        // title changes, we'll bubble it up to listeners of our own title
-        // changed event, so they can handle it.
-        newTab->GetTerminalControl().TitleChanged([=](auto newTitle){
-            // Only bubble the change if this tab is the focused tab.
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                newTab->IsFocused())
-            {
-                _titleChangeHandlers(newTitle);
-            }
-        });
+        // Hookup our event handlers to the new terminal
+        _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -782,23 +843,14 @@ namespace winrt::TerminalApp::implementation
             tabViewItem.Icon(_GetIconFromProfile(*profile));
         }
 
-        // Add an event handler when the terminal's connection is closed.
-        newTab->GetTerminalControl().ConnectionClosed([=]() {
-            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [newTab, tabViewItem, this]() {
-                const GUID tabProfile = newTab->GetProfile();
-                // Don't just capture this pointer, because the profile might
-                // get destroyed before this is called (case in point -
-                // reloading settings)
-                const auto* const p = _settings->FindProfile(tabProfile);
+        tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
-                if (p != nullptr && p->GetCloseOnExit())
-                {
-                    _RemoveTabViewItem(tabViewItem);
-                }
+        // When the tab is closed, remove it from our list of tabs.
+        newTab->Closed([tabViewItem, this]() {
+            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
+                _RemoveTabViewItem(tabViewItem);
             });
         });
-
-        tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
         // This is one way to set the tab's selected background color.
         //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
@@ -815,7 +867,14 @@ namespace winrt::TerminalApp::implementation
     // - the index of the currently focused tab if there is one, else -1
     int App::_GetFocusedTabIndex() const
     {
-        return _tabView.SelectedIndex();
+        // GH#1117: This is a workaround because _tabView.SelectedIndex()
+        //          sometimes return incorrect result after removing some tabs
+        uint32_t focusedIndex;
+        if (_tabView.Items().IndexOf(_tabView.SelectedItem(), focusedIndex))
+        {
+            return focusedIndex;
+        }
+        return -1;
     }
 
     void App::_OpenSettings()
@@ -856,7 +915,7 @@ namespace winrt::TerminalApp::implementation
     {
         delta = std::clamp(delta, -1, 1);
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        const auto control = _tabs[focusedTabIndex]->GetTerminalControl();
+        const auto control = _GetFocusedControl();
         const auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
@@ -868,10 +927,7 @@ namespace winrt::TerminalApp::implementation
     //    and get text to appear on separate lines.
     void App::_CopyText(const bool trimTrailingWhitespace)
     {
-        const int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-
-        const auto control = focusedTab->GetTerminalControl();
+        const auto control = _GetFocusedControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
 
@@ -885,8 +941,7 @@ namespace winrt::TerminalApp::implementation
         // we clamp the values to the range [0, tabCount) while still supporting moving
         // leftward from 0 to tabCount - 1.
         _SetFocusedTabIndex(
-            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
-        );
+            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount));
     }
 
     // Method Description:
@@ -921,10 +976,9 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 auto tab = _tabs.at(selectedIndex);
-                auto control = tab->GetTerminalControl().GetControl();
 
                 _tabContent.Children().Clear();
-                _tabContent.Children().Append(control);
+                _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
                 _titleChangeHandlers(GetTitle());
@@ -977,8 +1031,10 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    auto tab = _tabs.at(selectedIndex);
-                    return tab->GetTerminalControl().Title();
+                    if (auto focusedControl{ _GetFocusedControl() })
+                    {
+                        return focusedControl.Title();
+                    }
                 }
                 CATCH_LOG();
             }
@@ -1067,6 +1123,98 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::Microsoft::Terminal::TerminalControl::TermControl App::_GetFocusedControl()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+        return focusedTab->GetFocusedTerminalControl();
+    }
+
+    // Method Description:
+    // - Vertically split the focused pane, and place the given TermControl into
+    //   the newly created pane.
+    // Arguments:
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
+    void App::_SplitVertical(const std::optional<GUID>& profileGuid)
+    {
+        _SplitPane(Pane::SplitState::Vertical, profileGuid);
+    }
+
+    // Method Description:
+    // - Horizontally split the focused pane and place the given TermControl
+    //   into the newly created pane.
+    // Arguments:
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
+    void App::_SplitHorizontal(const std::optional<GUID>& profileGuid)
+    {
+        _SplitPane(Pane::SplitState::Horizontal, profileGuid);
+    }
+
+    // Method Description:
+    // - Split the focused pane either horizontally or vertically, and place the
+    //   given TermControl into the newly created pane.
+    // - If splitType == SplitState::None, this method does nothing.
+    // Arguments:
+    // - splitType: one value from the Pane::SplitState enum, indicating how the
+    //   new pane should be split from its parent.
+    // - profile: The profile GUID to associate with the newly created pane. If
+    //   this is nullopt, use the default profile.
+    void App::_SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid)
+    {
+        // Do nothing if we're requesting no split.
+        if (splitType == Pane::SplitState::None)
+        {
+            return;
+        }
+
+        const auto realGuid = profileGuid ? profileGuid.value() :
+                                            _settings->GlobalSettings().GetDefaultProfile();
+        const auto controlSettings = _settings->MakeSettings(realGuid);
+        TermControl newControl{ controlSettings };
+
+        const int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+
+        // Hookup our event handlers to the new terminal
+        _RegisterTerminalEvents(newControl, focusedTab);
+
+        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
+                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
+    }
+
+    // Method Description:
+    // - Place `copiedData` into the clipboard as text. Triggered when a
+    //   terminal control raises it's CopyToClipboard event.
+    // Arguments:
+    // - copiedData: the new string content to place on the clipboard.
+    void App::_CopyToClipboardHandler(const winrt::hstring& copiedData)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
+            DataPackage dataPack = DataPackage();
+            dataPack.RequestedOperation(DataPackageOperation::Copy);
+            dataPack.SetText(copiedData);
+            Clipboard::SetContent(dataPack);
+
+            // TODO: MSFT 20642290 and 20642291
+            // rtf copy and html copy
+        });
+    }
+
+    // Method Description:
+    // - Fires an async event to get data from the clipboard, and paste it to
+    //   the terminal. Triggered when the Terminal Control requests clipboard
+    //   data with it's PasteFromClipboard event.
+    // Arguments:
+    // - eventArgs: the PasteFromClipboard event sent from the TermControl
+    void App::_PasteFromClipboardHandler(const IInspectable& /*sender*/,
+                                         const PasteFromClipboardEventArgs& eventArgs)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
+            PasteFromClipboard(eventArgs);
+        });
+    }
 
     // Method Description:
     // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.

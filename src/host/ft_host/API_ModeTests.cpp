@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 
+using namespace WEX::Logging;
+
 // This class is intended to test:
 // GetConsoleMode
 // SetConsoleMode
@@ -44,7 +46,7 @@ void ModeTests::TestGetConsoleModeInvalid()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
     END_TEST_METHOD_PROPERTIES()
-    
+
     DWORD dwConsoleMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_FAILED(GetConsoleMode(INVALID_HANDLE_VALUE, &dwConsoleMode));
     VERIFY_ARE_EQUAL(dwConsoleMode, (DWORD)-1);

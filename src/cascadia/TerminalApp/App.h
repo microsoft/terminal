@@ -18,9 +18,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
-
     // We dont use AppT as it does not provide access to protected constructors
-    template <typename D, typename... I>
+    template<typename D, typename... I>
     using AppT_Override = App_base<D, I...>;
 
     struct App : AppT_Override<App>
@@ -62,7 +61,6 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
-        std::unique_ptr<TerminalApp::AppKeyBindings> _keyBindings;
 
         HRESULT _settingsLoadedResult;
 
@@ -76,8 +74,7 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
-        [[nodiscard]]
-        HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
+        [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
 
@@ -90,6 +87,10 @@ namespace winrt::TerminalApp::implementation
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         void _UpdateTabView();
+        void _UpdateTabIcon(std::shared_ptr<Tab> tab);
+        void _UpdateTitle(std::shared_ptr<Tab> tab);
+
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
@@ -103,6 +104,9 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
+        void _SplitVertical(const std::optional<GUID>& profileGuid);
+        void _SplitHorizontal(const std::optional<GUID>& profileGuid);
+        void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
@@ -118,6 +122,12 @@ namespace winrt::TerminalApp::implementation
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
+
+        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
+
+        void _CopyToClipboardHandler(const winrt::hstring& copiedData);
+        void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
+
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }

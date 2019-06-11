@@ -3,6 +3,9 @@
 
 #include "precomp.h"
 
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to provide a canary (simple launch test)
 // to ensure that activation of the console still works.
 class CanaryTests

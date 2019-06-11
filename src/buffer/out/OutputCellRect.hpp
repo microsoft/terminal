@@ -40,7 +40,7 @@ public:
 
 private:
     std::vector<OutputCell> _storage;
-    
+
     OutputCell* _FindRowOffset(const size_t row);
     const OutputCell* _FindRowOffset(const size_t row) const;
 

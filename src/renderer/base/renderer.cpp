@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "renderer.hpp"
@@ -27,7 +26,6 @@ Renderer::Renderer(IRenderData* pData,
     _pThread{ std::move(thread) },
     _destructing{ false }
 {
-
     _srViewportPrevious = { 0 };
 
     for (size_t i = 0; i < cEngines; i++)
@@ -55,8 +53,7 @@ Renderer::~Renderer()
 // - <none>
 // Return Value:
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
-[[nodiscard]]
-HRESULT Renderer::PaintFrame()
+[[nodiscard]] HRESULT Renderer::PaintFrame()
 {
     if (_destructing)
     {
@@ -71,15 +68,12 @@ HRESULT Renderer::PaintFrame()
     return S_OK;
 }
 
-
-[[nodiscard]]
-HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     _pData->LockConsole();
-    auto unlock = wil::scope_exit([&]()
-    {
+    auto unlock = wil::scope_exit([&]() {
         _pData->UnlockConsole();
     });
 
@@ -98,8 +92,7 @@ HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
         return S_OK;
     }
 
-    auto endPaint = wil::scope_exit([&]()
-    {
+    auto endPaint = wil::scope_exit([&]() {
         LOG_IF_FAILED(pEngine->EndPaint());
     });
 
@@ -429,8 +422,7 @@ void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfo
 // - pFontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-[[nodiscard]]
-HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
+[[nodiscard]] HRESULT Renderer::GetProposedFont(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
 {
     // If there's no head, return E_FAIL. The caller should decide how to
     //      handle this.
@@ -521,8 +513,7 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
 // - <none>
 // Return Value:
 // - <none>
-[[nodiscard]]
-HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT Renderer::_PaintBackground(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->PaintBackground();
 }
@@ -747,7 +738,6 @@ void Renderer::_PaintCursor(_In_ IRenderEngine* const pEngine)
 
         // Draw it within the viewport
         LOG_IF_FAILED(pEngine->PaintCursor(options));
-
     }
 }
 
@@ -861,8 +851,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 //                             (Usually only happens when the default is changed, not when each individual color is swapped in a multi-color run.)
 // Return Value:
 // - <none>
-[[nodiscard]]
-HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
+[[nodiscard]] HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute textAttributes, const bool isSettingDefaultBrushes)
 {
     const COLORREF rgbForeground = _pData->GetForegroundColor(textAttributes);
     const COLORREF rgbBackground = _pData->GetBackgroundColor(textAttributes);
@@ -884,8 +873,7 @@ HRESULT Renderer::_UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const
 // - <none>
 // Return Value:
 // - <none>
-[[nodiscard]]
-HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
+[[nodiscard]] HRESULT Renderer::_PerformScrolling(_In_ IRenderEngine* const pEngine)
 {
     return pEngine->ScrollFrame();
 }

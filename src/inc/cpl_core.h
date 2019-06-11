@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+
 /*
 *  General rules for being installed in the Control Panel:
 *
@@ -19,8 +20,9 @@
 *
 */
 #ifndef _INC_CPL
-#define _INC_CPL 
+#define _INC_CPL
 
+// clang-format off
 
 #include <pshpack1.h>   /* Assume byte packing throughout */
 
@@ -181,5 +183,6 @@ typedef LPNEWCPLINFOA LPNEWCPLINFO;
 
 #include <poppack.h>
 
-#endif  /* _INC_CPL */
+// clang-format on
 
+#endif /* _INC_CPL */

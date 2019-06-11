@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "thread.hpp"
@@ -18,7 +17,6 @@ RenderThread::RenderThread() :
     _fKeepRunning(true),
     _hPaintEnabledEvent(nullptr)
 {
-
 }
 
 RenderThread::~RenderThread()
@@ -60,8 +58,7 @@ RenderThread::~RenderThread()
 // Return Value:
 // - S_OK if we succeeded, else an HRESULT corresponding to a failure to create
 //      an Event or Thread.
-[[nodiscard]]
-HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
+[[nodiscard]] HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
 {
     _pRenderer = pRendererParent;
 
@@ -70,10 +67,10 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hEvent = CreateEventW(nullptr, // non-inheritable security attributes
-                                     FALSE,   // auto reset event
-                                     FALSE,   // initially unsignaled
-                                     nullptr  // no name
-                                     );
+                                     FALSE, // auto reset event
+                                     FALSE, // initially unsignaled
+                                     nullptr // no name
+        );
 
         if (hEvent == nullptr)
         {
@@ -88,8 +85,8 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hPaintEnabledEvent = CreateEventW(nullptr,
-                                                 TRUE,    // manual reset event
-                                                 FALSE,   // initially signaled
+                                                 TRUE, // manual reset event
+                                                 FALSE, // initially signaled
                                                  nullptr);
 
         if (hPaintEnabledEvent == nullptr)
@@ -105,8 +102,8 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hPaintCompletedEvent = CreateEventW(nullptr,
-                                                   TRUE,    // manual reset event
-                                                   TRUE,    // initially signaled
+                                                   TRUE, // manual reset event
+                                                   TRUE, // initially signaled
                                                    nullptr);
 
         if (hPaintCompletedEvent == nullptr)
@@ -121,13 +118,13 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
 
     if (SUCCEEDED(hr))
     {
-        HANDLE hThread = CreateThread(nullptr,      // non-inheritable security attributes
-                                      0,            // use default stack size
+        HANDLE hThread = CreateThread(nullptr, // non-inheritable security attributes
+                                      0, // use default stack size
                                       s_ThreadProc,
                                       this,
-                                      0,            // create immediately
-                                      nullptr       // we don't need the thread ID
-                                      );
+                                      0, // create immediately
+                                      nullptr // we don't need the thread ID
+        );
 
         if (hThread == nullptr)
         {

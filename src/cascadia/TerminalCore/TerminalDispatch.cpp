@@ -13,7 +13,6 @@ using namespace ::Microsoft::Console::VirtualTerminal;
 TerminalDispatch::TerminalDispatch(ITerminalApi& terminalApi) :
     _terminalApi{ terminalApi }
 {
-
 }
 
 void TerminalDispatch::Execute(const wchar_t wchControl)
@@ -26,7 +25,7 @@ void TerminalDispatch::Print(const wchar_t wchPrintable)
     _terminalApi.PrintString({ &wchPrintable, 1 });
 }
 
-void TerminalDispatch::PrintString(const wchar_t *const rgwch, const size_t cch)
+void TerminalDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
 {
     _terminalApi.PrintString({ rgwch, cch });
 }
@@ -44,7 +43,7 @@ bool TerminalDispatch::CursorPosition(const unsigned int uiLine,
 bool TerminalDispatch::CursorForward(const unsigned int uiDistance)
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
-    const COORD newCursorPos { cursorPos.X + gsl::narrow<short>(uiDistance), cursorPos.Y };
+    const COORD newCursorPos{ cursorPos.X + gsl::narrow<short>(uiDistance), cursorPos.Y };
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
 
