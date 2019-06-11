@@ -941,10 +941,7 @@ namespace winrt::TerminalApp::implementation
     // - Paste text from the Windows Clipboard to the focused terminal
     void App::_PasteText()
     {
-        const int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-
-        const auto control = focusedTab->GetTerminalControl();
+        const auto control = _GetFocusedControl();
         control.PasteTextFromClipboard();
     }
 
