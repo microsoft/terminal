@@ -19,8 +19,7 @@ CopyFromCharPopup::CopyFromCharPopup(SCREEN_INFORMATION& screenInfo) :
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CopyFromCharPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     // get user input
     WCHAR Char = UNICODE_NULL;

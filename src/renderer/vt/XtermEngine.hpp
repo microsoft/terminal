@@ -36,29 +36,22 @@ namespace Microsoft::Console::Render
 
         virtual ~XtermEngine() override = default;
 
-        [[nodiscard]]
-        HRESULT StartPaint() noexcept override;
-        [[nodiscard]]
-        HRESULT EndPaint() noexcept override;
+        [[nodiscard]] HRESULT StartPaint() noexcept override;
+        [[nodiscard]] HRESULT EndPaint() noexcept override;
 
-        [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                            const COLORREF colorBackground,
-                                            const WORD legacyColorAttribute,
-                                            const bool isBold,
-                                            const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]]
-        HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                const COORD coord,
-                                const bool trimLeft) noexcept override;
-        [[nodiscard]]
-        HRESULT ScrollFrame() noexcept override;
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                           const COLORREF colorBackground,
+                                                           const WORD legacyColorAttribute,
+                                                           const bool isBold,
+                                                           const bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                              const COORD coord,
+                                              const bool trimLeft) noexcept override;
+        [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
-        [[nodiscard]]
-        HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
 
-        [[nodiscard]]
-        HRESULT WriteTerminalW(_In_ const std::wstring& str) noexcept override;
+        [[nodiscard]] HRESULT WriteTerminalW(_In_ const std::wstring& str) noexcept override;
 
     protected:
         const COLORREF* const _ColorTable;
@@ -68,17 +61,14 @@ namespace Microsoft::Console::Render
         bool _usingUnderLine;
         bool _needToDisableCursor;
 
-        [[nodiscard]]
-        HRESULT _MoveCursor(const COORD coord) noexcept override;
+        [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]]
-        HRESULT _UpdateUnderline(const WORD wLegacyAttrs) noexcept;
+        [[nodiscard]] HRESULT _UpdateUnderline(const WORD wLegacyAttrs) noexcept;
 
-        [[nodiscard]]
-        HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
-    #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         friend class VtRendererTest;
-    #endif
+#endif
     };
 }

@@ -748,8 +748,7 @@ const Cursor& TextBuffer::GetCursor() const
     return _cursor;
 }
 
-[[nodiscard]]
-TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
+[[nodiscard]] TextAttribute TextBuffer::GetCurrentAttributes() const noexcept
 {
     return _currentAttributes;
 }
@@ -779,8 +778,7 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]]
-NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
@@ -822,7 +820,6 @@ NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
         // Also take advantage of the row ID refresh loop to resize the rows in the X dimension
         // and cleanup the UnicodeStorage characters that might fall outside the resized buffer.
         _RefreshRowIDs(newSize.X);
-
     }
     CATCH_RETURN();
 
@@ -1012,7 +1009,7 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                 // always apply \r\n for box selection
                 if (!lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                 {
-                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00);      // cant see CR/LF so just use black FG & BK
+                    COLORREF const Blackness = RGB(0x00, 0x00, 0x00); // cant see CR/LF so just use black FG & BK
 
                     selectionText.push_back(UNICODE_CARRIAGERETURN);
                     selectionText.push_back(UNICODE_LINEFEED);

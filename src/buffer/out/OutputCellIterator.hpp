@@ -47,7 +47,7 @@ public:
     OutputCellIterator& operator=(const OutputCellIterator& it) = default;
 
     operator bool() const noexcept;
-    
+
     ptrdiff_t GetCellDistance(OutputCellIterator other) const noexcept;
     ptrdiff_t GetInputDistance(OutputCellIterator other) const noexcept;
     friend ptrdiff_t operator-(OutputCellIterator one, OutputCellIterator two) = delete;
@@ -59,12 +59,11 @@ public:
     const OutputCellView* operator->() const;
 
 private:
-    
-    enum class Mode 
-    { 
+    enum class Mode
+    {
         // Loose mode is where we're given text and attributes in a raw sort of form
         // like while data is being inserted from an API call.
-        Loose, 
+        Loose,
 
         // Loose mode with only text is where we're given just text and we want
         // to use the attribute already in the buffer when writing
@@ -90,10 +89,11 @@ private:
     std::basic_string_view<WORD> _legacyAttrs;
 
     std::variant<
-        std::wstring_view, 
-        std::basic_string_view<CHAR_INFO>, 
-        std::basic_string_view<OutputCell>, 
-        std::monostate> _run;
+        std::wstring_view,
+        std::basic_string_view<CHAR_INFO>,
+        std::basic_string_view<OutputCell>,
+        std::monostate>
+        _run;
 
     TextAttribute _attr;
 

@@ -17,7 +17,6 @@ OutputCell::OutputCell() :
     _textAttribute{ InvalidTextAttribute },
     _behavior{ TextAttributeBehavior::Stored }
 {
-
 }
 
 OutputCell::OutputCell(const std::wstring_view charData,

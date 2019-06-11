@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "..\inc\FontInfo.hpp"
@@ -19,19 +18,18 @@ FontInfo::FontInfo(_In_ PCWSTR const pwszFaceName,
                    const COORD coordSize,
                    const UINT uiCodePage,
                    const bool fSetDefaultRasterFont /*= false*/) :
-                   FontInfoBase(pwszFaceName, bFamily, lWeight, fSetDefaultRasterFont, uiCodePage),
-                   _coordSize(coordSize),
-                   _coordSizeUnscaled(coordSize)
+    FontInfoBase(pwszFaceName, bFamily, lWeight, fSetDefaultRasterFont, uiCodePage),
+    _coordSize(coordSize),
+    _coordSizeUnscaled(coordSize)
 {
     ValidateFont();
 }
 
 FontInfo::FontInfo(const FontInfo& fiFont) :
-                   FontInfoBase(fiFont),
-                   _coordSize(fiFont.GetSize()),
-                   _coordSizeUnscaled(fiFont.GetUnscaledSize())
+    FontInfoBase(fiFont),
+    _coordSize(fiFont.GetSize()),
+    _coordSizeUnscaled(fiFont.GetUnscaledSize())
 {
-
 }
 
 COORD FontInfo::GetUnscaledSize() const
@@ -43,7 +41,6 @@ COORD FontInfo::GetSize() const
 {
     return _coordSize;
 }
-
 
 void FontInfo::SetFromEngine(_In_ PCWSTR const pwszFaceName,
                              const BYTE bFamily,
@@ -92,7 +89,7 @@ void FontInfo::_ValidateCoordSize()
 }
 
 #pragma warning(push)
-#pragma warning(suppress:4356)
+#pragma warning(suppress : 4356)
 Microsoft::Console::Render::IFontDefaultList* FontInfo::s_pFontDefaultList;
 #pragma warning(pop)
 

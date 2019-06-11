@@ -35,8 +35,7 @@ SMALL_RECT VtEngine::GetDirtyRectInChars()
 // - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
+[[nodiscard]] HRESULT VtEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const pResult) noexcept
 {
     *pResult = false;
     return S_FALSE;
@@ -78,10 +77,8 @@ bool VtEngine::_WillWriteSingleChar() const
     // Either the next character to the right or the immediately previous
     //      character should follow this code path
     //      (The immediate previous character would suggest a backspace)
-    bool invalidIsNext = (_srcInvalid.Top == _lastText.Y)
-                         && (_srcInvalid.Left == _lastText.X);
-    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y)
-                         && (_srcInvalid.Left == (_lastText.X-1));
+    bool invalidIsNext = (_srcInvalid.Top == _lastText.Y) && (_srcInvalid.Left == _lastText.X);
+    bool invalidIsLast = (_srcInvalid.Top == _lastText.Y) && (_srcInvalid.Left == (_lastText.X - 1));
 
     return noScrollDelta && invalidIsOneChar && (invalidIsNext || invalidIsLast);
 }

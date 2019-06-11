@@ -81,14 +81,11 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-
     gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
     gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
     ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
-
 }
-
 
 // Routine Description:
 // - Applies hardcoded default settings that are in line with what is defined
@@ -247,7 +244,7 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
 // - a CONSOLE_STATE_INFO with the current state of this settings structure.
 CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
 {
-    CONSOLE_STATE_INFO csi = {0};
+    CONSOLE_STATE_INFO csi = { 0 };
     csi.ScreenAttributes = _wFillAttribute;
     csi.PopupAttributes = _wPopupFillAttribute;
     csi.ScreenBufferSize = _dwScreenBufferSize;
@@ -281,7 +278,6 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.TerminalScrolling = _TerminalScrolling;
     return csi;
 }
-
 
 void Settings::Validate()
 {
@@ -444,20 +440,20 @@ void Settings::SetLineSelection(const bool bLineSelection)
     _bLineSelection = bLineSelection;
 }
 
-bool Settings::GetWrapText () const
+bool Settings::GetWrapText() const
 {
     return _bWrapText;
 }
-void Settings::SetWrapText (const bool bWrapText )
+void Settings::SetWrapText(const bool bWrapText)
 {
     _bWrapText = bWrapText;
 }
 
-bool Settings::GetCtrlKeyShortcutsDisabled () const
+bool Settings::GetCtrlKeyShortcutsDisabled() const
 {
     return _fCtrlKeyShortcutsDisabled;
 }
-void Settings::SetCtrlKeyShortcutsDisabled (const bool fCtrlKeyShortcutsDisabled )
+void Settings::SetCtrlKeyShortcutsDisabled(const bool fCtrlKeyShortcutsDisabled)
 {
     _fCtrlKeyShortcutsDisabled = fCtrlKeyShortcutsDisabled;
 }
@@ -469,7 +465,7 @@ BYTE Settings::GetWindowAlpha() const
 void Settings::SetWindowAlpha(const BYTE bWindowAlpha)
 {
     // if we're out of bounds, set it to 100% opacity so it appears as if nothing happened.
-    _bWindowAlpha = (bWindowAlpha < MIN_WINDOW_OPACITY)? BYTE_MAX : bWindowAlpha;
+    _bWindowAlpha = (bWindowAlpha < MIN_WINDOW_OPACITY) ? BYTE_MAX : bWindowAlpha;
 }
 
 DWORD Settings::GetHotKey() const
@@ -774,13 +770,13 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
         //  the nearest color table value for its *ground.
         const COLORREF rgbForeground = LookupForegroundColor(attributes);
         fgIndex = attributes.ForegroundIsDefault() ?
-                             fgIndex :
-                             static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
+                      fgIndex :
+                      static_cast<BYTE>(FindNearestTableIndex(rgbForeground));
 
         const COLORREF rgbBackground = LookupBackgroundColor(attributes);
         bgIndex = attributes.BackgroundIsDefault() ?
-                             bgIndex :
-                             static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
+                      bgIndex :
+                      static_cast<BYTE>(FindNearestTableIndex(rgbBackground));
     }
 
     // TextAttribute::GetLegacyAttributes(BYTE, BYTE) will use the legacy value

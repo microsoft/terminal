@@ -7,7 +7,6 @@
 
 class Tab
 {
-
 public:
     Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
@@ -32,7 +31,6 @@ public:
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
-
     std::shared_ptr<Pane> _rootPane{ nullptr };
 
     bool _focused{ false };

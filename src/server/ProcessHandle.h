@@ -36,9 +36,9 @@ public:
     DWORD const dwProcessId;
     DWORD const dwThreadId;
 
-     const ConsoleProcessPolicy GetPolicy() const;
+    const ConsoleProcessPolicy GetPolicy() const;
 
-     CD_CONNECTION_INFORMATION GetConnectionInformation() const;
+    CD_CONNECTION_INFORMATION GetConnectionInformation() const;
 
 private:
     ConsoleProcessHandle(const DWORD dwProcessId,

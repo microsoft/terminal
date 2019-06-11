@@ -43,9 +43,9 @@ public:
     bool InsertLine(const unsigned int /*uiDistance*/) override { return false; } // IL
     bool DeleteLine(const unsigned int /*uiDistance*/) override { return false; } // DL
     bool SetColumns(const unsigned int /*uiColumns*/) override { return false; } // DECSCPP, DECCOLM
-    bool SetCursorKeysMode(const bool /*fApplicationMode*/) override { return false; }  // DECCKM
-    bool SetKeypadMode(const bool /*fApplicationMode*/) override { return false; }  // DECKPAM, DECKPNM
-    bool EnableCursorBlinking(const bool /*fEnable*/) override { return false; }  // ATT610
+    bool SetCursorKeysMode(const bool /*fApplicationMode*/) override { return false; } // DECCKM
+    bool SetKeypadMode(const bool /*fApplicationMode*/) override { return false; } // DECKPAM, DECKPNM
+    bool EnableCursorBlinking(const bool /*fEnable*/) override { return false; } // ATT610
     bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/) override { return false; } // DECSTBM
     bool ReverseLineFeed() override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
@@ -58,7 +58,7 @@ public:
     bool EnableVT200MouseMode(const bool /*fEnabled*/) override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1005
     bool EnableSGRExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1006
-    bool EnableButtonEventMouseMode(const bool /*fEnabled*/)override { return false; } // ?1002
+    bool EnableButtonEventMouseMode(const bool /*fEnabled*/) override { return false; } // ?1002
     bool EnableAnyEventMouseMode(const bool /*fEnabled*/) override { return false; } // ?1003
     bool EnableAlternateScroll(const bool /*fEnabled*/) override { return false; } // ?1007
     bool SetColorTableEntry(const size_t /*tableIndex*/, const DWORD /*dwColor*/) override { return false; } // OSCColorTable
@@ -88,11 +88,9 @@ public:
 
     bool SetCursorStyle(const DispatchTypes::CursorStyle /*cursorStyle*/) override { return false; } // DECSCUSR
     bool SetCursorColor(const COLORREF /*Color*/) override { return false; } // OSCSetCursorColor, OSCResetCursorColor
-    
+
     // DTTERM_WindowManipulation
     bool WindowManipulation(const DispatchTypes::WindowManipulationType /*uiFunction*/,
                             _In_reads_(_Param_(3)) const unsigned short* const /*rgusParams*/,
                             const size_t /*cParams*/) override { return false; }
-
 };
-

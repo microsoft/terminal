@@ -24,5 +24,5 @@ namespace Microsoft::Console
         virtual COLORREF GetDefaultBackground() const = 0;
     };
 
-    inline Microsoft::Console::IDefaultColorProvider::~IDefaultColorProvider() { }
+    inline Microsoft::Console::IDefaultColorProvider::~IDefaultColorProvider() {}
 }

@@ -39,6 +39,7 @@ namespace winrt::Microsoft::UI::Xaml::Markup::factory_implementation
     public:
         XamlApplication();
         ~XamlApplication();
+
     private:
         std::vector<HMODULE> m_preloadInstances;
     };

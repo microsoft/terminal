@@ -39,88 +39,59 @@ namespace Microsoft::Console::Render
 
         virtual ~VtEngine() override = default;
 
-        [[nodiscard]]
-        HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]]
-        virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
-        [[nodiscard]]
-        HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
-        [[nodiscard]]
-        HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]]
-        HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
-        [[nodiscard]]
-        HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]]
-        HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
-        [[nodiscard]]
-        HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
+        [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
+        [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateAll() noexcept override;
+        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
+        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
-        [[nodiscard]]
-        virtual HRESULT StartPaint() noexcept override;
-        [[nodiscard]]
-        virtual HRESULT EndPaint() noexcept override;
-        [[nodiscard]]
-        virtual HRESULT Present() noexcept override;
+        [[nodiscard]] virtual HRESULT StartPaint() noexcept override;
+        [[nodiscard]] virtual HRESULT EndPaint() noexcept override;
+        [[nodiscard]] virtual HRESULT Present() noexcept override;
 
-        [[nodiscard]]
-        virtual HRESULT ScrollFrame() noexcept = 0;
+        [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
 
-        [[nodiscard]]
-        HRESULT PaintBackground() noexcept override;
-        [[nodiscard]]
-        virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                        const COORD coord,
-                                        const bool trimLeft) noexcept override;
-        [[nodiscard]]
-        HRESULT PaintBufferGridLines(const GridLines lines,
-                                    const COLORREF color,
-                                    const size_t cchLine,
-                                    const COORD coordTarget) noexcept override;
-        [[nodiscard]]
-        HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
+        [[nodiscard]] HRESULT PaintBackground() noexcept override;
+        [[nodiscard]] virtual HRESULT PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                      const COORD coord,
+                                                      const bool trimLeft) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(const GridLines lines,
+                                                   const COLORREF color,
+                                                   const size_t cchLine,
+                                                   const COORD coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
-        [[nodiscard]]
-        HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
-        [[nodiscard]]
-        virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                            const COLORREF colorBackground,
-                                            const WORD legacyColorAttribute,
-                                            const bool isBold,
-                                            const bool isSettingDefaultBrushes) noexcept = 0;
-        [[nodiscard]]
-        HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
-                           _Out_ FontInfo& pfiFontInfo) noexcept override;
-        [[nodiscard]]
-        HRESULT UpdateDpi(const int iDpi) noexcept override;
-        [[nodiscard]]
-        HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                           const COLORREF colorBackground,
+                                                           const WORD legacyColorAttribute,
+                                                           const bool isBold,
+                                                           const bool isSettingDefaultBrushes) noexcept = 0;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
+                                         _Out_ FontInfo& pfiFontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
-        [[nodiscard]]
-        HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
-                                _Out_ FontInfo& Font,
-                                const int iDpi) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
+                                              _Out_ FontInfo& Font,
+                                              const int iDpi) noexcept override;
 
         SMALL_RECT GetDirtyRectInChars() override;
-        [[nodiscard]]
-        HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
-        [[nodiscard]]
-        HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
+        [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
+        [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
-        [[nodiscard]]
-        HRESULT SuppressResizeRepaint() noexcept;
+        [[nodiscard]] HRESULT SuppressResizeRepaint() noexcept;
 
-        [[nodiscard]]
-        HRESULT RequestCursor() noexcept;
-        [[nodiscard]]
-        HRESULT InheritCursor(const COORD coordCursor) noexcept;
+        [[nodiscard]] HRESULT RequestCursor() noexcept;
+        [[nodiscard]] HRESULT InheritCursor(const COORD coordCursor) noexcept;
 
-        [[nodiscard]]
-        HRESULT WriteTerminalUtf8(const std::string& str) noexcept;
+        [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string& str) noexcept;
 
-        [[nodiscard]]
-        virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
 
@@ -162,119 +133,81 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
 
-        [[nodiscard]]
-        HRESULT _Write(std::string_view const str) noexcept;
-        [[nodiscard]]
-        HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
-        [[nodiscard]]
-        HRESULT _Flush() noexcept;
+        [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
+        [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;
+        [[nodiscard]] HRESULT _Flush() noexcept;
 
         void _OrRect(_Inout_ SMALL_RECT* const pRectExisting, const SMALL_RECT* const pRectToOr) const;
-        [[nodiscard]]
-        HRESULT _InvalidCombine(const Microsoft::Console::Types::Viewport invalid) noexcept;
-        [[nodiscard]]
-        HRESULT _InvalidOffset(const COORD* const ppt) noexcept;
-        [[nodiscard]]
-        HRESULT _InvalidRestrict() noexcept;
+        [[nodiscard]] HRESULT _InvalidCombine(const Microsoft::Console::Types::Viewport invalid) noexcept;
+        [[nodiscard]] HRESULT _InvalidOffset(const COORD* const ppt) noexcept;
+        [[nodiscard]] HRESULT _InvalidRestrict() noexcept;
         bool _AllIsInvalid() const;
 
-        [[nodiscard]]
-        HRESULT _StopCursorBlinking() noexcept;
-        [[nodiscard]]
-        HRESULT _StartCursorBlinking() noexcept;
-        [[nodiscard]]
-        HRESULT _HideCursor() noexcept;
-        [[nodiscard]]
-        HRESULT _ShowCursor() noexcept;
-        [[nodiscard]]
-        HRESULT _EraseLine() noexcept;
-        [[nodiscard]]
-        HRESULT _InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept;
-        [[nodiscard]]
-        HRESULT _DeleteLine(const short sLines) noexcept;
-        [[nodiscard]]
-        HRESULT _InsertLine(const short sLines) noexcept;
-        [[nodiscard]]
-        HRESULT _CursorForward(const short chars) noexcept;
-        [[nodiscard]]
-        HRESULT _EraseCharacter(const short chars) noexcept;
-        [[nodiscard]]
-        HRESULT _CursorPosition(const COORD coord) noexcept;
-        [[nodiscard]]
-        HRESULT _CursorHome() noexcept;
-        [[nodiscard]]
-        HRESULT _ClearScreen() noexcept;
-        [[nodiscard]]
-        HRESULT _ChangeTitle(const std::string& title) noexcept;
-        [[nodiscard]]
-        HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
-                                            const bool fIsForeground) noexcept;
-        [[nodiscard]]
-        HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
-                                            const bool fIsForeground) noexcept;
-        [[nodiscard]]
-        HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
+        [[nodiscard]] HRESULT _StopCursorBlinking() noexcept;
+        [[nodiscard]] HRESULT _StartCursorBlinking() noexcept;
+        [[nodiscard]] HRESULT _HideCursor() noexcept;
+        [[nodiscard]] HRESULT _ShowCursor() noexcept;
+        [[nodiscard]] HRESULT _EraseLine() noexcept;
+        [[nodiscard]] HRESULT _InsertDeleteLine(const short sLines, const bool fInsertLine) noexcept;
+        [[nodiscard]] HRESULT _DeleteLine(const short sLines) noexcept;
+        [[nodiscard]] HRESULT _InsertLine(const short sLines) noexcept;
+        [[nodiscard]] HRESULT _CursorForward(const short chars) noexcept;
+        [[nodiscard]] HRESULT _EraseCharacter(const short chars) noexcept;
+        [[nodiscard]] HRESULT _CursorPosition(const COORD coord) noexcept;
+        [[nodiscard]] HRESULT _CursorHome() noexcept;
+        [[nodiscard]] HRESULT _ClearScreen() noexcept;
+        [[nodiscard]] HRESULT _ChangeTitle(const std::string& title) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
+                                                           const bool fIsForeground) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
+                                                            const bool fIsForeground) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsRenditionDefaultColor(const bool fIsForeground) noexcept;
 
-        [[nodiscard]]
-        HRESULT _SetGraphicsBoldness(const bool isBold) noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsBoldness(const bool isBold) noexcept;
 
-        [[nodiscard]]
-        HRESULT _SetGraphicsDefault() noexcept;
+        [[nodiscard]] HRESULT _SetGraphicsDefault() noexcept;
 
-        [[nodiscard]]
-        HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
+        [[nodiscard]] HRESULT _ResizeWindow(const short sWidth, const short sHeight) noexcept;
 
-        [[nodiscard]]
-        HRESULT _BeginUnderline() noexcept;
+        [[nodiscard]] HRESULT _BeginUnderline() noexcept;
 
-        [[nodiscard]]
-        HRESULT _EndUnderline() noexcept;
+        [[nodiscard]] HRESULT _EndUnderline() noexcept;
 
-        [[nodiscard]]
-        HRESULT _RequestCursor() noexcept;
+        [[nodiscard]] HRESULT _RequestCursor() noexcept;
 
-        [[nodiscard]]
-        virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
-        [[nodiscard]]
-        HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                         const COLORREF colorBackground,
-                                         const bool isBold,
-                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                         const WORD cColorTable) noexcept;
-        [[nodiscard]]
-        HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                             const COLORREF colorBackground,
-                                             const bool isBold,
-                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                             const WORD cColorTable) noexcept;
+        [[nodiscard]] virtual HRESULT _MoveCursor(const COORD coord) noexcept = 0;
+        [[nodiscard]] HRESULT _RgbUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                       const COLORREF colorBackground,
+                                                       const bool isBold,
+                                                       _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                                       const WORD cColorTable) noexcept;
+        [[nodiscard]] HRESULT _16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                           const COLORREF colorBackground,
+                                                           const bool isBold,
+                                                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                                           const WORD cColorTable) noexcept;
 
         bool _WillWriteSingleChar() const;
 
-        [[nodiscard]]
-        HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
-                                     const COORD coord) noexcept;
+        [[nodiscard]] HRESULT _PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+                                                   const COORD coord) noexcept;
 
-        [[nodiscard]]
-        HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
-                                      const COORD coord) noexcept;
+        [[nodiscard]] HRESULT _PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                    const COORD coord) noexcept;
 
-        [[nodiscard]]
-        HRESULT _WriteTerminalUtf8(const std::wstring& str) noexcept;
-        [[nodiscard]]
-        HRESULT _WriteTerminalAscii(const std::wstring& str) noexcept;
+        [[nodiscard]] HRESULT _WriteTerminalUtf8(const std::wstring& str) noexcept;
+        [[nodiscard]] HRESULT _WriteTerminalAscii(const std::wstring& str) noexcept;
 
-        [[nodiscard]]
-        virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
         /////////////////////////// Unit Testing Helpers ///////////////////////////
-    #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         std::function<bool(const char* const, size_t const)> _pfnTestCallback;
         bool _usingTestCallback;
 
         friend class VtRendererTest;
-    #endif
+#endif
 
         void SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn);
-
     };
 }
