@@ -447,11 +447,15 @@ void StateMachine::_ActionParam(const wchar_t wch)
                 // multiply existing values by 10 to make space in the 1s digit
                 *_pusActiveParam *= 10;
 
-                // mark that we've now stored another digit.
-                _iParamAccumulatePos++;
-
                 // store the digit in the 1s place.
                 *_pusActiveParam += usDigit;
+
+                // if the total is zero, it must be a leading zero digit, so we don't count it.
+                if (*_pusActiveParam != 0)
+                {
+                    // otherwise mark that we've now stored another digit.
+                    _iParamAccumulatePos++;
+                }
 
                 if (*_pusActiveParam > SHORT_MAX)
                 {
@@ -526,11 +530,15 @@ void StateMachine::_ActionOscParam(const wchar_t wch)
         // multiply existing values by 10 to make space in the 1s digit
         _sOscParam *= 10;
 
-        // mark that we've now stored another digit.
-        _iParamAccumulatePos++;
-
         // store the digit in the 1s place.
         _sOscParam += usDigit;
+
+        // if the total is zero, it must be a leading zero digit, so we don't count it.
+        if (_sOscParam != 0)
+        {
+            // otherwise mark that we've now stored another digit.
+            _iParamAccumulatePos++;
+        }
 
         if (_sOscParam > SHORT_MAX)
         {
