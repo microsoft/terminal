@@ -4,12 +4,13 @@
 #include "pch.h"
 #include "Pane.h"
 
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 
-static const int PaneSeparatorSize = 0;
+static const int PaneSeparatorSize = 4;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -34,33 +35,34 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             _root.Style(style);
         }
     }
+}
 
-    _resizedToken = _root.SizeChanged([&](auto&& s, auto&& e){
-        auto newSize = e.NewSize();
-        if (_splitState == SplitState::Vertical)
-        {
-            auto width = newSize.Width;
-            auto height = newSize.Height;
+void Pane::ResizeContent(const Size& newSize)
+{
+    const auto width = newSize.Width;
+    const auto height = newSize.Height;
 
-            _root.ColumnDefinitions().Clear();
+    _CreateRowColDefinitions(newSize);
 
-            // Create three columns in this grid: one for each pane, and one for the separator.
-            auto separatorColDef = Controls::ColumnDefinition();
-            separatorColDef.Width(GridLengthHelper::Auto());
+    if (_splitState == SplitState::Vertical)
+    {
+        const auto paneSizes = _GetPaneSizes(width);
 
-            auto firstColDef = Controls::ColumnDefinition();
-            firstColDef.Width(GridLengthHelper::FromPixels(width * _firstPercent.value()));
+        Size firstSize{ paneSizes.first, height };
+        Size secondSize{ paneSizes.second, height };
+        _firstChild->ResizeContent(firstSize);
+        _secondChild->ResizeContent(secondSize);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        const auto paneSizes = _GetPaneSizes(height);
 
-            auto secondColDef = Controls::ColumnDefinition();
-            secondColDef.Width(GridLengthHelper::FromPixels(width * _secondPercent.value()));
+        Size firstSize{ width, paneSizes.first };
+        Size secondSize{ width, paneSizes.second };
+        _firstChild->ResizeContent(firstSize);
+        _secondChild->ResizeContent(secondSize);
+    }
 
-            _root.ColumnDefinitions().Append(firstColDef);
-            // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-            _root.ColumnDefinitions().Append(separatorColDef);
-            _root.ColumnDefinitions().Append(secondColDef);
-            // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-        }
-    });
 }
 
 // Method Description:
@@ -438,6 +440,50 @@ void Pane::_SetupChildCloseHandlers()
     });
 }
 
+void Pane::_CreateRowColDefinitions(const Size& rootSize)
+{
+    if (_splitState == SplitState::Vertical)
+    {
+        _root.ColumnDefinitions().Clear();
+
+        // Create three columns in this grid: one for each pane, and one for the separator.
+        auto separatorColDef = Controls::ColumnDefinition();
+        separatorColDef.Width(GridLengthHelper::Auto());
+
+        const auto paneSizes = _GetPaneSizes(rootSize.Width);
+
+        auto firstColDef = Controls::ColumnDefinition();
+        firstColDef.Width(GridLengthHelper::FromPixels(paneSizes.first));
+
+        auto secondColDef = Controls::ColumnDefinition();
+        secondColDef.Width(GridLengthHelper::FromPixels(paneSizes.second));
+
+        _root.ColumnDefinitions().Append(firstColDef);
+        _root.ColumnDefinitions().Append(separatorColDef);
+        _root.ColumnDefinitions().Append(secondColDef);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        _root.RowDefinitions().Clear();
+
+        // Create three rows in this grid: one for each pane, and one for the separator.
+        auto separatorRowDef = Controls::RowDefinition();
+        separatorRowDef.Height(GridLengthHelper::Auto());
+
+        const auto paneSizes = _GetPaneSizes(rootSize.Height);
+
+        auto firstRowDef = Controls::RowDefinition();
+        firstRowDef.Height(GridLengthHelper::FromPixels(paneSizes.first));
+
+        auto secondRowDef = Controls::RowDefinition();
+        secondRowDef.Height(GridLengthHelper::FromPixels(paneSizes.second));
+
+        _root.RowDefinitions().Append(firstRowDef);
+        _root.RowDefinitions().Append(separatorRowDef);
+        _root.RowDefinitions().Append(secondRowDef);
+    }
+}
+
 // Method Description:
 // - Initializes our UI for a new split in this pane. Sets up row/column
 //   definitions, and initializes the separator grid. Does nothing if our split
@@ -448,27 +494,13 @@ void Pane::_SetupChildCloseHandlers()
 // - <none>
 void Pane::_CreateSplitContent()
 {
+    Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                     gsl::narrow_cast<float>(_root.ActualHeight()) };
+
+    _CreateRowColDefinitions(actualSize);
+
     if (_splitState == SplitState::Vertical)
     {
-        // Create three columns in this grid: one for each pane, and one for the separator.
-        auto separatorColDef = Controls::ColumnDefinition();
-        separatorColDef.Width(GridLengthHelper::Auto());
-
-        auto rootActualWidth = _root.ActualWidth();
-        auto rootWidth = _root.Width();
-
-        auto firstColDef = Controls::ColumnDefinition();
-        firstColDef.Width(GridLengthHelper::FromPixels(_root.ActualWidth() * _firstPercent.value()));
-
-        auto secondColDef = Controls::ColumnDefinition();
-        secondColDef.Width(GridLengthHelper::FromPixels(_root.ActualWidth() * _secondPercent.value()));
-
-        _root.ColumnDefinitions().Append(firstColDef);
-        // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-        _root.ColumnDefinitions().Append(separatorColDef);
-        _root.ColumnDefinitions().Append(secondColDef);
-        // _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
         _separatorRoot.Width(PaneSeparatorSize);
@@ -477,14 +509,6 @@ void Pane::_CreateSplitContent()
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        // Create three rows in this grid: one for each pane, and one for the separator.
-        auto separatorRowDef = Controls::RowDefinition();
-        separatorRowDef.Height(GridLengthHelper::Auto());
-
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-        _root.RowDefinitions().Append(separatorRowDef);
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
         _separatorRoot.Height(PaneSeparatorSize);
@@ -595,8 +619,8 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
 
     _splitState = splitType;
 
-    _firstPercent = { .50 };
-    _secondPercent = { .50 };
+    _firstPercent = { .50f };
+    _secondPercent = { .50f };
 
     _CreateSplitContent();
 
@@ -622,6 +646,19 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
     _SetupChildCloseHandlers();
 
     _lastFocused = false;
+}
+
+std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
+{
+    if (_IsLeaf())
+    {
+        THROW_HR(E_FAIL);
+    }
+
+    const auto sizeMinusSeparator = fullSize - PaneSeparatorSize;
+    const auto firstSize = sizeMinusSeparator * _firstPercent.value();
+    const auto secondSize = sizeMinusSeparator * _secondPercent.value();
+    return { firstSize, secondSize };
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);

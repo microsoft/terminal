@@ -175,6 +175,8 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _root.Loaded({ this, &App::_OnLoaded });
+
+        _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
     }
 
     // Method Description:
@@ -1184,6 +1186,15 @@ namespace winrt::TerminalApp::implementation
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
+    }
+
+    void App::_OnContentSizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    {
+        const auto newSize = e.NewSize();
+        for (auto& tab : _tabs)
+        {
+            tab->ResizeContent(newSize);
+        }
     }
 
     // Method Description:

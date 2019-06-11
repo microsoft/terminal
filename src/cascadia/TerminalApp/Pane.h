@@ -47,6 +47,7 @@ public:
     void UpdateFocus();
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
+    void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
 
     void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
@@ -61,16 +62,14 @@ private:
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
-    std::optional<double> _firstPercent{ std::nullopt };
-    std::optional<double> _secondPercent{ std::nullopt };
+    std::optional<float> _firstPercent{ std::nullopt };
+    std::optional<float> _secondPercent{ std::nullopt };
 
     bool _lastFocused{ false };
     std::optional<GUID> _profile{ std::nullopt };
     winrt::event_token _connectionClosedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-
-    winrt::event_token _resizedToken{ 0 };
 
     std::shared_mutex _createCloseLock{};
 
@@ -79,6 +78,7 @@ private:
     void _SetupChildCloseHandlers();
 
     void _DoSplit(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
 
@@ -86,4 +86,6 @@ private:
 
     void _FocusFirstChild();
     void _ControlClosedHandler();
+
+    std::pair<float, float> _GetPaneSizes(const float& fullSize);
 };

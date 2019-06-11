@@ -213,4 +213,10 @@ void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
     _rootPane->SplitHorizontal(profile, control);
 }
 
+void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
+{
+    _rootPane->ResizeContent(newSize);
+}
+
+
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

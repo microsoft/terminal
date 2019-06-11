@@ -119,6 +119,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _OnContentSizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
 
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
 

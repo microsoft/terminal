@@ -24,6 +24,7 @@ public:
     void AddHorizontalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateFocus();
+    void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     winrt::hstring GetFocusedTitle() const;
