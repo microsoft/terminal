@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this] (auto /*s*/, auto /*e*/){
+        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             _InitializeTerminal();
         });
 
@@ -1175,21 +1175,21 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _connection.TerminalOutput(_connectionOutputEventToken);
 
             // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
-            if (auto localCursorTimer{std::exchange(_cursorTimer, std::nullopt)})
+            if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
             {
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
 
-            if (auto localConnection{std::exchange(_connection, nullptr)})
+            if (auto localConnection{ std::exchange(_connection, nullptr) })
             {
                 localConnection.Close();
                 // connection is destroyed.
             }
 
-            if (auto localRenderEngine{std::exchange(_renderEngine, nullptr)})
+            if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
             {
-                if (auto localRenderer{std::exchange(_renderer, nullptr)})
+                if (auto localRenderer{ std::exchange(_renderer, nullptr) })
                 {
                     localRenderer->TriggerTeardown();
                     // renderer is destroyed
@@ -1197,7 +1197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // renderEngine is destroyed
             }
 
-            if (auto localTerminal{std::exchange(_terminal, nullptr)})
+            if (auto localTerminal{ std::exchange(_terminal, nullptr) })
             {
                 _initializedTerminal = false;
                 // terminal is destroyed.
