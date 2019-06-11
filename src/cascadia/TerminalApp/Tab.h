@@ -31,7 +31,6 @@ public:
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
-
     std::shared_ptr<Pane> _rootPane{ nullptr };
 
     bool _focused{ false };

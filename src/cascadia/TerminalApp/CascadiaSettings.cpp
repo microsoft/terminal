@@ -499,8 +499,16 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     std::wstring command(systemPath.get());
     command += L"\\wsl.exe --list";
 
-    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
-                                                TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
+    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                             const_cast<LPWSTR>(command.c_str()),
+                                             nullptr,
+                                             nullptr,
+                                             TRUE,
+                                             CREATE_NO_WINDOW,
+                                             nullptr,
+                                             nullptr,
+                                             &si,
+                                             &pi));
     switch (WaitForSingleObject(pi.hProcess, INFINITE))
     {
     case WAIT_OBJECT_0:
@@ -525,9 +533,10 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
     std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
-        //don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil and closing the file handle will cause an error.
+    // don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil
+    // and closing the file handle will cause an error.
     std::wstring wline;
-    std::getline(pipe, wline); //remove the header from the output.
+    std::getline(pipe, wline); // remove the header from the output.
     while (pipe.tellp() < bytesAvailable)
     {
         std::getline(pipe, wline);

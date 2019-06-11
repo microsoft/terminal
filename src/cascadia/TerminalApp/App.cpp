@@ -786,7 +786,7 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle){
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -798,8 +798,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&)
-        {
+        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -847,7 +846,7 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this](){
+        newTab->Closed([tabViewItem, this]() {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
                 _RemoveTabViewItem(tabViewItem);
             });
