@@ -19,8 +19,8 @@ USE_NATIVE_EH           = 1
 C_DEFINES=-DUNICODE -D__INSIDE_WINDOWS
 
 TARGETLIBS=\
-    $(MINWIN_SDK_LIB_PATH)\ntdll.lib \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib
+    $(MINWIN_EXTERNAL_SDK_LIB_PATH_L)\ntdll.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib
 
 SOURCES=main.cpp  \
         VtConsole.cpp \

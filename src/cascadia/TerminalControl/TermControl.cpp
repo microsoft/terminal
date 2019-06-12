@@ -1327,7 +1327,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        float width = gsl::narrow<float>(cols * fFontWidth);
+        double width = cols * fFontWidth;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (settings.ScrollState() == ScrollbarState::Visible)
@@ -1335,9 +1335,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             width += scrollbarSize;
         }
 
-        const float height = gsl::narrow<float>(rows * fFontHeight);
+        double height = rows * fFontHeight;
+        auto thickness = _ParseThicknessFromPadding(settings.Padding());
+        width += thickness.Left + thickness.Right;
+        height += thickness.Top + thickness.Bottom;
 
-        return { width, height };
+        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
     // Method Description:
