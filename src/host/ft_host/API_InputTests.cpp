@@ -11,6 +11,9 @@
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
 
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to test:
 // FlushConsoleInputBuffer
 // PeekConsoleInput
@@ -52,7 +55,7 @@ class InputTests
     TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
-    TEST_METHOD(RawReadUnpacksCoalsescedInputRecords);
+    TEST_METHOD(RawReadUnpacksCoalescedInputRecords);
 
     BEGIN_TEST_METHOD(TestVtInputGeneration)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
@@ -61,7 +64,7 @@ class InputTests
 
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
 {
-    SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
+    WEX::TestExecution::SetVerifyOutput verifySettings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
     DWORD nInputEvents = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEvents));
     VERIFY_ARE_EQUAL(nInputEvents,
@@ -668,7 +671,7 @@ void InputTests::TestVtInputGeneration()
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.uChar.UnicodeChar, L'A');
 }
 
-void InputTests::RawReadUnpacksCoalsescedInputRecords()
+void InputTests::RawReadUnpacksCoalescedInputRecords()
 {
     DWORD mode = 0;
     HANDLE hIn = GetStdInputHandle();
@@ -679,6 +682,10 @@ void InputTests::RawReadUnpacksCoalsescedInputRecords()
     GetConsoleMode(hIn, &mode);
     WI_ClearFlag(mode, ENABLE_LINE_INPUT);
     SetConsoleMode(hIn, mode);
+
+    // flush input queue before attempting to add new events and check
+    // in case any are leftover from previous tests
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));
 
     INPUT_RECORD record;
     record.EventType = KEY_EVENT;

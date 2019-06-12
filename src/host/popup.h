@@ -66,6 +66,7 @@ protected:
     friend class CommandListPopupTests;
 #endif
 
+    [[nodiscard]]
     NTSTATUS _getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept;
     void _DrawPrompt(const UINT id);
     virtual void _DrawContent() = 0;
@@ -81,6 +82,7 @@ private:
 
     void _DrawBorder();
 
+    [[nodiscard]]
     static NTSTATUS _getUserInputInternal(COOKED_READ_DATA& cookedReadData,
                                           bool& popupKey,
                                           DWORD& modifiers,

@@ -1,4 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <RuleSet Name="Console Rules" Description="These rules enforce static analysis on console code." ToolsVersion="15.0">
+
   <Include Path="cppcorecheckrules.ruleset" Action="Default" />
+
+  <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">
+    <Rule Id="C6001" Action="Error" />
+    <Rule Id="C6011" Action="Error" />
+  </Rules>
+
 </RuleSet>

@@ -14,14 +14,10 @@
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
-
-static constexpr short _ClampToShortMax(int value, short min)
-{
-    return static_cast<short>(std::clamp(value, static_cast<int>(min), SHRT_MAX));
-}
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -70,23 +66,25 @@ void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& 
 {
     _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    const COORD bufferSize { viewportSize.X, _ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const COORD bufferSize { viewportSize.X,
+                             Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
     const TextAttribute attr{};
     const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
 // Method Description:
-// - Initializes the Temrinal from the given set of settings.
+// - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
             Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ _ClampToShortMax(settings.InitialCols(), 1), _ClampToShortMax(settings.InitialRows(), 1) };
+    const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
+                              Utils::ClampToShortMax(settings.InitialRows(), 1) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, _ClampToShortMax(settings.HistorySize(), 0), renderTarget);
+    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
 }
@@ -443,6 +441,15 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 }
 
 // Method Description:
+// - Allows setting a callback for when the background color is changed
+// Arguments:
+// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
+void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
+{
+    _pfnBackgroundColorChanged = pfn;
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
@@ -490,11 +497,11 @@ void Terminal::_InitializeColorTable()
 {
     gsl::span<COLORREF> tableView = { &_colorTable[0], gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     // First set up the basic 256 colors
-    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
+    Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    Utils::InitializeCampbellColorTable(tableView);
     // Then make sure all the values have an alpha of 255
-    ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
+    Utils::SetColorTableAlpha(tableView, 0xff);
 }
 
 // Method Description:

@@ -413,7 +413,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 {
     const auto glyph = Utf16Parser::ParseNext(view);
     DbcsAttribute dbcsAttr;
-    if (!glyph.empty() && IsGlyphFullWidth(glyph))
+    if (IsGlyphFullWidth(glyph))
     {
         dbcsAttr.SetLeading();
     }

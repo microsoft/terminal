@@ -80,7 +80,7 @@ void UninitializeConsoleState()
         gpStateInfo->LinkTitle = nullptr;
     }
 
-    DestroyDbcsMisc();
+    LOG_IF_NTSTATUS_FAILED(DestroyDbcsMisc());
     UnregisterClasses(ghInstance);
 }
 

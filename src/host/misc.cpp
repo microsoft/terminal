@@ -15,6 +15,7 @@
 
 #define CHAR_NULL      ((char)0)
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
 {

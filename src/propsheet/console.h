@@ -58,7 +58,7 @@ Revision History:
 #define IDS_TOOLTIP_OPACITY          17
 #define IDS_TOOLTIP_INTERCEPT_COPY_PASTE    18
 
-NTSTATUS
+void
 MakeAltRasterFont(
     __in UINT CodePage,
     __out COORD *AltFontSize,
@@ -66,7 +66,8 @@ MakeAltRasterFont(
     __out ULONG *AltFontIndex,
     __out_ecount(LF_FACESIZE) LPTSTR AltFaceName);
 
-NTSTATUS InitializeDbcsMisc();
+[[nodiscard]]
+NTSTATUS InitializeDbcsMisc(VOID);
 
 BYTE
 CodePageToCharSet(
@@ -90,7 +91,7 @@ IsAvailableTTFont(
 
 BOOL
 IsAvailableTTFontCP(
-    LPCWSTR pwszFace,
+    LPCTSTR ptszFace,
     UINT CodePage
     );
 
@@ -104,7 +105,8 @@ GetAltFaceName(
     LPCTSTR ptszFace
     );
 
-NTSTATUS DestroyDbcsMisc();
+[[nodiscard]]
+NTSTATUS DestroyDbcsMisc(VOID);
 
 int
 LanguageListCreate(
@@ -117,26 +119,6 @@ LanguageDisplay(
     HWND hDlg,
     UINT CodePage
     ) ;
-
-//
-// registry.c
-//
-NTSTATUS
-MyRegOpenKey(
-    __in_opt HANDLE hKey,
-    __in LPCWSTR lpSubKey,
-    __out PHANDLE phResult
-    );
-
-NTSTATUS
-MyRegEnumValue(
-    __in HANDLE hKey,
-    __in DWORD dwIndex,
-    __in DWORD dwValueLength,
-    __out_bcount(dwValueLength) LPWSTR lpValueName,
-    __in_range(4, 1024) DWORD dwDataLength,
-    __out_bcount(dwDataLength) LPBYTE lpData
-    );
 
 //
 // Function prototypes
@@ -170,15 +152,14 @@ VOID SetRegistryValues(
     PCONSOLE_STATE_INFO StateInfo,
     DWORD dwPage);
 
-PCONSOLE_STATE_INFO InitStateValues(
-    HWND hwnd);
-
+[[nodiscard]]
 LRESULT CALLBACK FontPreviewWndProc(
     HWND hWnd,
     UINT wMsg,
     WPARAM wParam,
     LPARAM lParam);
 
+[[nodiscard]]
 LRESULT CALLBACK PreviewWndProc(
     HWND hWnd,
     UINT wMsg,
@@ -197,6 +178,7 @@ BOOL UpdateStateInfo(
 BOOL InitializeConsoleState();
 void UninitializeConsoleState();
 void UpdateApplyButton(const HWND hDlg);
+[[nodiscard]]
 HRESULT FindFontAndUpdateState();
 
 BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const size_t cPsps, const BOOL fRegisterCallbacks);
