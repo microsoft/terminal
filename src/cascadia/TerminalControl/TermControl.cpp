@@ -694,7 +694,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-
             if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();

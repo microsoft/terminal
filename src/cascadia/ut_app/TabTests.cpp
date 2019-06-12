@@ -112,6 +112,4 @@ namespace TerminalAppUnitTests
     //     VERIFY_IS_NOT_NULL(newTab);
     // }
 
-
-
 }

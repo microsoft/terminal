@@ -25,7 +25,6 @@ Author(s):
 #undef GetCurrentTime
 #endif
 
-
 #include <WexTestClass.h>
 #include <json.h>
 #include "consoletaeftemplates.hpp"
@@ -41,7 +40,6 @@ Author(s):
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
-
 
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
