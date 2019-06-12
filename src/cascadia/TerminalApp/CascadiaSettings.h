@@ -20,7 +20,6 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "Profile.h"
 
-
 namespace TerminalApp
 {
     class CascadiaSettings;
@@ -28,7 +27,6 @@ namespace TerminalApp
 
 class TerminalApp::CascadiaSettings final
 {
-
 public:
     CascadiaSettings();
     ~CascadiaSettings();
@@ -52,10 +50,10 @@ public:
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     void CreateDefaults();
+
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
-
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();

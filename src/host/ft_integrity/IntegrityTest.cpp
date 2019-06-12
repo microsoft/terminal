@@ -46,15 +46,15 @@ static void s_RunViaCreateProcess(_In_ PCWSTR pwszExePath)
     LOG_OUTPUT(L"Launching '%s'", cmdlineMutable.get());
 
     THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-        cmdlineMutable.get(),
-        nullptr,
-        nullptr,
-        TRUE,
-        0,
-        nullptr,
-        nullptr,
-        &si,
-        &pi));
+                                             cmdlineMutable.get(),
+                                             nullptr,
+                                             nullptr,
+                                             TRUE,
+                                             0,
+                                             nullptr,
+                                             nullptr,
+                                             &si,
+                                             &pi));
 
     WaitForSingleObject(pi.hProcess, INFINITE);
 }
@@ -67,7 +67,7 @@ static void s_SetConIntegrityLow()
 
     // First assemble with WinRT strings including the Test Deployment Directory C:\data\test\bin which can vary.
     auto commandLine = ref new String(L"%WINDIR%\\system32\\icacls.exe ") +
-        TAEFHelper::GetTestDeploymentDirectory() + ref new String(L"conintegrity.exe /setintegritylevel low");
+                       TAEFHelper::GetTestDeploymentDirectory() + ref new String(L"conintegrity.exe /setintegritylevel low");
 
     // Now call our helper to munge the environment strings then run it and wait for exit.
     s_RunViaCreateProcess(commandLine->Data());
@@ -113,11 +113,11 @@ bool IntegrityTest::ClassSetup()
 
 #if defined(_X86_)
     auto vclibPackage = DeploymentHelper::AddPackageIfNotPresent(testDeploymentDir + ref new String(L"Microsoft.VCLibs.x86.14.00.appx"));
-#elif defined (_AMD64_)
+#elif defined(_AMD64_)
     auto vclibPackage = DeploymentHelper::AddPackageIfNotPresent(testDeploymentDir + ref new String(L"Microsoft.VCLibs.x64.14.00.appx"));
-#elif defined (_ARM_)
+#elif defined(_ARM_)
     auto vclibPackage = DeploymentHelper::AddPackageIfNotPresent(testDeploymentDir + ref new String(L"Microsoft.VCLibs.arm.14.00.appx"));
-#elif defined (_ARM64_)
+#elif defined(_ARM64_)
     auto vclibPackage = DeploymentHelper::AddPackageIfNotPresent(testDeploymentDir + ref new String(L"Microsoft.VCLibs.arm64.14.00.appx"));
 #else
 #error Unknown architecture for test.
@@ -186,8 +186,7 @@ void IntegrityTest::_RunUWPConIntegrityViaTile()
 // on OneCore-derived Windows SKUs.
 // Example: RCOW;1;0 = ReadConsoleOutputW returning TRUE and a GetLastError() of 0.
 // Please see conintegrity.exe and conintegrityuwp.exe for how they are formed.
-static PCWSTR _rgpwszExpectedSuccess[] = 
-{
+static PCWSTR _rgpwszExpectedSuccess[] = {
     L"RCOW;1;0",
     L"RCOA;1;0",
     L"RCOCW;1;0",
@@ -197,8 +196,7 @@ static PCWSTR _rgpwszExpectedSuccess[] =
     L"WCIW;1;0"
 };
 
-static PCWSTR _rgpwszExpectedFail[] =
-{
+static PCWSTR _rgpwszExpectedFail[] = {
     L"RCOW;0;5",
     L"RCOA;0;5",
     L"RCOCW;0;5",
@@ -318,7 +316,7 @@ PCWSTR IntegrityTest::s_GetMyIntegrityLevel()
     THROW_IF_FAILED(wil::GetTokenInformationNoThrow(tokenLabel, GetCurrentProcessToken()));
 
     dwIntegrityLevel = *GetSidSubAuthority(tokenLabel->Label.Sid,
-        (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
+                                           (DWORD)(UCHAR)(*GetSidSubAuthorityCount(tokenLabel->Label.Sid) - 1));
 
     switch (dwIntegrityLevel)
     {

@@ -94,7 +94,6 @@ ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
 {
 }
 
-
 // Routine Description:
 // - Connects the GetConsoleScreenBufferInfoEx API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
@@ -768,7 +767,7 @@ BOOL ConhostInternalGetSet::PrivateSetColorTableEntry(const short index, const C
 // - Connects the PrivateSetDefaultForeground call directly into our Driver Message servicing
 //      call inside Conhost.exe
 // Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR. 
+// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // - TRUE if successful (see DoSrvPrivateSetDefaultForegroundColor). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) const noexcept

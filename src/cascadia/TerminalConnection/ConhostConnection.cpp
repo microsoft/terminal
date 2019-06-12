@@ -8,7 +8,7 @@
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
 // We're just gonna manually define it for this prototyping code
 #ifndef STARTF_USESTDHANDLES
-#define STARTF_USESTDHANDLES       0x00000100
+#define STARTF_USESTDHANDLES 0x00000100
 #endif
 
 #include "ConhostConnection.g.cpp"
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // We want the conhost and all associated descendant processes
         // to be terminated when the tab is closed. GUI applications
         // spawned from the shell tend to end up in their own jobs.
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedInformation{ };
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedInformation{};
         jobExtendedInformation.BasicLimitInformation.LimitFlags =
             JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 
@@ -155,7 +155,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Close()
     {
-        if (!_connected) return;
+        if (!_connected)
+            return;
 
         if (_closing.exchange(true))
         {
@@ -199,12 +200,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     _disconnectHandlers();
                     return (DWORD)-1;
                 }
-
             }
-            if (dwRead == 0) continue;
+            if (dwRead == 0)
+            {
+                continue;
+            }
             // Convert buffer to hstring
             char* pchStr = (char*)(buffer);
-            std::string str{pchStr, dwRead};
+            std::string str{ pchStr, dwRead };
             auto hstr = winrt::to_hstring(str);
 
             // Pass the output to our registered event handlers

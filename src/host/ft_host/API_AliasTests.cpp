@@ -147,6 +147,5 @@ void AliasTests::TestGetConsoleAlias()
                                    dwExeName,
                                    bUnicode,
                                    bSetFirst);
-
     }
 }

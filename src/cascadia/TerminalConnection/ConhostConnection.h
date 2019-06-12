@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool _connected{ false };
         std::atomic<bool> _closing{ false };
 
-        wil::unique_hfile _inPipe;  // The pipe for writing input to
+        wil::unique_hfile _inPipe; // The pipe for writing input to
         wil::unique_hfile _outPipe; // The pipe for reading output from
         wil::unique_hfile _signalPipe;
         wil::unique_handle _hOutputThread;
