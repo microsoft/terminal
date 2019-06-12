@@ -100,7 +100,7 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 
 We are excited to work alongside you, our amazing community, to build and enhance Windows Terminal\!
 
-We ask that **before you start work on a feature that you would like to contribute, <span class="underline">please file an issue</span> describing your proposed change**: We will be happy to work with you to figure out the best approach, provide guidance and mentorship throughout feature development, and help avoid any wasted or duplicate effort.
+We ask that **before you start work on a feature that you would like to contribute**, please read our [Contributor's Guide](https://github.com/microsoft/terminal/blob/master/doc/contributing.md). We will be happy to work with you to figure out the best approach, provide guidance and mentorship throughout feature development, and help avoid any wasted or duplicate effort.
 
 > 👉 **Remember\!** Your contributions may be incorporated into future versions of Windows\! Because of this, all pull requests will be subject to the same level of scrutiny for quality, coding standards, performance, globalization, accessibility, and compatibility as those of our internal contributors.
 

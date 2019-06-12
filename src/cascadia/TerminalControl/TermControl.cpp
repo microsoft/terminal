@@ -266,7 +266,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 || imageSource.UriSource().RawUri() != imageUri.RawUri())
             {
                 // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image 
+                // which is especially important since the image
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
@@ -359,12 +359,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Don't let anyone else do something to the buffer.
         auto lock = _terminal->LockForWriting();
 
-        if (_connection != nullptr)
+        // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+        if (_cursorTimer)
+        {
+            _cursorTimer.value().Stop();
+            _cursorTimer = std::nullopt;
+        }
+
+        if (_connection)
         {
             _connection.Close();
         }
 
-        _renderer->TriggerTeardown();
+        if (_renderer)
+        {
+            _renderer->TriggerTeardown();
+        }
 
         _swapChainPanel = nullptr;
         _root = nullptr;
@@ -694,9 +704,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            // Ignore mouse events while the terminal does not have focus. 
-            // This prevents the user from selecting and copying text if they 
-            // click inside the current tab to refocus the terminal window. 
+            // Ignore mouse events while the terminal does not have focus.
+            // This prevents the user from selecting and copying text if they
+            // click inside the current tab to refocus the terminal window.
             if (!_focused)
             {
                 args.Handled(true);
@@ -970,6 +980,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = true;
 
         if (_cursorTimer.has_value())
@@ -984,6 +998,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = false;
 
         if (_cursorTimer.has_value())
@@ -1055,7 +1073,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible())
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
         {
             return;
         }
@@ -1191,7 +1209,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
     // Arguments:
     // - viewTop: the viewTop to scroll to
-    // The difference between this function and ScrollViewport is that this one also 
+    // The difference between this function and ScrollViewport is that this one also
     // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
     // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
     void TermControl::KeyboardScrollViewport(int viewTop)
@@ -1346,7 +1364,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
@@ -1369,6 +1388,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Returns true if this control should close when its connection is closed.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff the control should close when the connection is closed.
+    bool TermControl::ShouldCloseOnExit() const noexcept
+    {
+        return _settings.CloseOnExit();
+    }
+
+    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1385,11 +1415,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
             static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
         };
-        
+
         const auto fontSize = _actualFont.GetSize();
         FAIL_FAST_IF(fontSize.X == 0);
         FAIL_FAST_IF(fontSize.Y == 0);
-        
+
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;
