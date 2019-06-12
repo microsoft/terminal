@@ -1509,8 +1509,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
-    // clang-format on
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
+    // clang-format on
 }
