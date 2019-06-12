@@ -411,9 +411,8 @@ namespace winrt::TerminalApp::implementation
             auto aboutFlyout = Controls::MenuFlyoutItem{};
             aboutFlyout.Text(L"About");
 
-            Controls::FontIcon aboutIco{};
-            aboutIco.Glyph(L"\xF142");
-            aboutIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            Controls::SymbolIcon aboutIco{};
+            aboutIco.Symbol(Controls::Symbol::Help);
             aboutFlyout.Icon(aboutIco);
 
             aboutFlyout.Click({ this, &App::_AboutButtonOnClick });
@@ -463,6 +462,10 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the about button is clicked. See _ShowAboutDialog for more info.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
     void App::_AboutButtonOnClick(const IInspectable&,
                                   const RoutedEventArgs&)
     {
