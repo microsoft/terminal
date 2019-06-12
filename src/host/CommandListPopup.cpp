@@ -151,7 +151,7 @@ NTSTATUS CommandListPopup::_deleteSelection(CookedRead& cookedReadData) noexcept
 {
     try
     {
-        auto history = cookedReadData.History();
+        auto& history = cookedReadData.History();
         history.Remove(static_cast<short>(_currentCommand));
         _setBottomIndex();
 
@@ -181,7 +181,7 @@ NTSTATUS CommandListPopup::_swapUp(CookedRead& cookedReadData) noexcept
 {
     try
     {
-        auto history = cookedReadData.History();
+        auto& history = cookedReadData.History();
 
         if (history.GetNumberOfCommands() <= 1 || _currentCommand == 0)
         {
@@ -204,7 +204,7 @@ NTSTATUS CommandListPopup::_swapDown(CookedRead& cookedReadData) noexcept
 {
     try
     {
-        auto history = cookedReadData.History();
+        auto& history = cookedReadData.History();
 
         if (history.GetNumberOfCommands() <= 1 || _currentCommand == gsl::narrow<short>(history.GetNumberOfCommands()) - 1i16)
         {
