@@ -16,18 +16,18 @@ std::wostream& operator<<(std::wostream& stream, const IInputEvent* const pEvent
     {
         switch (pEvent->EventType())
         {
-            case InputEventType::KeyEvent:
-                return stream << static_cast<const KeyEvent* const>(pEvent);
-            case InputEventType::MouseEvent:
-                return stream << static_cast<const MouseEvent* const>(pEvent);
-            case InputEventType::WindowBufferSizeEvent:
-                return stream << static_cast<const WindowBufferSizeEvent* const>(pEvent);
-            case InputEventType::MenuEvent:
-                return stream << static_cast<const MenuEvent* const>(pEvent);
-            case InputEventType::FocusEvent:
-                return stream << static_cast<const FocusEvent* const>(pEvent);
-            default:
-                return stream << L"IInputEvent()";
+        case InputEventType::KeyEvent:
+            return stream << static_cast<const KeyEvent* const>(pEvent);
+        case InputEventType::MouseEvent:
+            return stream << static_cast<const MouseEvent* const>(pEvent);
+        case InputEventType::WindowBufferSizeEvent:
+            return stream << static_cast<const WindowBufferSizeEvent* const>(pEvent);
+        case InputEventType::MenuEvent:
+            return stream << static_cast<const MenuEvent* const>(pEvent);
+        case InputEventType::FocusEvent:
+            return stream << static_cast<const FocusEvent* const>(pEvent);
+        default:
+            return stream << L"IInputEvent()";
         }
     }
     catch (...)
@@ -50,6 +50,7 @@ std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent
         charData = L"null";
     }
 
+    // clang-format off
     return stream << L"KeyEvent(" <<
         keyMotion << L", " <<
         L"repeat: " << pKeyEvent->_repeatCount << L", " <<
@@ -57,6 +58,7 @@ std::wostream& operator<<(std::wostream& stream, const KeyEvent* const pKeyEvent
         L"scanCode: " << pKeyEvent->_virtualScanCode << L", " <<
         L"char: " << charData << L", " <<
         L"mods: " << pKeyEvent->_activeModifierKeys << L")";
+    // clang-format on
 }
 
 std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseEvent)
@@ -66,12 +68,14 @@ std::wostream& operator<<(std::wostream& stream, const MouseEvent* const pMouseE
         return stream << L"nullptr";
     }
 
+    // clang-format off
     return stream << L"MouseEvent(" <<
         L"X: " << pMouseEvent->_position.X << L", " <<
         L"Y: " << pMouseEvent->_position.Y << L", " <<
         L"buttons: " << pMouseEvent->_buttonState << L", " <<
         L"mods: " << pMouseEvent->_activeModifierKeys << L", " <<
         L"events: " << pMouseEvent->_eventFlags << L")";
+    // clang-format on
 }
 
 std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* const pEvent)
@@ -81,9 +85,11 @@ std::wostream& operator<<(std::wostream& stream, const WindowBufferSizeEvent* co
         return stream << L"nullptr";
     }
 
+    // clang-format off
     return stream << L"WindowbufferSizeEvent(" <<
         L"X: " << pEvent->_size.X << L", " <<
         L"Y: " << pEvent->_size.Y << L")";
+    // clang-format on
 }
 
 std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEvent)
@@ -93,8 +99,7 @@ std::wostream& operator<<(std::wostream& stream, const MenuEvent* const pMenuEve
         return stream << L"nullptr";
     }
 
-    return stream << L"MenuEvent(" <<
-        L"CommandId" << pMenuEvent->_commandId << L")";
+    return stream << L"MenuEvent(" << L"CommandId" << pMenuEvent->_commandId << L")";
 }
 
 std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusEvent)
@@ -104,6 +109,5 @@ std::wostream& operator<<(std::wostream& stream, const FocusEvent* const pFocusE
         return stream << L"nullptr";
     }
 
-    return stream << L"FocusEvent(" <<
-        L"focus" << pFocusEvent->_focus << L")";
+    return stream << L"FocusEvent(" << L"focus" << pFocusEvent->_focus << L")";
 }

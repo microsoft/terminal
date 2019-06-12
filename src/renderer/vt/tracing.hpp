@@ -24,7 +24,6 @@ namespace Microsoft::Console::VirtualTerminal
     class RenderTracing final
     {
     public:
-
         RenderTracing();
         ~RenderTracing();
         void TraceString(const std::string_view& str) const;

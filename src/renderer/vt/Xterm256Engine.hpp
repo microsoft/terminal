@@ -24,24 +24,22 @@ namespace Microsoft::Console::Render
     {
     public:
         Xterm256Engine(_In_ wil::unique_hfile hPipe,
-                    const Microsoft::Console::IDefaultColorProvider& colorProvider,
-                    const Microsoft::Console::Types::Viewport initialViewport,
-                    _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                    const WORD cColorTable);
+                       const Microsoft::Console::IDefaultColorProvider& colorProvider,
+                       const Microsoft::Console::Types::Viewport initialViewport,
+                       _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                       const WORD cColorTable);
 
         virtual ~Xterm256Engine() override = default;
 
-        [[nodiscard]]
-        HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
-                                    const COLORREF colorBackground,
-                                    const WORD legacyColorAttribute,
-                                    const bool isBold,
-                                    const bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                   const COLORREF colorBackground,
+                                                   const WORD legacyColorAttribute,
+                                                   const bool isBold,
+                                                   const bool isSettingDefaultBrushes) noexcept override;
 
     private:
-
-    #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         friend class VtRendererTest;
-    #endif
+#endif
     };
 }

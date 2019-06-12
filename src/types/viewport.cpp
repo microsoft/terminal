@@ -9,13 +9,11 @@ using namespace Microsoft::Console::Types;
 Viewport::Viewport(const SMALL_RECT sr) noexcept :
     _sr(sr)
 {
-
 }
 
 Viewport::Viewport(const Viewport& other) noexcept :
     _sr(other._sr)
 {
-
 }
 
 Viewport Viewport::Empty() noexcept
@@ -48,8 +46,7 @@ Viewport Viewport::FromDimensions(const COORD origin,
                                   const short width,
                                   const short height) noexcept
 {
-    return Viewport::FromExclusive({ origin.X, origin.Y,
-                                     origin.X + width, origin.Y + height });
+    return Viewport::FromExclusive({ origin.X, origin.Y, origin.X + width, origin.Y + height });
 }
 
 // Function Description:
@@ -63,8 +60,7 @@ Viewport Viewport::FromDimensions(const COORD origin,
 Viewport Viewport::FromDimensions(const COORD origin,
                                   const COORD dimensions) noexcept
 {
-    return Viewport::FromExclusive({ origin.X, origin.Y,
-                                     origin.X + dimensions.X, origin.Y + dimensions.Y });
+    return Viewport::FromExclusive({ origin.X, origin.Y, origin.X + dimensions.X, origin.Y + dimensions.Y });
 }
 
 // Function Description:
@@ -87,8 +83,7 @@ Viewport Viewport::FromDimensions(const COORD dimensions) noexcept
 // - a 1x1 Viewport at the given coordinate
 Viewport Viewport::FromCoord(const COORD origin) noexcept
 {
-    return Viewport::FromInclusive({ origin.X, origin.Y,
-                                     origin.X, origin.Y });
+    return Viewport::FromInclusive({ origin.X, origin.Y, origin.X, origin.Y });
 }
 
 SHORT Viewport::Left() const noexcept
@@ -162,9 +157,9 @@ COORD Viewport::Dimensions() const noexcept
 bool Viewport::IsInBounds(const Viewport& other) const noexcept
 {
     return other.Left() >= Left() && other.Left() <= RightInclusive() &&
-        other.RightInclusive() >= Left() && other.RightInclusive() <= RightInclusive() &&
-        other.Top() >= Top() && other.Top() <= other.BottomInclusive() &&
-        other.BottomInclusive() >= Top() && other.BottomInclusive() <= BottomInclusive();
+           other.RightInclusive() >= Left() && other.RightInclusive() <= RightInclusive() &&
+           other.Top() >= Top() && other.Top() <= other.BottomInclusive() &&
+           other.BottomInclusive() >= Top() && other.BottomInclusive() <= BottomInclusive();
 }
 
 // Method Description:
@@ -176,7 +171,7 @@ bool Viewport::IsInBounds(const Viewport& other) const noexcept
 bool Viewport::IsInBounds(const COORD& pos) const noexcept
 {
     return pos.X >= Left() && pos.X < RightExclusive() &&
-        pos.Y >= Top() && pos.Y < BottomExclusive();
+           pos.Y >= Top() && pos.Y < BottomExclusive();
 }
 
 // Method Description:
@@ -717,7 +712,7 @@ SMALL_RECT Viewport::ToExclusive() const noexcept
 // - an exclusive RECT equivalent to this viewport.
 RECT Viewport::ToRect() const noexcept
 {
-    RECT r{0};
+    RECT r{ 0 };
     r.left = Left();
     r.top = Top();
     r.right = RightExclusive();
@@ -762,8 +757,7 @@ Viewport Viewport::ToOrigin() const noexcept
 // - other: the viewport to convert to this coordinate space
 // Return Value:
 // - the input viewport in a the coordinate space with origin at (this.Top, this.Left)
-[[nodiscard]]
-Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
+[[nodiscard]] Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 {
     Viewport returnVal = other;
     ConvertToOrigin(&returnVal._sr);
@@ -780,8 +774,7 @@ Viewport Viewport::ConvertToOrigin(const Viewport& other) const noexcept
 // - other: the viewport to convert out of this coordinate space
 // Return Value:
 // - the input viewport in a the coordinate space with origin at (0, 0)
-[[nodiscard]]
-Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
+[[nodiscard]] Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
 {
     Viewport returnVal = other;
     ConvertFromOrigin(&returnVal._sr);
@@ -797,8 +790,7 @@ Viewport Viewport::ConvertFromOrigin(const Viewport& other) const noexcept
 // Return Value:
 // - The offset viewport by the given delta.
 // - NOTE: Throws on safe math failure.
-[[nodiscard]]
-Viewport Viewport::Offset(const Viewport& original, const COORD delta)
+[[nodiscard]] Viewport Viewport::Offset(const Viewport& original, const COORD delta)
 {
     // If there's no delta, do nothing.
     if (delta.X == 0 && delta.Y == 0)
@@ -829,8 +821,7 @@ Viewport Viewport::Offset(const Viewport& original, const COORD delta)
 // - rhs: the other viewport to or together
 // Return Value:
 // - a Viewport representing the union of the other two viewports.
-[[nodiscard]]
-Viewport Viewport::Union(const Viewport& lhs, const Viewport& rhs) noexcept
+[[nodiscard]] Viewport Viewport::Union(const Viewport& lhs, const Viewport& rhs) noexcept
 {
     const auto leftValid = lhs.IsValid();
     const auto rightValid = rhs.IsValid();
@@ -870,8 +861,7 @@ Viewport Viewport::Union(const Viewport& lhs, const Viewport& rhs) noexcept
 // - rhs: the other viepwort to intersect
 // Return Value:
 // - a Viewport representing the intersection of the other two, or an empty viewport if there's no intersection.
-[[nodiscard]]
-Viewport Viewport::Intersect(const Viewport& lhs, const Viewport& rhs) noexcept
+[[nodiscard]] Viewport Viewport::Intersect(const Viewport& lhs, const Viewport& rhs) noexcept
 {
     const auto left = std::max(lhs.Left(), rhs.Left());
     const auto top = std::max(lhs.Top(), rhs.Top());
@@ -904,8 +894,7 @@ Viewport Viewport::Intersect(const Viewport& lhs, const Viewport& rhs) noexcept
 // - Array of 4 Viewports representing non-overlapping segments of the remaining area
 //   that was covered by `main` before the regional area of `removeMe` was taken out.
 // - You must check that each viewport .IsValid() before using it.
-[[nodiscard]]
-SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& removeMe) noexcept
+[[nodiscard]] SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& removeMe) noexcept
 {
     SomeViewports result;
 
@@ -928,7 +917,7 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
         // In the following examples, the found remaining regions are represented by:
         // T = Top      B = Bottom      L = Left        R = Right
         //
-         // 4 Sides but Identical:
+        // 4 Sides but Identical:
         // |---------original---------|             |---------original---------|
         // |                          |             |                          |
         // |                          |             |                          |
@@ -1037,7 +1026,7 @@ SomeViewports Viewport::Subtract(const Viewport& original, const Viewport& remov
                 result.viewports.at(result.used++) = right;
             }
         }
-     }
+    }
 
     return result;
 }

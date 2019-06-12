@@ -16,10 +16,12 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-namespace WEX {
-    namespace TestExecution {
+namespace WEX
+{
+    namespace TestExecution
+    {
         template<>
-        class VerifyOutputTraits <TextAttributeRun>
+        class VerifyOutputTraits<TextAttributeRun>
         {
         public:
             static WEX::Common::NoThrowString ToString(const TextAttributeRun& tar)
@@ -27,19 +29,18 @@ namespace WEX {
                 return WEX::Common::NoThrowString().Format(
                     L"Length:%d, attr:%s",
                     tar.GetLength(),
-                    VerifyOutputTraits<TextAttribute>::ToString(tar.GetAttributes()).GetBuffer()
-                );
+                    VerifyOutputTraits<TextAttribute>::ToString(tar.GetAttributes()).GetBuffer());
             }
         };
 
         template<>
-        class VerifyCompareTraits <TextAttributeRun, TextAttributeRun>
+        class VerifyCompareTraits<TextAttributeRun, TextAttributeRun>
         {
         public:
             static bool AreEqual(const TextAttributeRun& expected, const TextAttributeRun& actual)
             {
                 return expected.GetAttributes() == actual.GetAttributes() &&
-                    expected.GetLength() == actual.GetLength();
+                       expected.GetLength() == actual.GetLength();
             }
 
             static bool AreSame(const TextAttributeRun& expected, const TextAttributeRun& actual)
@@ -54,7 +55,7 @@ namespace WEX {
             static bool IsNull(const TextAttributeRun& object)
             {
                 return object.GetAttributes().IsLegacy() && object.GetAttributes().GetLegacyAttributes() == 0 &&
-                    object.GetLength() == 0;
+                       object.GetLength() == 0;
             }
         };
     }
@@ -293,7 +294,6 @@ class AttrRowTests
             insertRow[1].SetLength(uiChar2Length);
         }
 
-
         LogChain(L"Insert: ", insertRow);
         Log::Comment(NoThrowString().Format(L"At Index: %d", uiStartPos));
 
@@ -453,7 +453,6 @@ class AttrRowTests
 
     TEST_METHOD(TestUnpackAttrs)
     {
-
         Log::Comment(L"Checking unpack of a single color for the entire length");
         {
             const std::vector<TextAttribute> attrs{ pSingle->begin(), pSingle->end() };

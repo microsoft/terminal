@@ -35,7 +35,7 @@ public:
              const UINT uiCodePage,
              const bool fSetDefaultRasterFont = false);
 
-    FontInfo(const FontInfo &fiFont);
+    FontInfo(const FontInfo& fiFont);
 
     COORD GetSize() const;
     COORD GetUnscaledSize() const;
@@ -61,6 +61,5 @@ private:
 };
 
 bool operator==(const FontInfo& a, const FontInfo& b);
-
 
 // SET AND UNSET CONSOLE_OEMFONT_DISPLAY unless we can get rid of the stupid recoding in the conhost side.

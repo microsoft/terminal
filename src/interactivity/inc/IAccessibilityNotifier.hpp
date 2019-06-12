@@ -39,7 +39,7 @@ namespace Microsoft::Console::Interactivity
         virtual void NotifyConsoleEndApplicationEvent(_In_ DWORD processId) = 0;
 
     protected:
-        IAccessibilityNotifier() { }
+        IAccessibilityNotifier() {}
 
         IAccessibilityNotifier(IAccessibilityNotifier const&) = delete;
         IAccessibilityNotifier& operator=(IAccessibilityNotifier const&) = delete;

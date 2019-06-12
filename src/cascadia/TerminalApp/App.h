@@ -18,9 +18,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
-
     // We dont use AppT as it does not provide access to protected constructors
-    template <typename D, typename... I>
+    template<typename D, typename... I>
     using AppT_Override = App_base<D, I...>;
 
     struct App : AppT_Override<App>
@@ -79,8 +78,7 @@ namespace winrt::TerminalApp::implementation
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
 
-        [[nodiscard]]
-        HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
+        [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
         void _OpenSettings();
 
@@ -96,7 +94,6 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
         void _UpdateTitle(std::shared_ptr<Tab> tab);
-
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 

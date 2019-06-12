@@ -23,7 +23,6 @@ class CharRow;
 class CharRowCellReference final
 {
 public:
-
     using const_iterator = const wchar_t*;
 
     CharRowCellReference(CharRow& parent, const size_t index) :
@@ -44,7 +43,6 @@ public:
 
     const_iterator begin() const;
     const_iterator end() const;
-
 
     friend bool operator==(const CharRowCellReference& ref, const std::vector<wchar_t>& glyph);
     friend bool operator==(const std::vector<wchar_t>& glyph, const CharRowCellReference& ref);

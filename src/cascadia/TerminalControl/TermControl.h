@@ -18,7 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) : m_clipboardDataHandler(clipboardDataHandler) { }
+        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) :
+            m_clipboardDataHandler(clipboardDataHandler) {}
 
         void HandleClipboardData(hstring value)
         {
@@ -53,6 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
+        // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
@@ -60,6 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+        // clang-format on
 
     private:
         TerminalConnection::ITerminalConnection _connection;
@@ -78,7 +81,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Settings::IControlSettings _settings;
         bool _focused;
-        bool _closing;
+        std::atomic<bool> _closing;
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
@@ -93,6 +96,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+
+        // Event revokers -- we need to deregister ourselves before we die,
+        // lest we get callbacks afterwards.
+        winrt::Windows::UI::Xaml::Controls::Control::SizeChanged_revoker _sizeChangedRevoker;
+        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::CompositionScaleChanged_revoker _compositionScaleChangedRevoker;
+        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::Loaded_revoker _loadedRevoker;
+        winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
+        winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
         void _Create();
         void _ApplyUISettings();
@@ -124,7 +135,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseTransparencyHandler(const double delta);
 
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
-        Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 

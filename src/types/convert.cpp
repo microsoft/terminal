@@ -26,8 +26,7 @@ static const WORD leftShiftScanCode = 0x2A;
 // Return Value:
 // - The UTF-16 wide string.
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]]
-std::wstring ConvertToW(const UINT codePage, const std::string_view source)
+[[nodiscard]] std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 {
     // If there's nothing to convert, bail early.
     if (source.empty())
@@ -65,20 +64,21 @@ std::wstring ConvertToW(const UINT codePage, const std::string_view source)
 // Return Value:
 // - The multibyte string encoded in the given codepage
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or MultiByteToWideChar failures.
-[[nodiscard]]
-std::string ConvertToA(const UINT codepage, const std::wstring_view source)
+[[nodiscard]] std::string ConvertToA(const UINT codepage, const std::wstring_view source)
 {
     // If there's nothing to convert, bail early.
     if (source.empty())
     {
         return {};
     }
-    
+
     int iSource; // convert to int because Wc2Mb requires it.
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
     // Ask how much space we will need.
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
@@ -90,7 +90,9 @@ std::string ConvertToA(const UINT codepage, const std::wstring_view source)
     THROW_IF_NULL_ALLOC(psOut.get());
 
     // Attempt conversion for real.
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
 
     // Return as a string
@@ -105,8 +107,7 @@ std::string ConvertToA(const UINT codepage, const std::wstring_view source)
 // Return Value:
 // - Length in characters of multibyte buffer that would be required to hold this text after conversion
 // - NOTE: Throws suitable HRESULT errors from memory allocation, safe math, or WideCharToMultiByte failures.
-[[nodiscard]]
-size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
+[[nodiscard]] size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
 {
     // If there's no bytes, bail early.
     if (source.empty())
@@ -118,7 +119,9 @@ size_t GetALengthFromW(const UINT codepage, const std::wstring_view source)
     THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
 
     // Ask how many bytes this string consumes in the other codepage
-#pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
     THROW_LAST_ERROR_IF(0 == iTarget);
 
@@ -163,7 +166,6 @@ std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch,
 
     return convertedEvents;
 }
-
 
 // Routine Description:
 // - converts a wchar_t into a series of KeyEvents as if it was typed
@@ -384,7 +386,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
     // 0x2010 - 0x2B59 varies between narrow, ambiguous, and wide by character and font (Unicode 9.0)
     // However, there are a bunch of retroactive-emoji in this range. Things that weren't emoji and then they became
     // "emoji" later. As a result, they jumped from a fixed narrow definition to a now ambiguous definition.
-    // There are others in this range already defined as wide or ambiguous, but we're just going to 
+    // There are others in this range already defined as wide or ambiguous, but we're just going to
     // implicitly say they're all ambiguous here to force a font lookup.
     // I picked the ones that looked like color double-wide emoji in my browser that weren't already
     // covered easily by the half-width/full-width table (see CodepointWidthDetector.cpp)
@@ -467,8 +469,7 @@ CodepointWidth GetQuickCharWidth(const wchar_t wch) noexcept
              (0x2B05 <= wch && wch <= 0x2B07) ||
              (0x2B1B <= wch && wch <= 0x2B1C) ||
              0x2B50 == wch ||
-             0x2B55 == wch
-             )
+             0x2B55 == wch)
     {
         return CodepointWidth::Ambiguous;
     }

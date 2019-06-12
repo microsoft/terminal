@@ -34,7 +34,7 @@ public:
     ReadData(const ReadData&) = delete;
     ReadData(ReadData&&);
     ReadData& operator=(const ReadData&) & = delete;
-    ReadData& operator=(ReadData &&) & = delete;
+    ReadData& operator=(ReadData&&) & = delete;
 
     virtual bool Notify(const WaitTerminationReason TerminationReason,
                         const bool fIsUnicode,
@@ -52,8 +52,9 @@ public:
     ReadData() :
         IWaitRoutine(ReplyDataType::Read),
         _pInputBuffer{ nullptr },
-        _pInputReadHandleData{ nullptr}
-    {}
+        _pInputReadHandleData{ nullptr }
+    {
+    }
 #endif
 protected:
     InputBuffer* _pInputBuffer;

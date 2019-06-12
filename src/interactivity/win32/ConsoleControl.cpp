@@ -15,8 +15,7 @@ using namespace Microsoft::Console::Interactivity::Win32;
 
 #pragma region IConsoleControl Members
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
+[[nodiscard]] NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
 {
     CONSOLE_PROCESS_INFO cpi;
     cpi.dwProcessID = dwProcessId;
@@ -27,8 +26,7 @@ NTSTATUS ConsoleControl::NotifyConsoleApplication(_In_ DWORD dwProcessId)
                    sizeof(CONSOLE_PROCESS_INFO));
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
+[[nodiscard]] NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForeground)
 {
     CONSOLESETFOREGROUND Flags;
     Flags.hProcess = hProcess;
@@ -39,8 +37,7 @@ NTSTATUS ConsoleControl::SetForeground(_In_ HANDLE hProcess, _In_ BOOL fForegrou
                    sizeof(Flags));
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
+[[nodiscard]] NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType, _In_ ULONG ulCtrlFlags)
 {
     auto pConsoleWindow = ServiceLocator::LocateConsoleWindow();
 
@@ -48,9 +45,7 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
     ConsoleEndTaskParams.ProcessId = hProcessId;
     ConsoleEndTaskParams.ConsoleEventCode = dwEventType;
     ConsoleEndTaskParams.ConsoleFlags = ulCtrlFlags;
-    ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr
-        ? nullptr
-        : pConsoleWindow->GetWindowHandle();
+    ConsoleEndTaskParams.hwnd = pConsoleWindow == nullptr ? nullptr : pConsoleWindow->GetWindowHandle();
 
     return Control(ControlType::ConsoleEndTask,
                    &ConsoleEndTaskParams,
@@ -61,15 +56,14 @@ NTSTATUS ConsoleControl::EndTask(_In_ HANDLE hProcessId, _In_ DWORD dwEventType,
 
 #pragma region Public Methods
 
-[[nodiscard]]
-NTSTATUS ConsoleControl::Control(_In_ ControlType ConsoleCommand,
-                                 _In_reads_bytes_(ConsoleInformationLength) PVOID ConsoleInformation,
-                                 _In_ DWORD ConsoleInformationLength)
+[[nodiscard]] NTSTATUS ConsoleControl::Control(_In_ ControlType ConsoleCommand,
+                                               _In_reads_bytes_(ConsoleInformationLength) PVOID ConsoleInformation,
+                                               _In_ DWORD ConsoleInformationLength)
 {
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef NTSTATUS(WINAPI *PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
+        typedef NTSTATUS(WINAPI * PfnConsoleControl)(ControlType Command, PVOID Information, DWORD Length);
 
         static PfnConsoleControl pfn = (PfnConsoleControl)GetProcAddress(_hUser32, "ConsoleControl");
 
@@ -90,7 +84,7 @@ BOOL ConsoleControl::EnterReaderModeHelper(_In_ HWND hwnd)
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef BOOL(WINAPI *PfnEnterReaderModeHelper)(HWND hwnd);
+        typedef BOOL(WINAPI * PfnEnterReaderModeHelper)(HWND hwnd);
 
         static PfnEnterReaderModeHelper pfn = (PfnEnterReaderModeHelper)GetProcAddress(_hUser32, "EnterReaderModeHelper");
 
@@ -106,13 +100,13 @@ BOOL ConsoleControl::EnterReaderModeHelper(_In_ HWND hwnd)
 #endif
 }
 
-BOOL ConsoleControl::TranslateMessageEx(const MSG *pmsg,
+BOOL ConsoleControl::TranslateMessageEx(const MSG* pmsg,
                                         _In_ UINT flags)
 {
 #ifdef CON_USERPRIVAPI_INDIRECT
     if (_hUser32 != nullptr)
     {
-        typedef BOOL(WINAPI *PfnTranslateMessageEx)(const MSG *pmsg, UINT flags);
+        typedef BOOL(WINAPI * PfnTranslateMessageEx)(const MSG* pmsg, UINT flags);
 
         static PfnTranslateMessageEx pfn = (PfnTranslateMessageEx)GetProcAddress(_hUser32, "TranslateMessageEx");
 

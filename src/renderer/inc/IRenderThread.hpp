@@ -24,5 +24,5 @@ namespace Microsoft::Console::Render
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
     };
 
-    inline Microsoft::Console::Render::IRenderThread::~IRenderThread() { };
+    inline Microsoft::Console::Render::IRenderThread::~IRenderThread(){};
 }

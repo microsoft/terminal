@@ -23,13 +23,11 @@ Author(s):
 
 #define XTERM_COLOR_TABLE_SIZE (256)
 
-
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
     {
     public:
-
         AdaptDispatch(ConGetSet* const pConApi,
                       AdaptDefaults* const pDefaults);
 
@@ -71,8 +69,8 @@ namespace Microsoft::Console::VirtualTerminal
                              const size_t cParams) override; // DECSET
         bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
                                const size_t cParams) override; // DECRST
-        bool SetCursorKeysMode(const bool fApplicationMode) override;  // DECCKM
-        bool SetKeypadMode(const bool fApplicationMode) override;  // DECKPAM, DECKPNM
+        bool SetCursorKeysMode(const bool fApplicationMode) override; // DECCKM
+        bool SetKeypadMode(const bool fApplicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool bEnable) override; // ATT610
         bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
                                           const SHORT sBottomMargin) override; // DECSTBM
@@ -100,13 +98,12 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD dwColor) override; // OscColorTable
         bool SetDefaultForeground(const DWORD dwColor) override; // OSCDefaultForeground
         bool SetDefaultBackground(const DWORD dwColor) override; // OSCDefaultBackground
-        
+
         bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                 _In_reads_(cParams) const unsigned short* const rgusParams,
                                 const size_t cParams) override; // DTTERM_WindowManipulation
 
     private:
-
         enum class CursorDirection
         {
             Up,
