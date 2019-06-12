@@ -100,7 +100,7 @@ bool Pane::_DoResize(const Direction& direction)
     }
 
     // Make sure we're not making a pane explode here by resizing it to 0 characters.
-    const bool changeWidth = _splitState==SplitState::Vertical;
+    const bool changeWidth = _splitState == SplitState::Vertical;
 
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
@@ -800,7 +800,6 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
     return { firstSize, secondSize };
 }
 
-
 // Method Description:
 // - Get the absolute minimum size that this pane can be resized to and still
 //   have 1x1 character visible, in each of its children. This includes the
@@ -820,8 +819,8 @@ Size Pane::_GetMinSize()
     {
         const auto firstSize = _firstChild->_GetMinSize();
         const auto secondSize = _secondChild->_GetMinSize();
-        const auto newWidth = firstSize.Width + secondSize.Width + (_splitState==SplitState::Vertical ? PaneSeparatorSize : 0);
-        const auto newHeight = firstSize.Height + secondSize.Height + (_splitState==SplitState::Horizontal ? PaneSeparatorSize : 0);
+        const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
+        const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
         return { newWidth, newHeight };
     }
 }
