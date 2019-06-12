@@ -643,7 +643,7 @@ void Terminal::DoubleClickSelection(const COORD position)
     // set endSelectionPosition to one left of that spot
     _ExpandDoubleClickSelectionRight(position);
 }
- 
+
 // Method Description:
 // - Select the entire row of the position clicked
 // Arguments:
@@ -726,8 +726,7 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
 {
     // TODO: hook up delimiters to Settings
-    std::wstring_view delimiters[] =
-    {
+    std::wstring_view delimiters[] = {
         L" ",
         L"/",
         L"\\"
