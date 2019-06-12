@@ -20,7 +20,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     }
 
     // Add anchor offset here to update properly on new buffer output
-    SHORT temp1, temp2;
+    SHORT temp1;
+    SHORT temp2;
     THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
     THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
 
@@ -29,8 +30,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD &higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
-    const COORD &lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
+    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
+    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
@@ -51,8 +52,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
             selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
         }
 
-        selectionRow.Left = _ExpandWideGlyphSelection_Left(selectionRow.Left, row);
-        selectionRow.Right = _ExpandWideGlyphSelection_Right(selectionRow.Right, row);
+        selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
+        selectionRow.Right = _ExpandWideGlyphSelectionRight(selectionRow.Right, row);
 
         selectionArea.emplace_back(selectionRow);
     }
@@ -65,7 +66,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT xPos, const SHORT yPos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const noexcept
 {
     // don't change the value if at/outside the boundary
     if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
@@ -73,7 +74,7 @@ const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT xPos, const SHO
         return xPos;
     }
 
-    COORD position{xPos, yPos};
+    COORD position{ xPos, yPos };
     const auto attr = _buffer->GetCellDataAt(position)->DbcsAttr();
     if (attr.IsTrailing())
     {
@@ -90,7 +91,7 @@ const SHORT Terminal::_ExpandWideGlyphSelection_Left(const SHORT xPos, const SHO
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelection_Right(const SHORT xPos, const SHORT yPos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const noexcept
 {
     // don't change the value if at/outside the boundary
     if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
