@@ -38,7 +38,7 @@ void Clipboard::Copy(bool fAlsoCopyHtml)
 
         // store selection in clipboard
         StoreSelectionToClipboard(fAlsoCopyHtml);
-        Selection::Instance().ClearSelection();   // clear selection in console
+        Selection::Instance().ClearSelection(); // clear selection in console
     }
     CATCH_LOG();
 }
@@ -222,10 +222,10 @@ void Clipboard::StoreSelectionToClipboard(bool const fAlsoCopyHtml)
 // - lineSelection - true if entire line is being selected. False otherwise (box selection)
 // - selectionRects - the selection regions from which the data will be extracted from the buffer
 TextBuffer::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                            const bool lineSelection,
-                                                            const std::vector<SMALL_RECT>& selectionRects)
+                                                           const bool lineSelection,
+                                                           const std::vector<SMALL_RECT>& selectionRects)
 {
-    const auto &buffer = screenInfo.GetTextBuffer();
+    const auto& buffer = screenInfo.GetTextBuffer();
     const bool trimTrailingWhitespace = !WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED);
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
@@ -247,7 +247,7 @@ TextBuffer::TextAndColor Clipboard::RetrieveTextFromBuffer(const SCREEN_INFORMAT
 // - string containing the generated HTML
 std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
 {
-    std::string szClipboard;            // we will build the data going back in this string buffer
+    std::string szClipboard; // we will build the data going back in this string buffer
 
     try
     {
@@ -261,7 +261,7 @@ std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
             "EndSelection:%010d\r\n";
 
         // measure clip header
-        size_t const cbHeader = 157;        // when formats are expanded, there will be 157 bytes in the header.
+        size_t const cbHeader = 157; // when formats are expanded, there will be 157 bytes in the header.
 
         std::string const szHtmlHeader =
             "<!DOCTYPE><HTML><HEAD><TITLE>Windows Console Host</TITLE></HEAD><BODY>";
@@ -285,15 +285,15 @@ std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
         size_t const cbSpanFontSize = 28 + (iFontHeightPoints / 10) + 1;
 
         std::string szSpanFontSize;
-        szSpanFontSize.resize(cbSpanFontSize + 1);    // reserve space for null after string for sprintf
+        szSpanFontSize.resize(cbSpanFontSize + 1); // reserve space for null after string for sprintf
         sprintf_s(szSpanFontSize.data(), cbSpanFontSize + 1, szSpanFontSizePattern.data(), iFontHeightPoints);
-        szSpanFontSize.resize(cbSpanFontSize);      //chop off null at end
+        szSpanFontSize.resize(cbSpanFontSize); //chop off null at end
 
         std::string const szSpanStartPattern = R"X(<SPAN STYLE="color:#%02x%02x%02x;background-color:#%02x%02x%02x">)X";
 
-        size_t const cbSpanStart = 53;          // when format is expanded, there will be 53 bytes per color pattern.
+        size_t const cbSpanStart = 53; // when format is expanded, there will be 53 bytes per color pattern.
         std::string szSpanStart;
-        szSpanStart.resize(cbSpanStart + 1);    // +1 for null terminator
+        szSpanStart.resize(cbSpanStart + 1); // +1 for null terminator
 
         std::string const szSpanStartFontPattern = R"X(<SPAN STYLE="font-family: '%s', monospace">)X";
         size_t const cbSpanStartFontPattern = 41;
@@ -338,7 +338,7 @@ std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
         // First we have to add the required header and then
         // some standard HTML boiler plate required for CF_HTML
         // as part of the HTML Clipboard format
-        szClipboard.append(cbHeader, 'H');         // reserve space for a header we fill in later
+        szClipboard.append(cbHeader, 'H'); // reserve space for a header we fill in later
         szClipboard.append(szHtmlHeader);
         szClipboard.append(szHtmlFragStart);
 
@@ -406,13 +406,10 @@ std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
                     // start new span
 
                     // format with color then copy formatted string
-                    szSpanStart.resize(cbSpanStart + 1);       // add room for null
-                    sprintf_s(szSpanStart.data(), cbSpanStart + 1, szSpanStartPattern.data(),
-                        GetRValue(fgColor), GetGValue(fgColor), GetBValue(fgColor),
-                        GetRValue(bkColor), GetGValue(bkColor), GetBValue(bkColor));
-                    szSpanStart.resize(cbSpanStart);        // chop null from sprintf
+                    szSpanStart.resize(cbSpanStart + 1); // add room for null
+                    sprintf_s(szSpanStart.data(), cbSpanStart + 1, szSpanStartPattern.data(), GetRValue(fgColor), GetGValue(fgColor), GetBValue(fgColor), GetRValue(bkColor), GetGValue(bkColor), GetBValue(bkColor));
+                    szSpanStart.resize(cbSpanStart); // chop null from sprintf
                     szClipboard.append(szSpanStart);
-
                 }
 
                 // accumulate 1 character
@@ -459,29 +456,28 @@ std::string Clipboard::GenHTML(const TextBuffer::TextAndColor& rows)
 
         // we are done generating formating & building HTML for the selection
         // prepare the header text with the byte counts now that we know them
-        size_t const cbHtmlStart = cbHeader;                    // bytecount to start of HTML context
-        size_t const cbHtmlEnd = szClipboard.size() - 1;        // don't count the null at the end
-        size_t const cbFragStart = cbHeader + cbHtmlHeader;     // bytecount to start of selection fragment
+        size_t const cbHtmlStart = cbHeader; // bytecount to start of HTML context
+        size_t const cbHtmlEnd = szClipboard.size() - 1; // don't count the null at the end
+        size_t const cbFragStart = cbHeader + cbHtmlHeader; // bytecount to start of selection fragment
         size_t const cbFragEnd = cbHtmlEnd - cbHtmlFooter;
 
         // push the values into the required HTML 0.9 header format
         std::string szHtmlClipHeaderFinal;
-        szHtmlClipHeaderFinal.resize(cbHeader + 1);   // add room for a null
+        szHtmlClipHeaderFinal.resize(cbHeader + 1); // add room for a null
         sprintf_s(szHtmlClipHeaderFinal.data(), cbHeader + 1, szHtmlClipFormat.data(), cbHtmlStart, cbHtmlEnd, cbFragStart, cbFragEnd, cbFragStart, cbFragEnd);
-        szHtmlClipHeaderFinal.resize(cbHeader);    // chop off the null
+        szHtmlClipHeaderFinal.resize(cbHeader); // chop off the null
 
         // overwrite the reserved space with the actual header & offsets we calculated
         szClipboard.replace(0, cbHeader, szHtmlClipHeaderFinal.data());
     }
-    catch(...)
+    catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
-        szClipboard.clear();            // dont return a partial html fragment...
+        szClipboard.clear(); // dont return a partial html fragment...
     }
 
     return szClipboard;
 }
-
 
 // Routine Description:
 // - Copies the text given onto the global system clipboard.
@@ -555,11 +551,10 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
     globalHandle.release();
 }
 
-
 // Returns true if the character should be emitted to the paste stream
 // -- in some cases, we will change what character should be emitted, as in the case of "smart quotes"
 // Returns false if the character should not be emitted (e.g. <TAB>)
-bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR * const pwch)
+bool Clipboard::FilterCharacterOnPaste(_Inout_ WCHAR* const pwch)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     bool fAllowChar = true;

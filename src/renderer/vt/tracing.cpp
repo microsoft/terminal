@@ -6,26 +6,26 @@
 #include <sstream>
 
 TRACELOGGING_DEFINE_PROVIDER(g_hConsoleVtRendererTraceProvider,
-    "Microsoft.Windows.Console.Render.VtEngine",
-    // tl:{c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d}
-    (0xc9ba2a95, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d),
-    TraceLoggingOptionMicrosoftTelemetry());
+                             "Microsoft.Windows.Console.Render.VtEngine",
+                             // tl:{c9ba2a95-d3ca-5e19-2bd6-776a0910cb9d}
+                             (0xc9ba2a95, 0xd3ca, 0x5e19, 0x2b, 0xd6, 0x77, 0x6a, 0x09, 0x10, 0xcb, 0x9d),
+                             TraceLoggingOptionMicrosoftTelemetry());
 
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 
 RenderTracing::RenderTracing()
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     TraceLoggingRegister(g_hConsoleVtRendererTraceProvider);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 RenderTracing::~RenderTracing()
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     TraceLoggingUnregister(g_hConsoleVtRendererTraceProvider);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 // Function Description:
@@ -43,7 +43,7 @@ std::string toPrintableString(const std::string_view& inString)
     for (size_t i = 0; i < inString.length(); i++)
     {
         unsigned char c = inString[i];
-        if (c < '\x20' && c < '\x7f')
+        if (c < '\x20')
         {
             retval += "^";
             char actual = (c + 0x40);
@@ -66,16 +66,16 @@ std::string toPrintableString(const std::string_view& inString)
 }
 void RenderTracing::TraceString(const std::string_view& instr) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     const std::string _seq = toPrintableString(instr);
     const char* const seq = _seq.c_str();
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceString",
                       TraceLoggingString(seq),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(instr);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 std::string _ViewportToString(const Viewport& view)
@@ -116,42 +116,42 @@ std::string _CoordToString(const COORD& c)
 
 void RenderTracing::TraceInvalidate(const Viewport invalidRect) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     const auto invalidatedStr = _ViewportToString(invalidRect);
     const auto invalidated = invalidatedStr.c_str();
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceInvalidate",
                       TraceLoggingString(invalidated),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(invalidRect);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 void RenderTracing::TraceInvalidateAll(const Viewport viewport) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     const auto invalidatedStr = _ViewportToString(viewport);
     const auto invalidatedAll = invalidatedStr.c_str();
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceInvalidateAll",
                       TraceLoggingString(invalidatedAll),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(viewport);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 void RenderTracing::TraceTriggerCircling(const bool newFrame) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceTriggerCircling",
                       TraceLoggingBool(newFrame),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(newFrame);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 void RenderTracing::TraceStartPaint(const bool quickReturn,
@@ -161,7 +161,7 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
                                     const COORD scrollDelt,
                                     const bool cursorMoved) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     const auto invalidatedStr = _ViewportToString(invalidRect);
     const auto invalidated = invalidatedStr.c_str();
     const auto lastViewStr = _ViewportToString(lastViewport);
@@ -177,37 +177,36 @@ void RenderTracing::TraceStartPaint(const bool quickReturn,
                       TraceLoggingString(scrollDelta),
                       TraceLoggingBool(cursorMoved),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(quickReturn);
     UNREFERENCED_PARAMETER(invalidRectUsed);
     UNREFERENCED_PARAMETER(invalidRect);
     UNREFERENCED_PARAMETER(lastViewport);
     UNREFERENCED_PARAMETER(scrollDelt);
     UNREFERENCED_PARAMETER(cursorMoved);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }
 
 void RenderTracing::TraceEndPaint() const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceEndPaint",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
-    #endif UNIT_TESTING
+#else
+#endif UNIT_TESTING
 }
-
 
 void RenderTracing::TraceLastText(const COORD lastTextPos) const
 {
-    #ifndef UNIT_TESTING
+#ifndef UNIT_TESTING
     const auto lastTextStr = _CoordToString(lastTextPos);
     const auto lastText = lastTextStr.c_str();
     TraceLoggingWrite(g_hConsoleVtRendererTraceProvider,
                       "VtEngine_TraceLastText",
                       TraceLoggingString(lastText),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
-    #else
+#else
     UNREFERENCED_PARAMETER(lastTextPos);
-    #endif UNIT_TESTING
+#endif UNIT_TESTING
 }

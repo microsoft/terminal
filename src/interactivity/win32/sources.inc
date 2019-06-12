@@ -64,4 +64,4 @@ INCLUDES = \
     ..; \
 
 TARGETLIBS = \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib  \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib  \

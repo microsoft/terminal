@@ -20,6 +20,7 @@ struct PTY_SIGNAL_RESIZE
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::VirtualTerminal;
 
 // Constructor Description:
 // - Creates the PTY Signal Input Thread.
@@ -76,8 +77,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
 // Return Value:
 // - S_OK if the thread runs to completion.
 // - Otherwise it may cause an application termination another route and never return.
-[[nodiscard]]
-HRESULT PtySignalInputThread::_InputThread()
+[[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
     unsigned short signalId;
     while (_GetData(&signalId, sizeof(signalId)))
@@ -101,7 +101,7 @@ HRESULT PtySignalInputThread::_InputThread()
                     SUCCEEDED(UShortToShort(resizeMsg.sy, &sRows)) &&
                     (sColumns > 0 && sRows > 0))
                 {
-                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({sColumns, sRows});
+                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({ sColumns, sRows });
                 }
                 break;
             }
@@ -164,8 +164,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
 
 // Method Description:
 // - Starts the PTY Signal input thread.
-[[nodiscard]]
-HRESULT PtySignalInputThread::Start() noexcept
+[[nodiscard]] HRESULT PtySignalInputThread::Start() noexcept
 {
     RETURN_LAST_ERROR_IF(!_hFile);
 
@@ -180,7 +179,7 @@ HRESULT PtySignalInputThread::Start() noexcept
                            0,
                            &dwThreadId);
 
-    RETURN_LAST_ERROR_IF(hThread == INVALID_HANDLE_VALUE);
+    RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
 

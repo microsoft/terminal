@@ -18,7 +18,6 @@
 x64/
 x86/
 ARM64/
-build/
 bld/
 [Bb]in/
 [Oo]bj/
@@ -264,6 +263,9 @@ build*.metadata
 
 # .razzlerc.cmd file - used by dev environment
 tools/.razzlerc.*
+# .PowershellModules - if one needs a powershell module dependency, one
+# can save it here. used by tools/OpenConsole.psm1
+.PowershellModules
 # message compiler output
 MSG*.bin
 /*.exe
@@ -276,3 +278,4 @@ MSG*.bin
 **/Unmerged/*
 profiles.json
 *.metaproj
+*.swp

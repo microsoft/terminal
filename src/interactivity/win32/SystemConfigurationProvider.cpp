@@ -77,7 +77,7 @@ void SystemConfigurationProvider::GetSettingsFromLink(
 
             gci.SetLinkTitle(std::wstring(pwszTitle, cch));
 
-            wchar_t* const linkNameForCsi = new(std::nothrow) wchar_t[gci.GetLinkTitle().length()+1]{0};
+            wchar_t* const linkNameForCsi = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ 0 };
             if (linkNameForCsi)
             {
                 gci.GetLinkTitle().copy(linkNameForCsi, gci.GetLinkTitle().length());
@@ -93,14 +93,14 @@ void SystemConfigurationProvider::GetSettingsFromLink(
             int iShowWindow;
             WORD wHotKey;
             NTSTATUS Status = ShortcutSerialization::s_GetLinkValues(&csi,
-                &fReadConsoleProperties,
-                wszShortcutTitle,
-                ARRAYSIZE(wszShortcutTitle),
-                wszIconLocation,
-                ARRAYSIZE(wszIconLocation),
-                &iIconIndex,
-                &iShowWindow,
-                &wHotKey);
+                                                                     &fReadConsoleProperties,
+                                                                     wszShortcutTitle,
+                                                                     ARRAYSIZE(wszShortcutTitle),
+                                                                     wszIconLocation,
+                                                                     ARRAYSIZE(wszIconLocation),
+                                                                     &iIconIndex,
+                                                                     &iShowWindow,
+                                                                     &wHotKey);
 
             // Convert results back to appropriate types and set.
             if (SUCCEEDED(IntToWord(iShowWindow, &wShowWindow)))

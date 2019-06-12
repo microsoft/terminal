@@ -9,7 +9,7 @@
 #include <windows.h>
 #include "wchar.h"
 
-// Extension presence detection 
+// Extension presence detection
 #include <sysparamsext.h>
 
 #define _DDK_INCLUDED

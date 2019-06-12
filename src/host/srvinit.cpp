@@ -25,11 +25,13 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
+
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-[[nodiscard]]
-HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
@@ -83,12 +85,11 @@ static bool s_IsOnDesktop()
     return fIsDesktop;
 }
 
-[[nodiscard]]
-NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
-                      _In_ DWORD TitleLength,
-                      _In_reads_bytes_(TitleLength) LPWSTR Title,
-                      _In_ LPCWSTR CurDir,
-                      _In_ LPCWSTR AppName)
+[[nodiscard]] NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
+                                    _In_ DWORD TitleLength,
+                                    _In_reads_bytes_(TitleLength) LPWSTR Title,
+                                    _In_ LPCWSTR CurDir,
+                                    _In_ LPCWSTR AppName)
 {
     // We will find and locate all relevant preference settings and then create the console here.
     // The precedence order for settings is:
@@ -139,7 +140,6 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         }
     }
 
-
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
 
@@ -149,12 +149,13 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     // Validate all applied settings for correctness against final rules.
     settings.Validate();
 
-    // As of the graphics refactoring to library based, all fonts are now DPI aware. Scaling is performed at the Blt time for raster fonts.
+    // As of the graphics refactoring to library based, all fonts are now DPI aware. Scaling is
+    // performed at the Blt time for raster fonts.
     // Note that we can only declare our DPI awareness once per process launch.
     // Set the process's default dpi awareness context to PMv2 so that new top level windows
     // inherit their WM_DPICHANGED* broadcast mode (and more, like dialog scaling) from the thread.
 
-    IHighDpiApi *pHighDpiApi = ServiceLocator::LocateHighDpiApi();
+    IHighDpiApi* pHighDpiApi = ServiceLocator::LocateHighDpiApi();
     if (pHighDpiApi)
     {
         // N.B.: There is no high DPI support on OneCore (non-UAP) systems.
@@ -178,8 +179,9 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
         settings.SetLaunchFaceName(settings.GetFaceName(), LF_FACESIZE);
     }
 
-// Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation for the settings we just set.
-    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t)});
+    // Allocate console will read the global ServiceLocator::LocateGlobals().getConsoleInformation
+    // for the settings we just set.
+    NTSTATUS Status = CONSOLE_INFORMATION::AllocateConsole({ Title, TitleLength / sizeof(wchar_t) });
     if (!NT_SUCCESS(Status))
     {
         return Status;
@@ -188,8 +190,7 @@ NTSTATUS SetUpConsole(_Inout_ Settings* pStartupSettings,
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
+[[nodiscard]] NTSTATUS RemoveConsole(_In_ ConsoleProcessHandle* ProcessData)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     LockConsole();
@@ -244,8 +245,7 @@ void ConsoleCheckDebug()
 #endif
 }
 
-[[nodiscard]]
-HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
@@ -275,8 +275,8 @@ HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* 
     return S_OK;
 }
 
-#define SYSTEM_ROOT         (L"%SystemRoot%")
-#define SYSTEM_ROOT_LENGTH  (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
+#define SYSTEM_ROOT (L"%SystemRoot%")
+#define SYSTEM_ROOT_LENGTH (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
 
 // Routine Description:
 // - This routine translates path characters into '_' characters because the NT registry apis do not allow the creation of keys with
@@ -297,7 +297,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new(std::nothrow) wchar_t[MAX_PATH];
+    LPWSTR pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
@@ -311,7 +311,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
                 if (fUnexpand &&
                     cchConsoleTitle >= cchSystemRoot &&
-#pragma prefast(suppress:26018, "We've guaranteed that cchSystemRoot is equal to or smaller than cchConsoleTitle in size.")
+#pragma prefast(suppress : 26018, "We've guaranteed that cchSystemRoot is equal to or smaller than cchConsoleTitle in size.")
                     (CSTR_EQUAL == CompareStringOrdinal(pwszConsoleTitle, cchSystemRoot, pwszSysRoot, cchSystemRoot, TRUE)))
                 {
                     cbConsoleTitle -= cbSystemRoot;
@@ -325,7 +325,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
                 LPWSTR pszTranslatedConsoleTitle;
                 const size_t cbTranslatedConsoleTitle = cbSystemRoot + cbConsoleTitle;
-                Tmp = pszTranslatedConsoleTitle = (PWSTR)new BYTE[cbTranslatedConsoleTitle];
+                Tmp = pszTranslatedConsoleTitle = (PWSTR) new BYTE[cbTranslatedConsoleTitle];
                 if (pszTranslatedConsoleTitle == nullptr)
                 {
                     return nullptr;
@@ -333,14 +333,14 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
 
                 // No need to check return here -- pszTranslatedConsoleTitle is guaranteed large enough for SYSTEM_ROOT
                 (void)StringCbCopy(pszTranslatedConsoleTitle, cbTranslatedConsoleTitle, SYSTEM_ROOT);
-                pszTranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR));   // skip by characters -- not bytes
+                pszTranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR)); // skip by characters -- not bytes
 
                 for (UINT i = 0; i < cbConsoleTitle; i += sizeof(WCHAR))
                 {
-#pragma prefast(suppress:26018, "We are reading the null portion of the buffer on purpose and will escape on reaching it below.")
+#pragma prefast(suppress : 26018, "We are reading the null portion of the buffer on purpose and will escape on reaching it below.")
                     if (fSubstitute && *pwszConsoleTitle == '\\')
                     {
-#pragma prefast(suppress:26019, "Console title must contain system root if this path was followed.")
+#pragma prefast(suppress : 26019, "Console title must contain system root if this path was followed.")
                         *pszTranslatedConsoleTitle++ = (WCHAR)'_';
                     }
                     else
@@ -362,8 +362,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
     return Tmp;
 }
 
-[[nodiscard]]
-NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID * const pLangId)
+[[nodiscard]] NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID* const pLangId)
 {
     NTSTATUS Status = STATUS_NOT_SUPPORTED;
 
@@ -420,8 +419,7 @@ NTSTATUS GetConsoleLangId(const UINT uiOutputCP, _Out_ LANGID * const pLangId)
     return Status;
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleLangIdImpl(LANGID& langId) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleLangIdImpl(LANGID& langId) noexcept
 {
     try
     {
@@ -445,8 +443,7 @@ HRESULT ApiRoutines::GetConsoleLangIdImpl(LANGID& langId) noexcept
 // - Cac - Receives the connection information.
 // Return Value:
 // - NTSTATUS indicating if the connection information was successfully initialized.
-[[nodiscard]]
-NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac)
+[[nodiscard]] NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONSOLE_API_CONNECTINFO Cac)
 {
     CONSOLE_SERVER_MSG Data = { 0 };
     // Try to receive the data sent by the client.
@@ -493,8 +490,7 @@ NTSTATUS ConsoleInitializeConnectInfo(_In_ PCONSOLE_API_MSG Message, _Out_ PCONS
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
+[[nodiscard]] NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
 {
     // AllocConsole is outside our codebase, but we should be able to mostly track the call here.
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AllocConsole);
@@ -532,19 +528,17 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
         //      should we be unable to figure out its width another way.
         auto pfn = std::bind(&Renderer::IsGlyphWideByFont, static_cast<Renderer*>(g.pRender), std::placeholders::_1);
         SetGlyphWidthFallback(pfn);
-
     }
     catch (...)
     {
         Status = NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
     }
 
-
     if (NT_SUCCESS(Status) && p->WindowVisible)
     {
         HANDLE Thread = nullptr;
 
-        IConsoleInputThread *pNewThread = nullptr;
+        IConsoleInputThread* pNewThread = nullptr;
         LOG_IF_FAILED(ServiceLocator::CreateConsoleInputThread(&pNewThread));
 
         FAIL_FAST_IF_NULL(pNewThread);
@@ -574,7 +568,6 @@ NTSTATUS ConsoleAllocateConsole(PCONSOLE_API_CONNECTINFO p)
             {
                 Status = STATUS_SUCCESS;
             }
-
 
             // If we're not headless, we'll make a real window.
             // Allow UI Access to the real window but not the little
@@ -656,7 +649,7 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
         }
 
         // TODO: 9115192 correct mixed NTSTATUS/HRESULT
-        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(&ReplyMsg->Complete, &ReceiveMsg);
+        HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
             if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))

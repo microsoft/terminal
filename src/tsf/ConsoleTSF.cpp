@@ -6,7 +6,7 @@
 #include "TfEditSes.h"
 
 /* 626761ad-78d2-44d2-be8b-752cf122acec */
-const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, {0xbe, 0x8b, 0x75, 0x2c, 0xf1, 0x22, 0xac, 0xec} };
+const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, { 0xbe, 0x8b, 0x75, 0x2c, 0xf1, 0x22, 0xac, 0xec } };
 
 //+---------------------------------------------------------------------------
 //
@@ -14,10 +14,14 @@ const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, {0xbe, 0x8b, 0x75, 0
 //
 //----------------------------------------------------------------------------
 
-#define Init_CheckResult()    if (FAILED(hr)) { Uninitialize(); return hr; }
+#define Init_CheckResult() \
+    if (FAILED(hr))        \
+    {                      \
+        Uninitialize();    \
+        return hr;         \
+    }
 
-[[nodiscard]]
-HRESULT CConsoleTSF::Initialize()
+[[nodiscard]] HRESULT CConsoleTSF::Initialize()
 {
     HRESULT hr;
 
@@ -72,14 +76,14 @@ HRESULT CConsoleTSF::Initialize()
         hr = spITfProfilesMgr->GetActiveProfile(GUID_TFCAT_TIP_KEYBOARD, &ipp);
         if (SUCCEEDED(hr))
         {
-            OnActivated(ipp.dwProfileType, ipp.langid, ipp.clsid, ipp.catid,
-                        ipp.guidProfile, ipp.hkl, ipp.dwFlags);
+            OnActivated(ipp.dwProfileType, ipp.langid, ipp.clsid, ipp.catid, ipp.guidProfile, ipp.hkl, ipp.dwFlags);
         }
     }
     Init_CheckResult();
 
     // Setup some useful Cicero event sinks and callbacks.
-
+    // _spITfThreadMgr && _spITfInputContext must be non-null for checks above to have succeeded, so
+    // we're not going to check them again here. try_query will A/V if they're null.
     wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
     wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
 
@@ -120,39 +124,49 @@ void CConsoleTSF::Uninitialize()
     }
 
     // Detach Cicero event sinks.
-    wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
-    if (spSrcICS)
+    if (_spITfInputContext)
     {
-        spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        wil::com_ptr_nothrow<ITfSourceSingle> spSrcICS(_spITfInputContext.try_query<ITfSourceSingle>());
+        if (spSrcICS)
+        {
+            spSrcICS->UnadviseSingleSink(_tid, IID_ITfCleanupContextSink);
+        }
     }
 
     // Associate the document\context with the console window.
 
-    wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
-    if (spSrcTIM)
+    if (_spITfThreadMgr)
     {
-        if (_dwUIElementSinkCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcTIM(_spITfThreadMgr.try_query<ITfSource>());
+        if (spSrcTIM)
         {
-            spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
-        }
-        if (_dwActivationSinkCookie)
-        {
-            spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            if (_dwUIElementSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwUIElementSinkCookie);
+            }
+            if (_dwActivationSinkCookie)
+            {
+                spSrcTIM->UnadviseSink(_dwActivationSinkCookie);
+            }
         }
     }
+
     _dwUIElementSinkCookie = 0;
     _dwActivationSinkCookie = 0;
 
-    wil::com_ptr_nothrow<ITfSource> spSrcIC(_spITfInputContext.try_query<ITfSource>());
-    if (spSrcIC)
+    if (_spITfInputContext)
     {
-        if (_dwContextOwnerCookie)
+        wil::com_ptr_nothrow<ITfSource> spSrcIC(_spITfInputContext.try_query<ITfSource>());
+        if (spSrcIC)
         {
-            spSrcIC->UnadviseSink(_dwContextOwnerCookie);
-        }
-        if (_dwTextEditSinkCookie)
-        {
-            spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            if (_dwContextOwnerCookie)
+            {
+                spSrcIC->UnadviseSink(_dwContextOwnerCookie);
+            }
+            if (_dwTextEditSinkCookie)
+            {
+                spSrcIC->UnadviseSink(_dwTextEditSinkCookie);
+            }
         }
     }
     _dwContextOwnerCookie = 0;
@@ -241,12 +255,14 @@ STDMETHODIMP CConsoleTSF::QueryInterface(REFIID riid, void** ppvObj)
     return (*ppvObj) ? S_OK : E_NOINTERFACE;
 }
 
-STDAPI_(ULONG) CConsoleTSF::AddRef()
+STDAPI_(ULONG)
+CConsoleTSF::AddRef()
 {
     return InterlockedIncrement(&_cRef);
 }
 
-STDAPI_(ULONG) CConsoleTSF::Release()
+STDAPI_(ULONG)
+CConsoleTSF::Release()
 {
     ULONG cr = InterlockedDecrement(&_cRef);
     if (cr == 0)
@@ -359,7 +375,7 @@ STDMETHODIMP CConsoleTSF::OnEndComposition(ITfCompositionView* pCompView)
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
+STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext* pInputContext, TfEditCookie ecReadOnly, ITfEditRecord* pEditRecord)
 {
     if (_cCompositions && _pConversionArea && _HasCompositionChanged(pInputContext, ecReadOnly, pEditRecord))
     {
@@ -374,8 +390,13 @@ STDMETHODIMP CConsoleTSF::OnEndEdit(ITfContext *pInputContext, TfEditCookie ecRe
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/, LANGID /*langid*/, REFCLSID /*clsid*/,
-                                      REFGUID catid, REFGUID /*guidProfile*/, HKL /*hkl*/, DWORD dwFlags)
+STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/,
+                                      LANGID /*langid*/,
+                                      REFCLSID /*clsid*/,
+                                      REFGUID catid,
+                                      REFGUID /*guidProfile*/,
+                                      HKL /*hkl*/,
+                                      DWORD dwFlags)
 {
     if (!(dwFlags & TF_IPSINK_FLAG_ACTIVE))
     {
@@ -402,7 +423,7 @@ STDMETHODIMP CConsoleTSF::OnActivated(DWORD /*dwProfileType*/, LANGID /*langid*/
 //
 //----------------------------------------------------------------------------
 
-STDMETHODIMP CConsoleTSF::BeginUIElement(DWORD /*dwUIElementId*/, BOOL *pbShow)
+STDMETHODIMP CConsoleTSF::BeginUIElement(DWORD /*dwUIElementId*/, BOOL* pbShow)
 {
     *pbShow = TRUE;
     return S_OK;
@@ -436,7 +457,7 @@ STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
 //
 //----------------------------------------------------------------------------
 
- CConversionArea* CConsoleTSF::CreateConversionArea()
+CConversionArea* CConsoleTSF::CreateConversionArea()
 {
     BOOL fHadConvArea = (_pConversionArea != NULL);
 
@@ -461,8 +482,7 @@ STDMETHODIMP CConsoleTSF::EndUIElement(DWORD /*dwUIElementId*/)
 //
 //----------------------------------------------------------------------------
 
-[[nodiscard]]
-HRESULT CConsoleTSF::_OnUpdateComposition()
+[[nodiscard]] HRESULT CConsoleTSF::_OnUpdateComposition()
 {
     if (_fEditSessionRequested)
     {
@@ -470,7 +490,7 @@ HRESULT CConsoleTSF::_OnUpdateComposition()
     }
 
     HRESULT hr = E_OUTOFMEMORY;
-    CEditSessionUpdateCompositionString* pEditSession = new(std::nothrow) CEditSessionUpdateCompositionString();
+    CEditSessionUpdateCompositionString* pEditSession = new (std::nothrow) CEditSessionUpdateCompositionString();
     if (pEditSession)
     {
         // Can't use TF_ES_SYNC because called from OnEndEdit.
@@ -491,13 +511,12 @@ HRESULT CConsoleTSF::_OnUpdateComposition()
 //
 //----------------------------------------------------------------------------
 
-[[nodiscard]]
-HRESULT CConsoleTSF::_OnCompleteComposition()
+[[nodiscard]] HRESULT CConsoleTSF::_OnCompleteComposition()
 {
     // Update the composition area.
 
     HRESULT hr = E_OUTOFMEMORY;
-    CEditSessionCompositionComplete* pEditSession = new(std::nothrow) CEditSessionCompositionComplete();
+    CEditSessionCompositionComplete* pEditSession = new (std::nothrow) CEditSessionCompositionComplete();
     if (pEditSession)
     {
         // The composition could have been finalized because of a caret move, therefore it must be
@@ -513,7 +532,7 @@ HRESULT CConsoleTSF::_OnCompleteComposition()
     if (!_fCleanupSessionRequested)
     {
         _fCleanupSessionRequested = TRUE;
-        CEditSessionCompositionCleanup* pEditSessionCleanup = new(std::nothrow) CEditSessionCompositionCleanup();
+        CEditSessionCompositionCleanup* pEditSessionCleanup = new (std::nothrow) CEditSessionCompositionCleanup();
         if (pEditSessionCleanup)
         {
             // Can't use TF_ES_SYNC because requesting RW while called within another session.

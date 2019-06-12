@@ -9,6 +9,7 @@
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Interactivity;
 
 std::unique_ptr<Selection> Selection::_instance;
 
@@ -728,7 +729,7 @@ void Selection::SelectAll()
             // Check if both anchor and opposite corner are exactly the bounds of the input line
             const bool fAllInputSelected =
                 ((Utils::s_CompareCoords(coordInputStart, coordOldAnchor) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchorOpposite) == 0) ||
-                (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
+                 (Utils::s_CompareCoords(coordInputStart, coordOldAnchorOpposite) == 0 && Utils::s_CompareCoords(coordInputEnd, coordOldAnchor) == 0));
 
             if (fIsOldSelWithinInput && !fAllInputSelected)
             {

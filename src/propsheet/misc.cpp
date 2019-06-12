@@ -28,12 +28,11 @@ Revision History:
 ULONG gDebugFlag = 0;
 #endif
 
-
 #define MAX_FONT_INFO_ALLOC (ULONG_MAX / sizeof(FONT_INFO))
 
 #define FE_ABANDONFONT 0
-#define FE_SKIPFONT    1
-#define FE_FONTOK      2
+#define FE_SKIPFONT 1
+#define FE_FONTOK 2
 
 #define TERMINAL_FACENAME L"Terminal"
 
@@ -41,7 +40,20 @@ ULONG gDebugFlag = 0;
  * TTPoints -- Initial font pixel heights for TT fonts
  */
 SHORT TTPoints[] = {
-    5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 24, 28, 36, 72
+    5,
+    6,
+    7,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    24,
+    28,
+    36,
+    72
 };
 
 /*
@@ -49,18 +61,28 @@ SHORT TTPoints[] = {
  * So, This list except odd point size because font width is (SBCS:DBCS != 1:2).
  */
 SHORT TTPointsDbcs[] = {
-    6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 36, 72
+    6,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    24,
+    28,
+    36,
+    72
 };
 
-
-typedef struct _FONTENUMDATA {
+typedef struct _FONTENUMDATA
+{
     HDC hDC;
     BOOL bFindFaces;
     ULONG ulFE;
     __field_ecount_opt(nTTPoints) PSHORT pTTPoints;
     UINT nTTPoints;
 } FONTENUMDATA, *PFONTENUMDATA;
-
 
 PFACENODE
 AddFaceNode(
@@ -72,8 +94,10 @@ AddFaceNode(
     /*
      * Is it already here?
      */
-    for (ppTmp = &gpFaceNames; *ppTmp; ppTmp = &((*ppTmp)->pNext)) {
-        if (0 == lstrcmp(((*ppTmp)->atch), ptsz)) {
+    for (ppTmp = &gpFaceNames; *ppTmp; ppTmp = &((*ppTmp)->pNext))
+    {
+        if (0 == lstrcmp(((*ppTmp)->atch), ptsz))
+        {
             // already there !
             return *ppTmp;
         }
@@ -83,7 +107,8 @@ AddFaceNode(
     pNew = (PFACENODE)HeapAlloc(GetProcessHeap(),
                                 0,
                                 sizeof(FACENODE) + ((cch + 1) * sizeof(WCHAR)));
-    if (pNew == NULL) {
+    if (pNew == NULL)
+    {
         return NULL;
     }
 
@@ -94,15 +119,15 @@ AddFaceNode(
     return pNew;
 }
 
-
 VOID
-DestroyFaceNodes(
-    VOID)
+    DestroyFaceNodes(
+        VOID)
 {
     PFACENODE pNext, pTmp;
 
     pTmp = gpFaceNames;
-    while (pTmp != NULL) {
+    while (pTmp != NULL)
+    {
         pNext = pTmp->pNext;
         HeapFree(GetProcessHeap(), 0, pTmp);
         pTmp = pNext;
@@ -152,7 +177,7 @@ void RecreateFontHandles(const HWND hWnd)
             // if the current font is a TrueType font
             if (TM_IS_TT_FONT(FontInfo[iCurrFont].Family))
             {
-                LOGFONT lf = {0};
+                LOGFONT lf = { 0 };
                 lf.lfWidth = GetDPIXScaledPixelSize(hWnd, FontInfo[iCurrFont].Size.X);
                 lf.lfHeight = GetDPIYScaledPixelSize(hWnd, FontInfo[iCurrFont].Size.Y);
                 lf.lfWeight = FontInfo[iCurrFont].Weight;
@@ -176,13 +201,11 @@ void RecreateFontHandles(const HWND hWnd)
     }
 }
 
-
 // Routine Description:
 // - Add the font described by the LOGFONT structure to the font table if
 //      it's not already there.
-int
-AddFont(
-    ENUMLOGFONT *pelf,
+int AddFont(
+    ENUMLOGFONT* pelf,
     NEWTEXTMETRIC* pntm,
     int nFontType,
     HDC hDC,
@@ -208,9 +231,10 @@ AddFont(
 CreateBoldFont:
     pelf->elfLogFont.lfQuality = DEFAULT_QUALITY;
     hFont = CreateFontIndirect(&pelf->elfLogFont);
-    if (!hFont) {
+    if (!hFont)
+    {
         DBGFONTS(("    REJECT  font (can't create)\n"));
-        return FE_SKIPFONT;  // same font in other sizes may still be suitable
+        return FE_SKIPFONT; // same font in other sizes may still be suitable
     }
 
     DBGFONTS2(("    hFont = %p\n", hFont));
@@ -223,19 +247,26 @@ CreateBoldFont:
     SizeActual.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
     DBGFONTS2(("    actual size %d,%d\n", SizeActual.X, SizeActual.Y));
     tmFamily = tm.tmPitchAndFamily;
-    if (TM_IS_TT_FONT(tmFamily) && (SizeWant.Y >= 0)) {
+    if (TM_IS_TT_FONT(tmFamily) && (SizeWant.Y >= 0))
+    {
         SizeToShow = SizeWant;
-        if (SizeWant.X == 0) {
+        if (SizeWant.X == 0)
+        {
             // Asking for zero width height gets a default aspect-ratio width.
             // It's better to show that width rather than 0.
             SizeToShow.X = SizeActual.X;
         }
-    } else {
+    }
+    else
+    {
         SizeToShow = SizeActual;
     }
 
     DBGFONTS2(("    SizeToShow = (%d,%d), SizeActual = (%d,%d)\n",
-            SizeToShow.X, SizeToShow.Y, SizeActual.X, SizeActual.Y));
+               SizeToShow.X,
+               SizeToShow.Y,
+               SizeActual.X,
+               SizeActual.Y));
 
     /*
      * NOW, determine whether this font entry has already been cached
@@ -246,31 +277,43 @@ CreateBoldFont:
      *  2) By height (as shown)
      *  3) By width (as shown)
      */
-    for (nFont = 0; nFont < NumberOfFonts; ++nFont) {
+    for (nFont = 0; nFont < NumberOfFonts; ++nFont)
+    {
         COORD SizeShown;
 
-        if (FontInfo[nFont].hFont == NULL) {
+        if (FontInfo[nFont].hFont == NULL)
+        {
             DBGFONTS(("!   Font %x has a NULL hFont\n", nFont));
             continue;
         }
 
-        if (FontInfo[nFont].SizeWant.X > 0) {
+        if (FontInfo[nFont].SizeWant.X > 0)
+        {
             SizeShown.X = FontInfo[nFont].SizeWant.X;
-        } else {
+        }
+        else
+        {
             SizeShown.X = FontInfo[nFont].Size.X;
         }
 
-        if (FontInfo[nFont].SizeWant.Y > 0) {
+        if (FontInfo[nFont].SizeWant.Y > 0)
+        {
             // This is a font specified by cell height.
             SizeShown.Y = FontInfo[nFont].SizeWant.Y;
-        } else {
+        }
+        else
+        {
             SizeShown.Y = FontInfo[nFont].Size.Y;
-            if (FontInfo[nFont].SizeWant.Y < 0) {
+            if (FontInfo[nFont].SizeWant.Y < 0)
+            {
                 // This is a TT font specified by character height.
-                if (SizeWant.Y < 0 && SizeWant.Y > FontInfo[nFont].SizeWant.Y) {
+                if (SizeWant.Y < 0 && SizeWant.Y > FontInfo[nFont].SizeWant.Y)
+                {
                     // Requested pixelheight is smaller than this one.
                     DBGFONTS(("INSERT %d pt at %x, before %d pt\n",
-                            -SizeWant.Y, nFont, -FontInfo[nFont].SizeWant.Y));
+                              -SizeWant.Y,
+                              nFont,
+                              -FontInfo[nFont].SizeWant.Y));
                     break;
                 }
             }
@@ -292,14 +335,13 @@ CreateBoldFont:
             return FE_FONTOK;
         }
 
-
         if ((SizeToShow.Y < SizeShown.Y) ||
-            (SizeToShow.Y == SizeShown.Y && SizeToShow.X < SizeShown.X)) {
+            (SizeToShow.Y == SizeShown.Y && SizeToShow.X < SizeShown.X))
+        {
             /*
              * This new font is smaller than nFont
              */
-            DBGFONTS(("INSERT at %x, SizeToShow = (%d,%d)\n", nFont,
-                    SizeToShow.X,SizeToShow.Y));
+            DBGFONTS(("INSERT at %x, SizeToShow = (%d,%d)\n", nFont, SizeToShow.X, SizeToShow.Y));
             break;
         }
     }
@@ -307,7 +349,8 @@ CreateBoldFont:
     /*
      * If we have to grow our font table, do it.
      */
-    if (NumberOfFonts == FontInfoLength) {
+    if (NumberOfFonts == FontInfoLength)
+    {
         PFONT_INFO Temp = NULL;
 
         FontInfoLength += FONT_INCREMENT;
@@ -319,9 +362,10 @@ CreateBoldFont:
                                            sizeof(FONT_INFO) * FontInfoLength);
         }
 
-        if (Temp == NULL) {
+        if (Temp == NULL)
+        {
             FontInfoLength -= FONT_INCREMENT;
-            return FE_ABANDONFONT;  // no point enumerating more - no memory!
+            return FE_ABANDONFONT; // no point enumerating more - no memory!
         }
         FontInfo = Temp;
     }
@@ -330,8 +374,9 @@ CreateBoldFont:
      * The font we are adding should be inserted into the list, if it is
      * smaller than the last one.
      */
-    if (nFont < NumberOfFonts) {
-        RtlMoveMemory(&FontInfo[nFont+1],
+    if (nFont < NumberOfFonts)
+    {
+        RtlMoveMemory(&FontInfo[nFont + 1],
                       &FontInfo[nFont],
                       sizeof(FONT_INFO) * (NumberOfFonts - nFont));
     }
@@ -340,12 +385,14 @@ CreateBoldFont:
      * If we're adding a truetype font for the V2 console, secretly swap out the current hFont with one that's scaled
      * appropriately for DPI
      */
-    if (nFontType == TRUETYPE_FONTTYPE && gpStateInfo->fIsV2Console) {
+    if (nFontType == TRUETYPE_FONTTYPE && gpStateInfo->fIsV2Console)
+    {
         DeleteObject(hFont);
         pelf->elfLogFont.lfWidth = GetDPIXScaledPixelSize(gpStateInfo->hWnd, SizeOriginal.X);
         pelf->elfLogFont.lfHeight = GetDPIYScaledPixelSize(gpStateInfo->hWnd, SizeOriginal.Y);
         hFont = CreateFontIndirect(&pelf->elfLogFont);
-        if (!hFont) {
+        if (!hFont)
+        {
             return FE_SKIPFONT;
         }
     }
@@ -356,9 +403,12 @@ CreateBoldFont:
     FontInfo[nFont].hFont = hFont;
     FontInfo[nFont].Family = tmFamily;
     FontInfo[nFont].Size = SizeActual;
-    if (TM_IS_TT_FONT(tmFamily)) {
+    if (TM_IS_TT_FONT(tmFamily))
+    {
         FontInfo[nFont].SizeWant = SizeWant;
-    } else {
+    }
+    else
+    {
         FontInfo[nFont].SizeWant.X = 0;
         FontInfo[nFont].SizeWant.Y = 0;
     }
@@ -373,34 +423,35 @@ CreateBoldFont:
     /*
      * If this is a true type font, create a bold version too.
      */
-    if (nFontType == TRUETYPE_FONTTYPE && !IS_BOLD(FontInfo[nFont].Weight)) {
-          pelf->elfLogFont.lfWeight = FW_BOLD;
-          pelf->elfLogFont.lfWidth = SizeOriginal.X;
-          pelf->elfLogFont.lfHeight = SizeOriginal.Y;
-          fCreatingBoldFont = TRUE;
-          goto CreateBoldFont;
+    if (nFontType == TRUETYPE_FONTTYPE && !IS_BOLD(FontInfo[nFont].Weight))
+    {
+        pelf->elfLogFont.lfWeight = FW_BOLD;
+        pelf->elfLogFont.lfWidth = SizeOriginal.X;
+        pelf->elfLogFont.lfHeight = SizeOriginal.Y;
+        fCreatingBoldFont = TRUE;
+        goto CreateBoldFont;
     }
 
-    return FE_FONTOK;  // and continue enumeration
+    return FE_FONTOK; // and continue enumeration
 }
 
-
 VOID
-InitializeFonts(
-    VOID)
+    InitializeFonts(
+        VOID)
 {
-    EnumerateFonts(EF_DEFFACE);  // Just the Default font
+    LOG_IF_FAILED(EnumerateFonts(EF_DEFFACE)); // Just the Default font
 }
 
-
 VOID
-DestroyFonts(
-    VOID)
+    DestroyFonts(
+        VOID)
 {
     ULONG FontIndex;
 
-    if (FontInfo != NULL) {
-        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
+    if (FontInfo != NULL)
+    {
+        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++)
+        {
             DeleteObject(FontInfo[FontIndex].hFont);
         }
         HeapFree(GetProcessHeap(), 0, FontInfo);
@@ -420,7 +471,7 @@ DestroyFonts(
  * Is called exactly once by GDI for each font in the system. This
  * routine is used to store the FONT_INFO structure.
  */
-int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam)
 {
     FAIL_FAST_IF(!(ShouldAllowAllMonoTTFonts()));
     UINT i;
@@ -429,11 +480,13 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nF
     PFONTENUMDATA pfed = (PFONTENUMDATA)lParam;
 
     DBGFONTS(("  FontEnum \"%ls\" (%d,%d) weight 0x%lx(%d) %x -- %s\n",
-            ptszFace,
-            pelf->elfLogFont.lfWidth, pelf->elfLogFont.lfHeight,
-            pelf->elfLogFont.lfWeight, pelf->elfLogFont.lfWeight,
-            pelf->elfLogFont.lfCharSet,
-            pfed->bFindFaces ? "Finding Faces" : "Creating Fonts"));
+              ptszFace,
+              pelf->elfLogFont.lfWidth,
+              pelf->elfLogFont.lfHeight,
+              pelf->elfLogFont.lfWeight,
+              pelf->elfLogFont.lfWeight,
+              pelf->elfLogFont.lfCharSet,
+              pfed->bFindFaces ? "Finding Faces" : "Creating Fonts"));
 
     // reject non-monospaced fonts
     if (!(pelf->elfLogFont.lfPitchAndFamily & FIXED_PITCH))
@@ -472,41 +525,50 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nF
     }
 
     // reject East Asian TT fonts that aren't East Asian charset.
-    if (g_fEastAsianSystem && (nFontType == TRUETYPE_FONTTYPE) && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+    if (g_fEastAsianSystem && (nFontType == TRUETYPE_FONTTYPE) && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+    {
         DBGFONTS(("    REJECT  face (East Asian charset, but not East Asian TT)\n"));
-        return FE_SKIPFONT;    // should be enumerate next charset.
+        return FE_SKIPFONT; // should be enumerate next charset.
     }
 
     // reject East Asian TT fonts on non-East Asian systems
     if (!g_fEastAsianSystem && (nFontType == TRUETYPE_FONTTYPE) && IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
     {
         DBGFONTS(("    REJECT  face (East Asian TT and not East Asian charset)\n"));
-        return FE_SKIPFONT;    // should be enumerate next charset.
+        return FE_SKIPFONT; // should be enumerate next charset.
     }
 
     /*
      * Add or find the facename
      */
     pFN = AddFaceNode(ptszFace);
-    if (pFN == NULL) {
+    if (pFN == NULL)
+    {
         return FE_ABANDONFONT;
     }
 
-    if (pfed->bFindFaces) {
+    if (pfed->bFindFaces)
+    {
         DWORD dwFontType;
 
-        if (nFontType == TRUETYPE_FONTTYPE) {
+        if (nFontType == TRUETYPE_FONTTYPE)
+        {
             DBGFONTS(("NEW TT FACE %ls\n", ptszFace));
             dwFontType = EF_TTFONT;
-        } else if (nFontType == RASTER_FONTTYPE) {
-            DBGFONTS(("NEW OEM FACE %ls\n",ptszFace));
+        }
+        else if (nFontType == RASTER_FONTTYPE)
+        {
+            DBGFONTS(("NEW OEM FACE %ls\n", ptszFace));
             dwFontType = EF_OEMFONT;
-        } else {
+        }
+        else
+        {
             dwFontType = 0;
         }
 
         pFN->dwFlag |= dwFontType | EF_NEW;
-        if (IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+        if (IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+        {
             pFN->dwFlag |= EF_DBCSFONT;
         }
         return FE_SKIPFONT;
@@ -516,24 +578,30 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nF
      * Add the font to the table. If this is a true type font, add the
      * sizes from the array. Otherwise, just add the size we got.
      */
-    if (nFontType & TRUETYPE_FONTTYPE) {
-        for (i = 0; i < pfed->nTTPoints; i++) {
+    if (nFontType & TRUETYPE_FONTTYPE)
+    {
+        for (i = 0; i < pfed->nTTPoints; i++)
+        {
             pelf->elfLogFont.lfHeight = pfed->pTTPoints[i];
-            pelf->elfLogFont.lfWidth  = 0;
+            pelf->elfLogFont.lfWidth = 0;
             pelf->elfLogFont.lfWeight = pntm->tmWeight;
             pfed->ulFE |= AddFont(pelf, pntm, nFontType, pfed->hDC, pFN);
-            if (pfed->ulFE == FE_ABANDONFONT) {
+            if (pfed->ulFE == FE_ABANDONFONT)
+            {
                 return FE_ABANDONFONT;
             }
         }
-    } else {
+    }
+    else
+    {
         pfed->ulFE |= AddFont(pelf, pntm, nFontType, pfed->hDC, pFN);
-        if (pfed->ulFE == FE_ABANDONFONT) {
+        if (pfed->ulFE == FE_ABANDONFONT)
+        {
             return FE_ABANDONFONT;
         }
     }
 
-    return FE_FONTOK;  // and continue enumeration
+    return FE_FONTOK; // and continue enumeration
 }
 
 /*
@@ -546,12 +614,12 @@ int CALLBACK FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nF
  * routine is used to store the FONT_INFO structure.
  */
 int
-CALLBACK
-FontEnum(
-    ENUMLOGFONT *pelf,
-    NEWTEXTMETRIC *pntm,
-    int nFontType,
-    LPARAM lParam)
+    CALLBACK
+    FontEnum(
+        ENUMLOGFONT* pelf,
+        NEWTEXTMETRIC* pntm,
+        int nFontType,
+        LPARAM lParam)
 {
     UINT i;
     LPCTSTR ptszFace = pelf->elfLogFont.lfFaceName;
@@ -559,24 +627,25 @@ FontEnum(
     PFONTENUMDATA pfed = (PFONTENUMDATA)lParam;
 
     DBGFONTS(("  FontEnum \"%ls\" (%d,%d) weight 0x%lx(%d) %x -- %s\n",
-            ptszFace,
-            pelf->elfLogFont.lfWidth, pelf->elfLogFont.lfHeight,
-            pelf->elfLogFont.lfWeight, pelf->elfLogFont.lfWeight,
-            pelf->elfLogFont.lfCharSet,
-            pfed->bFindFaces ? "Finding Faces" : "Creating Fonts"));
+              ptszFace,
+              pelf->elfLogFont.lfWidth,
+              pelf->elfLogFont.lfHeight,
+              pelf->elfLogFont.lfWeight,
+              pelf->elfLogFont.lfWeight,
+              pelf->elfLogFont.lfCharSet,
+              pfed->bFindFaces ? "Finding Faces" : "Creating Fonts"));
 
     //
     // reject variable width and italic fonts, also tt fonts with neg ac
     //
 
-    if
-    (
-      !(pelf->elfLogFont.lfPitchAndFamily & FIXED_PITCH) ||
-      (pelf->elfLogFont.lfItalic)                        ||
-      !(pntm->ntmFlags & NTM_NONNEGATIVE_AC)
-    )
+    if (
+        !(pelf->elfLogFont.lfPitchAndFamily & FIXED_PITCH) ||
+        (pelf->elfLogFont.lfItalic) ||
+        !(pntm->ntmFlags & NTM_NONNEGATIVE_AC))
     {
-        if (! IsAvailableTTFont(ptszFace)) {
+        if (!IsAvailableTTFont(ptszFace))
+        {
             DBGFONTS(("    REJECT  face (dbcs, variable pitch, italic, or neg a&c)\n"));
             return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
         }
@@ -591,7 +660,8 @@ FontEnum(
      */
 
     if ((nFontType == TRUETYPE_FONTTYPE) &&
-            ((pelf->elfLogFont.lfPitchAndFamily & 0xf0) != FF_MODERN)) {
+        ((pelf->elfLogFont.lfPitchAndFamily & 0xf0) != FF_MODERN))
+    {
         DBGFONTS(("    REJECT  face (TT but not FF_MODERN)\n"));
         return pfed->bFindFaces ? FE_SKIPFONT : FE_ABANDONFONT;
     }
@@ -600,8 +670,9 @@ FontEnum(
      * reject non-TT fonts that aren't OEM
      */
     if ((nFontType != TRUETYPE_FONTTYPE) &&
-            (!g_fEastAsianSystem || !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) &&
-            (pelf->elfLogFont.lfCharSet != OEM_CHARSET)) {
+        (!g_fEastAsianSystem || !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) &&
+        (pelf->elfLogFont.lfCharSet != OEM_CHARSET))
+    {
         DBGFONTS(("    REJECT  face (not TT nor OEM)\n"));
         return FE_SKIPFONT;
     }
@@ -631,42 +702,50 @@ FontEnum(
      */
     if (IsAvailableTTFont(ptszFace) &&
         !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet) &&
-        !IsAvailableTTFontCP(ptszFace,0)
-       ) {
+        !IsAvailableTTFontCP(ptszFace, 0))
+    {
         DBGFONTS(("    REJECT  face (East Asian TT and not East Asian charset)\n"));
-        return FE_SKIPFONT;    // should be enumerate next charset.
+        return FE_SKIPFONT; // should be enumerate next charset.
     }
 
     /*
      * Add or find the facename
      */
     pFN = AddFaceNode(ptszFace);
-    if (pFN == NULL) {
+    if (pFN == NULL)
+    {
         return FE_ABANDONFONT;
     }
 
-    if (pfed->bFindFaces) {
+    if (pfed->bFindFaces)
+    {
         DWORD dwFontType;
 
-        if (nFontType == TRUETYPE_FONTTYPE) {
+        if (nFontType == TRUETYPE_FONTTYPE)
+        {
             DBGFONTS(("NEW TT FACE %ls\n", ptszFace));
             dwFontType = EF_TTFONT;
-        } else if (nFontType == RASTER_FONTTYPE) {
-            DBGFONTS(("NEW OEM FACE %ls\n",ptszFace));
+        }
+        else if (nFontType == RASTER_FONTTYPE)
+        {
+            DBGFONTS(("NEW OEM FACE %ls\n", ptszFace));
             dwFontType = EF_OEMFONT;
-        } else {
+        }
+        else
+        {
             dwFontType = 0;
         }
 
         pFN->dwFlag |= dwFontType | EF_NEW;
-        if (IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+        if (IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+        {
             pFN->dwFlag |= EF_DBCSFONT;
         }
         return FE_SKIPFONT;
     }
 
-
-    if (IS_BOLD(pelf->elfLogFont.lfWeight)) {
+    if (IS_BOLD(pelf->elfLogFont.lfWeight))
+    {
         DBGFONTS2(("    A bold font (weight %d)\n", pelf->elfLogFont.lfWeight));
         // return FE_SKIPFONT;
     }
@@ -675,28 +754,33 @@ FontEnum(
      * Add the font to the table. If this is a true type font, add the
      * sizes from the array. Otherwise, just add the size we got.
      */
-    if (nFontType & TRUETYPE_FONTTYPE) {
-        for (i = 0; i < pfed->nTTPoints; i++) {
+    if (nFontType & TRUETYPE_FONTTYPE)
+    {
+        for (i = 0; i < pfed->nTTPoints; i++)
+        {
             pelf->elfLogFont.lfHeight = pfed->pTTPoints[i];
-            pelf->elfLogFont.lfWidth  = 0;
+            pelf->elfLogFont.lfWidth = 0;
             pelf->elfLogFont.lfWeight = 400;
             pfed->ulFE |= AddFont(pelf, pntm, nFontType, pfed->hDC, pFN);
-            if (pfed->ulFE == FE_ABANDONFONT) {
+            if (pfed->ulFE == FE_ABANDONFONT)
+            {
                 return FE_ABANDONFONT;
             }
         }
-    } else {
+    }
+    else
+    {
         pfed->ulFE |= AddFont(pelf, pntm, nFontType, pfed->hDC, pFN);
-        if (pfed->ulFE == FE_ABANDONFONT) {
+        if (pfed->ulFE == FE_ABANDONFONT)
+        {
             return FE_ABANDONFONT;
         }
     }
 
-    return FE_FONTOK;  // and continue enumeration
+    return FE_FONTOK; // and continue enumeration
 }
 
-BOOL
-DoFontEnum(
+BOOL DoFontEnum(
     __in_opt HDC hDC,
     __in_ecount_opt(LF_FACESIZE) LPTSTR ptszFace,
     __in_ecount_opt(nTTPoints) PSHORT pTTPoints,
@@ -707,7 +791,8 @@ DoFontEnum(
     LOGFONT LogFont;
 
     DBGFONTS(("DoFontEnum \"%ls\"\n", ptszFace));
-    if (hDC == NULL) {
+    if (hDC == NULL)
+    {
         hDC = CreateCompatibleDC(NULL);
         bDeleteDC = TRUE;
     }
@@ -719,13 +804,15 @@ DoFontEnum(
     fed.nTTPoints = nTTPoints;
     RtlZeroMemory(&LogFont, sizeof(LOGFONT));
     LogFont.lfCharSet = DEFAULT_CHARSET;
-    if (ptszFace != nullptr) {
+    if (ptszFace != nullptr)
+    {
         StringCchCopy(LogFont.lfFaceName, LF_FACESIZE, ptszFace);
 
         if (NumberOfFonts == 0 && // We've yet to enumerate fonts
             g_fEastAsianSystem && // And we're currently using a CJK codepage
             !IS_ANY_DBCS_CHARSET(CodePageToCharSet(OEMCP)) && // But the system codepage *isn't* CJK
-            0 == lstrcmp(ptszFace, TERMINAL_FACENAME)) {      // and we're looking at the raster font
+            0 == lstrcmp(ptszFace, TERMINAL_FACENAME))
+        { // and we're looking at the raster font
 
             // In this specific scenario, the raster font will only be enumerated if we ask for OEM_CHARSET rather than
             // a CJK charset
@@ -738,16 +825,15 @@ DoFontEnum(
      * character set.
      */
     EnumFontFamiliesEx(hDC, &LogFont, (FONTENUMPROC)((ShouldAllowAllMonoTTFonts()) ? FontEnumForV2Console : FontEnum), (LPARAM)&fed, 0);
-    if (bDeleteDC) {
+    if (bDeleteDC)
+    {
         DeleteDC(hDC);
     }
 
     return (fed.ulFE & FE_FONTOK) != 0;
 }
 
-
-VOID
-RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
+VOID RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
 {
     DWORD i;
     int nToRemove = 0;
@@ -762,7 +848,8 @@ RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
         {
             BOOL bDeleted = DeleteObject(FontInfo[i].hFont);
             DBGFONTS(("RemoveFace: hFont %p was %sdeleted\n",
-                    FontInfo[i].hFont, bDeleted ? "" : "NOT "));
+                      FontInfo[i].hFont,
+                      bDeleted ? "" : "NOT "));
             bDeleted; // to fix x86 build complaining
             FontInfo[i].hFont = NULL;
             nToRemove++;
@@ -773,8 +860,8 @@ RemoveFace(__in_ecount(LF_FACESIZE) LPCTSTR ptszFace)
              * Shuffle from FontInfo[i] down nToRemove slots.
              */
             RtlMoveMemory(&FontInfo[i - nToRemove],
-                    &FontInfo[i],
-                    sizeof(FONT_INFO)*(NumberOfFonts - i));
+                          &FontInfo[i],
+                          sizeof(FONT_INFO) * (NumberOfFonts - i));
             NumberOfFonts -= nToRemove;
             i -= nToRemove;
             nToRemove = 0;
@@ -838,7 +925,7 @@ void CreateSizeForAllTTFonts(__in const SHORT sSize)
     }
 }
 
-NTSTATUS
+[[nodiscard]] NTSTATUS
 EnumerateFonts(
     DWORD Flags)
 {
@@ -852,14 +939,16 @@ EnumerateFonts(
 
     dwFontType = (EF_TTFONT | EF_OEMFONT | EF_DEFFACE) & Flags;
 
-    if (FontInfo == NULL) {
+    if (FontInfo == NULL)
+    {
         //
         // allocate memory for the font array
         //
         NumberOfFonts = 0;
 
         FontInfo = (PFONT_INFO)HeapAlloc(GetProcessHeap(), 0, sizeof(FONT_INFO) * INITIAL_FONTS);
-        if (FontInfo == NULL) {
+        if (FontInfo == NULL)
+        {
             return STATUS_NO_MEMORY;
         }
 
@@ -868,36 +957,39 @@ EnumerateFonts(
 
     hDC = CreateCompatibleDC(NULL);
 
-    if (Flags & EF_DEFFACE) {
+    if (Flags & EF_DEFFACE)
+    {
         SelectObject(hDC, GetStockObject(OEM_FIXED_FONT));
         GetTextMetrics(hDC, &tm);
         GetTextFace(hDC, LF_FACESIZE, DefaultFaceName);
 
         DefaultFontSize.X = (SHORT)(tm.tmMaxCharWidth);
-        DefaultFontSize.Y = (SHORT)(tm.tmHeight+tm.tmExternalLeading);
+        DefaultFontSize.Y = (SHORT)(tm.tmHeight + tm.tmExternalLeading);
         DefaultFontFamily = tm.tmPitchAndFamily;
 
-        if (IS_ANY_DBCS_CHARSET(tm.tmCharSet)) {
+        if (IS_ANY_DBCS_CHARSET(tm.tmCharSet))
+        {
             DefaultFontSize.X /= 2;
         }
 
-        DBGFONTS(("Default (OEM) Font %ls (%d,%d) CharSet 0x%02X\n", DefaultFaceName,
-                 DefaultFontSize.X, DefaultFontSize.Y,
-                 tm.tmCharSet));
+        DBGFONTS(("Default (OEM) Font %ls (%d,%d) CharSet 0x%02X\n", DefaultFaceName, DefaultFontSize.X, DefaultFontSize.Y, tm.tmCharSet));
 
         // Make sure we are going to enumerate the OEM face.
         pFN = AddFaceNode(DefaultFaceName);
-        if (pFN != NULL) {
+        if (pFN != NULL)
+        {
             pFN->dwFlag |= EF_DEFFACE | EF_OEMFONT;
         }
     }
 
-    if (gbEnumerateFaces) {
+    if (gbEnumerateFaces)
+    {
         /*
          * Set the EF_OLD bit and clear the EF_NEW bit
          * for all previously available faces
          */
-        for (pFN = gpFaceNames; pFN; pFN = pFN->pNext) {
+        for (pFN = gpFaceNames; pFN; pFN = pFN->pNext)
+        {
             pFN->dwFlag |= EF_OLD;
             pFN->dwFlag &= ~EF_NEW;
         }
@@ -914,36 +1006,37 @@ EnumerateFonts(
     // Use DoFontEnum to get all fonts from the system.  Our FontEnum
     // proc puts just the ones we want into an array
     //
-    for (pFN = gpFaceNames; pFN; pFN = pFN->pNext) {
-        DBGFONTS(("\"%ls\" is %s%s%s%s%s%s\n", pFN->atch,
-            pFN->dwFlag & EF_NEW        ? "NEW "        : " ",
-            pFN->dwFlag & EF_OLD        ? "OLD "        : " ",
-            pFN->dwFlag & EF_ENUMERATED ? "ENUMERATED " : " ",
-            pFN->dwFlag & EF_OEMFONT    ? "OEMFONT "    : " ",
-            pFN->dwFlag & EF_TTFONT     ? "TTFONT "     : " ",
-            pFN->dwFlag & EF_DEFFACE    ? "DEFFACE "    : " "));
+    for (pFN = gpFaceNames; pFN; pFN = pFN->pNext)
+    {
+        DBGFONTS(("\"%ls\" is %s%s%s%s%s%s\n", pFN->atch, pFN->dwFlag & EF_NEW ? "NEW " : " ", pFN->dwFlag & EF_OLD ? "OLD " : " ", pFN->dwFlag & EF_ENUMERATED ? "ENUMERATED " : " ", pFN->dwFlag & EF_OEMFONT ? "OEMFONT " : " ", pFN->dwFlag & EF_TTFONT ? "TTFONT " : " ", pFN->dwFlag & EF_DEFFACE ? "DEFFACE " : " "));
 
-        if ((pFN->dwFlag & (EF_OLD|EF_NEW)) == EF_OLD) {
+        if ((pFN->dwFlag & (EF_OLD | EF_NEW)) == EF_OLD)
+        {
             // The face is no longer available
             RemoveFace(pFN->atch);
             pFN->dwFlag &= ~EF_ENUMERATED;
             continue;
         }
-        if ((pFN->dwFlag & dwFontType) == 0) {
+        if ((pFN->dwFlag & dwFontType) == 0)
+        {
             // not the kind of face we want
             continue;
         }
-        if (pFN->dwFlag & EF_ENUMERATED) {
+        if (pFN->dwFlag & EF_ENUMERATED)
+        {
             // we already enumerated this face
             continue;
         }
 
-        if (pFN->dwFlag & EF_TTFONT) {
-            if (g_fEastAsianSystem && !IsAvailableTTFontCP(pFN->atch,0))
+        if (pFN->dwFlag & EF_TTFONT)
+        {
+            if (g_fEastAsianSystem && !IsAvailableTTFontCP(pFN->atch, 0))
                 DoFontEnum(hDC, pFN->atch, TTPointsDbcs, ARRAYSIZE(TTPointsDbcs));
             else
                 DoFontEnum(hDC, pFN->atch, TTPoints, ARRAYSIZE(TTPoints));
-        } else {
+        }
+        else
+        {
             DoFontEnum(hDC, pFN->atch, NULL, 0);
         }
         pFN->dwFlag |= EF_ENUMERATED;
@@ -958,28 +1051,38 @@ EnumerateFonts(
 
     DeleteDC(hDC);
 
-    if (g_fEastAsianSystem) {
-        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
+    if (g_fEastAsianSystem)
+    {
+        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++)
+        {
             if (FontInfo[FontIndex].Size.X == DefaultFontSize.X &&
                 FontInfo[FontIndex].Size.Y == DefaultFontSize.Y &&
                 IS_DBCS_OR_OEM_CHARSET(FontInfo[FontIndex].tmCharSet) &&
-                FontInfo[FontIndex].Family == DefaultFontFamily) {
+                FontInfo[FontIndex].Family == DefaultFontFamily)
+            {
                 break;
             }
         }
-    } else {
-        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++) {
+    }
+    else
+    {
+        for (FontIndex = 0; FontIndex < NumberOfFonts; FontIndex++)
+        {
             if (FontInfo[FontIndex].Size.X == DefaultFontSize.X &&
                 FontInfo[FontIndex].Size.Y == DefaultFontSize.Y &&
-                FontInfo[FontIndex].Family == DefaultFontFamily) {
+                FontInfo[FontIndex].Family == DefaultFontFamily)
+            {
                 break;
             }
         }
     }
 
-    if (FontIndex < NumberOfFonts) {
+    if (FontIndex < NumberOfFonts)
+    {
         DefaultFontIndex = FontIndex;
-    } else {
+    }
+    else
+    {
         DefaultFontIndex = 0;
     }
 

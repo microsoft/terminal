@@ -21,7 +21,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Creates an object representing an interactive popup overlay during cooked mode command line editing.
 // - NOTE: Modifies global popup count (and adjusts cursor visibility as appropriate.)
@@ -253,8 +253,8 @@ COORD Popup::_CalculateSize(const SCREEN_INFORMATION& screenInfo, const COORD pr
 {
     // determine popup dimensions
     COORD size = proposedSize;
-    size.X += 2;    // add borders
-    size.Y += 2;    // add borders
+    size.X += 2; // add borders
+    size.Y += 2; // add borders
 
     const COORD viewportSize = screenInfo.GetViewport().Dimensions();
 
@@ -333,7 +333,7 @@ void Popup::SetUserInputFunction(UserInputFunction function) noexcept
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, DWORD& modifiers, wchar_t& wch) noexcept
 {
     return _userInputFunction(cookedReadData, popupKey, modifiers, wch);
 }
@@ -346,10 +346,10 @@ NTSTATUS Popup::_getUserInput(COOKED_READ_DATA& cookedReadData, bool& popupKey, 
 // - wch - on completion, the char read from the user
 // Return Value:
 // - relevant NTSTATUS
-NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
-                                      bool& popupKey,
-                                      DWORD& modifiers,
-                                      wchar_t& wch) noexcept
+[[nodiscard]] NTSTATUS Popup::_getUserInputInternal(COOKED_READ_DATA& cookedReadData,
+                                                    bool& popupKey,
+                                                    DWORD& modifiers,
+                                                    wchar_t& wch) noexcept
 {
     InputBuffer* const pInputBuffer = cookedReadData.GetInputBuffer();
     NTSTATUS Status = GetChar(pInputBuffer,

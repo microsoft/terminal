@@ -29,8 +29,6 @@
     "Microsoft.VisualStudio.Component.VC.v141.ARM64",
     "Microsoft.VisualStudio.ComponentGroup.UWP.VC",
     "Microsoft.VisualStudio.ComponentGroup.UWP.VC.v141",
-    "Microsoft.VisualStudio.Component.UWP.VC.ARM64",
-    "Microsoft.VisualStudio.Component.VC.v141.ATL",
-    "Microsoft.VisualStudio.Component.VC.v141.ATL.ARM64"
+    "Microsoft.VisualStudio.Component.UWP.VC.ARM64"
   ]
 }

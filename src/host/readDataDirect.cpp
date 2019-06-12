@@ -29,7 +29,7 @@ DirectReadData::DirectReadData(_In_ InputBuffer* const pInputBuffer,
     ReadData(pInputBuffer, pInputReadHandleData),
     _eventReadCount{ eventReadCount },
     _partialEvents{ std::move(partialEvents) },
-    _outEvents{ }
+    _outEvents{}
 {
 }
 
@@ -75,7 +75,7 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
 
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     FAIL_FAST_IF(!gci.IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;

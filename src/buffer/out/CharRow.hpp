@@ -54,8 +54,7 @@ public:
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
     void Reset();
-    [[nodiscard]]
-    HRESULT Resize(const size_t newSize) noexcept;
+    [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const;
     size_t MeasureRight() const noexcept;
     void ClearCell(const size_t column);
@@ -116,8 +115,7 @@ void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttr
                    endChars,
                    startAttrs,
                    outIt,
-                   [](const wchar_t wch, const DbcsAttribute attr)
-    {
-        return CharRow::value_type{ wch, attr };
-    });
+                   [](const wchar_t wch, const DbcsAttribute attr) {
+                       return CharRow::value_type{ wch, attr };
+                   });
 }

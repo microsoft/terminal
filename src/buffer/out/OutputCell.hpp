@@ -25,7 +25,7 @@ Author:
 
 class InvalidCharInfoConversionException : public std::exception
 {
-    const char* what() noexcept
+    const char* what() const noexcept
     {
         return "Cannot convert to CHAR_INFO without explicit TextAttribute";
     }
@@ -78,9 +78,9 @@ public:
     }
 
 private:
-    // basic_string contains a small storage internally so we don't need 
+    // basic_string contains a small storage internally so we don't need
     // to worry about heap allocation for short strings.
-    std::wstring _text; 
+    std::wstring _text;
     DbcsAttribute _dbcsAttribute;
     TextAttribute _textAttribute;
     TextAttributeBehavior _behavior;

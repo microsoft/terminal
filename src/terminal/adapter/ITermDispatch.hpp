@@ -46,9 +46,9 @@ public:
     virtual bool InsertLine(const unsigned int uiDistance) = 0; // IL
     virtual bool DeleteLine(const unsigned int uiDistance) = 0; // DL
     virtual bool SetColumns(const unsigned int uiColumns) = 0; // DECSCPP, DECCOLM
-    virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0;  // DECCKM
-    virtual bool SetKeypadMode(const bool fApplicationMode) = 0;  // DECKPAM, DECKPNM
-    virtual bool EnableCursorBlinking(const bool fEnable) = 0;  // ATT610
+    virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0; // DECCKM
+    virtual bool SetKeypadMode(const bool fApplicationMode) = 0; // DECKPAM, DECKPNM
+    virtual bool EnableCursorBlinking(const bool fEnable) = 0; // ATT610
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
@@ -65,9 +65,11 @@ public:
     virtual bool EnableAnyEventMouseMode(const bool fEnabled) = 0; // ?1003
     virtual bool EnableAlternateScroll(const bool fEnabled) = 0; // ?1007
     virtual bool SetColorTableEntry(const size_t tableIndex, const DWORD dwColor) = 0; // OSCColorTable
+    virtual bool SetDefaultForeground(const DWORD dwColor) = 0; // OSCDefaultForeground
+    virtual bool SetDefaultBackground(const DWORD dwColor) = 0; // OSCDefaultBackground
 
-    virtual bool EraseInDisplay(const DispatchTypes::EraseType  eraseType) = 0; // ED
-    virtual bool EraseInLine(const DispatchTypes::EraseType  eraseType) = 0; // EL
+    virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType) = 0; // ED
+    virtual bool EraseInLine(const DispatchTypes::EraseType eraseType) = 0; // EL
     virtual bool EraseCharacters(const unsigned int uiNumChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
@@ -94,7 +96,5 @@ public:
     virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                     _In_reads_(cParams) const unsigned short* const rgusParams,
                                     const size_t cParams) = 0;
-
 };
-inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() { }
-
+inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}

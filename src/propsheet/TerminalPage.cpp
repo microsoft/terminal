@@ -82,8 +82,7 @@ void _UpdateTextAndScroll(const HWND hDlg,
                           const WORD scrollItem) noexcept
 {
     UpdateItem(hDlg, textItem, value);
-    SendDlgItemMessage(hDlg, scrollItem, UDM_SETPOS, 0,
-                       MAKELONG(value, 0));
+    SendDlgItemMessage(hDlg, scrollItem, UDM_SETPOS, 0, MAKELONG(value, 0));
 }
 
 bool InitTerminalDialog(const HWND hDlg) noexcept
@@ -91,7 +90,7 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     // Initialize the global handle to this dialog
     g_hTerminalDlg = hDlg;
     // Group radios
-    CheckRadioButton(hDlg,IDD_TERMINAL_INVERSE_CURSOR,IDD_TERMINAL_CURSOR_USECOLOR, IDD_TERMINAL_INVERSE_CURSOR);
+    CheckRadioButton(hDlg, IDD_TERMINAL_INVERSE_CURSOR, IDD_TERMINAL_CURSOR_USECOLOR, IDD_TERMINAL_INVERSE_CURSOR);
 
     // initialize size of edit controls
     SendDlgItemMessage(hDlg, IDD_TERMINAL_FG_RED, EM_LIMITTEXT, 3, 0);
@@ -137,7 +136,9 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     }
     CheckDlgButton(hDlg, IDD_USE_TERMINAL_FG, initialTerminalFG);
     CheckDlgButton(hDlg, IDD_USE_TERMINAL_BG, initialTerminalBG);
-    CheckRadioButton(hDlg, IDD_TERMINAL_INVERSE_CURSOR, IDD_TERMINAL_CURSOR_USECOLOR,
+    CheckRadioButton(hDlg,
+                     IDD_TERMINAL_INVERSE_CURSOR,
+                     IDD_TERMINAL_CURSOR_USECOLOR,
                      initialCursorLegacy ? IDD_TERMINAL_INVERSE_CURSOR : IDD_TERMINAL_CURSOR_USECOLOR);
 
     // Set the initial values in the edit boxes and scroll controls
@@ -172,9 +173,9 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
     InvalidateRect(GetDlgItem(hDlg, IDD_TERMINAL_CURSOR_COLOR), NULL, FALSE);
 
     CheckRadioButton(hDlg,
-                     IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
-                     IDD_TERMINAL_LEGACY_CURSOR+gpStateInfo->CursorType);
-
+                     IDD_TERMINAL_LEGACY_CURSOR,
+                     IDD_TERMINAL_SOLIDBOX,
+                     IDD_TERMINAL_LEGACY_CURSOR + gpStateInfo->CursorType);
 
     CheckDlgButton(hDlg, IDD_DISABLE_SCROLLFORWARD, gpStateInfo->TerminalScrolling);
 
@@ -215,7 +216,7 @@ void _ChangeColorControl(const HWND hDlg,
             b = newValue;
         }
 
-        setting = RGB(r,g,b);
+        setting = RGB(r, g, b);
     }
 
     InvalidateRect(GetDlgItem(hDlg, colorControl), NULL, FALSE);
@@ -264,13 +265,14 @@ bool _CommandColorInput(const HWND hDlg,
 {
     bool handled = false;
 
-    switch (command) {
-        case EN_UPDATE:
-        case EN_CHANGE:
-            changeFunction(hDlg, item);
-            handled = true;
-            UpdateApplyButton(hDlg);
-            break;
+    switch (command)
+    {
+    case EN_UPDATE:
+    case EN_CHANGE:
+        changeFunction(hDlg, item);
+        handled = true;
+        UpdateApplyButton(hDlg);
+        break;
     }
     return handled;
 }
@@ -278,56 +280,57 @@ bool _CommandColorInput(const HWND hDlg,
 bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) noexcept
 {
     bool handled = false;
-    switch (item) {
-        case IDD_TERMINAL_CURSOR_USECOLOR:
-        case IDD_TERMINAL_INVERSE_CURSOR:
-            _UseCursorColor(hDlg, IsDlgButtonChecked(hDlg, IDD_TERMINAL_CURSOR_USECOLOR));
-            handled = true;
-            UpdateApplyButton(hDlg);
-            break;
-        case IDD_USE_TERMINAL_FG:
-            _UseForeground(hDlg, IsDlgButtonChecked(hDlg, IDD_USE_TERMINAL_FG));
-            handled = true;
-            UpdateApplyButton(hDlg);
-            break;
-        case IDD_USE_TERMINAL_BG:
-            _UseBackground(hDlg, IsDlgButtonChecked(hDlg, IDD_USE_TERMINAL_BG));
-            handled = true;
-            UpdateApplyButton(hDlg);
-            break;
+    switch (item)
+    {
+    case IDD_TERMINAL_CURSOR_USECOLOR:
+    case IDD_TERMINAL_INVERSE_CURSOR:
+        _UseCursorColor(hDlg, IsDlgButtonChecked(hDlg, IDD_TERMINAL_CURSOR_USECOLOR));
+        handled = true;
+        UpdateApplyButton(hDlg);
+        break;
+    case IDD_USE_TERMINAL_FG:
+        _UseForeground(hDlg, IsDlgButtonChecked(hDlg, IDD_USE_TERMINAL_FG));
+        handled = true;
+        UpdateApplyButton(hDlg);
+        break;
+    case IDD_USE_TERMINAL_BG:
+        _UseBackground(hDlg, IsDlgButtonChecked(hDlg, IDD_USE_TERMINAL_BG));
+        handled = true;
+        UpdateApplyButton(hDlg);
+        break;
 
-        case IDD_TERMINAL_FG_RED:
-        case IDD_TERMINAL_FG_GREEN:
-        case IDD_TERMINAL_FG_BLUE:
-            handled = _CommandColorInput(hDlg, item, command, _ChangeForegroundRGB);
-            break;
+    case IDD_TERMINAL_FG_RED:
+    case IDD_TERMINAL_FG_GREEN:
+    case IDD_TERMINAL_FG_BLUE:
+        handled = _CommandColorInput(hDlg, item, command, _ChangeForegroundRGB);
+        break;
 
-        case IDD_TERMINAL_BG_RED:
-        case IDD_TERMINAL_BG_GREEN:
-        case IDD_TERMINAL_BG_BLUE:
-            handled = _CommandColorInput(hDlg, item, command, _ChangeBackgroundRGB);
-            break;
+    case IDD_TERMINAL_BG_RED:
+    case IDD_TERMINAL_BG_GREEN:
+    case IDD_TERMINAL_BG_BLUE:
+        handled = _CommandColorInput(hDlg, item, command, _ChangeBackgroundRGB);
+        break;
 
-        case IDD_TERMINAL_CURSOR_RED:
-        case IDD_TERMINAL_CURSOR_GREEN:
-        case IDD_TERMINAL_CURSOR_BLUE:
-            handled = _CommandColorInput(hDlg, item, command, _ChangeCursorRGB);
-            break;
+    case IDD_TERMINAL_CURSOR_RED:
+    case IDD_TERMINAL_CURSOR_GREEN:
+    case IDD_TERMINAL_CURSOR_BLUE:
+        handled = _CommandColorInput(hDlg, item, command, _ChangeCursorRGB);
+        break;
 
-        case IDD_TERMINAL_LEGACY_CURSOR:
-        case IDD_TERMINAL_VERTBAR:
-        case IDD_TERMINAL_UNDERSCORE:
-        case IDD_TERMINAL_EMPTYBOX:
-        case IDD_TERMINAL_SOLIDBOX:
-            gpStateInfo->CursorType = item - IDD_TERMINAL_LEGACY_CURSOR;
-            UpdateApplyButton(hDlg);
-            handled = true;
-            break;
-        case IDD_DISABLE_SCROLLFORWARD:
-            gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
-            UpdateApplyButton(hDlg);
-            handled = true;
-            break;
+    case IDD_TERMINAL_LEGACY_CURSOR:
+    case IDD_TERMINAL_VERTBAR:
+    case IDD_TERMINAL_UNDERSCORE:
+    case IDD_TERMINAL_EMPTYBOX:
+    case IDD_TERMINAL_SOLIDBOX:
+        gpStateInfo->CursorType = item - IDD_TERMINAL_LEGACY_CURSOR;
+        UpdateApplyButton(hDlg);
+        handled = true;
+        break;
+    case IDD_DISABLE_SCROLLFORWARD:
+        gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
+        UpdateApplyButton(hDlg);
+        handled = true;
+        break;
     }
 
     return handled;
@@ -337,87 +340,91 @@ INT_PTR WINAPI TerminalDlgProc(const HWND hDlg, const UINT wMsg, const WPARAM wP
 {
     static bool fHaveInitialized = false;
 
-    switch (wMsg) {
-        case WM_INITDIALOG:
-            fHaveInitialized = true;
-            return InitTerminalDialog(hDlg);
-        case WM_COMMAND:
-            if (!fHaveInitialized)
-            {
-                return false;
-            }
-            return TerminalDlgCommand(hDlg, LOWORD(wParam), HIWORD(wParam));
-        case WM_NOTIFY:
+    switch (wMsg)
+    {
+    case WM_INITDIALOG:
+        fHaveInitialized = true;
+        return InitTerminalDialog(hDlg);
+    case WM_COMMAND:
+        if (!fHaveInitialized)
         {
-            if (lParam && (wParam == IDD_HELP_TERMINAL))
+            return false;
+        }
+        return TerminalDlgCommand(hDlg, LOWORD(wParam), HIWORD(wParam));
+    case WM_NOTIFY:
+    {
+        if (lParam && (wParam == IDD_HELP_TERMINAL))
+        {
+            // handle hyperlink click or keyboard activation
+            switch (((LPNMHDR)lParam)->code)
             {
-                // handle hyperlink click or keyboard activation
-                switch(((LPNMHDR)lParam)->code)
+            case NM_CLICK:
+            case NM_RETURN:
+            {
+                PNMLINK pnmLink = (PNMLINK)lParam;
+                if (0 == pnmLink->item.iLink)
                 {
-                    case NM_CLICK:
-                    case NM_RETURN:
-                    {
-                        PNMLINK pnmLink = (PNMLINK)lParam;
-                        if (0 == pnmLink->item.iLink)
-                        {
-                            ShellExecute(NULL,
-                                         L"open",
-                                         pnmLink->item.szUrl,
-                                         NULL,
-                                         NULL,
-                                         SW_SHOW);
-                        }
-
-                        break;
-                    }
+                    ShellExecute(NULL,
+                                 L"open",
+                                 pnmLink->item.szUrl,
+                                 NULL,
+                                 NULL,
+                                 SW_SHOW);
                 }
+
+                break;
             }
-            else
-            {
-                const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-                switch (pshn->hdr.code) {
-                    case PSN_APPLY:
-                        EndDlgPage(hDlg, !pshn->lParam);
-                        return TRUE;
-                    case PSN_KILLACTIVE:
-                    {
-                        // Fake the dialog proc into thinking the edit control just
-                        // lost focus so it'll update properly
-                        int item = GetDlgCtrlID(GetFocus());
-                        if (item)
-                        {
-                            SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
-                        }
-                        return TRUE;
-                    }
-                }
-
             }
         }
-        case WM_VSCROLL:
-            // Fake the dialog proc into thinking the edit control just
-            // lost focus so it'll update properly
-            SendMessage(hDlg, WM_COMMAND, MAKELONG((GetDlgCtrlID((HWND)lParam) - 1), EN_KILLFOCUS), 0);
-            return TRUE;
+        else
+        {
+            const PSHNOTIFY* const pshn = (LPPSHNOTIFY)lParam;
+            if (lParam)
+            {
+                switch (pshn->hdr.code)
+                {
+                case PSN_APPLY:
+                    EndDlgPage(hDlg, !pshn->lParam);
+                    return TRUE;
+                case PSN_KILLACTIVE:
+                {
+                    // Fake the dialog proc into thinking the edit control just
+                    // lost focus so it'll update properly
+                    int item = GetDlgCtrlID(GetFocus());
+                    if (item)
+                    {
+                        SendMessage(hDlg, WM_COMMAND, MAKELONG(item, EN_KILLFOCUS), 0);
+                    }
+                    return TRUE;
+                }
+                }
+            }
+        }
+    }
+    case WM_VSCROLL:
+        // Fake the dialog proc into thinking the edit control just
+        // lost focus so it'll update properly
+        SendMessage(hDlg, WM_COMMAND, MAKELONG((GetDlgCtrlID((HWND)lParam) - 1), EN_KILLFOCUS), 0);
+        return TRUE;
 
-        case WM_DESTROY:
-            // MSFT:20740368
-            // When the propsheet is opened straight from explorer, NOT from
-            //      conhost itself, then explorer will load console.dll once,
-            //      and re-use it for subsequent launches. This means that on
-            //      the first launch of the propsheet, our fHaveInitialized will
-            //      be false until we actually do the init work, but on
-            //      subsequent launches, fHaveInitialized will be re-used, and
-            //      found to be true, and we'll zero out the values of the
-            //      colors. This is because the message loop decides to update
-            //      the values of the textboxes before we get a chance to put
-            //      the current values into them. When the textboxes update,
-            //      they'll overwrite the current color components with whatever
-            //      they currently have, which is 0.
-            // To avoid this madness, make sure to reset our initialization
-            //      state when the dialog is closed.
-            fHaveInitialized = false;
-            break;
+    case WM_DESTROY:
+        // MSFT:20740368
+        // When the propsheet is opened straight from explorer, NOT from
+        //      conhost itself, then explorer will load console.dll once,
+        //      and re-use it for subsequent launches. This means that on
+        //      the first launch of the propsheet, our fHaveInitialized will
+        //      be false until we actually do the init work, but on
+        //      subsequent launches, fHaveInitialized will be re-used, and
+        //      found to be true, and we'll zero out the values of the
+        //      colors. This is because the message loop decides to update
+        //      the values of the textboxes before we get a chance to put
+        //      the current values into them. When the textboxes update,
+        //      they'll overwrite the current color components with whatever
+        //      they currently have, which is 0.
+        // To avoid this madness, make sure to reset our initialization
+        //      state when the dialog is closed.
+        fHaveInitialized = false;
+        break;
     }
 
     return false;

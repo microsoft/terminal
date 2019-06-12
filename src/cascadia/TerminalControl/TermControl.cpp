@@ -10,6 +10,8 @@
 #include <WinUser.h>
 #include "..\..\types\inc\GlyphWidth.hpp"
 
+#include "TermControl.g.cpp"
+
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::UI::Xaml;
@@ -19,7 +21,6 @@ using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-
     TermControl::TermControl() :
         TermControl(Settings::TerminalSettings{})
     {
@@ -78,12 +79,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
 
-        swapChainPanel.SizeChanged({ this, &TermControl::_SwapChainSizeChanged });
-        swapChainPanel.CompositionScaleChanged({ this, &TermControl::_SwapChainScaleChanged });
+        _sizeChangedRevoker = swapChainPanel.SizeChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainSizeChanged });
+        _compositionScaleChangedRevoker = swapChainPanel.CompositionScaleChanged(winrt::auto_revoke, { this, &TermControl::_SwapChainScaleChanged });
 
         // Initialize the terminal only once the swapchainpanel is loaded - that
         //      way, we'll be able to query the real pixel size it got on layout
-        swapChainPanel.Loaded([this] (auto /*s*/, auto /*e*/){
+        _loadedRevoker = swapChainPanel.Loaded(winrt::auto_revoke, [this](auto /*s*/, auto /*e*/) {
             _InitializeTerminal();
         });
 
@@ -113,7 +114,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-       _connection.TerminalDisconnected([=]() {
+        _connection.TerminalDisconnected([=]() {
             _connectionClosedHandlers();
         });
     }
@@ -130,7 +131,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal,[this](){
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Update our control settings
             _ApplyUISettings();
             // Update the terminal core with its new Core settings
@@ -156,8 +157,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Style our UI elements based on the values in our _settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
-    //   * Sets up the background of the control with the provided BG color,
-    //      acrylic or not, and if acrylic, then uses the opacity from _settings.
+    //   * Calls _InitializeBackgroundBrush to set up the Xaml brush responsible
+    //     for the control's background
+    //   * Calls _BackgroundColorChanged to style the background of the control
     // - Core settings will be passed to the terminal in _InitializeTerminal
     // Arguments:
     // - <none>
@@ -165,37 +167,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_ApplyUISettings()
     {
-        winrt::Windows::UI::Color bgColor{};
+        _InitializeBackgroundBrush();
+
         uint32_t bg = _settings.DefaultBackground();
-        const auto R = GetRValue(bg);
-        const auto G = GetGValue(bg);
-        const auto B = GetBValue(bg);
-        bgColor.R = R;
-        bgColor.G = G;
-        bgColor.B = B;
-        bgColor.A = 255;
-
-        if (_settings.UseAcrylic())
-        {
-            Media::AcrylicBrush acrylic{};
-            acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
-            acrylic.FallbackColor(bgColor);
-            acrylic.TintColor(bgColor);
-            acrylic.TintOpacity(_settings.TintOpacity());
-            _root.Background(acrylic);
-
-            // If we're acrylic, we want to make sure that the default BG color
-            // is transparent, so we can see the acrylic effect on text with the
-            // default BG color.
-            _settings.DefaultBackground(ARGB(0, R, G, B));
-        }
-        else
-        {
-            Media::SolidColorBrush solidColor{};
-            solidColor.Color(bgColor);
-            _root.Background(solidColor);
-            _settings.DefaultBackground(RGB(R, G, B));
-        }
+        _BackgroundColorChanged(bg);
 
         // Apply padding to the root Grid
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
@@ -215,6 +190,160 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Set up the brush used to display the control's background.
+    // - Respects the settings for acrylic, background image and opacity from
+    //   _settings.
+    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
+    //       from _settings.
+    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
+    //       respecting the opacity and stretch mode settings from _settings.
+    //   * Falls back to a solid color background from _settings if acrylic is not
+    //       enabled and no background image is present.
+    // - Avoids image flickering and acrylic brush redraw if settings are changed
+    //   but the appropriate brush is still in place.
+    // - Does not apply background color outside of acrylic mode;
+    //   _BackgroundColorChanged must be called to do so.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TermControl::_InitializeBackgroundBrush()
+    {
+        if (_settings.UseAcrylic())
+        {
+            // See if we've already got an acrylic background brush
+            // to avoid the flicker when setting up a new one
+            auto acrylic = _root.Background().try_as<Media::AcrylicBrush>();
+
+            // Instantiate a brush if there's not already one there
+            if (acrylic == nullptr)
+            {
+                acrylic = Media::AcrylicBrush{};
+                acrylic.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+            }
+
+            // see GH#1082: Initialize background color so we don't get a
+            // fade/flash when _BackgroundColorChanged is called
+            uint32_t color = _settings.DefaultBackground();
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = GetRValue(color);
+            bgColor.G = GetGValue(color);
+            bgColor.B = GetBValue(color);
+            bgColor.A = 255;
+
+            acrylic.FallbackColor(bgColor);
+            acrylic.TintColor(bgColor);
+
+            // Apply brush settings
+            acrylic.TintOpacity(_settings.TintOpacity());
+
+            // Apply brush to control if it's not already there
+            if (_root.Background() != acrylic)
+            {
+                _root.Background(acrylic);
+            }
+        }
+        else if (!_settings.BackgroundImage().empty())
+        {
+            Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
+
+            // Check if the existing brush is an image brush, and if not
+            // construct a new one
+            auto brush = _root.Background().try_as<Media::ImageBrush>();
+
+            if (brush == nullptr)
+            {
+                brush = Media::ImageBrush{};
+            }
+
+            // Check if the image brush is already pointing to the image
+            // in the modified settings; if it isn't (or isn't there),
+            // set a new image source for the brush
+            auto imageSource = brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+
+            if (imageSource == nullptr ||
+                imageSource.UriSource() == nullptr ||
+                imageSource.UriSource().RawUri() != imageUri.RawUri())
+            {
+                // Note that BitmapImage handles the image load asynchronously,
+                // which is especially important since the image
+                // may well be both large and somewhere out on the
+                // internet.
+                Media::Imaging::BitmapImage image(imageUri);
+                brush.ImageSource(image);
+            }
+
+            // Apply stretch and opacity settings
+            brush.Stretch(_settings.BackgroundImageStretchMode());
+            brush.Opacity(_settings.BackgroundImageOpacity());
+
+            // Apply brush if it isn't already there
+            if (_root.Background() != brush)
+            {
+                _root.Background(brush);
+            }
+        }
+        else
+        {
+            Media::SolidColorBrush solidColor{};
+            _root.Background(solidColor);
+        }
+    }
+
+    // Method Description:
+    // - Style the background of the control with the provided background color
+    // Arguments:
+    // - color: The background color to use as a uint32 (aka DWORD COLORREF)
+    // Return Value:
+    // - <none>
+    void TermControl::_BackgroundColorChanged(const uint32_t color)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, color]() {
+            const auto R = GetRValue(color);
+            const auto G = GetGValue(color);
+            const auto B = GetBValue(color);
+
+            winrt::Windows::UI::Color bgColor{};
+            bgColor.R = R;
+            bgColor.G = G;
+            bgColor.B = B;
+            bgColor.A = 255;
+
+            if (_settings.UseAcrylic())
+            {
+                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
+                {
+                    acrylic.FallbackColor(bgColor);
+                    acrylic.TintColor(bgColor);
+                }
+
+                // If we're acrylic, we want to make sure that the default BG color
+                // is transparent, so we can see the acrylic effect on text with the
+                // default BG color.
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
+            else if (!_settings.BackgroundImage().empty())
+            {
+                // This currently applies no changes to the image background
+                // brush itself.
+
+                // Set the default background as transparent to prevent the
+                // DX layer from overwriting the background image
+                _settings.DefaultBackground(ARGB(0, R, G, B));
+            }
+            else
+            {
+                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
+                {
+                    solidColor.Color(bgColor);
+                }
+
+                _settings.DefaultBackground(RGB(R, G, B));
+            }
+        });
+    }
+
+    // Method Description:
     // - Create a connection based on the values in our settings object.
     //   * Gets the commandline and working directory out of the _settings and
     //     creates a ConhostConnection with the given commandline and starting
@@ -226,20 +355,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     TermControl::~TermControl()
     {
-        _closing = true;
-        // Don't let anyone else do something to the buffer.
-        auto lock = _terminal->LockForWriting();
-
-        if (_connection != nullptr)
-        {
-            _connection.Close();
-        }
-
-        _renderer->TriggerTeardown();
-
-        _swapChainPanel = nullptr;
-        _root = nullptr;
-        _connection = nullptr;
+        Close();
     }
 
     UIElement TermControl::GetRoot()
@@ -260,8 +376,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]()
-        {
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [=]() {
             auto lock = _terminal->LockForWriting();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
@@ -275,18 +390,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        const auto windowWidth = _swapChainPanel.ActualWidth();  // Width() and Height() are NaN?
+        const auto windowWidth = _swapChainPanel.ActualWidth(); // Width() and Height() are NaN?
         const auto windowHeight = _swapChainPanel.ActualHeight();
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
         // First create the render thread.
+        // Then stash a local pointer to the render thread so we can initialize it and enable it
+        // to paint itself *after* we hand off its ownership to the renderer.
+        // We split up construction and initialization of the render thread object this way
+        // because the renderer and render thread have circular references to each other.
         auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-        // Stash a local pointer to the render thread, so we can enable it after
-        //       we hand off ownership to the renderer.
         auto* const localPointerToThread = renderThread.get();
+
+        // Now create the renderer and initialize the render thread.
         _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
         ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
+
+        THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
         // Set up the DX Engine
         auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
@@ -334,11 +455,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
 
-        THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
-
         auto chain = _renderEngine->GetSwapChain();
-        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]()
-        {
+        _swapChainPanel.Dispatcher().RunAsync(CoreDispatcherPriority::High, [this, chain]() {
             _terminal->LockConsole();
             auto nativePanel = _swapChainPanel.as<ISwapChainPanelNative>();
             nativePanel->SetSwapChain(chain.Get());
@@ -398,11 +516,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
         // These two handlers _must_ be on _controlRoot, not _root.
-        _controlRoot.PreviewKeyDown({this, &TermControl::_KeyDownHandler });
-        _controlRoot.CharacterReceived({this, &TermControl::_CharacterHandler });
+        _controlRoot.PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
+        _controlRoot.CharacterReceived({ this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
+
+        auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
+        _terminal->SetBackgroundCallback(pfnBackgroundColorChanged);
 
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
@@ -415,6 +536,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::make_optional(DispatcherTimer());
             _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
             _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Start();
         }
         else
         {
@@ -422,8 +544,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
-        _controlRoot.GotFocus({ this, &TermControl::_GotFocusHandler });
-        _controlRoot.LostFocus({ this, &TermControl::_LostFocusHandler });
+        _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
+        _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
@@ -436,7 +558,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     void TermControl::_CharacterHandler(winrt::Windows::Foundation::IInspectable const& /*sender*/,
-                                       Input::CharacterReceivedRoutedEventArgs const& e)
+                                        Input::CharacterReceivedRoutedEventArgs const& e)
     {
         if (_closing)
         {
@@ -533,6 +655,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
         }
 
+        // Manually prevent keyboard navigation with tab. We want to send tab to
+        // the terminal, and we don't want to be able to escape focus of the
+        // control with tab.
+        if (e.OriginalKey() == VirtualKey::Tab)
+        {
+            handled = true;
+        }
+
         e.Handled(handled);
     }
 
@@ -549,9 +679,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            // Ignore mouse events while the terminal does not have focus. 
-            // This prevents the user from selecting and copying text if they 
-            // click inside the current tab to refocus the terminal window. 
+            // Ignore mouse events while the terminal does not have focus.
+            // This prevents the user from selecting and copying text if they
+            // click inside the current tab to refocus the terminal window.
             if (!_focused)
             {
                 args.Handled(true);
@@ -825,10 +955,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_GotFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                        RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = true;
 
         if (_cursorTimer.has_value())
+        {
             _cursorTimer.value().Start();
+        }
     }
 
     // Method Description:
@@ -837,6 +973,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_LostFocusHandler(Windows::Foundation::IInspectable const& /* sender */,
                                         RoutedEventArgs const& /* args */)
     {
+        if (_closing)
+        {
+            return;
+        }
         _focused = false;
 
         if (_cursorTimer.has_value())
@@ -866,7 +1006,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
         _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
-
     }
 
     // Method Description:
@@ -908,6 +1047,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
+        {
+            return;
+        }
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
@@ -1001,7 +1144,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControl::Title()
     {
-        if (!_initializedTerminal) return L"";
+        if (!_initializedTerminal)
+            return L"";
 
         hstring hstr(_terminal->GetConsoleTitle());
         return hstr;
@@ -1025,15 +1169,59 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::Close()
     {
-        if (!_closing)
+        if (!_closing.exchange(true))
         {
-            this->~TermControl();
+            // Stop accepting new output before we disconnect everything.
+            _connection.TerminalOutput(_connectionOutputEventToken);
+
+            // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
+            if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
+            {
+                localCursorTimer->Stop();
+                // cursorTimer timer, now stopped, is destroyed.
+            }
+
+            if (auto localConnection{ std::exchange(_connection, nullptr) })
+            {
+                localConnection.Close();
+                // connection is destroyed.
+            }
+
+            if (auto localRenderEngine{ std::exchange(_renderEngine, nullptr) })
+            {
+                if (auto localRenderer{ std::exchange(_renderer, nullptr) })
+                {
+                    localRenderer->TriggerTeardown();
+                    // renderer is destroyed
+                }
+                // renderEngine is destroyed
+            }
+
+            if (auto localTerminal{ std::exchange(_terminal, nullptr) })
+            {
+                _initializedTerminal = false;
+                // terminal is destroyed.
+            }
         }
     }
 
     void TermControl::ScrollViewport(int viewTop)
     {
         _terminal->UserScrollViewport(viewTop);
+    }
+
+    // Method Description:
+    // - Scrolls the viewport of the terminal and updates the scroll bar accordingly
+    // Arguments:
+    // - viewTop: the viewTop to scroll to
+    // The difference between this function and ScrollViewport is that this one also
+    // updates the _scrollBar after the viewport scroll. The reason _scrollBar is not updated in
+    // ScrollViewport is because ScrollViewport is being called by _ScrollbarChangeHandler
+    void TermControl::KeyboardScrollViewport(int viewTop)
+    {
+        _terminal->UserScrollViewport(viewTop);
+        _lastScrollOffset = std::nullopt;
+        _scrollBar.Value(static_cast<int>(viewTop));
     }
 
     int TermControl::GetScrollOffset()
@@ -1167,11 +1355,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         switch (paddingPropIndex)
         {
-            case 1: return ThicknessHelper::FromUniformLength(thicknessArr[0]);
-            case 2: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
-            // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
-            case 4: return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
-            default: return Thickness();
+        case 1:
+            return ThicknessHelper::FromUniformLength(thicknessArr[0]);
+        case 2:
+            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
+        // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
+        case 4:
+            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
+        default:
+            return Thickness();
         }
     }
 
@@ -1181,7 +1373,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const{
+    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
         //      != CoreVirtualKeyStates::None
@@ -1204,6 +1397,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Returns true if this control should close when its connection is closed.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true iff the control should close when the connection is closed.
+    bool TermControl::ShouldCloseOnExit() const noexcept
+    {
+        return _settings.CloseOnExit();
+    }
+
+    // Method Description:
     // - Gets the corresponding viewport terminal position for the cursor
     //    by excluding the padding and normalizing with the font size.
     //    This is used for selection.
@@ -1215,16 +1419,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
     {
         // Exclude padding from cursor position calculation
-        COORD terminalPosition =
-        {
+        COORD terminalPosition = {
             static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
             static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
         };
-        
+
         const auto fontSize = _actualFont.GetSize();
         FAIL_FAST_IF(fontSize.X == 0);
         FAIL_FAST_IF(fontSize.Y == 0);
-        
+
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;
@@ -1232,13 +1435,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return terminalPosition;
     }
 
+    // clang-format off
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl,   TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl,   ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl,   CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
-    DEFINE_EVENT(TermControl,   ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
+    DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl, CopyToClipboard,       _clipboardCopyHandlers,         TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
+    // clang-format on
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
 }

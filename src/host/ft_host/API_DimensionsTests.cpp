@@ -3,6 +3,10 @@
 
 #include "precomp.h"
 
+using namespace WEX::TestExecution;
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to test:
 // GetConsoleScreenBufferInfo
 // GetConsoleScreenBufferInfoEx
@@ -167,9 +171,9 @@ void TestSetConsoleWindowInfoHelper(bool const bAbsolute,
     ConvertAbsoluteToRelative(bAbsolute, &srTest, srOriginalViewport);
 
     Log::Comment(NoThrowString().Format(L"Abs:%s Original:%s Viewport:%s",
-                 bAbsolute ? L"True" : L"False",
-                 VerifyOutputTraits<SMALL_RECT>::ToString(*srOriginalViewport).ToCStrWithFallbackTo(L"Fail To Display SMALL_RECT"),
-                 VerifyOutputTraits<SMALL_RECT>::ToString(srTest).ToCStrWithFallbackTo(L"Fail To Display SMALL_RECT")));
+                                        bAbsolute ? L"True" : L"False",
+                                        VerifyOutputTraits<SMALL_RECT>::ToString(*srOriginalViewport).ToCStrWithFallbackTo(L"Fail To Display SMALL_RECT"),
+                                        VerifyOutputTraits<SMALL_RECT>::ToString(srTest).ToCStrWithFallbackTo(L"Fail To Display SMALL_RECT")));
 
     if (bExpectedResult)
     {
@@ -281,7 +285,6 @@ void DimensionsTests::TestSetConsoleScreenBufferSize()
         Log::Comment(L"Adjusting Y dimension");
     }
 
-
     CONSOLE_SCREEN_BUFFER_INFO sbi = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfo(Common::_hConsole, &sbi), L"Get initial buffer/window information.");
 
@@ -334,7 +337,8 @@ void DimensionsTests::TestZeroSizedConsoleScreenBuffers()
         const BOOL fSucceeded = SetConsoleScreenBufferSize(Common::_hConsole, rgTestCoords[i]);
         VERIFY_IS_FALSE(!!fSucceeded,
                         NoThrowString().Format(L"Setting zero console size should always fail (x: %d y:%d)",
-                                               rgTestCoords[i].X, rgTestCoords[i].Y));
+                                               rgTestCoords[i].X,
+                                               rgTestCoords[i].Y));
         VERIFY_ARE_EQUAL((DWORD)ERROR_INVALID_PARAMETER, GetLastError());
     }
 }
@@ -391,7 +395,6 @@ void DimensionsTests::TestSetConsoleScreenBufferInfoEx()
     sbiex.dwSize.X = MAXSHORT;
     sbiex.dwSize.Y = MAXSHORT;
     VERIFY_WIN32_BOOL_FAILED(SetConsoleScreenBufferInfoEx(Common::_hConsole, &sbiex), L"Try MAX by MAX viewport size.");
-
 
     // Fill the entire structure with new data and set
     sbiex.dwSize.X = 200;

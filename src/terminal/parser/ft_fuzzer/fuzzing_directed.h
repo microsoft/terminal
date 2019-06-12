@@ -15,7 +15,7 @@
 #include <functional>
 
 #pragma warning(push)
-#pragma warning(disable:4242) // Standard random library contains C4242 warning about conversion from unsigned int to unsigned short.
+#pragma warning(disable : 4242) // Standard random library contains C4242 warning about conversion from unsigned int to unsigned short.
 #include <random>
 #pragma warning(pop)
 
@@ -24,7 +24,7 @@
 #include <assert.h>
 #include <strsafe.h>
 
-#pragma warning(disable:4505)
+#pragma warning(disable : 4505)
 #include "memallocator.h"
 
 #ifndef __FUZZING_ALLOCATOR
@@ -33,19 +33,25 @@
 
 namespace variadic
 {
-    template <int... Is>
-    struct index {};
+    template<int... Is>
+    struct index
+    {
+    };
 
-    template <int N, int... Is>
-    struct gen_seq : gen_seq<N - 1, N - 1, Is...> {};
+    template<int N, int... Is>
+    struct gen_seq : gen_seq<N - 1, N - 1, Is...>
+    {
+    };
 
-    template <int... Is>
-    struct gen_seq<0, Is...> : index<Is...>{};
+    template<int... Is>
+    struct gen_seq<0, Is...> : index<Is...>
+    {
+    };
 }
 
 namespace fuzz
 {
-    // Fuzz traits change inherent behavior of the CFuzzType class 
+    // Fuzz traits change inherent behavior of the CFuzzType class
     // (and associated derived classes).  This is a bit-flag such that
     // multiple traits can be applied as needed.
     enum _FuzzTraits : unsigned int
@@ -66,9 +72,9 @@ namespace fuzz
         // buffer and our fuzz classes frees the other buffer.
         //   Example:
         //     DWORD cbSize = 0;
-        //     __untrusted_array_size(BYTE, DWORD) cbSizeUntrusted = 
+        //     __untrusted_array_size(BYTE, DWORD) cbSizeUntrusted =
         //        __untrusted_array_size_init(BYTE, DWORD)(cbSize);
-        //     __untrusted_array(BYTE, DWORD) arr = 
+        //     __untrusted_array(BYTE, DWORD) arr =
         //         __untrusted_array_init<BYTE, DWORD>(FUZZ_MAP(...), nullptr, cbSizeUntrusted);
         //     AllocateArray(&arr, &cbSizeUntrusted); // arr overloads & operator to
         //                                            // allow allocation and then wraps
@@ -81,7 +87,7 @@ namespace fuzz
         // Given the design of the CFuzzArray class, it could be unclear
         // if the corresponding size of the array is the number of elements
         // or the overall byte count.  The class defaults to assuming
-        // the number of elements, but the trait below can be used to 
+        // the number of elements, but the trait below can be used to
         // inform the class that the size is actually the number of total
         // bytes.  Note that when using byte arrays, there is no difference
         // in behavior.
@@ -106,15 +112,15 @@ namespace fuzz
     };
 
     // Fuzz type entries provide a fuzzing function, specified as pfnFuzz,
-    // together with a percentage that this fuzzing function should be 
+    // together with a percentage that this fuzzing function should be
     // invoked.  The percentage, uiPercentage, should be between 1-100.
-    // There are some fuzzing classes (i.e. CFuzzString) that allow 
-    // for fuzzed values to be reallocated, in these cases a function 
-    // must be specified via pfnDealloc that can free the resulting 
-    // memory appropriately. If no memory is being reallocated, pfnDealloc 
+    // There are some fuzzing classes (i.e. CFuzzString) that allow
+    // for fuzzed values to be reallocated, in these cases a function
+    // must be specified via pfnDealloc that can free the resulting
+    // memory appropriately. If no memory is being reallocated, pfnDealloc
     // can be nullptr.
     //
-    // An array of fuzz type entries (or fuzz array entries) is referred 
+    // An array of fuzz type entries (or fuzz array entries) is referred
     // to as a fuzz map in subsequent documentation.
     //
     // The design of pfnFuzz is to allow for mutational based fuzzing
@@ -122,15 +128,15 @@ namespace fuzz
     // via the function parameter.  This data will be whatever the
     // fuzzing class' value is, either from initialization of the class
     // or by setting the value directly.
-    //   For example: 
-    //      __untrusted_lpwstr pwsz = 
+    //   For example:
+    //      __untrusted_lpwstr pwsz =
     //          __untrusted_lpwstr_init(FUZZ_MAP(...), L"foo");
     //      LPWSTR pwszFuzzed = pwsz; // Asking for the LPWSTR member will
-    //                                // cause the fuzzing map to be 
+    //                                // cause the fuzzing map to be
     //                                // evaluated, if a fuzz type entry is
     //                                // selected, L"foo" will be passed
     //                                // as the parameter to pfnFuzz
-    template <typename _Type, typename... _Args>
+    template<typename _Type, typename... _Args>
     struct _fuzz_type_entry
     {
         unsigned int uiPercentage;
@@ -142,7 +148,7 @@ namespace fuzz
     // specified within the fuzz type entry struct into its associated
     // probability range.  It is not expected that users of this codebase
     // will need to use this struct type directly.
-    template <typename _Type, typename... _Args>
+    template<typename _Type, typename... _Args>
     struct _range_fuzz_type_entry
     {
         _fuzz_type_entry<_Type, _Args...> fte;
@@ -155,12 +161,12 @@ namespace fuzz
     // in sync.  To support this, fuzz array entries have two template
     // parameters, the first one is the type of objects in the array,
     // and the second parameter is the size, either in bytes or in element
-    // count.  When designing a fuzz map for an array, you will need to 
+    // count.  When designing a fuzz map for an array, you will need to
     // determine whether _Type2 is the byte count or the element count.
     //
-    // With respect to pfnFuzz, once again this follows a mutational 
+    // With respect to pfnFuzz, once again this follows a mutational
     // based approach, where the parameters will be whatever CFuzzArray
-    // is initialized to.  Notice that the second parameter is an 
+    // is initialized to.  Notice that the second parameter is an
     // automatic reference to the size, which allows this value to be
     // updated in the event that a new fuzzed buffer is allocation and
     // returned from pfnFuzz.  If reallocation occurs, pfnDealloc must
@@ -169,9 +175,9 @@ namespace fuzz
     //       DWORD cbSize = 0;
     //     __untrusted_array_size(BYTE, DWORD) cbSizeUntrusted =
     //         __untrusted_array_size_init<BYTE, DWORD>(cbSize);
-    //     __untrusted_array(BYTE, DWORD) arr = 
+    //     __untrusted_array(BYTE, DWORD) arr =
     //         __untrusted_array_init<BYTE, DWORD>(FUZZ_MAP(...), nullptr, cbSizeUntrusted);
-    //     AllocateArray(&arr, &cbSizeUntrusted); // Operator overloading on & will 
+    //     AllocateArray(&arr, &cbSizeUntrusted); // Operator overloading on & will
     //                                            // allow the array to be allocated
     //                                            // and then wrapped by CFuzzArray
     //     BYTE *rgFuzzed = arr; // Asking for the BYTE* value will cause
@@ -179,18 +185,18 @@ namespace fuzz
     //                           // buffer is reallocated, pfnFuzz will
     //                           // have a reference to cbSize which can be
     //                           // updated appropriately.
-    template <typename _Type1, typename _Type2, typename... _Args>
+    template<typename _Type1, typename _Type2, typename... _Args>
     struct _fuzz_array_entry
     {
         unsigned int uiPercentage;
-        std::function<_Type1* (_Type1*, _Type2&, _Args...)> pfnFuzz;
+        std::function<_Type1*(_Type1*, _Type2&, _Args...)> pfnFuzz;
         std::function<void(_Type1*)> pfnDealloc;
     };
 
     // Internal struct for mapping percentages to value ranges.  Not
     // expected to be used by users of this codebase but for internal
     // use instead.
-    template <typename _Type1, typename _Type2, typename... _Args>
+    template<typename _Type1, typename _Type2, typename... _Args>
     struct _range_fuzz_array_entry
     {
         _fuzz_array_entry<_Type1, _Type2, _Args...> fae;
@@ -198,7 +204,7 @@ namespace fuzz
     };
 
     // During initialization of the fuzz classes, if the fuzz map
-    // percentages add up to more than 100% and the fuzz trait 
+    // percentages add up to more than 100% and the fuzz trait
     // TRAIT_THROW_ON_INIT_FAILURE is applied, the CFuzzRangeException
     // will be thrown.  Since constructors cannot return errors, this allows
     // for verifying that numeric errors have not been made when designing
@@ -209,14 +215,14 @@ namespace fuzz
     class CFuzzRangeException
     {
     public:
-        CFuzzRangeException() { };
-        virtual ~CFuzzRangeException() { };
+        CFuzzRangeException(){};
+        virtual ~CFuzzRangeException(){};
     };
 
     // In an effort to avoid fuzzing code from scattering rand() throughout
     // the codebase, the CFuzzChance class is designed as the go to place
     // for generating random values (or random selection of values).  This
-    // class is also used by the various fuzz classes internally for 
+    // class is also used by the various fuzz classes internally for
     // determining which fuzzing routine should be applied from the fuzz map.
     class CFuzzChance
     {
@@ -233,7 +239,7 @@ namespace fuzz
 #undef max
 #endif
         template<class _Type>
-        static _Type GetRandom() throw ()
+        static _Type GetRandom() throw()
         {
             return GetRandom<_Type>(std::numeric_limits<_Type>::min(), std::numeric_limits<_Type>::max());
         }
@@ -268,32 +274,33 @@ namespace fuzz
         }
 #ifdef __min_collision__
 #undef __min_collision__
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+#define min(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
 #ifdef __max_collision__
 #undef __max_collision__
-#define max(a,b) (((a) > (b)) ? (a) : (b))
+#define max(a, b) (((a) > (b)) ? (a) : (b))
 #endif
 
-        // Given an array of elements, select a random element from the 
+        // Given an array of elements, select a random element from the
         // collection.  Note that cElems is the number of items in the array.
-        template <typename _Type>
-        static _Type SelectOne(__in_ecount(cElems) const _Type *rg, __in size_t cElems) throw()
+        template<typename _Type>
+        static _Type SelectOne(__in_ecount(cElems) const _Type* rg, __in size_t cElems) throw()
         {
             return rg[GetRandom<size_t>(cElems)];
         }
 
         // Given an array of elements, select a random element from the
         // collection.  Note that _cElems is the number of items in the array.
-        template <typename _Type, size_t _cElems>
+        template<typename _Type, size_t _cElems>
         static _Type SelectOne(const _Type (&rg)[_cElems]) throw()
         {
             return rg[GetRandom<size_t>(_cElems)];
         }
+
     private:
-        CFuzzChance() { }
-        virtual ~CFuzzChance() { }
+        CFuzzChance() {}
+        virtual ~CFuzzChance() {}
         static std::random_device m_rd;
     };
 
@@ -307,21 +314,21 @@ namespace fuzz
     protected:
         CFuzzBase() :
             m_fFuzzed(FALSE),
-            m_iPercentageTotal(100)
-        { };
-        virtual ~CFuzzBase() { };
+            m_iPercentageTotal(100){};
+        virtual ~CFuzzBase(){};
 
         // Converts a percentage into a valid range.  Note that riTotal
         // is a reference value, which allows for a running total to be
         // decremented as fuzz map percentages are mapped to valid ranges.
         void ConvertPercentageToRange(__in unsigned int iPercentage,
-            __inout int &riTotal,
-            __deref_out _range *pr) const
+                                      __inout int& riTotal,
+                                      __deref_out _range* pr) const
         {
             pr->iHigh = riTotal;
             pr->iLow = riTotal - iPercentage;
             riTotal -= iPercentage;
         }
+
     protected:
         BOOL m_fFuzzed;
         int m_iPercentageTotal;
@@ -340,18 +347,19 @@ namespace fuzz
     // appropriate and should be changed to CCRTAllocator.  Adding new
     // allocator classes is as easy as writing a new class that supports
     // Allocate/Free/Reallocate, see documentation for CComAllocator.
-    template <class _Alloc, typename _Type1, typename _Type2, typename... _Args>
+    template<class _Alloc, typename _Type1, typename _Type2, typename... _Args>
     class CFuzzArray : public CFuzzBase
     {
     public:
-        template <typename _Type1, typename _Type2, typename... _Args> friend class CFuzzArraySize;
+        template<typename _Type1, typename _Type2, typename... _Args>
+        friend class CFuzzArraySize;
 
         // Creates a CFuzzArray instance that wraps a buffer specfied by
         // rg, together with its size (note that this is the number of elements
         // not necessarily the byte count).  cElems is a reference so it must
         // point to a valid variable.  In this constructor, it is valid for
         // the fuzz map to be a null pointer, but it is expected that a fuzz
-        // map will be provided at a later time via SetFuzzArrayMap or 
+        // map will be provided at a later time via SetFuzzArrayMap or
         // AddFuzzArrayEntry.
         //
         // If CFuzzArray is initialized with rg == nullptr, this usage case
@@ -363,15 +371,15 @@ namespace fuzz
         // not desirable, the situation is avoided by either not reallocating
         // or by not initializing via &.
         CFuzzArray(
-            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
+            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae,
-            __in_ecount_opt(cElems) _Type1 *rg,
+            __in_ecount_opt(cElems) _Type1* rg,
             __inout _Type2& cElems,
             __in _Args&&... args) :
-                m_rgCaller(rg),
-                m_pcElems(&cElems),
-                m_pfas(nullptr),
-                m_tArgs(std::forward<_Args>(args)...)
+            m_rgCaller(rg),
+            m_pcElems(&cElems),
+            m_pfas(nullptr),
+            m_tArgs(std::forward<_Args>(args)...)
         {
             Init(rgfae, cfae);
         }
@@ -379,15 +387,15 @@ namespace fuzz
         // Constructor that allows association with a companion CFuzzArraySize object.
         // See CFuzzArraySize comments for more details.
         CFuzzArray(
-            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
+            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae,
-            __in_opt _Type1 *rg,
-            __in CFuzzArraySize<_Type1, _Type2, _Args...> &size,
+            __in_opt _Type1* rg,
+            __in CFuzzArraySize<_Type1, _Type2, _Args...>& size,
             __in _Args&&... args) :
-                m_rgCaller(rg),
-                m_pcElems(size.m_pcElems),
-                m_pfas(nullptr),
-                m_tArgs(std::forward<_Args>(args)...)
+            m_rgCaller(rg),
+            m_pcElems(size.m_pcElems),
+            m_pfas(nullptr),
+            m_tArgs(std::forward<_Args>(args)...)
         {
             if (SUCCEEDED(Init(rgfae, cfae)))
             {
@@ -405,7 +413,7 @@ namespace fuzz
         // evaluated, potentially returning a fuzzed value.  Note that fuzzing
         // is only evaluated once, so repeated access will return the same
         // fuzzed choice.
-        __inline operator _Type1* () throw()
+        __inline operator _Type1*() throw()
         {
             return GetValueFromMap();
         }
@@ -413,7 +421,7 @@ namespace fuzz
         // Allow calls to get the size of the fuzzed array ensuring evaluation
         // of the fuzzmap.  Designed primarily to be called from the CFuzzArraySize
         // friend class.
-        __inline operator _Type2 () throw()
+        __inline operator _Type2() throw()
         {
             GetValueFromMap();
             return *m_pcElems;
@@ -424,10 +432,10 @@ namespace fuzz
         // via the constructor.  If this operator is used and the fuzzing map
         // applies reallocation, ownership of the respective buffers is transferred
         // such that the fuzzed buffer becomes the caller's responsibility and the
-        // initial buffer is freed when this class is destroyed.  Users of this 
+        // initial buffer is freed when this class is destroyed.  Users of this
         // codebase are responsible for ensuring the correct allocator is specified
         // for _Alloc and that the calling code is still functionally correct.
-        __inline _Type1** operator &() throw()
+        __inline _Type1** operator&() throw()
         {
             assert(m_rgCaller == nullptr);
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
@@ -435,19 +443,19 @@ namespace fuzz
         }
 
         // Const version of this operator overload does not assume ownership transfer
-        // like the above case.  
-        __inline const _Type1** operator &() const throw()
+        // like the above case.
+        __inline const _Type1** operator&() const throw()
         {
             assert(m_rgCaller == nullptr);
             return (m_rgRealloc) ? &m_rgRealloc : &m_rgCaller;
         }
 
-        // Setting the fuzz map will clear any previous applied fuzz map.  The 
-        // AddFuzzArrayEntry function can be used to add additional fuzz map 
-        // entries without removing the existing map.  Returns E_INVALIDARG in the 
+        // Setting the fuzz map will clear any previous applied fuzz map.  The
+        // AddFuzzArrayEntry function can be used to add additional fuzz map
+        // entries without removing the existing map.  Returns E_INVALIDARG in the
         // event that the total percentages add up to more than 100%.
-        __inline HRESULT SetFuzzArrayMap(
-            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
+        [[nodiscard]] __inline HRESULT SetFuzzArrayMap(
+            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae) throw()
         {
             ClearFuzzArrayEntries();
@@ -462,9 +470,9 @@ namespace fuzz
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
-        HRESULT AddFuzzArrayEntry(
+        [[nodiscard]] HRESULT AddFuzzArrayEntry(
             __in unsigned int uiPercentage,
-            __in std::function<_Type1* (_Type1*, _Type2&, _Args...)> pfnFuzz,
+            __in std::function<_Type1*(_Type1*, _Type2&, _Args...)> pfnFuzz,
             __in std::function<void(_Type1*)> pfnDealloc = nullptr) throw()
         {
             _range_fuzz_array_entry<_Type1, _Type2, _Args...> r = { 0 };
@@ -484,9 +492,9 @@ namespace fuzz
 
         // Invokes the fuzz map in the event that fuzzing as not been applied.
         // Since the fuzz map entries have their own potential allocation and
-        // deallocation routines, we actually make another copy of the fuzzed 
+        // deallocation routines, we actually make another copy of the fuzzed
         // buffer in the event that reallocation has occurred (determined by
-        // comparing against the original initialized pointer value).  This 
+        // comparing against the original initialized pointer value).  This
         // is important because we use the _Alloc value to ensure the correct
         // memory allocator is used that is appropriate for the calling code.
         __inline _Type1* GetValueFromMap()
@@ -495,16 +503,16 @@ namespace fuzz
             {
                 m_fFuzzed = TRUE;
                 WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
-                for (auto &r : m_map)
+                for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
                     {
-                        _Type1 *rgTemp = CallFuzzMapFunction(r.fae.pfnFuzz, m_rgCaller, *m_pcElems, m_tArgs);
+                        _Type1* rgTemp = CallFuzzMapFunction(r.fae.pfnFuzz, m_rgCaller, *m_pcElems, m_tArgs);
                         if (rgTemp && rgTemp != m_rgCaller)
                         {
                             size_t cbRealloc = (m_ftEffectiveTraits & TRAIT_SIZE_IS_BCOUNT) ?
-                                *m_pcElems :
-                                *m_pcElems * sizeof(_Type1);
+                                                   *m_pcElems :
+                                                   *m_pcElems * sizeof(_Type1);
                             m_rgRealloc = reinterpret_cast<_Type1*>(_Alloc::Allocate(cbRealloc));
                             if (m_rgRealloc)
                             {
@@ -524,13 +532,14 @@ namespace fuzz
 
             return (m_rgRealloc) ? m_rgRealloc : m_rgCaller;
         }
+
     private:
         _Type1* m_rgCaller;
         _Type1* m_rgRealloc;
-        _Type2 *m_pcElems;
+        _Type2* m_pcElems;
         FuzzTraits m_ftEffectiveTraits;
         CFuzzArraySize<_Type1, _Type2, _Args...>* m_pfas;
-        std::vector<_range_fuzz_array_entry<_Type1, _Type2, _Args...> > m_map;
+        std::vector<_range_fuzz_array_entry<_Type1, _Type2, _Args...>> m_map;
         std::tuple<_Args...> m_tArgs;
 
         CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>* Reference()
@@ -538,11 +547,11 @@ namespace fuzz
             return this;
         }
 
-        template <int... Is>
+        template<int... Is>
         _Type1* CallFuzzMapFunction(
-            std::function<_Type1* (_Type1*, _Type2&, _Args...)> pfnFuzz,
-            _Type1 *t1,
-            _Type2 &t2,
+            std::function<_Type1*(_Type1*, _Type2&, _Args...)> pfnFuzz,
+            _Type1* t1,
+            _Type2& t2,
             std::tuple<_Args...>& tup,
             variadic::index<Is...>)
         {
@@ -550,28 +559,28 @@ namespace fuzz
         }
 
         _Type1* CallFuzzMapFunction(
-            std::function<_Type1* (_Type1*, _Type2&, _Args...)> pfnFuzz,
-            _Type1 *t1,
-            _Type2 &t2,
+            std::function<_Type1*(_Type1*, _Type2&, _Args...)> pfnFuzz,
+            _Type1* t1,
+            _Type2& t2,
             std::tuple<_Args...>& tup)
         {
-            return CallFuzzMapFunction(pfnFuzz, t1, t2, tup, variadic::gen_seq < sizeof...(_Args) > {});
+            return CallFuzzMapFunction(pfnFuzz, t1, t2, tup, variadic::gen_seq<sizeof...(_Args)>{});
         }
 
-        HRESULT Init(
-            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
+        [[nodiscard]] HRESULT Init(
+            __in_ecount(cfae) const _fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
             __in ULONG cfae)
         {
             m_rgRealloc = nullptr;
             m_ftEffectiveTraits = m_traits;
 
-            // Since constructors cannot return error values, the 
+            // Since constructors cannot return error values, the
             // TRAIT_THROW_ON_INIT_FAILURE trait allows for an exception
             // to be thrown in the event that this class was not initialized
             // correctly.  The intended purpose is to catch users of this
             // codebase who have incorrectly specified fuzz maps that add up
             // to more than 100%.
-            HRESULT hr = hr = SetFuzzArrayMap(rgfae, cfae);
+            HRESULT hr = SetFuzzArrayMap(rgfae, cfae);
             if (FAILED(hr) && (m_traits & TRAIT_THROW_ON_INIT_FAILURE))
             {
                 throw CFuzzRangeException();
@@ -605,7 +614,7 @@ namespace fuzz
         }
     };
 
-    // When working with arrays, care must be taken when passing a pointer to a 
+    // When working with arrays, care must be taken when passing a pointer to a
     // fuzzed array together with the size to ensure the size lines up with the
     // the evaluated fuzz map.  Consider the following:
     //
@@ -628,11 +637,12 @@ namespace fuzz
     //    __untrusted_array_size(BYTE, size_t) cbUntrusted = __untrusted_array_size_init<BYTE, size_t>(cb);
     //    __untrusted_array(BYTE, size_t) rgUntrusted = __untrusted_array_init<BYTE, size_t>(FUZZ_MAP(...), rg, cbUntrusted);
     //    hr = foo(rgUntrusted, cbUntrusted);
-    template <typename _Type1, typename _Type2, typename... _Args>
+    template<typename _Type1, typename _Type2, typename... _Args>
     class CFuzzArraySize
     {
     public:
-        template <class _Alloc, typename _Type1, typename _Type2, typename... _Args> friend class CFuzzArray;
+        template<class _Alloc, typename _Type1, typename _Type2, typename... _Args>
+        friend class CFuzzArray;
 
         CFuzzArraySize(__inout _Type2& cElems) :
             m_pcElems(&cElems),
@@ -640,9 +650,9 @@ namespace fuzz
         {
         }
 
-        virtual ~CFuzzArraySize() { }
+        virtual ~CFuzzArraySize() {}
 
-        __inline operator _Type2 () throw()
+        __inline operator _Type2() throw()
         {
             if (m_pfa)
             {
@@ -652,23 +662,24 @@ namespace fuzz
             return *m_pcElems;
         }
 
-        __inline _Type2* operator &() throw()
+        __inline _Type2* operator&() throw()
         {
             return m_pcElems;
         }
 
-        __inline const _Type2* operator &() const throw()
+        __inline const _Type2* operator&() const throw()
         {
             return m_pcElems;
         }
 
-        __inline void Pair(__in CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...> &rfa)
+        __inline void Pair(__in CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>& rfa)
         {
             m_pfa = rfa.Reference();
         }
+
     private:
-        CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...> *m_pfa;
-        _Type2 *m_pcElems;
+        CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>* m_pfa;
+        _Type2* m_pcElems;
 
         CFuzzArraySize<_Type1, _Type2, _Args...>* Reference()
         {
@@ -679,9 +690,9 @@ namespace fuzz
     // The CFuzzType class is primarily designed for primitive types but
     // is also used as the base class for CFuzzTypePtr and CFuzzLpwstr.
     // The various operator overloads allow this class to wrap a type and
-    // usage of that type works transparently.  Asking for the value 
+    // usage of that type works transparently.  Asking for the value
     // of the type wrapped by this class will invoke the fuzzing map.
-    template <typename _Type, typename... _Args>
+    template<typename _Type, typename... _Args>
     class CFuzzType : public CFuzzBase
     {
     public:
@@ -690,18 +701,18 @@ namespace fuzz
         // is optional, but then expected to be provided via SetFuzzTypeMap
         // or AddFuzzTypeEntry if fuzzing is to be applied.
         CFuzzType(
-            __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...> *rgfte,
+            __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...>* rgfte,
             __in ULONG cfte,
             __in _Type t,
             __in _Args&&... args) :
-                m_t(t),
-                m_tInit(t),
-                m_tArgs(std::forward<_Args>(args)...)
+            m_t(t),
+            m_tInit(t),
+            m_tArgs(std::forward<_Args>(args)...)
         {
             m_pfnOnFuzzedValueFromMap = [](_Type t, std::function<void(_Type)>) { return t; };
             HRESULT hr = SetFuzzTypeMap(rgfte, cfte);
 
-            // Since constructors cannot return error values, the 
+            // Since constructors cannot return error values, the
             // TRAIT_THROW_ON_INIT_FAILURE trait allows for an exception
             // to be thrown in the event that this class was not initialized
             // correctly.  The intended purpose is to catch users of this
@@ -717,7 +728,7 @@ namespace fuzz
         {
         }
 
-        // Initializes with the value specified by t and then applies 
+        // Initializes with the value specified by t and then applies
         // the fuzz map to produce a fuzzed return value.  Usage of this
         // operator will make the CFuzzType instance look like a function
         // call, which might be desirable in some instances.
@@ -726,7 +737,7 @@ namespace fuzz
         //      int iFuzzedVal = iVal(15); // re-initializes the default value to 15,
         //                                 // then applies the fuzz map to return
         //                                 // a potentially fuzzed value
-        __inline _Type operator () (__in _Type t) throw()
+        __inline _Type operator()(__in _Type t) throw()
         {
             m_t = m_tInit = t;
             return GetValueFromMap();
@@ -736,7 +747,7 @@ namespace fuzz
         // If the fuzzing map has already been evaluated, initializing
         // via the = operator will not cause the fuzzing map to be
         // evaluated when the value is subsequently retrieved.
-        __inline void operator = (__in _Type t) throw()
+        __inline void operator=(__in _Type t) throw()
         {
             m_t = m_tInit = t;
         }
@@ -744,47 +755,50 @@ namespace fuzz
         // Getting the value of this instance will cause the fuzz map
         // to be evaluated.  The fuzz map will only be evaluated once,
         // subsequent access will always return the selected value.
-        __inline operator _Type () throw()
+        __inline operator _Type() throw()
         {
             return GetValueFromMap();
         }
 
-        // Allows initialization of the internal type by providing a 
+        // Allows initialization of the internal type by providing a
         // reference.  If the fuzz map has been evaluated, the reference
         // is provided to the fuzzed value.
-        __inline virtual _Type* operator &() throw()
+        __inline virtual _Type* operator&() throw()
         {
             return (m_fFuzzed) ? &m_t : &m_tInit;
         }
 
         // Similar to above, if the fuzz map has been evaluated, the
         // reference is provided to the fuzzed value.
-        __inline const _Type* operator &() const throw()
+        __inline const _Type* operator&() const throw()
         {
             return (m_fFuzzed) ? &m_t : &m_tInit;
         }
 
-        // Setting the fuzz map will clear any previous applied fuzz map.  The 
-        // AddFuzzArrayEntry function can be used to add additional fuzz map 
-        // entries without removing the existing map.  Returns E_INVALIDARG in the 
+        // Setting the fuzz map will clear any previous applied fuzz map.  The
+        // AddFuzzArrayEntry function can be used to add additional fuzz map
+        // entries without removing the existing map.  Returns E_INVALIDARG in the
         // event that the total percentages add up to more than 100%.
-        __inline HRESULT SetFuzzTypeMap(
-            __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...> *rgfte,
+        [[nodiscard]] __inline HRESULT SetFuzzTypeMap(
+            __in_ecount(cfte) const _fuzz_type_entry<_Type, _Args...>* rgfte,
             __in ULONG cfte) throw()
         {
             ClearFuzzTypeEntries();
-            for (ULONG i = 0; i < cfte; i++)
+
+            bool fInvalidEntry{};
+            for (ULONG i{}; i < cfte; ++i)
             {
-                AddFuzzTypeEntry(rgfte[i].uiPercentage, rgfte[i].pfnFuzz, rgfte[i].pfnDealloc);
+                // Process all entries; failure will be returned at the end.
+                fInvalidEntry |= FAILED(AddFuzzTypeEntry(rgfte[i].uiPercentage, rgfte[i].pfnFuzz, rgfte[i].pfnDealloc));
             }
 
-            return (m_iPercentageTotal >= 0) ? S_OK : E_INVALIDARG;
+            return (fInvalidEntry || (m_iPercentageTotal >= 0)) ? S_OK : E_INVALIDARG;
         }
 
         // Adds an additional fuzz map entry, without clearing the existing
         // fuzz map.  Returns E_INVALIDARG in the event that the total percentages
         // add up to more than 100%.
-        HRESULT AddFuzzTypeEntry(
+        [[nodiscard]] HRESULT AddFuzzTypeEntry(
             __in unsigned int uiPercentage,
             __in std::function<_Type(_Type, _Args...)> pfnFuzz,
             __in std::function<void(_Type)> pfnDealloc = nullptr) throw()
@@ -803,10 +817,11 @@ namespace fuzz
             m_map.clear();
             m_iPercentageTotal = 100;
         }
+
     protected:
         _Type m_t;
         _Type m_tInit;
-        std::vector<_range_fuzz_type_entry<_Type, _Args...> > m_map;
+        std::vector<_range_fuzz_type_entry<_Type, _Args...>> m_map;
         std::function<_Type(_Type, std::function<void(_Type)>)> m_pfnOnFuzzedValueFromMap;
         std::tuple<_Args...> m_tArgs;
 
@@ -815,13 +830,13 @@ namespace fuzz
             _Type t,
             std::tuple<_Args...>& tup)
         {
-            return CallFuzzMapFunction(pfnFuzz, t, tup, variadic::gen_seq < sizeof...(_Args) > {});
+            return CallFuzzMapFunction(pfnFuzz, t, tup, variadic::gen_seq<sizeof...(_Args)>{});
         }
 
         // To support sub classes ability to realloc fuzzed values,
         // the m_pfnOnFuzzedValueFromMap will be invoked whenever a fuzz map
         // entry is selected.  When not overridden, the default behavior is to
-        // set this classes value to the fuzzed value returned from the 
+        // set this classes value to the fuzzed value returned from the
         // associated fuzzing routine.  For an example that alters this behavior
         // take a look at the CFuzzLpwstr class.
         __inline virtual _Type GetValueFromMap()
@@ -831,7 +846,7 @@ namespace fuzz
                 m_fFuzzed = TRUE;
                 m_t = m_tInit;
                 WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
-                for (auto &r : m_map)
+                for (auto& r : m_map)
                 {
                     if (r.range.iLow <= wRandom && wRandom < r.range.iHigh)
                     {
@@ -843,8 +858,9 @@ namespace fuzz
 
             return m_t;
         }
+
     private:
-        template <int... Is>
+        template<int... Is>
         _Type CallFuzzMapFunction(
             std::function<_Type(_Type, _Args...)> pfnFuzz,
             _Type t,
@@ -857,28 +873,28 @@ namespace fuzz
     };
 
     // The CFuzzTypePtr class provides all the same functionality as the
-    // base CFuzzType class, but also provides an additional operator 
+    // base CFuzzType class, but also provides an additional operator
     // override for ->.  This allows pointers to be wrapped by this class
     // to be seamlessly used in the calling codebase.  Note that correct
     // fuzzing behavior is entirely dependent on the design of the fuzzing
     // map, this class is not intended to fuzz actual pointer values.
-    template <typename _Type, typename... _Args>
-    class CFuzzTypePtr : public CFuzzType < _Type, _Args... >
+    template<typename _Type, typename... _Args>
+    class CFuzzTypePtr : public CFuzzType<_Type, _Args...>
     {
     public:
         // Note that _Type is expected to be a pointer type (thus making
         // the operator override of -> make sense).  It is the callers
         // responsibility to set the type appropriately.
         CFuzzTypePtr(
-            __in_ecount(cfte) const _fuzz_type_entry<_Type> *rgfte,
+            __in_ecount(cfte) const _fuzz_type_entry<_Type>* rgfte,
             __in ULONG cfte,
             __in _Type pt,
             __in _Args&&... args) :
-                CFuzzType(rgfte, cfte, pt, std::forward<_Args>(args)...)
+            CFuzzType(rgfte, cfte, pt, std::forward<_Args>(args)...)
         {
         }
 
-        virtual ~CFuzzTypePtr() { }
+        virtual ~CFuzzTypePtr() {}
 
         _Type operator->() const throw()
         {
@@ -886,12 +902,12 @@ namespace fuzz
         }
 
         // This operator makes it possible to invoke the fuzzing map
-        // by calling this class like a parameterless function.  This is 
+        // by calling this class like a parameterless function.  This is
         // used to support the __make_untrusted call below.  Note that once
         // the fuzzing map is invoked, all future access of the pointer
         // members will be pointed to potentially fuzzed data (as per
         // the logic of the fuzz map).
-        __inline void operator() () throw()
+        __inline void operator()() throw()
         {
             GetValueFromMap();
         }
@@ -906,16 +922,16 @@ namespace fuzz
     // is allowed, _Alloc needs to match the appropriate allocation
     // method used by the calling code.  Please see CFuzzArray documentation
     // for more details.
-    template <class _Alloc, typename _Type, typename... _Args>
-    class CFuzzString : public CFuzzType <_Type*, _Args...>
+    template<class _Alloc, typename _Type, typename... _Args>
+    class CFuzzString : public CFuzzType<_Type*, _Args...>
     {
     public:
         CFuzzString(
-            __in_ecount(cfte) const _fuzz_type_entry<_Type*, _Args...> *rgfte,
+            __in_ecount(cfte) const _fuzz_type_entry<_Type*, _Args...>* rgfte,
             __in ULONG cfte,
-            __in _Type *psz,
+            __in _Type* psz,
             __in _Args... args) :
-                CFuzzType(rgfte, cfte, psz, std::forward<_Args>(args)...)
+            CFuzzType(rgfte, cfte, psz, std::forward<_Args>(args)...)
         {
             OnFuzzedValueFromMap();
         }
@@ -941,36 +957,36 @@ namespace fuzz
         //                           // fuzzed string.  This means
         //                           // pwsz is responsible for freeing
         //                           // the original allocation.
-        __inline virtual _Type** operator &() throw()
+        __inline virtual _Type** operator&() throw()
         {
             m_ftEffectiveTraits |= TRAIT_TRANSFER_ALLOCATION;
             return (m_fFuzzed) ? &m_t : &m_tInit;
         }
+
     private:
-        _Type *m_pszFuzzed;
+        _Type* m_pszFuzzed;
         FuzzTraits m_ftEffectiveTraits;
 
         // Since reallocation could occur that is dependent on matching the
-        // allocation routines of the calling code, we want to ensure we 
+        // allocation routines of the calling code, we want to ensure we
         // allocate using the correct allocator specified by _Alloc.  However,
         // the allocation routines in the fuzzing map could differ, therefore
         // we copy the fuzzed string as appropriate and use the specified
         // dealloc function in the fuzz map entry to delete the fuzzed string
         // created by the fuzz map entry.  Slightly inefficient, but safer
-        // and supports a wider variety of scenarios.  
+        // and supports a wider variety of scenarios.
         void OnFuzzedValueFromMap()
         {
             m_pszFuzzed = nullptr;
             m_ftEffectiveTraits = m_traits;
-            m_pfnOnFuzzedValueFromMap = [&](_Type *psz, std::function<void(_Type*)> dealloc)
-            {
+            m_pfnOnFuzzedValueFromMap = [&](_Type* psz, std::function<void(_Type*)> dealloc) {
                 FreeFuzzedString();
-                _Type *pszFuzzed = psz;
+                _Type* pszFuzzed = psz;
                 if (psz && psz != m_tInit)
                 {
                     size_t cb = (sizeof(_Type) == sizeof(char)) ?
-                        (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
-                        (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
+                                    (strlen(reinterpret_cast<LPSTR>(psz)) + 1) * sizeof(char) :
+                                    (wcslen(reinterpret_cast<LPWSTR>(psz)) + 1) * sizeof(WCHAR);
                     m_pszFuzzed = reinterpret_cast<_Type*>(_Alloc::Allocate(cb));
                     if (m_pszFuzzed)
                     {
@@ -1010,7 +1026,7 @@ namespace fuzz
         }
     };
 
-    // The CFuzzFlags class extends the CFuzzType base class, but 
+    // The CFuzzFlags class extends the CFuzzType base class, but
     // operates slightly differently than other fuzz class implementations.
     // The intended usage of this class is when dealing with bit flags,
     // where covering the range of possible bit flag combinations would be
@@ -1032,24 +1048,25 @@ namespace fuzz
     //       };
     //
     // Also note that this class should specifically not have the
-    // TRAIT_THROW_ON_INIT_FAILURE trait, as it is expected that the 
+    // TRAIT_THROW_ON_INIT_FAILURE trait, as it is expected that the
     // percentages will total more than 100% when added together.
-    template <typename _Type, typename... _Args>
-    class CFuzzFlags : public CFuzzType < _Type, _Args... >
+    template<typename _Type, typename... _Args>
+    class CFuzzFlags : public CFuzzType<_Type, _Args...>
     {
     public:
         CFuzzFlags(
-            __in_ecount(cfte) const _fuzz_type_entry<_Type> *rgfte,
+            __in_ecount(cfte) const _fuzz_type_entry<_Type>* rgfte,
             __in ULONG cfte,
             __in _Type flags,
             __in _Args&&... args) :
-                CFuzzType(rgfte, cfte, flags, std::forward<_Args>(args)...)
+            CFuzzType(rgfte, cfte, flags, std::forward<_Args>(args)...)
         {
         }
 
         virtual ~CFuzzFlags()
         {
         }
+
     protected:
         __inline virtual _Type GetValueFromMap()
         {
@@ -1057,10 +1074,10 @@ namespace fuzz
             {
                 m_t = 0;
                 m_fFuzzed = TRUE;
-                for (auto &r : m_map)
+                for (auto& r : m_map)
                 {
                     // Generate a new random value during each map entry
-                    // and use it to evaluate if each individual fuzz map 
+                    // and use it to evaluate if each individual fuzz map
                     // entry should be applied.
                     WORD wRandom = CFuzzChance::GetRandom<WORD>(100);
 
@@ -1083,9 +1100,9 @@ namespace fuzz
 // To make using these classes a no-opt if fuzzing is not intended to
 // be applied, the following set of functions and defines operate
 // differently if __GENERATE_DIRECTED_FUZZING is defined.  If defined,
-// these wrappers use the correct fuzz classes and initialize these 
+// these wrappers use the correct fuzz classes and initialize these
 // classes with the appropriate map specified by the caller.  If not
-// defined, essentially the use of these classes disappear and the 
+// defined, essentially the use of these classes disappear and the
 // remaining functions are optimized away by the compiler.  When
 // applied appropriately, not turning on fuzzing leaves no performance
 // impact, no size footprint, and no leakage of information into the
@@ -1093,11 +1110,15 @@ namespace fuzz
 #ifdef __GENERATE_DIRECTED_FUZZING
 #define FUZZ_ARRAY_START_STATIC(name, type, size, ...) static const fuzz::_fuzz_array_entry<type, size, __VA_ARGS__> name[] = {
 #define FUZZ_ARRAY_START(name, type, size, ...) const fuzz::_fuzz_array_entry<type, size, __VA_ARGS__> name[] = {
-#define FUZZ_ARRAY_END() };
+#define FUZZ_ARRAY_END() \
+    }                    \
+    ;
 
 #define FUZZ_TYPE_START_STATIC(name, type, ...) static const fuzz::_fuzz_type_entry<type, __VA_ARGS__> name[] = {
 #define FUZZ_TYPE_START(name, type, ...) const fuzz::_fuzz_type_entry<type, __VA_ARGS__> name[] = {
-#define FUZZ_TYPE_END() };
+#define FUZZ_TYPE_END() \
+    }                   \
+    ;
 
 #define FUZZ_MAP_ENTRY_ALLOC(i, pfnAlloc, pfnDelete) { i, pfnAlloc, pfnDelete },
 #define FUZZ_MAP_ENTRY(i, pfnAlloc) { i, pfnAlloc },
@@ -1115,7 +1136,7 @@ namespace fuzz
 
 template<typename _Type, typename... _Args>
 static fuzz::CFuzzType<_Type, _Args...> __untrusted_init(
-    __in_ecount(cfte) const fuzz::_fuzz_type_entry<_Type, _Args...> *rgfte,
+    __in_ecount(cfte) const fuzz::_fuzz_type_entry<_Type, _Args...>* rgfte,
     __in ULONG cfte,
     __in _Type t,
     __in _Args&&... args)
@@ -1125,7 +1146,7 @@ static fuzz::CFuzzType<_Type, _Args...> __untrusted_init(
 
 template<typename... _Args>
 static fuzz::CFuzzString<__FUZZING_ALLOCATOR, WCHAR, _Args...> __untrusted_lpwstr_init(
-    __in_ecount(cfte) const fuzz::_fuzz_type_entry<LPWSTR, _Args...> *rgfte,
+    __in_ecount(cfte) const fuzz::_fuzz_type_entry<LPWSTR, _Args...>* rgfte,
     __in ULONG cfte,
     __in LPWSTR pwsz,
     __in _Args&&... args)
@@ -1135,7 +1156,7 @@ static fuzz::CFuzzString<__FUZZING_ALLOCATOR, WCHAR, _Args...> __untrusted_lpwst
 
 template<typename... _Args>
 static fuzz::CFuzzString<__FUZZING_ALLOCATOR, CHAR, _Args...> __untrusted_lpstr_init(
-    __in_ecount(cfte) const fuzz::_fuzz_type_entry<LPSTR, _Args...> *rgfte,
+    __in_ecount(cfte) const fuzz::_fuzz_type_entry<LPSTR, _Args...>* rgfte,
     __in ULONG cfte,
     __in LPSTR psz,
     __in _Args&&... args)
@@ -1145,23 +1166,23 @@ static fuzz::CFuzzString<__FUZZING_ALLOCATOR, CHAR, _Args...> __untrusted_lpstr_
 
 template<typename _Type1, typename _Type2, typename... _Args>
 static fuzz::CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...> __untrusted_array_init(
-    __in_ecount(cfae) const fuzz::_fuzz_array_entry<_Type1, _Type2, _Args...> *rgfae,
+    __in_ecount(cfae) const fuzz::_fuzz_array_entry<_Type1, _Type2, _Args...>* rgfae,
     __in ULONG cfae,
-    __in _Type1 *pt,
-    __in fuzz::CFuzzArraySize<_Type1, _Type2, _Args...> &rfas,
+    __in _Type1* pt,
+    __in fuzz::CFuzzArraySize<_Type1, _Type2, _Args...>& rfas,
     __in _Args&&... args)
 {
     return fuzz::CFuzzArray<__FUZZING_ALLOCATOR, _Type1, _Type2, _Args...>(rgfae, cfae, pt, rfas, std::forward<_Args>(args)...);
 }
 
 template<typename _Type1, typename _Type2, typename... _Args>
-static fuzz::CFuzzArraySize<_Type1, _Type2, _Args...> __untrusted_array_size_init(__inout _Type2 &t2)
+static fuzz::CFuzzArraySize<_Type1, _Type2, _Args...> __untrusted_array_size_init(__inout _Type2& t2)
 {
     return fuzz::CFuzzArraySize<_Type1, _Type2, _Args...>(t2);
 }
 
 template<typename _Type, typename... _Args>
-static void __make_untrusted_ptr(__in fuzz::CFuzzTypePtr<_Type, _Args...> &rftp)
+static void __make_untrusted_ptr(__in fuzz::CFuzzTypePtr<_Type, _Args...>& rftp)
 {
     rftp();
 }
@@ -1190,7 +1211,7 @@ static void __make_untrusted_ptr(__in fuzz::CFuzzTypePtr<_Type, _Args...> &rftp)
 
 template<typename _Type, typename... _Args>
 static __forceinline _Type __untrusted_init(
-    __in_opt void*, 
+    __in_opt void*,
     __in ULONG,
     __in _Type t,
     __in _Args&&...)
@@ -1198,9 +1219,9 @@ static __forceinline _Type __untrusted_init(
     return t;
 }
 
-template <typename... _Args>
+template<typename... _Args>
 static __forceinline LPWSTR __untrusted_lpwstr_init(
-    __in_opt void*, 
+    __in_opt void*,
     __in ULONG,
     __in LPWSTR pwsz,
     __in _Args&&...)
@@ -1208,9 +1229,9 @@ static __forceinline LPWSTR __untrusted_lpwstr_init(
     return pwsz;
 }
 
-template <typename... _Args>
+template<typename... _Args>
 static __forceinline LPSTR __untrusted_lpstr_init(
-    __in_opt void*, 
+    __in_opt void*,
     __in ULONG,
     __in LPSTR psz,
     __in _Args&&...)
@@ -1220,9 +1241,9 @@ static __forceinline LPSTR __untrusted_lpstr_init(
 
 template<typename _Type1, typename _Type2, typename... _Args>
 static __forceinline _Type1* __untrusted_array_init(
-    __in_opt void*, 
+    __in_opt void*,
     __in ULONG,
-    __in _Type1 *pt,
+    __in _Type1* pt,
     __in _Type2,
     __in _Args&&...)
 {

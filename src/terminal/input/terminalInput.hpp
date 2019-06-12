@@ -23,14 +23,21 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn);
-        ~TerminalInput();
+
+        TerminalInput() = delete;
+        TerminalInput(const TerminalInput& old) = default;
+        TerminalInput(TerminalInput&& moved) = default;
+
+        TerminalInput& operator=(const TerminalInput& old) = default;
+        TerminalInput& operator=(TerminalInput&& moved) = default;
+
+        ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent) const;
         void ChangeKeypadMode(const bool fApplicationMode);
         void ChangeCursorKeysMode(const bool fApplicationMode);
 
     private:
-
         std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> _pfnWriteEvents;
         bool _fKeypadApplicationMode = false;
         bool _fCursorApplicationMode = false;
@@ -50,17 +57,24 @@ namespace Microsoft::Console::VirtualTerminal
             _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
-                dwModifiers(0) {};
+                dwModifiers(0){};
 
             _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
-                dwModifiers(dwModifiers) {};
+                dwModifiers(dwModifiers){};
 
             // C++11 syntax for prohibiting assignment
             // We can't assign, everything here is const.
             // We also shouldn't need to, this is only for a specific table.
+            _TermKeyMap(const _TermKeyMap&) = delete;
             _TermKeyMap& operator=(const _TermKeyMap&) = delete;
+
+            _TermKeyMap(_TermKeyMap&&) = delete;
+            _TermKeyMap& operator=(_TermKeyMap&&) = delete;
+
+            _TermKeyMap() = delete;
+            ~_TermKeyMap() = default;
         };
 
         static const _TermKeyMap s_rgCursorKeysNormalMapping[];
@@ -78,18 +92,17 @@ namespace Microsoft::Console::VirtualTerminal
         static const size_t s_cSimpleModifedKeyMapping;
 
         bool _SearchKeyMapping(const KeyEvent& keyEvent,
-                                _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                const size_t cKeyMapping,
-                                _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
+                               _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                               const size_t cKeyMapping,
+                               _Out_ const TerminalInput::_TermKeyMap** pMatchingMapping) const;
+
         bool _TranslateDefaultMapping(const KeyEvent& keyEvent,
-                                        _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
-                                        const size_t cKeyMapping) const;
+                                      _In_reads_(cKeyMapping) const TerminalInput::_TermKeyMap* keyMapping,
+                                      const size_t cKeyMapping) const;
+
         bool _SearchWithModifier(const KeyEvent& keyEvent) const;
 
-
-    public:
         const size_t GetKeyMappingLength(const KeyEvent& keyEvent) const;
         const _TermKeyMap* GetKeyMapping(const KeyEvent& keyEvent) const;
-
     };
 }

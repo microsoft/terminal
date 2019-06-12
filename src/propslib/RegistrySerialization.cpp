@@ -15,19 +15,20 @@ DWORD RegistrySerialization::ToWin32RegistryType(const _RegPropertyType type)
 {
     switch (type)
     {
-        case _RegPropertyType::Boolean:
-        case _RegPropertyType::Dword:
-        case _RegPropertyType::Word:
-        case _RegPropertyType::Byte:
-        case _RegPropertyType::Coordinate:
-            return REG_DWORD;
-        case _RegPropertyType::String:
-            return REG_SZ;
-        default:
-            return REG_NONE;
+    case _RegPropertyType::Boolean:
+    case _RegPropertyType::Dword:
+    case _RegPropertyType::Word:
+    case _RegPropertyType::Byte:
+    case _RegPropertyType::Coordinate:
+        return REG_DWORD;
+    case _RegPropertyType::String:
+        return REG_SZ;
+    default:
+        return REG_NONE;
     }
 }
 
+// clang-format off
 // Registry settings to load (not all of them, some are special)
 const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMappings[] =
 {
@@ -76,6 +77,8 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_GlobalProp
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_VIRTTERM_LEVEL,                SET_FIELD_AND_SIZE(_dwVirtTermLevel), }
 };
 const size_t RegistrySerialization::s_GlobalPropMappingsSize = ARRAYSIZE(s_GlobalPropMappings);
+
+// clang-format off
 
 // Routine Description:
 // - Reads number from the registry and applies it to the given property if the value exists
@@ -395,7 +398,7 @@ NTSTATUS RegistrySerialization::s_UpdateValue(const HKEY hConsoleKey,
         bool fDeleteKey = false;
         if (hConsoleKey != hKey)
         {
-            Status = s_QueryValue(hConsoleKey, pwszValueName, sizeof(Data), dwType, Data, nullptr);
+            Status = s_QueryValue(hConsoleKey, pwszValueName, cbDataLength, dwType, Data, nullptr);
             if (NT_SUCCESS(Status))
             {
                 fDeleteKey = (memcmp(pbData, Data, cbDataLength) == 0);

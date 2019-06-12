@@ -32,8 +32,7 @@ public:
     void PrintString(const wchar_t* const rgwch, const size_t cch) override;
     void Execute(const wchar_t wch) override;
 
-    [[nodiscard]]
-    NTSTATUS GetResult() { return _ntstatus; };
+    [[nodiscard]] NTSTATUS GetResult() { return _ntstatus; };
 
 private:
     void _DefaultCase(const wchar_t wch);
@@ -44,7 +43,6 @@ private:
 };
 
 #include "..\terminal\adapter\conGetSet.hpp"
-
 
 // The ConhostInternalGetSet is for the Conhost process to call the entrypoints for its own Get/Set APIs.
 // Normally, these APIs are accessible from the outside of the conhost process (like by the process being "hosted") through
@@ -64,10 +62,12 @@ public:
     BOOL GetConsoleCursorInfo(_In_ CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) const override;
     BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) override;
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength,
+    BOOL FillConsoleOutputCharacterW(const WCHAR wch,
+                                     const DWORD nLength,
                                      const COORD dwWriteCoord,
                                      size_t& numberOfCharsWritten) noexcept override;
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength,
+    BOOL FillConsoleOutputAttribute(const WORD wAttribute,
+                                    const DWORD nLength,
                                     const COORD dwWriteCoord,
                                     size_t& numberOfAttrsWritten) noexcept override;
 
@@ -90,7 +90,7 @@ public:
     BOOL PrivateBoldText(const bool bolded) override;
 
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                            _Out_ size_t& eventsWritten) override;
+                                   _Out_ size_t& eventsWritten) override;
 
     BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
                                     _In_opt_ const SMALL_RECT* pClipRectangle,
@@ -156,6 +156,10 @@ public:
     BOOL MoveToBottom() const override;
 
     BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const noexcept override;
+
+    BOOL PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
+
+    BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

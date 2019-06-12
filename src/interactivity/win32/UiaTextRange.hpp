@@ -29,7 +29,6 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-
 // The UiaTextRange deals with several data structures that have
 // similar semantics. In order to keep the information from these data
 // structures separated, each structure has its own naming for a
@@ -68,10 +67,10 @@ typedef unsigned int Column;
 // the first char of the 0th row in the text buffer row array.
 typedef unsigned int Endpoint;
 
+constexpr IdType InvalidId = 0;
+
 namespace Microsoft::Console::Interactivity::Win32
 {
-
-
     class UiaTextRange final : public ITextRangeProvider
     {
     private:
@@ -135,7 +134,6 @@ namespace Microsoft::Console::Interactivity::Win32
         };
 
     public:
-
         static std::deque<UiaTextRange*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider);
 
         // degenerate range
@@ -157,15 +155,16 @@ namespace Microsoft::Console::Interactivity::Win32
 
         ~UiaTextRange();
 
-
         const IdType GetId() const;
         const Endpoint GetStart() const;
         const Endpoint GetEnd() const;
         const bool IsDegenerate() const;
 
         // IUnknown methods
-        IFACEMETHODIMP_(ULONG) AddRef();
-        IFACEMETHODIMP_(ULONG) Release();
+        IFACEMETHODIMP_(ULONG)
+        AddRef();
+        IFACEMETHODIMP_(ULONG)
+        Release();
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
                                       _COM_Outptr_result_maybenull_ void** ppInterface);
 
@@ -339,34 +338,34 @@ namespace Microsoft::Console::Interactivity::Win32
                                                              _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacter(const int moveCount,
-                                         const TextPatternRangeEndpoint endpoint,
-                                         const MoveState moveState,
-                                         _Out_ int* const pAmountMoved);
+        _moveEndpointByUnitCharacter(const int moveCount,
+                                     const TextPatternRangeEndpoint endpoint,
+                                     const MoveState moveState,
+                                     _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacterForward(const int moveCount,
-                                                const TextPatternRangeEndpoint endpoint,
-                                                const MoveState moveState,
-                                                _Out_ int* const pAmountMoved);
+        _moveEndpointByUnitCharacterForward(const int moveCount,
+                                            const TextPatternRangeEndpoint endpoint,
+                                            const MoveState moveState,
+                                            _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacterBackward(const int moveCount,
-                                                 const TextPatternRangeEndpoint endpoint,
-                                                 const MoveState moveState,
-                                                 _Out_ int* const pAmountMoved);
+        _moveEndpointByUnitCharacterBackward(const int moveCount,
+                                             const TextPatternRangeEndpoint endpoint,
+                                             const MoveState moveState,
+                                             _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitLine(const int moveCount,
+        _moveEndpointByUnitLine(const int moveCount,
+                                const TextPatternRangeEndpoint endpoint,
+                                const MoveState moveState,
+                                _Out_ int* const pAmountMoved);
+
+        static std::tuple<Endpoint, Endpoint, bool>
+        _moveEndpointByUnitDocument(const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
                                     _Out_ int* const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitDocument(const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        _Out_ int* const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
@@ -375,7 +374,6 @@ namespace Microsoft::Console::Interactivity::Win32
 
     namespace UiaTextRangeTracing
     {
-
         enum class ApiCall
         {
             Constructor,

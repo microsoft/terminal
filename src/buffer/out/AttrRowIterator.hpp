@@ -13,7 +13,6 @@ Author(s):
 - Austin Diviness (AustDi) 04-Jun-2018
 --*/
 
-
 #pragma once
 
 #include "TextAttribute.hpp"
@@ -55,7 +54,7 @@ private:
     std::vector<TextAttributeRun>::const_iterator _run;
     const ATTR_ROW* _pAttrRow;
     size_t _currentAttributeIndex; // index of TextAttribute within the current TextAttributeRun
-    
+
     void _increment(size_t count);
     void _decrement(size_t count);
     void _setToEnd();

@@ -28,6 +28,9 @@
 
 // This class is intended to test:
 // GetConsoleAlias
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
 
 class AliasTests
 {
@@ -144,6 +147,5 @@ void AliasTests::TestGetConsoleAlias()
                                    dwExeName,
                                    bUnicode,
                                    bSetFirst);
-
     }
 }

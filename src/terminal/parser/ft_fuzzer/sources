@@ -31,8 +31,6 @@ STL_VER                 = STL_VER_CURRENT
 USE_NATIVE_EH           = 1
 
 BUILD_FOR_CORESYSTEM    = 1
-ATL_VER                 = 70
-USE_STATIC_ATL          = 1
 
 # -------------------------------------
 # Preprocessor Settings
@@ -63,9 +61,11 @@ PRECOMPILED_INCLUDE     =   stdafx.h
 SOURCES = \
     VTCommandFuzzer.cpp \
 
-
+INCLUDES = \
+    ..\..\..\inc \
+    $(INCLUDES) \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
-    $(ONECORE_SDK_LIB_VPATH)\onecore.lib \
+    $(ONECORE_EXTERNAL_SDK_LIB_VPATH_L)\onecore.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \

@@ -25,7 +25,7 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine is called when the user changes the screen/popup colors.
 // - It goes through the popup structures and changes the saved contents to reflect the new screen/popup colors.
@@ -63,7 +63,7 @@ bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer,
     while (Count > 0)
     {
         ULONG const StringSize = va_arg(Marker, ULONG);
-        PVOID* StringStart = va_arg(Marker, PVOID *);
+        PVOID* StringStart = va_arg(Marker, PVOID*);
 
         // Make sure the string fits in the supplied buffer and that it is properly aligned.
         if (StringSize > Size)
@@ -115,12 +115,10 @@ bool IsWordDelim(const std::wstring_view charData)
 CommandLine::CommandLine() :
     _isVisible{ true }
 {
-
 }
 
 CommandLine::~CommandLine()
 {
-
 }
 
 CommandLine& CommandLine::Instance()
@@ -231,7 +229,7 @@ void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateField
     if (coordOriginalCursor.Y < 0)
     {
         CharsToWrite += coordBufferSize.X * coordOriginalCursor.Y;
-        CharsToWrite += cookedReadData.OriginalCursorPosition().X;   // account for prompt
+        CharsToWrite += cookedReadData.OriginalCursorPosition().X; // account for prompt
         cookedReadData.OriginalCursorPosition().X = 0;
         cookedReadData.OriginalCursorPosition().Y = 0;
         coordOriginalCursor.X = 0;
@@ -267,7 +265,7 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData)
         cookedReadData.OriginalCursorPosition() = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
 
         SHORT ScrollY = 0;
-#pragma prefast(suppress:28931, "Status is not unused. It's used in debug assertions.")
+#pragma prefast(suppress : 28931, "Status is not unused. It's used in debug assertions.")
         NTSTATUS Status = WriteCharsLegacy(cookedReadData.ScreenInfo(),
                                            cookedReadData.BufferStartPtr(),
                                            cookedReadData.BufferStartPtr(),
@@ -331,8 +329,7 @@ void SetCurrentCommandLine(COOKED_READ_DATA& cookedReadData, _In_ SHORT Index) /
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
-[[nodiscard]]
-NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]] NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands())
@@ -357,8 +354,7 @@ NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData)
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
-[[nodiscard]]
-NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]] NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
 {
     // Delete the current command from cursor position to the
     // letter specified by the user. The user is prompted via
@@ -385,8 +381,7 @@ NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData)
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 // - S_FALSE - if we couldn't make a popup because we had no commands
-[[nodiscard]]
-NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]] NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData)
 {
     // copy the previous command to the current command, up to but
     // not including the character specified by the user.  the user
@@ -413,8 +408,7 @@ NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData)
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - STATUS_SUCCESS - read was fully completed (user hit return)
 // - S_FALSE - if we couldn't make a popup because we had no commands or it wouldn't fit.
-[[nodiscard]]
-HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
+[[nodiscard]] HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 {
     if (cookedReadData.HasHistory() &&
         cookedReadData.History().GetNumberOfCommands() &&
@@ -454,20 +448,17 @@ HRESULT CommandLine::StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData)
 void CommandLine::_processHistoryCycling(COOKED_READ_DATA& cookedReadData,
                                          const CommandHistory::SearchDirection searchDirection)
 {
-
     // for doskey compatibility, buffer isn't circular. don't do anything if attempting
     // to cycle history past the bounds of the history buffer
     if (!cookedReadData.HasHistory())
     {
         return;
     }
-    else if (searchDirection == CommandHistory::SearchDirection::Previous
-             && cookedReadData.History().AtFirstCommand())
+    else if (searchDirection == CommandHistory::SearchDirection::Previous && cookedReadData.History().AtFirstCommand())
     {
         return;
     }
-    else if (searchDirection == CommandHistory::SearchDirection::Next
-             && cookedReadData.History().AtLastCommand())
+    else if (searchDirection == CommandHistory::SearchDirection::Next && cookedReadData.History().AtLastCommand())
     {
         return;
     }
@@ -716,11 +707,10 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
             FAIL_FAST_IF(!(LastWord >= cookedReadData.BufferStartPtr()));
             if (LastWord != cookedReadData.BufferStartPtr())
             {
-
                 // LastWord is currently pointing to the last character
                 // of the previous word, unless it backed up to the beginning
                 // of the buffer.
-                // Let's increment LastWord so that it points to the expeced
+                // Let's increment LastWord so that it points to the expected
                 // insertion point.
                 ++LastWord;
             }
@@ -729,13 +719,13 @@ COORD CommandLine::_moveCursorLeftByWord(COOKED_READ_DATA& cookedReadData) noexc
         cookedReadData.InsertionPoint() = (ULONG)(cookedReadData.BufferCurrentPtr() - cookedReadData.BufferStartPtr());
         cursorPosition = cookedReadData.OriginalCursorPosition();
         cursorPosition.X = (SHORT)(cursorPosition.X +
-                                    RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                                cookedReadData.BufferStartPtr(),
-                                                                cookedReadData.InsertionPoint()));
+                                   RetrieveTotalNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
+                                                               cookedReadData.BufferStartPtr(),
+                                                               cookedReadData.InsertionPoint()));
         const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 1,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
+                               cookedReadData.InsertionPoint() + 1,
+                               sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
         {
             cursorPosition.X++;
         }
@@ -759,9 +749,9 @@ COORD CommandLine::_moveCursorLeft(COOKED_READ_DATA& cookedReadData)
         cursorPosition.X = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition().X;
         cursorPosition.Y = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition().Y;
         cursorPosition.X = (SHORT)(cursorPosition.X -
-                                    RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                            cookedReadData.BufferStartPtr(),
-                                                            cookedReadData.InsertionPoint()));
+                                   RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
+                                                          cookedReadData.BufferStartPtr(),
+                                                          cookedReadData.InsertionPoint()));
         const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
                                 cookedReadData.BufferStartPtr(),
@@ -843,8 +833,8 @@ COORD CommandLine::_moveCursorRightByWord(COOKED_READ_DATA& cookedReadData) noex
                                                                cookedReadData.InsertionPoint()));
         const SHORT sScreenBufferSizeX = cookedReadData.ScreenInfo().GetBufferSize().Width();
         if (CheckBisectStringW(cookedReadData.BufferStartPtr(),
-                                cookedReadData.InsertionPoint() + 1,
-                                sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
+                               cookedReadData.InsertionPoint() + 1,
+                               sScreenBufferSizeX - cookedReadData.OriginalCursorPosition().X))
         {
             cursorPosition.X++;
         }
@@ -867,9 +857,9 @@ COORD CommandLine::_moveCursorRight(COOKED_READ_DATA& cookedReadData) noexcept
     {
         cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();
         cursorPosition.X = (SHORT)(cursorPosition.X +
-                                    RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
-                                                            cookedReadData.BufferStartPtr(),
-                                                            cookedReadData.InsertionPoint()));
+                                   RetrieveNumberOfSpaces(cookedReadData.OriginalCursorPosition().X,
+                                                          cookedReadData.BufferStartPtr(),
+                                                          cookedReadData.InsertionPoint()));
         if (CheckBisectProcessW(cookedReadData.ScreenInfo(),
                                 cookedReadData.BufferStartPtr(),
                                 cookedReadData.InsertionPoint() + 2,
@@ -934,7 +924,7 @@ void CommandLine::_insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
 {
     size_t NumSpaces = 0;
 
-    *cookedReadData.BufferCurrentPtr() = (WCHAR)0x1a;  // ctrl-z
+    *cookedReadData.BufferCurrentPtr() = (WCHAR)0x1a; // ctrl-z
     cookedReadData.BytesRead() += sizeof(WCHAR);
     cookedReadData.InsertionPoint()++;
     if (cookedReadData.IsEchoInput())
@@ -942,14 +932,14 @@ void CommandLine::_insertCtrlZ(COOKED_READ_DATA& cookedReadData) noexcept
         short ScrollY = 0;
         size_t CharsToWrite = sizeof(WCHAR);
         FAIL_FAST_IF_NTSTATUS_FAILED(WriteCharsLegacy(cookedReadData.ScreenInfo(),
-                                                     cookedReadData.BufferStartPtr(),
-                                                     cookedReadData.BufferCurrentPtr(),
-                                                     cookedReadData.BufferCurrentPtr(),
-                                                     &CharsToWrite,
-                                                     &NumSpaces,
-                                                     cookedReadData.OriginalCursorPosition().X,
-                                                     WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
-                                                     &ScrollY));
+                                                      cookedReadData.BufferStartPtr(),
+                                                      cookedReadData.BufferCurrentPtr(),
+                                                      cookedReadData.BufferCurrentPtr(),
+                                                      &CharsToWrite,
+                                                      &NumSpaces,
+                                                      cookedReadData.OriginalCursorPosition().X,
+                                                      WC_DESTRUCTIVE_BACKSPACE | WC_KEEP_CURSOR_VISIBLE | WC_ECHO,
+                                                      &ScrollY));
         cookedReadData.OriginalCursorPosition().Y += ScrollY;
         cookedReadData.VisibleCharCount() += NumSpaces;
     }
@@ -1021,9 +1011,9 @@ COORD CommandLine::_cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cooked
     {
         SHORT index;
         if (cookedReadData.History().FindMatchingCommand({ cookedReadData.BufferStartPtr(), cookedReadData.InsertionPoint() },
-                                                            cookedReadData.History().LastDisplayed,
-                                                            index,
-                                                            CommandHistory::MatchOptions::None))
+                                                         cookedReadData.History().LastDisplayed,
+                                                         index,
+                                                         CommandHistory::MatchOptions::None))
         {
             SHORT CurrentPos;
 
@@ -1074,7 +1064,9 @@ COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noe
     if (!cookedReadData.AtEol())
     {
         // Delete commandline.
-#pragma prefast(suppress:__WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_BUFFER_OVERFLOW, "Not sure why prefast is getting confused here")
+        // clang-format on
         DeleteCommandLine(cookedReadData, false);
 
         // Delete char.
@@ -1124,10 +1116,9 @@ COORD CommandLine::DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noe
 // - CONSOLE_STATUS_WAIT - CommandListPopup ran out of input
 // - CONSOLE_STATUS_READ_COMPLETE - user hit <enter> in CommandListPopup
 // - STATUS_SUCCESS - everything's cool
-[[nodiscard]]
-NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
-                                         _In_ WCHAR wch,
-                                         const DWORD dwKeyState)
+[[nodiscard]] NTSTATUS CommandLine::ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
+                                                       _In_ WCHAR wch,
+                                                       const DWORD dwKeyState)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD cursorPosition = cookedReadData.ScreenInfo().GetTextBuffer().GetCursor().GetPosition();

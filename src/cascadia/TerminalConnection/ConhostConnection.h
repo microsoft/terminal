@@ -32,11 +32,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory{};
 
         bool _connected{};
-        HANDLE _inPipe{ INVALID_HANDLE_VALUE };  // The pipe for writing input to
+        HANDLE _inPipe{ INVALID_HANDLE_VALUE }; // The pipe for writing input to
         HANDLE _outPipe{ INVALID_HANDLE_VALUE }; // The pipe for reading output from
         HANDLE _signalPipe{ INVALID_HANDLE_VALUE };
         DWORD _outputThreadId{};
-        HANDLE _hOutputThread{ INVALID_HANDLE_VALUE };
+        HANDLE _hOutputThread{ nullptr };
         PROCESS_INFORMATION _piConhost{};
         guid _guid{}; // A "unique" session identifier for connected client
         bool _closing{};

@@ -63,7 +63,6 @@ Notes:
 #include "readDataCooked.hpp"
 #include "popup.h"
 
-
 class CommandLine
 {
 public:
@@ -76,13 +75,11 @@ public:
     void Show();
     bool IsVisible() const noexcept;
 
-    [[nodiscard]]
-    NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
-                                _In_ WCHAR wch,
-                                const DWORD dwKeyState);
+    [[nodiscard]] NTSTATUS ProcessCommandLine(COOKED_READ_DATA& cookedReadData,
+                                              _In_ WCHAR wch,
+                                              const DWORD dwKeyState);
 
-    [[nodiscard]]
-    HRESULT StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData);
+    [[nodiscard]] HRESULT StartCommandNumberPopup(COOKED_READ_DATA& cookedReadData);
 
     bool HasPopup() const noexcept;
     Popup& GetPopup();
@@ -97,6 +94,7 @@ public:
 
     void DeletePromptAfterCursor(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD DeleteFromRightOfCursor(COOKED_READ_DATA& cookedReadData) noexcept;
+
 protected:
     CommandLine();
 
@@ -104,12 +102,9 @@ protected:
     CommandLine(CommandLine const&) = delete;
     CommandLine& operator=(CommandLine const&) = delete;
 
-    [[nodiscard]]
-    NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData);
-    [[nodiscard]]
-    NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);
-    [[nodiscard]]
-    NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData);
+    [[nodiscard]] NTSTATUS CommandLine::_startCommandListPopup(COOKED_READ_DATA& cookedReadData);
+    [[nodiscard]] NTSTATUS CommandLine::_startCopyFromCharPopup(COOKED_READ_DATA& cookedReadData);
+    [[nodiscard]] NTSTATUS CommandLine::_startCopyToCharPopup(COOKED_READ_DATA& cookedReadData);
 
     void _processHistoryCycling(COOKED_READ_DATA& cookedReadData, const CommandHistory::SearchDirection searchDirection);
     void _setPromptToOldestCommand(COOKED_READ_DATA& cookedReadData);
@@ -126,18 +121,15 @@ protected:
     void _fillPromptWithPreviousCommandFragment(COOKED_READ_DATA& cookedReadData) noexcept;
     COORD _cycleMatchingCommandHistoryToPrompt(COOKED_READ_DATA& cookedReadData);
 
-
 #ifdef UNIT_TESTING
     friend class CommandLineTests;
     friend class CommandNumberPopupTests;
 #endif
 
 private:
-
     std::deque<std::unique_ptr<Popup>> _popups;
     bool _isVisible;
 };
-
 
 void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateFields);
 
@@ -145,24 +137,23 @@ void RedrawCommandLine(COOKED_READ_DATA& cookedReadData);
 
 // Values for WriteChars(), WriteCharsLegacy() dwFlags
 #define WC_DESTRUCTIVE_BACKSPACE 0x01
-#define WC_KEEP_CURSOR_VISIBLE   0x02
-#define WC_ECHO                  0x04
+#define WC_KEEP_CURSOR_VISIBLE 0x02
+#define WC_ECHO 0x04
 
 // This is no longer necessary. The buffer will always be Unicode. We don't need to perform special work to check if we're in a raster font
 // and convert the entire buffer to match (and all insertions).
 //#define WC_FALSIFY_UNICODE       0x08
 
-#define WC_LIMIT_BACKSPACE       0x10
-#define WC_NONDESTRUCTIVE_TAB    0x20
+#define WC_LIMIT_BACKSPACE 0x10
+#define WC_NONDESTRUCTIVE_TAB 0x20
 //#define WC_NEWLINE_SAVE_X        0x40  -  This has been replaced with an output mode flag instead as it's line discipline behavior that may not necessarily be coupled with VT.
-#define WC_DELAY_EOL_WRAP        0x80
+#define WC_DELAY_EOL_WRAP 0x80
 
 // Word delimiters
-bool IsWordDelim(const WCHAR wch);
+bool IsWordDelim(const wchar_t wch);
 bool IsWordDelim(const std::wstring_view charData);
 
-[[nodiscard]]
-HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
+[[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept;
 
 bool IsValidStringBuffer(_In_ bool Unicode, _In_reads_bytes_(Size) PVOID Buffer, _In_ ULONG Size, _In_ ULONG Count, ...);
 

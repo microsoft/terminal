@@ -11,7 +11,7 @@
 #include <algorithm>
 
 using namespace Microsoft::Console::Types;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - Handles a keyboard event for extending the current selection
 // - Must be called when the console is in selecting state.
@@ -76,7 +76,8 @@ Selection::KeySelectionEventResult Selection::HandleKeySelectionEvent(const INPU
         }
 
         // if in mouse selection mode and user hits a key, cancel selection
-        if (!IsSystemKey(wVirtualKeyCode)) {
+        if (!IsSystemKey(wVirtualKeyCode))
+        {
             ClearSelection();
         }
     }
@@ -638,7 +639,7 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     // If it is line selection, we can assemble that across multiple lines to make a search term.
     // But if it is block selection and the selected area is > 1 line in height, ignore the shift because we can't search.
     // Also ignore if there is no current selection.
-    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.Top != _srSelectionRect.Bottom ))))
+    if ((fShiftPressed) && (!IsAreaSelected() || (!IsLineSelection() && (_srSelectionRect.Top != _srSelectionRect.Bottom))))
     {
         fShiftPressed = false;
     }
@@ -927,7 +928,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
     return false;
 }
 
-#pragma region Calculation/Support for keyboard selection
+#pragma region Calculation / Support for keyboard selection
 
 // Routine Description:
 // - Retrieves the boundaries of the input line (first and last char positions)
@@ -936,8 +937,7 @@ bool Selection::_HandleMarkModeSelectionNav(const INPUT_KEY_INFO* const pInputKe
 // - pcoordInputEnd - Position of the last character in the input line
 // Return Value:
 // - If true, the boundaries returned are valid. If false, they should be discarded.
-[[nodiscard]]
-bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
+[[nodiscard]] bool Selection::s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto bufferSize = gci.GetActiveOutputBuffer().GetBufferSize();

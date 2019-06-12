@@ -31,7 +31,7 @@ public:
 
     virtual void OnSize() override;
 
-    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
     void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
 
@@ -42,7 +42,6 @@ public:
     void SetNonClientHeight(const int contentHeight) noexcept;
 
 private:
-
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
 
     HWND _nonClientInteropWindowHandle;
@@ -62,11 +61,12 @@ private:
     MARGINS _maximizedMargins;
     bool _isMaximized;
 
-    LRESULT HitTestNCA(POINT ptMouse) const noexcept;
-    HRESULT _UpdateFrameMargins() const noexcept;
+    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+
+    [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
 
-    RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+    RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 };

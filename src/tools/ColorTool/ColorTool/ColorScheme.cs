@@ -10,7 +10,7 @@ using System.Linq;
 namespace ColorTool
 {
     /// <summary>
-    /// Represents a colorscheme that can be applied to a console.
+    /// Represents a color scheme that can be applied to a console.
     /// </summary>
     public class ColorScheme
     {

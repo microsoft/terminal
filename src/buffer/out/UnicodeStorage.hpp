@@ -21,10 +21,9 @@ Author(s):
 // std::unordered_map needs help to know how to hash a COORD
 namespace std
 {
-    template <>
+    template<>
     struct hash<COORD>
     {
-
         // Routine Description:
         // - hashes a coord. coord will be hashed by storing the x and y values consecutively in the lower
         // bits of a size_t.

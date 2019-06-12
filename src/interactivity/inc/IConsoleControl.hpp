@@ -21,15 +21,15 @@ namespace Microsoft::Console::Interactivity
     {
     public:
         virtual ~IConsoleControl() = 0;
-        virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
-        virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
-        virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
+        [[nodiscard]] virtual NTSTATUS NotifyConsoleApplication(DWORD dwProcessId) = 0;
+        [[nodiscard]] virtual NTSTATUS SetForeground(HANDLE hProcess, BOOL fForeground) = 0;
+        [[nodiscard]] virtual NTSTATUS EndTask(HANDLE hProcessId, DWORD dwEventType, ULONG ulCtrlFlags) = 0;
 
     protected:
-        IConsoleControl() { }
+        IConsoleControl() {}
 
         IConsoleControl(IConsoleControl const&) = delete;
-        IConsoleControl& operator=(IConsoleControl const &) = delete;
+        IConsoleControl& operator=(IConsoleControl const&) = delete;
     };
 
     inline IConsoleControl::~IConsoleControl() {}

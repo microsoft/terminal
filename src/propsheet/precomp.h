@@ -17,7 +17,6 @@
 #define DEFINE_CONSOLEV2_PROPERTIES
 #define INC_OLE2
 
-
 // This includes a lot of common headers needed by both the host and the propsheet
 // including: windows.h, winuser, ntstatus, assert, and the DDK
 #include "HostAndPropsheetIncludes.h"
@@ -48,16 +47,11 @@
 #include "strid.h"
 #include "..\propslib\conpropsp.hpp"
 
-// WIL
 #include <new>
-#include <wil/Common.h>
-#include <wil/Result.h>
-#include <wil/resource.h>
-#include <wil/wistd_memory.h>
 
 // This is currently bubbling up the source tree to our branch
 #ifndef WM_DPICHANGED_BEFOREPARENT
-#define WM_DPICHANGED_BEFOREPARENT      0x02E2
+#define WM_DPICHANGED_BEFOREPARENT 0x02E2
 #endif
 
 // When on a non-CJK machine using the raster font in a CJK codepage (e.g. "chcp 932"), the raster font is enumerated as

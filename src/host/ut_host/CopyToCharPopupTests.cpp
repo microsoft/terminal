@@ -12,7 +12,7 @@
 
 #include "../CopyToCharPopup.hpp"
 
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -67,8 +67,7 @@ class CopyToCharPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = VK_ESCAPE;
             modifiers = 0;
@@ -104,8 +103,7 @@ class CopyToCharPopupTests
     TEST_METHOD(NothingHappensWhenCharNotFound)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L'x';
             modifiers = 0;
@@ -135,8 +133,7 @@ class CopyToCharPopupTests
     TEST_METHOD(CanCopyToEmptyPrompt)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -173,8 +170,7 @@ class CopyToCharPopupTests
     TEST_METHOD(WontCopyTextBeforeCursor)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -208,14 +204,12 @@ class CopyToCharPopupTests
         VERIFY_ARE_EQUAL(resultText, testString);
         // make sure that more wasn't copied
         VERIFY_ARE_EQUAL(buffer[testString.size()], UNICODE_SPACE);
-
     }
 
     TEST_METHOD(CanMergeLine)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = L's';
             modifiers = 0;
@@ -245,5 +239,4 @@ class CopyToCharPopupTests
         // make sure that more wasn't copied
         VERIFY_ARE_EQUAL(buffer[expectedText.size()], UNICODE_SPACE);
     }
-
 };

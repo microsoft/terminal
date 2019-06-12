@@ -46,6 +46,7 @@ bool CursorTests::TestCleanup()
 
 void CursorTests::TestGetSetConsoleCursorInfo()
 {
+    using namespace WEX::TestExecution;
     DWORD dwSize;
     bool bVisible;
 

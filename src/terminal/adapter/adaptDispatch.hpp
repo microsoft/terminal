@@ -23,87 +23,87 @@ Author(s):
 
 #define XTERM_COLOR_TABLE_SIZE (256)
 
-
 namespace Microsoft::Console::VirtualTerminal
 {
     class AdaptDispatch : public ITermDispatch
     {
     public:
-
         AdaptDispatch(ConGetSet* const pConApi,
                       AdaptDefaults* const pDefaults);
 
-        virtual void Execute(const wchar_t wchControl)
+        void Execute(const wchar_t wchControl) override
         {
             _pDefaults->Execute(wchControl);
         }
 
-        virtual void PrintString(const wchar_t* const rgwch, const size_t cch);
-        virtual void Print(const wchar_t wchPrintable);
+        void PrintString(const wchar_t* const rgwch, const size_t cch) override;
+        void Print(const wchar_t wchPrintable) override;
 
-        virtual bool CursorUp(_In_ unsigned int const uiDistance); // CUU
-        virtual bool CursorDown(_In_ unsigned int const uiDistance); // CUD
-        virtual bool CursorForward(_In_ unsigned int const uiDistance); // CUF
-        virtual bool CursorBackward(_In_ unsigned int const uiDistance); // CUB
-        virtual bool CursorNextLine(_In_ unsigned int const uiDistance); // CNL
-        virtual bool CursorPrevLine(_In_ unsigned int const uiDistance); // CPL
-        virtual bool CursorHorizontalPositionAbsolute(_In_ unsigned int const uiColumn); // CHA
-        virtual bool VerticalLinePositionAbsolute(_In_ unsigned int const uiLine); // VPA
-        virtual bool CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn); // CUP
-        virtual bool CursorSavePosition(); // DECSC
-        virtual bool CursorRestorePosition(); // DECRC
-        virtual bool CursorVisibility(const bool fIsVisible); // DECTCEM
-        virtual bool EraseInDisplay(const DispatchTypes::EraseType eraseType); // ED
-        virtual bool EraseInLine(const DispatchTypes::EraseType eraseType); // EL
-        virtual bool EraseCharacters(_In_ unsigned int const uiNumChars); // ECH
-        virtual bool InsertCharacter(_In_ unsigned int const uiCount); // ICH
-        virtual bool DeleteCharacter(_In_ unsigned int const uiCount); // DCH
-        virtual bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
-                                            const size_t cOptions); // SGR
-        virtual bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType); // DSR
-        virtual bool DeviceAttributes(); // DA
-        virtual bool ScrollUp(_In_ unsigned int const uiDistance); // SU
-        virtual bool ScrollDown(_In_ unsigned int const uiDistance); // SD
-        virtual bool InsertLine(_In_ unsigned int const uiDistance); // IL
-        virtual bool DeleteLine(_In_ unsigned int const uiDistance); // DL
-        virtual bool SetColumns(_In_ unsigned int const uiColumns); // DECSCPP, DECCOLM
-        virtual bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
-                                        const size_t cParams); // DECSET
-        virtual bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
-                                        const size_t cParams); // DECRST
-        virtual bool SetCursorKeysMode(const bool fApplicationMode);  // DECCKM
-        virtual bool SetKeypadMode(const bool fApplicationMode);  // DECKPAM, DECKPNM
-        virtual bool EnableCursorBlinking(const bool bEnable); // ATT610
-        virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
-                                                    const SHORT sBottomMargin); // DECSTBM
-        virtual bool ReverseLineFeed(); // RI
-        virtual bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
-        virtual bool UseAlternateScreenBuffer(); // ASBSET
-        virtual bool UseMainScreenBuffer(); // ASBRST
-        virtual bool HorizontalTabSet(); // HTS
-        virtual bool ForwardTab(const SHORT sNumTabs); // CHT
-        virtual bool BackwardsTab(const SHORT sNumTabs); // CBT
-        virtual bool TabClear(const SHORT sClearType); // TBC
-        virtual bool DesignateCharset(const wchar_t wchCharset); // DesignateCharset
-        virtual bool SoftReset(); // DECSTR
-        virtual bool HardReset(); // RIS
-        virtual bool EnableVT200MouseMode(const bool fEnabled); // ?1000
-        virtual bool EnableUTF8ExtendedMouseMode(const bool fEnabled); // ?1005
-        virtual bool EnableSGRExtendedMouseMode(const bool fEnabled); // ?1006
-        virtual bool EnableButtonEventMouseMode(const bool fEnabled); // ?1002
-        virtual bool EnableAnyEventMouseMode(const bool fEnabled); // ?1003
-        virtual bool EnableAlternateScroll(const bool fEnabled); // ?1007
-        virtual bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle); // DECSCUSR
-        virtual bool SetCursorColor(const COLORREF cursorColor);
+        bool CursorUp(_In_ unsigned int const uiDistance) override; // CUU
+        bool CursorDown(_In_ unsigned int const uiDistance) override; // CUD
+        bool CursorForward(_In_ unsigned int const uiDistance) override; // CUF
+        bool CursorBackward(_In_ unsigned int const uiDistance) override; // CUB
+        bool CursorNextLine(_In_ unsigned int const uiDistance) override; // CNL
+        bool CursorPrevLine(_In_ unsigned int const uiDistance) override; // CPL
+        bool CursorHorizontalPositionAbsolute(_In_ unsigned int const uiColumn) override; // CHA
+        bool VerticalLinePositionAbsolute(_In_ unsigned int const uiLine) override; // VPA
+        bool CursorPosition(_In_ unsigned int const uiLine, _In_ unsigned int const uiColumn) override; // CUP
+        bool CursorSavePosition() override; // DECSC
+        bool CursorRestorePosition() override; // DECRC
+        bool CursorVisibility(const bool fIsVisible) override; // DECTCEM
+        bool EraseInDisplay(const DispatchTypes::EraseType eraseType) override; // ED
+        bool EraseInLine(const DispatchTypes::EraseType eraseType) override; // EL
+        bool EraseCharacters(_In_ unsigned int const uiNumChars) override; // ECH
+        bool InsertCharacter(_In_ unsigned int const uiCount) override; // ICH
+        bool DeleteCharacter(_In_ unsigned int const uiCount) override; // DCH
+        bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
+                                  const size_t cOptions) override; // SGR
+        bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR
+        bool DeviceAttributes() override; // DA
+        bool ScrollUp(_In_ unsigned int const uiDistance) override; // SU
+        bool ScrollDown(_In_ unsigned int const uiDistance) override; // SD
+        bool InsertLine(_In_ unsigned int const uiDistance) override; // IL
+        bool DeleteLine(_In_ unsigned int const uiDistance) override; // DL
+        bool SetColumns(_In_ unsigned int const uiColumns) override; // DECSCPP, DECCOLM
+        bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
+                             const size_t cParams) override; // DECSET
+        bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
+                               const size_t cParams) override; // DECRST
+        bool SetCursorKeysMode(const bool fApplicationMode) override; // DECCKM
+        bool SetKeypadMode(const bool fApplicationMode) override; // DECKPAM, DECKPNM
+        bool EnableCursorBlinking(const bool bEnable) override; // ATT610
+        bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
+                                          const SHORT sBottomMargin) override; // DECSTBM
+        bool ReverseLineFeed() override; // RI
+        bool SetWindowTitle(const std::wstring_view title) override; // OscWindowTitle
+        bool UseAlternateScreenBuffer() override; // ASBSET
+        bool UseMainScreenBuffer() override; // ASBRST
+        bool HorizontalTabSet() override; // HTS
+        bool ForwardTab(const SHORT sNumTabs) override; // CHT
+        bool BackwardsTab(const SHORT sNumTabs) override; // CBT
+        bool TabClear(const SHORT sClearType) override; // TBC
+        bool DesignateCharset(const wchar_t wchCharset) override; // DesignateCharset
+        bool SoftReset() override; // DECSTR
+        bool HardReset() override; // RIS
+        bool EnableVT200MouseMode(const bool fEnabled) override; // ?1000
+        bool EnableUTF8ExtendedMouseMode(const bool fEnabled) override; // ?1005
+        bool EnableSGRExtendedMouseMode(const bool fEnabled) override; // ?1006
+        bool EnableButtonEventMouseMode(const bool fEnabled) override; // ?1002
+        bool EnableAnyEventMouseMode(const bool fEnabled) override; // ?1003
+        bool EnableAlternateScroll(const bool fEnabled) override; // ?1007
+        bool SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) override; // DECSCUSR
+        bool SetCursorColor(const COLORREF cursorColor) override;
 
-        virtual bool SetColorTableEntry(const size_t tableIndex,
-                                        const DWORD dwColor); // OscColorTable
-        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const size_t cParams); // DTTERM_WindowManipulation
+        bool SetColorTableEntry(const size_t tableIndex,
+                                const DWORD dwColor) override; // OscColorTable
+        bool SetDefaultForeground(const DWORD dwColor) override; // OSCDefaultForeground
+        bool SetDefaultBackground(const DWORD dwColor) override; // OSCDefaultBackground
+
+        bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
+                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                const size_t cParams) override; // DTTERM_WindowManipulation
 
     private:
-
         enum class CursorDirection
         {
             Up,

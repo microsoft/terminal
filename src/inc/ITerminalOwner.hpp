@@ -29,5 +29,5 @@ namespace Microsoft::Console
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
-    inline Microsoft::Console::ITerminalOwner::~ITerminalOwner() { }
+    inline Microsoft::Console::ITerminalOwner::~ITerminalOwner() {}
 }

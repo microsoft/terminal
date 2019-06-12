@@ -19,27 +19,19 @@ namespace Microsoft::Console::VirtualTerminal
         VtIo();
         virtual ~VtIo() override = default;
 
-        [[nodiscard]]
-        HRESULT Initialize(const ConsoleArguments* const pArgs);
+        [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
-
-        [[nodiscard]]
-        HRESULT CreateAndStartSignalThread() noexcept;
-        [[nodiscard]]
-        HRESULT CreateIoHandlers() noexcept;
+        [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
+        [[nodiscard]] HRESULT CreateIoHandlers() noexcept;
 
         bool IsUsingVt() const;
 
-        [[nodiscard]]
-        HRESULT StartIfNeeded();
+        [[nodiscard]] HRESULT StartIfNeeded();
 
-        [[nodiscard]]
-        static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
+        [[nodiscard]] static HRESULT ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode);
 
-        [[nodiscard]]
-        HRESULT SuppressResizeRepaint();
-        [[nodiscard]]
-        HRESULT SetCursorPosition(const COORD coordCursor);
+        [[nodiscard]] HRESULT SuppressResizeRepaint();
+        [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
         void CloseInput() override;
         void CloseOutput() override;
@@ -62,15 +54,12 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
-        [[nodiscard]]
-        HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode);
-        [[nodiscard]]
-        HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ HANDLE SignalHandle);
+        [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
         void _ShutdownIfNeeded();
 
-    #ifdef UNIT_TESTING
+#ifdef UNIT_TESTING
         friend class VtIoTests;
-    #endif
+#endif
     };
 }

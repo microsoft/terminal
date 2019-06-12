@@ -5,6 +5,8 @@
 #include "TerminalSettings.h"
 #include <DefaultSettings.h>
 
+#include "TerminalSettings.g.cpp"
+
 namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     TerminalSettings::TerminalSettings() :
@@ -24,10 +26,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _padding{ DEFAULT_PADDING },
         _fontFace{ DEFAULT_FONT_FACE },
         _fontSize{ DEFAULT_FONT_SIZE },
+        _backgroundImage{},
+        _backgroundImageOpacity{ 1.0 },
+        _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
-
     }
 
     uint32_t TerminalSettings::DefaultForeground()
@@ -189,6 +193,36 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::FontSize(int32_t value)
     {
         _fontSize = value;
+    }
+
+    void TerminalSettings::BackgroundImage(hstring const& value)
+    {
+        _backgroundImage = value;
+    }
+
+    hstring TerminalSettings::BackgroundImage()
+    {
+        return _backgroundImage;
+    }
+
+    void TerminalSettings::BackgroundImageOpacity(double value)
+    {
+        _backgroundImageOpacity = value;
+    }
+
+    double TerminalSettings::BackgroundImageOpacity()
+    {
+        return _backgroundImageOpacity;
+    }
+
+    winrt::Windows::UI::Xaml::Media::Stretch TerminalSettings::BackgroundImageStretchMode()
+    {
+        return _backgroundImageStretchMode;
+    }
+
+    void TerminalSettings::BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value)
+    {
+        _backgroundImageStretchMode = value;
     }
 
     Settings::IKeyBindings TerminalSettings::KeyBindings()

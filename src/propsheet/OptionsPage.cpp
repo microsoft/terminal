@@ -8,17 +8,21 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
     UINT Value;
     BOOL bOK;
 
-    switch (Item) {
+    switch (Item)
+    {
     case IDD_LANGUAGELIST:
-        switch (Notification) {
-        case CBN_SELCHANGE: {
+        switch (Notification)
+        {
+        case CBN_SELCHANGE:
+        {
             HWND hWndLanguageCombo;
             LONG lListIndex;
 
             hWndLanguageCombo = GetDlgItem(hDlg, IDD_LANGUAGELIST);
             lListIndex = (LONG)SendMessage(hWndLanguageCombo, CB_GETCURSEL, 0, 0);
             Value = (UINT)SendMessage(hWndLanguageCombo, CB_GETITEMDATA, lListIndex, 0);
-            if (Value != -1) {
+            if (Value != -1)
+            {
                 fChangeCodePage = (Value != gpStateInfo->CodePage);
                 UpdateStateInfo(hDlg, Item, Value);
                 UpdateApplyButton(hDlg);
@@ -27,7 +31,7 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
         }
 
         default:
-            DBGFONTS(("unhandled CBN_%x from POINTSLIST\n",Notification));
+            DBGFONTS(("unhandled CBN_%x from POINTSLIST\n", Notification));
             break;
         }
         return TRUE;
@@ -35,7 +39,8 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
     case IDD_CURSOR_MEDIUM:
     case IDD_CURSOR_LARGE:
         UpdateStateInfo(hDlg, Item, 0);
-        if (Notification != EN_KILLFOCUS) {
+        if (Notification != EN_KILLFOCUS)
+        {
             // we don't want to light up the apply button just because a cursor selection lost focus -- this can
             // happen when switching between tabs even if there's no actual change in selection.
             UpdateApplyButton(hDlg);
@@ -52,11 +57,15 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
 
     case IDD_HISTORY_SIZE:
     case IDD_HISTORY_NUM:
-        switch (Notification) {
+        switch (Notification)
+        {
         case EN_UPDATE:
-            if (!CheckNum(hDlg, Item)) {
+            if (!CheckNum(hDlg, Item))
+            {
                 Undo(hControlWindow);
-            } else if (g_fSettingsDlgInitialized) {
+            }
+            else if (g_fSettingsDlgInitialized)
+            {
                 UpdateApplyButton(hDlg);
             }
             break;
@@ -66,7 +75,8 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
              * Update the state info structure
              */
             Value = GetDlgItemInt(hDlg, Item, &bOK, TRUE);
-            if (bOK) {
+            if (bOK)
+            {
                 UpdateStateInfo(hDlg, Item, Value);
                 UpdateApplyButton(hDlg);
             }
@@ -122,7 +132,6 @@ bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned i
         UpdateApplyButton(hDlg);
         return TRUE;
     }
-
     }
     return FALSE;
 }
@@ -135,7 +144,8 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
     UINT Item;
     UINT Notification;
 
-    switch (wMsg) {
+    switch (wMsg)
+    {
     case WM_INITDIALOG:
         CheckDlgButton(hDlg, IDD_HISTORY_NODUP, gpStateInfo->HistoryNoDup);
         CheckDlgButton(hDlg, IDD_QUICKEDIT, gpStateInfo->QuickEdit);
@@ -157,44 +167,56 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         CreateAndAssociateToolTipToControl(IDD_INTERCEPT_COPY_PASTE, hDlg, IDS_TOOLTIP_INTERCEPT_COPY_PASTE);
 
         // initialize cursor radio buttons
-        if (gpStateInfo->CursorSize <= 25) {
+        if (gpStateInfo->CursorSize <= 25)
+        {
             Item = IDD_CURSOR_SMALL;
-        } else if (gpStateInfo->CursorSize <= 50) {
+        }
+        else if (gpStateInfo->CursorSize <= 50)
+        {
             Item = IDD_CURSOR_MEDIUM;
-        } else {
+        }
+        else
+        {
             Item = IDD_CURSOR_LARGE;
         }
         CheckRadioButton(hDlg, IDD_CURSOR_SMALL, IDD_CURSOR_LARGE, Item);
 
-        SetDlgItemInt(hDlg, IDD_HISTORY_SIZE, gpStateInfo->HistoryBufferSize,
-                      FALSE);
+        SetDlgItemInt(hDlg, IDD_HISTORY_SIZE, gpStateInfo->HistoryBufferSize, FALSE);
         SendDlgItemMessage(hDlg, IDD_HISTORY_SIZE, EM_LIMITTEXT, 3, 0);
-        SendDlgItemMessage(hDlg, IDD_HISTORY_SIZESCROLL, UDM_SETRANGE, 0,
-                           MAKELONG(999, 1));
+        SendDlgItemMessage(hDlg, IDD_HISTORY_SIZESCROLL, UDM_SETRANGE, 0, MAKELONG(999, 1));
 
         SetDlgItemInt(hDlg, IDD_HISTORY_NUM, gpStateInfo->NumberOfHistoryBuffers, FALSE);
         SendDlgItemMessage(hDlg, IDD_HISTORY_NUM, EM_LIMITTEXT, 3, 0);
         SendDlgItemMessage(hDlg, IDD_HISTORY_NUM, EM_SETSEL, 0, (DWORD)-1);
-        SendDlgItemMessage(hDlg, IDD_HISTORY_NUMSCROLL, UDM_SETRANGE, 0,
-                           MAKELONG(999, 1));
+        SendDlgItemMessage(hDlg, IDD_HISTORY_NUMSCROLL, UDM_SETRANGE, 0, MAKELONG(999, 1));
 
-        if (g_fEastAsianSystem) {
+        if (g_fEastAsianSystem)
+        {
             // In CJK systems, we always show the codepage on both the defaults and non-defaults propsheets
-            if (gpStateInfo->Defaults) {
+            if (gpStateInfo->Defaults)
+            {
                 LanguageListCreate(hDlg, gpStateInfo->CodePage);
-            } else {
+            }
+            else
+            {
                 LanguageDisplay(hDlg, gpStateInfo->CodePage);
             }
-        } else {
+        }
+        else
+        {
             // On non-CJK systems, we show the codepage on a non-default propsheet, but don't allow the user to view or
             // change it on the defaults propsheet
             const HWND hwndLanguageGroupbox = GetDlgItem(hDlg, IDD_LANGUAGE_GROUPBOX);
-            if (hwndLanguageGroupbox) {
-                if (gpStateInfo->Defaults) {
+            if (hwndLanguageGroupbox)
+            {
+                if (gpStateInfo->Defaults)
+                {
                     const HWND hwndLanguageList = GetDlgItem(hDlg, IDD_LANGUAGELIST);
                     ShowWindow(hwndLanguageList, SW_HIDE);
                     ShowWindow(hwndLanguageGroupbox, SW_HIDE);
-                } else {
+                }
+                else
+                {
                     const HWND hwndLanguage = GetDlgItem(hDlg, IDD_LANGUAGE);
                     LanguageDisplay(hDlg, gpStateInfo->CodePage);
                     ShowWindow(hwndLanguage, SW_SHOW);
@@ -216,34 +238,37 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         if (lParam && (wParam == IDD_HELP_SYSLINK || wParam == IDD_HELP_LEGACY_LINK))
         {
             // handle hyperlink click or keyboard activation
-            switch(((LPNMHDR)lParam)->code)
+            switch (((LPNMHDR)lParam)->code)
             {
-                case NM_CLICK:
-                case NM_RETURN:
+            case NM_CLICK:
+            case NM_RETURN:
+            {
+                PNMLINK pnmLink = (PNMLINK)lParam;
+                if (0 == pnmLink->item.iLink)
                 {
-                    PNMLINK pnmLink = (PNMLINK)lParam;
-                    if (0 == pnmLink->item.iLink)
-                    {
-                        ShellExecute(NULL,
-                                     L"open",
-                                     pnmLink->item.szUrl,
-                                     NULL,
-                                     NULL,
-                                     SW_SHOW);
-                    }
-
-                    break;
+                    ShellExecute(NULL,
+                                 L"open",
+                                 pnmLink->item.szUrl,
+                                 NULL,
+                                 NULL,
+                                 SW_SHOW);
                 }
+
+                break;
+            }
             }
         }
         else
         {
-            const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-            switch (pshn->hdr.code) {
+            const PSHNOTIFY* const pshn = (LPPSHNOTIFY)lParam;
+            if (lParam)
+            {
+                switch (pshn->hdr.code)
+                {
                 case PSN_APPLY:
                     /*
-                     * Write out the state values and exit.
-                     */
+                         * Write out the state values and exit.
+                         */
                     EndDlgPage(hDlg, !pshn->lParam);
                     return TRUE;
 
@@ -253,15 +278,16 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
 
                 case PSN_KILLACTIVE:
                     /*
-                     * Fake the dialog proc into thinking the edit control just
-                     * lost focus so it'll update properly
-                     */
+                         * Fake the dialog proc into thinking the edit control just
+                         * lost focus so it'll update properly
+                         */
                     Item = GetDlgCtrlID(GetFocus());
                     if (Item)
                     {
                         SendMessage(hDlg, WM_COMMAND, MAKELONG(Item, EN_KILLFOCUS), 0);
                     }
                     return TRUE;
+                }
             }
         }
 

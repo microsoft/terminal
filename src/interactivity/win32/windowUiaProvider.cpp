@@ -18,7 +18,6 @@ WindowUiaProvider::WindowUiaProvider() :
     _pScreenInfoProvider{ nullptr },
     _cRefs(1)
 {
-
 }
 
 WindowUiaProvider::~WindowUiaProvider()
@@ -61,8 +60,7 @@ WindowUiaProvider* WindowUiaProvider::Create()
     }
 }
 
-[[nodiscard]]
-HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
+[[nodiscard]] HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
 
@@ -106,8 +104,7 @@ HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
     return hr;
 }
 
-[[nodiscard]]
-HRESULT WindowUiaProvider::SetTextAreaFocus()
+[[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
 {
     try
     {
@@ -118,13 +115,15 @@ HRESULT WindowUiaProvider::SetTextAreaFocus()
 
 #pragma region IUnknown
 
-IFACEMETHODIMP_(ULONG) WindowUiaProvider::AddRef()
+IFACEMETHODIMP_(ULONG)
+WindowUiaProvider::AddRef()
 {
     Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
-IFACEMETHODIMP_(ULONG) WindowUiaProvider::Release()
+IFACEMETHODIMP_(ULONG)
+WindowUiaProvider::Release()
 {
     Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
     long val = InterlockedDecrement(&_cRefs);
@@ -259,7 +258,7 @@ IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_
         const HWND hwnd = _GetWindowHandle();
         return UiaHostProviderFromHwnd(hwnd, ppProvider);
     }
-    catch(...)
+    catch (...)
     {
         return static_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
     }
@@ -379,8 +378,7 @@ HWND WindowUiaProvider::_GetWindowHandle() const
     return pIConsoleWindow->GetWindowHandle();
 }
 
-[[nodiscard]]
-HRESULT WindowUiaProvider::_EnsureValidHwnd() const
+[[nodiscard]] HRESULT WindowUiaProvider::_EnsureValidHwnd() const
 {
     try
     {
@@ -391,7 +389,7 @@ HRESULT WindowUiaProvider::_EnsureValidHwnd() const
     return S_OK;
 }
 
-IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
+Microsoft::Console::Interactivity::IConsoleWindow* const WindowUiaProvider::_getIConsoleWindow()
 {
-    return ServiceLocator::LocateConsoleWindow();
+    return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow();
 }

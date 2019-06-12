@@ -5,7 +5,9 @@
 #include "../host/scrolling.hpp"
 #include "../interactivity/inc/ServiceLocator.hpp"
 #pragma hdrstop
+
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Interactivity;
 
 CursorBlinker::CursorBlinker() :
     _hCaretBlinkTimer(INVALID_HANDLE_VALUE),
@@ -113,8 +115,8 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     // Don't blink the cursor for remote sessions.
     if ((!ServiceLocator::LocateSystemConfigurationProvider()->IsCaretBlinkingEnabled() ||
          _uCaretBlinkTime == -1 ||
-        (!cursor.IsBlinkingAllowed())) &&
-       cursor.IsOn())
+         (!cursor.IsBlinkingAllowed())) &&
+        cursor.IsOn())
     {
         goto DoScroll;
     }

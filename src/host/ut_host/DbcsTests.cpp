@@ -86,6 +86,5 @@ class DbcsTests
                 VERIFY_ARE_EQUAL(rgci[i].Attributes, 0);
             }
         }
-
     }
 };
