@@ -1,9 +1,6 @@
-/*
-* Copyright (c) Microsoft Corporation.
-* Licensed under the MIT license.
-*
-* Class Name: JsonTests
-*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 
 #include "../TerminalApp/ColorScheme.h"
