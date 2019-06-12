@@ -1055,7 +1055,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Process a resize event that was initiated by the user. This can either be due to the user resizing the window (causing the swapchain to resize) or due to the DPI changing (causing us to need to resize the buffer to match)
+    // - Process a resize event that was initiated by the user. This can either
+    //   be due to the user resizing the window (causing the swapchain to
+    //   resize) or due to the DPI changing (causing us to need to resize the
+    //   buffer to match)
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
@@ -1064,6 +1067,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         SIZE size;
         size.cx = static_cast<long>(newWidth);
         size.cy = static_cast<long>(newHeight);
+
+        // Don't actually resize so small that a single character wouldn't fit
+        // in either dimension. The buffer really doesn't like being size 0.
+        if (size.cx < _actualFont.GetSize().X || size.cy < _actualFont.GetSize().Y)
+        {
+            return;
+        }
 
         // Tell the dx engine that our window is now the new size.
         THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
@@ -1313,12 +1323,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
+    // Method Description:
+    // - Get the size of a single character of this control. The size is in
+    //   DIPs. If you need it in _pixels_, you'll need to multiply by the
+    //   current display scaling.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The dimensions of a single character of this control, in DIPs
     winrt::Windows::Foundation::Size TermControl::CharacterDimensions()
     {
         const auto fontSize = _actualFont.GetSize();
         return { gsl::narrow_cast<float>(fontSize.X), gsl::narrow_cast<float>(fontSize.Y) };
     }
 
+    // Method Description:
+    // - Get the absolute minimum size that this control can be resized to and
+    //   still have 1x1 character visible. This includes the space needed for
+    //   the scrollbar and the padding.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The minimum size that this terminal control can be resized to and still
+    //   have a visible character.
     winrt::Windows::Foundation::Size TermControl::MinimumSize()
     {
         const auto fontSize = _actualFont.GetSize();

@@ -104,17 +104,23 @@ bool Pane::_DoResize(const Direction& direction)
 
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
+    // actualDimension is the size in DIPs of this pane in the direction we're
+    // resizing.
     auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
     actualDimension -= PaneSeparatorSize;
 
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
 
+    // These are the minimum amount of space we need for each of our children
     const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
     const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
 
     const auto firstMinPercent = firstMinDimension / actualDimension;
     const auto secondMinPercent = secondMinDimension / actualDimension;
+
+    // Make sure that the first pane doesn't get bigger than the space we need
+    // to reserve for the second.
     const auto firstMaxPercent = 1.0f - secondMinPercent;
 
     _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
@@ -794,6 +800,16 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
     return { firstSize, secondSize };
 }
 
+
+// Method Description:
+// - Get the absolute minimum size that this pane can be resized to and still
+//   have 1x1 character visible, in each of its children. This includes the
+//   space needed for the separator.
+// Arguments:
+// - <none>
+// Return Value:
+// - The minimum size that this pane can be resized to and still have a visible
+//   character.
 Size Pane::_GetMinSize()
 {
     if (_IsLeaf())
