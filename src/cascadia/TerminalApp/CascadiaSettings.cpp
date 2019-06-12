@@ -255,16 +255,16 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                                         static_cast<int>('T') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         static_cast<int>('W') });
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        static_cast<int>('W') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CopyText,
-                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                         static_cast<int>('C') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('C') });
 
     keyBindings.SetKeyBinding(ShortcutAction::PasteText,
-                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                         static_cast<int>('V') });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('V') });
 
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
                               KeyChord{ KeyModifiers::Ctrl,
