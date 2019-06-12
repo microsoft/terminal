@@ -534,7 +534,14 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         if (wlinestream)
         {
             std::wstring distName;
-            std::getline(wlinestream, distName, L' ');
+            std::getline(wlinestream, distName, L'\r');
+            size_t firstChar = distName.find_first_of(L"( ");
+            // Some localizations don't have a space between the name and "(Default)"
+            // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
+            if (firstChar < distName.size())
+            {
+                distName.resize(firstChar);
+            }
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
