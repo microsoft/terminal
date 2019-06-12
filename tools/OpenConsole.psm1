@@ -51,7 +51,9 @@ function Import-LocalModule
 function Set-MsbuildDevEnvironment
 {
     [CmdletBinding()]
-    param()
+    param(
+        [switch]$Prerelease
+    )
 
     $ErrorActionPreference = 'Stop'
 
@@ -59,7 +61,7 @@ function Set-MsbuildDevEnvironment
 
     Write-Verbose 'Searching for VC++ instances'
     $vsinfo = `
-        Get-VSSetupInstance  -All `
+        Get-VSSetupInstance  -All -Prerelease:$Prerelease `
         | Select-VSSetupInstance `
             -Latest -Product * `
             -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
