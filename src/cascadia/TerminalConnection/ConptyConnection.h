@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _commandline;
 
         bool _connected;
-        HANDLE _inPipe;  // The pipe for writing input to
+        HANDLE _inPipe; // The pipe for writing input to
         HANDLE _outPipe; // The pipe for reading output from
         HPCON _hPC;
         DWORD _outputThreadId;

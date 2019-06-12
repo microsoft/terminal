@@ -1,13 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include <cwchar>
 
 #include "..\inc\FontInfoBase.hpp"
-
 
 bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 {
@@ -23,10 +21,10 @@ FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
                            const LONG lWeight,
                            const bool fSetDefaultRasterFont,
                            const UINT uiCodePage) :
-                           _bFamily(bFamily),
-                           _lWeight(lWeight),
-                           _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
-                           _uiCodePage(uiCodePage)
+    _bFamily(bFamily),
+    _lWeight(lWeight),
+    _fDefaultRasterSetFromEngine(fSetDefaultRasterFont),
+    _uiCodePage(uiCodePage)
 {
     if (nullptr != pwszFaceName)
     {
@@ -36,7 +34,7 @@ FontInfoBase::FontInfoBase(_In_ PCWSTR const pwszFaceName,
     ValidateFont();
 }
 
-FontInfoBase::FontInfoBase(const FontInfoBase &fibFont) :
+FontInfoBase::FontInfoBase(const FontInfoBase& fibFont) :
     FontInfoBase(fibFont.GetFaceName(),
                  fibFont.GetFamily(),
                  fibFont.GetWeight(),

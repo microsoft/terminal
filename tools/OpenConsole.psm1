@@ -51,7 +51,9 @@ function Import-LocalModule
 function Set-MsbuildDevEnvironment
 {
     [CmdletBinding()]
-    param()
+    param(
+        [switch]$Prerelease
+    )
 
     $ErrorActionPreference = 'Stop'
 
@@ -59,7 +61,7 @@ function Set-MsbuildDevEnvironment
 
     Write-Verbose 'Searching for VC++ instances'
     $vsinfo = `
-        Get-VSSetupInstance  -All `
+        Get-VSSetupInstance  -All -Prerelease:$Prerelease `
         | Select-VSSetupInstance `
             -Latest -Product * `
             -Require 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64'
@@ -304,4 +306,36 @@ function Debug-OpenConsole()
     Debug-Process -Id $process.Id
 }
 
-Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole
+#.SYNOPSIS
+# runs clang-format on list of files
+#
+#.PARAMETER Path
+# The full paths to the files to format
+function Invoke-ClangFormat {
+    [CmdletBinding()]
+    Param (
+        [Parameter(Mandatory=$true,ValueFromPipeline=$true)]
+        [string[]]$Path
+    )
+
+    Process {
+        ForEach($_ in $Path) {
+            Try {
+                $n = Get-Item $_ -ErrorAction Stop | Select -Expand FullName
+                & "$env:OpenconsoleRoot/dep/llvm/clang-format" -i $n
+            } Catch {
+                Write-Error $_
+            }
+        }
+    }
+}
+
+#.SYNOPSIS
+# runs code formatting on all c++ files
+function Invoke-CodeFormat() {
+    Get-ChildItem -Recurse "$env:OpenConsoleRoot/src" -Include *.cpp, *.hpp, *.h |
+      Where FullName -NotLike "*Generated Files*" |
+      Invoke-ClangFormat
+}
+
+Export-ModuleMember -Function Set-MsbuildDevEnvironment,Invoke-OpenConsoleTests,Invoke-OpenConsoleBuild,Start-OpenConsole,Debug-OpenConsole,Invoke-CodeFormat

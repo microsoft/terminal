@@ -45,7 +45,7 @@ bool DispatchCommon::s_ResizeWindow(ConGetSet& conApi,
             csbiex.dwSize.X = sColumns;
             // Only set the screen buffer's height if it's currently less than
             //  what we're requesting.
-            if(sRows > csbiex.dwSize.Y)
+            if (sRows > csbiex.dwSize.Y)
             {
                 csbiex.dwSize.Y = sRows;
             }

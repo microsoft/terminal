@@ -143,7 +143,6 @@ class TextBufferTests
     TEST_METHOD(ResizeTraditionalHighUnicodeColumnRemoval);
 
     TEST_METHOD(TestBurrito);
-
 };
 
 void TextBufferTests::TestBufferCreate()
@@ -215,7 +214,6 @@ void TextBufferTests::TestDoubleBytePadFlag()
     Row.GetCharRow().SetDoubleBytePadded(false);
     VERIFY_IS_FALSE(Row.GetCharRow().WasDoubleBytePadded());
 }
-
 
 void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
                                      short const cLength,
@@ -343,7 +341,7 @@ void TextBufferTests::TestInsertCharacter()
 
     // ensure that the cursor moved to a new position (X or Y or both have changed)
     VERIFY_IS_TRUE((coordCursorBefore.X != textBuffer.GetCursor().GetPosition().X) ||
-        (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
+                   (coordCursorBefore.Y != textBuffer.GetCursor().GetPosition().Y));
     // the proper advancement of the cursor (e.g. which position it goes to) is validated in other tests
 }
 
@@ -385,7 +383,6 @@ void TextBufferTests::TestIncrementCursor()
 void TextBufferTests::TestNewlineCursor()
 {
     TextBuffer& textBuffer = GetTbi();
-
 
     const short sBufferHeight = textBuffer.GetSize().Height();
 
@@ -559,7 +556,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const TextBuffer& tbi = si.GetTextBuffer();
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
-    
+
     // Case 1 -
     //      Write '\E[m\E[38;2;64;128;255mX\E[49mX\E[m'
     //      Make sure that the second X has RGB attributes (FG and BG)
@@ -578,8 +575,8 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -595,7 +592,6 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset, std::wcslen(reset));
-
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBackground()
@@ -623,8 +619,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -665,8 +661,8 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -680,12 +676,11 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attrB), RGB(64, 128, 255));
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), gci.LookupForegroundColor(si.GetAttributes()));
 
-    VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, 0);
-    VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes()&COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
+    VERIFY_ARE_EQUAL(attrA.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, 0);
+    VERIFY_ARE_EQUAL(attrB.GetLegacyAttributes() & COMMON_LVB_UNDERSCORE, COMMON_LVB_UNDERSCORE);
 
     wchar_t* reset = L"\x1b[0m";
     stateMachine.ProcessString(reset, std::wcslen(reset));
-
 }
 
 void TextBufferTests::TestMixedRgbAndLegacyBrightness()
@@ -714,8 +709,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -761,8 +756,8 @@ void TextBufferTests::TestRgbEraseLine()
 
         Log::Comment(NoThrowString().Format(
             L"cursor={X:%d,Y:%d}",
-            x, y
-        ));
+            x,
+            y));
         VERIFY_ARE_EQUAL(x, 2);
         VERIFY_ARE_EQUAL(y, 0);
 
@@ -812,8 +807,8 @@ void TextBufferTests::TestUnBold()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
@@ -826,8 +821,8 @@ void TextBufferTests::TestUnBold()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -864,8 +859,8 @@ void TextBufferTests::TestUnBoldRgb()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_ARE_EQUAL(x, 2);
     VERIFY_ARE_EQUAL(y, 0);
 
@@ -878,8 +873,8 @@ void TextBufferTests::TestUnBoldRgb()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -924,8 +919,8 @@ void TextBufferTests::TestComplexUnBold()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_ARE_EQUAL(x, 6);
     VERIFY_ARE_EQUAL(y, 0);
 
@@ -942,11 +937,10 @@ void TextBufferTests::TestComplexUnBold()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     Log::Comment(NoThrowString().Format(
-        L"attrA=%s", VerifyOutputTraits<TextAttribute>::ToString(attrA).GetBuffer()
-    ));
+        L"attrA=%s", VerifyOutputTraits<TextAttribute>::ToString(attrA).GetBuffer()));
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
     LOG_ATTR(attrC);
@@ -989,7 +983,6 @@ void TextBufferTests::TestComplexUnBold()
     stateMachine.ProcessString(&reset[0], reset.length());
 }
 
-
 void TextBufferTests::CopyAttrs()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1015,8 +1008,8 @@ void TextBufferTests::CopyAttrs()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_ARE_EQUAL(x, 0);
     VERIFY_ARE_EQUAL(y, 0);
 
@@ -1029,15 +1022,14 @@ void TextBufferTests::CopyAttrs()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrA), dark_blue);
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attrB), dark_magenta);
-
 }
 
 void TextBufferTests::EmptySgrTest()
@@ -1070,8 +1062,8 @@ void TextBufferTests::EmptySgrTest()
     const COLORREF darkRed = gci.GetColorTableEntry(4);
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_IS_TRUE(x >= 3);
 
     const auto& row = tbi.GetRowByOffset(y);
@@ -1084,8 +1076,8 @@ void TextBufferTests::EmptySgrTest()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1136,8 +1128,8 @@ void TextBufferTests::TestReverseReset()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     VERIFY_IS_TRUE(x >= 3);
 
     const auto& row = tbi.GetRowByOffset(y);
@@ -1150,8 +1142,8 @@ void TextBufferTests::TestReverseReset()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1242,8 +1234,8 @@ void TextBufferTests::CopyLastAttr()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     const ROW& row1 = tbi.GetRowByOffset(y + 1);
     const ROW& row2 = tbi.GetRowByOffset(y + 2);
@@ -1265,8 +1257,8 @@ void TextBufferTests::CopyLastAttr()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
 
     LOG_ATTR(attr1A);
     LOG_ATTR(attr2A);
@@ -1283,7 +1275,6 @@ void TextBufferTests::CopyLastAttr()
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr2B), solCyan);
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr2B), solBg);
-
 
     VERIFY_ARE_EQUAL(gci.LookupForegroundColor(attr3A), solFg);
     VERIFY_ARE_EQUAL(gci.LookupBackgroundColor(attr3A), solBg);
@@ -1306,8 +1297,7 @@ void TextBufferTests::TestRgbThenBold()
     const Cursor& cursor = tbi.GetCursor();
     // See MSFT:16398982
     Log::Comment(NoThrowString().Format(
-        L"Test that a bold following a RGB color doesn't remove the RGB color"
-    ));
+        L"Test that a bold following a RGB color doesn't remove the RGB color"));
     Log::Comment(L"\"\\x1b[38;2;40;40;40m\\x1b[48;2;168;153;132mX\\x1b[1mX\\x1b[m\"");
     const auto foreground = RGB(40, 40, 40);
     const auto background = RGB(168, 153, 132);
@@ -1323,11 +1313,10 @@ void TextBufferTests::TestRgbThenBold()
     const auto attrB = attrs[x - 1];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"
-    ));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1352,10 +1341,9 @@ void TextBufferTests::TestResetClearsBoldness()
     StateMachine& stateMachine = si.GetStateMachine();
     const Cursor& cursor = tbi.GetCursor();
     Log::Comment(NoThrowString().Format(
-        L"Test that resetting bold attributes clears the boldness."
-    ));
+        L"Test that resetting bold attributes clears the boldness."));
     const auto x0 = cursor.GetPosition().X;
-    
+
     // Test assumes that the background/foreground were default attribute when it starts up,
     // so set that here.
     TextAttribute defaultAttribute;
@@ -1381,11 +1369,10 @@ void TextBufferTests::TestResetClearsBoldness()
     const auto attrD = attrs[x0 + 3];
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x, y
-    ));
+        x,
+        y));
     Log::Comment(NoThrowString().Format(
-        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"
-    ));
+        L"attrA should be RGB, and attrB should be the same as attrA, NOT bolded"));
 
     LOG_ATTR(attrA);
     LOG_ATTR(attrB);
@@ -1450,8 +1437,8 @@ void TextBufferTests::TestBackspaceStrings()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x0, y0
-    ));
+        x0,
+        y0));
     std::wstring seq = L"a\b \b";
     stateMachine.ProcessString(seq.c_str(), seq.length());
 
@@ -1495,8 +1482,8 @@ void TextBufferTests::TestBackspaceStringsAPI()
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
-        x0, y0
-    ));
+        x0,
+        y0));
 
     // We're going to write an "a" to the buffer in various ways, then try
     //      backspacing it with "\b \b".
@@ -1509,8 +1496,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
 
     size_t seqCb = 6;
     Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as a single string."
-    ));
+        L"Using WriteCharsLegacy, write \\b \\b as a single string."));
     {
         wchar_t* str = L"\b \b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
@@ -1519,8 +1505,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
         VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
         Log::Comment(NoThrowString().Format(
-            L"Using DoWriteConsole, write \\b \\b as a single string."
-        ));
+            L"Using DoWriteConsole, write \\b \\b as a single string."));
         VERIFY_SUCCEEDED(DoWriteConsole(L"a", &aCb, si, waiter));
 
         VERIFY_SUCCEEDED(DoWriteConsole(str, &seqCb, si, waiter));
@@ -1531,8 +1516,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     seqCb = 2;
 
     Log::Comment(NoThrowString().Format(
-        L"Using DoWriteConsole, write \\b \\b as seperate strings."
-    ));
+        L"Using DoWriteConsole, write \\b \\b as seperate strings."));
 
     VERIFY_SUCCEEDED(DoWriteConsole(L"a", &seqCb, si, waiter));
     VERIFY_SUCCEEDED(DoWriteConsole(L"\b", &seqCb, si, waiter));
@@ -1542,10 +1526,8 @@ void TextBufferTests::TestBackspaceStringsAPI()
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
 
-
     Log::Comment(NoThrowString().Format(
-        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."
-    ));
+        L"Using WriteCharsLegacy, write \\b \\b as seperate strings."));
     {
         wchar_t* str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
@@ -1565,7 +1547,6 @@ void TextBufferTests::TestBackspaceStringsAPI()
 
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, y0);
-
 }
 
 void TextBufferTests::TestRepeatCharacter()
@@ -1582,8 +1563,7 @@ void TextBufferTests::TestRepeatCharacter()
     cursor.SetYPosition(0);
 
     Log::Comment(
-        L"Test 0: Simply repeat a single character."
-    );
+        L"Test 0: Simply repeat a single character.");
 
     std::wstring sequence = L"X";
     stateMachine.ProcessString(sequence);
@@ -1603,8 +1583,7 @@ void TextBufferTests::TestRepeatCharacter()
     }
 
     Log::Comment(
-        L"Test 1: Try repeating characters after another VT action. It should do nothing."
-    );
+        L"Test 1: Try repeating characters after another VT action. It should do nothing.");
 
     stateMachine.ProcessString(L"\n");
     stateMachine.ProcessString(L"A");
@@ -1629,8 +1608,7 @@ void TextBufferTests::TestRepeatCharacter()
     }
 
     Log::Comment(
-        L"Test 2: Repeat a character lots of times"
-    );
+        L"Test 2: Repeat a character lots of times");
 
     stateMachine.ProcessString(L"\x1b[3;H");
     stateMachine.ProcessString(L"C");
@@ -1652,8 +1630,7 @@ void TextBufferTests::TestRepeatCharacter()
     }
 
     Log::Comment(
-        L"Test 3: try repeating a non-graphical character. It should do nothing."
-    );
+        L"Test 3: try repeating a non-graphical character. It should do nothing.");
 
     stateMachine.ProcessString(L"\r\n");
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
@@ -1664,10 +1641,8 @@ void TextBufferTests::TestRepeatCharacter()
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 4);
 
-
     Log::Comment(
-        L"Test 4: try repeating multiple times. It should do nothing."
-    );
+        L"Test 4: try repeating multiple times. It should do nothing.");
 
     stateMachine.ProcessString(L"\r\n");
     VERIFY_ARE_EQUAL(cursor.GetPosition().X, 0);
@@ -1791,7 +1766,6 @@ void TextBufferTests::ResizeTraditional()
             viewIt++;
         }
     }
-
 }
 
 // This tests that when buffer storage rows are rotated around during a resize traditional operation,
@@ -1939,7 +1913,7 @@ void TextBufferTests::ResizeTraditionalHighUnicodeColumnRemoval()
     VERIFY_ARE_EQUAL(1u, _buffer->GetUnicodeStorage()._map.size(), L"There should be one item in the map.");
 
     // Perform resize to trim off the column of the buffer that included the emoji
-    COORD trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y};
+    COORD trimmedBufferSize{ bufferSize.X - 1, bufferSize.Y };
 
     VERIFY_NT_SUCCESS(_buffer->ResizeTraditional(trimmedBufferSize));
 

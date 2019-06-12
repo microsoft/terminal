@@ -17,6 +17,8 @@ Abstract:
 
 #pragma once
 
+// clang-format off
+
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #endif
@@ -85,3 +87,5 @@ constexpr NTSTATUS NTSTATUS_FROM_HRESULT(HRESULT hr) noexcept
 {
     return NTSTATUS_FROM_WIN32(HRESULT_CODE(hr));
 }
+
+// clang-format on

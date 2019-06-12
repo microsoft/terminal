@@ -72,7 +72,7 @@ class UtilsTests
         Log::Comment(String().Format(L"Coordinates - A: (%d, %d) B: (%d, %d)", coordA.X, coordA.Y, coordB.X, coordB.Y));
     }
 
-    void SubtractRandom(short &psValue)
+    void SubtractRandom(short& psValue)
     {
         SHORT const sRand = RandomShort();
         psValue -= gsl::narrow<SHORT>(std::max(sRand % psValue, 1));

@@ -38,8 +38,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT
 //      error code if painting didn't start successfully, or we failed to write
 //      the pipe.
-[[nodiscard]]
-HRESULT XtermEngine::StartPaint() noexcept
+[[nodiscard]] HRESULT XtermEngine::StartPaint() noexcept
 {
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
@@ -97,10 +96,8 @@ HRESULT XtermEngine::StartPaint() noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT XtermEngine::EndPaint() noexcept
+[[nodiscard]] HRESULT XtermEngine::EndPaint() noexcept
 {
-
     // MSFT:TODO:20331739
     // Make sure to match the cursor visibility in the terminal to the console's
     // if (!_quickReturn)
@@ -125,7 +122,6 @@ HRESULT XtermEngine::EndPaint() noexcept
     return S_OK;
 }
 
-
 // Routine Description:
 // - Write a VT sequence to either start or stop underlining text.
 // Arguments:
@@ -133,8 +129,7 @@ HRESULT XtermEngine::EndPaint() noexcept
 //      about the underlining state of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
+[[nodiscard]] HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
 {
     bool textUnderlined = WI_IsFlagSet(legacyColorAttribute, COMMON_LVB_UNDERSCORE);
     if (textUnderlined != _usingUnderLine)
@@ -164,12 +159,11 @@ HRESULT XtermEngine::_UpdateUnderline(const WORD legacyColorAttribute) noexcept
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                          const COLORREF colorBackground,
-                                          const WORD legacyColorAttribute,
-                                          const bool isBold,
-                                          const bool /*isSettingDefaultBrushes*/) noexcept
+[[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                        const COLORREF colorBackground,
+                                                        const WORD legacyColorAttribute,
+                                                        const bool isBold,
+                                                        const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
     //      flag is there. If the state of that flag is different then our
@@ -195,8 +189,7 @@ HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
 // - coord: location to move the cursor to.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
+[[nodiscard]] HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 {
     HRESULT hr = S_OK;
 
@@ -207,7 +200,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             _needToDisableCursor = true;
             hr = _CursorHome();
         }
-        else if (coord.X == 0 && coord.Y == (_lastText.Y+1))
+        else if (coord.X == 0 && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, at the start of the line.
 
@@ -229,13 +222,13 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
             std::string seq = "\r";
             hr = _Write(seq);
         }
-        else if (coord.X == _lastText.X && coord.Y == (_lastText.Y+1))
+        else if (coord.X == _lastText.X && coord.Y == (_lastText.Y + 1))
         {
             // Down one line, same X position
             std::string seq = "\n";
             hr = _Write(seq);
         }
-        else if (coord.X == (_lastText.X-1) && coord.Y == (_lastText.Y))
+        else if (coord.X == (_lastText.X - 1) && coord.Y == (_lastText.Y))
         {
             // Back one char, same Y position
             std::string seq = "\b";
@@ -277,8 +270,7 @@ HRESULT XtermEngine::_MoveCursor(COORD const coord) noexcept
 // - <none>
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT XtermEngine::ScrollFrame() noexcept
+[[nodiscard]] HRESULT XtermEngine::ScrollFrame() noexcept
 {
     if (_scrollDelta.X != 0)
     {
@@ -302,7 +294,7 @@ HRESULT XtermEngine::ScrollFrame() noexcept
         //      That will cause everything to move up, by moving the viewport down.
         // This will let remote conhosts scroll up to see history like normal.
         const short bottom = _lastViewport.ToOrigin().BottomInclusive();
-        hr = _MoveCursor({0, bottom});
+        hr = _MoveCursor({ 0, bottom });
         if (SUCCEEDED(hr))
         {
             std::string seq = std::string(absDy, '\n');
@@ -318,7 +310,7 @@ HRESULT XtermEngine::ScrollFrame() noexcept
     {
         // Move to the top of the buffer, and insert some lines of text, to
         //      cause the viewport contents to shift down.
-        hr = _MoveCursor({0, 0});
+        hr = _MoveCursor({ 0, 0 });
         if (SUCCEEDED(hr))
         {
             hr = _InsertLine(absDy);
@@ -337,8 +329,7 @@ HRESULT XtermEngine::ScrollFrame() noexcept
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
-[[nodiscard]]
-HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 {
     const short dx = pcoordDelta->X;
     const short dy = pcoordDelta->Y;
@@ -367,7 +358,6 @@ HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 
         // Store if safemath succeeded
         _scrollDelta = invalidScrollNew;
-
     }
 
     return S_OK;
@@ -385,14 +375,13 @@ HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                     const COORD coord,
-                                     const bool /*trimLeft*/) noexcept
+[[nodiscard]] HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                   const COORD coord,
+                                                   const bool /*trimLeft*/) noexcept
 {
     return _fUseAsciiOnly ?
-        VtEngine::_PaintAsciiBufferLine(clusters, coord) :
-        VtEngine::_PaintUtf8BufferLine(clusters, coord);
+               VtEngine::_PaintAsciiBufferLine(clusters, coord) :
+               VtEngine::_PaintUtf8BufferLine(clusters, coord);
 }
 
 // Method Description:
@@ -402,12 +391,11 @@ HRESULT XtermEngine::PaintBufferLine(std::basic_string_view<Cluster> const clust
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]]
-HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
 {
     return _fUseAsciiOnly ?
-        VtEngine::_WriteTerminalAscii(wstr) :
-        VtEngine::_WriteTerminalUtf8(wstr);
+               VtEngine::_WriteTerminalAscii(wstr) :
+               VtEngine::_WriteTerminalUtf8(wstr);
 }
 
 // Method Description:
@@ -416,8 +404,7 @@ HRESULT XtermEngine::WriteTerminalW(const std::wstring& wstr) noexcept
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
+[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring& newTitle) noexcept
 {
     // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
     //      do anything, to maintain compatibility.

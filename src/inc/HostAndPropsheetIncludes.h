@@ -2,6 +2,8 @@
 // Licensed under the MIT license.
 #pragma once
 
+// clang-format off
+
 // Define and then undefine WIN32_NO_STATUS because windows.h has no guard to prevent it from double defing certain statuses
 // when included with ntstatus.h
 #define WIN32_NO_STATUS
@@ -46,3 +48,5 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include "conddkrefs.h"
 #include "conwinuserrefs.h"
+
+// clang-format on
