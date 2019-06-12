@@ -41,6 +41,12 @@ jobs:
       nugetConfigPath: build/config/NuGet.config
       restoreDirectory: '$(Build.SourcesDirectory)/packages'
 
+  - task: PowerShell@2
+    displayName: 'Code Formattting Check'
+    inputs:
+      targetType: filePath
+      filePath: '.\build\scripts\Invoke-FormattingCheck.ps1'
+
   - task: VSBuild@1
     displayName: 'Build solution **\OpenConsole.sln'
     inputs:
