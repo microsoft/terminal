@@ -278,13 +278,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Apply stretch and opacity settings
             _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
             _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
-
         }
         else
         {
             _bgImageLayer.Source(nullptr);
         }
-
     }
 
     // Method Description:
@@ -306,38 +304,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             bgColor.B = B;
             bgColor.A = 255;
 
-            if (_settings.UseAcrylic())
+            if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
             {
-                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
-                {
-                    acrylic.FallbackColor(bgColor);
-                    acrylic.TintColor(bgColor);
-                }
+                acrylic.FallbackColor(bgColor);
+                acrylic.TintColor(bgColor);
+            }
+            else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
+            {
+                solidColor.Color(bgColor);
+            }
 
-                // If we're acrylic, we want to make sure that the default BG color
-                // is transparent, so we can see the acrylic effect on text with the
-                // default BG color.
-                _settings.DefaultBackground(ARGB(0, R, G, B));
-            }
-            else if (!_settings.BackgroundImage().empty())
-            {
-                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-                {
-                    solidColor.Color(bgColor);
-                }
-                // Set the default background as transparent to prevent the
-                // DX layer from overwriting the background image
-                _settings.DefaultBackground(ARGB(0, R, G, B));
-            }
-            else
-            {
-                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-                {
-                    solidColor.Color(bgColor);
-                }
-
-                _settings.DefaultBackground(RGB(R, G, B));
-            }
+            // Set the default background as transparent to prevent the
+            // DX layer from overwriting the background image or acrylic effect
+            _settings.DefaultBackground(ARGB(0, R, G, B));
         });
     }
 
