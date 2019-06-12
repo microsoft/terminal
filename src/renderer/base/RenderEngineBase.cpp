@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 #include "../inc/RenderEngineBase.hpp"
 #pragma hdrstop
@@ -12,7 +11,6 @@ RenderEngineBase::RenderEngineBase() :
     _titleChanged(false),
     _lastFrameTitle(L"")
 {
-
 }
 
 HRESULT RenderEngineBase::InvalidateTitle(const std::wstring& proposedTitle) noexcept

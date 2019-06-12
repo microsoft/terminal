@@ -11,7 +11,6 @@ using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-
 static const std::vector<wchar_t> CyrillicChar = { 0x0431 }; // lowercase be
 static const std::vector<wchar_t> LatinChar = { 0x0061 }; // uppercase A
 static const std::vector<wchar_t> FullWidthChar = { 0xFF2D }; // fullwidth latin small letter m

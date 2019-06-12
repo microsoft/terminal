@@ -12,7 +12,6 @@
 #include "../host/selection.hpp"
 #include "../host/search.h"
 
-
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing;
 using namespace Microsoft::Console::Interactivity;
@@ -82,13 +81,13 @@ void UiaTextRange::_outputRowConversions()
         for (unsigned int i = 0; i < totalRows; ++i)
         {
             std::wstringstream ss;
-            ss << i << "\t" << _screenInfoRowToTextBufferRow (i) << "\t" << _screenInfoRowToEndpoint(i) << "\n";
+            ss << i << "\t" << _screenInfoRowToTextBufferRow(i) << "\t" << _screenInfoRowToEndpoint(i) << "\n";
             std::wstring str = ss.str();
             OutputDebugString(str.c_str());
         }
         OutputDebugString(L"\n");
     }
-    catch(...)
+    catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
     }
@@ -145,10 +144,10 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IRawElementProvi
     return ranges;
 }
 
-
 UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvider)
 {
-    UiaTextRange* range = nullptr;;
+    UiaTextRange* range = nullptr;
+    ;
     try
     {
         range = new UiaTextRange(pProvider);
@@ -230,7 +229,6 @@ UiaTextRange* UiaTextRange::Create(_In_ IRawElementProviderSimple* const pProvid
     return range;
 }
 
-
 // degenerate range constructor.
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
     _cRefs{ 1 },
@@ -239,13 +237,13 @@ UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider) :
     _end{ 0 },
     _degenerate{ true }
 {
-   _id = id;
-   ++id;
+    _id = id;
+    ++id;
 
-   // tracing
-   ApiMsgConstructor apiMsg;
-   apiMsg.Id = _id;
-   Tracing::s_TraceUia(nullptr, ApiCall::Constructor, &apiMsg);
+    // tracing
+    ApiMsgConstructor apiMsg;
+    apiMsg.Id = _id;
+    Tracing::s_TraceUia(nullptr, ApiCall::Constructor, &apiMsg);
 }
 
 UiaTextRange::UiaTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -330,8 +328,8 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
     _degenerate{ a._degenerate }
 {
     (static_cast<IUnknown*>(_pProvider))->AddRef();
-   _id = id;
-   ++id;
+    _id = id;
+    ++id;
 
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
     OutputDebugString(L"Copy Constructor\n");
@@ -372,13 +370,15 @@ const bool UiaTextRange::IsDegenerate() const
 
 #pragma region IUnknown
 
-IFACEMETHODIMP_(ULONG) UiaTextRange::AddRef()
+IFACEMETHODIMP_(ULONG)
+UiaTextRange::AddRef()
 {
     Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
-IFACEMETHODIMP_(ULONG) UiaTextRange::Release()
+IFACEMETHODIMP_(ULONG)
+UiaTextRange::Release()
 {
     Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
 
@@ -422,7 +422,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     {
         *ppRetVal = new UiaTextRange(*this);
     }
-    catch(...)
+    catch (...)
     {
         *ppRetVal = nullptr;
         return wil::ResultFromCaughtException();
@@ -452,8 +452,7 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
@@ -473,7 +472,6 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
 
     return S_OK;
 }
-
 
 IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                               _In_ ITextRangeProvider* pTargetRange,
@@ -526,8 +524,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
 IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
 
@@ -647,13 +644,11 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
     *ppRetVal = nullptr;
-
 
     try
     {
@@ -716,8 +711,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
@@ -746,7 +740,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 #if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
             std::wstringstream ss;
             ss << L"---Initial span start=" << _start << L" and end=" << _end << L"\n";
-            ss << L"----Retrieving sr:" << startScreenInfoRow << L" sc:" << startColumn << L" er:" << endScreenInfoRow << L" ec:" << endColumn <<  L"\n";
+            ss << L"----Retrieving sr:" << startScreenInfoRow << L" sc:" << startColumn << L" er:" << endScreenInfoRow << L" ec:" << endColumn << L"\n";
             OutputDebugString(ss.str().c_str());
 #endif
 
@@ -816,8 +810,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
                                   _Out_ int* pRetVal)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
 
@@ -848,7 +841,6 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     if (unit == TextUnit::TextUnit_Character)
     {
         moveFunc = &_moveByCharacter;
-
     }
     else if (unit <= TextUnit::TextUnit_Line)
     {
@@ -887,8 +879,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
                                                 _Out_ int* pRetVal)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
 
@@ -953,8 +944,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
                                                  _In_ TextPatternRangeEndpoint targetEndpoint)
 {
     ServiceLocator::LocateGlobals().getConsoleInformation().LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         ServiceLocator::LocateGlobals().getConsoleInformation().UnlockConsole();
     });
 
@@ -1062,11 +1052,9 @@ IFACEMETHODIMP UiaTextRange::Select()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
-
 
     if (_degenerate)
     {
@@ -1109,8 +1097,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
@@ -1173,7 +1160,6 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
             newViewport.Top = static_cast<SHORT>(topRow);
             newViewport.Bottom = static_cast<SHORT>(topRow + viewportHeight - 1);
         }
-
     }
 
     FAIL_FAST_IF(!(newViewport.Top >= static_cast<SHORT>(topRow)));
@@ -1186,7 +1172,6 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
         pIConsoleWindow->ChangeViewport(newViewport);
     }
     CATCH_RETURN();
-
 
     // tracing
     ApiMsgScrollIntoView apiMsg;
@@ -1230,7 +1215,7 @@ const Microsoft::Console::Types::Viewport& UiaTextRange::_getViewport()
 // window.
 Microsoft::Console::Interactivity::IConsoleWindow* const UiaTextRange::_getIConsoleWindow()
 {
-	using namespace Microsoft::Console::Interactivity;
+    using namespace Microsoft::Console::Interactivity;
     IConsoleWindow* const pIConsoleWindow = ServiceLocator::LocateConsoleWindow();
     THROW_HR_IF_NULL(E_POINTER, pIConsoleWindow);
     return pIConsoleWindow;
@@ -1292,7 +1277,6 @@ const COORD UiaTextRange::_getScreenBufferCoords()
 {
     return _getScreenInfo().GetBufferSize().Dimensions();
 }
-
 
 // Routine Description:
 // - Gets the width of the screen buffer rows
@@ -1589,7 +1573,6 @@ const unsigned int UiaTextRange::_getLastScreenInfoRowIndex()
     return _getTotalRows() - 1;
 }
 
-
 // Routine Description:
 // - returns the index of the first column of the screen info rows
 // Arguments:
@@ -1702,7 +1685,7 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(const int mo
 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
-            currentColumn + 1>= right)
+            currentColumn + 1 >= right)
         {
             break;
         }

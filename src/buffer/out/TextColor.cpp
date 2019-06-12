@@ -86,7 +86,6 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
                     return colorTable[i + 8];
                 }
             }
-
         }
 
         return defaultColor;

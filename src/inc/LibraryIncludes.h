@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// clang-format off
+
 #pragma once
 
 
@@ -67,3 +69,5 @@
 #include <sal.h>
 
 #pragma warning(pop)
+
+// clang-format on

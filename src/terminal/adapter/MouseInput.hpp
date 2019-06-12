@@ -21,7 +21,7 @@ Author(s):
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    typedef void(*WriteInputEvents)(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
+    typedef void (*WriteInputEvents)(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events);
 
     class MouseInput sealed
     {
@@ -30,9 +30,9 @@ namespace Microsoft::Console::VirtualTerminal
         ~MouseInput();
 
         bool HandleMouse(const COORD coordMousePosition,
-                            const unsigned int uiButton,
-                            const short sModifierKeystate,
-                            const short sWheelDelta);
+                         const unsigned int uiButton,
+                         const short sModifierKeystate,
+                         const short sWheelDelta);
 
         void SetUtf8ExtendedMode(const bool fEnable);
         void SetSGRExtendedMode(const bool fEnable);

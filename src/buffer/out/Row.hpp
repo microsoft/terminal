@@ -46,8 +46,7 @@ public:
     void SetId(const SHORT id) noexcept;
 
     bool Reset(const TextAttribute Attr);
-    [[nodiscard]]
-    HRESULT Resize(const size_t width);
+    [[nodiscard]] HRESULT Resize(const size_t width);
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const;

@@ -25,16 +25,13 @@ Revision History:
 
 namespace Microsoft::Console::Internal
 {
-
     namespace ProcessPolicy
     {
-        [[nodiscard]]
-        HRESULT CheckAppModelPolicy(const HANDLE hToken,
-                                    bool& fIsWrongWayBlocked) noexcept;
+        [[nodiscard]] HRESULT CheckAppModelPolicy(const HANDLE hToken,
+                                                  bool& fIsWrongWayBlocked) noexcept;
 
-        [[nodiscard]]
-        HRESULT CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
-                                          bool& fIsWrongWayBlocked) noexcept;
+        [[nodiscard]] HRESULT CheckIntegrityLevelPolicy(const HANDLE hOtherToken,
+                                                        bool& fIsWrongWayBlocked) noexcept;
     }
 
     namespace EdpPolicy

@@ -20,13 +20,12 @@ Revision History:
 #include "../inc/conattrs.hpp"
 
 // the following values are used to create the textmode cursor.
-#define CURSOR_SMALL_SIZE 25    // large enough to be one pixel on a six pixel font
+#define CURSOR_SMALL_SIZE 25 // large enough to be one pixel on a six pixel font
 class TextBuffer;
 
 class Cursor final
 {
 public:
-
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
     Cursor(const ULONG ulSize, TextBuffer& parentBuffer);
@@ -94,19 +93,19 @@ private:
 
     // NOTE: If you are adding a property here, go add it to CopyProperties.
 
-    COORD _cPosition;   // current position on screen (in screen buffer coords).
+    COORD _cPosition; // current position on screen (in screen buffer coords).
 
     bool _fHasMoved;
-    bool _fIsVisible;  // whether cursor is visible (set only through the API)
-    bool _fIsOn;   // whether blinking cursor is on or not
-    bool _fIsDouble;   // whether the cursor size should be doubled
+    bool _fIsVisible; // whether cursor is visible (set only through the API)
+    bool _fIsOn; // whether blinking cursor is on or not
+    bool _fIsDouble; // whether the cursor size should be doubled
     bool _fBlinkingAllowed; //Whether or not the cursor is allowed to blink at all. only set through VT (^[[?12h/l)
-    bool _fDelay;    // don't blink scursor on next timer message
+    bool _fDelay; // don't blink scursor on next timer message
     bool _fIsConversionArea; // is attached to a conversion area so it doesn't actually need to display the cursor.
     bool _fIsPopupShown; // if a popup is being shown, turn off, stop blinking.
 
-    bool _fDelayedEolWrap;    // don't wrap at EOL till the next char comes in.
-    COORD _coordDelayedAt;   // coordinate the EOL wrap was delayed at.
+    bool _fDelayedEolWrap; // don't wrap at EOL till the next char comes in.
+    COORD _coordDelayedAt; // coordinate the EOL wrap was delayed at.
 
     bool _fDeferCursorRedraw; // whether we should defer redrawing the cursor or not
     bool _fHaveDeferredCursorRedraw; // have we been asked to redraw the cursor while it was being deferred?

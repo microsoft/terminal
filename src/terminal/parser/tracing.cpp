@@ -13,51 +13,50 @@ ParserTracing::ParserTracing()
 
 ParserTracing::~ParserTracing()
 {
-
 }
 
 void ParserTracing::TraceStateChange(_In_ PCWSTR const pwszName) const
 {
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_EnterState",
-        TraceLoggingWideString(pwszName),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_EnterState",
+                      TraceLoggingWideString(pwszName),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::TraceOnAction(_In_ PCWSTR const pwszName) const
 {
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Action",
-        TraceLoggingWideString(pwszName),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_Action",
+                      TraceLoggingWideString(pwszName),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::TraceOnExecute(const wchar_t wch) const
 {
     INT16 sch = (INT16)wch;
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Execute",
-        TraceLoggingWChar(wch),
-        TraceLoggingHexInt16(sch),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_Execute",
+                      TraceLoggingWChar(wch),
+                      TraceLoggingHexInt16(sch),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::TraceOnExecuteFromEscape(const wchar_t wch) const
 {
     INT16 sch = (INT16)wch;
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_ExecuteFromEscape",
-        TraceLoggingWChar(wch),
-        TraceLoggingHexInt16(sch),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_ExecuteFromEscape",
+                      TraceLoggingWChar(wch),
+                      TraceLoggingHexInt16(sch),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::TraceOnEvent(_In_ PCWSTR const pwszName) const
 {
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Event",
-        TraceLoggingWideString(pwszName),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_Event",
+                      TraceLoggingWideString(pwszName),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::TraceCharInput(const wchar_t wch)
@@ -65,11 +64,11 @@ void ParserTracing::TraceCharInput(const wchar_t wch)
     AddSequenceTrace(wch);
     INT16 sch = (INT16)wch;
 
-    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_NewChar",
-        TraceLoggingWChar(wch),
-        TraceLoggingHexInt16(sch),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-        );
+    TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                      "StateMachine_NewChar",
+                      TraceLoggingWChar(wch),
+                      TraceLoggingHexInt16(sch),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
 }
 
 void ParserTracing::AddSequenceTrace(const wchar_t wch)
@@ -86,17 +85,17 @@ void ParserTracing::DispatchSequenceTrace(const bool fSuccess)
 {
     if (fSuccess)
     {
-        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Sequence_OK",
+        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                          "StateMachine_Sequence_OK",
                           TraceLoggingWideString(_rgwchSequenceTrace),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-                          );
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
     else
     {
-        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_Sequence_FAIL",
+        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                          "StateMachine_Sequence_FAIL",
                           TraceLoggingWideString(_rgwchSequenceTrace),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-                          );
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
 
     ClearSequenceTrace();
@@ -118,11 +117,11 @@ void ParserTracing::DispatchPrintRunTrace(const wchar_t* const pwsString, const 
     {
         wchar_t wch = *pwsString;
         INT16 sch = (INT16)wch;
-        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_PrintRun",
-            TraceLoggingWChar(wch),
-            TraceLoggingHexInt16(sch),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-            );
+        TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                          "StateMachine_PrintRun",
+                          TraceLoggingWChar(wch),
+                          TraceLoggingHexInt16(sch),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
     }
     else
     {
@@ -142,12 +141,11 @@ void ParserTracing::DispatchPrintRunTrace(const wchar_t* const pwsString, const 
             memcpy(str, pwsString, sizeof(wchar_t) * strLen);
             str[strLen] = '\0';
 
-            TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider, "StateMachine_PrintRun",
+            TraceLoggingWrite(g_hConsoleVirtTermParserEventTraceProvider,
+                              "StateMachine_PrintRun",
                               TraceLoggingWideString(str),
                               TraceLoggingValue(strLen),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE)
-                              );
-
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
         }
     }
 }

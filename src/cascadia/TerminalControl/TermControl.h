@@ -18,7 +18,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
     public:
-        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) : m_clipboardDataHandler(clipboardDataHandler) { }
+        PasteFromClipboardEventArgs(std::function<void(std::wstring)> clipboardDataHandler) :
+            m_clipboardDataHandler(clipboardDataHandler) {}
 
         void HandleClipboardData(hstring value)
         {
@@ -53,6 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
+        // clang-format off
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
@@ -60,6 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+        // clang-format on
 
     private:
         TerminalConnection::ITerminalConnection _connection;
