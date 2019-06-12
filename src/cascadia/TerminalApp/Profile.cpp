@@ -86,7 +86,7 @@ Profile::Profile(const winrt::guid& guid) :
     _useAcrylic{ false },
     _scrollbarState{},
     _closeOnExit{ true },
-    _convertPasteLineEndings{ },
+    _convertPasteLineEndings{},
     _padding{ DEFAULT_PADDING },
     _icon{},
     _backgroundImage{},
