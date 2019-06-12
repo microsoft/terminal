@@ -223,7 +223,6 @@ namespace winrt::TerminalApp::implementation
     void App::_ShowOkDialog(const winrt::hstring& titleKey,
                             const winrt::hstring& contentKey)
     {
-
         auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
         auto title = resourceLoader.GetString(titleKey);
         auto message = resourceLoader.GetString(contentKey);
@@ -254,7 +253,7 @@ namespace winrt::TerminalApp::implementation
         aboutTextStream << versionLabel.c_str() << L" ";
         aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision;
 
-        winrt::hstring aboutText { aboutTextStream.str() };
+        winrt::hstring aboutText{ aboutTextStream.str() };
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
