@@ -1327,16 +1327,24 @@ namespace winrt::TerminalApp::implementation
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
-    void App::_CopyToClipboardHandler(const winrt::hstring& copiedData)
+    void App::_CopyToClipboardHandler(const IInspectable& /*sender*/,
+                                      const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
     {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
             DataPackage dataPack = DataPackage();
             dataPack.RequestedOperation(DataPackageOperation::Copy);
-            dataPack.SetText(copiedData);
-            Clipboard::SetContent(dataPack);
 
-            // TODO: MSFT 20642290 and 20642291
-            // rtf copy and html copy
+            // copy text to dataPack
+            dataPack.SetText(copiedData.Text());
+
+            // copy html to dataPack
+            const auto htmlData = copiedData.Html();
+            if (htmlData.size())
+            {
+                dataPack.SetHtmlFormat(htmlData);
+            }
+
+            Clipboard::SetContent(dataPack);
         });
     }
 

@@ -1184,12 +1184,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
         // extract text from buffer
-        const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+
+        // convert text: vector<string> --> string
+        std::wstring textData;
+        for (const auto& text : bufferData.text)
+        {
+            textData += text;
+        }
+
+        // convert text to HTML format
+        const auto fontData = _terminal->GetFontInfo();
+        const auto htmlData = TextBuffer::GenHTML(bufferData, fontData.GetUnscaledSize().Y, fontData.GetFaceName());
 
         _terminal->ClearSelection();
 
         // send data up for clipboard
-        _clipboardCopyHandlers(copiedData);
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::to_hstring(textData.c_str()), winrt::to_hstring(htmlData));
+        _clipboardCopyHandlers(*this, *copyArgs);
     }
 
     // Method Description:
@@ -1496,9 +1508,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl, CopyToClipboard,       _clipboardCopyHandlers,         TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
     // clang-format on
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControl, CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
 }
