@@ -83,7 +83,7 @@ private:
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
-    void _DoResize(const winrt::TerminalApp::Direction& direction);
+    bool _DoResize(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
 
@@ -92,10 +92,12 @@ private:
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 
+    winrt::Windows::Foundation::Size _GetMinSize();
+
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.
-    // - This is used fow pane resizing (which will need a pane separator
+    // - This is used for pane resizing (which will need a pane separator
     //   that's perpendicular to the direction to be able to move the separator
     //   in that direction).
     // - Additionally, it will be used for moving focus between panes, which

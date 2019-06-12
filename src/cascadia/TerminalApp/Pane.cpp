@@ -79,17 +79,18 @@ void Pane::ResizeContent(const Size& newSize)
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
 // - Adjusts the separation amount by 5%
+// - Does nothing if the direction doesn't match our current split direction
 // Arguments:
 // - direction: the direction to move our separator. If it's down or right,
 //   we'll be increasing the size of the first of our children. Else, we'll be
 //   decreasing the size of our first child.
 // Return Value:
-// - <none>
-void Pane::_DoResize(const Direction& direction)
+// - false if we couldn't resize this pane in the given direction, else true.
+bool Pane::_DoResize(const Direction& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        return;
+        return false;
     }
 
     float amount = .05f;
@@ -98,15 +99,32 @@ void Pane::_DoResize(const Direction& direction)
         amount *= -1.0f;
     }
 
-    // Make sure we're not making a pane explode here by resizing it to 0
-    _firstPercent = std::clamp(_firstPercent.value() - amount, .05f, .95f);
+    // Make sure we're not making a pane explode here by resizing it to 0 characters.
+    const bool changeWidth = _splitState==SplitState::Vertical;
+
+    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                           gsl::narrow_cast<float>(_root.ActualHeight()) };
+    auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
+    actualDimension -= PaneSeparatorSize;
+
+    const auto firstMinSize = _firstChild->_GetMinSize();
+    const auto secondMinSize = _secondChild->_GetMinSize();
+
+    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
+    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
+
+    const auto firstMinPercent = firstMinDimension / actualDimension;
+    const auto secondMinPercent = secondMinDimension / actualDimension;
+    const auto firstMaxPercent = 1.0f - secondMinPercent;
+
+    _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
     // Update the other child to fill the remaining percent
     _secondPercent = 1.0f - _firstPercent.value();
 
     // Resize our columns to match the new percentages.
-    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
-                           gsl::narrow_cast<float>(_root.ActualHeight()) };
     ResizeContent(actualSize);
+
+    return true;
 }
 
 // Method Description:
@@ -122,7 +140,7 @@ void Pane::_DoResize(const Direction& direction)
 // - true if we or a child handled this resize request.
 bool Pane::ResizePane(const Direction& direction)
 {
-    // If we're a leaf, do nothing. We can't possibly have a descentant with a
+    // If we're a leaf, do nothing. We can't possibly have a descendant with a
     // separator the correct direction.
     if (_IsLeaf())
     {
@@ -137,12 +155,7 @@ bool Pane::ResizePane(const Direction& direction)
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
     if (firstIsFocused || secondIsFocused)
     {
-        if (Pane::DirectionMatchesSplit(direction, _splitState))
-        {
-            _DoResize(direction);
-            return true;
-        }
-        return false;
+        return _DoResize(direction);
     }
     else
     {
@@ -157,31 +170,11 @@ bool Pane::ResizePane(const Direction& direction)
         // either.
         if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
         {
-            const bool handled = _firstChild->ResizePane(direction);
-            if (handled)
-            {
-                return true;
-            }
-            else if (Pane::DirectionMatchesSplit(direction, _splitState))
-            {
-                _DoResize(direction);
-                return true;
-            }
-            return false;
+            return _firstChild->ResizePane(direction) || _DoResize(direction);
         }
         else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
         {
-            const bool handled = _secondChild->ResizePane(direction);
-            if (handled)
-            {
-                return true;
-            }
-            else if (Pane::DirectionMatchesSplit(direction, _splitState))
-            {
-                _DoResize(direction);
-                return true;
-            }
-            return false;
+            return _secondChild->ResizePane(direction) || _DoResize(direction);
         }
     }
     return false;
@@ -802,6 +795,22 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
     const auto firstSize = sizeMinusSeparator * _firstPercent.value();
     const auto secondSize = sizeMinusSeparator * _secondPercent.value();
     return { firstSize, secondSize };
+}
+
+Size Pane::_GetMinSize()
+{
+    if (_IsLeaf())
+    {
+        return _control.MinimumSize();
+    }
+    else
+    {
+        const auto firstSize = _firstChild->_GetMinSize();
+        const auto secondSize = _secondChild->_GetMinSize();
+        const auto newWidth = firstSize.Width + secondSize.Width + (_splitState==SplitState::Vertical ? PaneSeparatorSize : 0);
+        const auto newHeight = firstSize.Height + secondSize.Height + (_splitState==SplitState::Horizontal ? PaneSeparatorSize : 0);
+        return { newWidth, newHeight };
+    }
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);

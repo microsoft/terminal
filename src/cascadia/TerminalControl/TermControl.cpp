@@ -1305,6 +1305,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return { width, height };
     }
 
+    winrt::Windows::Foundation::Size TermControl::CharacterDimensions()
+    {
+        const auto fontSize = _actualFont.GetSize();
+        return { gsl::narrow_cast<float>(fontSize.X), gsl::narrow_cast<float>(fontSize.Y) };
+    }
+
+    winrt::Windows::Foundation::Size TermControl::MinimumSize()
+    {
+        const auto fontSize = _actualFont.GetSize();
+        float width = gsl::narrow<float>(fontSize.X);
+        float height = gsl::narrow<float>(fontSize.Y);
+        // Reserve additional space if scrollbar is intended to be visible
+        if (_settings.ScrollState() == ScrollbarState::Visible)
+        {
+
+            // width += GetSystemMetricsForDpi(SM_CXVSCROLL, USER_DEFAULT_SCREEN_DPI);
+            width += _scrollBar.ActualWidth();
+        }
+        return { width, height };
+    }
+
     // Method Description:
     // - Create XAML Thickness object based on padding props provided.
     //   Used for controlling the TermControl XAML Grid container's Padding prop.

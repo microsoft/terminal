@@ -34,6 +34,8 @@ namespace Microsoft.Terminal.TerminalControl
         void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void Close();
         Boolean ShouldCloseOnExit { get; };
+        Windows.Foundation.Size CharacterDimensions { get; };
+        Windows.Foundation.Size MinimumSize { get; };
 
         void ScrollViewport(Int32 viewTop);
         void KeyboardScrollViewport(Int32 viewTop);
