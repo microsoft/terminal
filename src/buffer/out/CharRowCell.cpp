@@ -5,7 +5,6 @@
 #include "CharRowCell.hpp"
 #include "unicode.hpp"
 
-
 // default glyph value, used for reseting the character data portion of a cell
 static constexpr wchar_t DefaultValue = UNICODE_SPACE;
 

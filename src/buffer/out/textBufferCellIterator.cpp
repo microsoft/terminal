@@ -68,11 +68,11 @@ TextBufferCellIterator::operator bool() const noexcept
 bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const noexcept
 {
     return _pos == it._pos &&
-        &_buffer == &it._buffer &&
-        _exceeded == it._exceeded &&
-        _bounds == it._bounds &&
-        _pRow == it._pRow &&
-        _attrIter == it._attrIter;
+           &_buffer == &it._buffer &&
+           _exceeded == it._exceeded &&
+           _bounds == it._bounds &&
+           _pRow == it._pRow &&
+           _attrIter == it._attrIter;
 }
 
 // Routine Description:

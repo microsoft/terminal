@@ -92,8 +92,7 @@ public:
             }
         }
         Log::Comment(
-            NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length())
-        );
+            NoThrowString().Format(L"\tvtseq: \"%s\"(%zu)", vtseq.c_str(), vtseq.length()));
 
         _stateMachine->ProcessString(&vtseq[0], vtseq.length());
         Log::Comment(L"String processed");
@@ -109,8 +108,7 @@ public:
 
         Log::Comment(
             NoThrowString().Format(L"\texpected:\t") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-        );
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected));
 
         // Look for an equivalent input record.
         // Differences between left and right modifiers are ignored, as long as one is pressed.
@@ -119,8 +117,7 @@ public:
         {
             Log::Comment(
                 NoThrowString().Format(L"\tActual  :\t") +
-                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
-            );
+                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec));
 
             bool areEqual =
                 (irExpected.EventType == inRec.EventType) &&
@@ -148,17 +145,13 @@ public:
         {
             Log::Comment(
                 NoThrowString().Format(L"\texpected:\t") +
-                VerifyOutputTraits<INPUT_RECORD>::ToString(expected)
-            );
-
+                VerifyOutputTraits<INPUT_RECORD>::ToString(expected));
         }
 
         INPUT_RECORD irExpected = vExpectedInput.front();
         Log::Comment(
             NoThrowString().Format(L"\tLooking for:\t") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-        );
-
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected));
 
         // Look for an equivalent input record.
         // Differences between left and right modifiers are ignored, as long as one is pressed.
@@ -167,8 +160,7 @@ public:
         {
             Log::Comment(
                 NoThrowString().Format(L"\tActual  :\t") +
-                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec)
-            );
+                VerifyOutputTraits<INPUT_RECORD>::ToString(inRec));
 
             bool areEqual =
                 (irExpected.EventType == inRec.EventType) &&
@@ -186,8 +178,7 @@ public:
                     irExpected = vExpectedInput.front();
                     Log::Comment(
                         NoThrowString().Format(L"\tLooking for:\t") +
-                        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected)
-                    );
+                        VerifyOutputTraits<INPUT_RECORD>::ToString(irExpected));
                 }
             }
         }
@@ -213,7 +204,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     void RoundtripTerminalInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
     void TestInputStringCallback(std::deque<std::unique_ptr<IInputEvent>>& inEvents);
-
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -243,7 +233,6 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     friend class TestInteractDispatch;
 };
 
-
 class Microsoft::Console::VirtualTerminal::TestInteractDispatch final : public IInteractDispatch
 {
 public:
@@ -270,7 +259,6 @@ TestInteractDispatch::TestInteractDispatch(_In_ std::function<void(std::deque<st
     _pfnWriteInputCallback(pfn),
     _testState(testState)
 {
-
 }
 
 bool TestInteractDispatch::WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents)
@@ -292,10 +280,9 @@ bool TestInteractDispatch::WindowManipulation(const DispatchTypes::WindowManipul
                                               _In_reads_(cParams) const unsigned short* const rgusParams,
                                               const size_t cParams)
 {
-
     VERIFY_ARE_EQUAL(true, _testState->_expectedToCallWindowManipulation);
     VERIFY_ARE_EQUAL(_testState->_expectedWindowManipulation, uiFunction);
-    for(size_t i = 0; i < cParams; i++)
+    for (size_t i = 0; i < cParams; i++)
     {
         VERIFY_ARE_EQUAL(_testState->_expectedParams[i], rgusParams[i]);
     }
@@ -350,23 +337,23 @@ void InputEngineTest::C0Test()
         wchar_t expectedWch = wch + 0x40;
         bool writeCtrl = true;
         // These two are weird exceptional cases.
-        switch(wch)
+        switch (wch)
         {
-            case L'\r': // Enter
-                expectedWch = wch;
-                writeCtrl = false;
-                break;
-            case L'\x1b': // Escape
-                expectedWch = wch;
-                writeCtrl = false;
-                break;
-            case L'\t': // Tab
-                writeCtrl = false;
-                break;
+        case L'\r': // Enter
+            expectedWch = wch;
+            writeCtrl = false;
+            break;
+        case L'\x1b': // Escape
+            expectedWch = wch;
+            writeCtrl = false;
+            break;
+        case L'\t': // Tab
+            writeCtrl = false;
+            break;
         }
 
         short keyscan = VkKeyScanW(expectedWch);
-        short vkey =  keyscan & 0xff;
+        short vkey = keyscan & 0xff;
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         WORD scanCode = (WORD)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
@@ -377,7 +364,7 @@ void InputEngineTest::C0Test()
         }
         // If we need to press shift for this key, but not on alphabetical chars
         //  Eg simulating C-z, not C-S-z.
-        if (WI_IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z' ))
+        if (WI_IsFlagSet(keyscanModifiers, 1) && (expectedWch < L'A' || expectedWch > L'Z'))
         {
             dwModifierState = WI_SetFlag(dwModifierState, SHIFT_PRESSED);
         }
@@ -387,16 +374,20 @@ void InputEngineTest::C0Test()
         {
             Log::Comment(NoThrowString().Format(
                 L"We used to expect 0x%x, 0x%x, 0x%x, 0x%x here",
-                vkey, scanCode, wch, dwModifierState
-            ));
+                vkey,
+                scanCode,
+                wch,
+                dwModifierState));
             vkey = 'C';
             scanCode = 0;
             wch = UNICODE_ETX;
             dwModifierState = LEFT_CTRL_PRESSED;
             Log::Comment(NoThrowString().Format(
                 L"Now we expect 0x%x, 0x%x, 0x%x, 0x%x here",
-                vkey, scanCode, wch, dwModifierState
-            ));
+                vkey,
+                scanCode,
+                wch,
+                dwModifierState));
             testState._expectSendCtrlC = true;
         }
         else
@@ -420,7 +411,6 @@ void InputEngineTest::C0Test()
         testState.vExpectedInput.push_back(inputRec);
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
-
     }
 }
 
@@ -441,15 +431,15 @@ void InputEngineTest::AlphanumericTest()
         std::wstring inputSeq = std::wstring(&wch, 1);
 
         short keyscan = VkKeyScanW(wch);
-        short vkey =  keyscan & 0xff;
+        short vkey = keyscan & 0xff;
         WORD scanCode = (wchar_t)MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC);
 
         short keyscanModifiers = (keyscan >> 8) & 0xff;
         // Because of course, these are not the same flags.
         DWORD dwModifierState = 0 |
-            (WI_IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
-            (WI_IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
-            (WI_IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0) ;
+                                (WI_IsFlagSet(keyscanModifiers, 1) ? SHIFT_PRESSED : 0) |
+                                (WI_IsFlagSet(keyscanModifiers, 2) ? LEFT_CTRL_PRESSED : 0) |
+                                (WI_IsFlagSet(keyscanModifiers, 4) ? LEFT_ALT_PRESSED : 0);
 
         Log::Comment(NoThrowString().Format(L"Testing char 0x%x", wch));
         Log::Comment(NoThrowString().Format(L"Input Sequence=\"%s\"", inputSeq.c_str()));
@@ -467,7 +457,6 @@ void InputEngineTest::AlphanumericTest()
 
         _stateMachine->ProcessString(&inputSeq[0], inputSeq.length());
     }
-
 }
 
 void InputEngineTest::RoundTripTest()
@@ -499,7 +488,7 @@ void InputEngineTest::RoundTripTest()
             // A-Z need shift pressed in addition to the 'a'-'z' chars.
             uiActualKeystate = WI_SetFlag(uiActualKeystate, SHIFT_PRESSED);
         }
-        else if (vkey == VK_CANCEL  || vkey == VK_PAUSE)
+        else if (vkey == VK_CANCEL || vkey == VK_PAUSE)
         {
             uiActualKeystate = WI_SetFlag(uiActualKeystate, LEFT_CTRL_PRESSED);
         }
@@ -520,8 +509,7 @@ void InputEngineTest::RoundTripTest()
 
         Log::Comment(
             NoThrowString().Format(L"Expecting::   ") +
-            VerifyOutputTraits<INPUT_RECORD>::ToString(irTest)
-        );
+            VerifyOutputTraits<INPUT_RECORD>::ToString(irTest));
 
         testState.vExpectedInput.clear();
         testState.vExpectedInput.push_back(irTest);
@@ -529,7 +517,6 @@ void InputEngineTest::RoundTripTest()
         auto inputKey = IInputEvent::Create(irTest);
         terminalInput.HandleKey(inputKey.get());
     }
-
 }
 
 void InputEngineTest::WindowManipulationTest()
@@ -545,8 +532,7 @@ void InputEngineTest::WindowManipulationTest()
     Log::Comment(NoThrowString().Format(
         L"Try sending a bunch of Window Manipulation sequences. "
         L"Only the valid ones should call the "
-        L"TestInteractDispatch::WindowManipulation callback."
-    ));
+        L"TestInteractDispatch::WindowManipulation callback."));
 
     bool fValidType = false;
 
@@ -555,7 +541,7 @@ void InputEngineTest::WindowManipulationTest()
     const wchar_t* const wszParam1 = L"123";
     const wchar_t* const wszParam2 = L"456";
 
-    for(unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
+    for (unsigned int i = 0; i < static_cast<unsigned int>(BYTE_MAX); i++)
     {
         if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
         {
@@ -564,7 +550,6 @@ void InputEngineTest::WindowManipulationTest()
 
         std::wstringstream seqBuilder;
         seqBuilder << L"\x1b[" << i;
-
 
         if (i == DispatchTypes::WindowManipulationType::ResizeWindowInCharacters)
         {
@@ -596,8 +581,7 @@ void InputEngineTest::WindowManipulationTest()
         seqBuilder << L"t";
         std::wstring seq = seqBuilder.str();
         Log::Comment(NoThrowString().Format(
-            L"Processing \"%s\"", seq.c_str()
-        ));
+            L"Processing \"%s\"", seq.c_str()));
         _stateMachine->ProcessString(&seq[0], seq.length());
     }
 }
@@ -613,7 +597,7 @@ void InputEngineTest::NonAsciiTest()
     testState._stateMachine = _stateMachine.get();
     Log::Comment(L"Sending various non-ascii strings, and seeing what we get out");
 
-    INPUT_RECORD proto = {0};
+    INPUT_RECORD proto = { 0 };
     proto.EventType = KEY_EVENT;
     proto.Event.KeyEvent.dwControlKeyState = 0;
     proto.Event.KeyEvent.wRepeatCount = 1;
@@ -625,8 +609,7 @@ void InputEngineTest::NonAsciiTest()
 
     Log::Comment(NoThrowString().Format(
         L"We're sending utf-16 characters here, because the VtInputThread has "
-        L"already converted the ut8 input to utf16 by the time it calls the state machine."
-    ));
+        L"already converted the ut8 input to utf16 by the time it calls the state machine."));
 
     // "Л", UTF-16: 0x041B, utf8: "\xd09b"
     std::wstring utf8Input = L"\x041B";
@@ -634,8 +617,7 @@ void InputEngineTest::NonAsciiTest()
     test.Event.KeyEvent.uChar.UnicodeChar = utf8Input[0];
 
     Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", utf8Input.c_str()
-    ));
+        L"Processing \"%s\"", utf8Input.c_str()));
 
     testState.vExpectedInput.clear();
     testState.vExpectedInput.push_back(test);
@@ -649,8 +631,7 @@ void InputEngineTest::NonAsciiTest()
     test.Event.KeyEvent.uChar.UnicodeChar = utf8Input[0];
 
     Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", utf8Input.c_str()
-    ));
+        L"Processing \"%s\"", utf8Input.c_str()));
 
     testState.vExpectedInput.clear();
     testState.vExpectedInput.push_back(test);
@@ -676,16 +657,14 @@ void InputEngineTest::CursorPositioningTest()
         L"Try sending a cursor position response, then send it again. "
         L"The first time, it should be interpreted as a cursor position. "
         L"The state machine engine should reset itself to normal operation "
-        L"after that, and treat the second as an F3."
-    ));
+        L"after that, and treat the second as an F3."));
 
     std::wstring seq = L"\x1b[1;4R";
     testState._expectCursorPosition = true;
     testState._expectedCursor = { 4, 1 };
 
     Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", seq.c_str()
-    ));
+        L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(&seq[0], seq.length());
 
     testState._expectCursorPosition = false;
@@ -701,8 +680,7 @@ void InputEngineTest::CursorPositioningTest()
 
     testState.vExpectedInput.push_back(inputRec);
     Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", seq.c_str()
-    ));
+        L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(&seq[0], seq.length());
 }
 
@@ -730,8 +708,7 @@ void InputEngineTest::CSICursorBackTabTest()
 
     const std::wstring seq = L"\x1b[Z";
     Log::Comment(NoThrowString().Format(
-        L"Processing \"%s\"", seq.c_str()
-    ));
+        L"Processing \"%s\"", seq.c_str()));
     _stateMachine->ProcessString(&seq[0], seq.length());
 }
 

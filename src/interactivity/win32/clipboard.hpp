@@ -41,14 +41,14 @@ namespace Microsoft::Console::Interactivity::Win32
         void StoreSelectionToClipboard(_In_ bool const fAlsoCopyHtml);
 
         TextBuffer::TextAndColor RetrieveTextFromBuffer(const SCREEN_INFORMATION& screenInfo,
-                                                         const bool lineSelection,
-                                                         const std::vector<SMALL_RECT>& selectionRects);
+                                                        const bool lineSelection,
+                                                        const std::vector<SMALL_RECT>& selectionRects);
 
         void CopyHTMLToClipboard(const TextBuffer::TextAndColor& rows);
-        std::string GenHTML(const TextBuffer::TextAndColor & rows);
+        std::string GenHTML(const TextBuffer::TextAndColor& rows);
         void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const fAlsoCopyHtml);
 
-        bool FilterCharacterOnPaste(_Inout_ WCHAR * const pwch);
+        bool FilterCharacterOnPaste(_Inout_ WCHAR* const pwch);
 
 #ifdef UNIT_TESTING
         friend class ClipboardTests;

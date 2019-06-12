@@ -213,44 +213,48 @@ static std::wstring g_pipestr;
 static HANDLE g_hLogging = INVALID_HANDLE_VALUE;
 static int g_childNum;
 
-static const wchar_t *const kChildDivider = L"--";
-static const wchar_t *const kChildCommand_Job = L"j";
-static const wchar_t *const kChildCommand_Read = L"r";
-static const wchar_t *const kChildCommand_Hold = L"h";
+static const wchar_t* const kChildDivider = L"--";
+static const wchar_t* const kChildCommand_Job = L"j";
+static const wchar_t* const kChildCommand_Read = L"r";
+static const wchar_t* const kChildCommand_Hold = L"h";
 
-struct PipeHandles {
+struct PipeHandles
+{
     HANDLE rh;
     HANDLE wh;
 };
 
-static PipeHandles createPipe() {
-    PipeHandles ret {};
+static PipeHandles createPipe()
+{
+    PipeHandles ret{};
     const BOOL success = CreatePipe(&ret.rh, &ret.wh, nullptr, 0);
     UNREFERENCED_PARAMETER(success); // to make release builds happy.
     assert(success && "CreatePipe failed");
     return ret;
 }
 
-static HANDLE makeJob() {
+static HANDLE makeJob()
+{
     HANDLE job = CreateJobObjectW(nullptr, nullptr);
     assert(job);
-    JOBOBJECT_EXTENDED_LIMIT_INFORMATION info {};
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION info{};
     info.BasicLimitInformation.LimitFlags =
         JOB_OBJECT_LIMIT_BREAKAWAY_OK |
         JOB_OBJECT_LIMIT_SILENT_BREAKAWAY_OK |
         JOB_OBJECT_LIMIT_DIE_ON_UNHANDLED_EXCEPTION |
         JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
     BOOL success = SetInformationJobObject(job,
-        JobObjectExtendedLimitInformation,
-        &info,
-        sizeof(info));
+                                           JobObjectExtendedLimitInformation,
+                                           &info,
+                                           sizeof(info));
     UNREFERENCED_PARAMETER(success); // to make release builds happy.
     assert(success && "SetInformationJobObject failed");
     return job;
 }
 
-static std::wstring exeName() {
-    std::array<wchar_t, 4096> self {};
+static std::wstring exeName()
+{
+    std::array<wchar_t, 4096> self{};
     DWORD len = GetModuleFileNameW(nullptr, self.data(), (DWORD)self.size());
     UNREFERENCED_PARAMETER(len); // to make release builds happy.
     assert(len >= 1 && len < self.size() && "GetModuleFileNameW failed");
@@ -264,8 +268,9 @@ static std::wstring exeName() {
 #endif
 
 #define TRACE(fmt, ...) trace("closetest: " fmt, ##__VA_ARGS__)
-static void trace(const char *fmt, ...) PL_PRINTF_FORMAT(1, 2);
-static void trace(const char *fmt, ...) {
+static void trace(const char* fmt, ...) PL_PRINTF_FORMAT(1, 2);
+static void trace(const char* fmt, ...)
+{
     std::array<char, 4096> buf;
     int written = 0;
     va_list ap;
@@ -286,7 +291,8 @@ static void trace(const char *fmt, ...) {
     OutputDebugStringA(buf.data());
 }
 
-static std::vector<DWORD> getConsoleProcessList() {
+static std::vector<DWORD> getConsoleProcessList()
+{
     std::vector<DWORD> ret;
     ret.resize(1);
     const DWORD count1 = GetConsoleProcessList(&ret[0], (DWORD)ret.size());
@@ -297,10 +303,13 @@ static std::vector<DWORD> getConsoleProcessList() {
     return ret;
 }
 
-static void dumpConsoleProcessList() {
+static void dumpConsoleProcessList()
+{
     std::string msg;
-    for (DWORD pid : getConsoleProcessList()) {
-        if (!msg.empty()) {
+    for (DWORD pid : getConsoleProcessList())
+    {
+        if (!msg.empty())
+        {
             msg += ", ";
         }
         msg += std::to_string(pid);
@@ -308,23 +317,34 @@ static void dumpConsoleProcessList() {
     TRACE("attached process list: %s", msg.c_str());
 }
 
-static std::wstring argvToCommandLine(const std::vector<std::wstring> &argv) {
+static std::wstring argvToCommandLine(const std::vector<std::wstring>& argv)
+{
     std::wstring ret;
-    for (const auto &arg : argv) {
+    for (const auto& arg : argv)
+    {
         // Strictly incorrect, but good enough.
-        if (!ret.empty()) {
+        if (!ret.empty())
+        {
             ret.push_back(L' ');
         }
         const bool quote = arg.empty() || arg.find(L' ') != std::wstring::npos;
-        if (quote) { ret.push_back(L'\"'); }
+        if (quote)
+        {
+            ret.push_back(L'\"');
+        }
         ret.append(arg);
-        if (quote) { ret.push_back(L'\"'); }
+        if (quote)
+        {
+            ret.push_back(L'\"');
+        }
     }
     return ret;
 }
 
-static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring> &extraArgs) {
-    if (extraArgs.empty()) {
+static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring>& extraArgs)
+{
+    if (extraArgs.empty())
+    {
         return;
     }
 
@@ -348,11 +368,10 @@ static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring> &ext
 
     //TRACE("spawning: %ls", cmdline.c_str());
 
-    BOOL success {};
-    STARTUPINFOW sui { sizeof(sui) };
-    PROCESS_INFORMATION pi {};
-    success = CreateProcessW(exeName().c_str(), &cmdline[0], nullptr, nullptr, FALSE,
-        0, nullptr, nullptr, &sui, &pi);
+    BOOL success{};
+    STARTUPINFOW sui{ sizeof(sui) };
+    PROCESS_INFORMATION pi{};
+    success = CreateProcessW(exeName().c_str(), &cmdline[0], nullptr, nullptr, FALSE, 0, nullptr, nullptr, &sui, &pi);
     assert(success && "CreateProcessW failed");
 
     const DWORD waitRet = WaitForSingleObject(readyEvent, INFINITE);
@@ -363,9 +382,11 @@ static void spawnChildTree(DWORD masterPid, const std::vector<std::wstring> &ext
 }
 
 // Split args up into children and spawn each child as a sibling.
-static void spawnSiblings(DWORD masterPid, const std::vector<std::wstring> &args) {
+static void spawnSiblings(DWORD masterPid, const std::vector<std::wstring>& args)
+{
     auto it = args.begin();
-    while (it != args.end()) {
+    while (it != args.end())
+    {
         assert(*it == kChildDivider);
         const auto itEnd = std::find(it + 1, args.end(), kChildDivider);
         const std::vector<std::wstring> child(it, itEnd);
@@ -374,7 +395,8 @@ static void spawnSiblings(DWORD masterPid, const std::vector<std::wstring> &args
     }
 }
 
-static void genChild(int n, const std::wstring &desc, int allocChunk, std::vector<std::wstring> &out) {
+static void genChild(int n, const std::wstring& desc, int allocChunk, std::vector<std::wstring>& out)
+{
     assert(desc != kChildDivider); // A divider as the desc would break spawnSiblings's parsing.
     out.push_back(kChildDivider);
     out.push_back(std::to_wstring(n));
@@ -382,8 +404,13 @@ static void genChild(int n, const std::wstring &desc, int allocChunk, std::vecto
     out.push_back(std::to_wstring(allocChunk / 1024));
 }
 
-static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChunk,
-                     std::vector<std::wstring> &out, std::vector<HANDLE> &handles) {
+static void genBatch(bool forward,
+                     bool useJob,
+                     bool useGapProcess,
+                     int allocChunk,
+                     std::vector<std::wstring>& out,
+                     std::vector<HANDLE>& handles)
+{
     static int cnt = 1;
 
     const PipeHandles pipe = createPipe();
@@ -394,10 +421,13 @@ static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChu
 
     auto genVictim = [&](int n, int /*n2*/) {
         genChild(n, L"", allocChunk, out);
-        if (useJob) {
+        if (useJob)
+        {
             out.push_back(kChildCommand_Job);
             out.push_back(std::to_wstring((uintptr_t)job));
-        } else {
+        }
+        else
+        {
             out.push_back(kChildCommand_Read);
             out.push_back(std::to_wstring((uintptr_t)pipe.rh));
         }
@@ -415,15 +445,20 @@ static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChu
     const int gap = cnt + 1;
     const int second = cnt + 1 + useGapProcess;
 
-    if (forward) {
+    if (forward)
+    {
         genKiller(first, second);
-        if (useGapProcess) {
+        if (useGapProcess)
+        {
             genChild(gap, L"", allocChunk, out);
         }
         genVictim(second, first);
-    } else {
+    }
+    else
+    {
         genVictim(first, second);
-        if (useGapProcess) {
+        if (useGapProcess)
+        {
             genChild(gap, L"", allocChunk, out);
         }
         genKiller(second, first);
@@ -431,8 +466,10 @@ static void genBatch(bool forward, bool useJob, bool useGapProcess, int allocChu
     cnt += 2 + useGapProcess;
 }
 
-static BOOL WINAPI ctrlHandler(DWORD type) {
-    if (type == CTRL_CLOSE_EVENT) {
+static BOOL WINAPI ctrlHandler(DWORD type)
+{
+    if (type == CTRL_CLOSE_EVENT)
+    {
         TRACE("child %d: CTRL_CLOSE_EVENT received, pausing...", g_childNum);
         Sleep(250);
         TRACE("child %d: CTRL_CLOSE_EVENT received, exiting...", g_childNum);
@@ -443,52 +480,58 @@ static BOOL WINAPI ctrlHandler(DWORD type) {
 
 // Duplicate a handle from `srcProc` into a non-inheritable handle in the
 // current process.
-static HANDLE duplicateHandle(HANDLE srcProc, HANDLE srcHandle) {
-    HANDLE ret {};
+static HANDLE duplicateHandle(HANDLE srcProc, HANDLE srcHandle)
+{
+    HANDLE ret{};
     const auto success =
-        DuplicateHandle(srcProc, srcHandle,
-                        GetCurrentProcess(), &ret,
-                        0, FALSE, DUPLICATE_SAME_ACCESS);
+        DuplicateHandle(srcProc, srcHandle, GetCurrentProcess(), &ret, 0, FALSE, DUPLICATE_SAME_ACCESS);
     assert(success && "DuplicateHandle failed");
     return ret;
 }
 
-static HANDLE openProcess(DWORD pid) {
+static HANDLE openProcess(DWORD pid)
+{
     const HANDLE ret = OpenProcess(PROCESS_DUP_HANDLE, FALSE, pid);
     assert(ret != nullptr && "OpenProcess failed");
     return ret;
 }
 
-static std::deque<std::wstring> getCommandLine() {
+static std::deque<std::wstring> getCommandLine()
+{
     // Link with Shell32.lib for CommandLineToArgvW.
     std::deque<std::wstring> ret;
     const auto cmdline = GetCommandLineW();
-    int argc {};
+    int argc{};
     const auto argv = CommandLineToArgvW(cmdline, &argc);
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 0; i < argc; ++i)
+    {
         ret.push_back(argv[i]);
     }
     LocalFree((HLOCAL)argv);
     return ret;
 }
 
-template <typename T>
-static T shift(std::deque<T> &container) {
+template<typename T>
+static T shift(std::deque<T>& container)
+{
     assert(!container.empty());
     T ret = container.front();
     container.pop_front();
     return ret;
 }
 
-static int shiftInt(std::deque<std::wstring> &container) {
+static int shiftInt(std::deque<std::wstring>& container)
+{
     return _wtoi(shift(container).c_str());
 }
 
-static HANDLE shiftHandle(std::deque<std::wstring> &container) {
+static HANDLE shiftHandle(std::deque<std::wstring>& container)
+{
     return (HANDLE)(uintptr_t)shiftInt(container);
 }
 
-static int doChild(std::deque<std::wstring> argv) {
+static int doChild(std::deque<std::wstring> argv)
+{
     // closetest.exe --child <masterPid> <parentPid> <readyEvent> <opt:pipeName> -- <num> <desc> <alloc> [cmd arg] [...]
     shift(argv);
     assert(shift(argv) == L"--child");
@@ -518,30 +561,38 @@ static int doChild(std::deque<std::wstring> argv) {
 
     SetConsoleCtrlHandler(ctrlHandler, TRUE);
 
-    TRACE("child %d: attached to console%ls", g_childNum,
-        desc.empty() ? L"" : (std::wstring(L" (") + desc + L")").c_str());
+    TRACE("child %d: attached to console%ls", g_childNum, desc.empty() ? L"" : (std::wstring(L" (") + desc + L")").c_str());
 
-    if (allocChunk > 0) {
+    if (allocChunk > 0)
+    {
         // Slow process termination down by allocating a chunk of memory.
-        char *buf = new char[allocChunk];
+        char* buf = new char[allocChunk];
         memset(buf, 0xcc, allocChunk);
     }
 
     HANDLE readHandle = nullptr;
     HANDLE jobHandle = nullptr;
 
-    while (!argv.empty() && argv.front() != kChildDivider) {
+    while (!argv.empty() && argv.front() != kChildDivider)
+    {
         const auto cmd = shift(argv);
-        if (cmd == kChildCommand_Hold) {
+        if (cmd == kChildCommand_Hold)
+        {
             // Duplicate the handle into this process, then forget it.
             duplicateHandle(masterProc, shiftHandle(argv));
-        } else if (cmd == kChildCommand_Read) {
+        }
+        else if (cmd == kChildCommand_Read)
+        {
             assert(readHandle == nullptr);
             readHandle = duplicateHandle(masterProc, shiftHandle(argv));
-        } else if (cmd == kChildCommand_Job) {
+        }
+        else if (cmd == kChildCommand_Job)
+        {
             assert(jobHandle == nullptr);
             jobHandle = duplicateHandle(masterProc, shiftHandle(argv));
-        } else {
+        }
+        else
+        {
             TRACE("Invalid child command: %ls", cmd.c_str());
             exit(1);
         }
@@ -550,7 +601,8 @@ static int doChild(std::deque<std::wstring> argv) {
     spawnChildTree(masterPid, std::vector<std::wstring>(argv.begin(), argv.end()));
 
     // Assign self to a job object.
-    if (jobHandle != nullptr) {
+    if (jobHandle != nullptr)
+    {
         const BOOL success =
             AssignProcessToJobObject(jobHandle, GetCurrentProcess());
         assert(success && "AssignProcessToJobObject failed");
@@ -570,19 +622,23 @@ static int doChild(std::deque<std::wstring> argv) {
     CloseHandle(readyEvent);
     readyEvent = nullptr;
 
-    if (readHandle != nullptr) {
-        char buf {};
-        DWORD actual {};
+    if (readHandle != nullptr)
+    {
+        char buf{};
+        DWORD actual{};
         ReadFile(readHandle, &buf, sizeof(buf), &actual, nullptr);
         TRACE("child %d: ReadFile() returned, exiting...", g_childNum);
-    } else {
+    }
+    else
+    {
         Sleep(300 * 1000);
     }
 
     return 0;
 }
 
-static void usage() {
+static void usage()
+{
     printf("usage: %ls [options]\n", exeName().c_str());
     printf("Options:\n");
     printf("  -n NUM_BATCHES    Start NUM_BATCHES batches of processes [default: 4]\n");
@@ -605,8 +661,8 @@ static void usage() {
     printf("  --no-realloc      Skip free/alloc console to break out of the initial session\n");
 }
 
-static int doParent(std::deque<std::wstring> argv) {
-
+static int doParent(std::deque<std::wstring> argv)
+{
     int numBatches = 4;
     int dir = 0;
     bool useJob = false;
@@ -617,46 +673,88 @@ static int doParent(std::deque<std::wstring> argv) {
 
     // Parse arguments
     shift(argv); // discard the program name.
-    while (!argv.empty()) {
+    while (!argv.empty())
+    {
         const auto arg = shift(argv);
         const auto hasNext = !argv.empty();
 
-        if (arg == L"--help" || arg == L"-h") {
+        if (arg == L"--help" || arg == L"-h")
+        {
             usage();
             exit(0);
-        } else if (arg == L"-n" && hasNext) {
+        }
+        else if (arg == L"-n" && hasNext)
+        {
             numBatches = shiftInt(argv);
-        } else if (arg == L"-d" && hasNext) {
+        }
+        else if (arg == L"-d" && hasNext)
+        {
             const auto next = shift(argv);
-            if      (next == L"forward")         { dir = 1; }
-            else if (next == L"backward")        { dir = 2; }
-            else if (next == L"alternate")       { dir = 3; }
-            else if (next == L"none")            { dir = 0; }
-            else {
+            if (next == L"forward")
+            {
+                dir = 1;
+            }
+            else if (next == L"backward")
+            {
+                dir = 2;
+            }
+            else if (next == L"alternate")
+            {
+                dir = 3;
+            }
+            else if (next == L"none")
+            {
+                dir = 0;
+            }
+            else
+            {
                 fprintf(stderr, "error: unrecognized -d argument: %ls\n", next.c_str());
                 exit(1);
             }
-        } else if (arg == L"--gap") {
+        }
+        else if (arg == L"--gap")
+        {
             useGapProcess = true;
-        } else if (arg == L"--no-gap") {
+        }
+        else if (arg == L"--no-gap")
+        {
             useGapProcess = false;
-        } else if (arg == L"--alloc" && hasNext) {
+        }
+        else if (arg == L"--alloc" && hasNext)
+        {
             const auto next = shift(argv);
             allocChunk = (int)(_wtof(next.c_str()) * 1024.0 * 1024.0);
-        } else if (arg == L"-m" && hasNext) {
+        }
+        else if (arg == L"-m" && hasNext)
+        {
             const auto next = shift(argv);
-            if      (next == L"pipe")    { useJob = false; }
-            else if (next == L"job")     { useJob = true; }
-            else {
+            if (next == L"pipe")
+            {
+                useJob = false;
+            }
+            else if (next == L"job")
+            {
+                useJob = true;
+            }
+            else
+            {
                 fprintf(stderr, "error: unrecognized -m argument: %ls\n", next.c_str());
                 exit(1);
             }
         }
-        else if (arg == L"--graph" && hasNext) {
+        else if (arg == L"--graph" && hasNext)
+        {
             const auto next = shift(argv);
-            if (next == L"tree") { useSiblings = false; }
-            else if (next == L"list") { useSiblings = true; }
-            else {
+            if (next == L"tree")
+            {
+                useSiblings = false;
+            }
+            else if (next == L"list")
+            {
+                useSiblings = true;
+            }
+            else
+            {
                 fprintf(stderr, "error: unrecognized --graph argument: %ls\n", next.c_str());
                 exit(1);
             }
@@ -688,7 +786,8 @@ static int doParent(std::deque<std::wstring> argv) {
         {
             noRealloc = true;
         }
-        else {
+        else
+        {
             usage();
             fprintf(stderr, "\nerror: unrecognized argument: %ls\n", arg.c_str());
             exit(1);
@@ -698,14 +797,18 @@ static int doParent(std::deque<std::wstring> argv) {
     // Decide which children to start.
     std::vector<std::wstring> spawnList;
     std::vector<HANDLE> handles;
-    for (int i = 0; i < numBatches; ++i) {
-        if (dir == 0) {
+    for (int i = 0; i < numBatches; ++i)
+    {
+        if (dir == 0)
+        {
             genChild(i + 1, L"", allocChunk, spawnList);
         }
-        if (dir & 1) {
+        if (dir & 1)
+        {
             genBatch(true, useJob, useGapProcess, allocChunk, spawnList, handles);
         }
-        if (dir & 2) {
+        if (dir & 2)
+        {
             genBatch(false, useJob, useGapProcess, allocChunk, spawnList, handles);
         }
     }
@@ -717,12 +820,16 @@ static int doParent(std::deque<std::wstring> argv) {
         AllocConsole();
     }
 
-    if (useSiblings) {
+    if (useSiblings)
+    {
         spawnSiblings(GetCurrentProcessId(), spawnList);
-    } else {
+    }
+    else
+    {
         spawnChildTree(GetCurrentProcessId(), spawnList);
     }
-    for (auto h : handles) {
+    for (auto h : handles)
+    {
         CloseHandle(h);
     }
 
@@ -733,12 +840,16 @@ static int doParent(std::deque<std::wstring> argv) {
     return 0;
 }
 
-int main() {
+int main()
+{
     setlocale(LC_ALL, "");
     auto argv = getCommandLine();
-    if (argv.size() >= 2 && argv[1] == L"--child") {
+    if (argv.size() >= 2 && argv[1] == L"--child")
+    {
         return doChild(std::move(argv));
-    } else {
+    }
+    else
+    {
         return doParent(std::move(argv));
     }
 }

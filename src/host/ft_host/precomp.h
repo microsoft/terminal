@@ -21,8 +21,8 @@
 #include <sysparamsext.h>
 #endif
 
-#define CM_SET_KEY_STATE (WM_USER+18)
-#define CM_SET_KEYBOARD_LAYOUT (WM_USER+19)
+#define CM_SET_KEY_STATE (WM_USER + 18)
+#define CM_SET_KEYBOARD_LAYOUT (WM_USER + 19)
 
 #include "OneCoreDelay.hpp"
 

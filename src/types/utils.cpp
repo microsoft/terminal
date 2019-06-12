@@ -7,7 +7,7 @@
 using namespace Microsoft::Console;
 
 // Function Description:
-// - Clamps a long in between `min` and `SHRT_MAX` 
+// - Clamps a long in between `min` and `SHRT_MAX`
 // Arguments:
 // - value: the value to clamp
 // - min: the minimum value to clamp to
@@ -16,8 +16,8 @@ using namespace Microsoft::Console;
 short Utils::ClampToShortMax(const long value, const short min)
 {
     return static_cast<short>(std::clamp(value,
-        static_cast<long>(min),
-        static_cast<long>(SHRT_MAX)));
+                                         static_cast<long>(min),
+                                         static_cast<long>(SHRT_MAX)));
 }
 
 // Function Description:
@@ -30,11 +30,7 @@ short Utils::ClampToShortMax(const long value, const short min)
 std::wstring Utils::GuidToString(const GUID guid)
 {
     wchar_t guid_cstr[39];
-    const int written = swprintf(guid_cstr, sizeof(guid_cstr),
-             L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}",
-             guid.Data1, guid.Data2, guid.Data3,
-             guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3],
-             guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
+    const int written = swprintf(guid_cstr, sizeof(guid_cstr), L"{%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x}", guid.Data1, guid.Data2, guid.Data3, guid.Data4[0], guid.Data4[1], guid.Data4[2], guid.Data4[3], guid.Data4[4], guid.Data4[5], guid.Data4[6], guid.Data4[7]);
 
     THROW_HR_IF(E_INVALIDARG, written == -1);
 
@@ -130,6 +126,7 @@ void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
 
+    // clang-format off
     table[0]   = RGB( 12,   12,   12);
     table[1]   = RGB( 197,  15,   31);
     table[2]   = RGB( 19,   161,  14);
@@ -146,6 +143,7 @@ void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
     table[13]  = RGB( 180,  0,    158);
     table[14]  = RGB( 97,   214,  214);
     table[15]  = RGB( 242,  242,  242);
+    // clang-format on
 }
 
 // Function Description:
@@ -159,6 +157,7 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 256);
 
+    // clang-format off
     table[0]   = RGB( 0x00, 0x00, 0x00);
     table[1]   = RGB( 0x80, 0x00, 0x00);
     table[2]   = RGB( 0x00, 0x80, 0x00);
@@ -415,7 +414,7 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
     table[253] = RGB(0xda, 0xda, 0xda);
     table[254] = RGB(0xe4, 0xe4, 0xe4);
     table[255] = RGB(0xee, 0xee, 0xee);
-
+    // clang-format on
 }
 
 // Function Description:
@@ -428,7 +427,7 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
 {
     const auto shiftedAlpha = newAlpha << 24;
-    for( auto& color : table)
+    for (auto& color : table)
     {
         WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
     }
@@ -461,8 +460,8 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
 
-    buffer[6] = (buffer[6] & 0x0F) | 0x50;  // set the uuid version to 5
-    buffer[8] = (buffer[8] & 0x3F) | 0x80;  // set the variant to 2 (RFC4122)
+    buffer[6] = (buffer[6] & 0x0F) | 0x50; // set the uuid version to 5
+    buffer[8] = (buffer[8] & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
 
     // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
     // "...the underlying bytes making up the object can be copied into an array

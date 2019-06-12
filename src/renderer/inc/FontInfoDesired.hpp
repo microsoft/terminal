@@ -21,7 +21,6 @@ Author(s):
 #include "FontInfoBase.hpp"
 #include "FontInfo.hpp"
 
-
 class FontInfoDesired : public FontInfoBase
 {
 public:
@@ -31,7 +30,7 @@ public:
                     const COORD coordSizeDesired,
                     const UINT uiCodePage);
 
-    FontInfoDesired(const FontInfo &fiFont);
+    FontInfoDesired(const FontInfo& fiFont);
 
     COORD GetEngineSize() const;
     bool IsDefaultRasterFont() const;

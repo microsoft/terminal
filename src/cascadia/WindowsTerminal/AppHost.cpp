@@ -102,7 +102,8 @@ void AppHost::AppTitleChanged(winrt::hstring newTitle)
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed() {
+void AppHost::LastTabClosed()
+{
     _window->Close();
 }
 
@@ -140,7 +141,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     // Create a RECT from our requested client size
     auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                _currentHeight }).ToRect();
+                                                _currentHeight })
+                         .ToRect();
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
@@ -166,10 +168,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
             // size of our window, which will be at least close.
             LOG_LAST_ERROR();
             nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                   _currentHeight }).ToRect();
+                                                   _currentHeight })
+                            .ToRect();
         }
     }
-
 
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     const auto adjustedWidth = nonClient.right - nonClient.left;
@@ -181,7 +183,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
 
-    bool succeeded = SetWindowPos(hwnd, nullptr,
+    bool succeeded = SetWindowPos(hwnd,
+                                  nullptr,
                                   newPos.Left(),
                                   newPos.Top(),
                                   newPos.Width(),
@@ -191,6 +194,4 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
-
-
 }

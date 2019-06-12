@@ -12,11 +12,11 @@
 using namespace Microsoft::Console::Interactivity;
 
 // API Sets
-#define EXT_API_SET_NTUSER_WINDOW  L"ext-ms-win-ntuser-window-l1-1-0"
+#define EXT_API_SET_NTUSER_WINDOW L"ext-ms-win-ntuser-window-l1-1-0"
 
 // This may not be defined depending on the SDK version being targetted.
 #ifndef LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER
-#define LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER  0x00004000
+#define LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER 0x00004000
 #endif
 
 #pragma region Public Methods
@@ -27,8 +27,7 @@ using namespace Microsoft::Console::Interactivity;
 // Arguments:
 // - level - pointer to an APILevel enum stating the level of support the
 //           system offers for the given functionality.
-[[nodiscard]]
-NTSTATUS ApiDetector::DetectNtUserWindow(_Out_ ApiLevel* level)
+[[nodiscard]] NTSTATUS ApiDetector::DetectNtUserWindow(_Out_ ApiLevel* level)
 {
     // N.B.: Testing for the API set implies the function is present.
     return DetectApiSupport(EXT_API_SET_NTUSER_WINDOW, nullptr, level);
@@ -38,8 +37,7 @@ NTSTATUS ApiDetector::DetectNtUserWindow(_Out_ ApiLevel* level)
 
 #pragma region Private Methods
 
-[[nodiscard]]
-NTSTATUS ApiDetector::DetectApiSupport(_In_ LPCWSTR lpApiHost, _In_ LPCSTR lpProcedure, _Out_ ApiLevel* level)
+[[nodiscard]] NTSTATUS ApiDetector::DetectApiSupport(_In_ LPCWSTR lpApiHost, _In_ LPCSTR lpProcedure, _Out_ ApiLevel* level)
 {
     if (!level)
     {
@@ -47,7 +45,7 @@ NTSTATUS ApiDetector::DetectApiSupport(_In_ LPCWSTR lpApiHost, _In_ LPCSTR lpPro
     }
 
     NTSTATUS status = STATUS_SUCCESS;
-    HMODULE  hModule = nullptr;
+    HMODULE hModule = nullptr;
 
     status = TryLoadWellKnownLibrary(lpApiHost, &hModule);
     if (NT_SUCCESS(status) && lpProcedure)
@@ -60,8 +58,8 @@ NTSTATUS ApiDetector::DetectApiSupport(_In_ LPCWSTR lpApiHost, _In_ LPCSTR lpPro
     return STATUS_SUCCESS;
 }
 
-[[nodiscard]]
-NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _Outptr_result_nullonfailure_ HMODULE *phModule)
+[[nodiscard]] NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary,
+                                                            _Outptr_result_nullonfailure_ HMODULE* phModule)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -106,10 +104,11 @@ NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _Outptr_re
     return status;
 }
 
-[[nodiscard]]
-NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _In_ DWORD dwLoaderFlags, _Outptr_result_nullonfailure_ HMODULE *phModule)
+[[nodiscard]] NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary,
+                                                            _In_ DWORD dwLoaderFlags,
+                                                            _Outptr_result_nullonfailure_ HMODULE* phModule)
 {
-    HMODULE  hModule = nullptr;
+    HMODULE hModule = nullptr;
 
     hModule = LoadLibraryExW(lpLibrary,
                              nullptr,
@@ -126,8 +125,7 @@ NTSTATUS ApiDetector::TryLoadWellKnownLibrary(_In_ LPCWSTR lpLibrary, _In_ DWORD
     }
 }
 
-[[nodiscard]]
-NTSTATUS ApiDetector::TryLocateProcedure(_In_ HMODULE hModule, _In_ LPCSTR lpProcedure)
+[[nodiscard]] NTSTATUS ApiDetector::TryLocateProcedure(_In_ HMODULE hModule, _In_ LPCSTR lpProcedure)
 {
     FARPROC proc = GetProcAddress(hModule, lpProcedure);
 

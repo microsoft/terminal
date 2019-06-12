@@ -21,7 +21,6 @@ namespace Microsoft::Console::VirtualTerminal
     class ParserTracing sealed
     {
     public:
-
         ParserTracing();
         ~ParserTracing();
 
@@ -42,7 +41,5 @@ namespace Microsoft::Console::VirtualTerminal
 
         wchar_t _rgwchSequenceTrace[s_cMaxSequenceTrace];
         size_t _cchSequenceTrace;
-
-
     };
 }

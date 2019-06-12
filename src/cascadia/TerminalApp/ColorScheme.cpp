@@ -17,8 +17,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view TableKey{ "colors" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
-static constexpr std::array<std::string_view, 16> TableColors =
-{
+static constexpr std::array<std::string_view, 16> TableColors = {
     "black",
     "red",
     "green",
@@ -39,25 +38,22 @@ static constexpr std::array<std::string_view, 16> TableColors =
 
 ColorScheme::ColorScheme() :
     _schemeName{ L"" },
-    _table{  },
+    _table{},
     _defaultForeground{ RGB(242, 242, 242) },
     _defaultBackground{ RGB(12, 12, 12) }
 {
-
 }
 
 ColorScheme::ColorScheme(std::wstring name, COLORREF defaultFg, COLORREF defaultBg) :
     _schemeName{ name },
-    _table{  },
+    _table{},
     _defaultForeground{ defaultFg },
     _defaultBackground{ defaultBg }
 {
-
 }
 
 ColorScheme::~ColorScheme()
 {
-
 }
 
 // Method Description:
@@ -156,7 +152,6 @@ ColorScheme ColorScheme::FromJson(const Json::Value& json)
 
     return result;
 }
-
 
 std::wstring_view ColorScheme::GetName() const noexcept
 {

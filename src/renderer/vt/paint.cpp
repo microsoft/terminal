@@ -18,8 +18,7 @@ using namespace Microsoft::Console::Types;
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint.
 //      HRESULT error code if painting didn't start successfully.
-[[nodiscard]]
-HRESULT VtEngine::StartPaint() noexcept
+[[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
     if (_pipeBroken)
     {
@@ -28,9 +27,9 @@ HRESULT VtEngine::StartPaint() noexcept
 
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||
-        (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
-        _cursorMoved ||
-        _titleChanged;
+                         (_scrollDelta.X != 0 || _scrollDelta.Y != 0) ||
+                         _cursorMoved ||
+                         _titleChanged;
 
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn, _fInvalidRectUsed, _invalidRect, _lastViewport, _scrollDelta, _cursorMoved);
@@ -47,14 +46,13 @@ HRESULT VtEngine::StartPaint() noexcept
 // - <none>
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::EndPaint() noexcept
+[[nodiscard]] HRESULT VtEngine::EndPaint() noexcept
 {
     _trace.TraceEndPaint();
 
     _invalidRect = Viewport::Empty();
     _fInvalidRectUsed = false;
-    _scrollDelta = {0};
+    _scrollDelta = { 0 };
     _clearedAllThisFrame = false;
     _cursorMoved = false;
     _firstPaint = false;
@@ -92,8 +90,7 @@ HRESULT VtEngine::EndPaint() noexcept
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]]
-HRESULT VtEngine::Present() noexcept
+[[nodiscard]] HRESULT VtEngine::Present() noexcept
 {
     return S_FALSE;
 }
@@ -104,8 +101,7 @@ HRESULT VtEngine::Present() noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintBackground() noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBackground() noexcept
 {
     return S_OK;
 }
@@ -121,10 +117,9 @@ HRESULT VtEngine::PaintBackground() noexcept
 //      double-wide character.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                  const COORD coord,
-                                  const bool /*trimLeft*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                const COORD coord,
+                                                const bool /*trimLeft*/) noexcept
 {
     return VtEngine::_PaintAsciiBufferLine(clusters, coord);
 }
@@ -138,11 +133,10 @@ HRESULT VtEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
-                                       const COLORREF /*color*/,
-                                       const size_t /*cchLine*/,
-                                       const COORD /*coordTarget*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+                                                     const COLORREF /*color*/,
+                                                     const size_t /*cchLine*/,
+                                                     const COORD /*coordTarget*/) noexcept
 {
     return S_OK;
 }
@@ -153,8 +147,7 @@ HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
 // - options - Options that affect the presentation of the cursor
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // MSFT:15933349 - Send the terminal the updated cursor information, if it's changed.
     LOG_IF_FAILED(_MoveCursor(options.coordCursor));
@@ -172,8 +165,7 @@ HRESULT VtEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
+[[nodiscard]] HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 {
     return S_OK;
 }
@@ -186,12 +178,11 @@ HRESULT VtEngine::PaintSelection(const SMALL_RECT /*rect*/) noexcept
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
-                                           const COLORREF colorBackground,
-                                           const bool isBold,
-                                           _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                           const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                         const COLORREF colorBackground,
+                                                         const bool isBold,
+                                                         _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                                         const WORD cColorTable) noexcept
 {
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
@@ -273,14 +264,12 @@ HRESULT VtEngine::_RgbUpdateDrawingBrushes(const COLORREF colorForeground,
 // - cColorTable: size of the color table.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
-                                               const COLORREF colorBackground,
-                                               const bool isBold,
-                                               _In_reads_(cColorTable) const COLORREF* const ColorTable,
-                                               const WORD cColorTable) noexcept
+[[nodiscard]] HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
+                                                             const COLORREF colorBackground,
+                                                             const bool isBold,
+                                                             _In_reads_(cColorTable) const COLORREF* const ColorTable,
+                                                             const WORD cColorTable) noexcept
 {
-
     const bool fgChanged = colorForeground != _LastFG;
     const bool bgChanged = colorBackground != _LastBG;
     const bool fgIsDefault = colorForeground == _colorProvider.GetDefaultForeground();
@@ -325,7 +314,6 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 
             _LastBG = colorBackground;
         }
-
     }
 
     return S_OK;
@@ -345,9 +333,8 @@ HRESULT VtEngine::_16ColorUpdateDrawingBrushes(const COLORREF colorForeground,
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
-                                        const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                      const COORD coord) noexcept
 {
     try
     {
@@ -381,9 +368,8 @@ HRESULT VtEngine::_PaintAsciiBufferLine(std::basic_string_view<Cluster> const cl
 // - coord - character coordinate target to render within viewport
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
-                                       const COORD coord) noexcept
+[[nodiscard]] HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clusters,
+                                                     const COORD coord) noexcept
 {
     if (coord.Y < _virtualTop)
     {
@@ -452,12 +438,12 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
     //      frame, don't add spaces at the end.
     const bool removeSpaces = (useEraseChar || (_clearedAllThisFrame) || (_newBottomLine));
     const size_t cchActual = removeSpaces ?
-                                (cchLine - numSpaces) :
-                                cchLine;
+                                 (cchLine - numSpaces) :
+                                 cchLine;
 
     const size_t columnsActual = removeSpaces ?
-                                    (totalWidth - numSpaces) :
-                                    totalWidth;
+                                     (totalWidth - numSpaces) :
+                                     totalWidth;
 
     // Write the actual text string
     std::wstring wstr = std::wstring(unclusteredString.data(), cchActual);
@@ -531,8 +517,7 @@ HRESULT VtEngine::_PaintUtf8BufferLine(std::basic_string_view<Cluster> const clu
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
 {
     return S_OK;
 }

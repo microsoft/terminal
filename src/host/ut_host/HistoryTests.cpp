@@ -243,9 +243,7 @@ class HistoryTests
     }
 
 private:
-
-    const std::array<std::wstring, 5> _manyApps =
-    {
+    const std::array<std::wstring, 5> _manyApps = {
         L"foo.exe",
         L"bar.exe",
         L"baz.exe",
@@ -253,8 +251,7 @@ private:
         L"banana.exe"
     };
 
-    const std::array<std::wstring, 12> _manyHistoryItems =
-    {
+    const std::array<std::wstring, 12> _manyHistoryItems = {
         L"dir",
         L"dir /w",
         L"dir /p /w",

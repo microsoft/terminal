@@ -34,7 +34,6 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
     _hMenu(hMenu),
     _hHeirMenu(hHeirMenu)
 {
-
 }
 
 // Routine Description:
@@ -43,11 +42,10 @@ Menu::Menu(HMENU hMenu, HMENU hHeirMenu) :
 // - hWnd - The handle to the console's window
 // Return Value:
 // - STATUS_SUCCESS or suitable NT error code
-[[nodiscard]]
-NTSTATUS Menu::CreateInstance(HWND hWnd)
+[[nodiscard]] NTSTATUS Menu::CreateInstance(HWND hWnd)
 {
     NTSTATUS status = STATUS_SUCCESS;
-    HMENU hMenu     = nullptr;
+    HMENU hMenu = nullptr;
     HMENU hHeirMenu = nullptr;
 
     int ItemLength;
@@ -58,7 +56,7 @@ NTSTATUS Menu::CreateInstance(HWND hWnd)
     hHeirMenu = LoadMenuW(ServiceLocator::LocateGlobals().hInstance,
                           MAKEINTRESOURCE(ID_CONSOLE_SYSTEMMENU));
 
-    Menu *pNewMenu = new(std::nothrow) Menu(hMenu, hHeirMenu);
+    Menu* pNewMenu = new (std::nothrow) Menu(hMenu, hHeirMenu);
     status = NT_TESTNULL(pNewMenu);
 
     if (NT_SUCCESS(status))
@@ -138,7 +136,6 @@ Menu* Menu::Instance()
 
 Menu::~Menu()
 {
-
 }
 
 // Routine Description:
@@ -274,9 +271,9 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
         APPLET_PROC const pfnCplApplet = (APPLET_PROC)GetProcAddress((HMODULE)hLibrary, "CPlApplet");
         if (pfnCplApplet != nullptr)
         {
-            (*pfnCplApplet) (hwnd, CPL_INIT, 0, 0);
-            (*pfnCplApplet) (hwnd, CPL_DBLCLK, (LPARAM)& StateInfo, 0);
-            (*pfnCplApplet) (hwnd, CPL_EXIT, 0, 0);
+            (*pfnCplApplet)(hwnd, CPL_INIT, 0, 0);
+            (*pfnCplApplet)(hwnd, CPL_DBLCLK, (LPARAM)&StateInfo, 0);
+            (*pfnCplApplet)(hwnd, CPL_EXIT, 0, 0);
         }
 
         LOG_IF_WIN32_BOOL_FALSE(FreeLibrary((HMODULE)hLibrary));
@@ -301,8 +298,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     }
 }
 
-[[nodiscard]]
-HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
+[[nodiscard]] HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO* const pStateInfo)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION& ScreenInfo = gci.GetActiveOutputBuffer();
@@ -346,7 +342,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
     // Create mutable copies of the titles so the propsheet can do something with them.
     if (gci.GetOriginalTitle().length() > 0)
     {
-        pStateInfo->OriginalTitle = new(std::nothrow) wchar_t[gci.GetOriginalTitle().length()+1]{UNICODE_NULL};
+        pStateInfo->OriginalTitle = new (std::nothrow) wchar_t[gci.GetOriginalTitle().length() + 1]{ UNICODE_NULL };
         RETURN_IF_NULL_ALLOC(pStateInfo->OriginalTitle);
         gci.GetOriginalTitle().copy(pStateInfo->OriginalTitle, gci.GetOriginalTitle().length());
     }
@@ -357,7 +353,7 @@ HRESULT Menu::s_GetConsoleState(CONSOLE_STATE_INFO * const pStateInfo)
 
     if (gci.GetLinkTitle().length() > 0)
     {
-        pStateInfo->LinkTitle = new(std::nothrow) wchar_t[gci.GetLinkTitle().length()+1]{UNICODE_NULL};
+        pStateInfo->LinkTitle = new (std::nothrow) wchar_t[gci.GetLinkTitle().length() + 1]{ UNICODE_NULL };
         RETURN_IF_NULL_ALLOC(pStateInfo->LinkTitle);
         gci.GetLinkTitle().copy(pStateInfo->LinkTitle, gci.GetLinkTitle().length());
     }
@@ -604,7 +600,6 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.ConsoleIme.RefreshAreaAttributes();
 
     gci.SetInterceptCopyPaste(!!pStateInfo->InterceptCopyPaste);
-
 }
 
 #pragma endregion

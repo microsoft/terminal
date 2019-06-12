@@ -30,13 +30,12 @@ public:
     void LoadDefaultFromRegistry();
     void LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle);
 
-
     void GetEditKeys(_In_opt_ HKEY hConsoleKey) const;
+
 private:
     void _LoadMappedProperties(_In_reads_(cPropertyMappings) const RegistrySerialization::RegPropertyMap* const rgPropertyMappings,
                                const size_t cPropertyMappings,
                                const HKEY hKey);
-
 
     Settings* const _pSettings;
 };
