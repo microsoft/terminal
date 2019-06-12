@@ -21,7 +21,7 @@ Author:
 class CommandListPopup : public Popup
 {
 public:
-    CommandListPopup(SCREEN_INFORMATION& screenInfo, CommandHistory& history);
+    CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history);
 
     [[nodiscard]]
     NTSTATUS Process(CookedRead& cookedReadData) noexcept override;

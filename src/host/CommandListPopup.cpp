@@ -50,7 +50,7 @@ static COORD calculatePopupSize(const CommandHistory& history)
     return { gsl::narrow<short>(width), height };
 }
 
-CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, CommandHistory& history) :
+CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const CommandHistory& history) :
     Popup(screenInfo, calculatePopupSize(history)),
     _history{ history },
     _currentCommand{ std::min(history.LastDisplayed, static_cast<SHORT>(history.GetNumberOfCommands() - 1)) }
