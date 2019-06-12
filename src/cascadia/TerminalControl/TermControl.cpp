@@ -1327,10 +1327,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Reserve additional space if scrollbar is intended to be visible
         if (_settings.ScrollState() == ScrollbarState::Visible)
         {
-
-            // width += GetSystemMetricsForDpi(SM_CXVSCROLL, USER_DEFAULT_SCREEN_DPI);
             width += _scrollBar.ActualWidth();
         }
+
+        // Account for the size of any padding
+        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
+        width += thickness.Left + thickness.Right;
+        height += thickness.Top + thickness.Bottom;
+
         return { width, height };
     }
 
