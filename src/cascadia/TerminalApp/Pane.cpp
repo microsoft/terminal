@@ -520,7 +520,6 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_separatorRoot);
         _root.Children().Append(_secondChild->GetRootElement());
 
-
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastFocused)
         {
@@ -542,14 +541,14 @@ void Pane::_CloseChild(const bool closeFirst)
 // - <none>
 void Pane::_SetupChildCloseHandlers()
 {
-    _firstClosedToken = _firstChild->Closed([this](){
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+    _firstClosedToken = _firstChild->Closed([this]() {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
             _CloseChild(true);
         });
     });
 
-    _secondClosedToken = _secondChild->Closed([this](){
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=](){
+    _secondClosedToken = _secondChild->Closed([this]() {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
             _CloseChild(false);
         });
     });
@@ -656,7 +655,6 @@ void Pane::_ApplySplitDefinitions()
         Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
         Controls::Grid::SetColumn(_separatorRoot, 1);
         Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
-
     }
     else if (_splitState == SplitState::Horizontal)
     {
@@ -665,7 +663,6 @@ void Pane::_ApplySplitDefinitions()
         Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
     }
 }
-
 
 // Method Description:
 // - Vertically split the focused pane in our tree of panes, and place the given

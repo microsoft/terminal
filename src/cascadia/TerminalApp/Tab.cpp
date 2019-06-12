@@ -165,7 +165,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 {
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
-    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this](){
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
         _tabViewItem.Header(text);
     });
 }
@@ -181,7 +181,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 void Tab::Scroll(const int delta)
 {
     auto control = GetFocusedTerminalControl();
-    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta](){
+    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
     });

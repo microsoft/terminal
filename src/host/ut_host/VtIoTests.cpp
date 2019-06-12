@@ -19,7 +19,6 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace std;
 
-
 class Microsoft::Console::VirtualTerminal::VtIoTests
 {
     TEST_CLASS(VtIoTests);
@@ -105,21 +104,18 @@ void VtIoTests::DtorTestJustEngine()
         L"This test is going to instantiate a bunch of VtIos in different \n"
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
-        L"that are only defined in UNIT_TESTING"
-    ));
+        L"that are only defined in UNIT_TESTING"));
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
     VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
-        L"New some engines and delete them"
-    ));
+        L"New some engines and delete them"));
     for (int i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
-            L"New/Delete loop #%d", i
-        ));
+            L"New/Delete loop #%d", i));
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
@@ -149,7 +145,6 @@ void VtIoTests::DtorTestJustEngine()
         delete pRenderEngineWinTelnet;
         Log::Comment(NoThrowString().Format(L"Deleted."));
     }
-
 }
 
 void VtIoTests::DtorTestDeleteVtio()
@@ -158,21 +153,18 @@ void VtIoTests::DtorTestDeleteVtio()
         L"This test is going to instantiate a bunch of VtIos in different \n"
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
-        L"that are only defined in UNIT_TESTING"
-    ));
+        L"that are only defined in UNIT_TESTING"));
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
     VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
-        L"New some engines and delete them"
-    ));
+        L"New some engines and delete them"));
     for (int i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
-            L"New/Delete loop #%d", i
-        ));
+            L"New/Delete loop #%d", i));
 
         wil::unique_hfile hOutputFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
 
@@ -227,7 +219,6 @@ void VtIoTests::DtorTestDeleteVtio()
         delete vtio;
         Log::Comment(NoThrowString().Format(L"Deleted."));
     }
-
 }
 
 void VtIoTests::DtorTestStackAlloc()
@@ -236,21 +227,18 @@ void VtIoTests::DtorTestStackAlloc()
         L"This test is going to instantiate a bunch of VtIos in different \n"
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
-        L"that are only defined in UNIT_TESTING"
-    ));
+        L"that are only defined in UNIT_TESTING"));
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
     VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
-        L"make some engines and let them fall out of scope"
-    ));
+        L"make some engines and let them fall out of scope"));
     for (int i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
-            L"Scope Exit Auto cleanup #%d", i
-        ));
+            L"Scope Exit Auto cleanup #%d", i));
 
         wil::unique_hfile hOutputFile;
 
@@ -296,7 +284,6 @@ void VtIoTests::DtorTestStackAlloc()
                                                                       colorTableSize);
         }
     }
-
 }
 
 void VtIoTests::DtorTestStackAllocMany()
@@ -305,21 +292,18 @@ void VtIoTests::DtorTestStackAllocMany()
         L"This test is going to instantiate a bunch of VtIos in different \n"
         L"scenarios to see if something causes a weird cleanup.\n"
         L"It's here because of the strange nature of VtEngine having members\n"
-        L"that are only defined in UNIT_TESTING"
-    ));
+        L"that are only defined in UNIT_TESTING"));
 
     const WORD colorTableSize = 16;
     COLORREF colorTable[colorTableSize];
     VtIoTestColorProvider p;
 
     Log::Comment(NoThrowString().Format(
-        L"Try an make a whole bunch all at once, and have them all fall out of scope at once."
-    ));
+        L"Try an make a whole bunch all at once, and have them all fall out of scope at once."));
     for (int i = 0; i < 25; ++i)
     {
         Log::Comment(NoThrowString().Format(
-            L"Multiple engines, one scope loop #%d", i
-        ));
+            L"Multiple engines, one scope loop #%d", i));
 
         wil::unique_hfile hOutputFile;
         {
@@ -358,14 +342,12 @@ void VtIoTests::DtorTestStackAllocMany()
                                                                        colorTableSize);
         }
     }
-
 }
 
 void VtIoTests::RendererDtorAndThread()
 {
     Log::Comment(NoThrowString().Format(
-        L"Test deleting a Renderer a bunch of times"
-    ));
+        L"Test deleting a Renderer a bunch of times"));
 
     for (int i = 0; i < 16; ++i)
     {
@@ -389,8 +371,7 @@ void VtIoTests::RendererDtorAndThread()
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
-        L"Test deleting a Renderer a bunch of times"
-    ));
+        L"Test deleting a Renderer a bunch of times"));
 
     for (int i = 0; i < 16; ++i)
     {

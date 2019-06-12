@@ -20,8 +20,7 @@ namespace Microsoft::Console::Interactivity::Win32
     public:
         WindowTheme();
 
-        [[nodiscard]]
-        HRESULT TrySetDarkMode(HWND hwnd) const noexcept;
+        [[nodiscard]] HRESULT TrySetDarkMode(HWND hwnd) const noexcept;
 
     private:
         bool _IsDarkMode() const noexcept;

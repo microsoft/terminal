@@ -15,7 +15,7 @@ USE_UNICRT=1
 C_DEFINES=-DUNICODE
 
 TARGETLIBS=\
-        $(MINCORE_SDK_LIB_PATH)\mincore.lib \
+        $(MINCORE_EXTERNAL_SDK_LIB_PATH_L)\mincore.lib \
 
 SOURCES=main.cpp  \
         res.rc \

@@ -37,6 +37,5 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool MoveCursor(const unsigned int row,
                                 const unsigned int col) = 0;
-
     };
 }

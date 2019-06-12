@@ -18,7 +18,6 @@
 // Author:
 // - Mike Griese (zadjii-msft) 16-May-2019
 
-
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
@@ -26,9 +25,7 @@
 
 class Pane : public std::enable_shared_from_this<Pane>
 {
-
 public:
-
     enum class SplitState : int
     {
         None = 0,

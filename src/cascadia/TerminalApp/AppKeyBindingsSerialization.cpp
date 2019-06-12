@@ -62,7 +62,7 @@ static constexpr std::string_view ResizePaneDownKey{ "resizePaneDown" };
 // the actual strings being pointed to. However, since both these strings and
 // the map are all const for the lifetime of the app, we have nothing to worry
 // about here.
-static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames {
+static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames{
     { CopyTextKey, ShortcutAction::CopyText },
     { PasteTextKey, ShortcutAction::PasteText },
     { NewTabKey, ShortcutAction::NewTab },
@@ -101,6 +101,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ResizePaneRightKey, ShortcutAction::ResizePaneRight },
     { ResizePaneUpKey, ShortcutAction::ResizePaneUp },
     { ResizePaneDownKey, ShortcutAction::ResizePaneDown },
+    { OpenSettingsKey, ShortcutAction::OpenSettings },
 };
 
 // Function Description:
@@ -219,5 +220,4 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
         }
     }
     return newBindings;
-
 }

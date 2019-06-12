@@ -63,13 +63,13 @@ Profile::Profile() :
 {
 }
 
-Profile::Profile(const winrt::guid& guid):
+Profile::Profile(const winrt::guid& guid) :
     _guid(guid),
     _name{ L"Default" },
     _schemeName{},
 
-    _defaultForeground{  },
-    _defaultBackground{  },
+    _defaultForeground{},
+    _defaultBackground{},
     _colorTable{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
@@ -78,24 +78,23 @@ Profile::Profile(const winrt::guid& guid):
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
     _commandline{ L"cmd.exe" },
-    _startingDirectory{  },
+    _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
     _useAcrylic{ false },
-    _scrollbarState{ },
+    _scrollbarState{},
     _closeOnExit{ true },
     _padding{ DEFAULT_PADDING },
-    _icon{ },
-    _backgroundImage{ },
-    _backgroundImageOpacity{ },
-    _backgroundImageStretchMode{ }
+    _icon{},
+    _backgroundImage{},
+    _backgroundImageOpacity{},
+    _backgroundImageStretchMode{}
 {
 }
 
 Profile::~Profile()
 {
-
 }
 
 GUID Profile::GetGuid() const noexcept
@@ -494,8 +493,8 @@ void Profile::SetIconPath(std::wstring_view path) noexcept
 std::wstring_view Profile::GetIconPath() const noexcept
 {
     return HasIcon() ?
-           std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
-           std::wstring_view{ L"", 0 };
+               std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
+               std::wstring_view{ L"", 0 };
 }
 
 // Method Description:
@@ -661,16 +660,16 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 {
     switch (cursorShape)
     {
-        case CursorStyle::Underscore:
-            return CursorShapeUnderscore;
-        case CursorStyle::FilledBox:
-            return CursorShapeFilledbox;
-        case CursorStyle::EmptyBox:
-            return CursorShapeEmptybox;
-        case CursorStyle::Vintage:
-            return CursorShapeVintage;
-        default:
-        case CursorStyle::Bar:
-            return CursorShapeBar;
+    case CursorStyle::Underscore:
+        return CursorShapeUnderscore;
+    case CursorStyle::FilledBox:
+        return CursorShapeFilledbox;
+    case CursorStyle::EmptyBox:
+        return CursorShapeEmptybox;
+    case CursorStyle::Vintage:
+        return CursorShapeVintage;
+    default:
+    case CursorStyle::Bar:
+        return CursorShapeBar;
     }
 }

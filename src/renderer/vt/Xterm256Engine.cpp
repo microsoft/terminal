@@ -29,12 +29,11 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 //      the window. Unused for VT
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]]
-HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
-                                             const COLORREF colorBackground,
-                                             const WORD legacyColorAttribute,
-                                             const bool isBold,
-                                             const bool /*isSettingDefaultBrushes*/) noexcept
+[[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
+                                                           const COLORREF colorBackground,
+                                                           const WORD legacyColorAttribute,
+                                                           const bool isBold,
+                                                           const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
     //      flag is there. If the state of that flag is different then our

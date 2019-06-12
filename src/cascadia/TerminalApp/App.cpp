@@ -36,7 +36,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-
     App::App() :
         App(winrt::TerminalApp::XamlMetaDataProvider())
     {
@@ -44,8 +43,8 @@ namespace winrt::TerminalApp::implementation
 
     App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
         base_type(parentProvider),
-        _settings{  },
-        _tabs{  },
+        _settings{},
+        _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
         _dialogLock{}
@@ -138,7 +137,7 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
 
         // When the new tab button is clicked, open the default profile
-        _newTabButton.Click([this](auto&&, auto&&){
+        _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);
         });
 
@@ -265,7 +264,6 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
-
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
@@ -324,7 +322,7 @@ namespace winrt::TerminalApp::implementation
                 profileMenuItem.FontWeight(FontWeights::Bold());
             }
 
-            profileMenuItem.Click([this, profileIndex](auto&&, auto&&){
+            profileMenuItem.Click([this, profileIndex](auto&&, auto&&) {
                 this->_OpenNewTab({ profileIndex });
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -393,7 +391,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void App::_SettingsButtonOnClick(const IInspectable&,
-                                         const RoutedEventArgs&)
+                                     const RoutedEventArgs&)
     {
         LaunchSettings();
     }
@@ -443,8 +441,7 @@ namespace winrt::TerminalApp::implementation
     //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
-    [[nodiscard]]
-    HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
+    [[nodiscard]] HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
     {
         HRESULT hr = E_FAIL;
 
@@ -517,32 +514,33 @@ namespace winrt::TerminalApp::implementation
         std::filesystem::path fileParser = localPathCopy.c_str();
         const auto folder = fileParser.parent_path();
 
-        _reader.create(folder.c_str(), false, wil::FolderChangeEvents::All,
-            [this](wil::FolderChangeEvent event, PCWSTR fileModified)
-        {
-            // We want file modifications, AND when files are renamed to be
-            // profiles.json. This second case will oftentimes happen with text
-            // editors, who will write a temp file, then rename it to be the
-            // actual file you wrote. So listen for that too.
-            if (!(event == wil::FolderChangeEvent::Modified ||
-                  event == wil::FolderChangeEvent::RenameNewName))
-            {
-                return;
-            }
+        _reader.create(folder.c_str(),
+                       false,
+                       wil::FolderChangeEvents::All,
+                       [this](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                           // We want file modifications, AND when files are renamed to be
+                           // profiles.json. This second case will oftentimes happen with text
+                           // editors, who will write a temp file, then rename it to be the
+                           // actual file you wrote. So listen for that too.
+                           if (!(event == wil::FolderChangeEvent::Modified ||
+                                 event == wil::FolderChangeEvent::RenameNewName))
+                           {
+                               return;
+                           }
 
-            const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-            std::filesystem::path settingsParser = localPathCopy.c_str();
-            std::filesystem::path modifiedParser = fileModified;
+                           const auto localPathCopy = CascadiaSettings::GetSettingsPath();
+                           std::filesystem::path settingsParser = localPathCopy.c_str();
+                           std::filesystem::path modifiedParser = fileModified;
 
-            // Getting basename (filename.ext)
-            const auto settingsBasename = settingsParser.filename();
-            const auto modifiedBasename = modifiedParser.filename();
+                           // Getting basename (filename.ext)
+                           const auto settingsBasename = settingsParser.filename();
+                           const auto modifiedBasename = modifiedParser.filename();
 
-            if (settingsBasename == modifiedBasename)
-            {
-                this->_ReloadSettings();
-            }
-        });
+                           if (settingsBasename == modifiedBasename)
+                           {
+                               this->_ReloadSettings();
+                           }
+                       });
     }
 
     // Method Description:
@@ -577,12 +575,12 @@ namespace winrt::TerminalApp::implementation
         // Refresh UI elements
 
         auto profiles = _settings->GetProfiles();
-        for (auto &profile : profiles)
+        for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
             TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
-            for (auto &tab : _tabs)
+            for (auto& tab : _tabs)
             {
                 // Attempt to reload the settings of any panes with this profile
                 tab->UpdateSettings(settings, profileGuid);
@@ -603,7 +601,6 @@ namespace winrt::TerminalApp::implementation
             // profile, which might have changed
             _CreateNewTabFlyout();
         });
-
     }
 
     // Method Description:
@@ -676,7 +673,7 @@ namespace winrt::TerminalApp::implementation
         // GH#1117: This is a workaround because _tabView.SelectedIndex(tabIndex)
         //          sometimes set focus to an incorrect tab after removing some tabs
         auto tab = _tabs.at(tabIndex);
-        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this](){
+        _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tab, this]() {
             auto tabViewItem = tab->GetTabViewItem();
             _tabView.SelectedItem(tabViewItem);
         });
@@ -792,7 +789,7 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle){
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -804,8 +801,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&)
-        {
+        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -853,7 +849,7 @@ namespace winrt::TerminalApp::implementation
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
 
         // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this](){
+        newTab->Closed([tabViewItem, this]() {
             _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
                 _RemoveTabViewItem(tabViewItem);
             });
@@ -954,8 +950,7 @@ namespace winrt::TerminalApp::implementation
         // we clamp the values to the range [0, tabCount) while still supporting moving
         // leftward from 0 to tabCount - 1.
         _SetFocusedTabIndex(
-            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount)
-        );
+            static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount));
     }
 
     // Method Description:
@@ -1045,7 +1040,10 @@ namespace winrt::TerminalApp::implementation
             {
                 try
                 {
-                    return _GetFocusedControl().Title();
+                    if (auto focusedControl{ _GetFocusedControl() })
+                    {
+                        return focusedControl.Title();
+                    }
                 }
                 CATCH_LOG();
             }

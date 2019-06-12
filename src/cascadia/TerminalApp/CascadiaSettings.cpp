@@ -18,8 +18,7 @@ using namespace Microsoft::Console;
 
 // {2bde4a90-d05f-401c-9492-e40884ead1d8}
 // uuidv5 properties: name format is UTF-16LE bytes
-static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID =
-{ 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
@@ -29,19 +28,17 @@ CascadiaSettings::CascadiaSettings() :
     _globals{},
     _profiles{}
 {
-
 }
 
 CascadiaSettings::~CascadiaSettings()
 {
-
 }
 
 ColorScheme _CreateCampbellScheme()
 {
-    ColorScheme campbellScheme { L"Campbell",
-                                 RGB(242, 242, 242),
-                                 RGB(12, 12, 12) };
+    ColorScheme campbellScheme{ L"Campbell",
+                                RGB(242, 242, 242),
+                                RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     Utils::InitializeCampbellColorTable(campbellSpan);
@@ -49,6 +46,8 @@ ColorScheme _CreateCampbellScheme()
 
     return campbellScheme;
 }
+
+// clang-format off
 
 ColorScheme _CreateOneHalfDarkScheme()
 {
@@ -167,6 +166,8 @@ ColorScheme _CreateSolarizedLightScheme()
     return solarizedLightScheme;
 }
 
+// clang-format on
+
 // Method Description:
 // - Create the set of schemes to use as the default schemes. Currently creates
 //      five default color schemes - Campbell (the new cmd color scheme),
@@ -250,23 +251,23 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     // TODO:MSFT:20700157 read our settings from some source, and configure
     //      keychord,action pairings from that file
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         static_cast<int>('T') });
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        static_cast<int>('T') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         static_cast<int>('W') });
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        static_cast<int>('W') });
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         VK_OEM_COMMA });
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_OEM_COMMA });
 
     keyBindings.SetKeyBinding(ShortcutAction::NextTab,
-                               KeyChord{ KeyModifiers::Ctrl,
-                                         VK_TAB });
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_TAB });
 
     keyBindings.SetKeyBinding(ShortcutAction::PrevTab,
-                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                         VK_TAB });
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        VK_TAB });
 
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
@@ -498,8 +499,16 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     std::wstring command(systemPath.get());
     command += L"\\wsl.exe --list";
 
-    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr, const_cast<LPWSTR>(command.c_str()), nullptr, nullptr,
-                                                TRUE, CREATE_NO_WINDOW, nullptr, nullptr, &si, &pi));
+    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                             const_cast<LPWSTR>(command.c_str()),
+                                             nullptr,
+                                             nullptr,
+                                             TRUE,
+                                             CREATE_NO_WINDOW,
+                                             nullptr,
+                                             nullptr,
+                                             &si,
+                                             &pi));
     switch (WaitForSingleObject(pi.hProcess, INFINITE))
     {
     case WAIT_OBJECT_0:
@@ -524,9 +533,10 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
     std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
-        //don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil and closing the file handle will cause an error.
+    // don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil
+    // and closing the file handle will cause an error.
     std::wstring wline;
-    std::getline(pipe, wline); //remove the header from the output.
+    std::getline(pipe, wline); // remove the header from the output.
     while (pipe.tellp() < bytesAvailable)
     {
         std::getline(pipe, wline);
@@ -534,7 +544,14 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
         if (wlinestream)
         {
             std::wstring distName;
-            std::getline(wlinestream, distName, L' ');
+            std::getline(wlinestream, distName, L'\r');
+            size_t firstChar = distName.find_first_of(L"( ");
+            // Some localizations don't have a space between the name and "(Default)"
+            // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
+            if (firstChar < distName.size())
+            {
+                distName.resize(firstChar);
+            }
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
@@ -564,7 +581,7 @@ std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view
     } while (requiredSize != result.size());
 
     // Trim the terminating null character
-    result.resize(requiredSize-1);
+    result.resize(requiredSize - 1);
     return result;
 }
 

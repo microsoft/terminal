@@ -18,13 +18,11 @@ Author(s):
 
 #include "DbcsAttribute.hpp"
 
-
 #if (defined(_M_IX86) || defined(_M_AMD64))
 // currently CharRowCell's fields use 3 bytes of memory, leaving the 4th byte in unused. this leads
 // to a rather large amount of useless memory allocated. so instead, pack CharRowCell by bytes instead of words.
 #pragma pack(push, 1)
 #endif
-
 
 class CharRowCell final
 {
@@ -44,6 +42,7 @@ public:
     const wchar_t& Char() const noexcept;
 
     friend constexpr bool operator==(const CharRowCell& a, const CharRowCell& b) noexcept;
+
 private:
     wchar_t _wch;
     DbcsAttribute _attr;
