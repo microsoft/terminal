@@ -189,10 +189,10 @@ private:
 
     void _NotifyScrollEvent();
 
-    #pragma region TextSelection
+#pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const;
     const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const noexcept;
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const noexcept;
-    #pragma endregion
+#pragma endregion
 };
