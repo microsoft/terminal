@@ -35,7 +35,7 @@ release with the fix is available.
 By default, most (newly authored) C++/WinRT components are authored as a dll
 that can be used to activate your types. However, you might have other classes
 in that binary that you want to be able to test, which aren't winrt types. If
-the implenmentation is stitting in a DLL, it'll be hard to write a TAEF unittest
+the implenmentation is sitting in a DLL, it'll be hard to write a TAEF unittest
 dll that can call the pure c++ types you've defined.
 
 The first thing you're going to need to do is move the implementation of your

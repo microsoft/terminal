@@ -74,6 +74,12 @@
   </ItemGroup>
 
   <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
       Setting this will tell cppwinrt.build.post.props to copy our output from
@@ -88,7 +94,7 @@
 
     <Link>
       <!-- Manually link with the TerminalAppLib.lib we've built. -->
-      <AdditionalLibraryDirectories>$(OpenConsoleDir)\$(Platform)\$(Configuration)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(_BinRoot)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 
       <AdditionalDependencies>TerminalAppLib.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>

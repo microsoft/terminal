@@ -106,7 +106,15 @@
 
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot>$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- This is a hack to get the ARM64 CI build working. See
+    https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
+    just has a bug in it.-->
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>Warning</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
   </PropertyGroup>
 
   <ItemGroup>

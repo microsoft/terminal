@@ -102,15 +102,21 @@
   </ItemGroup>
 
 
+  <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
   <ItemGroup>
     <!-- Manually reference TerminalApp, since we can't use a ProjectReference. -->
     <Reference Include="TerminalApp">
-      <HintPath>$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\TerminalApp.winmd</HintPath>
+      <HintPath>$(_BinRoot)\TerminalApp\TerminalApp.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-    <ReferenceCopyLocalPaths Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\TerminalApp.dll" />
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)\TerminalApp\TerminalApp.dll" />
 
   </ItemGroup>
 
