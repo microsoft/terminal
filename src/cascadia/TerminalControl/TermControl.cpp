@@ -39,7 +39,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
-        _cursorTimer{}
+        _cursorTimer{},
+        _lastMouseClick{},
+        _lastMouseClickPos{},
+        _doubleClickOccurred{ false }
     {
         _Create();
     }
@@ -1464,12 +1467,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - clickTime: the timestamp that the click occurred
     // Return Value:
     // - true if the new click was at the same location within the time delta
-    const bool TermControl::_IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const
+    const bool TermControl::_IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const
     {
         if (clickPos == _lastMouseClickPos)
         {
-            const TIMESTAMP threshold = 500000;
-            TIMESTAMP delta;
+            const TimeStamp threshold = 500000;
+            TimeStamp delta;
             UInt64Sub(clickTime, _lastMouseClick, &delta);
             if (delta < threshold)
             {
@@ -1487,12 +1490,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - clickTime: the timestamp that the click occurred
     // Return Value:
     // - true if the new click was at the same location within the time delta after a double click having occurred
-    const bool TermControl::_IsTripleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const
+    const bool TermControl::_IsTripleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const
     {
         if (_doubleClickOccurred && clickPos == _lastMouseClickPos)
         {
-            const TIMESTAMP threshold = 500000;
-            TIMESTAMP delta;
+            const TimeStamp threshold = 500000;
+            TimeStamp delta;
             UInt64Sub(clickTime, _lastMouseClick, &delta);
             if (delta < threshold)
             {

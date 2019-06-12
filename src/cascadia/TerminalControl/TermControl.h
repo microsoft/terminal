@@ -12,8 +12,6 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-#define TIMESTAMP uint64_t
-
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     struct PasteFromClipboardEventArgs :
@@ -34,6 +32,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
+        using TimeStamp = uint64_t;
+
         TermControl();
         TermControl(Settings::IControlSettings settings);
 
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
-        TIMESTAMP _lastMouseClick;
+        TimeStamp _lastMouseClick;
         bool _doubleClickOccurred;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
 
@@ -146,8 +146,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
-        const bool _IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const;
-        const bool _IsTripleClick(winrt::Windows::Foundation::Point clickPos, TIMESTAMP clickTime) const;
+        const bool _IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const;
+        const bool _IsTripleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const;
     };
 }
 
