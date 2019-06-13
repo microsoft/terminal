@@ -674,7 +674,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - sender: not used
     // - args: event data
     void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
-                                         Input::PointerRoutedEventArgs const& args)
+                                             Input::PointerRoutedEventArgs const& args)
     {
         _CapturePointer(sender, args);
 
@@ -745,7 +745,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - sender: not used
     // - args: event data
     void TermControl::_PointerMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                         Input::PointerRoutedEventArgs const& args)
+                                           Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
