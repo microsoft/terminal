@@ -93,6 +93,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { SwitchToTab8Key, ShortcutAction::SwitchToTab8 },
     { SplitHorizontalKey, ShortcutAction::SplitHorizontal },
     { SplitVerticalKey, ShortcutAction::SplitVertical },
+    { OpenSettingsKey, ShortcutAction::OpenSettings },
 };
 
 // Function Description:

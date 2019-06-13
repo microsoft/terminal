@@ -41,6 +41,7 @@ INCLUDES= \
     $(MINWIN_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(MINCORE_INTERNAL_PRIV_SDK_INC_PATH_L); \
     $(ONECORE_INTERNAL_SDK_INC_PATH); \
+    $(ONECORE_EXTERNAL_SDK_INC_PATH); \
 
 # -------------------------------------
 # Linker Settings
