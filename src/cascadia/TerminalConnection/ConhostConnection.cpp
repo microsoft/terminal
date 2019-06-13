@@ -149,26 +149,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (!_closing.load())
         {
-            SignalResizeWindow(_signalPipe.get(), static_cast<unsigned short>(columns), static_cast<unsigned short>(rows));
+            SignalResizeWindow(_signalPipe.get(), Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1));
         }
     }
 
     void ConhostConnection::Close()
     {
         if (!_connected)
-            return;
-
-        if (_closing.exchange(true))
         {
             return;
         }
 
-        _inPipe.reset();
-        _outPipe.reset();
-        _signalPipe.reset();
-        _hJob.reset(); // This will terminate the process _piConhost is holding.
-        WaitForSingleObject(_hOutputThread.get(), INFINITE);
-        _hOutputThread.reset();
+        if (!_closing.exchange(true))
+        {
+            _inPipe.reset();
+            _outPipe.reset();
+            _signalPipe.reset();
+            _hJob.reset(); // This will terminate the process _piConhost is holding.
+            _piConhost.reset();
+            WaitForSingleObject(_hOutputThread.get(), INFINITE);
+            _hOutputThread.reset();
+        }
     }
 
     DWORD WINAPI ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
