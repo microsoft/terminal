@@ -515,13 +515,19 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     }
 
     // Add anchor offset here to update properly on new buffer output
-    SHORT temp1, temp2;
-    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
-    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
+    SHORT y1;
+    SHORT y2;
+    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &y1));
+    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &y2));
+
+    // clamp X values to be within buffer bounds
+    const auto bufferWidth = _buffer->GetSize().RightInclusive();
+    SHORT x1 = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
+    SHORT x2 = std::clamp(_endSelectionPosition.X, static_cast<SHORT>(0), bufferWidth);
 
     // create these new anchors for comparison and rendering
-    const COORD selectionAnchorWithOffset = { _selectionAnchor.X, temp1 };
-    const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
+    const COORD selectionAnchorWithOffset = { x1, y1 };
+    const COORD endSelectionPositionWithOffset = { x2, y2 };
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
     const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
@@ -547,7 +553,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         else
         {
             selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
-            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
+            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferWidth;
         }
 
         selectionArea.emplace_back(selectionRow);
