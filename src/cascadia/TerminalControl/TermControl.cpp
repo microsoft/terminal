@@ -1471,10 +1471,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (clickPos == _lastMouseClickPos)
         {
-            const TimeStamp threshold = 500000;
             TimeStamp delta;
             UInt64Sub(clickTime, _lastMouseClick, &delta);
-            if (delta < threshold)
+            if (delta < multiClickTimer)
             {
                 return true;
             }
@@ -1494,10 +1493,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_doubleClickOccurred && clickPos == _lastMouseClickPos)
         {
-            const TimeStamp threshold = 500000;
             TimeStamp delta;
             UInt64Sub(clickTime, _lastMouseClick, &delta);
-            if (delta < threshold)
+            if (delta < multiClickTimer)
             {
                 return true;
             }

@@ -725,7 +725,7 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 // - true if cell data contains the delimiter.
 const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
 {
-    // TODO: hook up delimiters to Settings
+    // TODO GitHub #988: hook up delimiters to Settings
     std::wstring_view delimiters[] = {
         L" ",
         L"/",

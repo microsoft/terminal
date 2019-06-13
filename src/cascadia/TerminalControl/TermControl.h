@@ -34,6 +34,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         using TimeStamp = uint64_t;
 
+        // represents 0.5 seconds (or 5000 ms)
+        const TimeStamp multiClickTimer = 500000;
+
         TermControl();
         TermControl(Settings::IControlSettings settings);
 
