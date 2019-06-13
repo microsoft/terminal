@@ -144,16 +144,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
         _closing = true;
-        // TODO:
-        //      terminate the output thread
-        //      Close our handles
-        //      Close the Pseudoconsole
-        //      terminate our processes
+        _connected = false;
+
+        // Terminate the output thread
+        _outputThreadId = 0;
+        TerminateThread(_hOutputThread, 0);
+
+        // Close our pipes and the pseudoconsole
         CloseHandle(_signalPipe);
         CloseHandle(_inPipe);
         CloseHandle(_outPipe);
-        // What? CreateThread is in app partition but TerminateThread isn't?
-        //TerminateThread(_hOutputThread, 0);
+
         TerminateProcess(_piConhost.hProcess, 0);
         CloseHandle(_piConhost.hProcess);
     }
