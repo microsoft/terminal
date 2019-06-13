@@ -26,17 +26,14 @@ enum class CodepointWidth : BYTE
     Invalid // not a valid unicode codepoint
 };
 
-[[nodiscard]]
-std::wstring ConvertToW(const UINT codepage,
-                        const std::string_view source);
+[[nodiscard]] std::wstring ConvertToW(const UINT codepage,
+                                      const std::string_view source);
 
-[[nodiscard]]
-std::string ConvertToA(const UINT codepage,
-                       const std::wstring_view source);
+[[nodiscard]] std::string ConvertToA(const UINT codepage,
+                                     const std::wstring_view source);
 
-[[nodiscard]]
-size_t GetALengthFromW(const UINT codepage,
-                       const std::wstring_view source);
+[[nodiscard]] size_t GetALengthFromW(const UINT codepage,
+                                     const std::wstring_view source);
 
 std::deque<std::unique_ptr<KeyEvent>> CharToKeyEvents(const wchar_t wch, const unsigned int codepage);
 

@@ -14,17 +14,14 @@ Author(s):
 
 --*/
 
-
 #pragma once
 
 #include "../history.h"
 #include "../readDataCooked.hpp"
 
-
 class PopupTestHelper final
 {
 public:
-
     static void InitReadData(COOKED_READ_DATA& cookedReadData,
                              wchar_t* const pBuffer,
                              const size_t cchBuffer,
@@ -84,5 +81,4 @@ public:
         VERIFY_SUCCEEDED(history.Add(L"~ Emily Dickinson", false));
         VERIFY_ARE_EQUAL(history.GetNumberOfCommands(), 28u);
     }
-
 };

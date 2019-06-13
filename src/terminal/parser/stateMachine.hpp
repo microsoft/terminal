@@ -150,6 +150,5 @@ namespace Microsoft::Console::VirtualTerminal
         const wchar_t* _pwchCurr;
         const wchar_t* _pwchSequenceStart;
         size_t _currRunLength;
-
     };
 }

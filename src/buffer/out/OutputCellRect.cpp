@@ -11,7 +11,6 @@ OutputCellRect::OutputCellRect() :
     _rows(0),
     _cols(0)
 {
-
 }
 
 // Routine Description:
@@ -57,7 +56,7 @@ OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
 }
 
 // Routine Description:
-// - Internal helper to find the pointer to the specific row offset in the giant 
+// - Internal helper to find the pointer to the specific row offset in the giant
 //   contiguous block of memory allocated for this rectangle.
 // Arguments:
 // - row - The Y position or row index in the buffer.
@@ -69,7 +68,7 @@ OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
 }
 
 // Routine Description:
-// - Internal helper to find the pointer to the specific row offset in the giant 
+// - Internal helper to find the pointer to the specific row offset in the giant
 //   contiguous block of memory allocated for this rectangle.
 // Arguments:
 // - row - The Y position or row index in the buffer.

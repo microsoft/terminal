@@ -24,7 +24,7 @@ SHORT InputServices::GetKeyState(int nVirtKey)
     return ::GetKeyState(nVirtKey);
 }
 
-BOOL InputServices::TranslateCharsetInfo(DWORD * lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
+BOOL InputServices::TranslateCharsetInfo(DWORD* lpSrc, LPCHARSETINFO lpCs, DWORD dwFlags)
 {
     return ::TranslateCharsetInfo(lpSrc, lpCs, dwFlags);
 }

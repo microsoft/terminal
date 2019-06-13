@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+// clang-format off
+
 #pragma once
 
 
@@ -37,6 +39,7 @@
 #include <iterator>
 #include <math.h>
 #include <sstream>
+#include <fstream>
 #include <iomanip>
 #include <filesystem>
 #include <functional>
@@ -66,3 +69,5 @@
 #include <sal.h>
 
 #pragma warning(pop)
+
+// clang-format on

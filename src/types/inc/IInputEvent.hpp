@@ -18,7 +18,7 @@ Author:
 
 #ifndef ALTNUMPAD_BIT
 // from winconp.h
-#define ALTNUMPAD_BIT         0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
+#define ALTNUMPAD_BIT 0x04000000 // AltNumpad OEM char (copied from ntuser\inc\kbd.h)
 #endif
 
 #include <wtypes.h>
@@ -50,8 +50,8 @@ public:
     IInputEvent() = default;
     IInputEvent(const IInputEvent&) = default;
     IInputEvent(IInputEvent&&) = default;
-    IInputEvent& operator=(const IInputEvent&)& = default;
-    IInputEvent& operator=(IInputEvent&&)& = default;
+    IInputEvent& operator=(const IInputEvent&) & = default;
+    IInputEvent& operator=(IInputEvent&&) & = default;
 
     virtual INPUT_RECORD ToInputRecord() const noexcept = 0;
 
@@ -64,16 +64,15 @@ public:
 
 inline IInputEvent::~IInputEvent()
 {
-
 }
 
 #ifdef UNIT_TESTING
 std::wostream& operator<<(std::wostream& stream, const IInputEvent* pEvent);
 #endif
 
-#define ALT_PRESSED     (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
-#define CTRL_PRESSED    (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
-#define MOD_PRESSED     (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
+#define ALT_PRESSED (RIGHT_ALT_PRESSED | LEFT_ALT_PRESSED)
+#define CTRL_PRESSED (RIGHT_CTRL_PRESSED | LEFT_CTRL_PRESSED)
+#define MOD_PRESSED (SHIFT_PRESSED | ALT_PRESSED | CTRL_PRESSED)
 
 // Note taken from VkKeyScan docs (https://msdn.microsoft.com/en-us/library/windows/desktop/ms646329(v=vs.85).aspx):
 // For keyboard layouts that use the right-hand ALT key as a shift key
@@ -151,7 +150,7 @@ public:
         _repeatCount{ 0 },
         _virtualKeyCode{ 0 },
         _virtualScanCode{ 0 },
-        _charData { 0 },
+        _charData{ 0 },
         _activeModifierKeys{ 0 }
     {
     }
@@ -159,8 +158,8 @@ public:
     ~KeyEvent();
     KeyEvent(const KeyEvent&) = default;
     KeyEvent(KeyEvent&&) = default;
-    KeyEvent& operator=(const KeyEvent&)& = default;
-    KeyEvent& operator=(KeyEvent&&)& = default;
+    KeyEvent& operator=(const KeyEvent&) & = default;
+    KeyEvent& operator=(KeyEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -303,8 +302,8 @@ public:
     ~MouseEvent();
     MouseEvent(const MouseEvent&) = default;
     MouseEvent(MouseEvent&&) = default;
-    MouseEvent& operator=(const MouseEvent&)& = default;
-    MouseEvent& operator=(MouseEvent&&)& = default;
+    MouseEvent& operator=(const MouseEvent&) & = default;
+    MouseEvent& operator=(MouseEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -370,8 +369,8 @@ public:
     ~WindowBufferSizeEvent();
     WindowBufferSizeEvent(const WindowBufferSizeEvent&) = default;
     WindowBufferSizeEvent(WindowBufferSizeEvent&&) = default;
-    WindowBufferSizeEvent& operator=(const WindowBufferSizeEvent&)& = default;
-    WindowBufferSizeEvent& operator=(WindowBufferSizeEvent&&)& = default;
+    WindowBufferSizeEvent& operator=(const WindowBufferSizeEvent&) & = default;
+    WindowBufferSizeEvent& operator=(WindowBufferSizeEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -411,8 +410,8 @@ public:
     ~MenuEvent();
     MenuEvent(const MenuEvent&) = default;
     MenuEvent(MenuEvent&&) = default;
-    MenuEvent& operator=(const MenuEvent&)& = default;
-    MenuEvent& operator=(MenuEvent&&)& = default;
+    MenuEvent& operator=(const MenuEvent&) & = default;
+    MenuEvent& operator=(MenuEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;
@@ -452,8 +451,8 @@ public:
     ~FocusEvent();
     FocusEvent(const FocusEvent&) = default;
     FocusEvent(FocusEvent&&) = default;
-    FocusEvent& operator=(const FocusEvent&)& = default;
-    FocusEvent& operator=(FocusEvent&&)& = default;
+    FocusEvent& operator=(const FocusEvent&) & = default;
+    FocusEvent& operator=(FocusEvent&&) & = default;
 
     INPUT_RECORD ToInputRecord() const noexcept override;
     InputEventType EventType() const noexcept override;

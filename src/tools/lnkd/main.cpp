@@ -9,7 +9,7 @@ void PrintUsage()
     wprintf(L"\tlnkd <path\\to\\foo.lnk>\n");
 }
 
-HRESULT GetPropertyBoolValue(_In_ IPropertyStore *pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL *pfValue)
+HRESULT GetPropertyBoolValue(_In_ IPropertyStore* pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BOOL* pfValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -21,7 +21,7 @@ HRESULT GetPropertyBoolValue(_In_ IPropertyStore *pPropStore, _In_ REFPROPERTYKE
     return hr;
 }
 
-HRESULT GetPropertyByteValue(_In_ IPropertyStore *pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE *pbValue)
+HRESULT GetPropertyByteValue(_In_ IPropertyStore* pPropStore, _In_ REFPROPERTYKEY refPropKey, _Out_ BYTE* pbValue)
 {
     PROPVARIANT propvar;
     HRESULT hr = pPropStore->GetValue(refPropKey, &propvar);
@@ -42,9 +42,9 @@ HRESULT GetPropertyByteValue(_In_ IPropertyStore *pPropStore, _In_ REFPROPERTYKE
     return hr;
 }
 
-void DumpV2Properties(_In_ IShellLink *pslConsole)
+void DumpV2Properties(_In_ IShellLink* pslConsole)
 {
-    IPropertyStore *pPropStoreLnk;
+    IPropertyStore* pPropStoreLnk;
     HRESULT hr = pslConsole->QueryInterface(IID_PPV_ARGS(&pPropStoreLnk));
     if (SUCCEEDED(hr))
     {
@@ -133,13 +133,13 @@ void DumpBool(_In_ PCWSTR pszAttrName, const BOOL fEnabled)
     wprintf(L"\t%s: %s\n", pszAttrName, fEnabled ? L"true" : L"false");
 }
 
-HRESULT DumpV1Properties(_In_ IShellLink *pslConsole)
+HRESULT DumpV1Properties(_In_ IShellLink* pslConsole)
 {
-    IShellLinkDataList *pConsoleLnkDataList;
+    IShellLinkDataList* pConsoleLnkDataList;
     HRESULT hr = pslConsole->QueryInterface(IID_PPV_ARGS(&pConsoleLnkDataList));
     if (SUCCEEDED(hr))
     {
-        NT_CONSOLE_PROPS *pNtConsoleProps = nullptr;
+        NT_CONSOLE_PROPS* pNtConsoleProps = nullptr;
         hr = pConsoleLnkDataList->CopyDataBlock(NT_CONSOLE_PROPS_SIG, (void**)&pNtConsoleProps);
         if (SUCCEEDED(hr))
         {
@@ -161,7 +161,7 @@ HRESULT DumpV1Properties(_In_ IShellLink *pslConsole)
             DumpBool(L"bQuickEdit", pNtConsoleProps->bQuickEdit);
             DumpBool(L"bInsertMode", pNtConsoleProps->bInsertMode);
             DumpBool(L"bAutoPosition", pNtConsoleProps->bAutoPosition);
-            wprintf(L"\tuHistoryBufferSize: %d\n", pNtConsoleProps-> uHistoryBufferSize);
+            wprintf(L"\tuHistoryBufferSize: %d\n", pNtConsoleProps->uHistoryBufferSize);
             wprintf(L"\tuNumberOfHistoryBuffers: %d\n", pNtConsoleProps->uNumberOfHistoryBuffers);
             DumpBool(L"bHistoryNoDup", pNtConsoleProps->bHistoryNoDup);
             wprintf(L"\tColorTable:\n");
@@ -179,7 +179,7 @@ HRESULT DumpV1Properties(_In_ IShellLink *pslConsole)
         if (SUCCEEDED(hr))
         {
             // now dump East Asian properties if we can
-            NT_FE_CONSOLE_PROPS *pNtFEConsoleProps;
+            NT_FE_CONSOLE_PROPS* pNtFEConsoleProps;
             if (SUCCEEDED(pConsoleLnkDataList->CopyDataBlock(NT_FE_CONSOLE_PROPS_SIG,
                                                              (void**)&pNtFEConsoleProps)))
             {
@@ -200,11 +200,11 @@ HRESULT DumpV1Properties(_In_ IShellLink *pslConsole)
 
 HRESULT DumpProperties(_In_ PCWSTR pszLnkFile)
 {
-    IShellLink *pslConsole;
+    IShellLink* pslConsole;
     HRESULT hr = CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_INPROC, IID_PPV_ARGS(&pslConsole));
     if (SUCCEEDED(hr))
     {
-        IPersistFile *pPersistFileLnk;
+        IPersistFile* pPersistFileLnk;
         hr = pslConsole->QueryInterface(IID_PPV_ARGS(&pPersistFileLnk));
         if (SUCCEEDED(hr))
         {

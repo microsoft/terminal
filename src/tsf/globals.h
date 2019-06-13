@@ -20,7 +20,6 @@ Notes:
 
 --*/
 
-
 #pragma once
 
 //
@@ -37,22 +36,22 @@ Notes:
 //   #define MYMAX(x, y)    (SAFECAST(x, int), SAFECAST(y, int), ((x) > (y) ? (x) : (y)))
 //
 //
-#define SAFECAST(_obj, _type) (((_type)(_obj)==(_obj)?0:0), (_type)(_obj))
+#define SAFECAST(_obj, _type) (((_type)(_obj) == (_obj) ? 0 : 0), (_type)(_obj))
 
 //
 // Bitfields don't get along too well with bools,
 // so here's an easy way to convert them:
 //
-#define BOOLIFY(expr)           (!!(expr))
+#define BOOLIFY(expr) (!!(expr))
 
 //
 // generic COM stuff
 //
-#define SafeReleaseClear(punk)  \
-{                               \
-    if ((punk) != NULL)         \
-    {                           \
-        (punk)->Release();      \
-        (punk) = NULL;          \
-    }                           \
-}
+#define SafeReleaseClear(punk) \
+    {                          \
+        if ((punk) != NULL)    \
+        {                      \
+            (punk)->Release(); \
+            (punk) = NULL;     \
+        }                      \
+    }

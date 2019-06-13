@@ -4,6 +4,8 @@
 // This file contains symbolic constants for warning numbers.
 //
 
+// clang-format off
+
 
 #pragma once
 enum ECppCoreCheckWarningCodes
@@ -107,7 +109,4 @@ enum ECppCoreCheckWarningCodes
 
 #define CPPCORECHECK_UNIQUE_POINTER_WARNINGS 26410 26411 26414 26415
 
-
-
-
-
+// clang-format on

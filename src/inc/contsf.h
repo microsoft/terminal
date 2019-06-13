@@ -28,13 +28,12 @@ Revision History:
 extern "C" {
 #endif
 
-    typedef RECT(*GetSuggestionWindowPos)();
+typedef RECT (*GetSuggestionWindowPos)();
 
-    BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition);
-    void DeactivateTextServices();
-    BOOL NotifyTextServices(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT* lplResult);
+BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pfnPosition);
+void DeactivateTextServices();
+BOOL NotifyTextServices(UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT* lplResult);
 
 #ifdef __cplusplus
 }
 #endif
-

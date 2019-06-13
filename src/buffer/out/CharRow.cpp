@@ -101,8 +101,7 @@ void CharRow::Reset()
 // - newSize - the new width of the character and attributes rows
 // Return Value:
 // - S_OK on success, otherwise relevant error code
-[[nodiscard]]
-HRESULT CharRow::Resize(const size_t newSize) noexcept
+[[nodiscard]] HRESULT CharRow::Resize(const size_t newSize) noexcept
 {
     try
     {
@@ -263,7 +262,7 @@ std::wstring CharRow::GetTextRaw() const
 {
     std::wstring wstr;
     wstr.reserve(_data.size());
-    for (size_t i = 0;  i < _data.size(); ++i)
+    for (size_t i = 0; i < _data.size(); ++i)
     {
         auto glyph = GlyphAt(i);
         for (auto it = glyph.begin(); it != glyph.end(); ++it)
@@ -279,7 +278,7 @@ std::wstring CharRow::GetText() const
     std::wstring wstr;
     wstr.reserve(_data.size());
 
-    for (size_t i = 0;  i < _data.size(); ++i)
+    for (size_t i = 0; i < _data.size(); ++i)
     {
         auto glyph = GlyphAt(i);
         if (!DbcsAttrAt(i).IsTrailing())

@@ -26,7 +26,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         // Public Members
         RECT GetMaxWindowRectInPixels();
-        RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+        RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 
         BOOL AdjustWindowRectEx(_Inout_ LPRECT prc,
                                 const DWORD dwStyle,
@@ -38,8 +38,8 @@ namespace Microsoft::Console::Interactivity::Win32
                                 const DWORD dwExStyle,
                                 const int iDpi);
 
-        void ConvertClientRectToWindowRect(_Inout_ RECT * const prc);
-        void ConvertWindowRectToClientRect(_Inout_ RECT * const prc);
+        void ConvertClientRectToWindowRect(_Inout_ RECT* const prc);
+        void ConvertWindowRectToClientRect(_Inout_ RECT* const prc);
 
     private:
         enum ConvertRectangle
@@ -49,9 +49,9 @@ namespace Microsoft::Console::Interactivity::Win32
         };
 
         BOOL UnadjustWindowRectEx(_Inout_ LPRECT prc,
-                                    const DWORD dwStyle,
-                                    const BOOL fMenu,
-                                    const DWORD dwExStyle);
+                                  const DWORD dwStyle,
+                                  const BOOL fMenu,
+                                  const DWORD dwExStyle);
 
         void ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle crDirection);
     };

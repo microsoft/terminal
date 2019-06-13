@@ -9,8 +9,8 @@
 
 #include "winbasep.h"
 
-[[nodiscard]]
-HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle,
+                                                               const ConsoleArguments* const args)
 {
     return ConsoleCreateIoThreadLegacy(ServerHandle, args);
 }
@@ -18,10 +18,10 @@ HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle, cons
 // this function has unreachable code due to its unusual lifetime. We
 // disable the warning about it here.
 #pragma warning(push)
-#pragma warning(disable:4702)
+#pragma warning(disable : 4702)
 
-[[nodiscard]]
-HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine,
+                                                          const ConsoleArguments* const args)
 {
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
@@ -115,8 +115,7 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const Conso
                                                                      0,
                                                                      &AttributeListSize));
         // Set cleanup data for ProcThreadAttributeList when successful.
-        auto CleanupProcThreadAttribute = wil::scope_exit([&]
-        {
+        auto CleanupProcThreadAttribute = wil::scope_exit([&] {
             DeleteProcThreadAttributeList(StartupInformation.lpAttributeList);
         });
 
@@ -136,12 +135,12 @@ HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine, const Conso
         HandleList[2] = StartupInformation.StartupInfo.hStdError;
 
         RETURN_IF_WIN32_BOOL_FALSE(UpdateProcThreadAttribute(StartupInformation.lpAttributeList,
-                                                                0,
-                                                                PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                                                &HandleList[0],
-                                                                sizeof HandleList,
-                                                                NULL,
-                                                                NULL));
+                                                             0,
+                                                             PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                                             &HandleList[0],
+                                                             sizeof HandleList,
+                                                             NULL,
+                                                             NULL));
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
         if (wcslen(pwszCmdLine) == 0)

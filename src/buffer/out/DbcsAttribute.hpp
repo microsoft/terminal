@@ -139,5 +139,6 @@ constexpr bool operator==(const DbcsAttribute& a, const DbcsAttribute& b) noexce
     return a._attribute == b._attribute;
 }
 
-static_assert(sizeof(DbcsAttribute) == sizeof(BYTE), "DbcsAttribute should be one byte big. if this changes then it needs"
-    " either an implicit conversion to a BYTE or an update to all places that assume it's a byte big");
+static_assert(sizeof(DbcsAttribute) == sizeof(BYTE), "DbcsAttribute should be one byte big. if this changes then it needs "
+                                                     "either an implicit conversion to a BYTE or an update to all places "
+                                                     "that assume it's a byte big");
