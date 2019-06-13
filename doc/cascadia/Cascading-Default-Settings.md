@@ -31,10 +31,22 @@ needing to re-write the user's settings file.
 
 Largely inspired by the settings model that both VS Code (and Sublime Text) use.
 
+### Goal: Minimize Writing to `profiles.json`
+
+We want to write the user settings file, `profiles.json`, as little as possible.
+Each time we write the file, there's the possiblity that we've re-ordered the
+keys, as `jsoncpp` provides no ordering guarantee of the keys. This isn't great,
+as each write of the file will randomly re-order the file.
+
+One of our overarching goals with this change should be to re-write the user
+settings file as little as possible.
+
 ## Solution Design
 
 The settings are now composed from two files: a "Default" settings file, and a
 "User" settings file.
+
+### Default Settings
 
 We'll have a static version of the "Default" file hardcoded within the
 application. We'll write the hardcoded version of this file out to an actual
@@ -47,18 +59,72 @@ defaults file will contain some sort of disclaimer like:
 
 This disclaimer will help identify that the file shouldn't be modified.
 
-### Goal: Minimize Writing to `profiles.json`
+The `defaults.json` file will be written out whenever we detect that it doesn't exist.
 
-This isn't great, as each write of the file will randomly re-order the file.
+**TODO**: We also need to write it out if it changes, though ideally without
+actually loading the file at first load. Perhaps we could start another
+thread/`fire_and_forget` once we're loaded to re-scan the file and re-write it
+if it has changed.
+
+Because the `defaults.json` file is hardcoded within our application, we can use
+its text directly, without loading the file from disk. This should help save
+some startup time, as we'll only need to load the user settings from disk.
+
+When we make changes to the default settings, or we make changes to the settings
+schema, we should make sure that we update the hardcoded `defaults.json` with
+the new values. That way, the `defaults.json` file will always have the complete
+set of setings in it.
+
 
 ### Layering settings
 
+When we load the settings, we'll do it in two stages. First, we'll deseriale the
+default settings that we've hardcoded. Then, we'll intelligently layer the
+user's setting upon those we've already loaded. Some objects, like the default
+profiles, we'll need to make sure to load from the user settings into the
+existing objects we created from the default settings.
+
+* We'll need to make sure that any profile in the user settings that has a GUID
+  matching a default profile loads the user settings into the object created
+  from the defaults.
+* We'll need to make sure that there's only one action bound to each key chord
+  for a keybinding. If there are any key chords in the user settings that match
+  a default key chord, we should bind them to the action from the user settings
+  instead.
+* For any color schemes who's name matches the name of a default color scheme,
+  we'll need to apply the user settings to the existing color scheme.
 
 ### Hiding Default Profiles
 
-What if a user doesn't want to see one of the profiles that we've included in the default profiles?
+What if a user doesn't want to see one of the profiles that we've included in
+the default profiles?
 
-We could alternatively add a `hidden` key to each profile, which defaults to false. When we want to mark a profile as hidden, we'd just set that value to `true`, instead of trying to look up the profile's guid.
+We will add a `hidden` key to each profile, which defaults to false. When we
+want to mark a profile as hidden, we'd just set that value to `true`, instead of
+trying to look up the profile's guid.
+
+
+So, if someone wanted to hide the default cmd.exe profile, all they'd have to do
+is add `"hidden": true` to the cmd.exe entry in their user settings, like so:
+
+```js
+{
+    "profiles": [
+        {
+            // Make changes here to the cmd.exe profile
+            "guid": "{6239a42c-1de4-49a3-80bd-e8fdd045185c}",
+            "hidden": true
+        }
+    ],
+```
+
+#### Hidden Profiles and the Open New Tab shortcuts
+
+Currently, there are keyboard shortcuts for "Open New Tab With Profile
+&lt;N&gt;". These shortcuts will open up the Nth profile in the new tab
+dropdown. Considering we're adding the ability to remove profiles from that
+list, but keep them in the overall list of profiles, we'll need to make sure
+that the handler for that event still opens the Nth _visible_ profile.
 
 ### Dynamic Profiles
 
@@ -135,12 +201,12 @@ including these new profiles.
 If a dynamic profile generator has determined that a profile should no longer be
 used, we don't want to totally remove the profile from the file - perhaps
 there's some data the user would like from those settings. Instead, we'll simply
-add the profile's GUID to the `hiddenProfiles` list. That way, the profile will
-remain in their settings, but will not appear in the list of profiles.
+mark that profile as `"hidden": true`. That way, the profile will remain in
+their settings, but will not appear in the list of profiles.
 
-Should a dynamic profile generator try to create a profile that's already in the
-`hiddenProfiles` list, it'll make sure to remove that profile from the
-`hiddenProfiles` list, making the original visible again.
+Should a dynamic profile generator try to create a profile that's already
+`hidden`, it'll make sure to set `hidden` back to false, making the original
+visible again.
 
 Additionally, a user might not want a dynamic profile generator to always run.
 They might want to keep their Azure connections visible in the list of profiles,
@@ -151,6 +217,13 @@ to disable it**. For the above listed cases, the two settings might be something
 like `autoloadWslProfiles` and `autoloadAzureConnections`. These will be set to
 true in the default settings, but the user can override them to false if they so
 chose.
+
+#### What if a dynamic profile is removed, but it's the default?
+
+We should probably add an extra validation step at the end of serializing to
+ensure that the default profile isn't a hidden profile. If the user's set
+default profile is a hidden profile, we'll just set the first non-hidden profile
+as the default profile.
 
 ### Powershell Core & the Defaults
 
@@ -172,13 +245,26 @@ to:
 * Make sure to set the default profile in the user settings.
 
 Or, should we only add it to the user settings?
-* We'd only  hide it in the user settings if it's not installed.
+* We'd only generate it in the user settings if it's installed.
 * Set the commandline in the user settings. If the user deletes this value, then
   that profile would be unable to launch, unlike all the other profiles that are
   in the user settings (by default).
 * Make sure to set the default profile in the user settings.
 
-Currently there are only a few things that we actually set for the Powershell Core profile
+Currently there are only a few things that we actually set for the Powershell
+Core profile - the name, commandline, icon, and the color scheme. I don't
+believe it would add too much bloat to the user's settings to generate it in the
+user's settings by default.
+
+As a third option, we could treat the Powershell Core profile like a dynamic
+profile, and have it autogenerated if it exists, and auto-hidden if it's
+uninstalled. We'dd need to additionally include `autoloadPowershellCoreProfile`,
+set to true in the default settings. However, none of the other profile
+generators need to be able to change the default profile.
+
+Considering that the first option would still need to create an entry for
+powershell core in the user's settings file, I'd lean towards the third option -
+making it a dynamic profile just like WSL distros.
 
 ### Unbinding a Keybinding
 
@@ -196,8 +282,6 @@ Below is an example of what the default
             "guid": "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
         }
     ],
-    // To hide a profile, add its guid to this array
-    "hiddenProfiles": [],
 
     // Add custom color schemes to this array
     "schemes": [],
@@ -264,15 +348,20 @@ changed. If either is true, then we'll make sure to write that setting back out.
 
 ## Capabilities
 ### Security
+TODO
 ### Reliability
+TODO
 ### Performance, Power, and Efficiency
+TODO
 ### Accessibility
 N/A
 
 ## Potential Issues
-
 ### Migrating Existing Settings
+TODO
 
 ## Future considerations
+TODO
 
 ## Resources
+N/A
