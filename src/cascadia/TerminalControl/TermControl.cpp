@@ -478,7 +478,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.ViewportSize(bufferHeight);
         _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
         _scrollBar.PointerPressed({ this, &TermControl::_CapturePointer });
-        _scrollBar.PointerReleased({ this, &TermControl::_ReleasePointer });
+        _scrollBar.PointerReleased({ this, &TermControl::_ReleasePointerCapture });
 
         // Apply settings for scrollbar
         if (_settings.ScrollState() == ScrollbarState::Visible)
