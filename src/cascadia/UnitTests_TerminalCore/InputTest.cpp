@@ -46,11 +46,13 @@ namespace TerminalCoreUnitTests
         // Tests GH:637
 
         // Verify that Alt+a generates a lowercase a on the input
-        expectedinput = L"\x1b""a";
+        expectedinput = L"\x1b"
+                        "a";
         VERIFY_IS_TRUE(term.SendKeyEvent(L'A', false, true, false));
 
         // Verify that Alt+shift+a generates a uppercase a on the input
-        expectedinput = L"\x1b""A";
+        expectedinput = L"\x1b"
+                        "A";
         VERIFY_IS_TRUE(term.SendKeyEvent(L'A', false, true, true));
     }
 
