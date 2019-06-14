@@ -10,6 +10,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
+#include <VersionHelpers.h>
 
 #pragma hdrstop
 
@@ -178,7 +179,15 @@ DxEngine::~DxEngine()
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+
+        if (IsWindows8OrGreater())
+        {
+            SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        }
+        else
+        {
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+        }
 
         switch (_chainMode)
         {
@@ -860,15 +869,19 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                 _glyphCell.cx);
 
         // Get the baseline for this font as that's where we draw from
-        DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
+        DWRITE_LINE_SPACING_METHOD spacingMethod;
+        float spacing;
+        float baseline;
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacingMethod, &spacing, &baseline));
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
                                _d2dBrushForeground.Get(),
                                _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
+                               spacingMethod,
                                spacing,
+                               baseline,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
@@ -1223,9 +1236,9 @@ float DxEngine::GetScaling() const noexcept
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
 {
-    Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
@@ -1327,12 +1340,12 @@ float DxEngine::GetScaling() const noexcept
 // - style - Normal, italic, etc.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_FindFontFace(const std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT weight,
                                                                                DWRITE_FONT_STRETCH stretch,
                                                                                DWRITE_FONT_STYLE style) const
 {
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
@@ -1369,9 +1382,9 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                                  FontInfo& actual,
                                                  const int dpi,
-                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
 {
     try
     {
@@ -1437,8 +1450,8 @@ float DxEngine::GetScaling() const noexcept
         const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
         // We're going to build a line spacing object here to track all of this data in our format.
-        DWRITE_LINE_SPACING lineSpacing = {};
-        lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
+        DWRITE_LINE_SPACING_METHOD lineSpacingMethod = {};
+        lineSpacingMethod = DWRITE_LINE_SPACING_METHOD_UNIFORM;
 
         // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
         // If the baseline is fractional, the text appears blurry, especially at small scales.
@@ -1458,8 +1471,8 @@ float DxEngine::GetScaling() const noexcept
         //
         const auto fullPixelAscent = ceil(ascent);
         const auto fullPixelDescent = ceil(descent);
-        lineSpacing.height = fullPixelAscent + fullPixelDescent;
-        lineSpacing.baseline = fullPixelAscent;
+        const auto lineSpacing = fullPixelAscent + fullPixelDescent;
+        const auto baseline = fullPixelAscent;
 
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
@@ -1483,7 +1496,7 @@ float DxEngine::GetScaling() const noexcept
 
         fontFace = face;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(&lineSpacing));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacingMethod, lineSpacing, baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
@@ -1491,7 +1504,7 @@ float DxEngine::GetScaling() const noexcept
         // of hit testing math and other such multiplication/division.
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
+        coordSize.Y = gsl::narrow<SHORT>(lineSpacing);
 
         const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
         const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);

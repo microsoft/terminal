@@ -13,7 +13,9 @@ namespace Microsoft::Console::Render
                        ID2D1Brush* foregroundBrush,
                        ID2D1Brush* backgroundBrush,
                        IDWriteFactory* dwriteFactory,
-                       const DWRITE_LINE_SPACING spacing,
+                       const DWRITE_LINE_SPACING_METHOD spacingMethod,
+                       const float spacing,
+                       const float baseline,
                        const D2D_SIZE_F cellSize,
                        const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE)
         {
@@ -21,7 +23,9 @@ namespace Microsoft::Console::Render
             this->foregroundBrush = foregroundBrush;
             this->backgroundBrush = backgroundBrush;
             this->dwriteFactory = dwriteFactory;
+            this->spacingMethod = spacingMethod;
             this->spacing = spacing;
+            this->baseline = baseline;
             this->cellSize = cellSize;
             this->options = options;
         }
@@ -30,7 +34,9 @@ namespace Microsoft::Console::Render
         ID2D1Brush* foregroundBrush;
         ID2D1Brush* backgroundBrush;
         IDWriteFactory* dwriteFactory;
-        DWRITE_LINE_SPACING spacing;
+        DWRITE_LINE_SPACING_METHOD spacingMethod;
+        float spacing;
+        float baseline;
         D2D_SIZE_F cellSize;
         D2D1_DRAW_TEXT_OPTIONS options;
     };
