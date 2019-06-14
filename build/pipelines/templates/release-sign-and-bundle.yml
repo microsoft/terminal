@@ -10,6 +10,7 @@ jobs:
     - Buildx64Release
     - Buildx86Release
     - Buildarm64Release
+    - CodeFormatCheck
   condition: |
     and
     (
