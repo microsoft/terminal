@@ -25,6 +25,8 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
+static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
+
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -48,12 +50,19 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     {
         const auto actualData = fileData.value();
 
+        // Ignore UTF-8 BOM
+        auto actualDataStart = actualData.c_str();
+        if (actualData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
+        {
+            actualDataStart += Utf8Bom.size();
+        }
+
         // Parse the json data.
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
         std::string errs; // This string will recieve any error text from failing to parse.
         // `parse` will return false if it fails.
-        if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
+        if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
         {
             // TODO:GH#990 display this exception text to the user, in a
             //      copy-pasteable way.
