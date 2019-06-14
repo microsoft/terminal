@@ -20,6 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
+        _doubleClickDelimiters { L" /\\" },
         _useAcrylic{ false },
         _closeOnExit{ true },
         _tintOpacity{ 0.5 },
@@ -133,6 +134,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::CursorHeight(uint32_t value)
     {
         _cursorHeight = value;
+    }
+
+    hstring TerminalSettings::DoubleClickDelimiters()
+    {
+        return _doubleClickDelimiters;
+    }
+
+    void TerminalSettings::DoubleClickDelimiters(hstring const& value)
+    {
+        _doubleClickDelimiters = value;
     }
 
     bool TerminalSettings::UseAcrylic()
