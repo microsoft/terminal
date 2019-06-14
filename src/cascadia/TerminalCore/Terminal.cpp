@@ -230,9 +230,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         // MapVirtualKey will give us the capitalized version of the char.
         // However, if shift isn't pressed, we want to send the lowercase version.
         // (See GH#637)
-        if (!shiftPressed && (ch >= L'A' && ch <= L'Z'))
+        if (!shiftPressed)
         {
-            ch += 0x20;
+            ch = towlower(ch);
         }
     }
 
