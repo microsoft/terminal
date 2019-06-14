@@ -162,11 +162,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (!_closing.exchange(true))
         {
+            _hJob.reset(); // This will terminate the process _piConhost is holding.
+            _piConhost.reset();
+
             _inPipe.reset();
             _outPipe.reset();
             _signalPipe.reset();
-            _hJob.reset(); // This will terminate the process _piConhost is holding.
-            _piConhost.reset();
+
             WaitForSingleObject(_hOutputThread.get(), INFINITE);
             _hOutputThread.reset();
         }
