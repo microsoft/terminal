@@ -6,7 +6,7 @@ jobs:
 
   steps:
   - checkout: self
-    submodules: true
+    submodules: false
     clean: true
 
   - task: PowerShell@2
