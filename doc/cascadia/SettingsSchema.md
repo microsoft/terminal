@@ -1,6 +1,6 @@
 # Profiles.json Documentation
 
-## Global
+## Globals
 Properties listed below affect the entire window, regardless of the profile settings.
 
 | Property | Necessity | Type | Description |
