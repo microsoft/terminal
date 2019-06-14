@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-05-31
-last updated: 2019-05-31
+last updated: 2019-06-13
 issue id: #754
 ---
 
@@ -128,42 +128,6 @@ that the handler for that event still opens the Nth _visible_ profile.
 
 ### Dynamic Profiles
 
-<!-- How do we handle things like WSL distros, or Azure Connections, which we've
-generated at runtime?
-
-Currently, for things like that, we're only generating them on first launch
-without a settings file. If we add support for some new dynamic profile, and you
-already have a settings file, then you won't get the new types of profiles.
-However, on the upside, if you don't have a settings file, the new profiles will
-appear automatically, without having to do anything.
-
-We could add a button to force the lookup of these profiles. The button could be
-somewhere in the settings dialog. So long as we use stable GUIDs for each
-dynamic profile, we could ensure that if a profile already exists in their
-settings file, then we'd just add it.
-
-However, this loses the automatic generation behavior that the dynamic profiles
-currently have.
-
-Is there a good way that we could auto-generate these profiles constantly, and
-
-We could have the auto-generation logic determine that a profile source is no
-longer valid, and add it to the `hiddenProfiles` array.
-
-Downsides to auto-generating:
- * Any time we determine that a new profile should be added, we need to write
-   out the `profiles.json` file.
- * Any time a profile source is removed, we need to update `hiddenProfiles` in
-   `profiles.json`.
-   - What if someone really wants to keep a hidden profile around for some
-     reason?
-   - Perhaps we could introduce a `autoloadWslProfiles` setting, that controls
-     whether that behavior should run or not. Default to true, so the user can
-     turn that behavior off if they want.
-     - (similar with any azure shells)
-
-<hr> -->
-
 Sometimes, we may want to auto-generate a profile on the user's behalf. Consider
 the case of WSL distros on their machine, or VMs running in Azure they may want
 to auto-connect to. These _dynamic_ profiles have a source that might be added
@@ -268,18 +232,50 @@ making it a dynamic profile just like WSL distros.
 
 ### Unbinding a Keybinding
 
+How can a user unbind a key that's part of the default keybindings? What if a
+user really wants <kbd>ctrl</kbd>+<kbd>t</kbd> to fall through to the
+commandline application attached to the shell, instead of opening a new tab?
+
+We'll need to introduce a new keybinding command that should indicate that the
+key is unbound. We'll load the user keybindings and layer them on the defaults
+as described above. If during the deserializing we find an entry that's bound to
+the command `"unbound"` or any other string that we don't understand, instead of
+trying to _set_ the keybinding, we'll _clear_ the keybinding with a new method
+`AppKeyBindings::ClearKeyBinding(chord)`.
+
 ### Removing the Globals Object
+
+As a part of #[1005](https://github.com/microsoft/terminal/pull/1005), all the
+global settings were moved to their own object within the serialized settings.
+This was to try and make the file easier to parse as a user, considering global
+settings would be intermingled with profiles, keybindings, color schemes, etc.
+Since this change will make the user settings dramatically easier to navigate,
+we should probably remove the `globals` object, and have gobals at the root
+level again.
 
 ### Default `profiles.json`
 
-Below is an example of what the default
+Below is an example of what the default user settings file might look like when
+it's first generated, taking all the above points into consideration.
 
 ```js
+// To view the default settings, open the defaults.json file in this directory
 {
+    "defaultProfile" : "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "profiles": [
         {
             // Make changes here to the cmd.exe profile
             "guid": "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
+        },
+        {
+            // Make changes here to the Windows Powershell profile
+            "guid": "{086a83cd-e4ef-418b-89b1-3f6523ff9195}",
+        },
+        {
+            "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+            "name" : "Powershell Core",
+            "commandline" : "pwsh.exe",
+            "icon" : "ms-appx:///ProfileIcons/{574e775e-4f2a-5b96-ac1e-a2962a402336}.png",
         }
     ],
 
@@ -293,10 +289,17 @@ Below is an example of what the default
 
 ```
 
+Note the following:
+* cmd.exe and powershell.exe are both in the file, as to give users an easy
+  point to extend the settings for those default profiles.
+* Powershell Core is included in the file, and the default profile has been set
+  to its GUID.
+* There are a few helpful comments scattered throughout the file to help point
+  the user in the right direction.
+
 ## UI/UX Design
 
-### Two Files - `defaults.json` and `profiles.json`
-#### Opening `defaults.json`
+### Opening `defaults.json`
 How do we open both these files to show to the user (for the interim period
 before a proper Settings UI is created)? Currently, the "Settings" button only
 opens a single json file, `profiles.json`. We could keep that button doing the
@@ -348,20 +351,49 @@ changed. If either is true, then we'll make sure to write that setting back out.
 
 ## Capabilities
 ### Security
-TODO
+
+I don't think this will introduce any new security issues that weren't already
+present
+
 ### Reliability
-TODO
+I don't think this will introduce any new reliability concerns that weren't
+already present
+
 ### Performance, Power, and Efficiency
-TODO
+
+By not writing the defaults to disk, we'll theoretically marginally improve the
+load and save times for the `profiles.json` file, by simply having a smaller
+file to load.
+
 ### Accessibility
 N/A
 
 ## Potential Issues
 ### Migrating Existing Settings
-TODO
+
+I believe that existing `profiles.json` files will smoothly update to this
+model, without breaking. While in the new model, the `profiles.json` file can be
+much more sparse, users who have existing `profiles.json` files will have full
+settings in their user settings. We'll leave their files largely untouched, as
+we won't touch keys that have the same values as defaults that are currently in
+the `profiles.json` file. Fortunately though, users should be able to remove
+much of the boilerplate from their `profiles.json` files, and trim it down just
+to their modifications.
 
 ## Future considerations
-TODO
+* It's possible that a very similar layering loading mechanism could be used to
+  layer per-machine settings with roaming settings. Currently, there's only one
+  settings file, and it roams to all your devices. This could be problematic,
+  for example, if one of your machines has a font installed, but another
+  doesn't. A proposed solution to that problem was to have both roaming settings
+  and per-machine settings. The code to layer settings from the defaults and the
+  user settings could be re-used to handle layer the roaming and per-machine
+  settings.
+* What if an extension wants to generate their own dynamic profiles? We've
+  already outlined a contract that profile generators would have to follow to
+  behave correctly. It's possible that we could abstract our implementation into
+  a WinRT interface that extensions could implement, and be triggered just like
+  other dynamic profile generators.
 
 ## Resources
 N/A
