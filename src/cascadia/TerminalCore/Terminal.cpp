@@ -223,7 +223,18 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // KeyEvent.
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximimize, size, move, close
-    wchar_t ch = altPressed && vkey != VK_SPACE ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : UNICODE_NULL;
+    wchar_t ch = UNICODE_NULL;
+    if (altPressed && vkey != VK_SPACE)
+    {
+        ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
+        // MapVirtualKey will give us the capitalized version of the char.
+        // However, if shift isn't pressed, we want to send the lowercase version.
+        // (See GH#637)
+        if (!shiftPressed && (ch >= L'A' && ch <= L'Z'))
+        {
+            ch += 0x20;
+        }
+    }
 
     // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
     // correctly, the keyEvents's char needs to be set to Backspace.
