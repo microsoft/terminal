@@ -149,6 +149,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererVt", "src\renderer\vt\lib\vt.vcxproj", "{990F2657-8580-4828-943F-5DD657D11842}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VtPipeTerm", "src\tools\vtpipeterm\VtPipeTerm.vcxproj", "{814DBDDE-894E-4327-A6E1-740504850098}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B} = {9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConEchoKey", "src\tools\echokey\ConEchoKey.vcxproj", "{814CBEEE-894E-4327-A6E1-740504850098}"
 EndProject
