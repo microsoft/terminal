@@ -145,15 +145,24 @@ private:
     bool _snapOnInput;
 
     // Text Selection
+    enum TripleClickSelectionMode
+    {
+        Disabled = 0,
+        Line,
+        VisibleViewport
+    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
+    TripleClickSelectionMode _tripleClickMode;
     void _ExpandDoubleClickSelectionLeft(const COORD position);
     void _ExpandDoubleClickSelectionRight(const COORD position);
     const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
+    void _SelectRow(const COORD position);
+    void _SelectViewport();
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 
     std::shared_mutex _readWriteLock;

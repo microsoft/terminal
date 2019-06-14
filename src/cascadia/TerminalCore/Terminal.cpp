@@ -133,6 +133,9 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _snapOnInput = settings.SnapOnInput();
 
+    // TODO: import tripleClickSelection setting from Settings
+    _tripleClickMode = TripleClickSelectionMode::Line;
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -517,13 +520,42 @@ void Terminal::DoubleClickSelection(const COORD position)
 }
 
 // Method Description:
-// - Select the entire row of the position clicked
+// - Performs a triple click selection based on the setting
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::TripleClickSelection(const COORD position)
 {
+    switch (_tripleClickMode)
+    {
+    case TripleClickSelectionMode::VisibleViewport:
+        _SelectViewport();
+        break;
+    case TripleClickSelectionMode::Line:
+        _SelectRow(position);
+        break;
+    case TripleClickSelectionMode::Disabled:
+    default:
+        SetSelectionAnchor(position);
+        break;
+    }
+}
+
+// Method Description:
+// - Create a selection of the entire row of the position clicked
+// Arguments:
+// - position: the (x,y) coordinate on the visible viewport
+void Terminal::_SelectRow(const COORD position)
+{
     SetSelectionAnchor({ 0, position.Y });
     SetEndSelectionPosition({ _buffer->GetSize().RightInclusive(), position.Y });
+}
+
+// Method Description:
+// - Create a selection of the entire visible viewport present
+void Terminal::_SelectViewport()
+{
+    SetSelectionAnchor({ 0, 0 });
+    SetEndSelectionPosition(_mutableViewport.Dimensions());
 }
 
 // Method Description:
