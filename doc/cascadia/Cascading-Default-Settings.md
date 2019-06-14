@@ -2,7 +2,7 @@
 author: Mike Griese @zadjii-msft
 created on: 2019-05-31
 last updated: 2019-06-13
-issue id: #754
+issue id: 754
 ---
 
 # Cascading Default + User Settings
@@ -26,6 +26,8 @@ settings that the user needs to customize.
 Should the settings schema ever change, the defaults file will change, without
 needing to re-write the user's settings file.
 
+It also outlines a mechanism by which profiles could be dynamically added or
+hidden from the profiles list, based on some external source.
 
 ## Inspiration
 
@@ -41,17 +43,52 @@ as each write of the file will randomly re-order the file.
 One of our overarching goals with this change should be to re-write the user
 settings file as little as possible.
 
+### Goal: Minimize Content in `profiles.json`
+
+We want the user to only have to make the minimal number of changes possible to
+the user settings file. Additionally, the user should only have to have the
+settings that they've changed in that file. If the user wants to change only the
+`cursorColor` of a profile, they should only need to set that property in the
+user settings file, and not need an entire copy of the `Profile` object in their
+user settings file. That would create additional noise that's not relevant to
+the user.
+
+### Goal: Remove the Need to Reset Settings Entirely to get New Settings
+One problem with the current settings design is that we only generate "default"
+settings for the user when there's no settings file present at all. So, when we
+want to do things like update the default profiles to have an icon, or add
+support for generating WSL profiles, it will only apply to users for fresh
+installs. Otherwise, a user needs to completely delete the settings file to have
+the terminal re-generate the default settings.
+
+This is fairly annoying to the end-user, so ideally we'll find a way to be able
+to prevent this scenario.
+
 ## Solution Design
 
 The settings are now composed from two files: a "Default" settings file, and a
 "User" settings file.
 
+When we load the settings, we'll perform the following steps, each mentioned in
+greater detail below:
+1. Load the `defaults.json` (the default settings)
+1. Load the `profiles.json` (the user settings)
+1. Perform a preliminary scan of the user settings, and create all the profiles
+   in order they appear in the user settings file.
+1. Layer all settings from the defaults on the existing profiles, and create the
+   default color schemes, as well as the default global settings.
+1. Layer all user settings upon the existing settings models.
+1. Generate any dynamically generated profiles, if necessary. This step might
+   request the user settings are saved out.
+1. Validate the settings. This step might request the user settings are saved
+   out.
+1. If necessary, write the modified settings back to `profiles.json`.
+
 ### Default Settings
 
 We'll have a static version of the "Default" file hardcoded within the
-application. We'll write the hardcoded version of this file out to an actual
-file on disk, `defaults.json`, however, that file will not actually be used. The
-defaults file will contain some sort of disclaimer like:
+application. This `defaults.json` file will live within the application's
+package, which will prevent users from being able to edit it.
 
 ```json
 // This is an auto-generated file. Place any modifications to your settings in "profiles.json"
@@ -59,12 +96,6 @@ defaults file will contain some sort of disclaimer like:
 
 This disclaimer will help identify that the file shouldn't be modified.
 
-The `defaults.json` file will be written out whenever we detect that it doesn't exist.
-
-**TODO**: We also need to write it out if it changes, though ideally without
-actually loading the file at first load. Perhaps we could start another
-thread/`fire_and_forget` once we're loaded to re-scan the file and re-write it
-if it has changed.
 
 Because the `defaults.json` file is hardcoded within our application, we can use
 its text directly, without loading the file from disk. This should help save
@@ -125,6 +156,32 @@ Currently, there are keyboard shortcuts for "Open New Tab With Profile
 dropdown. Considering we're adding the ability to remove profiles from that
 list, but keep them in the overall list of profiles, we'll need to make sure
 that the handler for that event still opens the Nth _visible_ profile.
+
+### Serializing User Settings
+
+How can we tell that a setting should be written back to the user settings file?
+
+If the value of the setting isn't the same as the defaults, then it could easily
+be added to the user's `profiles.json`. We'll have to do a smart serialization
+of the various settings models. We'll pass in the default version **of that
+model** during the serialization. If that object finds that a particular setting
+is the same as a default setting, then we'll skip serializing it.
+
+What happens if a user has chosen to set the value to _coincidentally_ the same
+value as the default value? We should keep that key in the user's settings file,
+even though it is the same.
+
+In order to facilitate this, we'll need to keep the originally parsed user
+settings around in memory. When we go to serialize the settings, we'll check if
+either the setting exists already in the user settings file, or the setting has
+changed. If either is true, then we'll make sure to write that setting back out.
+
+For serializing settings for the default profiles, we'll check if the setting is
+in the user settings file, or if the value of the setting is different from the
+version of that `Profile` from the default settings. For user-created profiles,
+we'll compare the value of the setting with the value of the _default
+constructed_ `Profile` object. This will help ensure that each profile in the
+user's settings file maintains the minimal amount of info necessary.
 
 ### Dynamic Profiles
 
@@ -259,7 +316,7 @@ Below is an example of what the default user settings file might look like when
 it's first generated, taking all the above points into consideration.
 
 ```js
-// To view the default settings, open the defaults.json file in this directory
+// To view the default settings, open <path-to-app-package>\defaults.json
 {
     "defaultProfile" : "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
     "profiles": [
@@ -297,6 +354,25 @@ Note the following:
 * There are a few helpful comments scattered throughout the file to help point
   the user in the right direction.
 
+### Re-ordering profiles
+
+Since there are shortcuts to open the Nth profile in the list of profiles, we
+need to expose a way for the user to change the order of the profiles. This was
+not a problem when there was only a single list of profiles, but if the defaults
+are applied _first_ to the list of profiles, then the user wouldn't be able to
+change the order of the default profiles. Additionally, any profiles they add
+would _always_ show up after the defaults.
+
+To remedy this, we could scan the user profiles in the user settings first, and
+create `Profile` objects for each of those profiles first. These `Profile`s
+would only be initialized with their GUID temporarily, but they'd be placed into
+the list of profiles in the order they appear in the user's settings. Then, we'd
+load all the default settings, overlaying any default profiles on the `Profile`
+objects that might already exist in the list of profiles. If there are any
+default profiles that don't appear in the user's settings, they'll appear
+_after_ any profiles in the user's settings. Then, we'll overlay the full user
+settings on top of the defaults.
+
 ## UI/UX Design
 
 ### Opening `defaults.json`
@@ -328,26 +404,14 @@ provide them instructions on how to open the defaults file.
 
 ### How does this work with the settings UI?
 
-How can we tell that a setting should be written back to the user settings file?
+If we only have one version of the settings models (Globals, Profiles,
+ColorShemes, Keybindings) at runtime, and the user changes one of the settings
+with the settings UI, how can we tell that settings changed?
 
-If we only have one version of the settings model (Globals, Profiles,
-ColorShemes, Keybindings), and the user changes one of the settings with the
-settings UI, how can we tell that settings changed?
-
-If the value of the setting isn't the same as the defaults, then it could easily
-be added to the user's `profiles.json`. We'll have to do a smart serialization
-of the various settings models. We'll pass in the default version of that model
-during the serialization. If that object finds that a particular setting is the
-same as a default setting, then we'll skip serializing it.
-
-What happens if a user has chosen to set the value to _coincidentally_ the same
-value as the default value? We should keep that key in the user's settings file,
-even though it is the same.
-
-In order to facilitate this, we'll need to keep the originally parsed user
-settings around in memory. When we go to serialize the settings, we'll check if
-either the setting exists already in the user settings file, or the setting has
-changed. If either is true, then we'll make sure to write that setting back out.
+Fortunately, this should be handled cleanly by the algorithm proposed above, in
+the "Serializing User Settings" section. We'll only be serializing settings that
+have changed from the defaults, so only the actual changes they've made will be
+persisted back to the user settings file.
 
 ## Capabilities
 ### Security
@@ -394,6 +458,22 @@ to their modifications.
   behave correctly. It's possible that we could abstract our implementation into
   a WinRT interface that extensions could implement, and be triggered just like
   other dynamic profile generators.
+* **Multiple settings files** - This could enable us to place color schemes into
+  a seperate file (like `colorschemes.json`) and put keybindings into their own
+  file as well, and reduce the number of settings in the user's `profiles.json`.
+  It's unclear if this is something that we need quite yet, but the same
+  layering functionality that enables this scenario could also enable more than
+  two sources for settings.
+* **Global Default Profile Settings** - Say a user wants to override what the
+  defaults for a profile are, so that they can set settings for _all_ their
+  profiles at once? We could maybe introduce a profile in the user settings file
+  with a special guid set to `"default`, that we look for first, and treat
+  specially. We wouldn't include it in the list of profiles. When we're creating
+  profiles, we'll start with that profile as our prototype, instead of using the
+  default-constructed `Profile`. When we're serializing profiles, we'd again use
+  that as the point of comparison to check if a setting's value has changed.
+  There may be more unknowns with this proposal, so I leave it for a future
+  feature spec.
 
 ## Resources
 N/A
