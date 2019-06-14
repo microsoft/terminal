@@ -15,6 +15,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 
 ## Profiles
 Properties listed below are specific to each unique profile.
+
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `acrylicOpacity` | _Required_ | Number | When `useAcrylic` is set to `true`, it sets the transparency of the window for the profile. Accepts floating point values from 0-1. |
@@ -41,6 +42,7 @@ Properties listed below are specific to each unique profile.
 
 ## Schemes
 Properties listed below are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.
+
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `name` | _Required_ | String | Name of the color scheme. |
@@ -65,6 +67,7 @@ Properties listed below are specific to each color scheme. ColorTool is a great 
 
 ## Keybindings
 Properties listed below are specific to each custom key binding.
+
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
