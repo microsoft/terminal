@@ -229,6 +229,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(CSICursorBackTabTest);
     TEST_METHOD(AltBackspaceTest);
     TEST_METHOD(AltCtrlDTest);
+    TEST_METHOD(AltIntermediateTest);
 
     friend class TestInteractDispatch;
 };
@@ -764,4 +765,58 @@ void InputEngineTest::AltCtrlDTest()
     const std::wstring seq = L"\x1b\x04";
     Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x04\""));
     _stateMachine->ProcessString(seq);
+}
+
+void InputEngineTest::AltIntermediateTest()
+{
+    TestState testState;
+
+    std::wstring expectedTranslation{};
+
+    auto pfnTerminalInputCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    {
+        // Get all the characters:
+        std::wstring wstr = L"";
+        for (auto& ev : inEvents)
+        {
+            if (ev->EventType() == InputEventType::KeyEvent)
+            {
+                auto& k = static_cast<KeyEvent&>(*ev);
+                auto wch = k.GetCharData();
+                wstr += wch;
+            }
+        }
+
+        // VERIFY_ARE_EQUAL(expectedTranslation.size(), wstr.size());
+        VERIFY_ARE_EQUAL(expectedTranslation, wstr);
+    };
+    TerminalInput terminalInput{ pfnTerminalInputCallback };
+
+    // Create the callback that's fired when the state machine wants to write
+    // input. We'll take the events and put them straight into the
+    // TerminalInput.
+    auto pfnInputStateMachineCallback = [&](std::deque<std::unique_ptr<IInputEvent>>& inEvents)
+    {
+        for (auto& ev : inEvents)
+        {
+            terminalInput.HandleKey(ev.get());
+        }
+    };
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfnInputStateMachineCallback, &testState));
+    auto stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(stateMachine);
+    testState._stateMachine = stateMachine.get();
+
+    // Write a Alt+/, Ctrl+e pair to the input engine, then take it's output and
+    // run it through the terminalInput translator. We should get ^[/^E back
+    // out.
+    std::wstring seq = L"\x1b/";
+    expectedTranslation = seq;
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x1b/\""));
+    stateMachine->ProcessString(seq);
+
+    seq = L"\x05"; // 0x05 is ^E
+    expectedTranslation = seq;
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x05\""));
+    stateMachine->ProcessString(seq);
 }
