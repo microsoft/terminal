@@ -883,6 +883,19 @@ bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
     return true;
 }
 
+// Routine Description:
+// - Returns false if the engine wants to be able to collect intermediate
+//   characters in the Escape state. We do _not_ want to buffer any characters
+//   as intermediates, because we use ESC as a prefix to indicate a key was
+//   pressed while Alt was pressed.
+// Return Value:
+// - True iff we should dispatch in the Escape state when we encounter a
+//   Intermediate character.
+bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const
+{
+    return true;
+}
+
 // Method Description:
 // - Retrieves the type of window manipulation operation from the parameter pool
 //      stored during Param actions.
