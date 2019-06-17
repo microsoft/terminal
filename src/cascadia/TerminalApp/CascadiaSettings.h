@@ -45,7 +45,7 @@ public:
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
 
-    static winrt::hstring GetSettingsPath();
+    static std::wstring GetSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
@@ -60,12 +60,9 @@ private:
     void _CreateDefaultProfiles();
 
     static bool _IsPackaged();
-    static void _SaveAsPackagedApp(const std::string& content);
-    static void _SaveAsUnpackagedApp(const std::string& content);
-    static std::wstring _GetFullPathToUnpackagedSettingsFile();
-    static winrt::hstring _GetPackagedSettingsPath();
-    static std::optional<std::string> _LoadAsPackagedApp();
-    static std::optional<std::string> _LoadAsUnpackagedApp();
+    static void _WriteSettings(const std::string_view content);
+    static std::optional<std::string> _ReadSettings();
+
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);

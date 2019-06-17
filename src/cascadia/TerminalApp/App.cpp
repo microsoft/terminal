@@ -569,18 +569,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void App::_RegisterSettingsChange()
     {
-        // Make sure this hstring has a stack-local reference. If we don't it
-        // might get cleaned up before we parse the path.
-        const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-
-        // Getting the containing folder.
-        std::filesystem::path fileParser = localPathCopy.c_str();
-        const auto folder = fileParser.parent_path();
+        // Get the containing folder.
+        std::filesystem::path settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
                        false,
                        wil::FolderChangeEvents::All,
-                       [this](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                       [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
                            // We want file modifications, AND when files are renamed to be
                            // profiles.json. This second case will oftentimes happen with text
                            // editors, who will write a temp file, then rename it to be the
@@ -591,13 +587,11 @@ namespace winrt::TerminalApp::implementation
                                return;
                            }
 
-                           const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-                           std::filesystem::path settingsParser = localPathCopy.c_str();
-                           std::filesystem::path modifiedParser = fileModified;
+                           std::filesystem::path modifiedFilePath = fileModified;
 
                            // Getting basename (filename.ext)
-                           const auto settingsBasename = settingsParser.filename();
-                           const auto modifiedBasename = modifiedParser.filename();
+                           const auto settingsBasename = settingsPath.filename();
+                           const auto modifiedBasename = modifiedFilePath.filename();
 
                            if (settingsBasename == modifiedBasename)
                            {
