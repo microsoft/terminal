@@ -61,6 +61,8 @@ private:
     static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
+    static winrt::Microsoft::Terminal::Settings::SelectionMode _ParseSelectionMode(const std::wstring& selectionModeString);
+    static std::wstring_view _SerializeSelectionMode(const winrt::Microsoft::Terminal::Settings::SelectionMode selectionMode);
 
     GUID _guid;
     std::wstring _name;
@@ -76,6 +78,7 @@ private:
     uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
+    winrt::Microsoft::Terminal::Settings::SelectionMode _tripleClickSelectionMode;
 
     std::wstring _commandline;
     std::wstring _fontFace;

@@ -12,6 +12,13 @@ namespace Microsoft.Terminal.Settings
         EmptyBox
     };
 
+    enum SelectionMode
+    {
+        Disabled,
+        Line,
+        VisibleViewport
+    };
+
     interface ICoreSettings
     {
         UInt32 DefaultForeground;
@@ -27,6 +34,7 @@ namespace Microsoft.Terminal.Settings
         UInt32 CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
+        SelectionMode TripleClickSelectionMode;
     };
 
 }

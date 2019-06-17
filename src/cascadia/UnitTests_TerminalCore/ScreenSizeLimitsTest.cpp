@@ -36,6 +36,7 @@ namespace TerminalCoreUnitTests
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
+        SelectionMode TripleClickSelectionMode() { return SelectionMode::Line; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -50,6 +51,7 @@ namespace TerminalCoreUnitTests
         void CursorColor(uint32_t) {}
         void CursorShape(CursorStyle const&) noexcept {}
         void CursorHeight(uint32_t) {}
+        void TripleClickSelectionMode(SelectionMode) {}
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}

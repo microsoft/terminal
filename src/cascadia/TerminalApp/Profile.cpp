@@ -40,6 +40,7 @@ static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
 static constexpr std::string_view BackgroundimageStretchModeKey{ "backgroundImageStretchMode" };
+static constexpr std::string_view TripleClickSelectionModeKey{ "tripleClickSelectionMode" };
 
 // Possible values for Scrollbar state
 static constexpr std::wstring_view AlwaysVisible{ L"visible" };
@@ -57,6 +58,11 @@ static constexpr std::string_view ImageStretchModeNone{ "none" };
 static constexpr std::string_view ImageStretchModeFill{ "fill" };
 static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
 static constexpr std::string_view ImageStretchModeUniformTofill{ "uniformToFill" };
+
+// Possible values for Triple Click Selection Mode
+static constexpr std::wstring_view SelectionModeDisabled{ L"disabled" };
+static constexpr std::wstring_view SelectionModeLine{ L"line" };
+static constexpr std::wstring_view SelectionModeViewport{ L"viewport" };
 
 Profile::Profile() :
     Profile(Utils::CreateGuid())
@@ -76,6 +82,7 @@ Profile::Profile(const winrt::guid& guid) :
     _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
+    _tripleClickSelectionMode{ SelectionMode::Line },
 
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
@@ -144,6 +151,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     terminalSettings.CursorColor(_cursorColor);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
+    terminalSettings.TripleClickSelectionMode(_tripleClickSelectionMode);
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
@@ -249,6 +257,7 @@ Json::Value Profile::ToJson() const
         root[JsonKey(CursorHeightKey)] = _cursorHeight;
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
+    root[JsonKey(TripleClickSelectionModeKey)] = winrt::to_string(_SerializeSelectionMode(_tripleClickSelectionMode));
 
     ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
@@ -368,6 +377,10 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+    }
+    if (auto tripleClickSelectionMode{ json[JsonKey(TripleClickSelectionModeKey)] })
+    {
+        result._tripleClickSelectionMode = _ParseSelectionMode(GetWstringFromJson(tripleClickSelectionMode));
     }
 
     // Control Settings
@@ -671,5 +684,32 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     default:
     case CursorStyle::Bar:
         return CursorShapeBar;
+    }
+}
+
+winrt::Microsoft::Terminal::Settings::SelectionMode Profile::_ParseSelectionMode(const std::wstring& selectionModeString)
+{
+    if (selectionModeString == SelectionModeDisabled)
+    {
+        return SelectionMode::Disabled;
+    }
+    else if (selectionModeString == SelectionModeViewport)
+    {
+        return SelectionMode::VisibleViewport;
+    }
+    return SelectionMode::Line;
+}
+
+std::wstring_view Profile::_SerializeSelectionMode(const winrt::Microsoft::Terminal::Settings::SelectionMode selectionMode)
+{
+    switch (selectionMode)
+    {
+    case SelectionMode::Disabled:
+        return SelectionModeDisabled;
+    case SelectionMode::VisibleViewport:
+        return SelectionModeViewport;
+    case SelectionMode::Line:
+    default:
+        return SelectionModeLine;
     }
 }
