@@ -79,19 +79,6 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 
 # Getting Started
 
-## Prerequisites
-
-* You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
-* You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
-* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed.
-* You must install the following Workloads via the VS Installer. If you're running VS 2019, opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).
-  - Desktop Development with C++
-  - Universal Windows Platform Development
-    - Also install the following Individual Component:
-      - C++ (v141) Universal Windows Platform Tools
-
-* You must also [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run the Terminal app.
-
 ## Debugging
 
 * To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only"
@@ -127,6 +114,20 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 
 # Developer Guidance
+
+## Build Prerequisites
+
+* You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
+* You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
+* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed.
+* You must install the following Workloads via the VS Installer. If you're running VS 2019, opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).
+  - Desktop Development with C++
+  - Universal Windows Platform Development
+    - Also install the following Individual Component:
+      - C++ (v141) Universal Windows Platform Tools
+
+* You must also [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run the Terminal app.
+
 
 ## Building the Code
 
