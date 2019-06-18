@@ -19,19 +19,26 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         return selectionArea;
     }
 
-    // Add anchor offset here to update properly on new buffer output
-    SHORT temp1;
-    SHORT temp2;
-    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
-    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
-
     // create these new anchors for comparison and rendering
-    const COORD selectionAnchorWithOffset = { _selectionAnchor.X, temp1 };
-    const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
+    COORD selectionAnchorWithOffset;
+    COORD endSelectionPositionWithOffset;
+
+    // Add anchor offset here to update properly on new buffer output
+    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
+    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
+
+    // clamp X values to be within buffer bounds
+    const auto bufferWidth = _buffer->GetSize().RightInclusive();
+    selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
+    endSelectionPositionWithOffset.X = std::clamp(_endSelectionPosition.X, static_cast<SHORT>(0), bufferWidth);
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
-    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
+    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
+                                   selectionAnchorWithOffset :
+                                   endSelectionPositionWithOffset;
+    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ?
+                                  selectionAnchorWithOffset :
+                                  endSelectionPositionWithOffset;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
@@ -172,10 +179,15 @@ void Terminal::ClearSelection() noexcept
     _endSelectionPosition = { 0, 0 };
     _selectionAnchor_YOffset = 0;
     _endSelectionPosition_YOffset = 0;
+
+    _buffer->GetRenderTarget().TriggerSelection();
 }
 
 // Method Description:
 // - get wstring text from highlighted portion of text buffer
+// Arguments:
+// - trimTrailingWhitespace: enable removing any whitespace from copied selection
+//    and get text to appear on separate lines.
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
 const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const

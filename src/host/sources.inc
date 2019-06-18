@@ -132,6 +132,7 @@ INCLUDES = \
     $(SHELL_INC_PATH); \
     $(INTERNAL_SDK_INC_PATH); \
     $(ONECORE_INTERNAL_SDK_INC_PATH); \
+    $(ONECORE_EXTERNAL_SDK_INC_PATH); \
 
 # Anything defined here will be defined BEFORE the CRT items the build system adds.
 CRTLIBS = \
@@ -144,11 +145,11 @@ TARGETLIBS = \
     $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \
-    $(SDK_LIB_PATH)\propsys.lib \
-    $(SDK_LIB_PATH)\d2d1.lib \
-    $(SDK_LIB_PATH)\dwrite.lib \
-    $(SDK_LIB_PATH)\dxgi.lib \
-    $(SDK_LIB_PATH)\d3d11.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\propsys.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d2d1.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dwrite.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\dxgi.lib \
+    $(ONECOREUAP_EXTERNAL_SDK_LIB_PATH)\d3d11.lib \
     $(MODERNCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-mm-playsound-l1.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-dwmapi-ext-l1.lib \
     $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\ext-ms-win-edputil-policy-l1.lib \

@@ -12,18 +12,17 @@
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
-using namespace winrt::Windows::Storage;
-using namespace winrt::Windows::Storage::Streams;
 using namespace ::Microsoft::Console;
 
-static constexpr std::wstring_view FILENAME{ L"profiles.json" };
-static constexpr std::wstring_view SETTINGS_FOLDER_NAME{ L"\\Microsoft\\Windows Terminal\\" };
+static constexpr std::wstring_view SettingsFilename{ L"profiles.json" };
+static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+
+static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -39,21 +38,26 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
-    std::optional<std::string> fileData = _IsPackaged() ?
-                                              _LoadAsPackagedApp() :
-                                              _LoadAsUnpackagedApp();
+    std::optional<std::string> fileData = _ReadSettings();
 
     const bool foundFile = fileData.has_value();
     if (foundFile)
     {
         const auto actualData = fileData.value();
 
+        // Ignore UTF-8 BOM
+        auto actualDataStart = actualData.c_str();
+        if (actualData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
+        {
+            actualDataStart += Utf8Bom.size();
+        }
+
         // Parse the json data.
         Json::Value root;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
         std::string errs; // This string will recieve any error text from failing to parse.
         // `parse` will return false if it fails.
-        if (!reader->parse(actualData.c_str(), actualData.c_str() + actualData.size(), &root, &errs))
+        if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
         {
             // TODO:GH#990 display this exception text to the user, in a
             //      copy-pasteable way.
@@ -101,14 +105,7 @@ void CascadiaSettings::SaveAll() const
     wbuilder.settings_["indentation"] = "    ";
     const auto serializedString = Json::writeString(wbuilder, json);
 
-    if (_IsPackaged())
-    {
-        _SaveAsPackagedApp(serializedString);
-    }
-    else
-    {
-        _SaveAsUnpackagedApp(serializedString);
-    }
+    _WriteSettings(serializedString);
 }
 
 // Method Description:
@@ -213,9 +210,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 }
 
 // Function Description:
-// - Returns true if we're running in a packaged context. If we are, then we
-//      have to use the Windows.Storage API's to save/load our files. If we're
-//      not, then we won't be able to use those API's.
+// - Returns true if we're running in a packaged context.
+//   If we are, we want to change our settings path slightly.
 // Arguments:
 // - <none>
 // Return Value:
@@ -228,37 +224,6 @@ bool CascadiaSettings::_IsPackaged()
 }
 
 // Method Description:
-// - Writes the given content to our settings file as UTF-8 encoded using the Windows.Storage
-//      APIS's. This will only work within the context of an application with
-//      package identity, so make sure to call _IsPackaged before calling this method.
-//   Will overwrite any existing content in the file.
-// Arguments:
-// - content: the given string of content to write to the file.
-// Return Value:
-// - <none>
-void CascadiaSettings::_SaveAsPackagedApp(const std::string& content)
-{
-    auto curr = ApplicationData::Current();
-    auto folder = curr.RoamingFolder();
-
-    auto file_async = folder.CreateFileAsync(FILENAME,
-                                             CreationCollisionOption::ReplaceExisting);
-
-    auto file = file_async.get();
-
-    DataWriter dw = DataWriter();
-    const char* firstChar = content.c_str();
-    const char* lastChar = firstChar + content.size();
-
-    const uint8_t* firstByte = reinterpret_cast<const uint8_t*>(firstChar);
-    const uint8_t* lastByte = reinterpret_cast<const uint8_t*>(lastChar);
-    winrt::array_view<const uint8_t> bytes{ firstByte, lastByte };
-    dw.WriteBytes(bytes);
-
-    FileIO::WriteBufferAsync(file, dw.DetachBuffer()).get();
-}
-
-// Method Description:
 // - Writes the given content in UTF-8 to our settings file using the Win32 APIS's.
 //   Will overwrite any existing content in the file.
 // Arguments:
@@ -267,82 +232,21 @@ void CascadiaSettings::_SaveAsPackagedApp(const std::string& content)
 // - <none>
 //   This can throw an exception if we fail to open the file for writing, or we
 //      fail to write the file
-void CascadiaSettings::_SaveAsUnpackagedApp(const std::string& content)
+void CascadiaSettings::_WriteSettings(const std::string_view content)
 {
-    // Get path to output file
-    // In this scenario, the settings file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
-    std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
+    auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
 
     auto hOut = CreateFileW(pathToSettingsFile.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut, content.c_str(), gsl::narrow<DWORD>(content.length()), 0, 0));
+    THROW_LAST_ERROR_IF(!WriteFile(hOut, content.data(), gsl::narrow<DWORD>(content.size()), 0, 0));
     CloseHandle(hOut);
 }
 
 // Method Description:
-// - Computes the path to the settings file if the app is run unpackaged.
-//   Will create any intermediate directories if they don't exist.
-//   The file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
-// Arguments:
-// - <none>
-// Return Value:
-// - A string containing the path to the unpackaged settings file
-//   This can throw an exception if it fails to get the roaming app data folder.
-std::wstring CascadiaSettings::_GetFullPathToUnpackagedSettingsFile()
-{
-    wil::unique_cotaskmem_string roamingAppDataFolder;
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, 0, 0, &roamingAppDataFolder)))
-    {
-        THROW_LAST_ERROR();
-    }
-
-    std::wstring parentDirectoryForSettingsFile(roamingAppDataFolder.get());
-    parentDirectoryForSettingsFile.append(SETTINGS_FOLDER_NAME);
-
-    // Create the directory if it doesn't exist
-    wil::CreateDirectoryDeep(parentDirectoryForSettingsFile.c_str());
-
-    std::wstring pathToSettingsFile(parentDirectoryForSettingsFile);
-    pathToSettingsFile.append(FILENAME);
-
-    return pathToSettingsFile;
-}
-
-// Method Description:
-// - Reads the content of our settings file using the Windows.Storage
-//      APIS's. This will only work within the context of an application with
-//      package identity, so make sure to call _IsPackaged before calling this method.
-// Arguments:
-// - <none>
-// Return Value:
-// - an optional with the content of the file if we were able to open it,
-//      otherwise the optional will be empty
-std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
-{
-    auto curr = ApplicationData::Current();
-    auto folder = curr.RoamingFolder();
-    auto file_async = folder.TryGetItemAsync(FILENAME);
-    auto file = file_async.get();
-
-    if (file == nullptr)
-    {
-        return std::nullopt;
-    }
-    const auto storageFile = file.as<StorageFile>();
-
-    // settings file is UTF-8 without BOM
-    auto buffer = FileIO::ReadBufferAsync(storageFile).get();
-    auto bufferData = buffer.data();
-    std::vector<uint8_t> bytes{ bufferData, bufferData + buffer.Length() };
-    std::string resultString{ bytes.begin(), bytes.end() };
-    return { resultString };
-}
-
-// Method Description:
-// - Reads the content in UTF-8 enconding of our settings file using the Win32 APIs
+// - Reads the content in UTF-8 encoding of our settings file using the Win32 APIs
 // Arguments:
 // - <none>
 // Return Value:
@@ -350,9 +254,9 @@ std::optional<std::string> CascadiaSettings::_LoadAsPackagedApp()
 //      otherwise the optional will be empty.
 //   If the file exists, but we fail to read it, this can throw an exception
 //      from reading the file
-std::optional<std::string> CascadiaSettings::_LoadAsUnpackagedApp()
+std::optional<std::string> CascadiaSettings::_ReadSettings()
 {
-    std::wstring pathToSettingsFile = CascadiaSettings::_GetFullPathToUnpackagedSettingsFile();
+    auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
     const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
@@ -381,27 +285,32 @@ std::optional<std::string> CascadiaSettings::_LoadAsUnpackagedApp()
 // function Description:
 // - Returns the full path to the settings file, either within the application
 //   package, or in its unpackaged location.
+// - If the application is unpackaged,
+//   the file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
 // Arguments:
 // - <none>
 // Return Value:
 // - the full path to the settings file
-winrt::hstring CascadiaSettings::GetSettingsPath()
+std::wstring CascadiaSettings::GetSettingsPath()
 {
-    return _IsPackaged() ? CascadiaSettings::_GetPackagedSettingsPath() :
-                           winrt::hstring{ CascadiaSettings::_GetFullPathToUnpackagedSettingsFile() };
-}
+    wil::unique_cotaskmem_string roamingAppDataFolder;
+    // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
+    // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
+    // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, 0, &roamingAppDataFolder)))
+    {
+        THROW_LAST_ERROR();
+    }
 
-// Function Description:
-// - Get the full path to settings file in its packaged location.
-// Arguments:
-// - <none>
-// Return Value:
-// - the full path to the packaged settings file.
-winrt::hstring CascadiaSettings::_GetPackagedSettingsPath()
-{
-    const auto curr = ApplicationData::Current();
-    const auto folder = curr.RoamingFolder();
-    const auto file_async = folder.TryGetItemAsync(FILENAME);
-    const auto file = file_async.get();
-    return file.Path();
+    std::filesystem::path parentDirectoryForSettingsFile{ roamingAppDataFolder.get() };
+
+    if (!_IsPackaged())
+    {
+        parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
+    }
+
+    // Create the directory if it doesn't exist
+    std::filesystem::create_directories(parentDirectoryForSettingsFile);
+
+    return parentDirectoryForSettingsFile / SettingsFilename;
 }
