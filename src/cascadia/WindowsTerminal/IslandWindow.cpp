@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "IslandWindow.h"
 #include "../types/inc/Viewport.hpp"
+#include "resource.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -42,6 +43,7 @@ void IslandWindow::MakeWindow() noexcept
     wc.lpszClassName = XAML_HOSTING_WINDOW_CLASS_NAME;
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
+    wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
