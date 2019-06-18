@@ -514,20 +514,18 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         return selectionArea;
     }
 
+    // create these new anchors for comparison and rendering
+    COORD selectionAnchorWithOffset;
+    COORD endSelectionPositionWithOffset;
+
     // Add anchor offset here to update properly on new buffer output
-    SHORT y1;
-    SHORT y2;
-    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &y1));
-    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &y2));
+    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
+    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
 
     // clamp X values to be within buffer bounds
     const auto bufferWidth = _buffer->GetSize().RightInclusive();
-    SHORT x1 = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
-    SHORT x2 = std::clamp(_endSelectionPosition.X, static_cast<SHORT>(0), bufferWidth);
-
-    // create these new anchors for comparison and rendering
-    const COORD selectionAnchorWithOffset = { x1, y1 };
-    const COORD endSelectionPositionWithOffset = { x2, y2 };
+    selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
+    endSelectionPositionWithOffset.X = std::clamp(_endSelectionPosition.X, static_cast<SHORT>(0), bufferWidth);
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
     const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
