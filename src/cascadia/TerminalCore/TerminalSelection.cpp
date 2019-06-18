@@ -56,7 +56,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         else
         {
             selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
-            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
+            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferWidth;
         }
 
         selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
