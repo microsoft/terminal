@@ -41,7 +41,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, 10, 5 }, selection);
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 10, 5 }));
         }
 
         TEST_METHOD(SelectArea)
@@ -76,17 +76,17 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     // Verify top line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, rightBoundary, 10 }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, rightBoundary, 10 }));
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, 20, 15, 20 }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 20, 15, 20 }));
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, rowValue, rightBoundary, rowValue }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, rowValue, rightBoundary, rowValue }));
                 }
 
                 rowValue++;
@@ -123,7 +123,7 @@ namespace TerminalCoreUnitTests
                 auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
 
                 // Verify all lines
-                VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 15, rowValue }, selection);
+                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 15, rowValue }));
 
                 rowValue++;
             }
@@ -162,17 +162,17 @@ namespace TerminalCoreUnitTests
                 if (rowValue == 10)
                 {
                     // Verify top line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, 10, rightBoundary, 10 }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, rightBoundary, 10 }));
                 }
                 else if (rowValue == 20)
                 {
                     // Verify bottom line
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, 20, 15, 20 }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 20, 15, 20 }));
                 }
                 else
                 {
                     // Verify other lines (full)
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 0, rowValue, rightBoundary, rowValue }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, rowValue, rightBoundary, rowValue }));
                 }
 
                 rowValue++;
@@ -185,9 +185,13 @@ namespace TerminalCoreUnitTests
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
+            // This is the burrito emoji
+            // It's encoded in UTF-16, as needed by the buffer.
+            const auto burrito = L"\xD83C\xDF2F";
+
             // Insert wide glyph at position (4,10)
             term.SetCursorPosition(4, 10);
-            term.Write(L"\xF0\x9F\x98\x83");
+            term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 5, 10 };
@@ -201,7 +205,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, 10, 10, 5 }, selection);
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 10, 5 }));
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
@@ -210,9 +214,13 @@ namespace TerminalCoreUnitTests
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
+            // This is the burrito emoji
+            // It's encoded in UTF-16, as needed by the buffer.
+            const auto burrito = L"\xD83C\xDF2F";
+
             // Insert wide glyph at position (4,10)
             term.SetCursorPosition(4, 10);
-            term.Write(L"\xF0\x9F\x98\x83");
+            term.Write(burrito);
 
             // Simulate click at (x,y) = (5,10)
             auto clickPos = COORD{ 4, 10 };
@@ -226,7 +234,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, 10, 10, 5 }, selection);
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 10, 5 }));
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
@@ -235,13 +243,17 @@ namespace TerminalCoreUnitTests
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
+            // This is the burrito emoji
+            // It's encoded in UTF-16, as needed by the buffer.
+            const auto burrito = L"\xD83C\xDF2F";
+
             // Insert wide glyph at position (4,10)
             term.SetCursorPosition(4, 10);
-            term.Write(L"\xF0\x9F\x98\x83");
+            term.Write(burrito);
 
             // Insert wide glyph at position (7,11)
             term.SetCursorPosition(7, 11);
-            term.Write(L"\xF0\x9F\x98\x83");
+            term.Write(burrito);
 
             // Simulate ALT + click at (x,y) = (5,8)
             term.SetSelectionAnchor({ 5, 8 });
@@ -264,16 +276,16 @@ namespace TerminalCoreUnitTests
 
                 if (rowValue == 10)
                 {
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 4, rowValue, 7, rowValue }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, rowValue, 7, rowValue }));
                 }
                 else if (rowValue == 11)
                 {
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 8, rowValue }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 8, rowValue }));
                 }
                 else
                 {
                     // Verify all lines
-                    VerifyCompareTraits<SMALL_RECT>::AreEqual({ 5, rowValue, 7, rowValue }, selection);
+                    VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, 7, rowValue }));
                 }
 
                 rowValue++;
