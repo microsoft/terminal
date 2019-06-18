@@ -5,7 +5,7 @@ Properties listed below affect the entire window, regardless of the profile sett
 
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
-| `alwaysShowTabs` | _Required_ | Boolean | When set to `true`, tabs are always displayed. When set to `false` and `experimental_showTabsInTitlebar` is set to `false`, tabs only appear after typing <kbd>Ctrl</kbd> + <kbd>T</kbd>. |
+| `alwaysShowTabs` | _Required_ | Boolean | When set to `true`, tabs are always displayed. When set to `false` and `showTabsInTitlebar` is set to `false`, tabs only appear after typing <kbd>Ctrl</kbd> + <kbd>T</kbd>. |
 | `defaultProfile` | _Required_ | String | Sets the default profile. Opens by typing <kbd>Ctrl</kbd> + <kbd>T</kbd> or by clicking the '+' icon. The guid of the desired default profile is used as the value. |
 | `initialCols` | _Required_ | Integer | The number of columns displayed in the window upon first load. |
 | `initialRows` | _Required_ | Integer | The number of rows displayed in the window upon first load. |
