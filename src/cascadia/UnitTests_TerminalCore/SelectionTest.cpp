@@ -41,7 +41,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 10, 5 }));
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 5, 10 }));
         }
 
         TEST_METHOD(SelectArea)
@@ -205,7 +205,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 10, 5 }));
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
@@ -234,7 +234,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 10, 5 }));
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
