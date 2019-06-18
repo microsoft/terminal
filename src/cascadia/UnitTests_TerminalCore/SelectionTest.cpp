@@ -26,7 +26,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectUnit)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
@@ -46,7 +46,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectArea)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
@@ -95,7 +95,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectBoxArea)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
@@ -131,7 +131,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectAreaAfterScroll)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             SHORT scrollbackLines = 5;
             term.Create({ 100, 100 }, scrollbackLines, emptyRT);
@@ -181,7 +181,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
@@ -206,7 +206,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Leading)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
@@ -231,7 +231,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
-            Terminal term = Terminal();
+            Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
 
