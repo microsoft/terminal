@@ -38,8 +38,6 @@
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <winrt/Windows.System.h>
-#include <winrt/Windows.Storage.h>
-#include <winrt/Windows.Storage.Streams.h>
 
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
