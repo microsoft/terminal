@@ -525,14 +525,18 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         return selectionArea;
     }
 
-    // Add anchor offset here to update properly on new buffer output
-    SHORT temp1, temp2;
-    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
-    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
-
     // create these new anchors for comparison and rendering
-    const COORD selectionAnchorWithOffset = { _selectionAnchor.X, temp1 };
-    const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
+    COORD selectionAnchorWithOffset;
+    COORD endSelectionPositionWithOffset;
+
+    // Add anchor offset here to update properly on new buffer output
+    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
+    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
+
+    // clamp X values to be within buffer bounds
+    const auto bufferWidth = _buffer->GetSize().RightInclusive();
+    selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
+    endSelectionPositionWithOffset.X = std::clamp(_endSelectionPosition.X, static_cast<SHORT>(0), bufferWidth);
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
     const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
@@ -558,7 +562,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         else
         {
             selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
-            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
+            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferWidth;
         }
 
         selectionArea.emplace_back(selectionRow);
