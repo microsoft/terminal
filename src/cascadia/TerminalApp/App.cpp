@@ -595,9 +595,24 @@ namespace winrt::TerminalApp::implementation
 
                            if (settingsBasename == modifiedBasename)
                            {
-                               this->_ReloadSettings();
+                               this->_DispatchReloadSettings();
                            }
                        });
+    }
+
+    // Method Description:
+    // - Dispatches a settings reload with debounce.
+    //   Text editors implement Save in a bunch of different ways, so
+    //   this stops us from reloading too many times or too quickly.
+    fire_and_forget App::_DispatchReloadSettings()
+    {
+        static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
+        if (!_settingsReloadQueued.exchange(true))
+        {
+            co_await winrt::resume_after(FileActivityQuiesceTime);
+            _ReloadSettings();
+            _settingsReloadQueued.store(false);
+        }
     }
 
     // Method Description:

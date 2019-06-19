@@ -69,6 +69,8 @@ namespace winrt::TerminalApp::implementation
 
         wil::unique_folder_change_reader_nothrow _reader;
 
+        std::atomic<bool> _settingsReloadQueued{ false };
+
         void _Create();
         void _CreateNewTabFlyout();
 
@@ -85,6 +87,7 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
         void _RegisterSettingsChange();
+        fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();
 
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
