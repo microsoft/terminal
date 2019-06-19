@@ -477,6 +477,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
         _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
+        _scrollBar.PointerPressed({ this, &TermControl::_CapturePointer });
+        _scrollBar.PointerReleased({ this, &TermControl::_ReleasePointerCapture });
 
         // Apply settings for scrollbar
         if (_settings.ScrollState() == ScrollbarState::Visible)
@@ -499,9 +501,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
-        _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
-        _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
-        _root.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
+
+        // These need to be hooked up to the SwapChainPanel because we don't want the scrollbar to respond to pointer events (GitHub #950)
+        _swapChainPanel.PointerPressed({ this, &TermControl::_PointerPressedHandler });
+        _swapChainPanel.PointerMoved({ this, &TermControl::_PointerMovedHandler });
+        _swapChainPanel.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
 
         localPointerToThread->EnablePainting();
 
@@ -669,11 +673,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
-    // - sender: not used
+    // - sender: the XAML element responding to the pointer input
     // - args: event data
-    void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                         Input::PointerRoutedEventArgs const& args)
+    void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
+                                             Input::PointerRoutedEventArgs const& args)
     {
+        _CapturePointer(sender, args);
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
@@ -740,8 +746,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - sender: not used
     // - args: event data
-    void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                         Input::PointerRoutedEventArgs const& args)
+    void TermControl::_PointerMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                           Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
@@ -797,13 +803,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the PointerReleased event. We use this to de-anchor
     //   touch events, to stop scrolling via touch.
     // Arguments:
-    // - sender: not used
+    // - sender: the XAML element responding to the pointer input
     // - args: event data
-    // Return Value:
-    // - <none>
-    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& sender,
                                               Input::PointerRoutedEventArgs const& args)
     {
+        _ReleasePointerCapture(sender, args);
+
         const auto ptr = args.Pointer();
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -947,6 +953,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             this->ScrollViewport(static_cast<int>(newValue));
         }
+    }
+
+    // Method Description:
+    // - captures the pointer so that none of the other XAML elements respond to pointer events
+    // Arguments:
+    // - sender: XAML element that is interacting with pointer
+    // - args: pointer data (i.e.: mouse, touch)
+    // Return Value:
+    // - true if we successfully capture the pointer, false otherwise.
+    bool TermControl::_CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& args)
+    {
+        IUIElement uielem;
+        if (sender.try_as(uielem))
+        {
+            uielem.CapturePointer(args.Pointer());
+            return true;
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - releases the captured pointer because we're done responding to XAML pointer events
+    // Arguments:
+    // - sender: XAML element that is interacting with pointer
+    // - args: pointer data (i.e.: mouse, touch)
+    // Return Value:
+    // - true if we release capture of the pointer, false otherwise.
+    bool TermControl::_ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& args)
+    {
+        IUIElement uielem;
+        if (sender.try_as(uielem))
+        {
+            uielem.ReleasePointerCapture(args.Pointer());
+            return true;
+        }
+        return false;
     }
 
     // Method Description:
