@@ -192,7 +192,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const;
-    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const noexcept;
-    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const noexcept;
+    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
+    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
 #pragma endregion
 };

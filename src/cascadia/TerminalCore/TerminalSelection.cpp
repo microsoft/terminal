@@ -27,6 +27,10 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
     THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
 
+    // clamp Y values to be within mutable viewport bounds
+    selectionAnchorWithOffset.Y = std::clamp(selectionAnchorWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
+    endSelectionPositionWithOffset.Y = std::clamp(endSelectionPositionWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
+
     // clamp X values to be within buffer bounds
     const auto bufferWidth = _buffer->GetSize().RightInclusive();
     selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, static_cast<SHORT>(0), bufferWidth);
@@ -73,7 +77,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
     if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
@@ -98,7 +102,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const noexcept
+const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
     if (xPos <= 0 || xPos >= _buffer->GetSize().RightInclusive())
