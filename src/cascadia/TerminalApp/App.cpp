@@ -602,6 +602,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Dispatches a settings reload with debounce.
+    //   Text editors implement Save in a bunch of different ways, so
+    //   this stops us from reloading too many times or too quickly.
     fire_and_forget App::_DispatchReloadSettings()
     {
         static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
