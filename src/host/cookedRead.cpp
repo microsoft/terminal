@@ -17,7 +17,7 @@
 CookedRead::CookedRead(InputBuffer* const pInputBuffer,
                        INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                        SCREEN_INFORMATION& screenInfo,
-                       CommandHistory* pCommandHistory,
+                       std::shared_ptr<CommandHistory> pCommandHistory,
                        wchar_t* userBuffer,
                        const size_t cchUserBuffer,
                        const ULONG ctrlWakeupMask,

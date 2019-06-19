@@ -474,7 +474,7 @@ static HRESULT _ReadLineInput(InputBuffer& inputBuffer,
     RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
 
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    CommandHistory* const pCommandHistory = CommandHistory::s_Find(processData);
+    const std::shared_ptr<CommandHistory> pCommandHistory = CommandHistory::s_Find(processData);
 
     try
     {

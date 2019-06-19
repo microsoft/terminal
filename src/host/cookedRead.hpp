@@ -12,7 +12,7 @@ public:
     CookedRead(InputBuffer* const pInputBuffer,
                INPUT_READ_HANDLE_DATA* const pInputReadHandleData,
                SCREEN_INFORMATION& screenInfo,
-               CommandHistory* pCommandHistory,
+               std::shared_ptr<CommandHistory> pCommandHistory,
                wchar_t* userBuffer,
                const size_t cchUserBuffer,
                const ULONG ctrlWakeupMask,
@@ -112,7 +112,7 @@ private:
     COORD _promptStartLocation;
     // the location of the cursor before a popup is launched
     COORD _beforePopupCursorPosition;
-    CommandHistory* _pCommandHistory; // non-ownership pointer
+    std::shared_ptr<CommandHistory> _pCommandHistory;
     // mask of control keys that if pressed will end the cooked read early
     const ULONG _ctrlWakeupMask;
     // current state of the CookedRead

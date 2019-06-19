@@ -25,7 +25,7 @@ class CommandListPopupTests
     TEST_CLASS(CommandListPopupTests);
 
     std::unique_ptr<CommonState> m_state;
-    CommandHistory* m_pHistory;
+    std::shared_ptr<CommandHistory> m_pHistory;
 
     TEST_CLASS_SETUP(ClassSetup)
     {
