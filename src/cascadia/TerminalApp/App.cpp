@@ -36,14 +36,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-
     App::App() :
-        App(winrt::TerminalApp::XamlMetaDataProvider())
-    {
-    }
-
-    App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
-        base_type(parentProvider),
         _settings{  },
         _tabs{  },
         _loadedInitialSettings{ false },
@@ -55,37 +48,9 @@ namespace winrt::TerminalApp::implementation
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
-    }
 
-    void App::Initialize()
-    {
-        if (this->outer())
-        {
-            this->outer()->AddRef();
-        }
-
-        _windowsXamlManager = winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-    }
-
-    void App::Close()
-    {
-        if (_bIsClosed)
-        {
-            return;
-        }
-
-        _bIsClosed = true;
-
-        _windowsXamlManager.Close();
-
-        Exit();
-        {
-            MSG msg = {};
-            while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
-            {
-                ::DispatchMessageW(&msg);
-            }
-        }
+        AddRef();
+        m_inner.as<::IUnknown>()->Release();
     }
 
     // Method Description:
@@ -109,7 +74,6 @@ namespace winrt::TerminalApp::implementation
     App::~App()
     {
         TraceLoggingUnregister(g_hTerminalAppProvider);
-        Close();
     }
 
     // Method Description:

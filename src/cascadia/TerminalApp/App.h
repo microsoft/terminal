@@ -6,6 +6,7 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "App.g.h"
+#include "App.base.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -19,17 +20,10 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    // We dont use AppT as it does not provide access to protected constructors
-    template <typename D, typename... I>
-    using AppT_Override = App_base<D, I...>;
-
-    struct App : AppT_Override<App>
+    struct App : AppT2<App>
     {
     public:
         App();
-
-        void Initialize();
-        void Close();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
@@ -49,8 +43,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 
     private:
-        App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
-
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the app.
@@ -124,9 +116,6 @@ namespace winrt::TerminalApp::implementation
 
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
-
-        bool _bIsClosed = false;
-        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager{ nullptr };
     };
 }
 
