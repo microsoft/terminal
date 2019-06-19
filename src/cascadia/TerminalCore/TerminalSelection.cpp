@@ -27,18 +27,22 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     THROW_IF_FAILED(ShortAdd(selectionAnchorWithOffset.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
     THROW_IF_FAILED(ShortAdd(endSelectionPositionWithOffset.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
 
-    // clamp COORDs to be within the buffer
+    // clamp Y values to be within mutable viewport bounds
+    selectionAnchorWithOffset.Y = std::clamp(selectionAnchorWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
+    endSelectionPositionWithOffset.Y = std::clamp(endSelectionPositionWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
+
+    // clamp X values to be within buffer bounds
     const auto bufferSize = _buffer->GetSize();
-    bufferSize.Clamp(selectionAnchorWithOffset);
-    bufferSize.Clamp(endSelectionPositionWithOffset);
+    selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, bufferSize.Left(), bufferSize.RightInclusive());
+    endSelectionPositionWithOffset.X = std::clamp(_endSelectionPosition.X, bufferSize.Left(), bufferSize.RightInclusive());
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    // CompareInBounds returns whether A is to the left of (rv<0), equal to (rv==0), or to the right of (rv>0) B.
-    // Here, we want the "left"most coordinate to be the one "higher" on the screen. The other gets the dubious honor of
-    // being the "lower."
-    const auto& [higherCoord, lowerCoord] = bufferSize.CompareInBounds(selectionAnchorWithOffset, endSelectionPositionWithOffset) <= 0 ?
-                                                std::make_tuple(selectionAnchorWithOffset, endSelectionPositionWithOffset) :
-                                                std::make_tuple(endSelectionPositionWithOffset, selectionAnchorWithOffset);
+    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
+                                   selectionAnchorWithOffset :
+                                   endSelectionPositionWithOffset;
+    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ?
+                                  selectionAnchorWithOffset :
+                                  endSelectionPositionWithOffset;
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
