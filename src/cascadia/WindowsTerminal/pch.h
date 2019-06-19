@@ -41,6 +41,7 @@ Abstract:
 #include <winrt/Windows.system.h>
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
+#include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 #include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 
 // Additional headers for various xaml features. We need:

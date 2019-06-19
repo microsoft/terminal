@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;

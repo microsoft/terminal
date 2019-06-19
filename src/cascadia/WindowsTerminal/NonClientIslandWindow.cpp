@@ -129,7 +129,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
 
-    _UpdateFrameMargins();
+    winrt::check_hresult(_UpdateFrameMargins());
 }
 
 // Method Description:
