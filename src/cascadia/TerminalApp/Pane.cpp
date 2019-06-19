@@ -186,6 +186,73 @@ bool Pane::ResizePane(const Direction& direction)
     return false;
 }
 
+bool Pane::_DoNavigateFocus(const Direction& direction)
+{
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        return false;
+    }
+
+    bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
+
+    auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
+    // auto unfocusedChild = focusSecond ? _firstChild : _secondChild;
+
+    newlyFocusedChild->_FocusFirstChild();
+
+    UpdateFocus();
+
+    return true;
+}
+
+// Method Description:
+// -
+// Arguments:
+// - direction: The direction to move the separator in.
+// Return Value:
+// - true if we or a child handled this resize request.
+bool Pane::NavigateFocus(const Direction& direction)
+{
+    // If we're a leaf, do nothing. We can't possibly have a descendant with a
+    // separator the correct direction.
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    // Check if either our first or second child is the currently focused leaf.
+    // If it is, and the requested resize direction matches our separator, then
+    // we're the pane that needs to adjust its separator.
+    // If our separator is the wrong direction, then we can't handle it.
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    if (firstIsFocused || secondIsFocused)
+    {
+        return _DoNavigateFocus(direction);
+    }
+    else
+    {
+        // If neither of our children were the focused leaf, then recurse into
+        // our children and see if they can handle the resize.
+        // For each child, if it has a focused descendant, try having that child
+        // handle the resize.
+        // If the child wasn't able to handle the resize, it's possible that
+        // there were no descendants with a separator the correct direction. If
+        // our separator _is_ the correct direction, then we should be the pane
+        // to resize. Otherwise, just return false, as we couldn't handle it
+        // either.
+        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
+        {
+            return _firstChild->NavigateFocus(direction) || _DoNavigateFocus(direction);
+        }
+        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+        {
+            return _secondChild->NavigateFocus(direction) || _DoNavigateFocus(direction);
+        }
+    }
+    return false;
+}
+
 // Method Description:
 // - Called when our attached control is closed. Triggers listeners to our close
 //   event, if we're a leaf pane.

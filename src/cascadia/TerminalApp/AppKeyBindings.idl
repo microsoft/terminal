@@ -51,6 +51,10 @@ namespace TerminalApp
         ResizePaneRight,
         ResizePaneUp,
         ResizePaneDown,
+        MoveFocusLeft,
+        MoveFocusRight,
+        MoveFocusUp,
+        MoveFocusDown,
         OpenSettings
     };
 
@@ -74,9 +78,9 @@ namespace TerminalApp
     delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
     delegate void ResizePaneEventArgs(Direction direction);
+    delegate void MoveFocusEventArgs(Direction direction);
 
-    [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
@@ -103,5 +107,6 @@ namespace TerminalApp
         event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
         event ResizePaneEventArgs ResizePane;
+        event MoveFocusEventArgs MoveFocus;
     }
 }
