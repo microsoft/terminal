@@ -15,7 +15,6 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
-#include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 namespace winrt::TerminalApp::implementation

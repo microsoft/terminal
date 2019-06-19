@@ -19,8 +19,9 @@ namespace winrt::TerminalApp::implementation
         void Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
+
     private:
-        void OnMaximize(byte flag);
+        void _OnMaximize(byte flag);
         HWND _window = nullptr;
     };
 }
