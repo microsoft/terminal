@@ -37,8 +37,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     // Here, we want the "left"most coordinate to be the one "higher" on the screen. The other gets the dubious honor of
     // being the "lower."
     const auto& [higherCoord, lowerCoord] = bufferSize.CompareInBounds(selectionAnchorWithOffset, endSelectionPositionWithOffset) <= 0 ?
-                                               std::make_tuple(selectionAnchorWithOffset, endSelectionPositionWithOffset) :
-                                               std::make_tuple(endSelectionPositionWithOffset, selectionAnchorWithOffset);
+                                                std::make_tuple(selectionAnchorWithOffset, endSelectionPositionWithOffset) :
+                                                std::make_tuple(endSelectionPositionWithOffset, selectionAnchorWithOffset);
 
     selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
     for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
