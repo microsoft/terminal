@@ -24,7 +24,6 @@ namespace TerminalApp
 
 class TerminalApp::GlobalAppSettings final
 {
-
 public:
     GlobalAppSettings();
     ~GlobalAppSettings();
@@ -50,8 +49,8 @@ public:
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
-    winrt::Windows::Data::Json::JsonObject ToJson() const;
-    static GlobalAppSettings FromJson(winrt::Windows::Data::Json::JsonObject json);
+    Json::Value ToJson() const;
+    static GlobalAppSettings FromJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
@@ -73,5 +72,4 @@ private:
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
-
 };

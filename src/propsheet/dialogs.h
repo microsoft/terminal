@@ -21,6 +21,8 @@ Revision History:
 
 #pragma once
 
+// clang-format off
+
 #define DID_SETTINGS                100
 // unused 101
 // unused 102
@@ -159,6 +161,4 @@ Revision History:
 
 #define BM_TRUETYPE_ICON            1000
 
-
-
-
+// clang-format on

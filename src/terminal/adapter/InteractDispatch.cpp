@@ -14,10 +14,9 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // takes ownership of pConApi
-InteractDispatch::InteractDispatch(ConGetSet* const pConApi)
-    : _pConApi(THROW_IF_NULL_ALLOC(pConApi))
+InteractDispatch::InteractDispatch(ConGetSet* const pConApi) :
+    _pConApi(THROW_IF_NULL_ALLOC(pConApi))
 {
-
 }
 
 // Method Description:
@@ -108,25 +107,25 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
     //  MSFT:13271146 - QueryScreenSize
     switch (uiFunction)
     {
-        case DispatchTypes::WindowManipulationType::RefreshWindow:
-            if (cParams == 0)
+    case DispatchTypes::WindowManipulationType::RefreshWindow:
+        if (cParams == 0)
+        {
+            fSuccess = DispatchCommon::s_RefreshWindow(*_pConApi);
+        }
+        break;
+    case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+        if (cParams == 2)
+        {
+            fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);
+            if (fSuccess)
             {
-                fSuccess = DispatchCommon::s_RefreshWindow(*_pConApi);
+                DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
             }
-            break;
-        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-            if (cParams == 2)
-            {
-                fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);
-                if (fSuccess)
-                {
-                    DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
-                }
-            }
-            break;
-        default:
-            fSuccess = false;
-            break;
+        }
+        break;
+    default:
+        fSuccess = false;
+        break;
     }
 
     return fSuccess;
@@ -182,13 +181,13 @@ bool InteractDispatch::MoveCursor(const unsigned int row, const unsigned int col
 
             // Safely convert the UINT positions we were given into shorts (which is the size the console deals with)
             fSuccess = SUCCEEDED(UIntToShort(uiRow, &coordCursor.Y)) &&
-             SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
+                       SUCCEEDED(UIntToShort(uiCol, &coordCursor.X));
 
             if (fSuccess)
             {
                 // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
                 fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                    SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                           SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
                 if (fSuccess)
                 {

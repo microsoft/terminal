@@ -61,13 +61,11 @@ namespace Microsoft::Console::Interactivity
         virtual void UpdateWindowText() = 0;
 
         virtual void HorizontalScroll(const WORD wScrollCommand,
-                                        const WORD wAbsoluteChange) = 0;
+                                      const WORD wAbsoluteChange) = 0;
         virtual void VerticalScroll(const WORD wScrollCommand,
                                     const WORD wAbsoluteChange) = 0;
-        [[nodiscard]]
-        virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
-        [[nodiscard]]
-        virtual HRESULT UiaSetTextAreaFocus() = 0;
+        [[nodiscard]] virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
+        [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
         virtual RECT GetWindowRect() const = 0;
     };
 

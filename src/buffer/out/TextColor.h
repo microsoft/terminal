@@ -49,7 +49,6 @@ enum class ColorType : BYTE
 struct TextColor
 {
 public:
-
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
         _red{ 0 },
@@ -105,7 +104,6 @@ public:
         return _index;
     }
 
-
 private:
     ColorType _meta : 2;
     union
@@ -119,7 +117,8 @@ private:
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
-    template<typename TextColor> friend class WEX::TestExecution::VerifyOutputTraits;
+    template<typename TextColor>
+    friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
 
@@ -140,10 +139,12 @@ bool constexpr operator!=(const TextColor& a, const TextColor& b) noexcept
 
 #ifdef UNIT_TESTING
 
-namespace WEX {
-    namespace TestExecution {
+namespace WEX
+{
+    namespace TestExecution
+    {
         template<>
-        class VerifyOutputTraits < TextColor >
+        class VerifyOutputTraits<TextColor>
         {
         public:
             static WEX::Common::NoThrowString ToString(const TextColor& color)
@@ -166,4 +167,4 @@ namespace WEX {
 }
 #endif
 
-static_assert(sizeof(TextColor) <= 4*sizeof(BYTE), "We should only need 4B for an entire TextColor. Any more than that is just waste");
+static_assert(sizeof(TextColor) <= 4 * sizeof(BYTE), "We should only need 4B for an entire TextColor. Any more than that is just waste");

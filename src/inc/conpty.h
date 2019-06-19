@@ -9,18 +9,17 @@
 
 const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 
-HRESULT CreateConPty(const std::wstring& cmdline,       // _In_
-                     const unsigned short w,            // _In_
-                     const unsigned short h,            // _In_
-                     HANDLE* const hInput,              // _Out_
-                     HANDLE* const hOutput,             // _Out_
-                     HANDLE* const hSignal,             // _Out_
+HRESULT CreateConPty(const std::wstring& cmdline, // _In_
+                     const unsigned short w, // _In_
+                     const unsigned short h, // _In_
+                     HANDLE* const hInput, // _Out_
+                     HANDLE* const hOutput, // _Out_
+                     HANDLE* const hSignal, // _Out_
                      PROCESS_INFORMATION* const piPty); // _Out_
 
 bool SignalResizeWindow(const HANDLE hSignal,
                         const unsigned short w,
                         const unsigned short h);
-
 
 // Function Description:
 // - Creates a headless conhost in "pty mode" and launches the given commandline
@@ -45,14 +44,13 @@ bool SignalResizeWindow(const HANDLE hSignal,
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing format the
 //      commandline or failing to launch the conhost
-__declspec(noinline) inline
-HRESULT CreateConPty(const std::wstring& cmdline,
-                     const unsigned short w,
-                     const unsigned short h,
-                     HANDLE* const hInput,
-                     HANDLE* const hOutput,
-                     HANDLE* const hSignal,
-                     PROCESS_INFORMATION* const piPty)
+__declspec(noinline) inline HRESULT CreateConPty(const std::wstring& cmdline,
+                                                 const unsigned short w,
+                                                 const unsigned short h,
+                                                 HANDLE* const hInput,
+                                                 HANDLE* const hOutput,
+                                                 HANDLE* const hSignal,
+                                                 PROCESS_INFORMATION* const piPty)
 {
     // Create some anon pipes so we can pass handles down and into the console.
     // IMPORTANT NOTE:
@@ -72,7 +70,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     HANDLE signalPipeConhostSide;
 
     SECURITY_ATTRIBUTES sa;
-    sa = {0};
+    sa = { 0 };
     sa.nLength = sizeof(sa);
     sa.bInheritHandle = FALSE;
     sa.lpSecurityDescriptor = nullptr;
@@ -101,7 +99,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     conhostCmdline += L" -- ";
     conhostCmdline += cmdline;
 
-    STARTUPINFO si = {0};
+    STARTUPINFO si = { 0 };
     si.cb = sizeof(STARTUPINFOW);
     si.hStdInput = inPipeConhostSide;
     si.hStdOutput = outPipeConhostSide;
@@ -113,7 +111,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     {
         return E_OUTOFMEMORY;
     }
-    HRESULT hr = StringCchCopy(mutableCommandline.get(), conhostCmdline.length()+1, conhostCmdline.c_str());
+    HRESULT hr = StringCchCopy(mutableCommandline.get(), conhostCmdline.length() + 1, conhostCmdline.c_str());
     if (!SUCCEEDED(hr))
     {
         return hr;
@@ -122,14 +120,14 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     bool fSuccess = !!CreateProcessW(
         nullptr,
         mutableCommandline.get(),
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        true,       // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        // lpStartupInfo
-        piPty       // lpProcessInformation
+        nullptr, // lpProcessAttributes
+        nullptr, // lpThreadAttributes
+        true, // bInheritHandles
+        0, // dwCreationFlags
+        nullptr, // lpEnvironment
+        nullptr, // lpCurrentDirectory
+        &si, // lpStartupInfo
+        piPty // lpProcessInformation
     );
 
     CloseHandle(inPipeConhostSide);
@@ -147,8 +145,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
 // - h: The new height of the pty, in characters
 // Return Value:
 // - true if the resize succeeded, else false.
-__declspec(noinline) inline
-bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned short h)
+__declspec(noinline) inline bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned short h)
 {
     unsigned short signalPacket[3];
     signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;

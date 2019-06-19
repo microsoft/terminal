@@ -117,15 +117,13 @@ public:
 
     UINT TotalRowCount() const;
 
-    [[nodiscard]]
-    TextAttribute GetCurrentAttributes() const noexcept;
+    [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
     void SetCurrentAttributes(const TextAttribute currentAttributes) noexcept;
 
     void Reset();
 
-    [[nodiscard]]
-    HRESULT ResizeTraditional(const COORD newSize) noexcept;
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
 
     const UnicodeStorage& GetUnicodeStorage() const;
     UnicodeStorage& GetUnicodeStorage();
@@ -147,7 +145,6 @@ public:
                                            std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
 
 private:
-
     std::deque<ROW> _storage;
     Cursor _cursor;
 

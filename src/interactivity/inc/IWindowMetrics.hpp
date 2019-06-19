@@ -25,7 +25,7 @@ namespace Microsoft::Console::Interactivity
         virtual RECT GetMaxClientRectInPixels() = 0;
 
     protected:
-        IWindowMetrics() { }
+        IWindowMetrics() {}
 
         IWindowMetrics(IWindowMetrics const&) = delete;
         IWindowMetrics& operator=(IWindowMetrics const&) = delete;

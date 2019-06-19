@@ -31,7 +31,6 @@ void KeyEvent::SetKeyDown(const bool keyDown) noexcept
     _keyDown = keyDown;
 }
 
-
 void KeyEvent::SetRepeatCount(const WORD repeatCount) noexcept
 {
     _repeatCount = repeatCount;

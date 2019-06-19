@@ -17,7 +17,6 @@ namespace Microsoft::Console::VirtualTerminal
     class IStateMachineEngine
     {
     public:
-
         virtual ~IStateMachineEngine() = 0;
 
         virtual bool ActionExecute(const wchar_t wch) = 0;
@@ -43,17 +42,17 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool ActionIgnore() = 0;
 
         virtual bool ActionOscDispatch(const wchar_t wch,
-                                        const unsigned short sOscParam,
-                                        _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                                        const unsigned short cchOscString) = 0;
+                                       const unsigned short sOscParam,
+                                       _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
+                                       const unsigned short cchOscString) = 0;
 
         virtual bool ActionSs3Dispatch(const wchar_t wch,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams) = 0;
+                                       _In_reads_(cParams) const unsigned short* const rgusParams,
+                                       const unsigned short cParams) = 0;
 
         virtual bool FlushAtEndOfString() const = 0;
         virtual bool DispatchControlCharsFromEscape() const = 0;
-
+        virtual bool DispatchIntermediatesFromEscape() const = 0;
     };
 
     inline IStateMachineEngine::~IStateMachineEngine() {}

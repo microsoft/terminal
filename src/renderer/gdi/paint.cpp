@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 #include <vector>
 #include "gdirenderer.hpp"
@@ -18,11 +17,10 @@ using namespace Microsoft::Console::Render;
 // - <none>
 // Return Value:
 // - S_OK if we started to paint. S_FALSE if we didn't need to paint. HRESULT error code if painting didn't start successfully.
-[[nodiscard]]
-HRESULT GdiEngine::StartPaint() noexcept
+[[nodiscard]] HRESULT GdiEngine::StartPaint() noexcept
 {
     // If we have no handle, we don't need to paint. Return quickly.
-    RETURN_HR_IF(S_FALSE, INVALID_HANDLE_VALUE == _hwndTargetWindow);
+    RETURN_HR_IF(S_FALSE, !_IsWindowValid());
 
     // If we're already painting, we don't need to paint. Return quickly.
     RETURN_HR_IF(S_FALSE, _fPaintStarted);
@@ -64,8 +62,7 @@ HRESULT GdiEngine::StartPaint() noexcept
 // - <none>
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, error from Win32 windowing, or safemath error.
-[[nodiscard]]
-HRESULT GdiEngine::ScrollFrame() noexcept
+[[nodiscard]] HRESULT GdiEngine::ScrollFrame() noexcept
 {
     // If we don't have any scrolling to do, return early.
     RETURN_HR_IF(S_OK, 0 == _szInvalidScroll.cx && 0 == _szInvalidScroll.cy);
@@ -124,8 +121,7 @@ HRESULT GdiEngine::ScrollFrame() noexcept
 // - hwnd - Window handle to use for the DC properties when creating a memory DC and for checking the client area size.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]]
-HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
+[[nodiscard]] HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
 {
     RECT rcClient;
     RETURN_HR_IF(E_FAIL, !(GetClientRect(hwnd, &rcClient)));
@@ -191,8 +187,7 @@ HRESULT GdiEngine::_PrepareMemoryBitmap(const HWND hwnd) noexcept
 // - <none>
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]]
-HRESULT GdiEngine::EndPaint() noexcept
+[[nodiscard]] HRESULT GdiEngine::EndPaint() noexcept
 {
     // If we try to end a paint that wasn't started, it's invalid. Return.
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), !(_fPaintStarted));
@@ -230,8 +225,7 @@ HRESULT GdiEngine::EndPaint() noexcept
 // - <none>
 // Return Value:
 // - S_FALSE since we do nothing.
-[[nodiscard]]
-HRESULT GdiEngine::Present() noexcept
+[[nodiscard]] HRESULT GdiEngine::Present() noexcept
 {
     return S_FALSE;
 }
@@ -242,8 +236,7 @@ HRESULT GdiEngine::Present() noexcept
 // - prc - Rectangle to fill with color
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]]
-HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc) noexcept
+[[nodiscard]] HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc) noexcept
 {
     wil::unique_hbrush hbr(GetStockBrush(DC_BRUSH));
     RETURN_HR_IF_NULL(E_FAIL, hbr.get());
@@ -263,8 +256,7 @@ HRESULT GdiEngine::_PaintBackgroundColor(const RECT* const prc) noexcept
 // - <none>
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]]
-HRESULT GdiEngine::PaintBackground() noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBackground() noexcept
 {
     if (_psInvalidData.fErase)
     {
@@ -292,10 +284,9 @@ HRESULT GdiEngine::PaintBackground() noexcept
 // See: Win7: 390673, 447839 and then superseded by http://osgvsowi/638274 when FE/non-FE rendering condensed.
 //#define CONSOLE_EXTTEXTOUT_FLAGS ETO_OPAQUE | ETO_CLIPPED
 //#define MAX_POLY_LINES 80
-[[nodiscard]]
-HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                   const COORD coord,
-                                   const bool trimLeft) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                 const COORD coord,
+                                                 const bool trimLeft) noexcept
 {
     try
     {
@@ -326,7 +317,7 @@ HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const cluster
         {
             const auto& cluster = clusters.at(i);
 
-            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences. 
+            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
             // So replace anything complicated with a replacement character for drawing purposes.
             pwsPoly[i] = cluster.GetTextAsSingle();
             rgdxPoly[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
@@ -407,8 +398,7 @@ HRESULT GdiEngine::PaintBufferLine(std::basic_string_view<Cluster> const cluster
 // - <none>
 // Return Value:
 // - S_OK or E_FAIL if GDI failed.
-[[nodiscard]]
-HRESULT GdiEngine::_FlushBufferLines() noexcept
+[[nodiscard]] HRESULT GdiEngine::_FlushBufferLines() noexcept
 {
     HRESULT hr = S_OK;
 
@@ -449,8 +439,7 @@ HRESULT GdiEngine::_FlushBufferLines() noexcept
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]]
-HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
     // Return early if there are no lines to paint.
     RETURN_HR_IF(S_OK, GridLines::None == lines);
@@ -517,8 +506,7 @@ HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF co
 // - options - Parameters that affect the way that the cursor is drawn
 // Return Value:
 // - S_OK, suitable GDI HRESULT error, or safemath error, or E_FAIL in a GDI error where a specific error isn't set.
-[[nodiscard]]
-HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
@@ -641,8 +629,7 @@ HRESULT GdiEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noex
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or suitable GDI HRESULT error.
-[[nodiscard]]
-HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 

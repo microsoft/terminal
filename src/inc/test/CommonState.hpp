@@ -31,7 +31,6 @@ unit testing projects in the codebase without a bunch of overhead.
 class CommonState
 {
 public:
-
     static const SHORT s_csWindowWidth = 80;
     static const SHORT s_csWindowHeight = 80;
     static const SHORT s_csBufferWidth = 80;
@@ -157,7 +156,7 @@ public:
         try
         {
             std::unique_ptr<TextBuffer> textBuffer = std::make_unique<TextBuffer>(coordScreenBufferSize,
-                                                                                  TextAttribute{FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY},
+                                                                                  TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY },
                                                                                   uiCursorSize,
                                                                                   gci.pCurrentScreenBuffer->GetRenderTarget());
             if (textBuffer.get() == nullptr)
@@ -222,8 +221,7 @@ public:
         textBuffer.GetCursor().SetYPosition(cRowsToFill);
     }
 
-    [[nodiscard]]
-    NTSTATUS GetTextBufferInfoInitResult()
+    [[nodiscard]] NTSTATUS GetTextBufferInfoInitResult()
     {
         return m_ntstatusTextBufferInfo;
     }
@@ -241,7 +239,11 @@ private:
         // 9 characters, 6 spaces. 15 total
         // か = \x304b
         // き = \x304d
-        const PCWSTR pwszText = L"AB" L"\x304b\x304b" L"C" L"\x304d\x304d" L"DE      ";
+        const PCWSTR pwszText = L"AB"
+                                L"\x304b\x304b"
+                                L"C"
+                                L"\x304d\x304d"
+                                L"DE      ";
         const size_t length = wcslen(pwszText);
 
         std::vector<DbcsAttribute> attrs(length, DbcsAttribute());
@@ -288,7 +290,7 @@ private:
         }
     }
 
-    void FillBisect(ROW *pRow)
+    void FillBisect(ROW* pRow)
     {
         const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // length 80 string of text with bisecting characters at the beginning and end.

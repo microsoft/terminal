@@ -21,7 +21,6 @@ OutputCellView::OutputCellView(const std::wstring_view view,
     _textAttr(textAttr),
     _behavior(behavior)
 {
-
 }
 
 // Routine Description:
@@ -91,9 +90,9 @@ TextAttributeBehavior OutputCellView::TextAttrBehavior() const noexcept
 bool OutputCellView::operator==(const OutputCellView& it) const noexcept
 {
     return _view == it._view &&
-        _dbcsAttr == it._dbcsAttr &&
-        _textAttr == it._textAttr &&
-        _behavior == it._behavior;
+           _dbcsAttr == it._dbcsAttr &&
+           _textAttr == it._textAttr &&
+           _behavior == it._behavior;
 }
 
 // Routine Description:

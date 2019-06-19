@@ -21,11 +21,9 @@ namespace Microsoft::Console
     public:
         virtual ~ITerminalOutputConnection() = 0;
 
-        [[nodiscard]]
-        virtual HRESULT WriteTerminalUtf8(const std::string& str) = 0;
-        [[nodiscard]]
-        virtual HRESULT WriteTerminalW(const std::wstring& wstr) = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalUtf8(const std::string& str) = 0;
+        [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& wstr) = 0;
     };
 
-    inline Microsoft::Console::ITerminalOutputConnection::~ITerminalOutputConnection() { }
+    inline Microsoft::Console::ITerminalOutputConnection::~ITerminalOutputConnection() {}
 }

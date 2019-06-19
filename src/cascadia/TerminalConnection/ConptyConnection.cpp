@@ -22,7 +22,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _commandline = commandline;
         _initialRows = initialRows;
         _initialCols = initialCols;
-
     }
 
     winrt::event_token ConptyConnection::TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler)
@@ -97,7 +96,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         throw hresult_not_implemented();
     }
 
-
     // Function Description:
     // - Sample function which combines the creation of some basic anonymous pipes
     //      and passes them to CreatePseudoConsole.
@@ -112,7 +110,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                            _Out_ HANDLE* phOutput,
                                            _Out_ HPCON* phPC)
     {
-        if(phPC == NULL || phInput == NULL || phOutput == NULL)
+        if (phPC == NULL || phInput == NULL || phOutput == NULL)
         {
             return E_INVALIDARG;
         }
@@ -180,7 +178,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         bool fSuccess;
 
-        COORD dimensions{_initialCols, _initialRows};
+        COORD dimensions{ _initialCols, _initialRows };
         THROW_IF_FAILED(_CreatePseudoConsoleAndHandles(dimensions, 0, &_inPipe, &_outPipe, &_hPC));
 
         STARTUPINFOEX siEx;
@@ -195,32 +193,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_FAILED(_AttachPseudoConsole(_hPC, siEx.lpAttributeList));
 
-        std::wstring realCommand = _commandline.c_str();//winrt::to_string(_commandline);
-        if (realCommand == L""){
+        std::wstring realCommand = _commandline.c_str(); //winrt::to_string(_commandline);
+        if (realCommand == L"")
+        {
             realCommand = L"cmd.exe";
         }
 
         std::unique_ptr<wchar_t[]> mutableCommandline = std::make_unique<wchar_t[]>(realCommand.length() + 1);
         THROW_IF_NULL_ALLOC(mutableCommandline);
 
-        HRESULT hr = StringCchCopy(mutableCommandline.get(), realCommand.length()+1, realCommand.c_str());
+        HRESULT hr = StringCchCopy(mutableCommandline.get(), realCommand.length() + 1, realCommand.c_str());
         THROW_IF_FAILED(hr);
         fSuccess = !!CreateProcessW(
             nullptr,
             mutableCommandline.get(),
-            nullptr,    // lpProcessAttributes
-            nullptr,    // lpThreadAttributes
-            true,       // bInheritHandles
-            EXTENDED_STARTUPINFO_PRESENT,          // dwCreationFlags
-            nullptr,    // lpEnvironment
-            nullptr,    // lpCurrentDirectory
-            &siEx.StartupInfo,        // lpStartupInfo
-            &_piClient  // lpProcessInformation
+            nullptr, // lpProcessAttributes
+            nullptr, // lpThreadAttributes
+            true, // bInheritHandles
+            EXTENDED_STARTUPINFO_PRESENT, // dwCreationFlags
+            nullptr, // lpEnvironment
+            nullptr, // lpCurrentDirectory
+            &siEx.StartupInfo, // lpStartupInfo
+            &_piClient // lpProcessInformation
         );
         THROW_LAST_ERROR_IF(!fSuccess);
         DeleteProcThreadAttributeList(siEx.lpAttributeList);
     }
-
 
     DWORD WINAPI ConptyConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
@@ -243,7 +241,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Convert buffer to hstring
             char* pchStr = (char*)(buffer);
-            std::string str{pchStr, dwRead};
+            std::string str{ pchStr, dwRead };
             auto hstr = winrt::to_hstring(str);
 
             // Pass the output to our registered event handlers

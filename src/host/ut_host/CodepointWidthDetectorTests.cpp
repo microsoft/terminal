@@ -15,8 +15,7 @@ static constexpr std::wstring_view emoji = L"\xD83E\xDD22"; // U+1F922 nauseated
 static constexpr std::wstring_view ambiguous = L"\x414"; // U+0414 cyrillic capital de
 
 // codepoint and utf16 encoded string
-static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData =
-{
+static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData = {
     { 0x7, L"\a", CodepointWidth::Narrow }, // BEL
     { 0x20, L" ", CodepointWidth::Narrow },
     { 0x39, L"9", CodepointWidth::Narrow },
@@ -32,7 +31,6 @@ static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>>
 class CodepointWidthDetectorTests
 {
     TEST_CLASS(CodepointWidthDetectorTests);
-
 
     TEST_METHOD(CodepointWidthDetectDefersMapPopulation)
     {
@@ -120,5 +118,4 @@ class CodepointWidthDetectorTests
         widthDetector.NotifyFontChanged();
         VERIFY_ARE_EQUAL(0u, widthDetector._fallbackCache.size());
     }
-
 };

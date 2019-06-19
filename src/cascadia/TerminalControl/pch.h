@@ -30,4 +30,3 @@
 #include <winrt/Windows.ui.xaml.input.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
-

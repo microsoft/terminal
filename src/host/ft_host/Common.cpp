@@ -160,7 +160,8 @@ BOOL UnadjustWindowRectEx(
     RECT rc;
     SetRectEmpty(&rc);
     BOOL fRc = AdjustWindowRectEx(&rc, dwStyle, fMenu, dwExStyle);
-    if (fRc) {
+    if (fRc)
+    {
         prc->left -= rc.left;
         prc->top -= rc.top;
         prc->right -= rc.right;
@@ -194,10 +195,10 @@ bool Common::TestBufferSetup()
     // to the default output buffer at the same time.
 
     _hConsole = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-        0 /*dwShareMode*/,
-        NULL /*lpSecurityAttributes*/,
-        CONSOLE_TEXTMODE_BUFFER,
-        NULL /*lpReserved*/);
+                                          0 /*dwShareMode*/,
+                                          NULL /*lpSecurityAttributes*/,
+                                          CONSOLE_TEXTMODE_BUFFER,
+                                          NULL /*lpReserved*/);
 
     VERIFY_ARE_NOT_EQUAL(_hConsole, INVALID_HANDLE_VALUE, L"Creating our test screen buffer.");
 
@@ -240,7 +241,7 @@ CommonV1V2Helper::CommonV1V2Helper(const ForceV2States ForceV2StateDesired)
         _fRestoreOnExit = false;
         return;
     }
-    
+
     VERIFY_ARE_EQUAL(ERROR_SUCCESS, lstatus);
 
     Log::Comment(L"Backing up v1/v2 console state.");

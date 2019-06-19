@@ -47,8 +47,14 @@ namespace Microsoft::Console::Interactivity::Win32
 }
 
 #if DBG
-#define DBGCHARS(_params_)   { Tracing::s_TraceChars _params_ ; }
-#define DBGOUTPUT(_params_)  { Tracing::s_TraceOutput _params_ ; }
+#define DBGCHARS(_params_)              \
+    {                                   \
+        Tracing::s_TraceChars _params_; \
+    }
+#define DBGOUTPUT(_params_)              \
+    {                                    \
+        Tracing::s_TraceOutput _params_; \
+    }
 #else
 #define DBGCHARS(_params_)
 #define DBGOUTPUT(_params_)

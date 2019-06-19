@@ -23,7 +23,6 @@ namespace Microsoft::Console::VirtualTerminal
     class TerminalOutput sealed
     {
     public:
-
         TerminalOutput();
         ~TerminalOutput();
 
@@ -39,6 +38,5 @@ namespace Microsoft::Console::VirtualTerminal
         static const wchar_t s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayCharacters];
 
         const wchar_t* _GetTranslationTable() const;
-
     };
 }
