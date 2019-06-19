@@ -27,7 +27,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
     THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
     THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
 
-    // clamp Y values to be within mutable viewport bounds
+    // clamp Y values to be within mutable viewport height
     selectionAnchorWithOffset.Y = std::clamp(selectionAnchorWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
     endSelectionPositionWithOffset.Y = std::clamp(endSelectionPositionWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
 
