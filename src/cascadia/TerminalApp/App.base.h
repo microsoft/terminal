@@ -2,7 +2,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    template <typename D, typename... I>
+    template<typename D, typename... I>
     struct App_baseWithProvider : public App_base<D, ::winrt::Windows::UI::Xaml::Markup::IXamlMetadataProvider>
     {
         using IXamlType = ::winrt::Windows::UI::Xaml::Markup::IXamlType;
@@ -35,7 +35,6 @@ namespace winrt::TerminalApp::implementation
         }
     };
 
-    template <typename D, typename... I>
+    template<typename D, typename... I>
     using AppT2 = App_baseWithProvider<D, I...>;
 }
-

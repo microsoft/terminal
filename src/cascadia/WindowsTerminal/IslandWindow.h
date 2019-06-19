@@ -27,7 +27,6 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
 protected:
-
     void ForceResize()
     {
         // Do a quick resize to force the island to paint

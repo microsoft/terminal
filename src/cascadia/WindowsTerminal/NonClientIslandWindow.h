@@ -32,15 +32,13 @@ public:
 
     virtual void OnSize(const UINT width, const UINT height) override;
 
-    [[nodiscard]]
-    virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
+    [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
     MARGINS GetFrameMargins() const noexcept;
 
     void OnAppInitialized(winrt::TerminalApp::App app) override;
 
 private:
-
     wil::unique_hbrush _backgroundBrush;
     wil::unique_hrgn _dragBarRegion;
 
@@ -50,16 +48,14 @@ private:
 
     RECT GetDragAreaRect() const noexcept;
 
-    [[nodiscard]]
-    LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
 
-    [[nodiscard]]
-    HRESULT _UpdateFrameMargins() const noexcept;
+    [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
-    RECT GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested);
+    RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 };

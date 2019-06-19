@@ -11,8 +11,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    MinMaxCloseControl::MinMaxCloseControl(uint64_t hWnd)
-        : _window(reinterpret_cast<HWND>(hWnd))
+    MinMaxCloseControl::MinMaxCloseControl(uint64_t hWnd) :
+        _window(reinterpret_cast<HWND>(hWnd))
     {
         const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///MinMaxCloseControl.xaml" };
         winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);

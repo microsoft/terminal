@@ -25,7 +25,7 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
 }
 
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
-    IslandWindow{ },
+    IslandWindow{},
     _isMaximized{ false }
 {
 }
@@ -90,11 +90,11 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     // you' have a few pixels of the window border on the sides while maximized,
     // which most apps do not have.
     const auto bordersWidth = _isMaximized ?
-        (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
-        (dragX * 2);
+                                  (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
+                                  (dragX * 2);
     const auto bordersHeight = _isMaximized ?
-        (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
-        (dragY * 2);
+                                   (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
+                                   (dragY * 2);
 
     const auto windowsWidth = width - bordersWidth;
     const auto windowsHeight = height - bordersHeight;
@@ -329,10 +329,9 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 // Return Value:
 // - The return value is the result of the message processing and depends on the
 //   message sent.
-[[nodiscard]]
-LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
-    WPARAM const wParam,
-    LPARAM const lParam) noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::MessageHandler(UINT const message,
+                                                            WPARAM const wParam,
+                                                            LPARAM const lParam) noexcept
 {
     LRESULT lRet = 0;
 
@@ -606,7 +605,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         // window, and then process the restriction in a few window messages.
         if (((int)dpiOfMaximum == _currentDpi) &&
             ((suggestedWidth > maxWidth) ||
-            (suggestedHeight > maxHeight)))
+             (suggestedHeight > maxHeight)))
         {
             auto offset = 0;
             // Determine which side of the window to use for the offset
