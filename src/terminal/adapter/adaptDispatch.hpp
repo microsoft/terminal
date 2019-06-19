@@ -72,6 +72,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool SetCursorKeysMode(const bool fApplicationMode) override; // DECCKM
         bool SetKeypadMode(const bool fApplicationMode) override; // DECKPAM, DECKPNM
         bool EnableCursorBlinking(const bool bEnable) override; // ATT610
+        bool SetOriginMode(const bool fRelativeMode) override; // DECOM
         bool SetTopBottomScrollingMargins(const SHORT sTopMargin,
                                           const SHORT sBottomMargin) override; // DECSTBM
         bool ReverseLineFeed() override; // RI
@@ -148,6 +149,9 @@ namespace Microsoft::Console::VirtualTerminal
 
         COORD _coordSavedCursor;
         SMALL_RECT _srScrollMargins;
+
+        bool _fIsOriginModeRelative;
+        bool _fIsSavedOriginModeRelative;
 
         bool _fIsSetColumnsEnabled;
 

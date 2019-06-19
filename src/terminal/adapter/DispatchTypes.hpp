@@ -75,6 +75,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         DECCKM_CursorKeysMode = 1,
         DECCOLM_SetNumberOfColumns = 3,
+        DECOM_OriginMode = 6,
         ATT610_StartCursorBlink = 12,
         DECTCEM_TextCursorEnableMode = 25,
         VT200_MOUSE_MODE = 1000,
