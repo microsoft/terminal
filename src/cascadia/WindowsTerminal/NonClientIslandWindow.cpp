@@ -45,7 +45,7 @@ void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
     _dragBar = app.GetDragBar();
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
-    __super::OnAppInitialized(app);
+    IslandWindow::OnAppInitialized(app);
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
