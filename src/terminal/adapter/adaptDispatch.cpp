@@ -330,10 +330,12 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
             {
                 uiRow = *puiRow - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
 
-                // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+                // If the origin mode is relative, line numbers start at top margin of the scrolling region,
+                // and cannot move below the bottom margin of the scrolling region.
                 if (_fIsOriginModeRelative)
                 {
                     uiRow += _srScrollMargins.Top;
+                    uiRow = std::min<decltype(uiRow)>(uiRow, _srScrollMargins.Bottom);
                 }
             }
             else
