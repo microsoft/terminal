@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
         void _UpdateTitle(std::shared_ptr<Tab> tab);
 
-        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
+        void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 

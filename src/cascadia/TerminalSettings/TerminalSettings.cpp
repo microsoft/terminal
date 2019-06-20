@@ -13,6 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _defaultForeground{ DEFAULT_FOREGROUND_WITH_ALPHA },
         _defaultBackground{ DEFAULT_BACKGROUND_WITH_ALPHA },
         _colorTable{},
+        _tabTitle{},
         _historySize{ DEFAULT_HISTORY_SIZE },
         _initialRows{ 30 },
         _initialCols{ 80 },
@@ -63,6 +64,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     {
         THROW_HR_IF(E_INVALIDARG, index > _colorTable.size());
         _colorTable[index] = value;
+    }
+
+    hstring TerminalSettings::TabTitle()
+    {
+        return _tabTitle;
+    }
+
+    void TerminalSettings::TabTitle(hstring const& value)
+    {
+        _tabTitle = value;
     }
 
     int32_t TerminalSettings::HistorySize()

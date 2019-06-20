@@ -21,6 +21,7 @@ static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
+static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -71,6 +72,7 @@ Profile::Profile(const winrt::guid& guid) :
     _defaultForeground{},
     _defaultBackground{},
     _colorTable{},
+    _tabTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -200,6 +202,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
     }
 
+    if (_tabTitle)
+    {
+        terminalSettings.TabTitle(_tabTitle.value());
+    }
+
     return terminalSettings;
 }
 
@@ -269,6 +276,11 @@ Json::Value Profile::ToJson() const
     {
         const auto icon = winrt::to_string(_icon.value());
         root[JsonKey(IconKey)] = icon;
+    }
+
+    if (_tabTitle)
+    {
+        root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
     }
 
     if (_startingDirectory)
@@ -368,6 +380,10 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+    }
+    if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
+    {
+        result._tabTitle = GetWstringFromJson(tabTitle);
     }
 
     // Control Settings
@@ -477,6 +493,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value();
 }
 
+void Profile::SetTabTitle(std::wstring tabTitle) noexcept
+{
+    _tabTitle = tabTitle;
+}
+
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
@@ -506,6 +527,18 @@ std::wstring_view Profile::GetIconPath() const noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+bool Profile::HasTabTitle() const noexcept
+{
+    return _tabTitle.has_value();
+}
+
+std::wstring_view Profile::GetTabTitle() const noexcept
+{
+    return HasTabTitle() ?
+               std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
+               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::GetCloseOnExit() const noexcept

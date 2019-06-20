@@ -31,6 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void DefaultBackground(uint32_t value);
         uint32_t GetColorTableEntry(int32_t index) const;
         void SetColorTableEntry(int32_t index, uint32_t value);
+        hstring TabTitle();
+        void TabTitle(hstring const& value);
         int32_t HistorySize();
         void HistorySize(int32_t value);
         int32_t InitialRows();
@@ -87,6 +89,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _defaultForeground;
         uint32_t _defaultBackground;
         std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
+        hstring _tabTitle;
         int32_t _historySize;
         int32_t _initialRows;
         int32_t _initialCols;

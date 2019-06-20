@@ -668,6 +668,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& tab : _tabs)
         {
             _UpdateTabIcon(tab);
+            _UpdateTitle(tab);
         }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
@@ -713,14 +714,34 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
-        // TODO #608: If the settings don't want the terminal's text in the
-        // tab, then display something else.
-        tab->SetTabText(newTabTitle);
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        auto tabTitle = matchingProfile->GetTabTitle();
+
+
+
+            // TODO #608: If the settings don't want the terminal's text in the
+            // tab, then display something else.
+
+            if (tabTitle.empty())
         {
-            _titleChangeHandlers(newTabTitle);
+            tab->SetTabText(newTabTitle);
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(newTabTitle);
+            }
+        }
+        else
+        {
+            tab->SetTabText(winrt::to_hstring(tabTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(tabTitle);
+            }
         }
     }
 
@@ -854,7 +875,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
+    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab, TerminalSettings settings)
     {
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
@@ -866,7 +887,7 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+        term.TitleChanged([this, weakTabPtr, settings](auto newTitle) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -878,7 +899,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        term.GetControl().GotFocus([this, weakTabPtr, settings](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -909,13 +930,13 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTab);
+        _RegisterTerminalEvents(term, newTab, settings);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
@@ -1258,7 +1279,7 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab);
+        _RegisterTerminalEvents(newControl, focusedTab, controlSettings);
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
