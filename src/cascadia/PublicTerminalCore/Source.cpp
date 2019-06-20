@@ -198,3 +198,9 @@ void _stdcall DpiChanged(void* terminal, int newDpi)
     auto publicTerminal = (HwndTerminal*)terminal;
     publicTerminal->_UpdateFont(newDpi);
 }
+
+void _stdcall UserScroll(void* terminal, int viewTop)
+{
+    auto publicTerminal = (HwndTerminal*)terminal;
+    publicTerminal->_terminal->UserScrollViewport(viewTop);
+}

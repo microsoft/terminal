@@ -26,6 +26,9 @@ namespace WpfTerminalControl
         [DllImport("PublicTerminalCore.DLL.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void RegisterScrollCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]ScrollCallback callback);
 
+        [DllImport("PublicTerminalCore.DLL.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void UserScroll(IntPtr terminal, int viewTop);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
 
