@@ -20,6 +20,9 @@
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="TSFInputControl.h">
+      <DependentUpon>TSFInputControl.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -28,10 +31,14 @@
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="TSFInputControl.cpp">
+      <DependentUpon>TSFInputControl.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
+    <Midl Include="TSFInputControl.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -53,7 +60,7 @@
       <AdditionalDependencies>dwrite.lib;dxgi.lib;d2d1.lib;d3d11.lib;shcore.lib;winmm.lib;pathcch.lib;propsys.lib;uiautomationcore.lib;Shlwapi.lib;ntdll.lib;user32.lib;kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;$(OpenConsoleDir)src\types\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <PropertyGroup>

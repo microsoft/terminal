@@ -39,9 +39,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
-        _cursorTimer{}
+        _cursorTimer{},
+        _tsfInputControl { nullptr }
     {
         _Create();
+    }
+
+    inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
+    {
+        winrt::Windows::UI::Color color;
+        //color.A = static_cast<BYTE>(colorref >> 24);
+        color.R = GetRValue(colorref);
+        color.G = GetGValue(colorref);
+        color.B = GetBValue(colorref);
+        return color;
     }
 
     void TermControl::_Create()
@@ -75,6 +86,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.SmallChange(1);
         _scrollBar.LargeChange(4);
         _scrollBar.Visibility(Visibility::Visible);
+
+        _tsfInputControl = TSFInputControl();
+        _tsfInputControl.CompositionCompleted({ this, &TermControl::_CompositionCompleted });
+        _tsfInputControl.CurrentCursorPosition({ this, &TermControl::_CurrentCursorPositionHandler });
+        _tsfInputControl.CurrentFontInfo({ this, &TermControl::_FontInfoHandler });
+        container.Children().Append(_tsfInputControl);
 
         // Create the SwapChainPanel that will display our content
         Controls::SwapChainPanel swapChainPanel;
@@ -149,6 +166,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 auto lock = _terminal->LockForWriting();
                 _DoResize(width, height);
             }
+
+            // set TSF Foreground
+            Media::SolidColorBrush foregroundBrush{};
+            foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+            _tsfInputControl.Foreground(foregroundBrush);
+
+            // set TSF Font Family
+            //_tsfInputControl.FontFamily(Media::FontFamily(_actualFont.GetFaceName()));
+            //_tsfInputControl.FontWidth(_actualFont.GetSize().X);
+            //_tsfInputControl.FontHeight(_actualFont.GetSize().Y);
         });
     }
 
@@ -186,6 +213,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, 10, { 0, fontHeight }, CP_UTF8, false };
         _desiredFont = { _actualFont };
+
+        // set TSF Foreground
+        Media::SolidColorBrush foregroundBrush{};
+        foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
+        _tsfInputControl.Foreground(foregroundBrush);
     }
 
     // Method Description:
@@ -985,6 +1017,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
         _focused = true;
+        
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusEnter();
+        }
 
         if (_cursorTimer.has_value())
         {
@@ -1003,6 +1040,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
         _focused = false;
+
+        if (_tsfInputControl != nullptr)
+        {
+            _tsfInputControl.NotifyFocusLeave();
+        }
 
         if (_cursorTimer.has_value())
         {
@@ -1542,7 +1584,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return terminalPosition;
     }
 
-    // clang-format off
+    void TermControl::_CompositionCompleted(winrt::hstring text)
+    {
+        _connection.WriteInput(text);
+    }
+
+    void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
+    {
+        COORD cursorPos = _terminal->GetCursorPosition();
+        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
+        eventArgs.CurrentPosition(p);
+    }
+
+    void TermControl::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
+    {
+        COORD cursorPos = _actualFont.GetSize();
+        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
+        eventArgs.FontSize(p);
+        eventArgs.FontFace(_actualFont.GetFaceName());
+    }
+
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
