@@ -51,6 +51,9 @@ namespace winrt::TerminalApp::implementation
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
+
+        // See GH#1339. This is a workaround for MSFT:22116519
+        // We need this to prevent an occasional crash on teardown
         AddRef();
         m_inner.as<::IUnknown>()->Release();
     }
