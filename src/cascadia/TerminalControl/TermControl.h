@@ -10,7 +10,7 @@
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -73,6 +73,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
+        TSFInputControl _tsfInputControl;
+
         event_token _connectionOutputEventToken;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
@@ -144,6 +146,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+
+        // TSFInputControl Handlers
+        void _CompositionCompleted(winrt::hstring text);
+        void _CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs);
+        void _FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs);
     };
 }
 
