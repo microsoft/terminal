@@ -720,12 +720,10 @@ namespace winrt::TerminalApp::implementation
 
         auto tabTitle = matchingProfile->GetTabTitle();
 
+        // TODO #608: If the settings don't want the terminal's text in the
+        // tab, then display something else.
 
-
-            // TODO #608: If the settings don't want the terminal's text in the
-            // tab, then display something else.
-
-            if (tabTitle.empty())
+        if (tabTitle.empty())
         {
             tab->SetTabText(newTabTitle);
             if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
