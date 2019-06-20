@@ -51,6 +51,8 @@ namespace winrt::TerminalApp::implementation
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
+        AddRef();
+        m_inner.as<::IUnknown>()->Release();
     }
 
     // Method Description:
