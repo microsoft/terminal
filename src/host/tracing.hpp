@@ -17,6 +17,8 @@ Author(s):
 
 #pragma once
 
+#include <functional>
+
 #include "../types/inc/Viewport.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
