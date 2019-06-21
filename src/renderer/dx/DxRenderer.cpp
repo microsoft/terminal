@@ -180,6 +180,7 @@ DxEngine::~DxEngine()
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
+        // DXGI_SCALING_NONE is only valid on Windows 8+
         if (IsWindows8OrGreater())
         {
             SwapChainDesc.Scaling = DXGI_SCALING_NONE;
@@ -869,19 +870,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                 _glyphCell.cx);
 
         // Get the baseline for this font as that's where we draw from
-        DWRITE_LINE_SPACING_METHOD spacingMethod;
-        float spacing;
-        float baseline;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacingMethod, &spacing, &baseline));
+        DWRITE_LINE_SPACING spacing;
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
                                _d2dBrushForeground.Get(),
                                _d2dBrushBackground.Get(),
                                _dwriteFactory.Get(),
-                               spacingMethod,
                                spacing,
-                               baseline,
                                D2D1::SizeF(gsl::narrow<FLOAT>(_glyphCell.cx), gsl::narrow<FLOAT>(_glyphCell.cy)),
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
@@ -1450,8 +1447,8 @@ float DxEngine::GetScaling() const noexcept
         const float descent = (fontSize * fontMetrics.descent) / fontMetrics.designUnitsPerEm;
 
         // We're going to build a line spacing object here to track all of this data in our format.
-        DWRITE_LINE_SPACING_METHOD lineSpacingMethod = {};
-        lineSpacingMethod = DWRITE_LINE_SPACING_METHOD_UNIFORM;
+        DWRITE_LINE_SPACING lineSpacing = {};
+        lineSpacing.method = DWRITE_LINE_SPACING_METHOD_UNIFORM;
 
         // We need to make sure the baseline falls on a round pixel (not a fractional pixel).
         // If the baseline is fractional, the text appears blurry, especially at small scales.
@@ -1471,8 +1468,8 @@ float DxEngine::GetScaling() const noexcept
         //
         const auto fullPixelAscent = ceil(ascent);
         const auto fullPixelDescent = ceil(descent);
-        const auto lineSpacing = fullPixelAscent + fullPixelDescent;
-        const auto baseline = fullPixelAscent;
+        lineSpacing.height = fullPixelAscent + fullPixelDescent;
+        lineSpacing.baseline = fullPixelAscent;
 
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math above.
@@ -1496,7 +1493,7 @@ float DxEngine::GetScaling() const noexcept
 
         fontFace = face;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacingMethod, lineSpacing, baseline));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
@@ -1504,7 +1501,7 @@ float DxEngine::GetScaling() const noexcept
         // of hit testing math and other such multiplication/division.
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
-        coordSize.Y = gsl::narrow<SHORT>(lineSpacing);
+        coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
         const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
         const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);

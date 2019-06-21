@@ -238,7 +238,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     // Then make a copy for the baseline origin (which is part way down the left side of the text, not the top or bottom).
     // We'll use this baseline Origin for drawing the actual text.
     D2D1_POINT_2F baselineOrigin = origin;
-    baselineOrigin.y += drawingContext->baseline;
+    baselineOrigin.y += drawingContext->spacing.baseline;
 
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
