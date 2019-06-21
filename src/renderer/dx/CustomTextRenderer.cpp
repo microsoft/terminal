@@ -260,6 +260,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     // Now go onto drawing the text.
 
     // First check if we want a color font and try to extract color emoji first.
+    // Color emoji are only available on Windows 10+
     if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && IsWindows10OrGreater())
     {
         ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
