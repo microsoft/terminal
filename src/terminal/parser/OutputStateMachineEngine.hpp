@@ -10,6 +10,8 @@ Abstract:
 */
 #pragma once
 
+#include <functional>
+
 #include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
