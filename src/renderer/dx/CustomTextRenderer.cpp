@@ -264,7 +264,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && IsWindows10OrGreater())
     {
         ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
-        RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
+        RETURN_IF_FAILED(d2dContext.As(&d2dContext4));
 
         ::Microsoft::WRL::ComPtr<IDWriteFactory4> dwriteFactory4;
         RETURN_IF_FAILED(drawingContext->dwriteFactory->QueryInterface(dwriteFactory4.GetAddressOf()));
