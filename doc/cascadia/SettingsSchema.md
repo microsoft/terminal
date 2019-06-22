@@ -41,7 +41,7 @@ Properties listed below are specific to each unique profile.
 | `scrollbarState` | Optional | String | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
 
 ## Schemes
-Properties listed below are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.
+Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
 
 | Property | Necessity | Type | Description |
 | -------- | ---- | ----------- | ----------- |
