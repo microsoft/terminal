@@ -55,11 +55,9 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## Where can I download Windows Terminal?
 
-### There are no binaries to download quite yet. 
+### The Windows Terminal preview can be downloaded from the Microsoft Store.
 
-The Windows Terminal is in the _very early_ alpha stage, and not ready for the general public quite yet. If you want to jump in early, you can try building it yourself from source. 
-
-Otherwise, you'll need to wait until Mid-June for an official preview build to drop.
+[https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
