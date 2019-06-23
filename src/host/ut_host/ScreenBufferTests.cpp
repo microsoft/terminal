@@ -1013,6 +1013,22 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     seq = L"\x1b[!p";
     stateMachine.ProcessString(&seq[0], seq.length());
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
+
+    Log::Comment(
+        L"Set the origin mode, some margins, and move the cursor to 2,2.\n"
+        L"The position should be relative to the top-left of the margin area.");
+    stateMachine.ProcessString(L"\x1b[?6h");
+    stateMachine.ProcessString(L"\x1b[5;10r");
+    stateMachine.ProcessString(L"\x1b[2;2H");
+    VERIFY_ARE_EQUAL(COORD({ 1, 5 }), cursor.GetPosition());
+
+    Log::Comment(
+        L"Execute a soft reset, reapply the margins, and move the cursor to 2,2.\n"
+        L"The position should now be relative to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1b[!p");
+    stateMachine.ProcessString(L"\x1b[5;10r");
+    stateMachine.ProcessString(L"\x1b[2;2H");
+    VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 }
 
 void ScreenBufferTests::VtScrollMarginsNewlineColor()
