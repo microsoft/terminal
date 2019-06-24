@@ -26,7 +26,10 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
+
+        // Gets the current dragglable area in the non client region of the top level window
         Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
+
         void Create(uint64_t hParentWnd);
         void LoadSettings();
 
