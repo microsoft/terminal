@@ -82,6 +82,10 @@
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\Microsoft.Toolkit.Win32.UI.XamlHost.dll">
+      <DeploymentContent>true</DeploymentContent>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </NativeReferenceFile>
     <!--
       the packaging project wont recurse through our dependencies, you have to
       make sure that if you add a cppwinrt dependency to any of these projects,
