@@ -46,6 +46,8 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
+        // See GH#1339. This is a workaround for MSFT:22116519
+        // We need this to prevent an occasional crash on teardown
         AddRef();
         m_inner.as<::IUnknown>()->Release();
     }
@@ -265,7 +267,11 @@ namespace winrt::TerminalApp::implementation
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
-        _ShowDialog(winrt::box_value(title), winrt::box_value(aboutText), buttonText);
+        Controls::TextBlock aboutTextBlock;
+        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.IsTextSelectionEnabled(true);
+
+        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
     }
 
     // Method Description:

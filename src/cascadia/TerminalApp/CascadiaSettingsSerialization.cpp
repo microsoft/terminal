@@ -65,6 +65,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         }
         resultPtr = FromJson(root);
 
+        if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
+        {
+            throw winrt::hresult_invalid_argument();
+        }
+
         if (saveOnLoad)
         {
             // Logically compare the json we've parsed from the file to what

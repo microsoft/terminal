@@ -5,6 +5,8 @@
 
 #include "../../renderer/inc/RenderEngineBase.hpp"
 
+#include <functional>
+
 #include <dxgi.h>
 #include <dxgi1_2.h>
 
