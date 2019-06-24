@@ -262,7 +262,11 @@ namespace winrt::TerminalApp::implementation
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
-        _ShowDialog(winrt::box_value(title), winrt::box_value(aboutText), buttonText);
+        Controls::TextBlock aboutTextBlock;
+        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.IsTextSelectionEnabled(true);
+
+        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
     }
 
     // Method Description:
