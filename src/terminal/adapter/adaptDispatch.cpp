@@ -39,13 +39,13 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
                              AdaptDefaults* const pDefaults) :
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
+    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
     _TermOutput()
 {
-    _fIsOriginModeRelative = false; // by default, the DECOM origin mode is absolute.
-    _fIsSavedOriginModeRelative = false; // as is the origin mode of the saved cursor position.
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
