@@ -36,16 +36,9 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
-    void Initialize() override;
-
-    void OnAppInitialized() override;
-    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
-    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
+    void OnAppInitialized(winrt::TerminalApp::App app) override;
 
 private:
-    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
-    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
-
     wil::unique_hbrush _backgroundBrush;
     wil::unique_hrgn _dragBarRegion;
 
@@ -61,7 +54,6 @@ private:
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
-    void _UpdateDragRegion();
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
