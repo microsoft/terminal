@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "gdirenderer.hpp"
@@ -35,8 +34,7 @@ SMALL_RECT GdiEngine::GetDirtyRectInChars()
 // - pResult - recieves return value, True if it is full-width (2 wide). False if it is half-width (1 wide).
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
+[[nodiscard]] HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
     bool isFullWidth = false;
 
@@ -80,8 +78,7 @@ HRESULT GdiEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* 
 // - prc - Pixel region (RECT) for drawing to the client surface.
 // Return Value:
 // - S_OK or safe math failure value.
-[[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept
+[[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const prc) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -104,8 +101,7 @@ HRESULT GdiEngine::_ScaleByFont(const SMALL_RECT* const psr, _Out_ RECT* const p
 // - ppt - Pixel coordinate (POINT) for drawing to the client surface.
 // Return Value:
 // - S_OK or safe math failure value.
-[[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept
+[[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pPoint) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -126,8 +122,7 @@ HRESULT GdiEngine::_ScaleByFont(const COORD* const pcoord, _Out_ POINT* const pP
 // - psr - Character region (SMALL_RECT) from the console text buffer.
 // Return Value:
 // - S_OK or safe math failure value.
-[[nodiscard]]
-HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept
+[[nodiscard]] HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const psr) const noexcept
 {
     COORD const coordFontSize = _GetFontSize();
     RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), coordFontSize.X == 0 || coordFontSize.Y == 0);
@@ -154,7 +149,6 @@ HRESULT GdiEngine::_ScaleByFont(const RECT* const prc, _Out_ SMALL_RECT* const p
     // (8px + 8px) / 8px = 2ch for the Right measurement. Now we're redrawing 2 chars when we only needed to do one because this caused us to effectively round up.
     // C Conclusion = this works because our addition can never completely push us over to adding an additional ch to the rectangle.
     // So the algorithm below is using the C conclusion's math.
-
 
     // Do math as long and fit to short at the end.
     LONG lRight = prc->right;

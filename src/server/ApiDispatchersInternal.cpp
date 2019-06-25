@@ -14,15 +14,16 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-[[nodiscard]]
-HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+using Microsoft::Console::Interactivity::ServiceLocator;
+
+[[nodiscard]] HRESULT ApiDispatchers::ServerDeprecatedApi(_Inout_ CONSOLE_API_MSG* const m, _Inout_ BOOL* const /*pbReplyPending*/)
 {
     // log if we hit a deprecated API.
     RETURN_HR_MSG(E_NOTIMPL, "Deprecated API attempted: 0x%08x", m->Descriptor.Function);
 }
 
-[[nodiscard]]
-HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+[[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG* const m,
+                                                                  _Inout_ BOOL* const /*pbReplyPending*/)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     PCONSOLE_GETCONSOLEPROCESSLIST_MSG const a = &m->u.consoleMsgL3.GetConsoleProcessList;
@@ -55,8 +56,8 @@ HRESULT ApiDispatchers::ServerGetConsoleProcessList(_Inout_ CONSOLE_API_MSG * co
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+[[nodiscard]] HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG* const m,
+                                                             _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_LANGID_MSG* const a = &m->u.consoleMsgL1.GetConsoleLangId;
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::GetConsoleLangId);
@@ -65,8 +66,8 @@ HRESULT ApiDispatchers::ServerGetConsoleLangId(_Inout_ CONSOLE_API_MSG * const m
     return m->_pApiRoutines->GetConsoleLangIdImpl(a->LangId);
 }
 
-[[nodiscard]]
-HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG * const m, _Inout_ BOOL* const /*pbReplyPending*/)
+[[nodiscard]] HRESULT ApiDispatchers::ServerGenerateConsoleCtrlEvent(_Inout_ CONSOLE_API_MSG* const m,
+                                                                     _Inout_ BOOL* const /*pbReplyPending*/)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     CONSOLE_CTRLEVENT_MSG* const a = &m->u.consoleMsgL2.GenerateConsoleCtrlEvent;

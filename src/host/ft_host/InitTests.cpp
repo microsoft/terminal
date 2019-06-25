@@ -3,6 +3,9 @@
 
 #include "precomp.h"
 
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
 
@@ -99,7 +102,7 @@ MODULE_SETUP(ModuleSetup)
     // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
     // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.
     PWSTR str = new WCHAR[cchNeeded];
-    auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; }});
+    auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; } });
 
     VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 

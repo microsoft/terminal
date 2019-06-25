@@ -34,6 +34,7 @@ class InitTests
     // See the LOAD BEARING CODE comment inside GetConsoleLangId or the investigation results in MSFT: 9808579 for more detail.
     TEST_METHOD(TestGetConsoleLangId)
     {
+        using Microsoft::Console::Interactivity::ServiceLocator;
         BEGIN_TEST_METHOD_PROPERTIES()
             // https://msdn.microsoft.com/en-us/library/windows/desktop/dd317756(v=vs.85).aspx
             // The interesting ones for us are:
@@ -90,6 +91,5 @@ class InitTests
         {
             VERIFY_ARE_EQUAL(STATUS_NOT_SUPPORTED, status);
         }
-
     }
 };

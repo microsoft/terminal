@@ -16,9 +16,7 @@ Author(s):
 
 #include "..\renderer\inc\IRenderData.hpp"
 
-using namespace Microsoft::Console::Render;
-
-class RenderData final : public IRenderData
+class RenderData final : public Microsoft::Console::Render::IRenderData
 {
 public:
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
@@ -38,7 +36,7 @@ public:
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override;
+    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
@@ -48,5 +46,4 @@ public:
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
-
 };

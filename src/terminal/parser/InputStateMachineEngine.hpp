@@ -42,33 +42,33 @@ namespace Microsoft::Console::VirtualTerminal
                                      size_t const cch) override;
 
         bool ActionEscDispatch(const wchar_t wch,
-                            const unsigned short cIntermediate,
-                            const wchar_t wchIntermediate) override;
+                               const unsigned short cIntermediate,
+                               const wchar_t wchIntermediate) override;
 
         bool ActionCsiDispatch(const wchar_t wch,
-                            const unsigned short cIntermediate,
-                            const wchar_t wchIntermediate,
-                            _In_reads_(cParams) const unsigned short* const rgusParams,
-                            const unsigned short cParams);
+                               const unsigned short cIntermediate,
+                               const wchar_t wchIntermediate,
+                               _In_reads_(cParams) const unsigned short* const rgusParams,
+                               const unsigned short cParams);
 
         bool ActionClear() override;
 
         bool ActionIgnore() override;
 
         bool ActionOscDispatch(const wchar_t wch,
-                            const unsigned short sOscParam,
-                            _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
-                            const unsigned short cchOscString) override;
+                               const unsigned short sOscParam,
+                               _Inout_updates_(cchOscString) wchar_t* const pwchOscStringBuffer,
+                               const unsigned short cchOscString) override;
 
         bool ActionSs3Dispatch(const wchar_t wch,
-                            _In_reads_(cParams) const unsigned short* const rgusParams,
-                            const unsigned short cParams) override;
+                               _In_reads_(cParams) const unsigned short* const rgusParams,
+                               const unsigned short cParams) override;
 
         bool FlushAtEndOfString() const override;
         bool DispatchControlCharsFromEscape() const override;
+        bool DispatchIntermediatesFromEscape() const override;
 
     private:
-
         const std::unique_ptr<IInteractDispatch> _pDispatch;
         bool _lookingForDSR;
 
@@ -125,17 +125,20 @@ namespace Microsoft::Console::VirtualTerminal
             F12 = 24,
         };
 
-        struct CSI_TO_VKEY {
+        struct CSI_TO_VKEY
+        {
             CsiActionCodes Action;
             short vkey;
         };
 
-        struct GENERIC_TO_VKEY {
+        struct GENERIC_TO_VKEY
+        {
             GenericKeyIdentifiers Identifier;
             short vkey;
         };
 
-        struct SS3_TO_VKEY {
+        struct SS3_TO_VKEY
+        {
             Ss3ActionCodes Action;
             short vkey;
         };
@@ -144,20 +147,18 @@ namespace Microsoft::Console::VirtualTerminal
         static const GENERIC_TO_VKEY s_rgGenericMap[];
         static const SS3_TO_VKEY s_rgSs3Map[];
 
-
         DWORD _GetCursorKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams);
+                                          const unsigned short cParams);
         DWORD _GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const unsigned short cParams);
-        bool _GenerateKeyFromChar(const wchar_t wch, _Out_ short* const pVkey,
-                                _Out_ DWORD* const pdwModifierState);
+                                           const unsigned short cParams);
+        bool _GenerateKeyFromChar(const wchar_t wch, _Out_ short* const pVkey, _Out_ DWORD* const pdwModifierState);
 
         bool _IsModified(const unsigned short cParams);
         DWORD _GetModifier(const unsigned short modifierParam);
 
         bool _GetGenericVkey(_In_reads_(cParams) const unsigned short* const rgusParams,
-                            const unsigned short cParams,
-                            _Out_ short* const pVkey) const;
+                             const unsigned short cParams,
+                             _Out_ short* const pVkey) const;
         bool _GetCursorKeysVkey(const wchar_t wch, _Out_ short* const pVkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, _Out_ short* const pVkey) const;
 
@@ -171,10 +172,10 @@ namespace Microsoft::Console::VirtualTerminal
                                         const size_t cInput);
 
         size_t _GetSingleKeypress(const wchar_t wch,
-                                const short vkey,
-                                const DWORD dwModifierState,
-                                _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
-                                const size_t cRecords);
+                                  const short vkey,
+                                  const DWORD dwModifierState,
+                                  _Inout_updates_(cRecords) INPUT_RECORD* const rgInput,
+                                  const size_t cRecords);
 
         bool _GetWindowManipulationType(_In_reads_(cParams) const unsigned short* const rgusParams,
                                         const unsigned short cParams,

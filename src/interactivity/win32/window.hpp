@@ -16,7 +16,6 @@ Author(s):
 
 #include "..\inc\IConsoleWindow.hpp"
 
-
 namespace Microsoft::Console::Interactivity::Win32
 {
     class WindowUiaProvider;
@@ -24,12 +23,10 @@ namespace Microsoft::Console::Interactivity::Win32
     class Window final : public IConsoleWindow
     {
     public:
-        [[nodiscard]]
-        static NTSTATUS CreateInstance(_In_ Settings* const pSettings,
-                                        _In_ SCREEN_INFORMATION* const pScreen);
+        [[nodiscard]] static NTSTATUS CreateInstance(_In_ Settings* const pSettings,
+                                                     _In_ SCREEN_INFORMATION* const pScreen);
 
-        [[nodiscard]]
-        NTSTATUS ActivateAndShow(const WORD wShowWindow);
+        [[nodiscard]] NTSTATUS ActivateAndShow(const WORD wShowWindow);
 
         ~Window();
 
@@ -79,18 +76,16 @@ namespace Microsoft::Console::Interactivity::Win32
         BOOL PostUpdateWindowSize() const;
         BOOL PostUpdateExtendedEditKeys() const;
 
-        [[nodiscard]]
-        HRESULT SignalUia(_In_ EVENTID id);
+        [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id);
 
         void SetOwner();
         BOOL GetCursorPosition(_Out_ LPPOINT lpPoint);
         BOOL GetClientRectangle(_Out_ LPRECT lpRect);
         int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints,
-                        _In_ UINT cPoints);
+                      _In_ UINT cPoints);
         BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint);
 
-        [[nodiscard]]
-        HRESULT UiaSetTextAreaFocus();
+        [[nodiscard]] HRESULT UiaSetTextAreaFocus();
 
     protected:
         // prevent accidental generation of copies
@@ -101,11 +96,9 @@ namespace Microsoft::Console::Interactivity::Win32
         Window();
 
         // Registration/init
-        [[nodiscard]]
-        static NTSTATUS s_RegisterWindowClass();
-        [[nodiscard]]
-        NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
-                             _In_ SCREEN_INFORMATION* const pScreen);
+        [[nodiscard]] static NTSTATUS s_RegisterWindowClass();
+        [[nodiscard]] NTSTATUS _MakeWindow(_In_ Settings* const pSettings,
+                                           _In_ SCREEN_INFORMATION* const pScreen);
         void _CloseWindow() const;
 
         static ATOM s_atomWindowClass;
@@ -114,41 +107,39 @@ namespace Microsoft::Console::Interactivity::Win32
         HWND _hWnd;
         static Window* s_Instance;
 
-        [[nodiscard]]
-        NTSTATUS _InternalSetWindowSize();
+        [[nodiscard]] NTSTATUS _InternalSetWindowSize();
         void _UpdateWindowSize(const SIZE sizeNew);
 
         void _UpdateSystemMetrics() const;
 
         // Wndproc
-        static LRESULT CALLBACK s_ConsoleWindowProc(_In_ HWND hwnd,
-                                                    _In_ UINT uMsg,
-                                                    _In_ WPARAM wParam,
-                                                    _In_ LPARAM lParam);
-        LRESULT CALLBACK ConsoleWindowProc(_In_ HWND,
-                                            _In_ UINT uMsg,
-                                            _In_ WPARAM wParam,
-                                            _In_ LPARAM lParam);
+        [[nodiscard]] static LRESULT CALLBACK s_ConsoleWindowProc(_In_ HWND hwnd,
+                                                                  _In_ UINT uMsg,
+                                                                  _In_ WPARAM wParam,
+                                                                  _In_ LPARAM lParam);
+        [[nodiscard]] LRESULT CALLBACK ConsoleWindowProc(_In_ HWND,
+                                                         _In_ UINT uMsg,
+                                                         _In_ WPARAM wParam,
+                                                         _In_ LPARAM lParam);
 
         // Wndproc helpers
         void _HandleDrop(const WPARAM wParam) const;
-        [[nodiscard]]
-        HRESULT _HandlePaint() const;
+        [[nodiscard]] HRESULT _HandlePaint() const;
         void _HandleWindowPosChanged(const LPARAM lParam);
 
         // Accessibility/UI Automation
-        LRESULT _HandleGetObject(const HWND hwnd,
-                                    const WPARAM wParam,
-                                    const LPARAM lParam);
+        [[nodiscard]] LRESULT _HandleGetObject(const HWND hwnd,
+                                               const WPARAM wParam,
+                                               const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
         WindowUiaProvider* _pUiaProvider = nullptr;
 
         // Dynamic Settings helpers
-        static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                                const BOOL fAutoPos,
-                                                const Window* const pWindow);
-        static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
-                                                    const Window* const pWindow);
+        [[nodiscard]] static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
+                                                           const BOOL fAutoPos,
+                                                           const Window* const pWindow);
+        [[nodiscard]] static LRESULT s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle,
+                                                               const Window* const pWindow);
 
         // The size/position of the window on the most recent update.
         // This is remembered so we can figure out which
@@ -178,6 +169,6 @@ namespace Microsoft::Console::Interactivity::Win32
         bool _fInDPIChange = false;
 
         static void s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos,
-                                                    _Out_ RECT* const prc);
+                                                   _Out_ RECT* const prc);
     };
 }

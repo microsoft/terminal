@@ -9,7 +9,7 @@ extern "C" BOOL ActivateTextServices(HWND hwndConsole, GetSuggestionWindowPos pf
 {
     if (!g_pConsoleTSF && hwndConsole)
     {
-        g_pConsoleTSF = new(std::nothrow) CConsoleTSF(hwndConsole, pfnPosition);
+        g_pConsoleTSF = new (std::nothrow) CConsoleTSF(hwndConsole, pfnPosition);
         if (g_pConsoleTSF && SUCCEEDED(g_pConsoleTSF->Initialize()))
         {
             // Conhost calls this function only when the console window has focus.

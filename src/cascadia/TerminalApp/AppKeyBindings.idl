@@ -6,6 +6,7 @@ namespace TerminalApp
     enum ShortcutAction
     {
         CopyText = 0,
+        CopyTextWithoutNewlines,
         PasteText,
         NewTab,
         NewTabProfile0,
@@ -22,6 +23,8 @@ namespace TerminalApp
         CloseTab,
         NextTab,
         PrevTab,
+        SplitVertical,
+        SplitHorizontal,
         SwitchToTab0,
         SwitchToTab1,
         SwitchToTab2,
@@ -40,7 +43,7 @@ namespace TerminalApp
         OpenSettings
     };
 
-    delegate void CopyTextEventArgs();
+    delegate void CopyTextEventArgs(Boolean trimWhitespace);
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
@@ -49,6 +52,8 @@ namespace TerminalApp
     delegate void CloseTabEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
+    delegate void SplitVerticalEventArgs();
+    delegate void SplitHorizontalEventArgs();
     delegate void SwitchToTabEventArgs(Int32 profileIndex);
     delegate void IncreaseFontSizeEventArgs();
     delegate void DecreaseFontSizeEventArgs();
@@ -63,9 +68,6 @@ namespace TerminalApp
     {
         AppKeyBindings();
 
-        Windows.Data.Json.JsonArray ToJson();
-        static AppKeyBindings FromJson(Windows.Data.Json.JsonArray json);
-
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
         Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
 
@@ -79,6 +81,8 @@ namespace TerminalApp
         event SwitchToTabEventArgs SwitchToTab;
         event NextTabEventArgs NextTab;
         event PrevTabEventArgs PrevTab;
+        event SplitVerticalEventArgs SplitVertical;
+        event SplitHorizontalEventArgs SplitHorizontal;
         event IncreaseFontSizeEventArgs IncreaseFontSize;
         event DecreaseFontSizeEventArgs DecreaseFontSize;
         event ScrollUpEventArgs ScrollUp;

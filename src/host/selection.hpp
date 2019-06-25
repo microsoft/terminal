@@ -23,8 +23,6 @@ Revision History:
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
 #include "..\interactivity\inc\IConsoleWindow.hpp"
 
-using namespace Microsoft::Console::Interactivity;
-
 class Selection
 {
 public:
@@ -88,10 +86,9 @@ private:
 
     static std::unique_ptr<Selection> _instance;
 
-// -------------------------------------------------------------------------------------------------------
-// input handling (selectionInput.cpp)
+    // -------------------------------------------------------------------------------------------------------
+    // input handling (selectionInput.cpp)
 public:
-
     // key handling
 
     // N.B.: This enumeration helps push up calling clipboard functions into
@@ -112,8 +109,7 @@ public:
     void CheckAndSetAlternateSelection();
 
     // calculation functions
-    [[nodiscard]]
-    static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
+    [[nodiscard]] static bool s_GetInputLineBoundaries(_Out_opt_ COORD* const pcoordInputStart, _Out_opt_ COORD* const pcoordInputEnd);
     void GetValidAreaBoundaries(_Out_opt_ COORD* const pcoordValidStart, _Out_opt_ COORD* const pcoordValidEnd) const;
     static bool s_IsWithinBoundaries(const COORD coordPosition, const COORD coordStart, const COORD coordEnd);
 
@@ -126,9 +122,8 @@ private:
                               const COORD coordAnchor,
                               const COORD coordSelPoint) const;
 
-
-// -------------------------------------------------------------------------------------------------------
-// selection state (selectionState.cpp)
+    // -------------------------------------------------------------------------------------------------------
+    // selection state (selectionState.cpp)
 public:
     bool IsKeyboardMarkSelection() const;
     bool IsMouseInitiatedSelection() const;

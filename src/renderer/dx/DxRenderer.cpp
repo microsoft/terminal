@@ -50,8 +50,7 @@ DxEngine::DxEngine() :
     THROW_IF_FAILED(DWriteCreateFactory(
         DWRITE_FACTORY_TYPE_SHARED,
         __uuidof(_dwriteFactory),
-        reinterpret_cast<IUnknown **>(_dwriteFactory.GetAddressOf())
-    ));
+        reinterpret_cast<IUnknown**>(_dwriteFactory.GetAddressOf())));
 }
 
 // Routine Description:
@@ -69,8 +68,7 @@ DxEngine::~DxEngine()
 // - Generally S_OK, but might return a DirectX or memory error if
 //   resources need to be created or adjusted when enabling to prepare for draw
 //   Can give invalid state if you enable an enabled class.
-[[nodiscard]]
-HRESULT DxEngine::Enable() noexcept
+[[nodiscard]] HRESULT DxEngine::Enable() noexcept
 {
     return _EnableDisplayAccess(true);
 }
@@ -82,8 +80,7 @@ HRESULT DxEngine::Enable() noexcept
 // Return Value:
 // - Should be OK. We might close/free resources, but that shouldn't error.
 //   Can give invalid state if you disable a disabled class.
-[[nodiscard]]
-HRESULT DxEngine::Disable() noexcept
+[[nodiscard]] HRESULT DxEngine::Disable() noexcept
 {
     return _EnableDisplayAccess(false);
 }
@@ -96,14 +93,14 @@ HRESULT DxEngine::Disable() noexcept
 // Return Value:
 // - Generally OK. Can return invalid state if you set to the state that is already
 //   active (enabling enabled, disabling disabled).
-[[nodiscard]]
-HRESULT DxEngine::_EnableDisplayAccess(const bool outputEnabled) noexcept
+[[nodiscard]] HRESULT DxEngine::_EnableDisplayAccess(const bool outputEnabled) noexcept
 {
     // Invalid state if we're setting it to the same as what we already have.
     RETURN_HR_IF(E_NOT_VALID_STATE, outputEnabled == _isEnabled);
 
     _isEnabled = outputEnabled;
-    if (!_isEnabled) {
+    if (!_isEnabled)
+    {
         _ReleaseDeviceResources();
     }
 
@@ -122,8 +119,7 @@ HRESULT DxEngine::_EnableDisplayAccess(const bool outputEnabled) noexcept
 //                   - If false, we just set up the adapter.
 // Return Value:
 // - Could be any DirectX/D3D/D2D/DXGI/DWrite error or memory issue.
-[[nodiscard]]
-HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
+[[nodiscard]] HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
 {
     if (_haveDeviceResources)
     {
@@ -134,9 +130,8 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
 
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
 
-    RETURN_IF_FAILED(_dxgiFactory2->EnumAdapters1(0, &_dxgiAdapter1));
-
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
+                              // clang-format off
         // This causes problems for folks who do not have the whole DirectX SDK installed
         // when they try to run the rest of the project in debug mode.
         // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
@@ -145,8 +140,9 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
         // You can find out how to install it here:
         // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
-        // D3D11_CREATE_DEVICE_DEBUG |
-        D3D11_CREATE_DEVICE_SINGLETHREADED;
+                              // clang-format on
+                              // D3D11_CREATE_DEVICE_DEBUG |
+                              D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
@@ -156,23 +152,38 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    RETURN_IF_FAILED(D3D11CreateDevice(_dxgiAdapter1.Get(),
-                                       D3D_DRIVER_TYPE_UNKNOWN,
-                                       NULL,
-                                       DeviceFlags,
-                                       FeatureLevels,
-                                       ARRAYSIZE(FeatureLevels),
-                                       D3D11_SDK_VERSION,
-                                       &_d3dDevice,
-                                       NULL,
-                                       &_d3dDeviceContext));
+    // Trying hardware first for maximum performance, then trying WARP (software) renderer second
+    // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
+    // for Windows 7 in a VM.
+    const auto hardwareResult = D3D11CreateDevice(NULL,
+                                                  D3D_DRIVER_TYPE_HARDWARE,
+                                                  NULL,
+                                                  DeviceFlags,
+                                                  FeatureLevels,
+                                                  ARRAYSIZE(FeatureLevels),
+                                                  D3D11_SDK_VERSION,
+                                                  &_d3dDevice,
+                                                  NULL,
+                                                  &_d3dDeviceContext);
 
-    RETURN_IF_FAILED(_dxgiAdapter1->EnumOutputs(0, &_dxgiOutput));
+    if (FAILED(hardwareResult))
+    {
+        RETURN_IF_FAILED(D3D11CreateDevice(NULL,
+                                           D3D_DRIVER_TYPE_WARP,
+                                           NULL,
+                                           DeviceFlags,
+                                           FeatureLevels,
+                                           ARRAYSIZE(FeatureLevels),
+                                           D3D11_SDK_VERSION,
+                                           &_d3dDevice,
+                                           NULL,
+                                           &_d3dDeviceContext));
+    }
 
     _displaySizePixels = _GetClientSize();
 
-    if (createSwapChain) {
-
+    if (createSwapChain)
+    {
         DXGI_SWAP_CHAIN_DESC1 SwapChainDesc = { 0 };
         SwapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         SwapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -232,7 +243,8 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     }
 
     _haveDeviceResources = true;
-    if (_isPainting) {
+    if (_isPainting)
+    {
         // TODO: MSFT: 21169176 - remove this or restore the "try a few times to render" code... I think
         _d2dRenderTarget->BeginDraw();
     }
@@ -248,8 +260,7 @@ HRESULT DxEngine::_CreateDeviceResources(const bool createSwapChain) noexcept
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT DxEngine::_PrepareRenderTarget() noexcept
+[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
@@ -311,7 +322,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _dxgiSurface.Reset();
     _dxgiSwapChain.Reset();
-    _dxgiOutput.Reset();
 
     if (nullptr != _d3dDeviceContext.Get())
     {
@@ -323,7 +333,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _d3dDevice.Reset();
 
-    _dxgiAdapter1.Reset();
     _dxgiFactory2.Reset();
 }
 
@@ -336,11 +345,10 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 // - ppTextLayout - Location to receive new layout object
 // Return Value:
 // - S_OK if layout created successfully, otherwise a DirectWrite error
-[[nodiscard]]
-HRESULT DxEngine::_CreateTextLayout(
+[[nodiscard]] HRESULT DxEngine::_CreateTextLayout(
     _In_reads_(stringLength) PCWCHAR string,
     _In_ size_t stringLength,
-    _Out_ IDWriteTextLayout **ppTextLayout) noexcept
+    _Out_ IDWriteTextLayout** ppTextLayout) noexcept
 {
     return _dwriteFactory->CreateTextLayout(string,
                                             static_cast<UINT32>(stringLength),
@@ -357,16 +365,14 @@ HRESULT DxEngine::_CreateTextLayout(
 // - hwnd - Window handle
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
+[[nodiscard]] HRESULT DxEngine::SetHwnd(const HWND hwnd) noexcept
 {
     _hwndTarget = hwnd;
     _chainMode = SwapChainMode::ForHwnd;
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
+[[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
 {
     _sizeTarget = Pixels;
 
@@ -396,8 +402,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain() noexcept
 // - psrRegion - Character rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
+[[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
     _InvalidOr(*psrRegion);
     return S_OK;
@@ -409,8 +414,7 @@ HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 // - pcoordCursor - single point in the character cell grid
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
     SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
     return Invalidate(&sr);
@@ -422,8 +426,7 @@ HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 // - prcDirtyClient - pixel rectangle
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 {
     _InvalidOr(*prcDirtyClient);
 
@@ -436,8 +439,7 @@ HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
 {
     for (const auto& rect : rectangles)
     {
@@ -454,8 +456,7 @@ HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles)
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
@@ -503,8 +504,7 @@ HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::InvalidateAll() noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateAll() noexcept
 {
     const RECT screen = _GetDisplayRect();
     _InvalidOr(screen);
@@ -518,8 +518,7 @@ HRESULT DxEngine::InvalidateAll() noexcept
 // - pForcePaint - Always filled with false
 // Return Value:
 // - S_FALSE because we don't use this.
-[[nodiscard]]
-HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
@@ -531,8 +530,7 @@ HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 // - <none>
 // Return Value:
 // - X by Y area in pixels of the surface
-[[nodiscard]]
-SIZE DxEngine::_GetClientSize() const noexcept
+[[nodiscard]] SIZE DxEngine::_GetClientSize() const noexcept
 {
     switch (_chainMode)
     {
@@ -582,8 +580,7 @@ void _ScaleByFont(RECT& cellsToPixels, SIZE fontSize) noexcept
 // - <none>
 // Return Value;
 // - Origin-placed rectangle representing the pixel size of the surface
-[[nodiscard]]
-RECT DxEngine::_GetDisplayRect() const noexcept
+[[nodiscard]] RECT DxEngine::_GetDisplayRect() const noexcept
 {
     return { 0, 0, _displaySizePixels.cx, _displaySizePixels.cy };
 }
@@ -666,8 +663,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - pForcePaint - always filled with false.
 // Return Value:
 // - S_FALSE because this is unused.
-[[nodiscard]]
-HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
+[[nodiscard]] HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
     *pForcePaint = false;
     return S_FALSE;
@@ -679,13 +675,13 @@ HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 // - <none>
 // Return Value:
 // - Any DirectX error, a memory error, etc.
-[[nodiscard]]
-HRESULT DxEngine::StartPaint() noexcept
+[[nodiscard]] HRESULT DxEngine::StartPaint() noexcept
 {
     FAIL_FAST_IF_FAILED(InvalidateAll());
     RETURN_HR_IF(E_NOT_VALID_STATE, _isPainting); // invalid to start a paint while painting.
 
-    if (_isEnabled) {
+    if (_isEnabled)
+    {
         const auto clientSize = _GetClientSize();
         if (!_haveDeviceResources)
         {
@@ -714,20 +710,20 @@ HRESULT DxEngine::StartPaint() noexcept
 // - <none>
 // Return Value:
 // - Any DirectX error, a memory error, etc.
-[[nodiscard]]
-HRESULT DxEngine::EndPaint() noexcept
+[[nodiscard]] HRESULT DxEngine::EndPaint() noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, !_isPainting); // invalid to end paint when we're not painting
 
     HRESULT hr = S_OK;
 
-    if (_haveDeviceResources) {
+    if (_haveDeviceResources)
+    {
         _isPainting = false;
 
         hr = _d2dRenderTarget->EndDraw();
 
-        if (SUCCEEDED(hr)) {
-
+        if (SUCCEEDED(hr))
+        {
             if (_invalidScroll.cy != 0 || _invalidScroll.cx != 0)
             {
                 _presentDirty = _invalidRect;
@@ -775,8 +771,7 @@ HRESULT DxEngine::EndPaint() noexcept
 // - <none>
 // Return Value:
 // - Any DirectX error, a memory error, etc.
-[[nodiscard]]
-HRESULT DxEngine::_CopyFrontToBack() noexcept
+[[nodiscard]] HRESULT DxEngine::_CopyFrontToBack() noexcept
 {
     Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
     Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
@@ -796,8 +791,7 @@ HRESULT DxEngine::_CopyFrontToBack() noexcept
 // - <none>
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]]
-HRESULT DxEngine::Present() noexcept
+[[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
     if (_presentReady)
     {
@@ -822,8 +816,7 @@ HRESULT DxEngine::Present() noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::ScrollFrame() noexcept
+[[nodiscard]] HRESULT DxEngine::ScrollFrame() noexcept
 {
     return S_OK;
 }
@@ -834,8 +827,7 @@ HRESULT DxEngine::ScrollFrame() noexcept
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::PaintBackground() noexcept
+[[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
     /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
                                                   (float)_invalidRect.top,
@@ -859,10 +851,9 @@ HRESULT DxEngine::PaintBackground() noexcept
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]]
-HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
-                                  COORD const coord,
-                                  const bool /*trimLeft*/) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+                                                COORD const coord,
+                                                const bool /*trimLeft*/) noexcept
 {
     try
     {
@@ -910,14 +901,13 @@ HRESULT DxEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]]
-HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
-                                       COLORREF const color,
-                                       size_t const cchLine,
-                                       COORD const coordTarget) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
+                                                     COLORREF const color,
+                                                     size_t const cchLine,
+                                                     COORD const coordTarget) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
-    const auto restoreBrushOnExit = wil::scope_exit([&] {_d2dBrushForeground->SetColor(existingColor); });
+    const auto restoreBrushOnExit = wil::scope_exit([&] { _d2dBrushForeground->SetColor(existingColor); });
 
     _d2dBrushForeground->SetColor(D2D1::ColorF(color));
 
@@ -991,8 +981,7 @@ HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
 //  - rect - Rectangle to invert or highlight to make the selection area
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]]
-HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
 {
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto selectionColor = D2D1::ColorF(_defaultForegroundColor.r,
@@ -1001,7 +990,7 @@ HRESULT DxEngine::PaintSelection(const SMALL_RECT rect) noexcept
                                              0.5f);
 
     _d2dBrushForeground->SetColor(selectionColor);
-    const auto resetColorOnExit = wil::scope_exit([&] {_d2dBrushForeground->SetColor(existingColor); });
+    const auto resetColorOnExit = wil::scope_exit([&] { _d2dBrushForeground->SetColor(existingColor); });
 
     RECT pixels;
     pixels.left = rect.Left * _glyphCell.cx;
@@ -1034,8 +1023,7 @@ enum class CursorPaintType
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]]
-HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
 {
     // if the cursor is off, do nothing - it should not be visible.
     if (!options.isOn)
@@ -1130,12 +1118,11 @@ HRESULT DxEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexc
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
-[[nodiscard]]
-HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
-                                       COLORREF const colorBackground,
-                                       const WORD /*legacyColorAttribute*/,
-                                       const bool /*isBold*/,
-                                       bool const isSettingDefaultBrushes) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
+                                                     COLORREF const colorBackground,
+                                                     const WORD /*legacyColorAttribute*/,
+                                                     const bool /*isBold*/,
+                                                     bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = _ColorFFromColorRef(colorForeground);
     _backgroundColor = _ColorFFromColorRef(colorBackground);
@@ -1168,8 +1155,7 @@ HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
 // - fiFontInfo - Filled with the nearest font actually chosen for drawing
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]]
-HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
     const auto hr = _GetProposedFont(pfiFontInfoDesired,
                                      fiFontInfo,
@@ -1186,8 +1172,7 @@ HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo
     return hr;
 }
 
-[[nodiscard]]
-Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
     short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
     short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
@@ -1201,8 +1186,7 @@ Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcep
 // - iDpi - DPI
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateDpi(int const iDpi) noexcept
 {
     _dpi = iDpi;
 
@@ -1233,8 +1217,7 @@ float DxEngine::GetScaling() const noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
     return S_OK;
 }
@@ -1247,10 +1230,9 @@ HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 // - iDpi - <unused>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
-                                  FontInfo& pfiFontInfo,
-                                  int const iDpi) noexcept
+[[nodiscard]] HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
+                                                FontInfo& pfiFontInfo,
+                                                int const iDpi) noexcept
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
@@ -1270,8 +1252,7 @@ HRESULT DxEngine::GetProposedFont(const FontInfoDesired& pfiFontInfoDesired,
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]]
-SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
+[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
     SMALL_RECT r;
     r.Top = (SHORT)(floor(_invalidRect.top / _glyphCell.cy));
@@ -1293,8 +1274,7 @@ SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 // - <none>
 // Return Value:
 // - Nearest integer short x and y values for each cell.
-[[nodiscard]]
-COORD DxEngine::_GetFontSize() const noexcept
+[[nodiscard]] COORD DxEngine::_GetFontSize() const noexcept
 {
     return { (SHORT)(_glyphCell.cx), (SHORT)(_glyphCell.cy) };
 }
@@ -1305,8 +1285,7 @@ COORD DxEngine::_GetFontSize() const noexcept
 // - pFontSize - Filled with the font size.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
     *pFontSize = _GetFontSize();
     return S_OK;
@@ -1319,24 +1298,23 @@ HRESULT DxEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 // - pResult - True if it should take two columns. False if it should take one.
 // Return Value:
 // - S_OK or relevant DirectWrite error.
-[[nodiscard]]
-HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
+[[nodiscard]] HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
     Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
     // Create the text layout
     CustomTextLayout layout(_dwriteFactory.Get(),
-        _dwriteTextAnalyzer.Get(),
-        _dwriteTextFormat.Get(),
-        _dwriteFontFace.Get(),
-        { &cluster, 1 },
-        _glyphCell.cx);
+                            _dwriteTextAnalyzer.Get(),
+                            _dwriteTextFormat.Get(),
+                            _dwriteFontFace.Get(),
+                            { &cluster, 1 },
+                            _glyphCell.cx);
 
     UINT32 columns = 0;
     RETURN_IF_FAILED(layout.GetColumns(&columns));
 
     *pResult = columns != 1;
-    
+
     return S_OK;
 }
 
@@ -1346,10 +1324,9 @@ HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* c
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
-    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, (LPARAM)nullptr) ? S_OK : E_FAIL;
+    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;
 }
 
 // Routine Description:
@@ -1361,11 +1338,10 @@ HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 // - style - Normal, italic, etc.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]]
-Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
-                                                                 DWRITE_FONT_WEIGHT weight,
-                                                                 DWRITE_FONT_STRETCH stretch,
-                                                                 DWRITE_FONT_STYLE style) const
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
+                                                                               DWRITE_FONT_WEIGHT weight,
+                                                                               DWRITE_FONT_STRETCH stretch,
+                                                                               DWRITE_FONT_STYLE style) const
 {
     Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
 
@@ -1401,13 +1377,12 @@ Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstr
 // - dpi - The DPI of the screen
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]]
-HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
-                                   FontInfo& actual,
-                                   const int dpi,
-                                   Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
-                                   Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                   Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+[[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
+                                                 FontInfo& actual,
+                                                 const int dpi,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
 {
     try
     {
@@ -1548,7 +1523,6 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                              false,
                              scaled,
                              unscaled);
-
     }
     CATCH_RETURN();
 
@@ -1561,8 +1535,7 @@ HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
 // - color - GDI color
 // Return Value:
 // - D2D color
-[[nodiscard]]
-D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
+[[nodiscard]] D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
 {
     // Converts BGR color order to RGB.
     const UINT32 rgb = ((color & 0x0000FF) << 16) | (color & 0x00FF00) | ((color & 0xFF0000) >> 16);
@@ -1592,8 +1565,7 @@ D2D1_COLOR_F DxEngine::_ColorFFromColorRef(const COLORREF color) noexcept
 // - color - Direct2D Color F
 // Return Value:
 // - DXGI RGBA
-[[nodiscard]]
-DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
+[[nodiscard]] DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
 {
     DXGI_RGBA rgba;
     rgba.a = color.a;

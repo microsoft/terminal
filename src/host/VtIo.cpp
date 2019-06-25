@@ -15,9 +15,11 @@
 #include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Utils;
+using namespace Microsoft::Console::Interactivity;
 
 VtIo::VtIo() :
     _initialized(false),
@@ -37,8 +39,7 @@ VtIo::VtIo() :
 //      IO mode string
 // Return Value:
 //  S_OK if we parsed the string successfully, otherwise E_INVALIDARG indicating failure.
-[[nodiscard]]
-HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
+[[nodiscard]] HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
 {
     ioMode = VtIoMode::INVALID;
 
@@ -69,8 +70,7 @@ HRESULT VtIo::ParseIoMode(const std::wstring& VtMode, _Out_ VtIoMode& ioMode)
     return S_OK;
 }
 
-[[nodiscard]]
-HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
+[[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
 {
     _lookingForCursorPosition = pArgs->GetInheritCursor();
 
@@ -104,8 +104,10 @@ HRESULT VtIo::Initialize(const ConsoleArguments * const pArgs)
 // Return Value:
 //  S_OK if we initialized successfully, otherwise an appropriate HRESULT
 //      indicating failure.
-[[nodiscard]]
-HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, const HANDLE SignalHandle)
+[[nodiscard]] HRESULT VtIo::_Initialize(const HANDLE InHandle,
+                                        const HANDLE OutHandle,
+                                        const std::wstring& VtMode,
+                                        _In_opt_ const HANDLE SignalHandle)
 {
     FAIL_FAST_IF_MSG(_initialized, "Someone attempted to double-_Initialize VtIo");
 
@@ -131,8 +133,7 @@ HRESULT VtIo::_Initialize(const HANDLE InHandle, const HANDLE OutHandle, const s
 //  S_OK if we initialized successfully,
 //  S_FALSE if VtIo hasn't been initialized (or we're not in conpty mode)
 //  otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]]
-HRESULT VtIo::CreateIoHandlers() noexcept
+[[nodiscard]] HRESULT VtIo::CreateIoHandlers() noexcept
 {
     if (!_initialized)
     {
@@ -150,7 +151,7 @@ HRESULT VtIo::CreateIoHandlers() noexcept
 
         if (IsValidHandle(_hOutput.get()))
         {
-            Viewport initialViewport = Viewport::FromDimensions({0, 0},
+            Viewport initialViewport = Viewport::FromDimensions({ 0, 0 },
                                                                 gci.GetWindowSize().X,
                                                                 gci.GetWindowSize().Y);
             switch (_IoMode)
@@ -215,8 +216,7 @@ bool VtIo::IsUsingVt() const
 // Return Value:
 //  S_OK if we started successfully or had nothing to start, otherwise an
 //      appropriate HRESULT indicating failure.
-[[nodiscard]]
-HRESULT VtIo::StartIfNeeded()
+[[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
     // If we haven't been set up, do nothing (because there's nothing to start)
     if (!_objectsCreated)
@@ -248,7 +248,7 @@ HRESULT VtIo::StartIfNeeded()
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while(_lookingForCursorPosition)
+        while (_lookingForCursorPosition)
         {
             _pVtInputThread->DoReadInput(false);
         }
@@ -281,8 +281,7 @@ HRESULT VtIo::StartIfNeeded()
 // - S_FALSE if we're not in VtIo mode,
 //   S_OK if we succeeded,
 //   otherwise an appropriate HRESULT indicating failure.
-[[nodiscard]]
-HRESULT VtIo::CreateAndStartSignalThread() noexcept
+[[nodiscard]] HRESULT VtIo::CreateAndStartSignalThread() noexcept
 {
     if (!_initialized)
     {
@@ -313,8 +312,7 @@ HRESULT VtIo::CreateAndStartSignalThread() noexcept
 // Return Value:
 // - S_OK if the renderer successfully suppressed the next repaint, otherwise an
 //      appropriate HRESULT indicating failure.
-[[nodiscard]]
-HRESULT VtIo::SuppressResizeRepaint()
+[[nodiscard]] HRESULT VtIo::SuppressResizeRepaint()
 {
     HRESULT hr = S_OK;
     if (_pVtRenderEngine)
@@ -332,8 +330,7 @@ HRESULT VtIo::SuppressResizeRepaint()
 // Return Value:
 // - S_OK if we successfully inherited the cursor or did nothing, else an
 //      appropriate HRESULT
-[[nodiscard]]
-HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
+[[nodiscard]] HRESULT VtIo::SetCursorPosition(const COORD coordCursor)
 {
     HRESULT hr = S_OK;
     if (_lookingForCursorPosition)
@@ -374,7 +371,6 @@ void VtIo::CloseOutput()
 
     _ShutdownIfNeeded();
 }
-
 
 void VtIo::_ShutdownIfNeeded()
 {

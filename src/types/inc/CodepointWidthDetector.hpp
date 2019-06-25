@@ -14,32 +14,31 @@ Author:
 #pragma once
 
 #include "convert.hpp"
+#include <functional>
 
 static_assert(sizeof(unsigned int) == sizeof(wchar_t) * 2,
               "UnicodeRange expects to be able to store a unicode codepoint in an unsigned int");
-
 
 // use to measure the width of a codepoint
 class CodepointWidthDetector final
 {
 protected:
-
     // used to store range data in CodepointWidthDetector's internal map
     class UnicodeRange final
     {
     public:
         UnicodeRange(const unsigned int lowerBound,
                      const unsigned int upperBound) :
-                     _lowerBound{ lowerBound },
-                     _upperBound{ upperBound },
-                     _isBounds{ true }
+            _lowerBound{ lowerBound },
+            _upperBound{ upperBound },
+            _isBounds{ true }
         {
         }
 
         UnicodeRange(const unsigned int searchTerm) :
-                     _lowerBound{ searchTerm },
-                     _upperBound{ searchTerm },
-                     _isBounds{ false }
+            _lowerBound{ searchTerm },
+            _upperBound{ searchTerm },
+            _isBounds{ false }
         {
         }
 

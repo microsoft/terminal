@@ -8,13 +8,13 @@
 // Version detection code for ComCtl32 copied/adapter from
 // https://msdn.microsoft.com/en-us/library/windows/desktop/hh298349(v=vs.85).aspx#DllGetVersion
 
-#define PACKVERSION(major,minor) MAKELONG(minor,major)
+#define PACKVERSION(major, minor) MAKELONG(minor, major)
 
 static DWORD GetVersion(_In_ PCWSTR pwszDllName)
 {
     DWORD dwVersion = 0;
 
-    // We have to call for ComCtl32.dll without a path name so Fusion SxS will redirect us 
+    // We have to call for ComCtl32.dll without a path name so Fusion SxS will redirect us
     // if it thinks we are manifested properly and Fusion is enabled in this process space.
     HINSTANCE const hinstDll = LoadLibrary(pwszDllName);
 
@@ -22,13 +22,13 @@ static DWORD GetVersion(_In_ PCWSTR pwszDllName)
     {
         DLLGETVERSIONPROC const pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hinstDll, "DllGetVersion");
 
-        // Because some DLLs might not implement this function, you must test for 
-        // it explicitly. Depending on the particular DLL, the lack of a DllGetVersion 
-        // function can be a useful indicator of the version. 
+        // Because some DLLs might not implement this function, you must test for
+        // it explicitly. Depending on the particular DLL, the lack of a DllGetVersion
+        // function can be a useful indicator of the version.
 
         if (nullptr != pDllGetVersion)
         {
-            DLLVERSIONINFO dvi = {0};
+            DLLVERSIONINFO dvi = { 0 };
             dvi.cbSize = sizeof(dvi);
 
             if (SUCCEEDED((*pDllGetVersion)(&dvi)))
@@ -36,7 +36,7 @@ static DWORD GetVersion(_In_ PCWSTR pwszDllName)
                 dwVersion = PACKVERSION(dvi.dwMajorVersion, dvi.dwMinorVersion);
             }
         }
-        
+
         FreeLibrary(hinstDll);
     }
     return dwVersion;
@@ -80,7 +80,7 @@ void UninitializeConsoleState()
         gpStateInfo->LinkTitle = nullptr;
     }
 
-    DestroyDbcsMisc();
+    LOG_IF_NTSTATUS_FAILED(DestroyDbcsMisc());
     UnregisterClasses(ghInstance);
 }
 

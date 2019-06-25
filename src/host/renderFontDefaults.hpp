@@ -16,16 +16,13 @@ Author(s):
 
 #include "..\renderer\inc\IFontDefaultList.hpp"
 
-using namespace Microsoft::Console::Render;
-
-class RenderFontDefaults sealed : public IFontDefaultList
+class RenderFontDefaults sealed : public Microsoft::Console::Render::IFontDefaultList
 {
 public:
     RenderFontDefaults();
     ~RenderFontDefaults();
 
-    [[nodiscard]]
-    HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
-                                               _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                               const size_t cchFaceName);
+    [[nodiscard]] HRESULT RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
+                                                             _Out_writes_(cchFaceName) PWSTR pwszFaceName,
+                                                             const size_t cchFaceName);
 };

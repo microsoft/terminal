@@ -120,9 +120,8 @@ bool ConsoleHandleData::IsWriteShared() const
 // - ppInputBuffer - On success, filled with the referenced Input Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT ConsoleHandleData::GetInputBuffer(const ACCESS_MASK amRequested,
-                                          _Outptr_ InputBuffer** const ppInputBuffer) const
+[[nodiscard]] HRESULT ConsoleHandleData::GetInputBuffer(const ACCESS_MASK amRequested,
+                                                        _Outptr_ InputBuffer** const ppInputBuffer) const
 {
     *ppInputBuffer = nullptr;
 
@@ -141,9 +140,8 @@ HRESULT ConsoleHandleData::GetInputBuffer(const ACCESS_MASK amRequested,
 // - ppInputBuffer - On success, filled with the referenced Screen Buffer object
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
-                                           _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
+[[nodiscard]] HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
+                                                         _Outptr_ SCREEN_INFORMATION** const ppScreenInfo) const
 {
     *ppScreenInfo = nullptr;
 
@@ -161,10 +159,9 @@ HRESULT ConsoleHandleData::GetScreenBuffer(const ACCESS_MASK amRequested,
 // - ppWaitQueue - On success, filled with a pointer to the desired queue
 // Return Value:
 // - HRESULT S_OK or E_UNEXPECTED if the handle data structure is in an invalid state.
-[[nodiscard]]
-HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
+[[nodiscard]] HRESULT ConsoleHandleData::GetWaitQueue(_Outptr_ ConsoleWaitQueue** const ppWaitQueue) const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     if (_IsInput())
     {
         InputBuffer* const pObj = static_cast<InputBuffer*>(_pvClientPointer);
@@ -205,8 +202,7 @@ INPUT_READ_HANDLE_DATA* ConsoleHandleData::GetClientInput() const
 // - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
-[[nodiscard]]
-HRESULT ConsoleHandleData::_CloseInputHandle()
+[[nodiscard]] HRESULT ConsoleHandleData::_CloseInputHandle()
 {
     FAIL_FAST_IF(!(_IsInput()));
     InputBuffer* pInputBuffer = static_cast<InputBuffer*>(_pvClientPointer);
@@ -245,8 +241,7 @@ HRESULT ConsoleHandleData::_CloseInputHandle()
 // - HRESULT S_OK or suitable error code.
 // Note:
 // - The console lock must be held when calling this routine.
-[[nodiscard]]
-HRESULT ConsoleHandleData::_CloseOutputHandle()
+[[nodiscard]] HRESULT ConsoleHandleData::_CloseOutputHandle()
 {
     FAIL_FAST_IF(!(_IsOutput()));
     SCREEN_INFORMATION* pScreenInfo = static_cast<SCREEN_INFORMATION*>(_pvClientPointer);

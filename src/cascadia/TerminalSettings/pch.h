@@ -20,4 +20,3 @@
 
 #include <unknwn.h>
 #include <winrt/Windows.Foundation.h>
-

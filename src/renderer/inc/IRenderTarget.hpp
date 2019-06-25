@@ -39,6 +39,6 @@ namespace Microsoft::Console::Render
         virtual void TriggerTitleChange() = 0;
     };
 
-    inline Microsoft::Console::Render::IRenderTarget::~IRenderTarget() { }
+    inline Microsoft::Console::Render::IRenderTarget::~IRenderTarget() {}
 
 }

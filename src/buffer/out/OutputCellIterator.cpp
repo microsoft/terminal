@@ -26,7 +26,6 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const size_t fillLimi
     _distance(0),
     _fillLimit(fillLimit)
 {
-
 }
 
 // Routine Description:
@@ -43,7 +42,6 @@ OutputCellIterator::OutputCellIterator(const TextAttribute& attr, const size_t f
     _distance(0),
     _fillLimit(fillLimit)
 {
-
 }
 
 // Routine Description:
@@ -61,7 +59,6 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const TextAttribute& 
     _distance(0),
     _fillLimit(fillLimit)
 {
-
 }
 
 // Routine Description:
@@ -78,7 +75,6 @@ OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t f
     _distance(0),
     _fillLimit(fillLimit)
 {
-
 }
 
 // Routine Description:
@@ -94,7 +90,6 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
     _distance(0),
     _fillLimit(0)
 {
-
 }
 
 // Routine Description:
@@ -111,7 +106,6 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
     _pos(0),
     _fillLimit(0)
 {
-
 }
 
 // Routine Description:
@@ -131,7 +125,6 @@ OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacy
     _pos(0),
     _fillLimit(0)
 {
-
 }
 
 // Routine Description:
@@ -142,12 +135,11 @@ OutputCellIterator::OutputCellIterator(const std::basic_string_view<CHAR_INFO> c
     _mode(Mode::CharInfo),
     _currentView(s_GenerateView(charInfos.at(0))),
     _run(charInfos),
-    _attr(InvalidTextAttribute),  
+    _attr(InvalidTextAttribute),
     _distance(0),
     _pos(0),
     _fillLimit(0)
 {
-
 }
 
 // Routine Description:
@@ -163,7 +155,6 @@ OutputCellIterator::OutputCellIterator(const std::basic_string_view<OutputCell> 
     _pos(0),
     _fillLimit(0)
 {
-
 }
 
 // Routine Description:
@@ -413,7 +404,7 @@ OutputCellView OutputCellIterator::s_GenerateView(const std::wstring_view view,
 {
     const auto glyph = Utf16Parser::ParseNext(view);
     DbcsAttribute dbcsAttr;
-    if (!glyph.empty() && IsGlyphFullWidth(glyph))
+    if (IsGlyphFullWidth(glyph))
     {
         dbcsAttr.SetLeading();
     }

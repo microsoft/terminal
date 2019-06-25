@@ -158,6 +158,7 @@ Options:
     -b, --both     : Apply the scheme to both the current console and the defaults.
     -x, --xterm    : Set the colors using VT sequences. Used for setting the colors in WSL.
                      Only works in Windows versions &gt;= 17048.
+    -t, --terminal : Output the colors in JSON format for copying into a Windows Terminal settings file.
     -s, --schemes  : Displays all available schemes
     -l, --location : Displays the full path to the schemes directory
     -v, --version  : Display the version number

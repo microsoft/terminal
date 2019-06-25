@@ -24,33 +24,33 @@ struct _HSL
     // constructs an HSL color from a RGB Color.
     _HSL(const COLORREF rgb)
     {
-        const double r = (double) GetRValue(rgb);
-        const double g = (double) GetGValue(rgb);
-        const double b = (double) GetBValue(rgb);
+        const double r = (double)GetRValue(rgb);
+        const double g = (double)GetGValue(rgb);
+        const double b = (double)GetBValue(rgb);
 
-        const auto[min, max] = std::minmax({ r, g, b });
+        const auto [min, max] = std::minmax({ r, g, b });
 
         const auto diff = max - min;
         const auto sum = max + min;
-        // Luminence
+        // Luminance
         l = max / 255.0;
 
         // Saturation
         s = (max == 0) ? 0 : diff / max;
 
         //Hue
-        double q = (diff == 0)? 0 : 60.0/diff;
+        double q = (diff == 0) ? 0 : 60.0 / diff;
         if (max == r)
         {
-            h = (g < b)? ((360.0 + q * (g - b))/360.0) : ((q * (g - b))/360.0);
+            h = (g < b) ? ((360.0 + q * (g - b)) / 360.0) : ((q * (g - b)) / 360.0);
         }
         else if (max == g)
         {
-            h = (120.0 + q * (b - r))/360.0;
+            h = (120.0 + q * (b - r)) / 360.0;
         }
         else if (max == b)
         {
-            h = (240.0 + q * (r - g))/360.0;
+            h = (240.0 + q * (r - g)) / 360.0;
         }
         else
         {
@@ -71,9 +71,9 @@ struct _HSL
 static double _FindDifference(const _HSL* const phslColorA, const COLORREF rgbColorB)
 {
     const _HSL hslColorB = _HSL(rgbColorB);
-    return sqrt( pow((hslColorB.h - phslColorA->h), 2) +
-                 pow((hslColorB.s - phslColorA->s), 2) +
-                 pow((hslColorB.l - phslColorA->l), 2) );
+    return sqrt(pow((hslColorB.h - phslColorA->h), 2) +
+                pow((hslColorB.s - phslColorA->s), 2) +
+                pow((hslColorB.l - phslColorA->l), 2));
 }
 
 //Routine Description:
@@ -147,7 +147,7 @@ WORD Xterm256ToWindowsIndex(const size_t xtermTableEntry) noexcept
 }
 
 // Function Description:
-// - Converts the value of a pair of xterm color table indicies to the legacy attr equivalent.
+// - Converts the value of a pair of xterm color table indices to the legacy attr equivalent.
 // Arguments:
 // - xtermForeground: the xterm color table foreground index
 // - xtermBackground: the xterm color table background index
@@ -190,7 +190,7 @@ bool FindTableIndex(const COLORREF Color,
 // - Get a COLORREF for the foreground component of the given legacy attributes.
 // Arguments:
 // - wLegacyAttrs - The legacy attributes to get the foreground color from.
-// - ColorTable - The array of colors to to get the color from.
+// - ColorTable - The array of colors to get the color from.
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the foreground component
@@ -201,15 +201,15 @@ COLORREF ForegroundColor(const WORD wLegacyAttrs,
     const byte iColorTableIndex = LOBYTE(wLegacyAttrs) & FG_ATTRS;
 
     return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
-           ColorTable[iColorTableIndex] :
-           INVALID_COLOR;
+               ColorTable[iColorTableIndex] :
+               INVALID_COLOR;
 }
 
 // Method Description:
 // - Get a COLORREF for the background component of the given legacy attributes.
 // Arguments:
 // - wLegacyAttrs - The legacy attributes to get the background color from.
-// - ColorTable - The array of colors to to get the color from.
+// - ColorTable - The array of colors to get the color from.
 // - cColorTable - The number of elements in ColorTable
 // Return Value:
 // - the COLORREF for the background component
@@ -220,6 +220,6 @@ COLORREF BackgroundColor(const WORD wLegacyAttrs,
     const byte iColorTableIndex = (LOBYTE(wLegacyAttrs) & BG_ATTRS) >> 4;
 
     return (iColorTableIndex < cColorTable && iColorTableIndex >= 0) ?
-           ColorTable[iColorTableIndex] :
-           INVALID_COLOR;
+               ColorTable[iColorTableIndex] :
+               INVALID_COLOR;
 }

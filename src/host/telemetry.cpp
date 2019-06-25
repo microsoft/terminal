@@ -13,15 +13,15 @@
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 TRACELOGGING_DEFINE_PROVIDER(g_hConhostV2EventTraceProvider,
-    "Microsoft.Windows.Console.Host",
-    // {fe1ff234-1f09-50a8-d38d-c44fab43e818}
-    (0xfe1ff234, 0x1f09, 0x50a8, 0xd3, 0x8d, 0xc4, 0x4f, 0xab, 0x43, 0xe8, 0x18),
-    TraceLoggingOptionMicrosoftTelemetry());
+                             "Microsoft.Windows.Console.Host",
+                             // {fe1ff234-1f09-50a8-d38d-c44fab43e818}
+                             (0xfe1ff234, 0x1f09, 0x50a8, 0xd3, 0x8d, 0xc4, 0x4f, 0xab, 0x43, 0xe8, 0x18),
+                             TraceLoggingOptionMicrosoftTelemetry());
 #pragma warning(push)
 // Disable 4351 so we can initialize the arrays to 0 without a warning.
-#pragma warning(disable:4351)
-Telemetry::Telemetry()
-    : _fpFindStringLengthAverage(0),
+#pragma warning(disable : 4351)
+Telemetry::Telemetry() :
+    _fpFindStringLengthAverage(0),
     _fpDirectionDownAverage(0),
     _fpMatchCaseAverage(0),
     _uiFindNextClickedTotal(0),
@@ -195,15 +195,17 @@ void Telemetry::LogFindDialogNextClicked(const unsigned int uiStringLength, cons
 // Find dialog was closed, now send out the telemetry.
 void Telemetry::FindDialogClosed()
 {
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+    // clang-format on
     TraceLoggingWriteTagged(_activity,
-        "FindDialogUsed",
-        TraceLoggingValue(_fpFindStringLengthAverage, "StringLengthAverage"),
-        TraceLoggingValue(_fpDirectionDownAverage, "DirectionDownAverage"),
-        TraceLoggingValue(_fpMatchCaseAverage, "MatchCaseAverage"),
-        TraceLoggingValue(_uiFindNextClickedTotal, "FindNextButtonClickedTotal"),
-        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                            "FindDialogUsed",
+                            TraceLoggingValue(_fpFindStringLengthAverage, "StringLengthAverage"),
+                            TraceLoggingValue(_fpDirectionDownAverage, "DirectionDownAverage"),
+                            TraceLoggingValue(_fpMatchCaseAverage, "MatchCaseAverage"),
+                            TraceLoggingValue(_uiFindNextClickedTotal, "FindNextButtonClickedTotal"),
+                            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
     // Get ready for the next time the dialog is used.
     _fpFindStringLengthAverage = 0;
@@ -217,6 +219,7 @@ void Telemetry::FindDialogClosed()
 // disconnect when the conhost process exits.  So we have to remember the last process that connected.
 void Telemetry::TotalCodesForPreviousProcess()
 {
+    using namespace Microsoft::Console::VirtualTerminal;
     // Get the values even if we aren't recording the previously connected process, since we want to reset them to 0.
     unsigned int _uiTimesUsedCurrent = TermTelemetry::Instance().GetAndResetTimesUsedCurrent();
     unsigned int _uiTimesFailedCurrent = TermTelemetry::Instance().GetAndResetTimesFailedCurrent();
@@ -237,7 +240,7 @@ void Telemetry::TotalCodesForPreviousProcess()
 // The main difference between this and the standard bsearch library call, is that if this
 // can't find the string, it returns the position the new string should be inserted at.  This saves
 // us from having an additional search through the array, and improves performance.
-bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t *iPosition) const
+bool Telemetry::FindProcessName(const WCHAR* pszProcessName, _Out_ size_t* iPosition) const
 {
     int iMin = 0;
     int iMid = 0;
@@ -301,7 +304,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
                 _rguiProcessFileNamesCount[_iProcessConnectedCurrently]++;
             }
             else if ((_uiNumberProcessFileNames < ARRAYSIZE(_rguiProcessFileNamesCount)) &&
-                (_iProcessFileNamesNext < ARRAYSIZE(_wchProcessFileNames) - 10))
+                     (_iProcessFileNamesNext < ARRAYSIZE(_wchProcessFileNames) - 10))
             {
                 // Check if the MS released bash was used.  MS bash is installed under windows\system32, and it's possible somebody else
                 // could be installing their bash into that directory, but not likely.  If the user first runs a non-MS bash,
@@ -338,7 +341,7 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
                     _iProcessConnectedCurrently = _uiNumberProcessFileNames++;
 
                     // Packed arrays start with a UINT16 value indicating the number of elements in the array.
-                    BYTE *pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
+                    BYTE* pbFileNames = reinterpret_cast<BYTE*>(_wchProcessFileNames);
                     pbFileNames[0] = (BYTE)_uiNumberProcessFileNames;
                     pbFileNames[1] = (BYTE)(_uiNumberProcessFileNames >> 8);
                 }
@@ -352,14 +355,14 @@ void Telemetry::LogProcessConnected(const HANDLE hProcess)
 // so we don't overwhelm our servers by sending a constant stream of telemetry while the console is being used.
 void Telemetry::WriteFinalTraceLog()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
     // This is a bit of processing, so don't do it for the 95% of machines that aren't being sampled.
     if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, MICROSOFT_KEYWORD_MEASURES))
     {
         // Normally we would set the activity Id earlier, but since we know the parser only sends
         // one final log at the end, setting the activity this late should be fine.
-        TermTelemetry::Instance().SetActivityId(_activity.Id());
-        TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
+        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetActivityId(_activity.Id());
+        Microsoft::Console::VirtualTerminal::TermTelemetry::Instance().SetShouldWriteFinalLog(_fUserInteractiveForTelemetry);
 
         if (_fUserInteractiveForTelemetry)
         {
@@ -368,151 +371,157 @@ void Telemetry::WriteFinalTraceLog()
             // Send this back using "measures" since we want a good sampling of our entire userbase.
             time_t tEndedAt;
             time(&tEndedAt);
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
-                "SessionEnding",
-                TraceLoggingBool(_fBashUsed, "BashUsed"),
-                TraceLoggingBool(_fCtrlPgUpPgDnUsed, "CtrlPgUpPgDnUsed"),
-                TraceLoggingBool(_fKeyboardTextEditingUsed, "KeyboardTextEditingUsed"),
-                TraceLoggingBool(_fKeyboardTextSelectionUsed, "KeyboardTextSelectionUsed"),
-                TraceLoggingUInt32(_uiCtrlShiftCProcUsed, "CtrlShiftCProcUsed"),
-                TraceLoggingUInt32(_uiCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
-                TraceLoggingUInt32(_uiCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
-                TraceLoggingUInt32(_uiCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
-                TraceLoggingUInt32(_uiQuickEditCopyProcUsed, "QuickEditCopyProcUsed"),
-                TraceLoggingUInt32(_uiQuickEditCopyRawUsed, "QuickEditCopyRawUsed"),
-                TraceLoggingUInt32(_uiQuickEditPasteProcUsed, "QuickEditPasteProcUsed"),
-                TraceLoggingUInt32(_uiQuickEditPasteRawUsed, "QuickEditPasteRawUsed"),
-                TraceLoggingBool(gci.GetLinkTitle().length() == 0, "LaunchedFromShortcut"),
-                // Normally we would send out a single array containing the name and count,
-                // but that's difficult to do with our telemetry system, so send out two separate arrays.
-                // Casting to UINT should be fine, since our array size is only 2K.
-                TraceLoggingPackedField(_wchProcessFileNames, static_cast<UINT>(sizeof(WCHAR) * _iProcessFileNamesNext), TlgInUNICODESTRING | TlgInVcount, "ProcessesConnected"),
-                TraceLoggingUInt32Array(_rguiProcessFileNamesCount, _uiNumberProcessFileNames, "ProcessesConnectedCount"),
-                TraceLoggingUInt32Array(_rguiProcessFileNamesCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedCodesCount"),
-                TraceLoggingUInt32Array(_rguiProcessFileNamesFailedCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedCodesCount"),
-                TraceLoggingUInt32Array(_rguiProcessFileNamesFailedOutsideCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedOutsideCount"),
-                // Send back both starting and ending times separately instead just usage time (ending - starting).
-                // This can help us determine if they were using multiple consoles at the same time.
-                TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),
-                TraceLoggingInt32(static_cast<int>(tEndedAt), "EndedUsingAtSeconds"),
-                TraceLoggingUInt32(_uiColorSelectionUsed, "ColorSelectionUsed"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                                    "SessionEnding",
+                                    TraceLoggingBool(_fBashUsed, "BashUsed"),
+                                    TraceLoggingBool(_fCtrlPgUpPgDnUsed, "CtrlPgUpPgDnUsed"),
+                                    TraceLoggingBool(_fKeyboardTextEditingUsed, "KeyboardTextEditingUsed"),
+                                    TraceLoggingBool(_fKeyboardTextSelectionUsed, "KeyboardTextSelectionUsed"),
+                                    TraceLoggingUInt32(_uiCtrlShiftCProcUsed, "CtrlShiftCProcUsed"),
+                                    TraceLoggingUInt32(_uiCtrlShiftCRawUsed, "CtrlShiftCRawUsed"),
+                                    TraceLoggingUInt32(_uiCtrlShiftVProcUsed, "CtrlShiftVProcUsed"),
+                                    TraceLoggingUInt32(_uiCtrlShiftVRawUsed, "CtrlShiftVRawUsed"),
+                                    TraceLoggingUInt32(_uiQuickEditCopyProcUsed, "QuickEditCopyProcUsed"),
+                                    TraceLoggingUInt32(_uiQuickEditCopyRawUsed, "QuickEditCopyRawUsed"),
+                                    TraceLoggingUInt32(_uiQuickEditPasteProcUsed, "QuickEditPasteProcUsed"),
+                                    TraceLoggingUInt32(_uiQuickEditPasteRawUsed, "QuickEditPasteRawUsed"),
+                                    TraceLoggingBool(gci.GetLinkTitle().length() == 0, "LaunchedFromShortcut"),
+                                    // Normally we would send out a single array containing the name and count,
+                                    // but that's difficult to do with our telemetry system, so send out two separate arrays.
+                                    // Casting to UINT should be fine, since our array size is only 2K.
+                                    TraceLoggingPackedField(_wchProcessFileNames, static_cast<UINT>(sizeof(WCHAR) * _iProcessFileNamesNext), TlgInUNICODESTRING | TlgInVcount, "ProcessesConnected"),
+                                    TraceLoggingUInt32Array(_rguiProcessFileNamesCount, _uiNumberProcessFileNames, "ProcessesConnectedCount"),
+                                    TraceLoggingUInt32Array(_rguiProcessFileNamesCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedCodesCount"),
+                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedCodesCount"),
+                                    TraceLoggingUInt32Array(_rguiProcessFileNamesFailedOutsideCodesCount, _uiNumberProcessFileNames, "ProcessesConnectedFailedOutsideCount"),
+                                    // Send back both starting and ending times separately instead just usage time (ending - starting).
+                                    // This can help us determine if they were using multiple consoles at the same time.
+                                    TraceLoggingInt32(static_cast<int>(_tStartedAt), "StartedUsingAtSeconds"),
+                                    TraceLoggingInt32(static_cast<int>(tEndedAt), "EndedUsingAtSeconds"),
+                                    TraceLoggingUInt32(_uiColorSelectionUsed, "ColorSelectionUsed"),
+                                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             // Always send this back.  We could only send this back when they click "OK" in the settings dialog, but sending it
             // back every time should give us a good idea of their current, final settings, and not just only when they change a setting.
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
-                "Settings",
-                TraceLoggingBool(gci.GetAutoPosition(), "AutoPosition"),
-                TraceLoggingBool(gci.GetHistoryNoDup(), "HistoryNoDuplicates"),
-                TraceLoggingBool(gci.GetInsertMode(), "InsertMode"),
-                TraceLoggingBool(gci.GetLineSelection(), "LineSelection"),
-                TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
-                TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
-                TraceLoggingBool(gci.GetWrapText(), "WrapText"),
-                TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetColorTableSize(), "ColorTable"),
-                TraceLoggingValue(gci.CP, "CodePageInput"),
-                TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
-                TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),
-                TraceLoggingValue(gci.GetFontSize().Y, "FontSizeY"),
-                TraceLoggingValue(gci.GetHotKey(), "HotKey"),
-                TraceLoggingValue(gci.GetScreenBufferSize().X, "ScreenBufferSizeX"),
-                TraceLoggingValue(gci.GetScreenBufferSize().Y, "ScreenBufferSizeY"),
-                TraceLoggingValue(gci.GetStartupFlags(), "StartupFlags"),
-                TraceLoggingValue(gci.GetVirtTermLevel(), "VirtualTerminalLevel"),
-                TraceLoggingValue(gci.GetWindowSize().X, "WindowSizeX"),
-                TraceLoggingValue(gci.GetWindowSize().Y, "WindowSizeY"),
-                TraceLoggingValue(gci.GetWindowOrigin().X, "WindowOriginX"),
-                TraceLoggingValue(gci.GetWindowOrigin().Y, "WindowOriginY"),
-                TraceLoggingValue(gci.GetFaceName(), "FontName"),
-                TraceLoggingBool(gci.IsAltF4CloseAllowed(), "AllowAltF4Close"),
-                TraceLoggingBool(gci.GetCtrlKeyShortcutsDisabled(), "ControlKeyShortcutsDisabled"),
-                TraceLoggingBool(gci.GetEnableColorSelection(), "EnabledColorSelection"),
-                TraceLoggingBool(gci.GetFilterOnPaste(), "FilterOnPaste"),
-                TraceLoggingBool(gci.GetTrimLeadingZeros(), "TrimLeadingZeros"),
-                TraceLoggingValue(gci.GetLaunchFaceName(), "LaunchFontName"),
-                TraceLoggingValue(CommandHistory::s_CountOfHistories(), "CommandHistoriesNumber"),
-                TraceLoggingValue(gci.GetCodePage(), "CodePage"),
-                TraceLoggingValue(gci.GetCursorSize(), "CursorSize"),
-                TraceLoggingValue(gci.GetFontFamily(), "FontFamily"),
-                TraceLoggingValue(gci.GetFontWeight(), "FontWeight"),
-                TraceLoggingValue(gci.GetHistoryBufferSize(), "HistoryBufferSize"),
-                TraceLoggingValue(gci.GetNumberOfHistoryBuffers(), "HistoryBuffersNumber"),
-                TraceLoggingValue(gci.GetScrollScale(), "ScrollScale"),
-                TraceLoggingValue(gci.GetFillAttribute(), "FillAttribute"),
-                TraceLoggingValue(gci.GetPopupFillAttribute(), "PopupFillAttribute"),
-                TraceLoggingValue(gci.GetShowWindow(), "ShowWindow"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                                    "Settings",
+                                    TraceLoggingBool(gci.GetAutoPosition(), "AutoPosition"),
+                                    TraceLoggingBool(gci.GetHistoryNoDup(), "HistoryNoDuplicates"),
+                                    TraceLoggingBool(gci.GetInsertMode(), "InsertMode"),
+                                    TraceLoggingBool(gci.GetLineSelection(), "LineSelection"),
+                                    TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
+                                    TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
+                                    TraceLoggingBool(gci.GetWrapText(), "WrapText"),
+                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetColorTableSize(), "ColorTable"),
+                                    TraceLoggingValue(gci.CP, "CodePageInput"),
+                                    TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
+                                    TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),
+                                    TraceLoggingValue(gci.GetFontSize().Y, "FontSizeY"),
+                                    TraceLoggingValue(gci.GetHotKey(), "HotKey"),
+                                    TraceLoggingValue(gci.GetScreenBufferSize().X, "ScreenBufferSizeX"),
+                                    TraceLoggingValue(gci.GetScreenBufferSize().Y, "ScreenBufferSizeY"),
+                                    TraceLoggingValue(gci.GetStartupFlags(), "StartupFlags"),
+                                    TraceLoggingValue(gci.GetVirtTermLevel(), "VirtualTerminalLevel"),
+                                    TraceLoggingValue(gci.GetWindowSize().X, "WindowSizeX"),
+                                    TraceLoggingValue(gci.GetWindowSize().Y, "WindowSizeY"),
+                                    TraceLoggingValue(gci.GetWindowOrigin().X, "WindowOriginX"),
+                                    TraceLoggingValue(gci.GetWindowOrigin().Y, "WindowOriginY"),
+                                    TraceLoggingValue(gci.GetFaceName(), "FontName"),
+                                    TraceLoggingBool(gci.IsAltF4CloseAllowed(), "AllowAltF4Close"),
+                                    TraceLoggingBool(gci.GetCtrlKeyShortcutsDisabled(), "ControlKeyShortcutsDisabled"),
+                                    TraceLoggingBool(gci.GetEnableColorSelection(), "EnabledColorSelection"),
+                                    TraceLoggingBool(gci.GetFilterOnPaste(), "FilterOnPaste"),
+                                    TraceLoggingBool(gci.GetTrimLeadingZeros(), "TrimLeadingZeros"),
+                                    TraceLoggingValue(gci.GetLaunchFaceName(), "LaunchFontName"),
+                                    TraceLoggingValue(CommandHistory::s_CountOfHistories(), "CommandHistoriesNumber"),
+                                    TraceLoggingValue(gci.GetCodePage(), "CodePage"),
+                                    TraceLoggingValue(gci.GetCursorSize(), "CursorSize"),
+                                    TraceLoggingValue(gci.GetFontFamily(), "FontFamily"),
+                                    TraceLoggingValue(gci.GetFontWeight(), "FontWeight"),
+                                    TraceLoggingValue(gci.GetHistoryBufferSize(), "HistoryBufferSize"),
+                                    TraceLoggingValue(gci.GetNumberOfHistoryBuffers(), "HistoryBuffersNumber"),
+                                    TraceLoggingValue(gci.GetScrollScale(), "ScrollScale"),
+                                    TraceLoggingValue(gci.GetFillAttribute(), "FillAttribute"),
+                                    TraceLoggingValue(gci.GetPopupFillAttribute(), "PopupFillAttribute"),
+                                    TraceLoggingValue(gci.GetShowWindow(), "ShowWindow"),
+                                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
             static_assert(sizeof(UINT32) == sizeof(*gci.GetColorTable()), "gci.GetColorTable()");
 
             // I could use the TraceLoggingUIntArray, but then we would have to know the order of the enums on the backend.
             // So just log each enum count separately with its string representation which makes it more human readable.
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+            // clang-format on
             TraceLoggingWriteTagged(_activity,
-                "ApiUsed",
-                TraceLoggingUInt32(_rguiTimesApiUsed[AddConsoleAlias], "AddConsoleAlias"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[AllocConsole], "AllocConsole"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[AttachConsole], "AttachConsole"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[CreateConsoleScreenBuffer], "CreateConsoleScreenBuffer"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GenerateConsoleCtrlEvent], "GenerateConsoleCtrlEvent"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[FillConsoleOutputAttribute], "FillConsoleOutputAttribute"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[FillConsoleOutputCharacter], "FillConsoleOutputCharacter"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[FlushConsoleInputBuffer], "FlushConsoleInputBuffer"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[FreeConsole], "FreeConsole"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAlias], "GetConsoleAlias"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliases], "GetConsoleAliases"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasExesLength], "GetConsoleAliasExesLength"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasesLength], "GetConsoleAliasesLength"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasExes], "GetConsoleAliasExes"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleCP], "GetConsoleCP"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleCursorInfo], "GetConsoleCursorInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleDisplayMode], "GetConsoleDisplayMode"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleFontSize], "GetConsoleFontSize"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleHistoryInfo], "GetConsoleHistoryInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleLangId], "GetConsoleLangId"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleMode], "GetConsoleMode"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleOriginalTitle], "GetConsoleOriginalTitle"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleOutputCP], "GetConsoleOutputCP"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleProcessList], "GetConsoleProcessList"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleScreenBufferInfoEx], "GetConsoleScreenBufferInfoEx"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleSelectionInfo], "GetConsoleSelectionInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleTitle], "GetConsoleTitle"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleWindow], "GetConsoleWindow"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetCurrentConsoleFontEx], "GetCurrentConsoleFontEx"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetLargestConsoleWindowSize], "GetLargestConsoleWindowSize"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetNumberOfConsoleInputEvents], "GetNumberOfConsoleInputEvents"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[GetNumberOfConsoleMouseButtons], "GetNumberOfConsoleMouseButtons"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[PeekConsoleInput], "PeekConsoleInput"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsole], "ReadConsole"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleInput], "ReadConsoleInput"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutput], "ReadConsoleOutput"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutputAttribute], "ReadConsoleOutputAttribute"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutputCharacter], "ReadConsoleOutputCharacter"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[ScrollConsoleScreenBuffer], "ScrollConsoleScreenBuffer"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleActiveScreenBuffer], "SetConsoleActiveScreenBuffer"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCP], "SetConsoleCP"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCursorInfo], "SetConsoleCursorInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCursorPosition], "SetConsoleCursorPosition"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleDisplayMode], "SetConsoleDisplayMode"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleHistoryInfo], "SetConsoleHistoryInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleMode], "SetConsoleMode"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleOutputCP], "SetConsoleOutputCP"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleScreenBufferInfoEx], "SetConsoleScreenBufferInfoEx"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleScreenBufferSize], "SetConsoleScreenBufferSize"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleTextAttribute], "SetConsoleTextAttribute"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleTitle], "SetConsoleTitle"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleWindowInfo], "SetConsoleWindowInfo"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[SetCurrentConsoleFontEx], "SetCurrentConsoleFontEx"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsole], "WriteConsole"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleInput], "WriteConsoleInput"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutput], "WriteConsoleOutput"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputAttribute], "WriteConsoleOutputAttribute"),
-                TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
-                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                                    "ApiUsed",
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[AddConsoleAlias], "AddConsoleAlias"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[AllocConsole], "AllocConsole"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[AttachConsole], "AttachConsole"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[CreateConsoleScreenBuffer], "CreateConsoleScreenBuffer"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GenerateConsoleCtrlEvent], "GenerateConsoleCtrlEvent"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[FillConsoleOutputAttribute], "FillConsoleOutputAttribute"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[FillConsoleOutputCharacter], "FillConsoleOutputCharacter"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[FlushConsoleInputBuffer], "FlushConsoleInputBuffer"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[FreeConsole], "FreeConsole"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAlias], "GetConsoleAlias"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliases], "GetConsoleAliases"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasExesLength], "GetConsoleAliasExesLength"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasesLength], "GetConsoleAliasesLength"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleAliasExes], "GetConsoleAliasExes"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleCP], "GetConsoleCP"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleCursorInfo], "GetConsoleCursorInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleDisplayMode], "GetConsoleDisplayMode"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleFontSize], "GetConsoleFontSize"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleHistoryInfo], "GetConsoleHistoryInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleLangId], "GetConsoleLangId"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleMode], "GetConsoleMode"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleOriginalTitle], "GetConsoleOriginalTitle"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleOutputCP], "GetConsoleOutputCP"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleProcessList], "GetConsoleProcessList"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleScreenBufferInfoEx], "GetConsoleScreenBufferInfoEx"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleSelectionInfo], "GetConsoleSelectionInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleTitle], "GetConsoleTitle"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetConsoleWindow], "GetConsoleWindow"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetCurrentConsoleFontEx], "GetCurrentConsoleFontEx"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetLargestConsoleWindowSize], "GetLargestConsoleWindowSize"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetNumberOfConsoleInputEvents], "GetNumberOfConsoleInputEvents"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[GetNumberOfConsoleMouseButtons], "GetNumberOfConsoleMouseButtons"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[PeekConsoleInput], "PeekConsoleInput"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsole], "ReadConsole"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleInput], "ReadConsoleInput"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutput], "ReadConsoleOutput"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutputAttribute], "ReadConsoleOutputAttribute"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ReadConsoleOutputCharacter], "ReadConsoleOutputCharacter"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[ScrollConsoleScreenBuffer], "ScrollConsoleScreenBuffer"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleActiveScreenBuffer], "SetConsoleActiveScreenBuffer"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCP], "SetConsoleCP"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCursorInfo], "SetConsoleCursorInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleCursorPosition], "SetConsoleCursorPosition"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleDisplayMode], "SetConsoleDisplayMode"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleHistoryInfo], "SetConsoleHistoryInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleMode], "SetConsoleMode"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleOutputCP], "SetConsoleOutputCP"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleScreenBufferInfoEx], "SetConsoleScreenBufferInfoEx"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleScreenBufferSize], "SetConsoleScreenBufferSize"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleTextAttribute], "SetConsoleTextAttribute"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleTitle], "SetConsoleTitle"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetConsoleWindowInfo], "SetConsoleWindowInfo"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[SetCurrentConsoleFontEx], "SetCurrentConsoleFontEx"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsole], "WriteConsole"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleInput], "WriteConsoleInput"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutput], "WriteConsoleOutput"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputAttribute], "WriteConsoleOutputAttribute"),
+                                    TraceLoggingUInt32(_rguiTimesApiUsed[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
+                                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
             for (int n = 0; n < ARRAYSIZE(_rguiTimesApiUsedAnsi); n++)
             {
@@ -521,30 +530,32 @@ void Telemetry::WriteFinalTraceLog()
                     // Ansi specific API's are used less, so check if we have anything to send back.
                     // Also breaking it up into a separate TraceLoggingWriteTagged fixes a compilation warning that
                     // the heap is too small.
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+                    // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+                    // clang-format on
                     TraceLoggingWriteTagged(_activity,
-                        "ApiAnsiUsed",
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[AddConsoleAlias], "AddConsoleAlias"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[FillConsoleOutputCharacter], "FillConsoleOutputCharacter"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAlias], "GetConsoleAlias"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliases], "GetConsoleAliases"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasesLength], "GetConsoleAliasesLength"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasExes], "GetConsoleAliasExes"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasExesLength], "GetConsoleAliasExesLength"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleOriginalTitle], "GetConsoleOriginalTitle"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleTitle], "GetConsoleTitle"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[PeekConsoleInput], "PeekConsoleInput"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsole], "ReadConsole"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleInput], "ReadConsoleInput"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleOutput], "ReadConsoleOutput"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleOutputCharacter], "ReadConsoleOutputCharacter"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[SetConsoleTitle], "SetConsoleTitle"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsole], "WriteConsole"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleInput], "WriteConsoleInput"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutput], "WriteConsoleOutput"),
-                        TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
-                        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                        TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+                                            "ApiAnsiUsed",
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[AddConsoleAlias], "AddConsoleAlias"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[FillConsoleOutputCharacter], "FillConsoleOutputCharacter"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAlias], "GetConsoleAlias"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliases], "GetConsoleAliases"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasesLength], "GetConsoleAliasesLength"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasExes], "GetConsoleAliasExes"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleAliasExesLength], "GetConsoleAliasExesLength"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleOriginalTitle], "GetConsoleOriginalTitle"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[GetConsoleTitle], "GetConsoleTitle"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[PeekConsoleInput], "PeekConsoleInput"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsole], "ReadConsole"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleInput], "ReadConsoleInput"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleOutput], "ReadConsoleOutput"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[ReadConsoleOutputCharacter], "ReadConsoleOutputCharacter"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[SetConsoleTitle], "SetConsoleTitle"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsole], "WriteConsole"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleInput], "WriteConsoleInput"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutput], "WriteConsoleOutput"),
+                                            TraceLoggingUInt32(_rguiTimesApiUsedAnsi[WriteConsoleOutputCharacter], "WriteConsoleOutputCharacter"),
+                                            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
                     break;
                 }
             }
@@ -568,9 +579,11 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
 
     if (cCharsWritten > 0)
     {
-#pragma prefast(suppress:__WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+        // clang-format off
+#pragma prefast(suppress: __WARNING_NONCONST_LOCAL, "Activity can't be const, since it's set to a random value on startup.")
+        // clang-format on
         TraceLoggingWriteTagged(_activity,
-            "RipMessage",
-            TraceLoggingString(szMessageEvaluated, "Message"));
+                                "RipMessage",
+                                TraceLoggingString(szMessageEvaluated, "Message"));
     }
 }

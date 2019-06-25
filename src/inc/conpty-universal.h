@@ -41,8 +41,7 @@ const unsigned int PTY_SIGNAL_RESIZE_WINDOW = 8u;
 //
 struct WStringCaseInsensitiveCompare
 {
-    [[nodiscard]]
-    bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
+    [[nodiscard]] bool operator()(const std::wstring& lhs, const std::wstring& rhs) const noexcept
     {
         return (::_wcsicmp(lhs.c_str(), rhs.c_str()) < 0);
     }
@@ -50,25 +49,24 @@ struct WStringCaseInsensitiveCompare
 
 using EnvironmentVariableMapW = std::map<std::wstring, std::wstring, WStringCaseInsensitiveCompare>;
 
-[[nodiscard]]
-HRESULT CreateConPty(const std::wstring& cmdline,
-                     const unsigned short w,
-                     const unsigned short h,
-                     HANDLE* const hInput,
-                     HANDLE* const hOutput,
-                     HANDLE* const hSignal,
-                     PROCESS_INFORMATION* const piPty,
-                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept;
+[[nodiscard]] HRESULT CreateConPty(const std::wstring& cmdline,
+                                   const unsigned short w,
+                                   const unsigned short h,
+                                   HANDLE* const hInput,
+                                   HANDLE* const hOutput,
+                                   HANDLE* const hSignal,
+                                   PROCESS_INFORMATION* const piPty,
+                                   DWORD dwCreationFlags = 0,
+                                   const EnvironmentVariableMapW& extraEnvVars = {}) noexcept;
 
 bool SignalResizeWindow(const HANDLE hSignal,
                         const unsigned short w,
                         const unsigned short h);
 
-[[nodiscard]]
-HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept;
+[[nodiscard]] HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept;
 
-[[nodiscard]]
-HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept;
+[[nodiscard]] HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map,
+                                                          std::vector<wchar_t>& newEnvVars) noexcept;
 
 // Function Description:
 // - Updates an EnvironmentVariableMapW with the current process's unicode
@@ -77,9 +75,7 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
 // - map: The map to populate with the current processes's environment variables.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
-[[nodiscard]]
-__declspec(noinline) inline
-HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
+[[nodiscard]] __declspec(noinline) inline HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
 {
     LPWCH currentEnvVars{};
     auto freeCurrentEnv = wil::scope_exit([&] {
@@ -123,9 +119,7 @@ HRESULT UpdateEnvironmentMapW(EnvironmentVariableMapW& map) noexcept
 // - newEnvVars: The vector that will be used to create the new environment block.
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing
-[[nodiscard]]
-__declspec(noinline) inline
-HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept
+[[nodiscard]] __declspec(noinline) inline HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::vector<wchar_t>& newEnvVars) noexcept
 {
     // Clear environment block before use.
     constexpr size_t cbChar{ sizeof(decltype(newEnvVars.begin())::value_type) };
@@ -137,7 +131,7 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
 
     // Resize environment block to fit map.
     size_t cchEnv{ 2 }; // For the block's double NULL-terminator.
-    for (const auto&[name, value] : map)
+    for (const auto& [name, value] : map)
     {
         // Final form of "name=value\0".
         cchEnv += name.size() + 1 + value.size() + 1;
@@ -152,7 +146,7 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
     // Transform each map entry and copy it into the new environment block.
     LPWCH pEnvVars{ newEnvVars.data() };
     size_t cbRemaining{ cchEnv * cbChar };
-    for (const auto&[name, value] : map)
+    for (const auto& [name, value] : map)
     {
         // Final form of "name=value\0" for every entry.
         {
@@ -218,17 +212,16 @@ HRESULT EnvironmentMapToEnvironmentStringsW(EnvironmentVariableMapW& map, std::v
 // Return Value:
 // - S_OK if we succeeded, or an appropriate HRESULT for failing format the
 //      commandline or failing to launch the conhost
-[[nodiscard]]
-__declspec(noinline) inline
-HRESULT CreateConPty(const std::wstring& cmdline,
-                     std::optional<std::wstring> startingDirectory,
-                     const unsigned short w,
-                     const unsigned short h,
-                     HANDLE* const hInput,
-                     HANDLE* const hOutput,
-                     HANDLE* const hSignal,
-                     PROCESS_INFORMATION* const piPty,
-                     const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
+[[nodiscard]] __declspec(noinline) inline HRESULT CreateConPty(const std::wstring& cmdline,
+                                                               std::optional<std::wstring> startingDirectory,
+                                                               const unsigned short w,
+                                                               const unsigned short h,
+                                                               HANDLE* const hInput,
+                                                               HANDLE* const hOutput,
+                                                               HANDLE* const hSignal,
+                                                               PROCESS_INFORMATION* const piPty,
+                                                               DWORD dwCreationFlags = 0,
+                                                               const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
 {
     // Create some anon pipes so we can pass handles down and into the console.
     // IMPORTANT NOTE:
@@ -248,7 +241,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     HANDLE signalPipeConhostSide;
 
     SECURITY_ATTRIBUTES sa;
-    sa = {0};
+    sa = { 0 };
     sa.nLength = sizeof(sa);
     sa.bInheritHandle = FALSE;
     sa.lpSecurityDescriptor = nullptr;
@@ -275,7 +268,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     conhostCmdline += L" -- ";
     conhostCmdline += cmdline;
 
-    STARTUPINFO si = {0};
+    STARTUPINFO si = { 0 };
     si.cb = sizeof(STARTUPINFOW);
     si.hStdInput = inPipeConhostSide;
     si.hStdOutput = outPipeConhostSide;
@@ -287,7 +280,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     {
         return E_OUTOFMEMORY;
     }
-    HRESULT hr = StringCchCopy(mutableCommandline.get(), conhostCmdline.length()+1, conhostCmdline.c_str());
+    HRESULT hr = StringCchCopy(mutableCommandline.get(), conhostCmdline.length() + 1, conhostCmdline.c_str());
     if (!SUCCEEDED(hr))
     {
         return hr;
@@ -301,13 +294,12 @@ HRESULT CreateConPty(const std::wstring& cmdline,
                            newEnvVars.size() * sizeof(decltype(newEnvVars.begin())::value_type));
     });
 
-    DWORD dwCreationFlags = 0;
     if (!extraEnvVars.empty())
     {
         EnvironmentVariableMapW tempEnvMap{ extraEnvVars };
         auto zeroEnvMap = wil::scope_exit([&] {
             // Can't zero the keys, but at least we can zero the values.
-            for (auto&[name, value] : tempEnvMap)
+            for (auto& [name, value] : tempEnvMap)
             {
                 ::SecureZeroMemory(value.data(), value.size() * sizeof(decltype(value.begin())::value_type));
             }
@@ -326,14 +318,14 @@ HRESULT CreateConPty(const std::wstring& cmdline,
     bool fSuccess = !!CreateProcessW(
         nullptr,
         mutableCommandline.get(),
-        nullptr,                    // lpProcessAttributes
-        nullptr,                    // lpThreadAttributes
-        true,                       // bInheritHandles
-        dwCreationFlags,            // dwCreationFlags
-        lpEnvironment,              // lpEnvironment
-        lpCurrentDirectory,         // lpCurrentDirectory
-        &si,                        // lpStartupInfo
-        piPty                       // lpProcessInformation
+        nullptr, // lpProcessAttributes
+        nullptr, // lpThreadAttributes
+        true, // bInheritHandles
+        dwCreationFlags, // dwCreationFlags
+        lpEnvironment, // lpEnvironment
+        lpCurrentDirectory, // lpCurrentDirectory
+        &si, // lpStartupInfo
+        piPty // lpProcessInformation
     );
 
     CloseHandle(inPipeConhostSide);
@@ -351,8 +343,7 @@ HRESULT CreateConPty(const std::wstring& cmdline,
 // - h: The new height of the pty, in characters
 // Return Value:
 // - true if the resize succeeded, else false.
-__declspec(noinline) inline
-bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned short h)
+__declspec(noinline) inline bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned short h)
 {
     unsigned short signalPacket[3];
     signalPacket[0] = PTY_SIGNAL_RESIZE_WINDOW;
@@ -361,4 +352,3 @@ bool SignalResizeWindow(HANDLE hSignal, const unsigned short w, const unsigned s
 
     return !!WriteFile(hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
 }
-

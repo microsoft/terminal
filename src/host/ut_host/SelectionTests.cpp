@@ -17,6 +17,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class SelectionTests
 {
@@ -612,5 +613,4 @@ class SelectionInputTests
 
         } while (point.Y < bufferSize.BottomInclusive()); // stop once we've advanced to a point on the bottom row of the buffer.
     }
-
 };

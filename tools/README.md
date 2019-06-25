@@ -38,6 +38,10 @@ for Linux entrypoint) in your `~` directory.
 
 Likewise, `openps` launches powershell.
 
+## runformat
+
+`runformat` will format the c++ code to match our coding style.
+
 ## testcon, runut, runft
 `runut` will automatically run all of the unit tests through TAEF. `runft` will
 run the feature tests, and `testcon` runs all of them. They'll pass any
@@ -59,5 +63,6 @@ of the razzle environment, so you can immediately start using the macros:
  1. `bcz`
  2. `opencon`
  3. `testcon` (in the new console window)
+ 4. `runformat`
 
 If they all come out green, then you're ready for a pull request!

@@ -23,7 +23,7 @@ Notes:
 
 class CConversionArea;
 
-class CConsoleTSF final:
+class CConsoleTSF final :
     public ITfContextOwner,
     public ITfContextOwnerCompositionSink,
     public ITfInputProcessorProfileActivationSink,
@@ -44,18 +44,19 @@ public:
     virtual ~CConsoleTSF()
     {
     }
-    [[nodiscard]]
-    HRESULT Initialize();
-    void    Uninitialize();
+    [[nodiscard]] HRESULT Initialize();
+    void Uninitialize();
 
 public:
     // IUnknown methods
-    STDMETHODIMP QueryInterface(REFIID riid,  void **ppvObj);
-    STDMETHODIMP_(ULONG) AddRef(void);
-    STDMETHODIMP_(ULONG) Release(void);
+    STDMETHODIMP QueryInterface(REFIID riid, void** ppvObj);
+    STDMETHODIMP_(ULONG)
+    AddRef(void);
+    STDMETHODIMP_(ULONG)
+    Release(void);
 
     // ITfContextOwner
-    STDMETHODIMP GetACPFromPoint(const POINT*, DWORD, LONG *pCP)
+    STDMETHODIMP GetACPFromPoint(const POINT*, DWORD, LONG* pCP)
     {
         if (pCP)
         {
@@ -65,8 +66,7 @@ public:
         return S_OK;
     }
 
-
-    STDMETHODIMP GetScreenExt(RECT *pRect)
+    STDMETHODIMP GetScreenExt(RECT* pRect)
     {
         if (pRect)
         {
@@ -76,7 +76,7 @@ public:
         return S_OK;
     }
 
-    STDMETHODIMP GetTextExt(LONG, LONG, RECT *pRect, BOOL *pbClipped)
+    STDMETHODIMP GetTextExt(LONG, LONG, RECT* pRect, BOOL* pbClipped)
     {
         if (pRect)
         {
@@ -91,7 +91,7 @@ public:
         return S_OK;
     }
 
-    STDMETHODIMP GetStatus(TF_STATUS *pTfStatus)
+    STDMETHODIMP GetStatus(TF_STATUS* pTfStatus)
     {
         if (pTfStatus)
         {
@@ -105,28 +105,29 @@ public:
         *phwnd = _hwndConsole;
         return S_OK;
     }
-    STDMETHODIMP GetAttribute(REFGUID,  VARIANT*)
-    { return E_NOTIMPL; }
+    STDMETHODIMP GetAttribute(REFGUID, VARIANT*)
+    {
+        return E_NOTIMPL;
+    }
 
     // ITfContextOwnerCompositionSink methods
-    STDMETHODIMP OnStartComposition(ITfCompositionView *pComposition, BOOL *pfOk);
-    STDMETHODIMP OnUpdateComposition(ITfCompositionView *pComposition, ITfRange *pRangeNew);
+    STDMETHODIMP OnStartComposition(ITfCompositionView* pComposition, BOOL* pfOk);
+    STDMETHODIMP OnUpdateComposition(ITfCompositionView* pComposition, ITfRange* pRangeNew);
     STDMETHODIMP OnEndComposition(ITfCompositionView* pComposition);
 
     // ITfInputProcessorProfileActivationSink
-    STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid,
-                             REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags);
+    STDMETHODIMP OnActivated(DWORD dwProfileType, LANGID langid, REFCLSID clsid, REFGUID catid, REFGUID guidProfile, HKL hkl, DWORD dwFlags);
 
     // ITfUIElementSink methods
-    STDMETHODIMP BeginUIElement(DWORD dwUIELementId, BOOL *pbShow);
+    STDMETHODIMP BeginUIElement(DWORD dwUIELementId, BOOL* pbShow);
     STDMETHODIMP UpdateUIElement(DWORD dwUIELementId);
     STDMETHODIMP EndUIElement(DWORD dwUIELementId);
 
     // ITfCleanupContextSink methods
-    STDMETHODIMP OnCleanupContext(TfEditCookie ecWrite, ITfContext *pic);
+    STDMETHODIMP OnCleanupContext(TfEditCookie ecWrite, ITfContext* pic);
 
     // ITfTextEditSink methods
-    STDMETHODIMP OnEndEdit(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
+    STDMETHODIMP OnEndEdit(ITfContext* pInputContext, TfEditCookie ecReadOnly, ITfEditRecord* pEditRecord);
 
 public:
     CConversionArea* CreateConversionArea();
@@ -148,10 +149,13 @@ public:
         if (!fSet && _cCompositions)
         {
             // Close (terminate) any open compositions when losing the input focus.
-            wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
-            if (spCompositionServices)
+            if (_spITfInputContext)
             {
-                spCompositionServices->TerminateComposition(NULL);
+                wil::com_ptr_nothrow<ITfContextOwnerCompositionServices> spCompositionServices(_spITfInputContext.try_query<ITfContextOwnerCompositionServices>());
+                if (spCompositionServices)
+                {
+                    spCompositionServices->TerminateComposition(NULL);
+                }
             }
         }
     }
@@ -168,44 +172,42 @@ public:
     void SetCompletedRangeLength(long cch) { _cchCompleted = cch; }
 
 private:
-    [[nodiscard]]
-    HRESULT _OnUpdateComposition();
-    [[nodiscard]]
-    HRESULT _OnCompleteComposition();
-    BOOL _HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord);
+    [[nodiscard]] HRESULT _OnUpdateComposition();
+    [[nodiscard]] HRESULT _OnCompleteComposition();
+    BOOL _HasCompositionChanged(ITfContext* pInputContext, TfEditCookie ecReadOnly, ITfEditRecord* pEditRecord);
 
 private:
     // ref count.
     DWORD _cRef;
 
     // Cicero stuff.
-    TfClientId              _tid;
+    TfClientId _tid;
     wil::com_ptr_nothrow<ITfThreadMgrEx> _spITfThreadMgr;
     wil::com_ptr_nothrow<ITfDocumentMgr> _spITfDocumentMgr;
-    wil::com_ptr_nothrow<ITfContext>     _spITfInputContext;
+    wil::com_ptr_nothrow<ITfContext> _spITfInputContext;
 
     // Event sink cookies.
-    DWORD   _dwContextOwnerCookie = 0;
-    DWORD   _dwUIElementSinkCookie = 0;
-    DWORD   _dwTextEditSinkCookie = 0;
-    DWORD   _dwActivationSinkCookie = 0;
+    DWORD _dwContextOwnerCookie = 0;
+    DWORD _dwUIElementSinkCookie = 0;
+    DWORD _dwTextEditSinkCookie = 0;
+    DWORD _dwActivationSinkCookie = 0;
 
     // Conversion area object for the languages.
-    CConversionArea*        _pConversionArea = nullptr;
+    CConversionArea* _pConversionArea = nullptr;
 
     // Console info.
-    HWND    _hwndConsole;
+    HWND _hwndConsole;
     GetSuggestionWindowPos _pfnPosition;
 
     // Miscellaneous flags
-    BOOL _fModifyingDoc = FALSE;            // Set TRUE, when calls ITfRange::SetText
+    BOOL _fModifyingDoc = FALSE; // Set TRUE, when calls ITfRange::SetText
     BOOL _fCoInitialized = FALSE;
     BOOL _fEditSessionRequested = FALSE;
     BOOL _fCleanupSessionRequested = FALSE;
     BOOL _fCompositionCleanupSkipped = FALSE;
 
-    int  _cCompositions = 0;
-    long _cchCompleted = 0;     // length of completed composition waiting for cleanup
+    int _cCompositions = 0;
+    long _cchCompleted = 0; // length of completed composition waiting for cleanup
 };
 
 extern CConsoleTSF* g_pConsoleTSF;

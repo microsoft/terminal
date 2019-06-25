@@ -17,7 +17,7 @@ bool Terminal::PrintString(std::wstring_view stringView)
 
 bool Terminal::ExecuteChar(wchar_t wch)
 {
-    std::wstring_view view{&wch, 1};
+    std::wstring_view view{ &wch, 1 };
     _WriteBuffer(view);
     return true;
 }
@@ -106,7 +106,7 @@ bool Terminal::SetCursorPosition(short x, short y)
     const auto viewOrigin = viewport.Origin();
     const short absoluteX = viewOrigin.X + x;
     const short absoluteY = viewOrigin.Y + y;
-    COORD newPos{absoluteX, absoluteY};
+    COORD newPos{ absoluteX, absoluteY };
     viewport.Clamp(newPos);
     _buffer->GetCursor().SetPosition(newPos);
 

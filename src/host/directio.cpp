@@ -23,6 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Types;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class CONSOLE_INFORMATION;
 
@@ -73,8 +74,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
                 const KeyEvent* const keyEventEndByte = static_cast<const KeyEvent* const>(inEvents.front().get());
                 inEvents.pop_front();
 
-                char inBytes[] =
-                {
+                char inBytes[] = {
                     static_cast<char>(keyEvent->GetCharData()),
                     static_cast<char>(keyEventEndByte->GetCharData())
                 };
@@ -89,8 +89,7 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             }
             else
             {
-                char inBytes[] =
-                {
+                char inBytes[] = {
                     static_cast<char>(keyEvent->GetCharData())
                 };
                 try
@@ -152,14 +151,13 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 // - CONSOLE_STATUS_WAIT - If we didn't have enough data or needed to
 // block, this will be returned along with context in *ppWaiter.
 // - Or an out of memory/math/string error message in NTSTATUS format.
-[[nodiscard]]
-static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
-                                   std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                   const size_t eventReadCount,
-                                   INPUT_READ_HANDLE_DATA& readHandleState,
-                                   const bool IsUnicode,
-                                   const bool IsPeek,
-                                   std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
+                                                 std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                                 const size_t eventReadCount,
+                                                 INPUT_READ_HANDLE_DATA& readHandleState,
+                                                 const bool IsUnicode,
+                                                 const bool IsPeek,
+                                                 std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -267,12 +265,11 @@ static NTSTATUS _DoGetConsoleInput(InputBuffer& inputBuffer,
 // - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
-[[nodiscard]]
-HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
-                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           const size_t eventsToRead,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
+                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                                         const size_t eventsToRead,
+                                                         INPUT_READ_HANDLE_DATA& readHandleState,
+                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -303,12 +300,11 @@ HRESULT ApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
 // - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
-[[nodiscard]]
-HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
-                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           const size_t eventsToRead,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
+                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                                         const size_t eventsToRead,
+                                                         INPUT_READ_HANDLE_DATA& readHandleState,
+                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -339,12 +335,11 @@ HRESULT ApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
 // - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
-                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           const size_t eventsToRead,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
+                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                                         const size_t eventsToRead,
+                                                         INPUT_READ_HANDLE_DATA& readHandleState,
+                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -375,12 +370,11 @@ HRESULT ApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
 // - waiter - If we have to wait (not enough data to fill client
 // buffer), this contains context that will allow the server to
 // restore this call later.
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
-                                           std::deque<std::unique_ptr<IInputEvent>>& outEvents,
-                                           const size_t eventsToRead,
-                                           INPUT_READ_HANDLE_DATA& readHandleState,
-                                           std::unique_ptr<IWaitRoutine>& waiter) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
+                                                         std::deque<std::unique_ptr<IInputEvent>>& outEvents,
+                                                         const size_t eventsToRead,
+                                                         INPUT_READ_HANDLE_DATA& readHandleState,
+                                                         std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
     try
     {
@@ -405,11 +399,10 @@ HRESULT ApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
-                                             std::deque<std::unique_ptr<IInputEvent>>& events,
-                                             size_t& written,
-                                             const bool append) noexcept
+[[nodiscard]] static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
+                                                           std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                           size_t& written,
+                                                           const bool append) noexcept
 {
     try
     {
@@ -440,11 +433,10 @@ static HRESULT _WriteConsoleInputWImplHelper(InputBuffer& context,
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
-                                       _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                       _Out_ size_t& eventsWritten,
-                                       const bool append) noexcept
+[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
+                                                     _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                     _Out_ size_t& eventsWritten,
+                                                     const bool append) noexcept
 {
     return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
 }
@@ -459,11 +451,10 @@ HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
-                                            const std::basic_string_view<INPUT_RECORD> buffer,
-                                            size_t& written,
-                                            const bool append) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
+                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          size_t& written,
+                                                          const bool append) noexcept
 {
     written = 0;
 
@@ -504,11 +495,10 @@ HRESULT ApiRoutines::WriteConsoleInputAImpl(InputBuffer& context,
 // buffer, false if they should be written to the front
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
-                                            const std::basic_string_view<INPUT_RECORD> buffer,
-                                            size_t& written,
-                                            const bool append) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
+                                                          const std::basic_string_view<INPUT_RECORD> buffer,
+                                                          size_t& written,
+                                                          const bool append) noexcept
 {
     written = 0;
 
@@ -534,10 +524,9 @@ HRESULT ApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
 // - eventsWritten - on output, the number of events written
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
-                                        _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                        _Out_ size_t& eventsWritten)
+[[nodiscard]] HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
+                                                      _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
+                                                      _Out_ size_t& eventsWritten)
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -571,13 +560,12 @@ HRESULT DoSrvPrivatePrependConsoleInput(_Inout_ InputBuffer* const pInputBuffer,
 // Arguments:
 // - pInputBuffer - the input buffer to write to. Currently unused, as
 //      HandleGenericKeyEvent just gets the global input buffer, but all
-//      ConGetSet API's require a input or output object.
+//      ConGetSet API's require an input or output object.
 // - key - The keyevent to send to the console.
 // Return Value:
 // - HRESULT indicating success or failure
-[[nodiscard]]
-HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
-                                             _In_ KeyEvent key)
+[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
+                                                           _In_ KeyEvent key)
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -596,8 +584,9 @@ HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInput
 // - rectangle - This is the rectangle describing the region that the buffer covers.
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
-[[nodiscard]]
-static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR_INFO> buffer, const Viewport rectangle) noexcept
+[[nodiscard]] static HRESULT _ConvertCellsToAInplace(const UINT codepage,
+                                                     const gsl::span<CHAR_INFO> buffer,
+                                                     const Viewport rectangle) noexcept
 {
     try
     {
@@ -674,8 +663,9 @@ static HRESULT _ConvertCellsToAInplace(const UINT codepage, const gsl::span<CHAR
 // - rectangle - This is the rectangle describing the region that the buffer covers.
 // Return Value:
 // - Generally S_OK. Could be a memory or math error code.
-[[nodiscard]]
-static HRESULT _ConvertCellsToWInplace(const UINT codepage, gsl::span<CHAR_INFO> buffer, const Viewport& rectangle) noexcept
+[[nodiscard]] static HRESULT _ConvertCellsToWInplace(const UINT codepage,
+                                                     gsl::span<CHAR_INFO> buffer,
+                                                     const Viewport& rectangle) noexcept
 {
     try
     {
@@ -745,8 +735,7 @@ static HRESULT _ConvertCellsToWInplace(const UINT codepage, gsl::span<CHAR_INFO>
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
+[[nodiscard]] static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer, const Viewport& rectangle)
 {
     std::vector<CHAR_INFO> result;
     result.reserve(buffer.size() * 2); // we estimate we'll need up to double the cells if they all expand.
@@ -782,7 +771,6 @@ static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer
                     candidate.Attributes = bufferIter->Attributes;
                     WI_ClearAllFlags(candidate.Attributes, COMMON_LVB_SBCSDBCS);
                     WI_SetFlag(candidate.Attributes, COMMON_LVB_TRAILING_BYTE);
-
                 }
                 else
                 {
@@ -806,11 +794,10 @@ static std::vector<CHAR_INFO> _ConvertCellsToMungedW(gsl::span<CHAR_INFO> buffer
     return result;
 }
 
-[[nodiscard]]
-static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
-                                             gsl::span<CHAR_INFO> targetBuffer,
-                                             const Microsoft::Console::Types::Viewport& requestRectangle,
-                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
+[[nodiscard]] static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
+                                                           gsl::span<CHAR_INFO> targetBuffer,
+                                                           const Microsoft::Console::Types::Viewport& requestRectangle,
+                                                           Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
     try
     {
@@ -865,7 +852,7 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
         auto sourceIter = storageBuffer.GetCellDataAt(sourcePoint, clippedRequestRectangle);
 
         // Walk through every cell of the target, advancing the buffer.
-        // Validate that we always still have a valid iterator to the backgin store,
+        // Validate that we always still have a valid iterator to the backing store,
         // that we always are writing inside the user's buffer (before the end)
         // and we're always targeting the user's buffer inside its original bounds.
         while (sourceIter && targetIter < targetBuffer.end())
@@ -899,11 +886,10 @@ static HRESULT _ReadConsoleOutputWImplHelper(const SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
-                                            gsl::span<CHAR_INFO> buffer,
-                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
-                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
+                                                          gsl::span<CHAR_INFO> buffer,
+                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -922,11 +908,10 @@ HRESULT ApiRoutines::ReadConsoleOutputAImpl(const SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
-                                            gsl::span<CHAR_INFO> buffer,
-                                            const Microsoft::Console::Types::Viewport& sourceRectangle,
-                                            Microsoft::Console::Types::Viewport& readRectangle) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
+                                                          gsl::span<CHAR_INFO> buffer,
+                                                          const Microsoft::Console::Types::Viewport& sourceRectangle,
+                                                          Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -947,11 +932,10 @@ HRESULT ApiRoutines::ReadConsoleOutputWImpl(const SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
-                                              gsl::span<CHAR_INFO> buffer,
-                                              const Viewport& requestRectangle,
-                                              Viewport& writtenRectangle) noexcept
+[[nodiscard]] static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
+                                                            gsl::span<CHAR_INFO> buffer,
+                                                            const Viewport& requestRectangle,
+                                                            Viewport& writtenRectangle) noexcept
 {
     try
     {
@@ -1054,11 +1038,10 @@ static HRESULT _WriteConsoleOutputWImplHelper(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
-                                             gsl::span<CHAR_INFO> buffer,
-                                             const Viewport& requestRectangle,
-                                             Viewport& writtenRectangle) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
+                                                           gsl::span<CHAR_INFO> buffer,
+                                                           const Viewport& requestRectangle,
+                                                           Viewport& writtenRectangle) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -1076,11 +1059,10 @@ HRESULT ApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
-                                             gsl::span<CHAR_INFO> buffer,
-                                             const Viewport& requestRectangle,
-                                             Viewport& writtenRectangle) noexcept
+[[nodiscard]] HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
+                                                           gsl::span<CHAR_INFO> buffer,
+                                                           const Viewport& requestRectangle,
+                                                           Viewport& writtenRectangle) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -1104,11 +1086,10 @@ HRESULT ApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
-                                                    const COORD origin,
-                                                    gsl::span<WORD> buffer,
-                                                    size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& context,
+                                                                  const COORD origin,
+                                                                  gsl::span<WORD> buffer,
+                                                                  size_t& written) noexcept
 {
     written = 0;
 
@@ -1126,11 +1107,10 @@ HRESULT ApiRoutines::ReadConsoleOutputAttributeImpl(const SCREEN_INFORMATION& co
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
-                                                     const COORD origin,
-                                                     gsl::span<char> buffer,
-                                                     size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& context,
+                                                                   const COORD origin,
+                                                                   gsl::span<char> buffer,
+                                                                   size_t& written) noexcept
 {
     written = 0;
 
@@ -1144,7 +1124,7 @@ HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& c
                                              buffer.size());
 
         // for compatibility reasons, if we receive more chars than can fit in the buffer
-            // then we don't send anything back.
+        // then we don't send anything back.
         if (chars.size() <= gsl::narrow<size_t>(buffer.size()))
         {
             std::copy(chars.cbegin(), chars.cend(), buffer.begin());
@@ -1156,11 +1136,10 @@ HRESULT ApiRoutines::ReadConsoleOutputCharacterAImpl(const SCREEN_INFORMATION& c
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
-                                                     const COORD origin,
-                                                     gsl::span<wchar_t> buffer,
-                                                     size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& context,
+                                                                   const COORD origin,
+                                                                   gsl::span<wchar_t> buffer,
+                                                                   size_t& written) noexcept
 {
     written = 0;
 
@@ -1196,11 +1175,10 @@ HRESULT ApiRoutines::ReadConsoleOutputCharacterWImpl(const SCREEN_INFORMATION& c
 //#define CONSOLE_GRAPHICS_BUFFER 2
 //#define CONSOLE_OEMFONT_DISPLAY 4
 
-[[nodiscard]]
-NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
-                                   _In_ PCONSOLE_API_MSG /*Message*/,
-                                   _In_ PCD_CREATE_OBJECT_INFORMATION Information,
-                                   _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
+[[nodiscard]] NTSTATUS ConsoleCreateScreenBuffer(std::unique_ptr<ConsoleHandleData>& handle,
+                                                 _In_ PCONSOLE_API_MSG /*Message*/,
+                                                 _In_ PCD_CREATE_OBJECT_INFORMATION Information,
+                                                 _In_ PCONSOLE_CREATESCREENBUFFER_MSG a)
 {
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::CreateConsoleScreenBuffer);
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();

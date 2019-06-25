@@ -15,16 +15,16 @@
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
-
+using namespace Microsoft::Console::Interactivity;
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {
-    SAFEARRAY *psa = SafeArrayCreateVector(VT_I4, 0, length);
+    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, length);
     if (psa != nullptr)
     {
         for (long i = 0; i < length; i++)
         {
-            if (FAILED(SafeArrayPutElement(psa, &i, (void *)&(data[i]))))
+            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(data[i]))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
@@ -48,8 +48,7 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
 }
 
-[[nodiscard]]
-HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
+[[nodiscard]] HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
     // check to see if we're already firing this particular event
@@ -78,13 +77,15 @@ HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 
 #pragma region IUnknown
 
-IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::AddRef()
+IFACEMETHODIMP_(ULONG)
+ScreenInfoUiaProvider::AddRef()
 {
     Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
-IFACEMETHODIMP_(ULONG) ScreenInfoUiaProvider::Release()
+IFACEMETHODIMP_(ULONG)
+ScreenInfoUiaProvider::Release()
 {
     Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
     long val = InterlockedDecrement(&_cRefs);
@@ -338,8 +339,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ApiMsgGetSelection apiMsg;
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
@@ -454,8 +454,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     gci.LockConsole();
-    auto Unlock = wil::scope_exit([&]
-    {
+    auto Unlock = wil::scope_exit([&] {
         gci.UnlockConsole();
     });
 
@@ -531,7 +530,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
-    HRESULT hr = S_OK;;
+    HRESULT hr = S_OK;
     try
     {
         *ppRetVal = UiaTextRange::Create(pProvider);
@@ -559,7 +558,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
         *ppRetVal = UiaTextRange::Create(pProvider,
                                          point);
     }
-    catch(...)
+    catch (...)
     {
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();

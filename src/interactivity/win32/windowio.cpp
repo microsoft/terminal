@@ -23,7 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.
@@ -94,9 +94,9 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
     LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-        ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                  &ConsoleOwner,
-                  sizeof(ConsoleOwner)));
+                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
+                                &ConsoleOwner,
+                                sizeof(ConsoleOwner)));
 }
 
 // ----------------------------
@@ -358,7 +358,6 @@ void HandleKeyEvent(const HWND hWnd,
                     ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(opacityDelta);
                     return;
                 }
-
             }
         }
     }
@@ -475,7 +474,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     if (VirtualKeyCode == VK_ESCAPE &&
         bCtrlDown && !(GetKeyState(VK_MENU) & KEY_PRESSED) && !(GetKeyState(VK_SHIFT) & KEY_PRESSED))
     {
-        return TRUE;    // call DefWindowProc
+        return TRUE; // call DefWindowProc
     }
 
     // check for alt-f4
@@ -485,12 +484,11 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     }
 
     if (WI_IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
-    {   // we're iconic
+    { // we're iconic
         // Check for ENTER while iconic (restore accelerator).
         if (VirtualKeyCode == VK_RETURN)
         {
-
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
         else
         {
@@ -521,16 +519,16 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
                 return FALSE;
             }
 
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
 
         if (VirtualKeyCode == VK_ESCAPE)
         {
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
         if (VirtualKeyCode == VK_TAB)
         {
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
     }
 
@@ -539,8 +537,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     return FALSE;
 }
 
-[[nodiscard]]
-static HRESULT _AdjustFontSize(const SHORT delta) noexcept
+[[nodiscard]] static HRESULT _AdjustFontSize(const SHORT delta) noexcept
 {
     auto& globals = ServiceLocator::LocateGlobals();
     auto& screenInfo = globals.getConsoleInformation().GetActiveOutputBuffer();
@@ -779,7 +776,6 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                     MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
                     pSelection->AdjustSelection(wordBounds.first, wordBounds.second);
-
                 }
                 catch (...)
                 {
@@ -917,7 +913,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
             EventFlags);
         EventsWritten = static_cast<ULONG>(gci.pInputBuffer->Write(std::move(mouseEvent)));
     }
-    catch(...)
+    catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
         EventsWritten = 0;
@@ -947,7 +943,6 @@ LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
         {
             if (msg.message != WM_CHAR && msg.message != WM_DEADCHAR && msg.message != WM_SYSCHAR && msg.message != WM_SYSDEADCHAR)
             {
-
                 // don't store key info if dialog box input
                 if (GetWindowLongPtrW(msg.hwnd, GWLP_HWNDPARENT) == 0)
                 {
@@ -962,7 +957,7 @@ LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 
 // Routine Description:
 // - This routine gets called by the console input thread to set up the console window.
-NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
+NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleProcessHandle* ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);

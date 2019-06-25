@@ -22,11 +22,9 @@ Revision History:
 #include "precomp.h"
 #pragma hdrstop
 
-
 /* ----- Equates ----- */
-#define PREVIEW_HSCROLL  0x01
-#define PREVIEW_VSCROLL  0x02
-
+#define PREVIEW_HSCROLL 0x01
+#define PREVIEW_VSCROLL 0x02
 
 /* ----- Prototypes ----- */
 
@@ -39,16 +37,14 @@ LONG AspectScale(
     LONG n2,
     LONG m);
 
-
 /* ----- Globals ----- */
 
 POINT NonClientSize;
 RECT WindowRect;
 DWORD PreviewFlags;
 
-
 VOID
-UpdatePreviewRect(VOID)
+    UpdatePreviewRect(VOID)
 
 /*++
 
@@ -62,7 +58,7 @@ UpdatePreviewRect(VOID)
     POINT WindowSize;
     PFONT_INFO lpFont;
     HMONITOR hMonitor;
-    MONITORINFO mi = {0};
+    MONITORINFO mi = { 0 };
 
     /*
      * Get the font pointer
@@ -72,8 +68,8 @@ UpdatePreviewRect(VOID)
     /*
      * Get the window size
      */
-    MinSize.x = (GetSystemMetrics(SM_CXMIN)-NonClientSize.x) / lpFont->Size.X;
-    MinSize.y = (GetSystemMetrics(SM_CYMIN)-NonClientSize.y) / lpFont->Size.Y;
+    MinSize.x = (GetSystemMetrics(SM_CXMIN) - NonClientSize.x) / lpFont->Size.X;
+    MinSize.y = (GetSystemMetrics(SM_CYMIN) - NonClientSize.y) / lpFont->Size.Y;
     MaxSize.x = GetSystemMetrics(SM_CXFULLSCREEN) / lpFont->Size.X;
     MaxSize.y = GetSystemMetrics(SM_CYFULLSCREEN) / lpFont->Size.Y;
     WindowSize.x = max(MinSize.x, min(MaxSize.x, gpStateInfo->WindowSize.X));
@@ -86,12 +82,14 @@ UpdatePreviewRect(VOID)
     WindowRect.left = gpStateInfo->WindowPosX;
     WindowRect.top = gpStateInfo->WindowPosY;
     WindowRect.right = WindowSize.x * lpFont->Size.X + NonClientSize.x;
-    if (WindowRect.right < NonClientSize.x * 2) {
+    if (WindowRect.right < NonClientSize.x * 2)
+    {
         WindowRect.right = NonClientSize.x * 2;
     }
     WindowRect.right += WindowRect.left;
     WindowRect.bottom = WindowSize.y * lpFont->Size.Y + NonClientSize.y;
-    if (WindowRect.bottom < NonClientSize.y * 2) {
+    if (WindowRect.bottom < NonClientSize.y * 2)
+    {
         WindowRect.bottom = NonClientSize.y * 2;
     }
     WindowRect.bottom += WindowRect.top;
@@ -108,29 +106,33 @@ UpdatePreviewRect(VOID)
     /*
      * Convert window rectangle to monitor relative coordinates
      */
-    WindowRect.right  -= WindowRect.left;
-    WindowRect.left   -= mi.rcWork.left;
+    WindowRect.right -= WindowRect.left;
+    WindowRect.left -= mi.rcWork.left;
     WindowRect.bottom -= WindowRect.top;
-    WindowRect.top    -= mi.rcWork.top;
+    WindowRect.top -= mi.rcWork.top;
 
     /*
      * Update the display flags
      */
-    if (WindowSize.x < gpStateInfo->ScreenBufferSize.X) {
+    if (WindowSize.x < gpStateInfo->ScreenBufferSize.X)
+    {
         PreviewFlags |= PREVIEW_HSCROLL;
-    } else {
+    }
+    else
+    {
         PreviewFlags &= ~PREVIEW_HSCROLL;
     }
-    if (WindowSize.y < gpStateInfo->ScreenBufferSize.Y) {
+    if (WindowSize.y < gpStateInfo->ScreenBufferSize.Y)
+    {
         PreviewFlags |= PREVIEW_VSCROLL;
-    } else {
+    }
+    else
+    {
         PreviewFlags &= ~PREVIEW_VSCROLL;
     }
 }
 
-
-VOID
-InvalidatePreviewRect(HWND hWnd)
+VOID InvalidatePreviewRect(HWND hWnd)
 
 /*++
 
@@ -151,9 +153,9 @@ InvalidatePreviewRect(HWND hWnd)
      * Get the dimensions of the preview "window" and scale it to the
      * preview "screen"
      */
-    rectWin.left   = WindowRect.left;
-    rectWin.top    = WindowRect.top;
-    rectWin.right  = WindowRect.left + WindowRect.right;
+    rectWin.left = WindowRect.left;
+    rectWin.top = WindowRect.top;
+    rectWin.right = WindowRect.left + WindowRect.right;
     rectWin.bottom = WindowRect.top + WindowRect.bottom;
     AspectPoint(&rectPreview, (POINT*)&rectWin.left);
     AspectPoint(&rectPreview, (POINT*)&rectWin.right);
@@ -164,12 +166,9 @@ InvalidatePreviewRect(HWND hWnd)
     InvalidateRect(hWnd, &rectWin, FALSE);
 }
 
-
-VOID
-PreviewPaint(
+VOID PreviewPaint(
     PAINTSTRUCT* pPS,
-    HWND hWnd
-    )
+    HWND hWnd)
 
 /*++
 
@@ -215,7 +214,7 @@ PreviewPaint(
     ptButton.x = GetSystemMetrics(SM_CXSIZE);
     ptButton.y = GetSystemMetrics(SM_CYSIZE);
     AspectPoint(&rectPreview, &ptButton);
-    ptButton.y *= 2;       /* Double the computed size for "looks" */
+    ptButton.y *= 2; /* Double the computed size for "looks" */
     ptScroll.x = GetSystemMetrics(SM_CXVSCROLL);
     ptScroll.y = GetSystemMetrics(SM_CYHSCROLL);
     AspectPoint(&rectPreview, &ptScroll);
@@ -227,19 +226,19 @@ PreviewPaint(
     hBitmap = CreateCompatibleBitmap(pPS->hdc,
                                      rectPreview.right,
                                      rectPreview.bottom);
-    hBitmapOld = (HBITMAP) SelectObject(hDC, hBitmap);
+    hBitmapOld = (HBITMAP)SelectObject(hDC, hBitmap);
 
     /*
      * Create the brushes
      */
-    hbrBorder  = CreateSolidBrush(GetSysColor(COLOR_ACTIVEBORDER));
-    hbrTitle   = CreateSolidBrush(GetSysColor(COLOR_ACTIVECAPTION));
-    hbrFrame   = CreateSolidBrush(GetSysColor(COLOR_WINDOWFRAME));
-    hbrButton  = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
-    hbrScroll  = CreateSolidBrush(GetSysColor(COLOR_SCROLLBAR));
+    hbrBorder = CreateSolidBrush(GetSysColor(COLOR_ACTIVEBORDER));
+    hbrTitle = CreateSolidBrush(GetSysColor(COLOR_ACTIVECAPTION));
+    hbrFrame = CreateSolidBrush(GetSysColor(COLOR_WINDOWFRAME));
+    hbrButton = CreateSolidBrush(GetSysColor(COLOR_BTNFACE));
+    hbrScroll = CreateSolidBrush(GetSysColor(COLOR_SCROLLBAR));
     hbrDesktop = CreateSolidBrush(GetSysColor(COLOR_BACKGROUND));
-    rgbClient  = GetNearestColor(hDC, ScreenBkColor(gpStateInfo));
-    hbrClient  = CreateSolidBrush(rgbClient);
+    rgbClient = GetNearestColor(hDC, ScreenBkColor(gpStateInfo));
+    hbrClient = CreateSolidBrush(rgbClient);
 
     /*
      * Erase the clipping area
@@ -249,60 +248,43 @@ PreviewPaint(
     /*
      * Fill in the whole window with the client brush
      */
-    hbrOld = (HBRUSH) SelectObject(hDC, hbrClient);
-    PatBlt(hDC, rectWin.left, rectWin.top,
-           rectWin.right - 1, rectWin.bottom - 1, PATCOPY);
+    hbrOld = (HBRUSH)SelectObject(hDC, hbrClient);
+    PatBlt(hDC, rectWin.left, rectWin.top, rectWin.right - 1, rectWin.bottom - 1, PATCOPY);
 
     /*
      * Fill in the caption bar
      */
     SelectObject(hDC, hbrTitle);
-    PatBlt(hDC, rectWin.left + 3, rectWin.top + 3,
-           rectWin.right - 7, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + 3, rectWin.top + 3, rectWin.right - 7, ptButton.y - 2, PATCOPY);
 
     /*
      * Draw the "buttons"
      */
     SelectObject(hDC, hbrButton);
-    PatBlt(hDC, rectWin.left + 3, rectWin.top + 3,
-           ptButton.x, ptButton.y - 2, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptButton.x,
-           rectWin.top + 3,
-           ptButton.x, ptButton.y - 2, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 4 - 2 * ptButton.x - 1,
-           rectWin.top + 3,
-           ptButton.x, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + 3, rectWin.top + 3, ptButton.x, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptButton.x, rectWin.top + 3, ptButton.x, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 4 - 2 * ptButton.x - 1, rectWin.top + 3, ptButton.x, ptButton.y - 2, PATCOPY);
     SelectObject(hDC, hbrFrame);
-    PatBlt(hDC, rectWin.left + 3 + ptButton.x, rectWin.top + 3,
-           1, ptButton.y - 2, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptButton.x - 1,
-           rectWin.top + 3,
-           1, ptButton.y - 2, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 4 - 2 * ptButton.x - 2,
-           rectWin.top + 3,
-           1, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + 3 + ptButton.x, rectWin.top + 3, 1, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptButton.x - 1, rectWin.top + 3, 1, ptButton.y - 2, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 4 - 2 * ptButton.x - 2, rectWin.top + 3, 1, ptButton.y - 2, PATCOPY);
 
     /*
      * Draw the scrollbars
      */
     SelectObject(hDC, hbrScroll);
-    if (PreviewFlags & PREVIEW_HSCROLL) {
-        PatBlt(hDC, rectWin.left + 3,
-               rectWin.top + rectWin.bottom - 4 - ptScroll.y,
-               rectWin.right - 7, ptScroll.y, PATCOPY);
+    if (PreviewFlags & PREVIEW_HSCROLL)
+    {
+        PatBlt(hDC, rectWin.left + 3, rectWin.top + rectWin.bottom - 4 - ptScroll.y, rectWin.right - 7, ptScroll.y, PATCOPY);
     }
-    if (PreviewFlags & PREVIEW_VSCROLL) {
-        PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptScroll.x,
-               rectWin.top + 1 + ptButton.y + 1,
-               ptScroll.x, rectWin.bottom - 6 - ptButton.y, PATCOPY);
-        if (PreviewFlags & PREVIEW_HSCROLL) {
+    if (PreviewFlags & PREVIEW_VSCROLL)
+    {
+        PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptScroll.x, rectWin.top + 1 + ptButton.y + 1, ptScroll.x, rectWin.bottom - 6 - ptButton.y, PATCOPY);
+        if (PreviewFlags & PREVIEW_HSCROLL)
+        {
             SelectObject(hDC, hbrFrame);
-            PatBlt(hDC, rectWin.left + rectWin.right - 5 - ptScroll.x,
-                   rectWin.top + rectWin.bottom - 4 - ptScroll.y,
-                   1, ptScroll.y, PATCOPY);
-            PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptScroll.x,
-                   rectWin.top + rectWin.bottom - 5 - ptScroll.y,
-                   ptScroll.x, 1, PATCOPY);
+            PatBlt(hDC, rectWin.left + rectWin.right - 5 - ptScroll.x, rectWin.top + rectWin.bottom - 4 - ptScroll.y, 1, ptScroll.y, PATCOPY);
+            PatBlt(hDC, rectWin.left + rectWin.right - 4 - ptScroll.x, rectWin.top + rectWin.bottom - 5 - ptScroll.y, ptScroll.x, 1, PATCOPY);
         }
     }
 
@@ -310,48 +292,34 @@ PreviewPaint(
      * Draw the interior window frame and caption frame
      */
     SelectObject(hDC, hbrFrame);
-    PatBlt(hDC, rectWin.left + 2, rectWin.top + 2,
-           1, rectWin.bottom - 5, PATCOPY);
-    PatBlt(hDC, rectWin.left + 2, rectWin.top + 2,
-           rectWin.right - 5, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left + 2, rectWin.top + rectWin.bottom - 4,
-           rectWin.right - 5, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 4, rectWin.top + 2,
-           1, rectWin.bottom - 5, PATCOPY);
-    PatBlt(hDC, rectWin.left + 2, rectWin.top + 1 + ptButton.y,
-           rectWin.right - 5, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + 2, rectWin.top + 2, 1, rectWin.bottom - 5, PATCOPY);
+    PatBlt(hDC, rectWin.left + 2, rectWin.top + 2, rectWin.right - 5, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + 2, rectWin.top + rectWin.bottom - 4, rectWin.right - 5, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 4, rectWin.top + 2, 1, rectWin.bottom - 5, PATCOPY);
+    PatBlt(hDC, rectWin.left + 2, rectWin.top + 1 + ptButton.y, rectWin.right - 5, 1, PATCOPY);
 
     /*
      * Draw the border
      */
     SelectObject(hDC, hbrBorder);
-    PatBlt(hDC, rectWin.left + 1, rectWin.top + 1,
-           1, rectWin.bottom - 3, PATCOPY);
-    PatBlt(hDC, rectWin.left + 1, rectWin.top + 1,
-           rectWin.right - 3, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left + 1, rectWin.top + rectWin.bottom - 3,
-           rectWin.right - 3, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 3, rectWin.top + 1,
-           1, rectWin.bottom - 3, PATCOPY);
+    PatBlt(hDC, rectWin.left + 1, rectWin.top + 1, 1, rectWin.bottom - 3, PATCOPY);
+    PatBlt(hDC, rectWin.left + 1, rectWin.top + 1, rectWin.right - 3, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + 1, rectWin.top + rectWin.bottom - 3, rectWin.right - 3, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 3, rectWin.top + 1, 1, rectWin.bottom - 3, PATCOPY);
 
     /*
      * Draw the exterior window frame
      */
     SelectObject(hDC, hbrFrame);
-    PatBlt(hDC, rectWin.left, rectWin.top,
-           1, rectWin.bottom - 1, PATCOPY);
-    PatBlt(hDC, rectWin.left, rectWin.top,
-           rectWin.right - 1, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left, rectWin.top + rectWin.bottom - 2,
-           rectWin.right - 1, 1, PATCOPY);
-    PatBlt(hDC, rectWin.left + rectWin.right - 2, rectWin.top,
-           1, rectWin.bottom - 1, PATCOPY);
+    PatBlt(hDC, rectWin.left, rectWin.top, 1, rectWin.bottom - 1, PATCOPY);
+    PatBlt(hDC, rectWin.left, rectWin.top, rectWin.right - 1, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left, rectWin.top + rectWin.bottom - 2, rectWin.right - 1, 1, PATCOPY);
+    PatBlt(hDC, rectWin.left + rectWin.right - 2, rectWin.top, 1, rectWin.bottom - 1, PATCOPY);
 
     /*
      * Copy the memory device context to the screen device context
      */
-    BitBlt(pPS->hdc, 0, 0, rectPreview.right, rectPreview.bottom,
-           hDC, 0, 0, SRCCOPY);
+    BitBlt(pPS->hdc, 0, 0, rectPreview.right, rectPreview.bottom, hDC, 0, 0, SRCCOPY);
 
     /*
      * Clean up everything
@@ -369,15 +337,13 @@ PreviewPaint(
     DeleteDC(hDC);
 }
 
-
-LRESULT
-CALLBACK
-PreviewWndProc(
-    HWND hWnd,
-    UINT wMessage,
-    WPARAM wParam,
-    LPARAM lParam
-    )
+[[nodiscard]] LRESULT
+    CALLBACK
+    PreviewWndProc(
+        HWND hWnd,
+        UINT wMessage,
+        WPARAM wParam,
+        LPARAM lParam)
 
 /*
  * PreviewWndProc
@@ -391,7 +357,8 @@ PreviewWndProc(
     int cx;
     int cy;
 
-    switch (wMessage) {
+    switch (wMessage)
+    {
     case WM_CREATE:
         /*
          * Figure out space used by non-client area
@@ -412,7 +379,8 @@ PreviewWndProc(
         lpcs = (LPCREATESTRUCT)lParam;
         cx = lpcs->cx;
         cy = AspectScale(gcyScreen, gcxScreen, cx);
-        if (cy > lpcs->cy) {
+        if (cy > lpcs->cy)
+        {
             cy = lpcs->cy;
             cx = AspectScale(gcxScreen, gcyScreen, cy);
         }
@@ -435,10 +403,11 @@ PreviewWndProc(
         GetWindowRect(hWnd, &rcWindow);
         cx = rcWindow.right - rcWindow.left;
         cy = AspectScale(gcyScreen, gcxScreen, cx);
-        if (cy != rcWindow.bottom - rcWindow.top) {
+        if (cy != rcWindow.bottom - rcWindow.top)
+        {
             SetWindowPos(hWnd, NULL, 0, 0, cx, cy, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOZORDER);
         }
-    
+
         InvalidatePreviewRect(hWnd);
         break;
 
@@ -447,7 +416,6 @@ PreviewWndProc(
     }
     return 0L;
 }
-
 
 /*  AspectScale
  *      Performs the following calculation in LONG arithmetic to avoid

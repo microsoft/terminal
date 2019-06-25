@@ -199,7 +199,6 @@ void TextColorTests::TestChangeColor()
     color = rgbColor.GetColor(view, _defaultBg, true);
     VERIFY_ARE_EQUAL(_colorTable[15], color);
 
-
     rgbColor.SetIndex(15);
     color = rgbColor.GetColor(view, _defaultFg, false);
     VERIFY_ARE_EQUAL(_colorTable[15], color);

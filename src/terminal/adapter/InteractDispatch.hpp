@@ -23,22 +23,20 @@ namespace Microsoft::Console::VirtualTerminal
     class InteractDispatch : public IInteractDispatch
     {
     public:
-
         InteractDispatch(ConGetSet* const pConApi);
 
-        virtual ~InteractDispatch() override = default;
+        ~InteractDispatch() = default;
 
-        virtual bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
-        virtual bool WriteCtrlC() override;
-        virtual bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) override;
-        virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
-                                        _In_reads_(cParams) const unsigned short* const rgusParams,
-                                        const size_t cParams) override; // DTTERM_WindowManipulation
-        virtual bool MoveCursor(const unsigned int row,
-                                const unsigned int col) override;
+        bool WriteInput(_In_ std::deque<std::unique_ptr<IInputEvent>>& inputEvents) override;
+        bool WriteCtrlC() override;
+        bool WriteString(_In_reads_(cch) const wchar_t* const pws, const size_t cch) override;
+        bool WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
+                                _In_reads_(cParams) const unsigned short* const rgusParams,
+                                const size_t cParams) override; // DTTERM_WindowManipulation
+        bool MoveCursor(const unsigned int row,
+                        const unsigned int col) override;
+
     private:
-
         std::unique_ptr<ConGetSet> _pConApi;
-
     };
 }

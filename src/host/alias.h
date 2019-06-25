@@ -11,9 +11,6 @@ Abstract:
 --*/
 #pragma once
 
-
-
-
 class Alias
 {
 public:
@@ -30,7 +27,6 @@ public:
     static std::wstring s_MatchAndCopyAlias(const std::wstring& sourceText,
                                             const std::wstring& exeName,
                                             size_t& lineCount);
-
 
 private:
     static void s_TrimLeadingSpaces(std::wstring& str);
@@ -60,7 +56,7 @@ private:
                                              size_t& lineCount);
 
     static void s_AppendCrLf(std::wstring& appendToStr,
-                                size_t& lineCount);
+                             size_t& lineCount);
 
 #ifdef UNIT_TESTING
     static void s_TestAddAlias(std::wstring& exe,
