@@ -41,6 +41,14 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 #TODO
 
+## Using cut and paste in the Terminal window
+
+#TODO  For Powershell and Bash (and cmd.exe?)
+
+## Add a "Open Windows Terminal Here" to File Explorer
+
+#TODO
+
 ## Configuring Windows Terminal
 
 At the time of writing all Windows Terminal settings are managed via a Json file.
@@ -51,6 +59,7 @@ Your default json editor will open up the Terminal settings file. This will be
 locate in somewhere such as `$env:userprofile\
 
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc
+
 ## Tips and Tricks:
 
 1. In Powershell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
@@ -60,7 +69,4 @@ The list of valid settings can be found in the [Profiles.json Documentation](../
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
-2. #TODO
-
-
-
+2. #TODO  More Tips and Tricks
