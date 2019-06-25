@@ -51,4 +51,3 @@ Abstract:
 #include <winrt/Windows.ui.xaml.media.h>
 
 #include <wil/resource.h>
-
