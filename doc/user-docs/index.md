@@ -55,10 +55,14 @@ At the time of writing all Windows Terminal settings are managed via a Json file
 
 From the `down` button in the top bar select settings (default shortcut `ctrl-,`)
 
-Your default json editor will open up the Terminal settings file. This will be
-locate in somewhere such as `$env:userprofile\
+Your default json editor will open up the Terminal settings file. The file can found
+at `$env:userprofile\AppData\Local\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
+
+#TODO -- is this path correct for **users** ?
 
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc
+
+#TODO Add new page with detailed information on settings. E.g Adding new shells, keybindings, background Gif etc.
 
 ## Tips and Tricks:
 
