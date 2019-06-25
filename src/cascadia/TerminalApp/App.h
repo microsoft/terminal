@@ -125,6 +125,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
 
+        void _DuplicateTabViewItem(const IInspectable& tabViewItem);
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);

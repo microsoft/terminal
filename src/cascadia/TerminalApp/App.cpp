@@ -1141,6 +1141,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Duplicates the Tab
+    // Arguments:
+    // - tabViewItem: the TabViewItem in the TabView that is duplicated.
+    void App::_DuplicateTabViewItem(const IInspectable& tabViewItem)
+    {
+
+        uint32_t tabIndexFromControl = 0;
+        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+
+        auto _tabViewItem = tabViewItem.as<winrt::Microsoft::UI::Xaml::Controls::TabViewItem>();
+        auto _tab = _tabs.at(tabIndexFromControl);
+        
+        auto profileGuid = _tab->GetFocusedProfile();
+        auto settings = _settings->MakeSettings(profileGuid);
+
+        _CreateNewTabFromSettings(profileGuid.value(), settings);
+        
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
