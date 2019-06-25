@@ -1,0 +1,69 @@
+# Windows Terminal User Documentation
+
+NOTE: At the time of writing Windows Terminal is still under active development and many things will
+change. If you notice an error in the docs please raise an issue
+
+## Installing Windows Terminal 
+
+### From Source Code
+
+Follow the instructions in this repo's README
+
+### From the Micosoft Store
+
+1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
+2. Search for Windows Terminal in the Store
+3. Install in the normal fashion
+
+## Starting Windows Terminal
+
+From the Windows Start menu select Windows Terminal and run the application.
+
+Note: You can write click on the application item and run with administrator privilege of required.
+
+The  default shell is Powershell.
+
+## Multiple Tabs
+
+Additional shells can be started by hitting the `+` button from the top bar -- a new instance of the
+default shell is displayed (default shortcut `ctrl-shift-1`)
+
+## Running a different shell
+
+Note: The following text assumes you have WSL installed
+
+To choose a different shell (e.g. `cmd.exe` or WSL `bach`) then
+
+1. Select the `down` button next to the `+` in the top bar
+2. Choose your new shell from the list (more on how to extend the list in the config section)
+
+## Running Powershell with admin privilege
+
+#TODO
+
+## Configuring Windows Terminal
+
+At the time of writing all Windows Terminal settings are managed via a Json file.
+
+From the `down` button in the top bar select settings (default shortcut `ctrl-,`)
+
+Your default json editor will open up the Terminal settings file. This will be
+locate in somewhere such as `$env:userprofile\
+
+The list of valid settings can be found at [doc/ConsoleHostSettings.md]
+
+
+
+Tips and Tricks:
+
+1. In Powershell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
+
+    Under pwsh you can also use
+`(Get-Process -Id $pid).Parent.Parent.ProcessName -eq 'WindowsTerminal'`
+
+    (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
+
+2. #TODO
+
+
+
