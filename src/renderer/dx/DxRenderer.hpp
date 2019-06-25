@@ -156,9 +156,7 @@ namespace Microsoft::Console::Render
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        ::Microsoft::WRL::ComPtr<IDXGIAdapter1> _dxgiAdapter1;
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
