@@ -1,7 +1,7 @@
 # Windows Terminal User Documentation
 
 NOTE: At the time of writing Windows Terminal is still under active development and many things will
-change. If you notice an error in the docs please raise an issue
+change. If you notice an error in the docs, please raise an issue. Or better yet, please file a PR with an appropriate update!
 
 ## Installing Windows Terminal 
 
@@ -9,7 +9,7 @@ change. If you notice an error in the docs please raise an issue
 
 Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
-### From the Micosoft Store
+### From the Microsoft Store
 
 1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
 2. Search for Windows Terminal in the Store
@@ -17,11 +17,11 @@ Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
 ## Starting Windows Terminal
 
-From the Windows Start menu select Windows Terminal and run the application.
+From the Windows Start menu, select Windows Terminal and run the application.
 
 Note: You can right click on the application item and run with administrator privilege if required.
 
-The  default shell is Powershell.
+The default shell is Powershell.
 
 ## Multiple Tabs
 
