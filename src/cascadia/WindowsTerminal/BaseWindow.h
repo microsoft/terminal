@@ -6,7 +6,7 @@
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
 
-#include <wil\resource.h>
+#include <wil/resource.h>
 
 template<typename T>
 class BaseWindow
