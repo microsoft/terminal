@@ -17,7 +17,7 @@ Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
 ## Starting Windows Terminal
 
-From the Windows Start menu select Windows Terminal and run the application.
+From the Windows Start menu, select Windows Terminal and run the application.
 
 Note: You can right click on the application item and run with administrator privilege if required.
 
