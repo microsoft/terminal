@@ -103,6 +103,7 @@ namespace Microsoft::Console::Render
             ForComposition
         };
 
+        bool _allowTearing;
         SwapChainMode _chainMode;
 
         HWND _hwndTarget;
@@ -163,6 +164,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
         ::Microsoft::WRL::ComPtr<IDXGISwapChain1> _dxgiSwapChain;
 
+        [[nodiscard]] HRESULT _CheckTearingSupport() noexcept;
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;

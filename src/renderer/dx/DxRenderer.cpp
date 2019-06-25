@@ -42,6 +42,7 @@ DxEngine::DxEngine() :
     _sizeTarget{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
+    _allowTearing{ false },
     _chainMode{ SwapChainMode::ForComposition },
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() }
 {
@@ -107,6 +108,38 @@ DxEngine::~DxEngine()
     return S_OK;
 }
 
+// Routine Description:
+// - Attempts to look up if tearing support is available for variable refresh rate displays
+// - The class member _allowTearing is set if we could successfully QI to the correct Factory version
+//   and if that factory version said we have the tearing feature available. Otherwise it's false.
+// - See also: https://docs.microsoft.com/en-us/windows/desktop/direct3ddxgi/variable-refresh-rate-displays
+// Arguments:
+// - <none> - Uses internal DXGI factory state, will fail if factory isn't set up.
+// Return Value:
+// - S_OK or suitable failure code. It is appropriate to log this and go on.
+[[nodiscard]] HRESULT DxEngine::_CheckTearingSupport() noexcept
+{
+    // Set to false to start with in case we've changed factories since last time
+    // (since factories are listed as a device-dependent component and presumably could change behavior).
+    _allowTearing = false;
+
+    // Return early if the member variable factory isn't specified.
+    RETURN_HR_IF_NULL(E_POINTER, _dxgiFactory2.Get());
+
+    // Try to get the correct factory version to look up tearing information.
+    ::Microsoft::WRL::ComPtr<IDXGIFactory5> factory5;
+    RETURN_IF_FAILED(_dxgiFactory2.As(&factory5));
+
+    // Retrieve the feature status.
+    BOOL allowTearing = FALSE;
+    RETURN_IF_FAILED(factory5->CheckFeatureSupport(DXGI_FEATURE_PRESENT_ALLOW_TEARING, &allowTearing, sizeof(allowTearing)));
+
+    // Persist the feature information into the member variable.
+    _allowTearing = !!allowTearing;
+
+    return S_OK;
+}
+
 // Routine Description;
 // - Creates device-specific resources required for drawing
 //   which generally means those that are represented on the GPU and can
@@ -129,6 +162,11 @@ DxEngine::~DxEngine()
     auto freeOnFail = wil::scope_exit([&] { _ReleaseDeviceResources(); });
 
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
+
+    // Check tearing support when we get a new factory.
+    // If this fails, it's not critical. We'll just leave tearing off.
+    // Log it so we can see what happened in a debugger if curious.
+    LOG_IF_FAILED(_CheckTearingSupport());
 
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
                               // clang-format off
@@ -192,6 +230,8 @@ DxEngine::~DxEngine()
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
         SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        SwapChainDesc.Flags = 0;
+        WI_SetFlagIf(SwapChainDesc.Flags, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING, _allowTearing);
 
         switch (_chainMode)
         {
@@ -795,8 +835,12 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 {
     if (_presentReady)
     {
-        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present(1, 0));
-        /*FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));*/
+        UINT presentFlags = 0;
+        WI_SetFlagIf(presentFlags, DXGI_PRESENT_ALLOW_TEARING, _allowTearing);
+
+        // https://docs.microsoft.com/en-us/windows/desktop/api/DXGI/nf-dxgi-idxgiswapchain-present
+        FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present(0, presentFlags));
+        /*FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(0, presentFlags, &_presentParams));*/
 
         RETURN_IF_FAILED(_CopyFrontToBack());
         _presentReady = false;
