@@ -7,7 +7,7 @@ change. If you notice an error in the docs please raise an issue
 
 ### From Source Code
 
-Follow the instructions in this repo's README
+Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
 ### From the Micosoft Store
 
@@ -19,7 +19,7 @@ Follow the instructions in this repo's README
 
 From the Windows Start menu select Windows Terminal and run the application.
 
-Note: You can write click on the application item and run with administrator privilege of required.
+Note: You can right click on the application item and run with administrator privilege if required.
 
 The  default shell is Powershell.
 
@@ -32,12 +32,12 @@ default shell is displayed (default shortcut `ctrl-shift-1`)
 
 Note: The following text assumes you have WSL installed
 
-To choose a different shell (e.g. `cmd.exe` or WSL `bach`) then
+To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 1. Select the `down` button next to the `+` in the top bar
 2. Choose your new shell from the list (more on how to extend the list in the config section)
 
-## Running Powershell with admin privilege
+## Starting a new tab Powershell with admin privilege
 
 #TODO
 
@@ -50,11 +50,8 @@ From the `down` button in the top bar select settings (default shortcut `ctrl-,`
 Your default json editor will open up the Terminal settings file. This will be
 locate in somewhere such as `$env:userprofile\
 
-The list of valid settings can be found at [doc/ConsoleHostSettings.md]
-
-
-
-Tips and Tricks:
+The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc
+## Tips and Tricks:
 
 1. In Powershell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
 
