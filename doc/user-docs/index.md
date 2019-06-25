@@ -9,7 +9,7 @@ change. If you notice an error in the docs please raise an issue
 
 Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
-### From the Micosoft Store
+### From the Microsoft Store
 
 1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
 2. Search for Windows Terminal in the Store
