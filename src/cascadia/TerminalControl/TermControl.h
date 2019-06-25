@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
 
