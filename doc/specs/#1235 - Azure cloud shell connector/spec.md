@@ -23,7 +23,7 @@ The flowchart below shows the process by which the Azure cloud shell will be int
 
 The first three steps - authenticating the user, requesting a cloud shell and requesting a terminal - will be done via http requests. These requests will use the [cpprestsdk](https://github.com/Microsoft/cpprestsdk) library as that library is also owned by Microsoft, making it easy to resolve issues should any arise. 
 
-Authenticating the user will use [device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow) since Windows Terminal does not support browser access (yet). As for the authentication endpoint, Azure AD v1.0 will be used because Azure AD v2.0 (also known as Microsoft Identity Platform) [does not support login to personal accounts with device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow#constraints) at this time. Furthermore, upon successful authentication, the login/token information will be stored so that users will not need to repeatedly go through device code flow for future logins. Since this is sensitive information, the tokens will be stored with the [Windows.Security.Credentials namespace](https://docs.microsoft.com/en-us/uwp/api/windows.security.credentials). 
+Authenticating the user will use [device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow) since Windows Terminal does not support browser access (yet). As for the authentication endpoint, Azure AD v1.0 will be used because Azure AD v2.0 (also known as Microsoft Identity Platform) [does not support login to personal accounts with device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow#constraints) at this time. Furthermore, upon successful authentication, the login/token information will be stored so that users will not need to repeatedly go through device code flow for future logins. Since this is sensitive information, the tokens will be stored with [Windows Storage](https://docs.microsoft.com/en-us/uwp/api/windows.storage) and encrypted with [Windows Security Data Protection](https://docs.microsoft.com/en-us/uwp/api/windows.security.cryptography.dataprotection.dataprotectionprovider). 
 
 The last step - connecting to the terminal - will be done via a websocket connection to allow easier communication between the app and the server. 
 
@@ -73,4 +73,6 @@ This could potentially be the first plugin for Windows Terminal once the app all
 
 * [Azure AD v1.0](https://docs.microsoft.com/en-us/azure/active-directory/develop/v1-overview)
 * [cpprestsdk](https://github.com/Microsoft/cpprestsdk)
-* [device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow)
+* [Device code flow](https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/wiki/Device-Code-Flow)
+* [Windows Storage](https://docs.microsoft.com/en-us/uwp/api/windows.storage)
+* [Windows Security Data Protection](https://docs.microsoft.com/en-us/uwp/api/windows.security.cryptography.dataprotection.dataprotectionprovider)
