@@ -34,12 +34,6 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
-        App(winrt::TerminalApp::XamlMetaDataProvider())
-    {
-    }
-
-    App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
-        base_type(parentProvider),
         _settings{},
         _tabs{},
         _loadedInitialSettings{ false },
@@ -67,13 +61,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create()
+    void App::Create(uint64_t hWnd)
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create();
+        _Create(hWnd);
     }
 
     App::~App()
@@ -87,7 +81,7 @@ namespace winrt::TerminalApp::implementation
     //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    void App::_Create()
+    void App::_Create(uint64_t parentHwnd)
     {
         _tabView = MUX::Controls::TabView{};
 
@@ -106,7 +100,6 @@ namespace winrt::TerminalApp::implementation
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-
         newTabBtnColDef.Width(GridLengthHelper::Auto());
 
         _tabRow.ColumnDefinitions().Append(tabsColDef);
@@ -119,11 +112,10 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
-        {
-            _root.Children().Append(_tabRow);
-            Controls::Grid::SetRow(_tabRow, 0);
-        }
+        _root.Children().Append(_tabRow);
+
+        Controls::Grid::SetRow(_tabRow, 0);
+
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabContent, 1);
         Controls::Grid::SetColumn(_tabView, 0);
@@ -147,7 +139,20 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _tabRow.Children().Append(_tabView);
-        _tabRow.Children().Append(_newTabButton);
+
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
+            Controls::Grid::SetRow(_minMaxCloseControl, 0);
+            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
+            _minMaxCloseControl.Content().Children().Append(_newTabButton);
+
+            _tabRow.Children().Append(_minMaxCloseControl);
+        }
+        else
+        {
+            _tabRow.Children().Append(_newTabButton);
+        }
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -464,6 +469,16 @@ namespace winrt::TerminalApp::implementation
                                      const RoutedEventArgs&)
     {
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
+    }
+
+    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
+    {
+        if (_minMaxCloseControl)
+        {
+            return _minMaxCloseControl.DragBar();
+        }
+
+        return nullptr;
     }
 
     // Method Description:
