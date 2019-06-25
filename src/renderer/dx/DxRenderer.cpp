@@ -732,7 +732,11 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         {
             _dxgiSurface.Reset();
             _d2dRenderTarget.Reset();
-            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+            UINT swapChainFlags = 0;
+            WI_SetFlagIf(swapChainFlags, DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING, _allowTearing);
+
+            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, swapChainFlags);
             RETURN_IF_FAILED(_PrepareRenderTarget());
             _displaySizePixels = clientSize;
         }
