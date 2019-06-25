@@ -9,7 +9,7 @@ namespace Microsoft::Terminal::Core
     public:
         virtual ~ITerminalInput() {}
 
-        virtual bool SendKeyEvent(const WORD vkey, const bool ctrlPressed, const bool altPressed, const bool shiftPressed) = 0;
+        virtual bool SendKeyEvent(const WORD vkey, const DWORD modifiers) = 0;
 
         // void SendMouseEvent(uint row, uint col, KeyModifiers modifiers);
         [[nodiscard]] virtual HRESULT UserResize(const COORD size) noexcept = 0;
