@@ -130,7 +130,7 @@
     <activatableClass name="Microsoft.UI.Xaml.Media.RevealBorderBrush" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
     <activatableClass name="Microsoft.UI.Xaml.XamlTypeInfo.XamlControlsXamlMetaDataProvider" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
-  <file name="Microsoft.UI.Xaml.Markup.dll" hashalg="SHA1">
-    <activatableClass name="Microsoft.UI.Xaml.Markup.XamlApplication" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
+  <file name="Microsoft.Toolkit.Win32.UI.XamlHost.dll" hashalg="SHA1">
+    <activatableClass name="Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1"></activatableClass>
   </file>
 </assembly>
