@@ -1,7 +1,7 @@
 # Windows Terminal User Documentation
 
 NOTE: At the time of writing Windows Terminal is still under active development and many things will
-change. If you notice an error in the docs please raise an issue
+change. If you notice an error in the docs, please raise an issue. Or better yet, please file a PR with an appropriate update!
 
 ## Installing Windows Terminal 
 
