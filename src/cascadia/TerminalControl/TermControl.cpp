@@ -728,13 +728,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // paste selection, otherwise
                 else
                 {
-                    // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
-                    // This is called when the clipboard data is loaded.
-                    auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-                    auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
-
-                    // send paste event up to TermApp
-                    _clipboardPasteHandlers(*this, *pasteArgs);
+                    PasteTextFromClipboard();
                 }
             }
         }
@@ -1339,6 +1333,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // send data up for clipboard
         _clipboardCopyHandlers(copiedData);
+    }
+
+    // Method Description:
+    // - Initiate a paste operation.
+    void TermControl::PasteTextFromClipboard()
+    {
+        // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
+        // This is called when the clipboard data is loaded.
+        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+
+        // send paste event up to TermApp
+        _clipboardPasteHandlers(*this, *pasteArgs);
     }
 
     void TermControl::Close()

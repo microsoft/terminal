@@ -112,9 +112,11 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
+        void _PasteText();
         void _SplitVertical(const std::optional<GUID>& profileGuid);
         void _SplitHorizontal(const std::optional<GUID>& profileGuid);
         void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
+
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
