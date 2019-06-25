@@ -50,4 +50,5 @@ Abstract:
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
 
-#include <wil\resource.h>
+#include <wil/resource.h>
+
