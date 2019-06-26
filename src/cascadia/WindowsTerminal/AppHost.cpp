@@ -41,7 +41,9 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
+    _window = nullptr;
     _app.Close();
+    _app = nullptr;
 }
 
 // Method Description:
@@ -57,7 +59,6 @@ AppHost::~AppHost()
 // - <none>
 void AppHost::Initialize()
 {
-    _app.Initialize();
     _window->Initialize();
     const auto handle = _window->GetHandle();
     _app.Create(reinterpret_cast<uint64_t>(handle));

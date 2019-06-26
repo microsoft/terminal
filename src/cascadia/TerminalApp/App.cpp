@@ -46,10 +46,8 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        // See GH#1339. This is a workaround for MSFT:22116519
-        // We need this to prevent an occasional crash on teardown
-        AddRef();
-        m_inner.as<::IUnknown>()->Release();
+        // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
+        Initialize();
     }
 
     void App::Initialize()
