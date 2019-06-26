@@ -1089,7 +1089,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             const auto timeNow = std::chrono::high_resolution_clock::now();
 
-            if(_lastAutoScrollUpdateTime.has_value())
+            if (_lastAutoScrollUpdateTime.has_value())
             {
                 const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / 1000000.0;
                 _scrollBar.Value(_scrollBar.Value() + _autoScrollVelocity * deltaTime);
@@ -1098,7 +1098,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _SetEndSelectionPointAtCursor(_autoScrollingPointerPoint.value().Position());
                 }
-
             }
 
             _lastAutoScrollUpdateTime = timeNow;

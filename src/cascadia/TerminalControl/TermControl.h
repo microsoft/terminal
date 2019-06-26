@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::optional<int> _lastScrollOffset;
 
         // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
-        float _autoScrollVelocity;
+        double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
