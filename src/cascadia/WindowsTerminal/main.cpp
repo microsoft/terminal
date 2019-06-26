@@ -4,14 +4,50 @@
 #include "pch.h"
 #include "AppHost.h"
 
+#include <wil/result.h>
+
 using namespace winrt;
 using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 using namespace Windows::UI::Xaml::Hosting;
 using namespace Windows::Foundation::Numerics;
 
+static constexpr std::wstring_view ImageArchitectureToString(USHORT imageArchitecture)
+{
+    // clang-format off
+    return imageArchitecture == IMAGE_FILE_MACHINE_I386 ? L"i386" :
+                                IMAGE_FILE_MACHINE_AMD64 ? L"AMD64" :
+                                IMAGE_FILE_MACHINE_ARM64 ? L"ARM64" :
+                                IMAGE_FILE_MACHINE_ARM ? L"ARM" :
+                                L"Unknown";
+    // clang-format on
+}
+
+static void EnsureNativeArchitecture()
+{
+    USHORT processMachine{};
+    USHORT nativeMachine{};
+    THROW_IF_WIN32_BOOL_FALSE(IsWow64Process2(GetCurrentProcess(), &processMachine, &nativeMachine));
+    if (processMachine != IMAGE_FILE_MACHINE_UNKNOWN && processMachine != nativeMachine)
+    {
+        std::wstringstream messageBuilder;
+        messageBuilder << L"Windows Terminal is designed to run on your system's native architecture (" << ImageArchitectureToString(nativeMachine) << L").\n";
+        messageBuilder << L"You are currently using the " << ImageArchitectureToString(processMachine) << L" version.\n\n";
+        messageBuilder << L"Please use the version of Windows Terminal that matches your system's native architecture.";
+        auto message = messageBuilder.str();
+
+        MessageBoxW(nullptr,
+                    message.c_str(),
+                    L"Error",
+                    MB_OK | MB_ICONERROR);
+        ExitProcess(0);
+    }
+}
+
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    EnsureNativeArchitecture();
+
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
