@@ -202,11 +202,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
     }
 
-    if (_tabTitle)
-    {
-        terminalSettings.TabTitle(_tabTitle.value());
-    }
-
     return terminalSettings;
 }
 
@@ -493,6 +488,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value();
 }
 
+// Method Description
+// - Sets this profile's tab title.
+// Arguments:
+// - tabTitle: the tab title
+
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = tabTitle;
@@ -529,11 +529,19 @@ std::wstring_view Profile::GetName() const noexcept
     return _name;
 }
 
+// Method Description:
+// - Returns true if profile's custom tab title is set, if one is set. Otherwise returns false.
+// Return Value:
+// - true if this profile's custom tab title is set. Otherwise returns false.
 bool Profile::HasTabTitle() const noexcept
 {
     return _tabTitle.has_value();
 }
 
+// Method Description:
+// - Returns the custom tab title, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's custom tab title, if one is set. Otherwise returns the empty string.
 std::wstring_view Profile::GetTabTitle() const noexcept
 {
     return HasTabTitle() ?

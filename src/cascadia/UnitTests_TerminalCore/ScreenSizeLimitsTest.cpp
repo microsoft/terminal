@@ -22,7 +22,8 @@ namespace TerminalCoreUnitTests
         MockTermSettings(int32_t historySize, int32_t initialRows, int32_t initialCols) :
             _historySize(historySize),
             _initialRows(initialRows),
-            _initialCols(initialCols)
+            _initialCols(initialCols),
+            _tabTitle(winrt::to_hstring(""))
         {
         }
 
@@ -36,6 +37,7 @@ namespace TerminalCoreUnitTests
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
         uint32_t CursorHeight() { return 42UL; }
+        winrt::hstring TabTitle() { return _tabTitle; }
 
         // other implemented methods
         uint32_t GetColorTableEntry(int32_t) const { return 123; }
@@ -50,6 +52,7 @@ namespace TerminalCoreUnitTests
         void CursorColor(uint32_t) {}
         void CursorShape(CursorStyle const&) noexcept {}
         void CursorHeight(uint32_t) {}
+        void TabTitle(winrt::hstring) {}
 
         // other unimplemented methods
         void SetColorTableEntry(int32_t /* index */, uint32_t /* value */) {}
@@ -58,6 +61,7 @@ namespace TerminalCoreUnitTests
         int32_t _historySize;
         int32_t _initialRows;
         int32_t _initialCols;
+        winrt::hstring _tabTitle;
     };
 
 #define WCS(x) WCSHELPER(x)

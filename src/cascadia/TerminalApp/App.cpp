@@ -714,14 +714,13 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
         const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
         auto tabTitle = matchingProfile->GetTabTitle();
 
-        // TODO #608: If the settings don't want the terminal's text in the
-        // tab, then display something else.
+        // Checks if tab title has been set in the profile settings and
+        // updates accordingly.
 
         if (tabTitle.empty())
         {
@@ -873,7 +872,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab, TerminalSettings settings)
+    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
     {
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
@@ -885,7 +884,7 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr, settings](auto newTitle) {
+        term.TitleChanged([this, weakTabPtr](auto newTitle) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -897,7 +896,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr, settings](auto&&, auto&&) {
+        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -931,7 +930,7 @@ namespace winrt::TerminalApp::implementation
         const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTab, settings);
+        _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -1277,7 +1276,7 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab, controlSettings);
+        _RegisterTerminalEvents(newControl, focusedTab);
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
