@@ -1,6 +1,6 @@
 # Editing Windows Terminal JSON Settings
 
-One way (currently the only way) to configure Windows Terminal is by editing the json settings file. At
+One way (currently the only way) to configure Windows Terminal is by editing the profiles.json settings file. At
 the time of writing you can open the settings file in your default editor by selecting
 `Settings` from the WT pull down menu.
 
