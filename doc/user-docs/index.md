@@ -58,7 +58,7 @@ At the time of writing all Windows Terminal settings are managed via a Json file
 
 From the `down` button in the top bar select settings (default shortcut `ctrl-,`)
 
-Your default json editor will open up the Terminal settings file. The file can found
+Your default json editor will open up the Terminal settings file. The file can be found
 at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
 
 #TODO -- is this path correct for **users** ?
