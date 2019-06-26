@@ -6,7 +6,7 @@ the time of writing you can open the settings file in your default editor by sel
 
 The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\profiles.json` 
 
-Details of specific settings cane be found [here](../cascadia/SettingsSchema.md). A general introduction is provided below.
+Details of specific settings can be found [here](../cascadia/SettingsSchema.md). A general introduction is provided below.
 
 The settings are grouped under four headings:
 
