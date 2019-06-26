@@ -93,7 +93,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
+		static constexpr double _AutoScrollTimerInterval = 1.0 / 30.0;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
+        std::optional<Windows::Foundation::Point> _autoScrollingCursorPosition;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
