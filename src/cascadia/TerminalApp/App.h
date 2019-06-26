@@ -25,8 +25,6 @@ namespace winrt::TerminalApp::implementation
     public:
         App();
 
-        void Initialize();
-
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
 
