@@ -260,6 +260,15 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                               KeyChord{ KeyModifiers::Ctrl,
                                         static_cast<int>('W') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::CopyText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('C') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::PasteText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('V') });
+
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
                               KeyChord{ KeyModifiers::Ctrl,
                                         VK_OEM_COMMA });

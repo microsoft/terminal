@@ -8,7 +8,7 @@ jobs:
   variables:
     BuildConfiguration: AuditMode
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: vs2017-win2016 }
+  pool: { vmImage: windows-2019 }
 
   steps:
   - checkout: self
@@ -45,7 +45,7 @@ jobs:
     displayName: 'Build solution **\OpenConsole.sln'
     inputs:
       solution: '**\OpenConsole.sln'
-      vsVersion: 15.0
+      vsVersion: 16.0
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
       msbuildArgs: ${{ parameters.additionalBuildArguments }}

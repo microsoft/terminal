@@ -47,7 +47,10 @@ namespace winrt::TerminalApp::implementation
         switch (action)
         {
         case ShortcutAction::CopyText:
-            _CopyTextHandlers();
+            _CopyTextHandlers(true);
+            return true;
+        case ShortcutAction::CopyTextWithoutNewlines:
+            _CopyTextHandlers(false);
             return true;
         case ShortcutAction::PasteText:
             _PasteTextHandlers();

@@ -6,6 +6,7 @@ namespace TerminalApp
     enum ShortcutAction
     {
         CopyText = 0,
+        CopyTextWithoutNewlines,
         PasteText,
         NewTab,
 		DuplicateTab,
@@ -43,7 +44,7 @@ namespace TerminalApp
         OpenSettings
     };
 
-    delegate void CopyTextEventArgs();
+    delegate void CopyTextEventArgs(Boolean trimWhitespace);
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
 	delegate void DuplicateTabEventArgs();

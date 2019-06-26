@@ -27,6 +27,7 @@ IslandWindow::IslandWindow() noexcept :
 
 IslandWindow::~IslandWindow()
 {
+    _source.Close();
 }
 
 // Method Description:
@@ -111,11 +112,11 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
 
     if (_pfnCreateCallback)
     {
-        _pfnCreateCallback(_window, rc);
+        _pfnCreateCallback(_window.get(), rc);
     }
 
-    ShowWindow(_window, SW_SHOW);
-    UpdateWindow(_window);
+    ShowWindow(_window.get(), SW_SHOW);
+    UpdateWindow(_window.get());
 }
 
 void IslandWindow::Initialize()
@@ -125,23 +126,19 @@ void IslandWindow::Initialize()
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
-    winrt::check_hresult(interop->AttachToWindow(_window));
+    winrt::check_hresult(interop->AttachToWindow(_window.get()));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);
-
-    // Do a quick resize to force the island to paint
-    OnSize();
 }
 
-void IslandWindow::OnSize()
+void IslandWindow::OnSize(const UINT width, const UINT height)
 {
-    const auto physicalSize = GetPhysicalSize();
     // update the interop window size
-    SetWindowPos(_interopWindowHandle, 0, 0, 0, physicalSize.cx, physicalSize.cy, SWP_SHOWWINDOW);
+    SetWindowPos(_interopWindowHandle, 0, 0, 0, width, height, SWP_SHOWWINDOW);
 
     if (_rootGrid)
     {
@@ -187,9 +184,12 @@ void IslandWindow::OnSize()
 // Arguments:
 // - width: the new width of the window _in pixels_
 // - height: the new height of the window _in pixels_
-void IslandWindow::OnResize(const UINT /*width*/, const UINT /*height*/)
+void IslandWindow::OnResize(const UINT width, const UINT height)
 {
-    OnSize();
+    if (_interopWindowHandle)
+    {
+        OnSize(width, height);
+    }
 }
 
 // Method Description:
@@ -206,8 +206,12 @@ void IslandWindow::OnRestore()
     // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
 }
 
-void IslandWindow::SetRootContent(winrt::Windows::UI::Xaml::UIElement content)
+void IslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
 {
     _rootGrid.Children().Clear();
-    _rootGrid.Children().Append(content);
+    _rootGrid.Children().Append(app.GetRoot());
+
+    // Do a quick resize to force the island to paint
+    const auto size = GetPhysicalSize();
+    OnSize(size.cx, size.cy);
 }
