@@ -3,13 +3,19 @@
 
 #pragma once
 
+#include "..\src\types\IWindow.h"
+#include "..\src\types\WindowUiaProvider.h"
+
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
 
 #include <wil/resource.h>
 
+using namespace Microsoft::Console::Types;
+
 template<typename T>
-class BaseWindow
+class BaseWindow :
+    public Microsoft::Console::Types::IWindow
 {
 public:
     virtual ~BaseWindow() = 0;
@@ -49,6 +55,11 @@ public:
         case WM_DPICHANGED:
         {
             return HandleDpiChange(_window.get(), wparam, lparam);
+        }
+
+        case WM_GETOBJECT:
+        {
+            return HandleGetObject(_window, wparam, lparam);
         }
 
         case WM_DESTROY:
@@ -121,6 +132,44 @@ public:
         return 0;
     }
 
+    [[nodiscard]] LRESULT HandleGetObject(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
+    {
+        LRESULT retVal = 0;
+
+        // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            retVal = UiaReturnRawElementProvider(hWnd, wParam, lParam, _GetUiaProvider());
+        }
+        // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
+        
+        return retVal;
+    }
+
+    // Routine Description:
+    // - Creates/retrieves a handle to the UI Automation provider COM interfaces
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - Pointer to UI Automation provider class/interfaces.
+    IRawElementProviderSimple* _GetUiaProvider()
+    {
+        if (nullptr == _pUiaProvider)
+        {
+            try
+            {
+                _pUiaProvider = WindowUiaProvider::Create(this);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+                _pUiaProvider = nullptr;
+            }
+        }
+
+        return _pUiaProvider;
+    }
+
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
@@ -132,7 +181,7 @@ public:
         return rc;
     }
 
-    HWND GetHandle() const noexcept
+    HWND GetWindowHandle() const noexcept
     {
         return _window.get();
     };
@@ -197,6 +246,7 @@ protected:
     bool _inDpiChange = false;
 
     std::wstring _title = L"";
+    WindowUiaProvider* _pUiaProvider = nullptr;
 
     bool _minimized = false;
 };

@@ -29,6 +29,8 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
+#include <combaseapi.h>
+#include <UIAutomation.h>
 #include <objbase.h>
 #include <bcrypt.h>
 

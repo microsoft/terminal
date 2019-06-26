@@ -58,6 +58,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\UTF8OutPipeReader.cpp">
+    <ClCompile Include="..\WindowUiaProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -87,6 +91,13 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\UTF8OutPipeReader.hpp">
+    <ClInclude Include="..\IWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowUiaProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScreenInfoUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
