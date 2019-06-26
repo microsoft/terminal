@@ -11,6 +11,7 @@
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
+    <ClCompile Include="..\ScreenInfoUiaProvider.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
@@ -18,6 +19,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\utils.cpp" />
+    <ClCompile Include="..\WindowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
@@ -26,8 +28,11 @@
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\IWindow.h" />
     <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\ScreenInfoUiaProvider.h" />
     <ClInclude Include="..\utils.hpp" />
+    <ClInclude Include="..\WindowUiaProvider.h" />
   </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{18D09A24-8240-42D6-8CB6-236EEE820263}</ProjectGuid>

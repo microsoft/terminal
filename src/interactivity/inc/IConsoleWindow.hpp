@@ -15,12 +15,17 @@ Author(s):
 
 #pragma once
 
+#include "..\types\IWindow.h"
+
+using namespace Microsoft::Console::Types;
+
 // copied typedef from uiautomationcore.h
 typedef int EVENTID;
 
 namespace Microsoft::Console::Interactivity
 {
-    class IConsoleWindow
+    class IConsoleWindow :
+        public Microsoft::Console::Types::IWindow
     {
     public:
         virtual ~IConsoleWindow() = 0;
