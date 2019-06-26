@@ -13,7 +13,8 @@ Follow the instructions in this repo's [README](/README.md#developer-guidance)
 
 1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
 2. Search for Windows Terminal in the Store
-3. Install in the normal fashion
+3. Review the minimum system settings to ensure you can successfully install Windows Terminal
+4. Install in the normal fashion
 
 ## Starting Windows Terminal
 
@@ -22,6 +23,8 @@ From the Windows Start menu, select Windows Terminal and run the application.
 Note: You can right click on the application item and run with administrator privilege if required.
 
 The default shell is Powershell.
+
+#TODO Are they any command line arguments or switches?
 
 ## Multiple Tabs
 
