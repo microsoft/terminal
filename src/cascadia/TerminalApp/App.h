@@ -15,7 +15,6 @@
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
-#include <winrt/Windows.UI.Xaml.Hosting.h>
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 
 namespace winrt::TerminalApp::implementation
@@ -140,9 +139,6 @@ namespace winrt::TerminalApp::implementation
         void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
 
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
-
-        bool _bIsClosed = false;
-        winrt::Windows::UI::Xaml::Hosting::WindowsXamlManager _windowsXamlManager{ nullptr };
     };
 }
 
