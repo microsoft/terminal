@@ -27,10 +27,12 @@ namespace winrt::TerminalApp::implementation
         ::GetWindowPlacement(_window, &placement);
         if (placement.showCmd == SW_SHOWNORMAL)
         {
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateMaximized", false);
             ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
         }
         else if (placement.showCmd == SW_SHOWMAXIMIZED)
         {
+            winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateNormal", false);
             ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
         }
     }
