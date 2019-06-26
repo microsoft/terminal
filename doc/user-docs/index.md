@@ -22,7 +22,7 @@ From the Windows Start menu, select Windows Terminal and run the application.
 
 Note: You can right click on the application item and run with administrator privilege if required.
 
-The default shell is Powershell.
+The default shell is PowerShell.
 
 #TODO Are they any command line arguments or switches?
 
