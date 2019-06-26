@@ -60,6 +60,8 @@ at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingS
 
 #TODO -- is this path correct for **users** ?
 
+An introduction to the the various settings can be found [here](UsingJsonSettings.md)
+
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc
 
 #TODO Add new page with detailed information on settings. E.g Adding new shells, keybindings, background Gif etc.
