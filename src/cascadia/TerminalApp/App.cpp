@@ -491,6 +491,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
@@ -1141,17 +1142,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Duplicates the Tab
-    // Arguments:
-    // - tabViewItem: the TabViewItem in the TabView that is duplicated.
-    void App::_DuplicateTabViewItem(const IInspectable& tabViewItem)
+    // - Duplicates the current focused tab
+    void App::_DuplicateTabViewItem()
     {
-
-        uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-
-        auto _tabViewItem = tabViewItem.as<winrt::Microsoft::UI::Xaml::Controls::TabViewItem>();
-        auto _tab = _tabs.at(tabIndexFromControl);
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto _tab = _tabs.at(focusedTabIndex);
         
         auto profileGuid = _tab->GetFocusedProfile();
         auto settings = _settings->MakeSettings(profileGuid);

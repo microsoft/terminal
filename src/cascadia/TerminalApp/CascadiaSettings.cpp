@@ -269,6 +269,10 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_TAB });
 
+    keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('D') });
+
     // Yes these are offset by one.
     // Ideally, you'd want C-S-1 to open the _first_ profile, which is index 0
     keyBindings.SetKeyBinding(ShortcutAction::NewTabProfile0,
