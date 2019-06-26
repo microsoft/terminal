@@ -129,6 +129,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AppContainer>false</AppContainer>
     </Link>
   </ItemDefinitionGroup>
 
