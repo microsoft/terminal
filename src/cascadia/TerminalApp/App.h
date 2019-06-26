@@ -103,6 +103,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _OpenNewTab(std::optional<int> profileIndex);
+        void _DuplicateTabViewItem();
         void _CloseFocusedTab();
         void _SelectNextTab(const bool bMoveRight);
         void _SelectTab(const int tabIndex);
@@ -125,7 +126,6 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
 
-        void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
