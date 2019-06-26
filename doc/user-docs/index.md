@@ -71,7 +71,7 @@ The list of valid settings can be found in the [Profiles.json Documentation](../
 
 ## Tips and Tricks:
 
-1. In Powershell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
+1. In PowerShell you can discover if the Windows Terminal is being used by checking for the existence of the environment variable `WT_SESSION`.
 
     Under pwsh you can also use
 `(Get-Process -Id $pid).Parent.Parent.ProcessName -eq 'WindowsTerminal'`
