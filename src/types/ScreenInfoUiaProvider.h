@@ -3,41 +3,40 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- windowUiaProvider.hpp
+- screenInfoUiaProvider.hpp
 
 Abstract:
-- This module provides UI Automation access to the console window to
+- This module provides UI Automation access to the screen buffer to
   support both automation tests and accessibility (screen reading)
   applications.
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
 Author(s):
-- Michael Niksa (MiNiksa)     2017
+- Michael Niksa   (MiNiksa)   2017
 - Austin Diviness (AustDi)    2017
+- Carlos Zamora   (CaZamor)   2019
 --*/
 
 #pragma once
 
 #include "precomp.h"
 
-namespace Microsoft::Console::Interactivity::Win32
+namespace Microsoft::Console::Types
 {
-    // Forward declare, prevent circular ref.
-    class Window;
-    class ScreenInfoUiaProvider;
+    class IWindow;
+    class WindowUiaProvider;
 
-    class WindowUiaProvider final :
+    class ScreenInfoUiaProvider final :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
-        public IRawElementProviderFragmentRoot
+        public ITextProvider
     {
     public:
-        static WindowUiaProvider* Create();
-        virtual ~WindowUiaProvider();
+        ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
+        virtual ~ScreenInfoUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
-        [[nodiscard]] HRESULT SetTextAreaFocus();
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
@@ -64,18 +63,25 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP SetFocus();
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
 
-        // IRawElementProviderFragmentRoot methods
-        IFACEMETHODIMP ElementProviderFromPoint(_In_ double x,
-                                                _In_ double y,
-                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
-        IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+        // ITextProvider
+        IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+        IFACEMETHODIMP GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+        IFACEMETHODIMP RangeFromChild(_In_ IRawElementProviderSimple* childElement,
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+        IFACEMETHODIMP RangeFromPoint(_In_ UiaPoint point,
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+        IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+        IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
     private:
-        WindowUiaProvider();
+        // Ref counter for COM object
+        ULONG _cRefs;
 
-        HWND _GetWindowHandle() const;
-        [[nodiscard]] HRESULT _EnsureValidHwnd() const;
-        static IConsoleWindow* const _getIConsoleWindow();
+        // weak reference to uia parent
+        WindowUiaProvider* const _pUiaParent;
+
+        // weak reference to IWindow (IConsoleWindow or BaseWindow)
+        IWindow* _baseWindow;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
@@ -88,19 +94,16 @@ namespace Microsoft::Console::Interactivity::Win32
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalEventFiring;
+        std::map<EVENTID, bool> _signalFiringMapping;
 
-        ScreenInfoUiaProvider* _pScreenInfoProvider;
-
-        // Ref counter for COM object
-        ULONG _cRefs;
+        //const COORD _getScreenBufferCoords() const;
     };
 
-    namespace WindowUiaProviderTracing
+    namespace ScreenInfoUiaProviderTracing
     {
         enum class ApiCall
         {
-            Create,
+            Constructor,
             Signal,
             AddRef,
             Release,
@@ -115,15 +118,19 @@ namespace Microsoft::Console::Interactivity::Win32
             GetEmbeddedFragmentRoots,
             SetFocus,
             GetFragmentRoot,
-            ElementProviderFromPoint,
-            GetFocus
+            GetSelection,
+            GetVisibleRanges,
+            RangeFromChild,
+            RangeFromPoint,
+            GetDocumentRange,
+            GetSupportedTextSelection
         };
 
         struct IApiMsg
         {
         };
 
-        struct ApiMessageSignal : public IApiMsg
+        struct ApiMsgSignal : public IApiMsg
         {
             EVENTID Signal;
         };
@@ -131,6 +138,12 @@ namespace Microsoft::Console::Interactivity::Win32
         struct ApiMsgNavigate : public IApiMsg
         {
             NavigateDirection Direction;
+        };
+
+        struct ApiMsgGetSelection : public IApiMsg
+        {
+            bool AreaSelected;
+            unsigned int SelectionRowCount;
         };
     }
 }

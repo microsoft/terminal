@@ -21,6 +21,17 @@ Author(s):
 
 #include "../types/inc/Viewport.hpp"
 
+namespace Microsoft::Console::Types
+{
+    class WindowUiaProvider;
+
+    namespace WindowUiaProviderTracing
+    {
+        enum class ApiCall;
+        struct IApiMsg;
+    }
+}
+
 namespace Microsoft::Console::Interactivity::Win32
 {
     class UiaTextRange;
@@ -34,14 +45,6 @@ namespace Microsoft::Console::Interactivity::Win32
     class ScreenInfoUiaProvider;
 
     namespace ScreenInfoUiaProviderTracing
-    {
-        enum class ApiCall;
-        struct IApiMsg;
-    }
-
-    class WindowUiaProvider;
-
-    namespace WindowUiaProviderTracing
     {
         enum class ApiCall;
         struct IApiMsg;
@@ -99,9 +102,9 @@ public:
                            const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
                            const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
 
-    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::WindowUiaProvider* const pProvider,
-                           const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::ApiCall apiCall,
-                           const Microsoft::Console::Interactivity::Win32::WindowUiaProviderTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const pProvider,
+                           const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
+                           const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg);
 
 private:
     static ULONG s_ulDebugFlag;
