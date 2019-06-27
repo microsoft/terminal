@@ -2,9 +2,6 @@
 // Licensed under the MIT license.
 
 #pragma once
-
-#include "ControlKeyStates.hpp"
-
 namespace Microsoft::Terminal::Core
 {
     class ITerminalInput
@@ -12,7 +9,7 @@ namespace Microsoft::Terminal::Core
     public:
         virtual ~ITerminalInput() {}
 
-        virtual bool SendKeyEvent(const WORD vkey, const ControlKeyStates states) = 0;
+        virtual bool SendKeyEvent(const WORD vkey, const DWORD modifiers) = 0;
 
         // void SendMouseEvent(uint row, uint col, KeyModifiers modifiers);
         [[nodiscard]] virtual HRESULT UserResize(const COORD size) noexcept = 0;
