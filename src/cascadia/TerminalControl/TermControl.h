@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
+        RECT _charGridPadding;
 
         std::optional<int> _lastScrollOffset;
 
@@ -139,11 +140,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
-        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+        static RECT _ParsePadding(const hstring padding);
 
         Settings::KeyModifiers _GetPressedModifierKeys() const;
 
-        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition, bool clampToViewport = true);
     };
 }
 

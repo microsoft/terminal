@@ -42,6 +42,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
         [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept;
+        [[nodiscard]] HRESULT SetCharGridPadding(const RECT pixels) noexcept;
 
         void SetCallback(std::function<void()> pfn);
 
@@ -107,6 +108,7 @@ namespace Microsoft::Console::Render
 
         HWND _hwndTarget;
         SIZE _sizeTarget;
+        RECT _charGridPadding;
         int _dpi;
         float _scale;
 

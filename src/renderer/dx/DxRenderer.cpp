@@ -40,6 +40,7 @@ DxEngine::DxEngine() :
     _haveDeviceResources{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{ 0 },
+    _charGridPadding{ 0 },
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _chainMode{ SwapChainMode::ForComposition },
@@ -375,6 +376,15 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 [[nodiscard]] HRESULT DxEngine::SetWindowSize(const SIZE Pixels) noexcept
 {
     _sizeTarget = Pixels;
+
+    RETURN_IF_FAILED(InvalidateAll());
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT DxEngine::SetCharGridPadding(const RECT pixels) noexcept
+{
+    _charGridPadding = pixels;
 
     RETURN_IF_FAILED(InvalidateAll());
 
@@ -859,8 +869,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     {
         // Calculate positioning of our origin.
         D2D1_POINT_2F origin;
-        origin.x = static_cast<float>(coord.X * _glyphCell.cx);
-        origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
+        origin.x = static_cast<float>(coord.X * _glyphCell.cx + _charGridPadding.left);
+        origin.y = static_cast<float>(coord.Y * _glyphCell.cy + _charGridPadding.top);
 
         // Create the text layout
         CustomTextLayout layout(_dwriteFactory.Get(),
@@ -913,8 +923,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     const auto font = _GetFontSize();
     D2D_POINT_2F target;
-    target.x = static_cast<float>(coordTarget.X) * font.X;
-    target.y = static_cast<float>(coordTarget.Y) * font.Y;
+    target.x = static_cast<float>(coordTarget.X) * font.X + _charGridPadding.left;
+    target.y = static_cast<float>(coordTarget.Y) * font.Y + _charGridPadding.top;
 
     D2D_POINT_2F start = { 0 };
     D2D_POINT_2F end = { 0 };
@@ -993,10 +1003,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     const auto resetColorOnExit = wil::scope_exit([&] { _d2dBrushForeground->SetColor(existingColor); });
 
     RECT pixels;
-    pixels.left = rect.Left * _glyphCell.cx;
-    pixels.top = rect.Top * _glyphCell.cy;
-    pixels.right = rect.Right * _glyphCell.cx;
-    pixels.bottom = rect.Bottom * _glyphCell.cy;
+    pixels.left = rect.Left;
+    pixels.top = rect.Top;
+    pixels.right = rect.Right;
+    pixels.bottom = rect.Bottom;
+    _ScaleByFont(pixels, _glyphCell);
+    pixels.left += _charGridPadding.left;
+    pixels.top += _charGridPadding.top;
+    pixels.right += _charGridPadding.left;
+    pixels.bottom += _charGridPadding.top;
 
     D2D1_RECT_F draw = { 0 };
     draw.left = static_cast<float>(pixels.left);
@@ -1032,8 +1047,8 @@ enum class CursorPaintType
     }
     // Create rectangular block representing where the cursor can fill.
     D2D1_RECT_F rect = { 0 };
-    rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx);
-    rect.top = static_cast<float>(options.coordCursor.Y * _glyphCell.cy);
+    rect.left = static_cast<float>(options.coordCursor.X * _glyphCell.cx + _charGridPadding.left);
+    rect.top = static_cast<float>(options.coordCursor.Y * _glyphCell.cy + _charGridPadding.top);
     rect.right = static_cast<float>(rect.left + _glyphCell.cx);
     rect.bottom = static_cast<float>(rect.top + _glyphCell.cy);
 
@@ -1174,8 +1189,10 @@ enum class CursorPaintType
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
-    short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    short widthInChars = static_cast<short>((viewInPixels.Width() - _charGridPadding.left - _charGridPadding.right) / _glyphCell.cx);
+    short heightInChars = static_cast<short>((viewInPixels.Height() - _charGridPadding.top - _charGridPadding.bottom) / _glyphCell.cy);
+    widthInChars = std::max(widthInChars, short{ 0 });
+    heightInChars = std::max(heightInChars, short{ 0 });
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
@@ -1255,10 +1272,10 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
     SMALL_RECT r;
-    r.Top = (SHORT)(floor(_invalidRect.top / _glyphCell.cy));
-    r.Left = (SHORT)(floor(_invalidRect.left / _glyphCell.cx));
-    r.Bottom = (SHORT)(floor(_invalidRect.bottom / _glyphCell.cy));
-    r.Right = (SHORT)(floor(_invalidRect.right / _glyphCell.cx));
+    r.Top = (SHORT)(floor((_invalidRect.top - _charGridPadding.top) / _glyphCell.cy));
+    r.Left = (SHORT)(floor((_invalidRect.left- _charGridPadding.left) / _glyphCell.cx));
+    r.Bottom = (SHORT)(floor((_invalidRect.bottom - _charGridPadding.bottom) / _glyphCell.cy));
+    r.Right = (SHORT)(floor((_invalidRect.right - _charGridPadding.right) / _glyphCell.cx));
 
     // Exclusive to inclusive
     r.Bottom--;

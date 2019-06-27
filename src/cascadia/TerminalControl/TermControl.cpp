@@ -37,6 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _lastScrollOffset{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
+        _charGridPadding{},
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
         _cursorTimer{}
@@ -173,8 +174,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _BackgroundColorChanged(bg);
 
         // Apply padding to the root Grid
-        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        _root.Padding(thickness);
+        _charGridPadding = _ParsePadding(_settings.Padding());
+        if (_renderEngine)
+        {
+            _renderEngine->SetCharGridPadding(_charGridPadding);
+        }
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
@@ -430,6 +434,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Resize our terminal connection to match that size, and initialize the terminal with that size.
         const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
         THROW_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+        THROW_IF_FAILED(dxEngine->SetCharGridPadding(_charGridPadding));
         const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
         const auto width = vp.Width();
         const auto height = vp.Height();
@@ -1355,30 +1360,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         double height = rows * fFontHeight;
-        auto thickness = _ParseThicknessFromPadding(settings.Padding());
-        width += thickness.Left + thickness.Right;
-        height += thickness.Top + thickness.Bottom;
+        auto padding = _ParsePadding(settings.Padding());
+        width += padding.left + padding.right;
+        height += padding.top + padding.bottom;
 
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
     // Method Description:
-    // - Create XAML Thickness object based on padding props provided.
-    //   Used for controlling the TermControl XAML Grid container's Padding prop.
+    // - Parse padding setting, specified in pixels
+    //   Used for controlling char grid padding.
     // Arguments:
     // - padding: 2D padding values
-    //      Single Double value provides uniform padding
-    //      Two Double values provide isometric horizontal & vertical padding
-    //      Four Double values provide independent padding for 4 sides of the bounding rectangle
+    //      Single integer value provides uniform padding
+    //      Two integer values provide isometric horizontal & vertical padding
+    //      Four integer values provide independent padding for 4 sides of the bounding rectangle
     // Return Value:
-    // - Windows::UI::Xaml::Thickness object
-    Windows::UI::Xaml::Thickness TermControl::_ParseThicknessFromPadding(const hstring padding)
+    // - RECT
+    RECT TermControl::_ParsePadding(const hstring padding)
     {
         const wchar_t singleCharDelim = L',';
         std::wstringstream tokenStream(padding.c_str());
         std::wstring token;
         uint8_t paddingPropIndex = 0;
-        std::array<double, 4> thicknessArr = {};
+        std::array<LONG, 4> thicknessArr = {};
         size_t* idx = nullptr;
 
         // Get padding values till we run out of delimiter separated values in the stream
@@ -1391,11 +1396,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
             {
-                // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
+                // std::stol internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
-                // We'll be permissive till the extent that stod function allows us to be by default
-                // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex] = std::stod(token, idx);
+                // We'll be permissive till the extent that stol function allows us to be by default
+                thicknessArr[paddingPropIndex] = std::stol(token, idx);
             }
         }
         catch (...)
@@ -1408,14 +1412,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         switch (paddingPropIndex)
         {
         case 1:
-            return ThicknessHelper::FromUniformLength(thicknessArr[0]);
+            return {
+                thicknessArr[0], thicknessArr[0], thicknessArr[0], thicknessArr[0]
+            };
         case 2:
-            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]);
+            return {
+                thicknessArr[0], thicknessArr[1], thicknessArr[0], thicknessArr[1]
+            };
         // No case for paddingPropIndex = 3, since it's not a norm to provide just Left, Top & Right padding values leaving out Bottom
         case 4:
-            return ThicknessHelper::FromLengths(thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]);
+            return {
+                thicknessArr[0], thicknessArr[1], thicknessArr[2], thicknessArr[3]
+            };
         default:
-            return Thickness();
+            return {};
         }
     }
 
@@ -1466,14 +1476,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - cursorPosition: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
+    // - clampToViewport: whether to clamp position within visible viewport
     // Return Value:
     // - the corresponding viewport terminal position for the given Point parameter
-    const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition)
+    const COORD TermControl::_GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition, bool clampToViewport)
     {
         // Exclude padding from cursor position calculation
         COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
-            static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
+            static_cast<SHORT>(cursorPosition.X - _charGridPadding.left),
+            static_cast<SHORT>(cursorPosition.Y - _charGridPadding.top)
         };
 
         const auto fontSize = _actualFont.GetSize();
@@ -1483,6 +1494,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Normalize to terminal coordinates by using font size
         terminalPosition.X /= fontSize.X;
         terminalPosition.Y /= fontSize.Y;
+
+        if (clampToViewport)
+        {
+            const short lastVisibleRow = std::max(_terminal->GetViewport().Height() - 1, 0);
+            const short lastVisibleCol = std::max(_terminal->GetViewport().Width() - 1, 0);
+
+            terminalPosition.Y = std::clamp(terminalPosition.Y, short{ 0 }, lastVisibleRow);
+            terminalPosition.X = std::clamp(terminalPosition.X, short{ 0 }, lastVisibleCol);
+        }
 
         return terminalPosition;
     }
