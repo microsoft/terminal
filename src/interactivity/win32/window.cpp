@@ -11,7 +11,6 @@
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
 #include "windowtheme.hpp"
-#include "windowUiaProvider.hpp"
 
 #include "..\..\host\globals.h"
 #include "..\..\host\dbcs.h"
@@ -32,6 +31,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"
+#include "..\..\types\WindowUiaProvider.h"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -49,7 +49,7 @@ using namespace Microsoft::Console::Render;
 ATOM Window::s_atomWindowClass = 0;
 Window* Window::s_Instance = nullptr;
 
-Window::Window() :
+Microsoft::Console::Interactivity::Win32::Window::Window() :
     _fIsInFullscreen(false),
     _pSettings(nullptr),
     _hWnd(0)
@@ -59,7 +59,7 @@ Window::Window() :
     ZeroMemory((void*)&_rcFullscreenWindowSize, sizeof(_rcFullscreenWindowSize));
 }
 
-Window::~Window()
+Microsoft::Console::Interactivity::Win32::Window::~Window()
 {
     if (nullptr != _pUiaProvider)
     {
@@ -113,7 +113,7 @@ Window::~Window()
 // - <none>
 // Return Value:
 // - STATUS_SUCCESS or failure from loading icons/registering class with the system
-[[nodiscard]] NTSTATUS Window::s_RegisterWindowClass()
+[[nodiscard]] NTSTATUS Microsoft::Console::Interactivity::Win32::Window::s_RegisterWindowClass()
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -163,7 +163,7 @@ Window::~Window()
 // - <none>
 // Return Value:
 // - <none>
-void Window::_UpdateSystemMetrics() const
+void Microsoft::Console::Interactivity::Win32::Window::_UpdateSystemMetrics() const
 {
     WindowDpiApi* const dpiApi = ServiceLocator::LocateHighDpiApi<WindowDpiApi>();
     Globals& g = ServiceLocator::LocateGlobals();
@@ -189,7 +189,7 @@ void Window::_UpdateSystemMetrics() const
 // - pScreen - Attach to this screen for rendering the client area of the window
 // Return Value:
 // - STATUS_SUCCESS, invalid parameters, or various potential errors from calling CreateWindow
-[[nodiscard]] NTSTATUS Window::_MakeWindow(_In_ Settings* const pSettings,
+[[nodiscard]] NTSTATUS Microsoft::Console::Interactivity::Win32::Window::_MakeWindow(_In_ Settings* const pSettings,
                                            _In_ SCREEN_INFORMATION* const pScreen)
 {
     Globals& g = ServiceLocator::LocateGlobals();
@@ -314,16 +314,16 @@ void Window::_UpdateSystemMetrics() const
 
             if (useDx)
             {
-                status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
                 if (NT_SUCCESS(status))
                 {
-                    status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
             }
             else
             {
-                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
 
             if (NT_SUCCESS(status))
@@ -375,7 +375,7 @@ void Window::_UpdateSystemMetrics() const
 // - <none>
 // Return Value:
 // - <none>
-void Window::_CloseWindow() const
+void Microsoft::Console::Interactivity::Win32::Window::_CloseWindow() const
 {
     // Pass on the notification to attached processes.
     // Since we only have one window for now, this will be the end of the host process as well.
@@ -388,7 +388,7 @@ void Window::_CloseWindow() const
 // - wShowWindow - See STARTUPINFO wShowWindow member: http://msdn.microsoft.com/en-us/library/windows/desktop/ms686331(v=vs.85).aspx
 // Return Value:
 // - STATUS_SUCCESS or system errors from activating the window and setting its show states
-[[nodiscard]] NTSTATUS Window::ActivateAndShow(const WORD wShowWindow)
+[[nodiscard]] NTSTATUS Microsoft::Console::Interactivity::Win32::Window::ActivateAndShow(const WORD wShowWindow)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
@@ -425,7 +425,7 @@ void Window::_CloseWindow() const
 // - NewWindow: the inclusive rect to use as the new viewport in the buffer
 // Return Value:
 // <none>
-void Window::ChangeViewport(const SMALL_RECT NewWindow)
+void Microsoft::Console::Interactivity::Win32::Window::ChangeViewport(const SMALL_RECT NewWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -474,7 +474,7 @@ void Window::ChangeViewport(const SMALL_RECT NewWindow)
 // - Size of the window in characters (relative to the current font)
 // Return Value:
 // - <none>
-void Window::UpdateWindowSize(const COORD coordSizeInChars)
+void Microsoft::Console::Interactivity::Win32::Window::UpdateWindowSize(const COORD coordSizeInChars)
 {
     GetScreenInfo().SetViewportSize(&coordSizeInChars);
 
@@ -484,7 +484,7 @@ void Window::UpdateWindowSize(const COORD coordSizeInChars)
 // Routine Description:
 // Arguments:
 // Return Value:
-void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
+void Microsoft::Console::Interactivity::Win32::Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 {
     SetWindowPos(GetWindowHandle(),
                  nullptr,
@@ -496,7 +496,7 @@ void Window::UpdateWindowPosition(_In_ POINT const ptNewPos) const
 }
 
 // This routine adds or removes the name to or from the beginning of the window title. The possible names are "Scroll", "Mark", and "Select"
-void Window::UpdateWindowText()
+void Microsoft::Console::Interactivity::Win32::Window::UpdateWindowText()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const bool fInScrollMode = Scrolling::s_IsInScrollMode();
@@ -543,12 +543,12 @@ void Window::UpdateWindowText()
     }
 }
 
-void Window::CaptureMouse()
+void Microsoft::Console::Interactivity::Win32::Window::CaptureMouse()
 {
     SetCapture(_hWnd);
 }
 
-BOOL Window::ReleaseMouse()
+BOOL Microsoft::Console::Interactivity::Win32::Window::ReleaseMouse()
 {
     return ReleaseCapture();
 }
@@ -559,7 +559,7 @@ BOOL Window::ReleaseMouse()
 // - sizeNew - The X and Y dimensions
 // Return Value:
 // - <none>
-void Window::_UpdateWindowSize(const SIZE sizeNew)
+void Microsoft::Console::Interactivity::Win32::Window::_UpdateWindowSize(const SIZE sizeNew)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -586,7 +586,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
 // - <none> - All state is read from the attached screen buffer
 // Return Value:
 // - STATUS_SUCCESS or suitable error code
-[[nodiscard]] NTSTATUS Window::_InternalSetWindowSize()
+[[nodiscard]] NTSTATUS Microsoft::Console::Interactivity::Win32::Window::_InternalSetWindowSize()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& siAttached = GetScreenInfo();
@@ -706,7 +706,7 @@ void Window::_UpdateWindowSize(const SIZE sizeNew)
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
+void Microsoft::Console::Interactivity::Win32::Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     COORD NewOrigin;
@@ -790,7 +790,7 @@ void Window::VerticalScroll(const WORD wScrollCommand, const WORD wAbsoluteChang
 // - AbsoluteChange - The magnitude of the change (for tracking commands)
 // Return Value:
 // - <none>
-void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
+void Microsoft::Console::Interactivity::Win32::Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteChange)
 {
     // Log a telemetry event saying the user interacted with the Console
     Telemetry::Instance().SetUserInteractive();
@@ -854,12 +854,12 @@ void Window::HorizontalScroll(const WORD wScrollCommand, const WORD wAbsoluteCha
     LOG_IF_FAILED(ScreenInfo.SetViewportOrigin(true, NewOrigin, false));
 }
 
-BOOL Window::EnableBothScrollBars()
+BOOL Microsoft::Console::Interactivity::Win32::Window::EnableBothScrollBars()
 {
     return EnableScrollBar(_hWnd, SB_BOTH, ESB_ENABLE_BOTH);
 }
 
-int Window::UpdateScrollBar(bool isVertical,
+int Microsoft::Console::Interactivity::Win32::Window::UpdateScrollBar(bool isVertical,
                             bool isAltBuffer,
                             UINT pageSize,
                             int maxSize,
@@ -883,7 +883,7 @@ int Window::UpdateScrollBar(bool isVertical,
 // - prc - rectangle to fill
 // Return Value:
 // - <none>
-void Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_ RECT* const prc)
+void Microsoft::Console::Interactivity::Win32::Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_ RECT* const prc)
 {
     prc->left = lpWindowPos->x;
     prc->top = lpWindowPos->y;
@@ -898,7 +898,7 @@ void Window::s_ConvertWindowPosToWindowRect(const LPWINDOWPOS lpWindowPos, _Out_
 // - prectWindow - rectangle to fill with pixel positions of the outer edge rectangle for this window
 // Return Value:
 // - <none>
-void Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* const prectWindow) const
+void Microsoft::Console::Interactivity::Win32::Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* const prectWindow) const
 {
     auto& g = ServiceLocator::LocateGlobals();
     const SCREEN_INFORMATION& siAttached = GetScreenInfo();
@@ -926,7 +926,7 @@ void Window::_CalculateWindowRect(const COORD coordWindowInChars, _Inout_ RECT* 
 //      rectangle for this window
 // Return Value:
 // - <none>
-void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
+void Microsoft::Console::Interactivity::Win32::Window::s_CalculateWindowRect(const COORD coordWindowInChars,
                                    const int iDpi,
                                    const COORD coordFontSize,
                                    const COORD coordBufferSize,
@@ -979,25 +979,25 @@ void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
     prectWindow->bottom = prectWindow->top + RECT_HEIGHT(&rectProposed);
 }
 
-RECT Window::GetWindowRect() const
+RECT Microsoft::Console::Interactivity::Win32::Window::GetWindowRect() const
 {
     RECT rc = { 0 };
     ::GetWindowRect(GetWindowHandle(), &rc);
     return rc;
 }
 
-HWND Window::GetWindowHandle() const
+HWND Microsoft::Console::Interactivity::Win32::Window::GetWindowHandle() const
 {
     return _hWnd;
 }
 
-SCREEN_INFORMATION& Window::GetScreenInfo()
+SCREEN_INFORMATION& Microsoft::Console::Interactivity::Win32::Window::GetScreenInfo()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer();
 }
 
-const SCREEN_INFORMATION& Window::GetScreenInfo() const
+const SCREEN_INFORMATION& Microsoft::Console::Interactivity::Win32::Window::GetScreenInfo() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetActiveOutputBuffer();
@@ -1009,7 +1009,7 @@ const SCREEN_INFORMATION& Window::GetScreenInfo() const
 // - <none>
 // Return Value:
 // - The level of opacity. 0xff should represent 100% opaque and 0x00 should be 100% transparent. (Used for Alpha channel in drawing.)
-BYTE Window::GetWindowOpacity() const
+BYTE Microsoft::Console::Interactivity::Win32::Window::GetWindowOpacity() const
 {
     return _pSettings->GetWindowAlpha();
 }
@@ -1021,7 +1021,7 @@ BYTE Window::GetWindowOpacity() const
 // - bOpacity - 0xff/100% opacity = opaque window. 0xb2/70% opacity = 30% transparent window.
 // Return Value:
 // - <none>
-void Window::SetWindowOpacity(const BYTE bOpacity)
+void Microsoft::Console::Interactivity::Win32::Window::SetWindowOpacity(const BYTE bOpacity)
 {
     _pSettings->SetWindowAlpha(bOpacity);
 }
@@ -1032,7 +1032,7 @@ void Window::SetWindowOpacity(const BYTE bOpacity)
 // - <none>
 // Return Value:
 // - <none>
-void Window::ApplyWindowOpacity() const
+void Microsoft::Console::Interactivity::Win32::Window::ApplyWindowOpacity() const
 {
     const BYTE bAlpha = GetWindowOpacity();
     HWND const hWnd = GetWindowHandle();
@@ -1051,7 +1051,7 @@ void Window::ApplyWindowOpacity() const
 // - sOpacityDelta - How much to modify the current window opacity. Positive = more opaque. Negative = more transparent.
 // Return Value:
 // - <none>
-void Window::ChangeWindowOpacity(const short sOpacityDelta)
+void Microsoft::Console::Interactivity::Win32::Window::ChangeWindowOpacity(const short sOpacityDelta)
 {
     // Window Opacity is always a BYTE (unsigned char, 1 byte)
     // Delta is a short (signed short, 2 bytes)
@@ -1080,17 +1080,17 @@ void Window::ChangeWindowOpacity(const short sOpacityDelta)
 // - Uses internally stored window handle
 // Return Value:
 // - True if maximized. False otherwise.
-bool Window::IsInMaximized() const
+bool Microsoft::Console::Interactivity::Win32::Window::IsInMaximized() const
 {
     return IsMaximized(_hWnd);
 }
 
-bool Window::IsInFullscreen() const
+bool Microsoft::Console::Interactivity::Win32::Window::IsInFullscreen() const
 {
     return _fIsInFullscreen;
 }
 
-void Window::SetIsFullscreen(const bool fFullscreenEnabled)
+void Microsoft::Console::Interactivity::Win32::Window::SetIsFullscreen(const bool fFullscreenEnabled)
 {
     // It is possible to enter SetIsFullScreen even if we're already in full screen.
     // Use the old is in fullscreen flag to gate checks that rely on the current state.
@@ -1134,7 +1134,7 @@ void Window::SetIsFullscreen(const bool fFullscreenEnabled)
     _ApplyWindowSize();
 }
 
-void Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
+void Microsoft::Console::Interactivity::Win32::Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
 {
     if (_fIsInFullscreen)
     {
@@ -1156,7 +1156,7 @@ void Window::_BackupWindowSizes(const bool fCurrentIsInFullscreen)
     }
 }
 
-void Window::_ApplyWindowSize()
+void Microsoft::Console::Interactivity::Win32::Window::_ApplyWindowSize()
 {
     const RECT rcNewSize = _fIsInFullscreen ? _rcFullscreenWindowSize : _rcNonFullscreenWindowSize;
 
@@ -1172,18 +1172,18 @@ void Window::_ApplyWindowSize()
     siAttached.MakeCurrentCursorVisible();
 }
 
-void Window::ToggleFullscreen()
+void Microsoft::Console::Interactivity::Win32::Window::ToggleFullscreen()
 {
     SetIsFullscreen(!IsInFullscreen());
 }
 
-void Window::s_ReinitializeFontsForDPIChange()
+void Microsoft::Console::Interactivity::Win32::Window::s_ReinitializeFontsForDPIChange()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.GetActiveOutputBuffer().RefreshFontWithRenderer();
 }
 
-[[nodiscard]] LRESULT Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
+[[nodiscard]] LRESULT Microsoft::Console::Interactivity::Win32::Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
                                                     const BOOL fAutoPos,
                                                     const Window* const pWindow)
 {
@@ -1247,7 +1247,7 @@ void Window::s_ReinitializeFontsForDPIChange()
     return Status;
 }
 
-[[nodiscard]] LRESULT Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
+[[nodiscard]] LRESULT Microsoft::Console::Interactivity::Win32::Window::s_RegPersistWindowOpacity(_In_ PCWSTR const pwszTitle, const Window* const pWindow)
 {
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;
 
@@ -1281,13 +1281,13 @@ void Window::s_ReinitializeFontsForDPIChange()
 // - <none>
 // Return Value:
 // - Pointer to UI Automation provider class/interfaces.
-IRawElementProviderSimple* Window::_GetUiaProvider()
+IRawElementProviderSimple* Microsoft::Console::Interactivity::Win32::Window::_GetUiaProvider()
 {
     if (nullptr == _pUiaProvider)
     {
         try
         {
-            _pUiaProvider = WindowUiaProvider::Create();
+            _pUiaProvider = WindowUiaProvider::Create(this);
         }
         catch (...)
         {
@@ -1299,7 +1299,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return _pUiaProvider;
 }
 
-[[nodiscard]] HRESULT Window::SignalUia(_In_ EVENTID id)
+[[nodiscard]] HRESULT Microsoft::Console::Interactivity::Win32::Window::SignalUia(_In_ EVENTID id)
 {
     if (_pUiaProvider != nullptr)
     {
@@ -1308,7 +1308,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return S_FALSE;
 }
 
-[[nodiscard]] HRESULT Window::UiaSetTextAreaFocus()
+[[nodiscard]] HRESULT Microsoft::Console::Interactivity::Win32::Window::UiaSetTextAreaFocus()
 {
     if (_pUiaProvider != nullptr)
     {
@@ -1318,27 +1318,27 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     return S_FALSE;
 }
 
-void Window::SetOwner()
+void Microsoft::Console::Interactivity::Win32::Window::SetOwner()
 {
     SetConsoleWindowOwner(_hWnd, nullptr);
 }
 
-BOOL Window::GetCursorPosition(_Out_ LPPOINT lpPoint)
+BOOL Microsoft::Console::Interactivity::Win32::Window::GetCursorPosition(_Out_ LPPOINT lpPoint)
 {
     return GetCursorPos(lpPoint);
 }
 
-BOOL Window::GetClientRectangle(_Out_ LPRECT lpRect)
+BOOL Microsoft::Console::Interactivity::Win32::Window::GetClientRectangle(_Out_ LPRECT lpRect)
 {
     return GetClientRect(_hWnd, lpRect);
 }
 
-int Window::MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints, _In_ UINT cPoints)
+int Microsoft::Console::Interactivity::Win32::Window::MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints, _In_ UINT cPoints)
 {
     return MapWindowPoints(_hWnd, nullptr, lpPoints, cPoints);
 }
 
-BOOL Window::ConvertScreenToClient(_Inout_ LPPOINT lpPoint)
+BOOL Microsoft::Console::Interactivity::Win32::Window::ConvertScreenToClient(_Inout_ LPPOINT lpPoint)
 {
     return ScreenToClient(_hWnd, lpPoint);
 }

@@ -24,11 +24,14 @@ Author(s):
 // Forward declare, prevent circular ref.
 class SCREEN_INFORMATION;
 
+namespace Microsoft::Console::Types
+{
+    class WindowUiaProvider;
+}
+
 namespace Microsoft::Console::Interactivity::Win32
 {
     class Window;
-
-    class WindowUiaProvider;
 
     class ScreenInfoUiaProvider final :
         public IRawElementProviderSimple,
@@ -36,7 +39,7 @@ namespace Microsoft::Console::Interactivity::Win32
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Types::WindowUiaProvider* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
@@ -81,7 +84,7 @@ namespace Microsoft::Console::Interactivity::Win32
         ULONG _cRefs;
 
         // weak reference to uia parent
-        WindowUiaProvider* const _pUiaParent;
+        Microsoft::Console::Types::WindowUiaProvider* const _pUiaParent;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
