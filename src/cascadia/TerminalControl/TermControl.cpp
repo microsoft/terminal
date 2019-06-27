@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
-        _connection { connection },
+        _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },

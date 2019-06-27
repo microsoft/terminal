@@ -1288,7 +1288,7 @@ namespace winrt::TerminalApp::implementation
         // Create a Conhost connection based on the values in our settings object.
         TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
 
-        TermControl newControl {controlSettings, controlConnection };
+        TermControl newControl{ controlSettings, controlConnection };
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
