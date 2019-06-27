@@ -29,7 +29,6 @@
     <ClCompile Include="..\WindowMetrics.cpp" />
     <ClCompile Include="..\WindowProc.cpp" />
     <ClCompile Include="..\windowtheme.cpp" />
-    <ClCompile Include="..\windowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AccessibilityNotifier.hpp" />
@@ -52,7 +51,6 @@
     <ClInclude Include="..\WindowMetrics.hpp" />
     <ClInclude Include="..\WindowIo.hpp" />
     <ClInclude Include="..\windowtheme.hpp" />
-    <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06EC74CB-9A12-429C-B551-8532EC964726}</ProjectGuid>

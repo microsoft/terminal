@@ -16,8 +16,6 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
-
 namespace Microsoft::Console::Types
 {
     class IWindow

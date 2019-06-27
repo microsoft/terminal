@@ -16,10 +16,13 @@ Author(s):
 
 #include "..\inc\IConsoleWindow.hpp"
 
-namespace Microsoft::Console::Interactivity::Win32
+namespace Microsoft::Console::Types
 {
     class WindowUiaProvider;
+}
 
+namespace Microsoft::Console::Interactivity::Win32
+{
     class Window final : public IConsoleWindow
     {
     public:
@@ -132,7 +135,7 @@ namespace Microsoft::Console::Interactivity::Win32
                                                const WPARAM wParam,
                                                const LPARAM lParam);
         IRawElementProviderSimple* _GetUiaProvider();
-        WindowUiaProvider* _pUiaProvider = nullptr;
+        Microsoft::Console::Types::WindowUiaProvider* _pUiaProvider = nullptr;
 
         // Dynamic Settings helpers
         [[nodiscard]] static LRESULT s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,

@@ -7,15 +7,17 @@
 #include "../../host/screenInfo.hpp"
 #include "../inc/ServiceLocator.hpp"
 
-#include "windowUiaProvider.hpp"
+#include "../types/WindowUiaProvider.h"
 #include "window.hpp"
 #include "windowdpiapi.hpp"
 
 #include "UiaTextRange.hpp"
 
+using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
-using namespace Microsoft::Console::Interactivity;
+
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {
@@ -36,7 +38,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
     return psa;
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
+Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Types::WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     _signalFiringMapping{},
     _cRefs(1)
@@ -44,11 +46,11 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaP
     Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
-ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
+Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 {
 }
 
-[[nodiscard]] HRESULT ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
+[[nodiscard]] HRESULT Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
     // check to see if we're already firing this particular event
@@ -78,14 +80,14 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 #pragma region IUnknown
 
 IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProvider::AddRef()
+Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::AddRef()
 {
     Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
 IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProvider::Release()
+Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::Release()
 {
     Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
     long val = InterlockedDecrement(&_cRefs);
@@ -96,7 +98,7 @@ ScreenInfoUiaProvider::Release()
     return val;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
                                                      _COM_Outptr_result_maybenull_ void** ppInterface)
 {
     Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
@@ -133,7 +135,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
 // Gets UI Automation provider options.
-IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
     Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
     *pOptions = ProviderOptions_ServerSideProvider;
@@ -142,7 +144,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions*
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
                                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
@@ -163,7 +165,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternI
 
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
-IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
                                                        _Out_ VARIANT* pVariant)
 {
     Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
@@ -233,7 +235,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
     Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
     *ppProvider = nullptr;
@@ -244,7 +246,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     ApiMsgNavigate apiMsg;
@@ -270,7 +272,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
     Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
     // Root defers this to host, others must implement it...
@@ -285,7 +287,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAF
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
     Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
     const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
@@ -301,20 +303,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
     Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
     *ppRoots = nullptr;
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::SetFocus()
 {
     Tracing::s_TraceUia(this, ApiCall::SetFocus, nullptr);
     return Signal(UIA_AutomationFocusChangedEventId);
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
     Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
@@ -334,7 +336,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 #pragma region ITextProvider
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ApiMsgGetSelection apiMsg;
@@ -448,7 +450,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -522,7 +524,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
@@ -545,7 +547,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     return hr;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
@@ -568,7 +570,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
     return hr;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
     IRawElementProviderSimple* pProvider;
@@ -594,7 +596,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
     return hr;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
+IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
     *pRetVal = SupportedTextSelection::SupportedTextSelection_Single;
@@ -603,20 +605,20 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ Supported
 
 #pragma endregion
 
-const COORD ScreenInfoUiaProvider::_getScreenBufferCoords() const
+const COORD Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::_getScreenBufferCoords() const
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.GetScreenBufferSize();
 }
 
-SCREEN_INFORMATION& ScreenInfoUiaProvider::_getScreenInfo()
+SCREEN_INFORMATION& Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::_getScreenInfo()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
     return gci.GetActiveOutputBuffer();
 }
 
-IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()
+IConsoleWindow* const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::_getIConsoleWindow()
 {
     return ServiceLocator::LocateConsoleWindow();
 }
