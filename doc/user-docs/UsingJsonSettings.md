@@ -138,7 +138,7 @@ Each one is identified by the name field. For example
 
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file
-4. Under the Debian Linux profile add the following fields
+4. Under the Debian Linux profile, add the following fields:
 ```json
     "backgroundImage": "ms-appdata://Roaming/openlogo.jpg",
     "backgroundImageOpacity": 0.3,
