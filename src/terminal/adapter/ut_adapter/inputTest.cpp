@@ -339,6 +339,7 @@ void InputTest::TerminalInputModifierKeyTests()
     unsigned int uiKeystate = uiActualKeystate;
 
     const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const BYTE slashVkey = LOBYTE(VkKeyScanW(L'/'));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -355,6 +356,12 @@ void InputTest::TerminalInputModifierKeyTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
+
+        // Ctrl-/ is handled in another test, because it's weird.
+        if (ControlPressed(uiKeystate) && (vkey == VK_DIVIDE || vkey == slashVkey))
+        {
+            continue;
+        }
 
         // Set up expected result
         switch (vkey)
@@ -373,9 +380,7 @@ void InputTest::TerminalInputModifierKeyTests()
             continue;
         case VK_BACK:
             // Backspace is kinda different from other keys - we'll handle in another test.
-        case VK_DIVIDE:
         case VK_OEM_2:
-            // Ctrl-/ is also handled in another test, because it's weird.
             // VK_OEM_2 is typically the '/?' key
             continue;
             // wcscpy_s(s_pwsInputBuffer, L"\x7f");
