@@ -1273,7 +1273,7 @@ float DxEngine::GetScaling() const noexcept
 {
     SMALL_RECT r;
     r.Top = (SHORT)(floor((_invalidRect.top - _charGridPadding.top) / _glyphCell.cy));
-    r.Left = (SHORT)(floor((_invalidRect.left- _charGridPadding.left) / _glyphCell.cx));
+    r.Left = (SHORT)(floor((_invalidRect.left - _charGridPadding.left) / _glyphCell.cx));
     r.Bottom = (SHORT)(floor((_invalidRect.bottom - _charGridPadding.bottom) / _glyphCell.cy));
     r.Right = (SHORT)(floor((_invalidRect.right - _charGridPadding.right) / _glyphCell.cx));
 
