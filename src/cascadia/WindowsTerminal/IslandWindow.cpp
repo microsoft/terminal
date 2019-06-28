@@ -179,6 +179,30 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     return base_type::MessageHandler(message, wparam, lparam);
 }
 
+// Routine Description:
+// - Creates/retrieves a handle to the UI Automation provider COM interfaces
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to UI Automation provider class/interfaces.
+IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
+{
+    if (nullptr == _pUiaProvider)
+    {
+        try
+        {
+            _pUiaProvider = WindowUiaProvider::Create(this);
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            _pUiaProvider = nullptr;
+        }
+    }
+
+    return _pUiaProvider;
+}
+
 // Method Description:
 // - Called when the window has been resized (or maximized)
 // Arguments:

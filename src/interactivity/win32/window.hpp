@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#include "..\inc\IConsoleWindow.hpp"
+#include "..\types\IConsoleWindow.hpp"
 
 namespace Microsoft::Console::Types
 {
@@ -23,7 +23,7 @@ namespace Microsoft::Console::Types
 
 namespace Microsoft::Console::Interactivity::Win32
 {
-    class Window final : public IConsoleWindow
+    class Window final : public Microsoft::Console::Types::IConsoleWindow
     {
     public:
         [[nodiscard]] static NTSTATUS CreateInstance(_In_ Settings* const pSettings,

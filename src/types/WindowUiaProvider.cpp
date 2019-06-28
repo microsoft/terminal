@@ -3,13 +3,13 @@
 
 #include "precomp.h"
 
-#include "IWindow.h"
+#include "IConsoleWindow.hpp"
 #include "WindowUiaProvider.h"
 #include "ScreenInfoUiaProvider.h"
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProvider::WindowUiaProvider(IWindow* baseWindow) :
+WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
     _signalEventFiring{},
     _baseWindow{ baseWindow },
     _pScreenInfoProvider{ nullptr },
@@ -25,7 +25,7 @@ WindowUiaProvider::~WindowUiaProvider()
     }
 }
 
-WindowUiaProvider* WindowUiaProvider::Create(IWindow* baseWindow)
+WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
     ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
@@ -282,7 +282,7 @@ IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    const IWindow* const pConsoleWindow = _baseWindow;
+    const IConsoleWindow* const pConsoleWindow = _baseWindow;
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pConsoleWindow);
 
     RECT const rc = pConsoleWindow->GetWindowRect();
@@ -344,7 +344,7 @@ IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawEle
 
 HWND WindowUiaProvider::_GetWindowHandle() const
 {
-    IWindow* const pConsoleWindow = _baseWindow;
+    IConsoleWindow* const pConsoleWindow = _baseWindow;
     THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
 
     return pConsoleWindow->GetWindowHandle();

@@ -618,7 +618,7 @@ SCREEN_INFORMATION& Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvi
     return gci.GetActiveOutputBuffer();
 }
 
-IConsoleWindow* const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::_getIConsoleWindow()
+Microsoft::Console::Types::IConsoleWindow* const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::_getIConsoleWindow()
 {
     return ServiceLocator::LocateConsoleWindow();
 }

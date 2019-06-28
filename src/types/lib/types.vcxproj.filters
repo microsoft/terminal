@@ -91,13 +91,15 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\inc\UTF8OutPipeReader.hpp">
-    <ClInclude Include="..\IWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WindowUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ScreenInfoUiaProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IConsoleWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

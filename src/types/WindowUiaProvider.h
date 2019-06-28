@@ -24,7 +24,7 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class IWindow;
+    class IConsoleWindow;
     class ScreenInfoUiaProvider;
 
     class WindowUiaProvider final :
@@ -33,7 +33,7 @@ namespace Microsoft::Console::Types
         public IRawElementProviderFragmentRoot
     {
     public:
-        static WindowUiaProvider* Create(IWindow* baseWindow);
+        static WindowUiaProvider* Create(IConsoleWindow* baseWindow);
         virtual ~WindowUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
@@ -70,8 +70,10 @@ namespace Microsoft::Console::Types
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
         IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
+
+        IConsoleWindow* _baseWindow;
     private:
-        WindowUiaProvider(IWindow* baseWindow);
+        WindowUiaProvider(IConsoleWindow* baseWindow);
 
         HWND _GetWindowHandle() const;
         [[nodiscard]] HRESULT _EnsureValidHwnd() const;
@@ -89,7 +91,7 @@ namespace Microsoft::Console::Types
         // mechanism for multi-threaded code.
         std::map<EVENTID, bool> _signalEventFiring;
 
-        IWindow* _baseWindow;
+        //IWindow* _baseWindow;
         ScreenInfoUiaProvider* _pScreenInfoProvider;
 
         // Ref counter for COM object

@@ -5,6 +5,7 @@
 
 #include "ScreenInfoUiaProvider.h"
 
+#include "IConsoleWindow.hpp"
 #include "WindowUiaProvider.h"
 
 using namespace Microsoft::Console::Types;
@@ -32,6 +33,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _baseWindow(pUiaParent->_baseWindow),
     _signalFiringMapping{},
     _cRefs(1)
 {
@@ -283,9 +285,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 {
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    pRect = nullptr;
-    return E_NOTIMPL;
-    /*const IWindow* const pWindow = _baseWindow;
+    const IConsoleWindow* const pWindow = _baseWindow;
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pWindow);
 
     RECT rc = pWindow->GetWindowRect();
@@ -295,7 +295,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     pRect->width = rc.right - rc.left;
     pRect->height = rc.bottom - rc.top;
 
-    return S_OK;*/
+    return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
