@@ -17,35 +17,45 @@
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
+                    <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
                     <StaticResource x:Key="CaptionButtonBackground" ResourceKey="SystemControlBackgroundAltHighBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
+                    <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
                     <StaticResource x:Key="CaptionButtonBackground" ResourceKey="SystemControlBackgroundAltHighBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="HighContrast">
-                    <StaticResource x:Key="CaptionButtonBackground" ResourceKey="SystemControlBackgroundAltHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
-                    <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
-                    <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <x:Double x:Key="CaptionButtonStrokeWidth">3.0</x:Double>
+                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="{ThemeResource SystemColorButtonFaceColor}"/>
+                    <SolidColorBrush x:Key="CaptionButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="CaptionButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="CaptionButtonStroke" Color="{ThemeResource SystemColorButtonTextColor}"/>
+                    <SolidColorBrush x:Key="CaptionButtonStrokePointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="CaptionButtonStrokePressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="{ThemeResource SystemColorHighlightTextColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="{ThemeResource SystemColorHighlightColor}"/>
+                    <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="{ThemeResource SystemColorHighlightTextColor}"/>
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
-
-            <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
-            <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
-            <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/> <!-- Derived by color-picking a clicked close button. -->
-            <SolidColorBrush x:Key="CloseButtonStrokePressed" Color="Black"/>
 
             <x:String x:Key="CaptionButtonPath"></x:String>
             <x:String x:Key="CaptionButtonPathWindowMaximized"></x:String>
@@ -101,7 +111,7 @@
 
                                 <Path
                                     x:Name="Path"
-                                    StrokeThickness="1"
+                                    StrokeThickness="{ThemeResource CaptionButtonStrokeWidth}"
                                     Stroke="{ThemeResource CaptionButtonStroke}"
                                     Data="{ThemeResource CaptionButtonPath}"
                                     Stretch="Fill"
