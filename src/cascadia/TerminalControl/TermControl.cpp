@@ -22,12 +22,12 @@ using namespace winrt::Microsoft::Terminal::Settings;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TermControl::TermControl() :
-        TermControl(Settings::TerminalSettings{})
+        TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
     {
     }
 
-    TermControl::TermControl(Settings::IControlSettings settings) :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), winrt::hstring(), 30, 80, winrt::guid()) },
+    TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+        _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },
@@ -98,7 +98,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot.Content(_root);
 
         _ApplyUISettings();
-        _ApplyConnectionSettings();
 
         // These are important:
         // 1. When we get tapped, focus us
@@ -341,16 +340,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _settings.DefaultBackground(RGB(R, G, B));
             }
         });
-    }
-
-    // Method Description:
-    // - Create a connection based on the values in our settings object.
-    //   * Gets the commandline and working directory out of the _settings and
-    //     creates a ConhostConnection with the given commandline and starting
-    //     directory.
-    void TermControl::_ApplyConnectionSettings()
-    {
-        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80, winrt::guid());
     }
 
     TermControl::~TermControl()
