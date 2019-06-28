@@ -58,7 +58,7 @@ public:
 
         case WM_GETOBJECT:
         {
-            return HandleGetObject(_window, wparam, lparam);
+            return HandleGetObject(_window.get(), wparam, lparam);
         }
 
         case WM_DESTROY:
