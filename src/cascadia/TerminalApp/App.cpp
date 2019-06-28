@@ -15,6 +15,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
 // Note: Generate GUID using TlgGuid.exe tool
@@ -46,10 +47,8 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        // See GH#1339. This is a workaround for MSFT:22116519
-        // We need this to prevent an occasional crash on teardown
-        AddRef();
-        m_inner.as<::IUnknown>()->Release();
+        // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
+        Initialize();
     }
 
     // Method Description:
@@ -925,7 +924,11 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
         // Initialize the new tab
-        TermControl term{ settings };
+
+        // Create a Conhost connection based on the values in our settings object.
+        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+
+        TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
@@ -1281,7 +1284,11 @@ namespace winrt::TerminalApp::implementation
         const auto realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
-        TermControl newControl{ controlSettings };
+
+        // Create a Conhost connection based on the values in our settings object.
+        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+
+        TermControl newControl{ controlSettings, controlConnection };
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
