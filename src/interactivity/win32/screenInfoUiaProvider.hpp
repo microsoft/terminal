@@ -101,7 +101,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         const COORD _getScreenBufferCoords() const;
         static SCREEN_INFORMATION& _getScreenInfo();
-        static IConsoleWindow* const _getIConsoleWindow();
+        static Microsoft::Console::Types::IConsoleWindow* const _getIConsoleWindow();
     };
 
     namespace ScreenInfoUiaProviderTracing
