@@ -85,5 +85,11 @@ We'll be using tags, primarily, to help us understand what needs attention, what
   - Will automatically remove the `AutoMerge` label if changes are pushed by someone *without* Write Access.
   - More information on bot-logic that can be controlled with comments is [here](https://github.com/OfficeDev/office-ui-fabric-react/wiki/Advanced-auto-merge)
   
+#### Mark issues with an active PR
+- If there is an active PR for an issue, label that issue with the `In-PR` label
+
+#### Add committed fix tag for completed PRs
+- When a PR is finished and there's no outstanding work left on a linked issue, add the `Resolution-Fix-Committed` label
+  
 ## Admin Panel
 [Here](https://fabric-cp.azurewebsites.net/bot/)

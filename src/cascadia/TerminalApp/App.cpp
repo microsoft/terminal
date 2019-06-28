@@ -3,10 +3,7 @@
 
 #include "pch.h"
 #include "App.h"
-#include <shellapi.h>
-#include <filesystem>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-#include <winrt/Windows.ApplicationModel.Resources.h>
 
 #include "App.g.cpp"
 
@@ -37,12 +34,6 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
-        App(winrt::TerminalApp::XamlMetaDataProvider())
-    {
-    }
-
-    App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
-        base_type(parentProvider),
         _settings{},
         _tabs{},
         _loadedInitialSettings{ false },
@@ -54,6 +45,9 @@ namespace winrt::TerminalApp::implementation
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
+
+        // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
+        Initialize();
     }
 
     // Method Description:
@@ -65,13 +59,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create()
+    void App::Create(uint64_t hWnd)
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create();
+        _Create(hWnd);
     }
 
     App::~App()
@@ -85,7 +79,7 @@ namespace winrt::TerminalApp::implementation
     //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    void App::_Create()
+    void App::_Create(uint64_t parentHwnd)
     {
         _tabView = MUX::Controls::TabView{};
 
@@ -104,7 +98,6 @@ namespace winrt::TerminalApp::implementation
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-
         newTabBtnColDef.Width(GridLengthHelper::Auto());
 
         _tabRow.ColumnDefinitions().Append(tabsColDef);
@@ -117,11 +110,10 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
-        {
-            _root.Children().Append(_tabRow);
-            Controls::Grid::SetRow(_tabRow, 0);
-        }
+        _root.Children().Append(_tabRow);
+
+        Controls::Grid::SetRow(_tabRow, 0);
+
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabContent, 1);
         Controls::Grid::SetColumn(_tabView, 0);
@@ -145,7 +137,20 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _tabRow.Children().Append(_tabView);
-        _tabRow.Children().Append(_newTabButton);
+
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
+            Controls::Grid::SetRow(_minMaxCloseControl, 0);
+            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
+            _minMaxCloseControl.Content().Children().Append(_newTabButton);
+
+            _tabRow.Children().Append(_minMaxCloseControl);
+        }
+        else
+        {
+            _tabRow.Children().Append(_newTabButton);
+        }
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -177,15 +182,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
-    //   the title and text from our Resources using the provided keys.
+    // - Show a ContentDialog with a single button to dismiss. Uses the
+    //   FrameworkElements provided as the title and content of this dialog, and
+    //   displays a single button to dismiss.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // - titleKey: The key to use to lookup the title text from our resources.
-    // - contentKey: The key to use to lookup the content text from our resources.
-    fire_and_forget App::_ShowOkDialog(const winrt::hstring& titleKey,
-                                       const winrt::hstring& contentKey)
+    // - titleElement: the element to use as the title of this ContentDialog
+    // - contentElement: the element to use as the content of this ContentDialog
+    // - closeButtonText: The string to use on the close button
+    fire_and_forget App::_ShowDialog(const IInspectable& titleElement,
+                                     const IInspectable& contentElement,
+                                     const winrt::hstring& closeButtonText)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -196,15 +204,10 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = resourceLoader.GetString(titleKey);
-        auto message = resourceLoader.GetString(contentKey);
-        auto buttonText = resourceLoader.GetString(L"Ok");
-
         Controls::ContentDialog dialog;
-        dialog.Title(winrt::box_value(title));
-        dialog.Content(winrt::box_value(message));
-        dialog.CloseButtonText(buttonText);
+        dialog.Title(titleElement);
+        dialog.Content(contentElement);
+        dialog.CloseButtonText(closeButtonText);
 
         // IMPORTANT: Add the dialog to the _root UIElement before you show it,
         // so it knows how to attach to the XAML content.
@@ -215,6 +218,58 @@ namespace winrt::TerminalApp::implementation
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown.
+    }
+
+    // Method Description:
+    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
+    //   the title and text from our Resources using the provided keys.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    // Arguments:
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    void App::_ShowOkDialog(const winrt::hstring& titleKey,
+                            const winrt::hstring& contentKey)
+    {
+        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        auto title = resourceLoader.GetString(titleKey);
+        auto message = resourceLoader.GetString(contentKey);
+        auto buttonText = resourceLoader.GetString(L"Ok");
+
+        _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
+    }
+
+    // Method Description:
+    // - Show a dialog with "About" information. Displays the app's Display
+    //   Name, and the version.
+    void App::_ShowAboutDialog()
+    {
+        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
+        const auto title = resourceLoader.GetString(L"AboutTitleText");
+        const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
+        const auto package = winrt::Windows::ApplicationModel::Package::Current();
+        const auto packageName = package.DisplayName();
+        const auto version = package.Id().Version();
+        std::wstringstream aboutTextStream;
+
+        // Format our about text. It will look like the following:
+        // <Display Name>
+        // Version: <Major>.<Minor>.<Build>.<Revision>
+
+        aboutTextStream << packageName.c_str() << L"\n";
+
+        aboutTextStream << versionLabel.c_str() << L" ";
+        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision;
+
+        winrt::hstring aboutText{ aboutTextStream.str() };
+
+        const auto buttonText = resourceLoader.GetString(L"Ok");
+
+        Controls::TextBlock aboutTextBlock;
+        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.IsTextSelectionEnabled(true);
+
+        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
     }
 
     // Method Description:
@@ -360,6 +415,17 @@ namespace winrt::TerminalApp::implementation
 
             feedbackFlyout.Click({ this, &App::_FeedbackButtonOnClick });
             newTabFlyout.Items().Append(feedbackFlyout);
+
+            // Create the about button.
+            auto aboutFlyout = Controls::MenuFlyoutItem{};
+            aboutFlyout.Text(L"About");
+
+            Controls::SymbolIcon aboutIco{};
+            aboutIco.Symbol(Controls::Symbol::Help);
+            aboutFlyout.Icon(aboutIco);
+
+            aboutFlyout.Click({ this, &App::_AboutButtonOnClick });
+            newTabFlyout.Items().Append(aboutFlyout);
         }
 
         _newTabButton.Flyout(newTabFlyout);
@@ -403,6 +469,28 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
     }
 
+    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
+    {
+        if (_minMaxCloseControl)
+        {
+            return _minMaxCloseControl.DragBar();
+        }
+
+        return nullptr;
+    }
+
+    // Method Description:
+    // - Called when the about button is clicked. See _ShowAboutDialog for more info.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void App::_AboutButtonOnClick(const IInspectable&,
+                                  const RoutedEventArgs&)
+    {
+        _ShowAboutDialog();
+    }
+
     // Method Description:
     // - Register our event handlers with the given keybindings object. This
     //   should be done regardless of what the events are actually bound to -
@@ -428,6 +516,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
+        bindings.PasteText([this]() { _PasteText(); });
     }
 
     // Method Description:
@@ -503,18 +593,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void App::_RegisterSettingsChange()
     {
-        // Make sure this hstring has a stack-local reference. If we don't it
-        // might get cleaned up before we parse the path.
-        const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-
-        // Getting the containing folder.
-        std::filesystem::path fileParser = localPathCopy.c_str();
-        const auto folder = fileParser.parent_path();
+        // Get the containing folder.
+        std::filesystem::path settingsPath{ CascadiaSettings::GetSettingsPath() };
+        const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
                        false,
                        wil::FolderChangeEvents::All,
-                       [this](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                       [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
                            // We want file modifications, AND when files are renamed to be
                            // profiles.json. This second case will oftentimes happen with text
                            // editors, who will write a temp file, then rename it to be the
@@ -525,19 +611,32 @@ namespace winrt::TerminalApp::implementation
                                return;
                            }
 
-                           const auto localPathCopy = CascadiaSettings::GetSettingsPath();
-                           std::filesystem::path settingsParser = localPathCopy.c_str();
-                           std::filesystem::path modifiedParser = fileModified;
+                           std::filesystem::path modifiedFilePath = fileModified;
 
                            // Getting basename (filename.ext)
-                           const auto settingsBasename = settingsParser.filename();
-                           const auto modifiedBasename = modifiedParser.filename();
+                           const auto settingsBasename = settingsPath.filename();
+                           const auto modifiedBasename = modifiedFilePath.filename();
 
                            if (settingsBasename == modifiedBasename)
                            {
-                               this->_ReloadSettings();
+                               this->_DispatchReloadSettings();
                            }
                        });
+    }
+
+    // Method Description:
+    // - Dispatches a settings reload with debounce.
+    //   Text editors implement Save in a bunch of different ways, so
+    //   this stops us from reloading too many times or too quickly.
+    fire_and_forget App::_DispatchReloadSettings()
+    {
+        static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
+        if (!_settingsReloadQueued.exchange(true))
+        {
+            co_await winrt::resume_after(FileActivityQuiesceTime);
+            _ReloadSettings();
+            _settingsReloadQueued.store(false);
+        }
     }
 
     // Method Description:
@@ -929,6 +1028,14 @@ namespace winrt::TerminalApp::implementation
     {
         const auto control = _GetFocusedControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
+    }
+
+    // Method Description:
+    // - Paste text from the Windows Clipboard to the focused terminal
+    void App::_PasteText()
+    {
+        const auto control = _GetFocusedControl();
+        control.PasteTextFromClipboard();
     }
 
     // Method Description:

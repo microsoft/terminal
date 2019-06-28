@@ -480,6 +480,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Value(0);
         _scrollBar.ViewportSize(bufferHeight);
         _scrollBar.ValueChanged({ this, &TermControl::_ScrollbarChangeHandler });
+        _scrollBar.PointerPressed({ this, &TermControl::_CapturePointer });
+        _scrollBar.PointerReleased({ this, &TermControl::_ReleasePointerCapture });
 
         // Apply settings for scrollbar
         if (_settings.ScrollState() == ScrollbarState::Visible)
@@ -502,9 +504,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
-        _root.PointerPressed({ this, &TermControl::_MouseClickHandler });
-        _root.PointerMoved({ this, &TermControl::_MouseMovedHandler });
-        _root.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
+
+        // These need to be hooked up to the SwapChainPanel because we don't want the scrollbar to respond to pointer events (GitHub #950)
+        _swapChainPanel.PointerPressed({ this, &TermControl::_PointerPressedHandler });
+        _swapChainPanel.PointerMoved({ this, &TermControl::_PointerMovedHandler });
+        _swapChainPanel.PointerReleased({ this, &TermControl::_PointerReleasedHandler });
 
         localPointerToThread->EnablePainting();
 
@@ -626,15 +630,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        auto modifiers = _GetPressedModifierKeys();
-
+        const auto modifiers = _GetPressedModifierKeys();
         const auto vkey = static_cast<WORD>(e.OriginalKey());
 
         bool handled = false;
         auto bindings = _settings.KeyBindings();
         if (bindings)
         {
-            KeyChord chord(modifiers, vkey);
+            KeyChord chord(
+                WI_IsAnyFlagSet(modifiers, CTRL_PRESSED),
+                WI_IsAnyFlagSet(modifiers, ALT_PRESSED),
+                WI_IsFlagSet(modifiers, SHIFT_PRESSED),
+                vkey);
             handled = bindings.TryKeyChord(chord);
         }
 
@@ -644,10 +651,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // If the terminal translated the key, mark the event as handled.
             // This will prevent the system from trying to get the character out
             // of it and sending us a CharacterRecieved event.
-            handled = _terminal->SendKeyEvent(vkey,
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Ctrl),
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Alt),
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Shift));
+            handled = _terminal->SendKeyEvent(vkey, modifiers);
 
             if (_cursorTimer.has_value())
             {
@@ -672,11 +676,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - handle a mouse click event. Begin selection process.
     // Arguments:
-    // - sender: not used
+    // - sender: the XAML element responding to the pointer input
     // - args: event data
-    void TermControl::_MouseClickHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                         Input::PointerRoutedEventArgs const& args)
+    void TermControl::_PointerPressedHandler(Windows::Foundation::IInspectable const& sender,
+                                             Input::PointerRoutedEventArgs const& args)
     {
+        _CapturePointer(sender, args);
+
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
@@ -736,13 +742,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // paste selection, otherwise
                 else
                 {
-                    // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
-                    // This is called when the clipboard data is loaded.
-                    auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
-                    auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
-
-                    // send paste event up to TermApp
-                    _clipboardPasteHandlers(*this, *pasteArgs);
+                    PasteTextFromClipboard();
                 }
             }
         }
@@ -761,8 +761,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - sender: not used
     // - args: event data
-    void TermControl::_MouseMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
-                                         Input::PointerRoutedEventArgs const& args)
+    void TermControl::_PointerMovedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                                           Input::PointerRoutedEventArgs const& args)
     {
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
@@ -818,13 +818,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Event handler for the PointerReleased event. We use this to de-anchor
     //   touch events, to stop scrolling via touch.
     // Arguments:
-    // - sender: not used
+    // - sender: the XAML element responding to the pointer input
     // - args: event data
-    // Return Value:
-    // - <none>
-    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& /*sender*/,
+    void TermControl::_PointerReleasedHandler(Windows::Foundation::IInspectable const& sender,
                                               Input::PointerRoutedEventArgs const& args)
     {
+        _ReleasePointerCapture(sender, args);
+
         const auto ptr = args.Pointer();
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -968,6 +968,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             //      itself - it was initiated by the mouse wheel, or the scrollbar.
             this->ScrollViewport(static_cast<int>(newValue));
         }
+    }
+
+    // Method Description:
+    // - captures the pointer so that none of the other XAML elements respond to pointer events
+    // Arguments:
+    // - sender: XAML element that is interacting with pointer
+    // - args: pointer data (i.e.: mouse, touch)
+    // Return Value:
+    // - true if we successfully capture the pointer, false otherwise.
+    bool TermControl::_CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& args)
+    {
+        IUIElement uielem;
+        if (sender.try_as(uielem))
+        {
+            uielem.CapturePointer(args.Pointer());
+            return true;
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - releases the captured pointer because we're done responding to XAML pointer events
+    // Arguments:
+    // - sender: XAML element that is interacting with pointer
+    // - args: pointer data (i.e.: mouse, touch)
+    // Return Value:
+    // - true if we release capture of the pointer, false otherwise.
+    bool TermControl::_ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& args)
+    {
+        IUIElement uielem;
+        if (sender.try_as(uielem))
+        {
+            uielem.ReleasePointerCapture(args.Pointer());
+            return true;
+        }
+        return false;
     }
 
     // Method Description:
@@ -1188,6 +1224,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _clipboardCopyHandlers(copiedData);
     }
 
+    // Method Description:
+    // - Initiate a paste operation.
+    void TermControl::PasteTextFromClipboard()
+    {
+        // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
+        // This is called when the clipboard data is loaded.
+        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
+
+        // send paste event up to TermApp
+        _clipboardPasteHandlers(*this, *pasteArgs);
+    }
+
     void TermControl::Close()
     {
         if (!_closing.exchange(true))
@@ -1396,8 +1445,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   find out which modifiers (ctrl, alt, shift) are pressed in events that
     //   don't necessarily include that state.
     // Return Value:
-    // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    // - The combined ControlKeyState flags as a bitfield.
+    DWORD TermControl::_GetPressedModifierKeys() const
     {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
@@ -1407,17 +1456,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Sometimes with the key down, the state is Down | Locked.
         // Sometimes with the key up, the state is Locked.
         // IsFlagSet(Down) is the only correct solution.
-        const auto ctrlKeyState = window.GetKeyState(VirtualKey::Control);
-        const auto shiftKeyState = window.GetKeyState(VirtualKey::Shift);
-        const auto altKeyState = window.GetKeyState(VirtualKey::Menu);
 
-        const auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
-        const auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
-        const auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
+        struct KeyModifier
+        {
+            VirtualKey vkey;
+            DWORD flag;
+        };
 
-        return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
-                             (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
-                             (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
+        constexpr std::array<KeyModifier, 5> modifiers{ {
+            { VirtualKey::RightMenu, RIGHT_ALT_PRESSED },
+            { VirtualKey::LeftMenu, LEFT_ALT_PRESSED },
+            { VirtualKey::RightControl, RIGHT_CTRL_PRESSED },
+            { VirtualKey::LeftControl, LEFT_CTRL_PRESSED },
+            { VirtualKey::Shift, SHIFT_PRESSED },
+        } };
+
+        DWORD flags = 0;
+
+        for (const auto& mod : modifiers)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
+            flags |= isDown ? mod.flag : 0;
+        }
+
+        return flags;
     }
 
     // Method Description:

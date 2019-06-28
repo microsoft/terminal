@@ -28,18 +28,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
-        hstring _commandline{};
-        hstring _startingDirectory{};
+        hstring _commandline;
+        hstring _startingDirectory;
+        guid _guid{}; // A unique session identifier for connected client
 
         bool _connected{};
-        HANDLE _inPipe{ INVALID_HANDLE_VALUE }; // The pipe for writing input to
-        HANDLE _outPipe{ INVALID_HANDLE_VALUE }; // The pipe for reading output from
-        HANDLE _signalPipe{ INVALID_HANDLE_VALUE };
-        DWORD _outputThreadId{};
-        HANDLE _hOutputThread{ nullptr };
-        PROCESS_INFORMATION _piConhost{};
-        guid _guid{}; // A "unique" session identifier for connected client
-        bool _closing{};
+        std::atomic<bool> _closing{ false };
+
+        wil::unique_hfile _inPipe; // The pipe for writing input to
+        wil::unique_hfile _outPipe; // The pipe for reading output from
+        wil::unique_hfile _signalPipe;
+        wil::unique_handle _hOutputThread;
+        wil::unique_process_information _piConhost;
+        wil::unique_handle _hJob;
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();

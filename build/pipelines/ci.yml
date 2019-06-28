@@ -34,3 +34,5 @@ jobs:
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: ARM64
+
+  - template: ./templates/check-formatting.yml

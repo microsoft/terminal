@@ -24,9 +24,9 @@
 
 #include <winrt/coroutine.h>
 
+#include <winrt/Windows.ApplicationModel.Resources.h>
 #include <winrt/Windows.Foundation.h>
 #include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.Data.Json.h>
 #include <winrt/windows.ui.core.h>
 #include <winrt/Windows.ui.input.h>
 #include <winrt/Windows.UI.Text.h>
@@ -34,14 +34,12 @@
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.input.h>
+#include <winrt/Windows.UI.Xaml.Hosting.h>
+#include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
-#include <winrt/windows.data.json.h>
-
 #include <winrt/Windows.System.h>
-#include <winrt/Windows.Storage.h>
-#include <winrt/Windows.Storage.Streams.h>
 
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
@@ -52,3 +50,6 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalWin32Provider);
 
 // JsonCpp
 #include <json.h>
+
+#include <shellapi.h>
+#include <filesystem>

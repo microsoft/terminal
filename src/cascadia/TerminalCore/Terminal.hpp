@@ -76,10 +76,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey,
-                      const bool ctrlPressed,
-                      const bool altPressed,
-                      const bool shiftPressed) override;
+    bool SendKeyEvent(const WORD vkey, const DWORD modifiers) override;
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
@@ -118,6 +115,7 @@ public:
     bool IsCursorBlinkingAllowed() const noexcept;
 
 #pragma region TextSelection
+    // These methods are defined in TerminalSelection.cpp
     const bool IsSelectionActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
@@ -194,5 +192,10 @@ private:
 
     void _NotifyScrollEvent();
 
+#pragma region TextSelection
+    // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const;
+    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
+    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+#pragma endregion
 };

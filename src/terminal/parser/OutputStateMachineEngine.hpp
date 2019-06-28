@@ -10,6 +10,8 @@ Abstract:
 */
 #pragma once
 
+#include <functional>
+
 #include "../adapter/termDispatch.hpp"
 #include "telemetry.hpp"
 #include "IStateMachineEngine.hpp"
@@ -58,6 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool FlushAtEndOfString() const override;
         bool DispatchControlCharsFromEscape() const override;
+        bool DispatchIntermediatesFromEscape() const override;
 
         void SetTerminalConnection(Microsoft::Console::ITerminalOutputConnection* const pTtyConnection,
                                    std::function<bool()> pfnFlushToTerminal);
