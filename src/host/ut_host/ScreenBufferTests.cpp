@@ -107,6 +107,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
+    TEST_METHOD(VtResizeDECCOLM);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -970,6 +971,136 @@ void ScreenBufferTests::VtResizeComprehensive()
 
     VERIFY_ARE_EQUAL(expectedViewWidth, newViewWidth);
     VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
+}
+
+void ScreenBufferTests::VtResizeDECCOLM()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto setInitialMargins = L"\x1b[5;15r";
+    const auto setInitialCursor = L"\x1b[10;40HABCDEF";
+    const auto allowDECCOLM = L"\x1b[?40h";
+    const auto disallowDECCOLM = L"\x1b[?40l";
+    const auto setDECCOLM = L"\x1b[?3h";
+    const auto resetDECCOLM = L"\x1b[?3l";
+
+    auto getRelativeCursorPosition = [&]()
+    {
+        return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
+    };
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+    auto initialMargins = si.GetRelativeScrollMargins();
+    auto initialCursorPosition = getRelativeCursorPosition();
+
+    auto initialSbHeight = si.GetBufferSize().Height();
+    auto initialSbWidth = si.GetBufferSize().Width();
+    auto initialViewHeight = si.GetViewport().Height();
+    auto initialViewWidth = si.GetViewport().Width();
+
+    Log::Comment(L"By default, setting DECCOLM should have no effect");
+    stateMachine.ProcessString(setDECCOLM);
+
+    auto newSbHeight = si.GetBufferSize().Height();
+    auto newSbWidth = si.GetBufferSize().Width();
+    auto newViewHeight = si.GetViewport().Height();
+    auto newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
+    VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(L"Once DECCOLM is allowed, "
+        L"setting it should change the width to 132 columns "
+        L"and reset the margins and cursor position");
+    stateMachine.ProcessString(allowDECCOLM);
+    stateMachine.ProcessString(setDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(132, newSbWidth);
+    VERIFY_ARE_EQUAL(132, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+    initialMargins = si.GetRelativeScrollMargins();
+    initialCursorPosition = getRelativeCursorPosition();
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(L"If DECCOLM is disallowed, resetting it should have no effect");
+    stateMachine.ProcessString(disallowDECCOLM);
+    stateMachine.ProcessString(resetDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
+    VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(L"Once DECCOLM is allowed again, "
+        L"resetting it should change the width to 80 columns "
+        L"and reset the margins and cursor position");
+    stateMachine.ProcessString(allowDECCOLM);
+    stateMachine.ProcessString(resetDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(80, newSbWidth);
+    VERIFY_ARE_EQUAL(80, newViewWidth);
 }
 
 void ScreenBufferTests::VtSoftResetCursorPosition()

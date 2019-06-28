@@ -641,6 +641,7 @@ public:
         _fIsAltBuffer{ false },
         _fCursorKeysMode{ false },
         _fCursorBlinking{ true },
+        _fIsDECCOLMAllowed{ false },
         _uiWindowWidth{ 80 }
     {
         memset(_rgOptions, s_uiGraphicsCleared, sizeof(_rgOptions));
@@ -807,6 +808,9 @@ public:
         case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
+        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+            fSuccess = EnableDECCOLMSupport(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
@@ -860,6 +864,12 @@ public:
         return true;
     }
 
+    bool EnableDECCOLMSupport(const bool fEnabled) override
+    {
+        _fIsDECCOLMAllowed = fEnabled;
+        return true;
+    }
+
     bool UseAlternateScreenBuffer() override
     {
         _fIsAltBuffer = true;
@@ -899,6 +909,7 @@ public:
     bool _fIsAltBuffer;
     bool _fCursorKeysMode;
     bool _fCursorBlinking;
+    bool _fIsDECCOLMAllowed;
     unsigned int _uiWindowWidth;
 
     static const size_t s_cMaxOptions = 16;
@@ -1261,6 +1272,24 @@ class StateMachineExternalTest final
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
         mach.ProcessString(L"\x1b[?1049l", 8);
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestEnableDECCOLMSupport)
+    {
+        StatefulDispatch* pDispatch = new StatefulDispatch;
+        VERIFY_IS_NOT_NULL(pDispatch);
+        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+
+        mach.ProcessString(L"\x1b[?40h");
+        VERIFY_IS_TRUE(pDispatch->_fIsDECCOLMAllowed);
+
+        pDispatch->ClearState();
+        pDispatch->_fIsDECCOLMAllowed = true;
+
+        mach.ProcessString(L"\x1b[?40l");
+        VERIFY_IS_FALSE(pDispatch->_fIsDECCOLMAllowed);
 
         pDispatch->ClearState();
     }
