@@ -1170,14 +1170,13 @@ namespace winrt::TerminalApp::implementation
     // - Duplicates the current focused tab
     void App::_DuplicateTabViewItem()
     {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        auto _tab = _tabs.at(focusedTabIndex);
-        
-        auto profileGuid = _tab->GetFocusedProfile();
-        auto settings = _settings->MakeSettings(profileGuid);
+        const int &focusedTabIndex = _GetFocusedTabIndex();
+        const auto &_tab = _tabs.at(focusedTabIndex);
+
+        const auto &profileGuid = _tab->GetFocusedProfile();
+        const auto &settings = _settings->MakeSettings(profileGuid);
 
         _CreateNewTabFromSettings(profileGuid.value(), settings);
-        
     }
 
     // Method Description:
