@@ -190,7 +190,7 @@ void Microsoft::Console::Interactivity::Win32::Window::_UpdateSystemMetrics() co
 // Return Value:
 // - STATUS_SUCCESS, invalid parameters, or various potential errors from calling CreateWindow
 [[nodiscard]] NTSTATUS Microsoft::Console::Interactivity::Win32::Window::_MakeWindow(_In_ Settings* const pSettings,
-                                           _In_ SCREEN_INFORMATION* const pScreen)
+                                                                                     _In_ SCREEN_INFORMATION* const pScreen)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
@@ -860,10 +860,10 @@ BOOL Microsoft::Console::Interactivity::Win32::Window::EnableBothScrollBars()
 }
 
 int Microsoft::Console::Interactivity::Win32::Window::UpdateScrollBar(bool isVertical,
-                            bool isAltBuffer,
-                            UINT pageSize,
-                            int maxSize,
-                            int viewportPosition)
+                                                                      bool isAltBuffer,
+                                                                      UINT pageSize,
+                                                                      int maxSize,
+                                                                      int viewportPosition)
 {
     SCROLLINFO si;
     si.cbSize = sizeof(si);
@@ -927,11 +927,11 @@ void Microsoft::Console::Interactivity::Win32::Window::_CalculateWindowRect(cons
 // Return Value:
 // - <none>
 void Microsoft::Console::Interactivity::Win32::Window::s_CalculateWindowRect(const COORD coordWindowInChars,
-                                   const int iDpi,
-                                   const COORD coordFontSize,
-                                   const COORD coordBufferSize,
-                                   _In_opt_ HWND const hWnd,
-                                   _Inout_ RECT* const prectWindow)
+                                                                             const int iDpi,
+                                                                             const COORD coordFontSize,
+                                                                             const COORD coordBufferSize,
+                                                                             _In_opt_ HWND const hWnd,
+                                                                             _Inout_ RECT* const prectWindow)
 {
     SIZE sizeWindow;
 
@@ -1184,8 +1184,8 @@ void Microsoft::Console::Interactivity::Win32::Window::s_ReinitializeFontsForDPI
 }
 
 [[nodiscard]] LRESULT Microsoft::Console::Interactivity::Win32::Window::s_RegPersistWindowPos(_In_ PCWSTR const pwszTitle,
-                                                    const BOOL fAutoPos,
-                                                    const Window* const pWindow)
+                                                                                              const BOOL fAutoPos,
+                                                                                              const Window* const pWindow)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     HKEY hCurrentUserKey, hConsoleKey, hTitleKey;

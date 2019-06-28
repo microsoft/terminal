@@ -70,8 +70,8 @@ namespace Microsoft::Console::Types
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
         IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
 
-
         IConsoleWindow* _baseWindow;
+
     private:
         WindowUiaProvider(IConsoleWindow* baseWindow);
 
