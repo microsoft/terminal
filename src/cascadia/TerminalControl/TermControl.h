@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
-        TermControl(Settings::IControlSettings settings);
+        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();

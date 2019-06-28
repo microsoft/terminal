@@ -10,6 +10,7 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
