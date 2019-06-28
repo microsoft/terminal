@@ -141,7 +141,7 @@ public:
             retVal = UiaReturnRawElementProvider(hWnd, wParam, lParam, _GetUiaProvider());
         }
         // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
-        
+
         return retVal;
     }
 
