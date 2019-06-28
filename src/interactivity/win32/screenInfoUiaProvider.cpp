@@ -99,7 +99,7 @@ Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::Release()
 }
 
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
-                                                     _COM_Outptr_result_maybenull_ void** ppInterface)
+                                                                                               _COM_Outptr_result_maybenull_ void** ppInterface)
 {
     Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
     if (riid == __uuidof(IUnknown))
@@ -145,7 +145,7 @@ IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
-                                                         _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+                                                                                                   _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
 
@@ -166,7 +166,7 @@ IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
-                                                       _Out_ VARIANT* pVariant)
+                                                                                                 _Out_ VARIANT* pVariant)
 {
     Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
 
@@ -247,7 +247,7 @@ IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::
 #pragma region IRawElementProviderFragment
 
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
-                                               _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+                                                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     ApiMsgNavigate apiMsg;
     apiMsg.Direction = direction;
@@ -525,7 +525,7 @@ IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::
 }
 
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
-                                                     _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+                                                                                               _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
 
@@ -548,7 +548,7 @@ IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::
 }
 
 IFACEMETHODIMP Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
-                                                     _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+                                                                                               _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
     Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
     IRawElementProviderSimple* pProvider;
