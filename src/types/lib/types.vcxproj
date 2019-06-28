@@ -22,13 +22,13 @@
     <ClCompile Include="..\WindowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\IConsoleWindow.hpp" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
-    <ClInclude Include="..\IWindow.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProvider.h" />
     <ClInclude Include="..\utils.hpp" />

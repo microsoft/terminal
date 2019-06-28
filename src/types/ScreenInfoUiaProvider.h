@@ -24,7 +24,7 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class IWindow;
+    class IConsoleWindow;
     class WindowUiaProvider;
 
     class ScreenInfoUiaProvider final :
@@ -81,7 +81,7 @@ namespace Microsoft::Console::Types
         WindowUiaProvider* const _pUiaParent;
 
         // weak reference to IWindow (IConsoleWindow or BaseWindow)
-        IWindow* _baseWindow;
+        IConsoleWindow* _baseWindow;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the

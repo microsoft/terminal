@@ -18,7 +18,7 @@ Author(s):
 
 #include "precomp.h"
 
-#include "../inc/IConsoleWindow.hpp"
+#include "../types/IConsoleWindow.hpp"
 #include "../types/inc/viewport.hpp"
 #include "../../buffer/out/cursor.h"
 
@@ -266,7 +266,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         static const Microsoft::Console::Types::Viewport& _getViewport();
         static HWND _getWindowHandle();
-        static IConsoleWindow* const _getIConsoleWindow();
+        static Microsoft::Console::Types::IConsoleWindow* const _getIConsoleWindow();
         static SCREEN_INFORMATION& _getScreenInfo();
         static TextBuffer& _getTextBuffer();
         static const COORD _getScreenBufferCoords();

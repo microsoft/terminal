@@ -21,7 +21,7 @@ Revision History:
 #include "input.h"
 
 #include "..\interactivity\inc\IAccessibilityNotifier.hpp"
-#include "..\interactivity\inc\IConsoleWindow.hpp"
+#include "..\types\IConsoleWindow.hpp"
 
 class Selection
 {

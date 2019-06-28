@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "..\src\types\IWindow.h"
-#include "..\src\types\WindowUiaProvider.h"
+#include "..\types\IConsoleWindow.hpp"
+#include "..\types\WindowUiaProvider.h"
 
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
@@ -14,8 +14,7 @@
 using namespace Microsoft::Console::Types;
 
 template<typename T>
-class BaseWindow :
-    public Microsoft::Console::Types::IWindow
+class BaseWindow
 {
 public:
     virtual ~BaseWindow() = 0;
@@ -145,29 +144,7 @@ public:
         return retVal;
     }
 
-    // Routine Description:
-    // - Creates/retrieves a handle to the UI Automation provider COM interfaces
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - Pointer to UI Automation provider class/interfaces.
-    IRawElementProviderSimple* _GetUiaProvider()
-    {
-        if (nullptr == _pUiaProvider)
-        {
-            try
-            {
-                _pUiaProvider = WindowUiaProvider::Create(this);
-            }
-            catch (...)
-            {
-                LOG_HR(wil::ResultFromCaughtException());
-                _pUiaProvider = nullptr;
-            }
-        }
-
-        return _pUiaProvider;
-    }
+    virtual IRawElementProviderSimple* _GetUiaProvider() = 0;
 
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
@@ -178,9 +155,9 @@ public:
         RECT rc = { 0 };
         ::GetWindowRect(_window.get(), &rc);
         return rc;
-    }
+    };
 
-    HWND GetWindowHandle() const noexcept
+    HWND GetHandle() const noexcept
     {
         return _window.get();
     };
@@ -245,7 +222,6 @@ protected:
     bool _inDpiChange = false;
 
     std::wstring _title = L"";
-    WindowUiaProvider* _pUiaProvider = nullptr;
 
     bool _minimized = false;
 };

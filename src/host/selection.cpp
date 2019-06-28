@@ -309,7 +309,7 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     CheckAndSetAlternateSelection();
 
     // set window title to mouse selection mode
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -437,7 +437,7 @@ void Selection::_CancelMouseSelection()
     // turn off selection flag
     _SetSelectingState(false);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -467,7 +467,7 @@ void Selection::_CancelMarkSelection()
     // Turn off selection flag.
     _SetSelectingState(false);
 
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
@@ -621,7 +621,7 @@ void Selection::InitializeMarkSelection()
     _coordSelectionAnchor = coordPosition;
 
     // set frame title text
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         pWindow->UpdateWindowText();
