@@ -34,7 +34,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         using TimeStamp = uint64_t;
 
-        // represents 0.5 seconds (or 5000 ms)
+        // represents 0.5 seconds (or 5000 ms). Denoted in microseconds
+        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         const TimeStamp multiClickTimer = 500000;
 
         TermControl();

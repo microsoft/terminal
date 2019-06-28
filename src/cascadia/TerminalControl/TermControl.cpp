@@ -713,7 +713,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 {
                     _terminal->TripleClickSelection(terminalPosition);
                     _renderer->TriggerSelection();
-                    _doubleClickOccurred = true;
                 }
                 else if (_IsDoubleClick(cursorPosition, point.Timestamp()))
                 {

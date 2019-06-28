@@ -500,7 +500,7 @@ void Terminal::DoubleClickSelection(const COORD position)
 {
     // if you double click a delimiter, just select that one cell
     COORD positionWithOffsets = _ConvertToBufferCell(position);
-    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+    const auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     if (_DoubleClickDelimiterCheck(cellChar))
     {
         SetSelectionAnchor(position);
@@ -598,13 +598,13 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
 {
     // TODO GitHub #988: hook up delimiters to Settings
-    std::wstring_view delimiters[] = {
+    const std::wstring_view delimiters[] = {
         L" ",
         L"/",
         L"\\"
     };
 
-    for (auto delimiter : delimiters)
+    for (const auto delimiter : delimiters)
     {
         if (cellChar == delimiter)
         {
