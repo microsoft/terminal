@@ -133,19 +133,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _snapOnInput = settings.SnapOnInput();
 
-    switch (settings.TripleClickSelectionMode())
-    {
-    case winrt::Microsoft::Terminal::Settings::SelectionMode::Disabled:
-        _tripleClickMode = TripleClickSelectionMode::Disabled;
-        break;
-    case winrt::Microsoft::Terminal::Settings::SelectionMode::VisibleViewport:
-        _tripleClickMode = TripleClickSelectionMode::VisibleViewport;
-        break;
-    case winrt::Microsoft::Terminal::Settings::SelectionMode::Line:
-    default:
-        _tripleClickMode = TripleClickSelectionMode::Line;
-        break;
-    }
+    _tripleClickMode = settings.TripleClickSelectionMode();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer

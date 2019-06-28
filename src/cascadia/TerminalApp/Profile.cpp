@@ -60,9 +60,9 @@ static constexpr std::string_view ImageStretchModeUniform{ "uniform" };
 static constexpr std::string_view ImageStretchModeUniformTofill{ "uniformToFill" };
 
 // Possible values for Triple Click Selection Mode
-static constexpr std::wstring_view SelectionModeDisabled{ L"disabled" };
-static constexpr std::wstring_view SelectionModeLine{ L"line" };
-static constexpr std::wstring_view SelectionModeViewport{ L"viewport" };
+static constexpr std::wstring_view TripleClickSelectionModeDisabled{ L"disabled" };
+static constexpr std::wstring_view TripleClickSelectionModeLine{ L"line" };
+static constexpr std::wstring_view TripleClickSelectionModeViewport{ L"viewport" };
 
 Profile::Profile() :
     Profile(Utils::CreateGuid())
@@ -82,7 +82,7 @@ Profile::Profile(const winrt::guid& guid) :
     _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
-    _tripleClickSelectionMode{ SelectionMode::Line },
+    _tripleClickSelectionMode{ TripleClickSelectionMode::Line },
 
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
@@ -257,7 +257,7 @@ Json::Value Profile::ToJson() const
         root[JsonKey(CursorHeightKey)] = _cursorHeight;
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
-    root[JsonKey(TripleClickSelectionModeKey)] = winrt::to_string(_SerializeSelectionMode(_tripleClickSelectionMode));
+    root[JsonKey(TripleClickSelectionModeKey)] = winrt::to_string(_SerializeTripleClickSelectionMode(_tripleClickSelectionMode));
 
     ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
@@ -380,7 +380,7 @@ Profile Profile::FromJson(const Json::Value& json)
     }
     if (auto tripleClickSelectionMode{ json[JsonKey(TripleClickSelectionModeKey)] })
     {
-        result._tripleClickSelectionMode = _ParseSelectionMode(GetWstringFromJson(tripleClickSelectionMode));
+        result._tripleClickSelectionMode = _ParseTripleClickSelectionMode(GetWstringFromJson(tripleClickSelectionMode));
     }
 
     // Control Settings
@@ -687,29 +687,43 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     }
 }
 
-winrt::Microsoft::Terminal::Settings::SelectionMode Profile::_ParseSelectionMode(const std::wstring& selectionModeString)
+// Method Description:
+// - Helper function for converting a user-specified triple click selection mode to the corresponding
+//   TripleClickSelectionMode enum value
+// Arguments:
+// - selectionModeString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode Profile::_ParseTripleClickSelectionMode(const std::wstring& selectionModeString)
 {
-    if (selectionModeString == SelectionModeDisabled)
+    if (selectionModeString == TripleClickSelectionModeDisabled)
     {
-        return SelectionMode::Disabled;
+        return winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::Disabled;
     }
-    else if (selectionModeString == SelectionModeViewport)
+    else if (selectionModeString == TripleClickSelectionModeViewport)
     {
-        return SelectionMode::VisibleViewport;
+        return winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::VisibleViewport;
     }
-    return SelectionMode::Line;
+    return winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::Line;
 }
 
-std::wstring_view Profile::_SerializeSelectionMode(const winrt::Microsoft::Terminal::Settings::SelectionMode selectionMode)
+// Method Description:
+// - Helper function for converting a TripleClickSelectionMode to its corresponding string
+//   value.
+// Arguments:
+// - selectionMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given TripleClickSelectionMode
+std::wstring_view Profile::_SerializeTripleClickSelectionMode(const winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode selectionMode)
 {
     switch (selectionMode)
     {
-    case SelectionMode::Disabled:
-        return SelectionModeDisabled;
-    case SelectionMode::VisibleViewport:
-        return SelectionModeViewport;
-    case SelectionMode::Line:
+    case winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::Disabled:
+        return TripleClickSelectionModeDisabled;
+    case winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::VisibleViewport:
+        return TripleClickSelectionModeViewport;
+    case winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode::Line:
     default:
-        return SelectionModeLine;
+        return TripleClickSelectionModeLine;
     }
 }

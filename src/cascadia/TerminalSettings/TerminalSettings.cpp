@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
-        _tripleClickSelectionMode{ Settings::SelectionMode::Line },
+        _tripleClickSelectionMode{ Settings::TripleClickSelectionMode::Line },
         _useAcrylic{ false },
         _closeOnExit{ true },
         _tintOpacity{ 0.5 },
@@ -136,12 +136,12 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight = value;
     }
 
-    Settings::SelectionMode TerminalSettings::TripleClickSelectionMode() const noexcept
+    Settings::TripleClickSelectionMode TerminalSettings::TripleClickSelectionMode() const noexcept
     {
         return _tripleClickSelectionMode;
     }
 
-    void TerminalSettings::TripleClickSelectionMode(winrt::Microsoft::Terminal::Settings::SelectionMode const& value) noexcept
+    void TerminalSettings::TripleClickSelectionMode(winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode const& value) noexcept
     {
         _tripleClickSelectionMode = value;
     }

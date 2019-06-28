@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.Settings
         EmptyBox
     };
 
-    enum SelectionMode
+    enum TripleClickSelectionMode
     {
         Disabled,
         Line,
@@ -34,7 +34,7 @@ namespace Microsoft.Terminal.Settings
         UInt32 CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
-        SelectionMode TripleClickSelectionMode;
+        TripleClickSelectionMode TripleClickSelectionMode;
     };
 
 }

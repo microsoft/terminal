@@ -20,6 +20,7 @@
 namespace winrt::Microsoft::Terminal::Settings
 {
     struct ICoreSettings;
+    enum class TripleClickSelectionMode;
 }
 
 namespace Microsoft::Terminal::Core
@@ -145,19 +146,13 @@ private:
     bool _snapOnInput;
 
     // Text Selection
-    enum TripleClickSelectionMode
-    {
-        Disabled = 0,
-        Line,
-        VisibleViewport
-    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
-    TripleClickSelectionMode _tripleClickMode;
+    winrt::Microsoft::Terminal::Settings::TripleClickSelectionMode _tripleClickMode;
     void _ExpandDoubleClickSelectionLeft(const COORD position);
     void _ExpandDoubleClickSelectionRight(const COORD position);
     const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
