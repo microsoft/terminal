@@ -110,7 +110,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
