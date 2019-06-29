@@ -992,8 +992,7 @@ void ScreenBufferTests::VtResizeDECCOLM()
     const auto setDECCOLM = L"\x1b[?3h";
     const auto resetDECCOLM = L"\x1b[?3l";
 
-    auto getRelativeCursorPosition = [&]()
-    {
+    auto getRelativeCursorPosition = [&]() {
         return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
     };
 
@@ -1031,8 +1030,9 @@ void ScreenBufferTests::VtResizeDECCOLM()
     initialViewHeight = newViewHeight;
     initialViewWidth = newViewWidth;
 
-    Log::Comment(L"Once DECCOLM is allowed, "
-        L"setting it should change the width to 132 columns "
+    Log::Comment(
+        L"Once DECCOLM is allowed, setting it "
+        L"should change the width to 132 columns "
         L"and reset the margins and cursor position");
     stateMachine.ProcessString(allowDECCOLM);
     stateMachine.ProcessString(setDECCOLM);
@@ -1084,8 +1084,9 @@ void ScreenBufferTests::VtResizeDECCOLM()
     initialViewHeight = newViewHeight;
     initialViewWidth = newViewWidth;
 
-    Log::Comment(L"Once DECCOLM is allowed again, "
-        L"resetting it should change the width to 80 columns "
+    Log::Comment(
+        L"Once DECCOLM is allowed again, resetting it "
+        L"should change the width to 80 columns "
         L"and reset the margins and cursor position");
     stateMachine.ProcessString(allowDECCOLM);
     stateMachine.ProcessString(resetDECCOLM);
