@@ -5,6 +5,10 @@
 #include "ConhostConnection.h"
 #include "windows.h"
 #include <sstream>
+#include <string_view>
+#include <algorithm>
+#include <type_traits>
+
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
 // We're just gonna manually define it for this prototyping code
 #ifndef STARTF_USESTDHANDLES
@@ -190,38 +194,98 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     DWORD ConhostConnection::_OutputThread()
     {
         const size_t bufferSize = 4096;
-        BYTE buffer[bufferSize];
-        DWORD dwRead;
+        BYTE buffer[bufferSize]{ 0 };
+        BYTE utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
+        DWORD dwRead{}; // length of a chunk read
+        DWORD dwPartialsLen{}; // number of cached UTF-8 code units
+        bool fSuccess{};
+        bool fStreamBegin{}; // indicates whether text is left in utf8Partials after the BOM check
+        const BYTE bitmasks[]{ 0, 0b11000000, 0b11100000, 0b11110000 }; // for comparisons after the Lead Byte was found
+
+        // check whether the UTF-8 stream has a Byte Order Mark
+        fSuccess = !!ReadFile(_outPipe.get(), utf8Partials, 3UL, &dwPartialsLen, nullptr);
+        if (!fSuccess)
+        {
+            if (_closing.load())
+            {
+                // This is okay, break out to kill the thread
+                return 0;
+            }
+
+            _disconnectHandlers();
+            return (DWORD)-1;
+        }
+
+        if (utf8Partials[0] == 0xEF && utf8Partials[1] == 0xBB && utf8Partials[2] == 0xBF)
+        {
+            dwPartialsLen = 0; // discard the BOM
+        }
+        else
+        {
+            fStreamBegin = true;
+        }
+
+        // process the data of the standard input in a loop
         while (true)
         {
-            dwRead = 0;
-            bool fSuccess = false;
+            // copy UTF-8 code units that were remaining from the previously read chunk (if any)
+            if (dwPartialsLen != 0)
+            {
+                std::move(utf8Partials, utf8Partials + dwPartialsLen, buffer);
+            }
 
-            fSuccess = !!ReadFile(_outPipe.get(), buffer, bufferSize, &dwRead, nullptr);
-            if (!fSuccess)
+            // try to read data
+            fSuccess = !!ReadFile(_outPipe.get(), &buffer[dwPartialsLen], std::extent<decltype(buffer)>::value - dwPartialsLen, &dwRead, nullptr);
+
+            dwRead += dwPartialsLen;
+            dwPartialsLen = 0;
+
+            if (dwRead == 0) // quit if no data has been read and no cached data was left over
+            {
+                return 0;
+            }
+            else if (!fSuccess && !fStreamBegin) // cached data without bytes for completion in the buffer
             {
                 if (_closing.load())
                 {
                     // This is okay, break out to kill the thread
                     return 0;
                 }
-                else
+
+                _disconnectHandlers();
+                return (DWORD)-1;
+            }
+
+            const BYTE* const endPtr{ buffer + dwRead };
+            const BYTE* backIter{ endPtr - 1 };
+            // if necessary put up to three bytes in the cache:
+            if ((*backIter & 0b10000000) == 0b10000000) // last byte in the buffer was a byte belonging to a UTF-8 multi-byte character
+            {
+                for (DWORD dwSequenceLen{ 1UL }, stop{ dwRead < 4UL ? dwRead : 4UL }; dwSequenceLen < stop; ++dwSequenceLen, --backIter) // check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the buffer
                 {
-                    _disconnectHandlers();
-                    return (DWORD)-1;
+                    if ((*backIter & 0b11000000) == 0b11000000) // Lead Byte found
+                    {
+                        if ((*backIter & bitmasks[dwSequenceLen]) != bitmasks[dwSequenceLen - 1]) // if the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them
+                        {
+                            std::move(backIter, endPtr, utf8Partials);
+                            dwRead -= dwSequenceLen;
+                            dwPartialsLen = dwSequenceLen;
+                        }
+
+                        break;
+                    }
                 }
             }
-            if (dwRead == 0)
-            {
-                continue;
-            }
             // Convert buffer to hstring
-            char* pchStr = (char*)(buffer);
-            std::string str{ pchStr, dwRead };
-            auto hstr = winrt::to_hstring(str);
+            const std::string_view strView{ reinterpret_cast<char*>(buffer), dwRead };
+            auto hstr{ winrt::to_hstring(strView) };
 
             // Pass the output to our registered event handlers
             _outputHandlers(hstr);
+
+            fStreamBegin = false;
         }
+
+        return 0;
     }
 }
