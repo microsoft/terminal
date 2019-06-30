@@ -310,10 +310,10 @@ void CascadiaSettings::_CreateDefaultKeybindings()
 
     keyBindings.SetKeyBinding(ShortcutAction::IncreaseZoom,
                               KeyChord{ KeyModifiers::Ctrl,
-                                        VK_ADD});
+                                        VK_ADD | VK_OEM_PLUS });
     keyBindings.SetKeyBinding(ShortcutAction::DecreaseZoom,
                               KeyChord{ KeyModifiers::Ctrl,
-                                        VK_SUBTRACT });
+                                        VK_SUBTRACT | VK_OEM_MINUS });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_UP });
