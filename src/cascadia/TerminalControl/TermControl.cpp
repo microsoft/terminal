@@ -1277,6 +1277,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return viewPort.Height();
     }
 
+    // Method Description:
+    // - Sets a incremented or decremented fontsize as value to the current tab.
     void TermControl::KeyboardZoomHandler(int zoom)
     {
         try

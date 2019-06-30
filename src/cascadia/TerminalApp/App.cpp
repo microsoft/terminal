@@ -507,6 +507,8 @@ namespace winrt::TerminalApp::implementation
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
+        bindings.IncreaseZoom([this]() { _IncreaseZoom(); });
+        bindings.DecreaseZoom([this]() { _DecreaseZoom(); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
         bindings.ScrollDown([this]() { _Scroll(1); });
         bindings.NextTab([this]() { _SelectNextTab(true); });
@@ -993,6 +995,22 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
         _RemoveTabViewItem(focusedTab->GetTabViewItem());
+    }
+
+    // Method Description:
+    // - Increase font zoom by 1. Behaves like pressing CTRL and turing the mouse wheel 1 step up.
+    void App::_IncreaseZoom()
+    {
+        const auto control = _GetFocusedControl();
+        control.KeyboardZoomHandler(1);
+    }
+
+    // Method Description:
+    // - Decrease font zoom by 1. Behaves like pressing CTRL and turing the mouse wheel 1 step down.
+    void App::_DecreaseZoom()
+    {
+        const auto control = _GetFocusedControl();
+        control.KeyboardZoomHandler(-1);
     }
 
     // Method Description:

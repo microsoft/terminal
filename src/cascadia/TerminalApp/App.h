@@ -111,6 +111,8 @@ namespace winrt::TerminalApp::implementation
         void _SetFocusedTabIndex(int tabIndex);
         int _GetFocusedTabIndex() const;
 
+        void _IncreaseZoom();
+        void _DecreaseZoom();
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
