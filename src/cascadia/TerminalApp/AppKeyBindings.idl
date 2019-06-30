@@ -36,6 +36,8 @@ namespace TerminalApp
         SwitchToTab8,
         IncreaseFontSize,
         DecreaseFontSize,
+        IncreaseZoom,
+        DecreaseZoom,
         ScrollUp,
         ScrollDown,
         ScrollUpPage,
@@ -57,6 +59,8 @@ namespace TerminalApp
     delegate void SwitchToTabEventArgs(Int32 profileIndex);
     delegate void IncreaseFontSizeEventArgs();
     delegate void DecreaseFontSizeEventArgs();
+    delegate void IncreaseZoomEventArgs();
+    delegate void DecreaseZoomEventArgs();
     delegate void ScrollUpEventArgs();
     delegate void ScrollDownEventArgs();
     delegate void ScrollUpPageEventArgs();
@@ -85,6 +89,8 @@ namespace TerminalApp
         event SplitHorizontalEventArgs SplitHorizontal;
         event IncreaseFontSizeEventArgs IncreaseFontSize;
         event DecreaseFontSizeEventArgs DecreaseFontSize;
+        event IncreaseZoomEventArgs IncreaseZoom;
+        event DecreaseZoomEventArgs DecreaseZoom;
         event ScrollUpEventArgs ScrollUp;
         event ScrollDownEventArgs ScrollDown;
         event ScrollUpPageEventArgs ScrollUpPage;

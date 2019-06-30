@@ -100,6 +100,12 @@ namespace winrt::TerminalApp::implementation
             _CloseTabHandlers();
             return true;
 
+        case ShortcutAction::IncreaseZoom:
+            _IncreaseZoomHandlers();
+            return true;
+        case ShortcutAction::DecreaseZoom:
+            _DecreaseZoomHandlers();
+            return true;
         case ShortcutAction::ScrollUp:
             _ScrollUpHandlers();
             return true;
@@ -229,6 +235,8 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
     DEFINE_EVENT(AppKeyBindings, IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
     DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
+    DEFINE_EVENT(AppKeyBindings, IncreaseZoom,      _IncreaseZoomHandlers,      TerminalApp::IncreaseZoomEventArgs);
+    DEFINE_EVENT(AppKeyBindings, DecreaseZoom,      _DecreaseZoomHandlers,      TerminalApp::DecreaseZoomEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);

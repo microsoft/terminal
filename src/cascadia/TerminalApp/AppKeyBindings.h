@@ -54,6 +54,8 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
         DECLARE_EVENT(IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
         DECLARE_EVENT(DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
+        DECLARE_EVENT(IncreaseZoom,      _IncreaseZoomHandlers,      TerminalApp::IncreaseZoomEventArgs);
+        DECLARE_EVENT(DecreaseZoom,      _DecreaseZoomHandlers,      TerminalApp::DecreaseZoomEventArgs);
         DECLARE_EVENT(ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
         DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
         DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);

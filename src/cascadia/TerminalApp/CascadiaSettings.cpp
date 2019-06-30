@@ -308,6 +308,12 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('9') });
 
+    keyBindings.SetKeyBinding(ShortcutAction::IncreaseZoom,
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_ADD});
+    keyBindings.SetKeyBinding(ShortcutAction::DecreaseZoom,
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_SUBTRACT });
     keyBindings.SetKeyBinding(ShortcutAction::ScrollUp,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_UP });

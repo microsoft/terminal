@@ -34,6 +34,8 @@ static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
 static constexpr std::string_view IncreaseFontSizeKey{ "increaseFontSize" };
 static constexpr std::string_view DecreaseFontSizeKey{ "decreaseFontSize" };
+static constexpr std::string_view IncreaseZoomKey{ "increaseZoom" };
+static constexpr std::string_view DecreaseZoomKey{ "decreaseZoom" };
 static constexpr std::string_view ScrollupKey{ "scrollUp" };
 static constexpr std::string_view ScrolldownKey{ "scrollDown" };
 static constexpr std::string_view ScrolluppageKey{ "scrollUpPage" };
@@ -80,6 +82,8 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { PrevTabKey, ShortcutAction::PrevTab },
     { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
     { DecreaseFontSizeKey, ShortcutAction::DecreaseFontSize },
+    { IncreaseZoomKey, ShortcutAction::IncreaseZoom },
+    { DecreaseZoomKey, ShortcutAction::DecreaseZoom },
     { ScrollupKey, ShortcutAction::ScrollUp },
     { ScrolldownKey, ShortcutAction::ScrollDown },
     { ScrolluppageKey, ShortcutAction::ScrollUpPage },
