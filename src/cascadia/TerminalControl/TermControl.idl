@@ -40,6 +40,8 @@ namespace Microsoft.Terminal.TerminalControl
         void KeyboardScrollViewport(Int32 viewTop);
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
+
+        void KeyboardZoomHandler(Int32 zoom);
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
     }
 }

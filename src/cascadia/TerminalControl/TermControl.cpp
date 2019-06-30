@@ -1277,6 +1277,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return viewPort.Height();
     }
 
+    void TermControl::KeyboardZoomHandler(int zoom)
+    {
+        try
+        {
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + zoom), static_cast<short>(1));
+            const auto* fontFace = _settings.FontFace().c_str();
+
+            _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
+            _desiredFont = { _actualFont };
+
+            _UpdateFont();
+            auto lock = _terminal->LockForWriting();
+            _DoResize(_swapChainPanel.ActualWidth(), _swapChainPanel.ActualHeight());
+        }
+        CATCH_LOG();
+    }
+
     // Function Description:
     // - Determines how much space (in pixels) an app would need to reserve to
     //   create a control with the settings stored in the settings param. This
