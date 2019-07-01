@@ -11,7 +11,7 @@
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
-    <ClCompile Include="..\ScreenInfoUiaProvider.cpp" />
+    <ClCompile Include="..\IScreenInfoUiaProvider.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
@@ -30,7 +30,7 @@
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\ScreenInfoUiaProvider.h" />
+    <ClInclude Include="..\IScreenInfoUiaProvider.h" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\WindowUiaProvider.h" />
   </ItemGroup>

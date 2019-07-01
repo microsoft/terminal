@@ -9,6 +9,7 @@ Abstract:
 - This module provides UI Automation access to the screen buffer to
   support both automation tests and accessibility (screen reading)
   applications.
+- ConHost and Windows Terminal must implement their own virtual functions separately.
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
@@ -21,20 +22,22 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
+#include "../buffer/out/textBuffer.hpp"
 
 namespace Microsoft::Console::Types
 {
     class IConsoleWindow;
     class WindowUiaProvider;
+    class Viewport;
 
-    class ScreenInfoUiaProvider final :
+    class IScreenInfoUiaProvider :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
-        virtual ~ScreenInfoUiaProvider();
+        IScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
+        virtual ~IScreenInfoUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
 
@@ -73,6 +76,14 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
+    protected:
+        virtual IConsoleWindow* const _getIConsoleWindow() { return _baseWindow; };
+        virtual const COORD _getScreenBufferCoords() const;
+        virtual const TextBuffer& _getTextBuffer() const;
+        virtual const Viewport _getViewport() const;
+        virtual void _LockConsole() noexcept;
+        virtual void _UnlockConsole() noexcept;
+
     private:
         // Ref counter for COM object
         ULONG _cRefs;
@@ -80,7 +91,7 @@ namespace Microsoft::Console::Types
         // weak reference to uia parent
         WindowUiaProvider* const _pUiaParent;
 
-        // weak reference to IWindow (IConsoleWindow or BaseWindow)
+        // weak reference to IConsoleWindow
         IConsoleWindow* _baseWindow;
 
         // this is used to prevent the object from
@@ -95,8 +106,6 @@ namespace Microsoft::Console::Types
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
         std::map<EVENTID, bool> _signalFiringMapping;
-
-        //const COORD _getScreenBufferCoords() const;
     };
 
     namespace ScreenInfoUiaProviderTracing

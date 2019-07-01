@@ -60,7 +60,7 @@
     <ClCompile Include="..\WindowUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
+    <ClCompile Include="..\IScreenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,10 +92,10 @@
     <ClInclude Include="..\WindowUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ScreenInfoUiaProvider.h">
+    <ClInclude Include="..\IConsoleWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IConsoleWindow.hpp">
+    <ClInclude Include="..\IScreenInfoUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
