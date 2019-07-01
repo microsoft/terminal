@@ -37,7 +37,7 @@ Note: The following text assumes you have WSL installed.
 
 To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
-1. Select the `down` button next to the `+` in the top bar
+1. Select the `down` button next to the `+` in the tab bar
 2. Choose your new shell from the list (more on how to extend the list in the config section)
 
 ## Starting a new tab Powershell with admin privilege
