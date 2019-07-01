@@ -15,6 +15,8 @@ Author:
 
 #pragma once
 #include <deque>
+#include <string>
+#include <string_view>
 #include <memory>
 #include "IInputEvent.hpp"
 

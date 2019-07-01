@@ -37,7 +37,7 @@ CascadiaSettings::~CascadiaSettings()
 ColorScheme _CreateCampbellScheme()
 {
     ColorScheme campbellScheme{ L"Campbell",
-                                RGB(242, 242, 242),
+                                RGB(204, 204, 204),
                                 RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
@@ -257,6 +257,15 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                               KeyChord{ KeyModifiers::Ctrl,
                                         static_cast<int>('W') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::CopyText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('C') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::PasteText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('V') });
+
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
                               KeyChord{ KeyModifiers::Ctrl,
                                         VK_OEM_COMMA });

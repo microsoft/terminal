@@ -331,7 +331,7 @@ void Pane::_CloseChild(const bool closeFirst)
         const auto oldFirstToken = _firstClosedToken;
         const auto oldSecondToken = _secondClosedToken;
         const auto oldFirst = _firstChild;
-        const auto oldSecond = _secondClosedToken;
+        const auto oldSecond = _secondChild;
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
@@ -342,9 +342,14 @@ void Pane::_CloseChild(const bool closeFirst)
         // Set up new close handlers on the children
         _SetupChildCloseHandlers();
 
-        // Revoke the old event handlers.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
+        // Revoke the old event handlers on our new children
+        _firstChild->Closed(remainingChild->_firstClosedToken);
+        _secondChild->Closed(remainingChild->_secondClosedToken);
+
+        // Revoke event handlers on old panes and controls
+        oldFirst->Closed(oldFirstToken);
+        oldSecond->Closed(oldSecondToken);
+        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
 
         // Reset our UI:
         _root.Children().Clear();
