@@ -61,7 +61,7 @@ For example
 
 ## Profiles
 
-A profile are the settings applied when a new WT tab is opened. Each profile is identified by a GUID and contains
+A profile contains the settings applied when a new WT tab is opened. Each profile is identified by a GUID and contains
 a number of other fields
 
 * Which command line to execute. This can include arguments #TODO Test this assumption, I only read the code
