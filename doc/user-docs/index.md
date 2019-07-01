@@ -31,7 +31,7 @@ The default shell is PowerShell.
 Additional shells can be started by hitting the `+` button from the top bar -- a new instance of the
 default shell is displayed (default shortcut `Ctrl+Shift+1`).
 
-## Running a different shell
+## Running a Different Shell
 
 Note: The following text assumes you have WSL installed.
 
