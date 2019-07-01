@@ -737,7 +737,7 @@ namespace winrt::TerminalApp::implementation
         const auto lastFocusedProfile = tab->GetFocusedProfile().value();
         const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
-        auto tabTitle = matchingProfile->GetTabTitle();
+        const auto tabTitle = matchingProfile->GetTabTitle();
 
         // Checks if tab title has been set in the profile settings and
         // updates accordingly.
