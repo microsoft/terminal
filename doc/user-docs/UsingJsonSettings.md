@@ -146,6 +146,6 @@ Each one is identified by the name field. For example
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
-7. Jump over to WT and verfiy your changes.
+7. Jump over to WT and verify your changes.
 Note: You will need to experiment with different colour settings
 and schemes to make your terminal text visible on top of your image
