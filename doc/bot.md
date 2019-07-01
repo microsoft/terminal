@@ -57,6 +57,14 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - When an issue is opened or labels are changed in any way, we will check if the tagging matches the system. If not, it will get `Needs-Tag-Fix`. The system is to have an `Area-`, `Issue-`, and `Product-` tag for all open things, and also a `Resolution-` for closed ones.
 - When the tags from appropriate categories are applied, it will auto-remove the `Needs-Tag-Fix` tag.
 
+#### Clean-up low quality issues
+- If an issue is filed with an incomplete title...
+- If an issue is filed with nothing in the body...
+- If an issue is filed matching a pattern that happens all the time (common duplicate phrase, obvious multiple-issues-in-one pattern)...
+- Then close the issue automatically informing the opener that they can resolve the problem and reopen the issue. (See Bug/Feature templates for example situations.)
+
+
+
 ### PR Management
 
 #### Codeflow Link *(Disabled)*
