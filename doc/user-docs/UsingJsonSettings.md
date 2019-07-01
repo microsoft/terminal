@@ -42,7 +42,7 @@ For example
 ## Key Bindings
 
 This is an array of key chords and shortcuts to invoke various commands.
-Each command can have more that one one key binding.
+Each command can have more than one key binding.
 
 NOTE: Key bindings is a subfield of the global settings and
 key bindings apply to all profiles.
