@@ -20,7 +20,7 @@ Follow the instructions in this repo's [README](/README.md#developer-guidance).
 
 From the Windows Start menu, select Windows Terminal and run the application.
 
-Note: You can right click on the application item and run with administrator privilege if required.
+Note: You can right click on the application item and run with Windows Administrator privilege if required.
 
 The default shell is PowerShell.
 
@@ -40,13 +40,13 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 1. Select the `down` button next to the `+` in the tab bar
 2. Choose your new shell from the list (more on how to extend the list in the config section)
 
-## Starting a new tab Powershell with admin privilege
+## Starting a new PowerShell tab with admin privilege
 
 #TODO
 
 ## Using cut and paste in the Terminal window
 
-#TODO  For Powershell and Bash (and cmd.exe?)
+#TODO  For PowerShell and Bash (and cmd.exe?)
 
 ## Add a "Open Windows Terminal Here" to File Explorer
 
@@ -61,13 +61,9 @@ From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`
 Your default json editor will open up the Terminal settings file. The file can be found
 at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
 
-#TODO -- is this path correct for **users** ?
-
 An introduction to the the various settings can be found [here](UsingJsonSettings.md).
 
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
-
-#TODO Add new page with detailed information on settings. E.g Adding new shells, keybindings, background Gif etc.
 
 ## Tips and Tricks:
 
