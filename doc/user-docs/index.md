@@ -28,7 +28,7 @@ The default shell is PowerShell.
 
 ## Multiple Tabs
 
-Additional shells can be started by hitting the `+` button from the top bar -- a new instance of the
+Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
 default shell is displayed (default shortcut `Ctrl+Shift+1`).
 
 ## Running a Different Shell
