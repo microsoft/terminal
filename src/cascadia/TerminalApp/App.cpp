@@ -742,23 +742,13 @@ namespace winrt::TerminalApp::implementation
         // Checks if tab title has been set in the profile settings and
         // updates accordingly.
 
-        if (tabTitle.empty())
+        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
         {
-            tab->SetTabText(newTabTitle);
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(newTabTitle);
-            }
-        }
-        else
-        {
-            tab->SetTabText(winrt::to_hstring(tabTitle.data()));
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(tabTitle);
-            }
+            _titleChangeHandlers(newActualTitle);
         }
     }
 

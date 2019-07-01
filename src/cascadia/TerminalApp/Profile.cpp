@@ -492,7 +492,6 @@ bool Profile::HasIcon() const noexcept
 // - Sets this profile's tab title.
 // Arguments:
 // - tabTitle: the tab title
-
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
     _tabTitle = tabTitle;
