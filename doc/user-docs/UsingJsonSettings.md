@@ -41,7 +41,7 @@ For example
 
 ## Key Bindings
 
-This is an array key chords and shortcuts to invoke various command.
+This is an array of key chords and shortcuts to invoke various commands.
 Each command can have more that one one key binding.
 
 NOTE: Key bindings is a subfield of the global settings and
