@@ -7,7 +7,7 @@ change. If you notice an error in the docs, please raise an issue. Or better yet
 
 ### From Source Code
 
-Follow the instructions in this repo's [README](/README.md#developer-guidance)
+Follow the instructions in this repo's [README](/README.md#developer-guidance).
 
 ### From the Microsoft Store
 
