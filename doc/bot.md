@@ -63,8 +63,6 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - If an issue is filed matching a pattern that happens all the time (common duplicate phrase, obvious multiple-issues-in-one pattern)...
 - Then close the issue automatically informing the opener that they can resolve the problem and reopen the issue. (See Bug/Feature templates for example situations.)
 
-
-
 ### PR Management
 
 #### Codeflow Link *(Disabled)*
