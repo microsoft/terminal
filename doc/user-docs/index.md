@@ -56,7 +56,7 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 At the time of writing all Windows Terminal settings are managed via a json file.
 
-From the `down` button in the top bar select settings (default shortcut `ctrl-,`)
+From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`).
 
 Your default json editor will open up the Terminal settings file. The file can be found
 at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
