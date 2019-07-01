@@ -17,7 +17,7 @@ The settings are grouped under four headings:
 
 ## Global Settings
 
-These settings define startup defaults
+These settings define startup defaults.
 
 * Theme
 * Title Bar options
