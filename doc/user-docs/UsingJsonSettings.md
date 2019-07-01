@@ -120,5 +120,8 @@ Notes:
 1. You will need to experiment with different color settings
 and schemes to make your terminal text visible on top of your image
 2. If you store the image in the UWP directory (the same directory as your profiles.json file),
-then you should use the path name as given in the above example. You can also use URL such as
-`http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg`
+then you should use the path name as given in the above example. You can also use a:
+    1. URL such as
+`http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg` 
+    2. Local file location such as `C:\Users\Public\Pictures\openlgo.jpg`
+
