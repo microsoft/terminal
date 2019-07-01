@@ -54,7 +54,7 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 ## Configuring Windows Terminal
 
-At the time of writing all Windows Terminal settings are managed via a Json file.
+At the time of writing all Windows Terminal settings are managed via a json file.
 
 From the `down` button in the top bar select settings (default shortcut `ctrl-,`)
 
