@@ -15,7 +15,7 @@ The settings are grouped under four headings:
 3. Profiles: A group of settings to be applied to a tab when it is opened using that profile. E.g. shell to use, cursor shape etc.
 4. Schemes: Sets of colour for background, text etc. that can be used by profiles
 
-## Global Settings:
+## Global Settings
 
 These settings define startup defaults
 
