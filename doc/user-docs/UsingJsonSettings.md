@@ -13,7 +13,7 @@ The settings are grouped under four headings:
 1. Global: Settings that apply to the whole application e.g. Default profile, initial size etc.
 2. Key Bindings: Actually a sub field of the global settings, but worth discussing separately
 3. Profiles: A group of settings to be applied to a tab when it is opened using that profile. E.g. shell to use, cursor shape etc.
-4. Schemes: Sets of colour for background, text etc. that can be used by profiles
+4. Schemes: Sets of colors for background, text etc. that can be used by profiles
 
 ## Global Settings
 
@@ -24,19 +24,15 @@ These settings define startup defaults.
 * Initial size
 * Default profile used when WT is started
 
-For example
+Example settings include
 
 ```json
-{
-    "alwaysShowTabs" : true,
     "defaultProfile" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "initialCols" : 120,
     "initialRows" : 50,
     "requestedTheme" : "system",
-    "showTabsInTitlebar" : true,
-    "showTerminalTitleInTitlebar" : true,
     "keybinding" : []
-}
+    ...
 ```
 
 ## Key Bindings
@@ -47,18 +43,6 @@ Each command can have more than one key binding.
 NOTE: Key bindings is a subfield of the global settings and
 key bindings apply to all profiles.
 
-For example
-
-```json
-{
-    "command" : "scrollDown",
-    "keys" : 
-    [
-        "ctrl+shift+down"
-    ]
-},
-```
-
 ## Profiles
 
 A profile contains the settings applied when a new WT tab is opened. Each profile is identified by a GUID and contains
@@ -66,16 +50,14 @@ a number of other fields.
 
 * Which command to execute on startup - this can include arguments.
 * Starting directory
-* Which colour scheme to use (see Schemes below)
+* Which color scheme to use (see Schemes below)
 * Font face and size
 * Various settings to control appearance. E.g. Opacity, icon, cursor appearance, display name etc.
 * Other behavioural settings. E.g. Close on exit, snap on input, .....
 
-For example 
+Example settings include
 
 ```json
-{
-    "acrylicOpacity" : 0.5,
     "closeOnExit" : true,
     "colorScheme" : "Campbell",
     "commandline" : "wsl.exe -d Debian",
@@ -84,49 +66,35 @@ For example
     "fontFace" : "Hack",
     "fontSize" : 9,
     "guid" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
-    "historySize" : 9001,
-    "icon" : "ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png",
-    "backgroundImage": "ms-appdata://Roaming/Linus.jpg",
-    "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "Fill",
     "name" : "Debian",
-    "padding" : "0, 0, 0, 0",
-    "snapOnInput" : true,
-    "useAcrylic" : false,
     "startingDirectory" : "%USERPROFILE%/wslhome"
-}
+    ....
 ```
+
+The profile GUID is used to reference the default profile in the global settings.
 
 The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch)
 
-##  Colour Schemes
+##  color Schemes
 
-Each scheme defines the colour values to be used for various terminal escape sequences.
-Each one is identified by the name field. For example
+Each scheme defines the color values to be used for various terminal escape sequences.
+Each schema is identified by the name field. Examples include
 
 ```json
-{
+    "name" : "Campbell",
     "background" : "#0C0C0C",
     "black" : "#0C0C0C",
     "blue" : "#0037DA",
-    "brightBlack" : "#767676",
-    "brightBlue" : "#3B78FF",
-    "brightCyan" : "#61D6D6",
-    "brightGreen" : "#16C60C",
-    "brightPurple" : "#B4009E",
-    "brightRed" : "#E74856",
-    "brightWhite" : "#F2F2F2",
-    "brightYellow" : "#F9F1A5",
-    "cyan" : "#3A96DD",
     "foreground" : "#F2F2F2",
     "green" : "#13A10E",
-    "name" : "Campbell",
-    "purple" : "#881798",
     "red" : "#C50F1F",
     "white" : "#CCCCCC",
     "yellow" : "#C19C00"
-},
+    ...
 ```
+
+The schema name can then be referenced in one or more profiles.
+
 ## Configuration Examples:
 
 ### Add a custom background to the WSL Debian terminal profile
@@ -140,12 +108,17 @@ Each one is identified by the name field. For example
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
 ```json
-    "backgroundImage": "ms-appdata://Roaming/openlogo.jpg",
+    "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
     "backgroundImageOpacity": 0.3,
     "backgroundImageStretchMode":  "Fill",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
 7. Jump over to WT and verify your changes.
-Note: You will need to experiment with different colour settings
-and schemes to make your terminal text visible on top of your image.
+
+Notes:
+1. You will need to experiment with different color settings
+and schemes to make your terminal text visible on top of your image
+2. If you store the image in the UWP directory (the same directory as your profiles.json file),
+then you should use the path name as given in the above example. You can also use URL such as
+`http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg`
