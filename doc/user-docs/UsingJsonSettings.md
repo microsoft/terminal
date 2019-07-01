@@ -64,7 +64,7 @@ For example
 A profile contains the settings applied when a new WT tab is opened. Each profile is identified by a GUID and contains
 a number of other fields.
 
-* Which command line to execute. This can include arguments #TODO Test this assumption, I only read the code
+* Which command to execute on startup - this can include arguments.
 * Starting directory
 * Which colour scheme to use (see Schemes below)
 * Font face and size
