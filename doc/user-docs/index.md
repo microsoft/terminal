@@ -33,7 +33,7 @@ default shell is displayed (default shortcut `ctrl-shift-1`)
 
 ## Running a different shell
 
-Note: The following text assumes you have WSL installed
+Note: The following text assumes you have WSL installed.
 
 To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
