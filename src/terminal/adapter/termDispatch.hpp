@@ -46,6 +46,7 @@ public:
     bool SetCursorKeysMode(const bool /*fApplicationMode*/) override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*fApplicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*fEnable*/) override { return false; } // ATT610
+    bool SetOriginMode(const bool /*fRelativeMode*/) override { return false; }; // DECOM
     bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/) override { return false; } // DECSTBM
     bool ReverseLineFeed() override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle

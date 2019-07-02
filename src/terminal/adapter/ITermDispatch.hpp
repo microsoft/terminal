@@ -49,6 +49,7 @@ public:
     virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool fApplicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool fEnable) = 0; // ATT610
+    virtual bool SetOriginMode(const bool fRelativeMode) = 0; // DECOM
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
