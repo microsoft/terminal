@@ -1350,13 +1350,14 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     }
     else
     {
-        const auto margins = screenInfo.GetAbsoluteScrollMargins();
-        const bool marginsSet = margins.BottomInclusive() > margins.Top();
+        const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+        const auto marginsSet = margins.Bottom > margins.Top;
+        const auto oldCursorInMargins = oldCursorPosition.Y <= margins.Bottom && oldCursorPosition.Y >= margins.Top;
 
         // If we don't have margins, or the cursor is within the boundaries of the margins
         // It's important to check if the cursor is in the margins,
         //      If it's not, but the margins are set, then we don't want to scroll anything
-        if (!marginsSet || margins.IsInBounds(oldCursorPosition))
+        if (!marginsSet || oldCursorInMargins)
         {
             // Cursor is at the top of the viewport
             const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
@@ -2037,8 +2038,10 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     auto& screenInfo = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    const auto margins = screenInfo.GetAbsoluteScrollMargins();
-    if (margins.IsInBounds(cursorPosition))
+    const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+    const auto marginsSet = margins.Bottom > margins.Top;
+    const auto cursorInMargins = cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
+    if (!marginsSet || cursorInMargins)
     {
         const auto screenEdges = screenInfo.GetBufferSize().ToInclusive();
         // Rectangle to cut out of the existing buffer
