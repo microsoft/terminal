@@ -55,6 +55,7 @@ public:
     bool ForwardTab(const SHORT /*sNumTabs*/) override { return false; } // CHT
     bool BackwardsTab(const SHORT /*sNumTabs*/) override { return false; } // CBT
     bool TabClear(const SHORT /*sClearType*/) override { return false; } // TBC
+    bool EnableDECCOLMSupport(const bool /*fEnabled*/) override { return false; } // ?40
     bool EnableVT200MouseMode(const bool /*fEnabled*/) override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1005
     bool EnableSGRExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1006
