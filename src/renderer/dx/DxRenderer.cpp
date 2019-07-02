@@ -690,10 +690,25 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         else if (_displaySizePixels.cy != clientSize.cy ||
                  _displaySizePixels.cx != clientSize.cx)
         {
+            // OK, we're going to play a dangerous game here for the sake of optimizing resize
+            // First, set up a complete clear of all device resources if something goes terribly wrong.
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&]
+                {
+                    _ReleaseDeviceResources();
+                });
+
+            // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
             _d2dRenderTarget.Reset();
-            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+            // Change the buffer size and recreate the render target (and surface)
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
             RETURN_IF_FAILED(_PrepareRenderTarget());
+
+            // OK we made it past the parts that can cause errors. We can release our failure handler.
+            resetDeviceResourcesOnFailure.release();
+
+            // And persist the new size.
             _displaySizePixels = clientSize;
         }
 
