@@ -24,7 +24,10 @@ Note: You can right click on the application item and run with Windows Administr
 
 The default shell is PowerShell.
 
-#TODO Are they any command line arguments or switches?
+
+### Command line options
+
+None at this time. See issue [#607](https://github.com/microsoft/terminal/issues/607)
 
 ## Multiple Tabs
 
@@ -42,15 +45,23 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 ## Starting a new PowerShell tab with admin privilege
 
-#TODO
+There is no current plan to support this feature for security reaons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
 
 ## Using cut and paste in the Terminal window
 
-#TODO  For PowerShell and Bash (and cmd.exe?)
+### With PowerShell
+
+* Copy - Select the text with mouse (default left button), then right click with mouse
+* Paste - by default use `<ctrl>+v`>, or right click with mouse
+
+### With Bash
+
+* Copy - Select the text with mouse (default left button), then right click with mouse
+* Paste - Right click with mouse
 
 ## Add a "Open Windows Terminal Here" to File Explorer
 
-#TODO
+Not currently supported "out of the box". See issue [#1060](https://github.com/microsoft/terminal/issues/1060)
 
 ## Configuring Windows Terminal
 
@@ -74,4 +85,4 @@ The list of valid settings can be found in the [Profiles.json Documentation](../
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
-2. #TODO  More Tips and Tricks
+2. Please add more Tips and Tricks
