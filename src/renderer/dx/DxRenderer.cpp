@@ -692,10 +692,9 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         {
             // OK, we're going to play a dangerous game here for the sake of optimizing resize
             // First, set up a complete clear of all device resources if something goes terribly wrong.
-            auto resetDeviceResourcesOnFailure = wil::scope_exit([&]
-                {
-                    _ReleaseDeviceResources();
-                });
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&] {
+                _ReleaseDeviceResources();
+            });
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
