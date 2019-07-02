@@ -525,7 +525,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        _autoScrollTimer.Interval(std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000)));
+        static constexpr auto autoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
+        _autoScrollTimer.Interval(autoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         // Set up blinking cursor
@@ -1074,7 +1075,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_lastAutoScrollUpdateTime.has_value())
             {
-                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / 1000000.0;
+                static constexpr double microSecPerSec = 1000000.0;
+                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / microSecPerSec;
                 _scrollBar.Value(_scrollBar.Value() + _autoScrollVelocity * deltaTime);
 
                 if (_autoScrollingPointerPoint.has_value())
@@ -1195,7 +1197,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
-    // - cursorPosition: in pixels
+    // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
@@ -1350,6 +1352,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
+
+            _autoScrollTimer.Stop();
 
             if (auto localConnection{ std::exchange(_connection, nullptr) })
             {
