@@ -78,6 +78,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECOM_OriginMode = 6,
         ATT610_StartCursorBlink = 12,
         DECTCEM_TextCursorEnableMode = 25,
+        XTERM_EnableDECCOLMSupport = 40,
         VT200_MOUSE_MODE = 1000,
         BUTTTON_EVENT_MOUSE_MODE = 1002,
         ANY_EVENT_MOUSE_MODE = 1003,

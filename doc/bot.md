@@ -56,6 +56,7 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 #### Enforce tag system
 - When an issue is opened or labels are changed in any way, we will check if the tagging matches the system. If not, it will get `Needs-Tag-Fix`. The system is to have an `Area-`, `Issue-`, and `Product-` tag for all open things, and also a `Resolution-` for closed ones.
 - When the tags from appropriate categories are applied, it will auto-remove the `Needs-Tag-Fix` tag.
+- `Resolution-Duplicate` is sufficient to fix all tagging. (`Area-`, `Issue-`, and `Product-` are not needed for a duplicate.)
 
 ### PR Management
 
@@ -84,6 +85,12 @@ We'll be using tags, primarily, to help us understand what needs attention, what
   - Will attempt to delete branch after merge, if possible
   - Will automatically remove the `AutoMerge` label if changes are pushed by someone *without* Write Access.
   - More information on bot-logic that can be controlled with comments is [here](https://github.com/OfficeDev/office-ui-fabric-react/wiki/Advanced-auto-merge)
+  
+#### Mark issues with an active PR
+- If there is an active PR for an issue, label that issue with the `In-PR` label
+
+#### Add committed fix tag for completed PRs
+- When a PR is finished and there's no outstanding work left on a linked issue, add the `Resolution-Fix-Committed` label
   
 ## Admin Panel
 [Here](https://fabric-cp.azurewebsites.net/bot/)

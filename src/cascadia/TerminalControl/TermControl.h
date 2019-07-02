@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
-        TermControl(Settings::IControlSettings settings);
+        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
 
@@ -140,7 +141,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
-        Settings::KeyModifiers _GetPressedModifierKeys() const;
+        DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };

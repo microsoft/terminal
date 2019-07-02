@@ -59,6 +59,7 @@ public:
     virtual bool ForwardTab(const SHORT sNumTabs) = 0; // CHT
     virtual bool BackwardsTab(const SHORT sNumTabs) = 0; // CBT
     virtual bool TabClear(const SHORT sClearType) = 0; // TBC
+    virtual bool EnableDECCOLMSupport(const bool fEnabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool fEnabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool fEnabled) = 0; // ?1005
     virtual bool EnableSGRExtendedMouseMode(const bool fEnabled) = 0; // ?1006

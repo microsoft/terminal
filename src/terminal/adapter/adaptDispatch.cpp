@@ -41,6 +41,7 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
     _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
+    _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
@@ -50,8 +51,6 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
     _srScrollMargins = { 0 }; // initially, there are no scroll margins.
-    _fIsSetColumnsEnabled = false; // by default, DECSCPP is disabled.
-    // TODO:10086990 - Create a setting to re-enable this.
 }
 
 void AdaptDispatch::Print(const wchar_t wchPrintable)
@@ -1078,12 +1077,6 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 {
-    if (!_fIsSetColumnsEnabled)
-    {
-        // Only set columns if that option is available. Return true, as this is technically a successful handling.
-        return true;
-    }
-
     SHORT sColumns;
     bool fSuccess = SUCCEEDED(UIntToShort(uiColumns, &sColumns));
     if (fSuccess)
@@ -1110,6 +1103,12 @@ bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
 {
+    if (!_fIsDECCOLMAllowed)
+    {
+        // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
+        return true;
+    }
+
     bool fSuccess = SetColumns(uiColumns);
     if (fSuccess)
     {
@@ -1151,6 +1150,9 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModePara
         break;
     case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
+        break;
+    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        fSuccess = EnableDECCOLMSupport(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         fSuccess = EnableVT200MouseMode(fEnable);
@@ -1728,6 +1730,18 @@ bool AdaptDispatch::_EraseScrollback()
 bool AdaptDispatch::_EraseAll()
 {
     return !!_conApi->PrivateEraseAll();
+}
+
+// Routine Description:
+// - Enables or disables support for the DECCOLM escape sequence.
+// Arguments:
+// - fEnabled - set to true to allow DECCOLM to be used, false to disallow.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableDECCOLMSupport(const bool fEnabled)
+{
+    _fIsDECCOLMAllowed = fEnabled;
+    return true;
 }
 
 //Routine Description:

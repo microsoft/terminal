@@ -162,15 +162,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (!_closing.exchange(true))
         {
-            _hJob.reset(); // This will terminate the process _piConhost is holding.
-            _piConhost.reset();
-
+            // It is imperative that the signal pipe be closed first; this triggers the
+            // pseudoconsole host's teardown. See PtySignalInputThread.cpp.
+            _signalPipe.reset();
             _inPipe.reset();
             _outPipe.reset();
-            _signalPipe.reset();
 
+            // Tear down our output thread -- now that the output pipe was closed on the
+            // far side, we can run down our local reader.
             WaitForSingleObject(_hOutputThread.get(), INFINITE);
             _hOutputThread.reset();
+
+            // Wait for conhost to terminate.
+            WaitForSingleObject(_piConhost.hProcess, INFINITE);
+
+            _hJob.reset(); // This is a formality.
+            _piConhost.reset();
         }
     }
 

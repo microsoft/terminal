@@ -86,6 +86,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool DesignateCharset(const wchar_t wchCharset) override; // DesignateCharset
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
+        bool EnableDECCOLMSupport(const bool fEnabled) override; // ?40
         bool EnableVT200MouseMode(const bool fEnabled) override; // ?1000
         bool EnableUTF8ExtendedMouseMode(const bool fEnabled) override; // ?1005
         bool EnableSGRExtendedMouseMode(const bool fEnabled) override; // ?1006
@@ -154,6 +155,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fIsSavedOriginModeRelative;
 
         bool _fIsSetColumnsEnabled;
+
+        bool _fIsDECCOLMAllowed;
 
         bool _fChangedForeground;
         bool _fChangedBackground;

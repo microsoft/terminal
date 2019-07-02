@@ -36,9 +36,12 @@ public:
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
+    bool HasTabTitle() const noexcept;
+    std::wstring_view GetTabTitle() const noexcept;
 
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
+    void SetTabTitle(std::wstring tabTitle) noexcept;
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
     void SetStartingDirectory(std::wstring startingDirectory) noexcept;
@@ -71,6 +74,7 @@ private:
     std::optional<uint32_t> _defaultForeground;
     std::optional<uint32_t> _defaultBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
+    std::optional<std::wstring> _tabTitle;
     int32_t _historySize;
     bool _snapOnInput;
     uint32_t _cursorColor;

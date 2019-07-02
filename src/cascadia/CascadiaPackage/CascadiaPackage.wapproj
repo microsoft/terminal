@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
-
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
     <VersionMinor>2</VersionMinor>
   </PropertyGroup>
-
   <PropertyGroup Label="Configuration">
-    <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <!--
     These two properties are very important!
     Without them, msbuild will stomp MinVersion and MaxVersionTested in the
@@ -22,27 +19,22 @@
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
     <EntryPointProjectUniqueName>..\WindowsTerminal\WindowsTerminal.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
-
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
-
   <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
-
   <ItemGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
-
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
       <SubType>Designer</SubType>
@@ -51,7 +43,6 @@
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-100.png">
       <Link>Images\LargeTile.scale-100.png</Link>
@@ -267,9 +258,7 @@
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
-
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-
   <!--
     This exists to work around Microsoft/microsoft-ui-xaml#494.
     https://github.com/Microsoft/microsoft-ui-xaml/issues/494
@@ -281,12 +270,12 @@
     This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
     here.
   -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
   <PropertyGroup>
     <WapProjBeforeGenerateAppxManifestDependsOn>
@@ -300,29 +289,25 @@
     </ItemGroup>
   </Target>
   <!-- End workaround -->
-
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
   </ItemGroup>
-
   <!-- Stomp the path to conhost.exe.
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
     adjacent to WindowsTerminal.exe.
    -->
-  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
-    <ItemGroup>
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+    <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
-      <_TemporaryFilteredWapProjOutput
-        Include="@(_FilteredNonWapProjProjectOutput)" />
-      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
-      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
+      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
+      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
+      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
         <!-- Override the filename for OpenConsole.exe (only) -->
         <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
-        <!-- Blank the SourceProject here to vend all files into the root of the pacakge. -->
-        <SourceProject></SourceProject>
-      </_FilteredNonWapProjProjectOutput>
-    </ItemGroup>
-  </Target>
-
+        <!-- Blank the SourceProject here to vend all files into the root of the package. -->
+        <SourceProject></SourceProject>
+      </_FilteredNonWapProjProjectOutput>
+    </ItemGroup>
+  </Target>
 </Project>
