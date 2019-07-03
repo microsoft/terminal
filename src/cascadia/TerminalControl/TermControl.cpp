@@ -616,15 +616,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        auto modifiers = _GetPressedModifierKeys();
-
+        const auto modifiers = _GetPressedModifierKeys();
         const auto vkey = static_cast<WORD>(e.OriginalKey());
 
         bool handled = false;
         auto bindings = _settings.KeyBindings();
         if (bindings)
         {
-            KeyChord chord(modifiers, vkey);
+            KeyChord chord(
+                WI_IsAnyFlagSet(modifiers, CTRL_PRESSED),
+                WI_IsAnyFlagSet(modifiers, ALT_PRESSED),
+                WI_IsFlagSet(modifiers, SHIFT_PRESSED),
+                vkey);
             handled = bindings.TryKeyChord(chord);
         }
 
@@ -634,10 +637,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // If the terminal translated the key, mark the event as handled.
             // This will prevent the system from trying to get the character out
             // of it and sending us a CharacterRecieved event.
-            handled = _terminal->SendKeyEvent(vkey,
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Ctrl),
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Alt),
-                                              WI_IsFlagSet(modifiers, KeyModifiers::Shift));
+            handled = _terminal->SendKeyEvent(vkey, modifiers);
 
             if (_cursorTimer.has_value())
             {
@@ -1413,8 +1413,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   find out which modifiers (ctrl, alt, shift) are pressed in events that
     //   don't necessarily include that state.
     // Return Value:
-    // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    // - The combined ControlKeyState flags as a bitfield.
+    DWORD TermControl::_GetPressedModifierKeys() const
     {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
@@ -1424,17 +1424,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Sometimes with the key down, the state is Down | Locked.
         // Sometimes with the key up, the state is Locked.
         // IsFlagSet(Down) is the only correct solution.
-        const auto ctrlKeyState = window.GetKeyState(VirtualKey::Control);
-        const auto shiftKeyState = window.GetKeyState(VirtualKey::Shift);
-        const auto altKeyState = window.GetKeyState(VirtualKey::Menu);
 
-        const auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
-        const auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
-        const auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
+        struct KeyModifier
+        {
+            VirtualKey vkey;
+            DWORD flag;
+        };
 
-        return KeyModifiers{ (ctrl ? Settings::KeyModifiers::Ctrl : Settings::KeyModifiers::None) |
-                             (alt ? Settings::KeyModifiers::Alt : Settings::KeyModifiers::None) |
-                             (shift ? Settings::KeyModifiers::Shift : Settings::KeyModifiers::None) };
+        constexpr std::array<KeyModifier, 5> modifiers{ {
+            { VirtualKey::RightMenu, RIGHT_ALT_PRESSED },
+            { VirtualKey::LeftMenu, LEFT_ALT_PRESSED },
+            { VirtualKey::RightControl, RIGHT_CTRL_PRESSED },
+            { VirtualKey::LeftControl, LEFT_CTRL_PRESSED },
+            { VirtualKey::Shift, SHIFT_PRESSED },
+        } };
+
+        DWORD flags = 0;
+
+        for (const auto& mod : modifiers)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
+            flags |= isDown ? mod.flag : 0;
+        }
+
+        return flags;
     }
 
     // Method Description:

@@ -195,16 +195,11 @@ void Terminal::Write(std::wstring_view stringView)
 //   real character out of the event.
 // Arguments:
 // - vkey: The vkey of the key pressed.
-// - ctrlPressed: true iff either ctrl key is pressed.
-// - altPressed: true iff either alt key is pressed.
-// - shiftPressed: true iff either shift key is pressed.
+// - modifiers: The current ControlKeyState flags.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey,
-                            const bool ctrlPressed,
-                            const bool altPressed,
-                            const bool shiftPressed)
+bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
@@ -213,10 +208,23 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         _NotifyScrollEvent();
     }
 
-    DWORD modifiers = 0 |
-                      (ctrlPressed ? LEFT_CTRL_PRESSED : 0) |
-                      (altPressed ? LEFT_ALT_PRESSED : 0) |
-                      (shiftPressed ? SHIFT_PRESSED : 0);
+    KeyEvent keyEv{ true, 0, vkey, 0, UNICODE_NULL, modifiers };
+
+    // AltGr key combinations don't always contain any meaningful,
+    // pretranslated unicode character during WM_KEYDOWN.
+    // E.g. on a German keyboard AltGr+Q should result in a "@" character,
+    // but actually results in "Q" with Alt and Ctrl modifier states.
+    // By returning false though, we can abort handling this WM_KEYDOWN
+    // event and let the WM_CHAR handler kick in, which will be
+    // provided with an appropriate unicode character.
+    if (keyEv.IsAltGrPressed())
+    {
+        return false;
+    }
+
+    const auto ctrlPressed = keyEv.IsCtrlPressed();
+    const auto altPressed = keyEv.IsAltPressed();
+    const auto shiftPressed = keyEv.IsShiftPressed();
 
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
@@ -250,9 +258,9 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         ch = UNICODE_SPACE;
     }
 
-    const bool manuallyHandled = ch != UNICODE_NULL;
+    keyEv.SetCharData(ch);
 
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers };
+    const bool manuallyHandled = ch != UNICODE_NULL;
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;

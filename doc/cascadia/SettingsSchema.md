@@ -39,6 +39,7 @@ Properties listed below are specific to each unique profile.
 | `foreground` | Optional | String | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `icon` | Optional | String | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
 | `scrollbarState` | Optional | String | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
+| `tabTitle` | Optional | String | Overrides default title of the tab. |
 
 ## Schemes
 Properties listed below are specific to each color scheme. [ColorTool](https://github.com/microsoft/terminal/tree/master/src/tools/ColorTool) is a great tool you can use to create and explore new color schemes. All colors use hex color format.
