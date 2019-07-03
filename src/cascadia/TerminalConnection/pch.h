@@ -7,6 +7,9 @@
 
 #pragma once
 
+#define WIN32_LEAN_AND_MEAN
+#define _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
+
 #include <LibraryIncludes.h>
 
 // Must be included before any WinRT headers.

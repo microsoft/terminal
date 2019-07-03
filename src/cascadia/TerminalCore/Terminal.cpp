@@ -347,6 +347,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 proposedCursorPosition.X--;
             }
         }
+        else if (wch == UNICODE_BEL)
+        {
+            // TODO: make the screen flash or make a sound
+            // For now its empty just so we don't try to write the BEL character
+        }
         else
         {
             // TODO: MSFT 21006766

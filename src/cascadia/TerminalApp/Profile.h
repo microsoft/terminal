@@ -46,6 +46,7 @@ public:
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
+    void SetCloseOnExit(bool defaultClose) noexcept;
 
     bool HasIcon() const noexcept;
     std::wstring_view GetIconPath() const noexcept;

@@ -96,3 +96,11 @@ bool TerminalDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     return _terminalApi.SetDefaultBackground(dwColor);
 }
+
+// Method Description:
+// - For now, this is a hacky backspace
+// - TODO: Handle the different erase modes, implement backspace properly
+bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType)
+{
+    return _terminalApi.EraseCharacters(1);
+}

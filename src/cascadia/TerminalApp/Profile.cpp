@@ -472,6 +472,11 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
+void Profile::SetCloseOnExit(bool defaultClose) noexcept
+{
+    _closeOnExit = defaultClose;
+}
+
 bool Profile::HasIcon() const noexcept
 {
     return _icon.has_value();

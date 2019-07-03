@@ -209,6 +209,14 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
+    auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
+    azureCloudShellProfile.SetCommandline(L"Azure");
+    azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+    azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
+    azureCloudShellProfile.SetAcrylicOpacity(0.6);
+    azureCloudShellProfile.SetUseAcrylic(true);
+    azureCloudShellProfile.SetCloseOnExit(false);
+
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
@@ -231,6 +239,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+    _profiles.emplace_back(azureCloudShellProfile);
     try
     {
         _AppendWslProfiles(_profiles);
