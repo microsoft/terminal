@@ -149,7 +149,7 @@ ActionAndArgs, ...>`.
 
 When we're parsing keybindings, we'll need to construct args for each of the
 events to go with each binding. When we find some key chord bound to a given
-Action, we'll construct the `IKeyBindingArgs` for that action. FOr many actions,
+Action, we'll construct the `IKeyBindingArgs` for that action. For many actions,
 these args will be an empty class. However, when we do find an action that needs
 additional parsing, `AppKeyBindingsSerialization` will do the extra work to
 parse the args for that action.
@@ -278,7 +278,7 @@ N/A
 ## Future considerations
 
 * Should we support some sort of conversion from num keys to an automatic arg?
-  For example, by default, <kbd>Alt</kbd>+<kbd>&gt;N&lt;</kbd> to focuses the
+  For example, by default, <kbd>Alt</kbd>+<kbd>&lt;N&gt;</kbd> to focuses the
   Nth tab. Currently, those are 8 separate entries in the keybindings. Should we
   enable some way for them be combined into a single binding entry, where the
   binding automatically recieves the number pressed as an arg? I couldn't find
