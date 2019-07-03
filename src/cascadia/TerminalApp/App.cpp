@@ -1036,6 +1036,14 @@ namespace winrt::TerminalApp::implementation
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
     }
 
+    // Method Description:
+    // - Attempt to move a separator between panes, as to resize each child on
+    //   either size of the separator. See Pane::ResizePane for details.
+    // - Moves a separator on the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the separator in.
+    // Return Value:
+    // - <none>
     void App::_ResizePane(const Direction& direction)
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();

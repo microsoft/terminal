@@ -1369,7 +1369,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     // Return Value:
     // - The dimensions of a single character of this control, in DIPs
-    winrt::Windows::Foundation::Size TermControl::CharacterDimensions()
+    winrt::Windows::Foundation::Size TermControl::CharacterDimensions() const
     {
         const auto fontSize = _actualFont.GetSize();
         return { gsl::narrow_cast<float>(fontSize.X), gsl::narrow_cast<float>(fontSize.Y) };
@@ -1384,11 +1384,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Return Value:
     // - The minimum size that this terminal control can be resized to and still
     //   have a visible character.
-    winrt::Windows::Foundation::Size TermControl::MinimumSize()
+    winrt::Windows::Foundation::Size TermControl::MinimumSize() const
     {
         const auto fontSize = _actualFont.GetSize();
-        float width = gsl::narrow<float>(fontSize.X);
-        float height = gsl::narrow<float>(fontSize.Y);
+        double width = fontSize.X;
+        double height = fontSize.Y;
         // Reserve additional space if scrollbar is intended to be visible
         if (_settings.ScrollState() == ScrollbarState::Visible)
         {
@@ -1400,7 +1400,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         width += thickness.Left + thickness.Right;
         height += thickness.Top + thickness.Bottom;
 
-        return { width, height };
+        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
     // Method Description:

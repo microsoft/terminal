@@ -44,8 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
-        Windows::Foundation::Size CharacterDimensions();
-        Windows::Foundation::Size MinimumSize();
+        Windows::Foundation::Size CharacterDimensions() const;
+        Windows::Foundation::Size MinimumSize() const;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
