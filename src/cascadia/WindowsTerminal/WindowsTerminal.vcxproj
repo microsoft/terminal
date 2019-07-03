@@ -90,16 +90,7 @@
       The reason why this is needed for ARM64 is unknown,
       If not added, the centenial package will fail to include the XamlHost dll.
     -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\Microsoft.Toolkit.Win32.UI.XamlHost.dll" Condition="'$(Platform)'=='ARM64'">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile>
-
-    <!--
-      The reason why this is needed for ARM64 is unknown,
-      If not added, the centenial package will fail to include the XamlHost dll.
-    -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\Microsoft.Toolkit.Win32.UI.XamlHost.dll" Condition="'$(Platform)'=='ARM64'">
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\Microsoft.Toolkit.Win32.UI.XamlHost.dll" Condition="'$(Platform)'=='ARM64'">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
