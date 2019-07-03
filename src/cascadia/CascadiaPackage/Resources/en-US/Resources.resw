@@ -150,4 +150,10 @@
   <data name="VersionLabelText" xml:space="preserve">
     <value>Version:</value>
   </data>
+  <data name="AppShortName" xml:space="preserve">
+    <value>Terminal</value>
+  </data>
+  <data name="AppShortNameDev" xml:space="preserve">
+    <value>Terminal (Dev)</value>
+  </data>
 </root>

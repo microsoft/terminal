@@ -6,9 +6,11 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "App.g.h"
+#include "App.base.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
 #include <winrt/Microsoft.UI.Xaml.Controls.Primitives.h>
@@ -18,18 +20,18 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    // We dont use AppT as it does not provide access to protected constructors
-    template<typename D, typename... I>
-    using AppT_Override = App_base<D, I...>;
-
-    struct App : AppT_Override<App>
+    struct App : AppT2<App>
     {
     public:
         App();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTabs() noexcept;
-        void Create();
+
+        // Gets the current dragglable area in the non client region of the top level window
+        Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
+
+        void Create(uint64_t hParentWnd);
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
@@ -44,8 +46,6 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
 
     private:
-        App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider);
-
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
         // activate the app.
@@ -57,6 +57,7 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
@@ -69,7 +70,9 @@ namespace winrt::TerminalApp::implementation
 
         wil::unique_folder_change_reader_nothrow _reader;
 
-        void _Create();
+        std::atomic<bool> _settingsReloadQueued{ false };
+
+        void _Create(uint64_t parentHWnd);
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
@@ -85,6 +88,7 @@ namespace winrt::TerminalApp::implementation
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
         void _RegisterSettingsChange();
+        fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();
 
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -109,9 +113,11 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(int delta);
         void _CopyText(const bool trimTrailingWhitespace);
+        void _PasteText();
         void _SplitVertical(const std::optional<GUID>& profileGuid);
         void _SplitHorizontal(const std::optional<GUID>& profileGuid);
         void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
+
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);

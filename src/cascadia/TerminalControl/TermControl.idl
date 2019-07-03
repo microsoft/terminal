@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.TerminalControl
     runtimeclass TermControl
     {
         TermControl();
-        TermControl(Microsoft.Terminal.Settings.IControlSettings settings);
+        TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
 
@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         String Title { get; };
         void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
         Boolean ShouldCloseOnExit { get; };
 

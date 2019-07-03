@@ -34,9 +34,6 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // This works because Kenny Kerr said it would, and he wrote cpp/winrt, so he knows.
     winrt::init_apartment(winrt::apartment_type::single_threaded);
 
-    // Initialize the Xaml Hosting Manager
-    auto manager = Windows::UI::Xaml::Hosting::WindowsXamlManager::InitializeForCurrentThread();
-
     // Initialize the xaml content. This must be called AFTER the
     // WindowsXamlManager is initalized.
     host.Initialize();

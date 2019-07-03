@@ -22,6 +22,7 @@ Author(s):
 #include "../../types/inc/Viewport.hpp"
 #include <dwmapi.h>
 #include <windowsx.h>
+#include <wil\resource.h>
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -29,37 +30,23 @@ public:
     NonClientIslandWindow() noexcept;
     virtual ~NonClientIslandWindow() override;
 
-    virtual void OnSize() override;
+    virtual void OnSize(const UINT width, const UINT height) override;
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
-    void SetNonClientContent(winrt::Windows::UI::Xaml::UIElement content);
-
-    virtual void Initialize() override;
-
     MARGINS GetFrameMargins() const noexcept;
 
-    void SetNonClientHeight(const int contentHeight) noexcept;
+    void OnAppInitialized(winrt::TerminalApp::App app) override;
 
 private:
-    winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _nonClientSource;
+    wil::unique_hbrush _backgroundBrush;
+    wil::unique_hrgn _dragBarRegion;
 
-    HWND _nonClientInteropWindowHandle;
-    winrt::Windows::UI::Xaml::Controls::Grid _nonClientRootGrid;
-
-    int _windowMarginBottom = 2;
-    int _windowMarginSides = 2;
-    int _titlebarMarginRight = 0;
-    int _titlebarMarginTop = 2;
-    int _titlebarMarginBottom = 0;
-
-    int _titlebarUnscaledContentHeight = 0;
-
-    ::Microsoft::Console::Types::Viewport GetTitlebarContentArea() const noexcept;
-    ::Microsoft::Console::Types::Viewport GetClientContentArea() const noexcept;
-
-    MARGINS _maximizedMargins;
+    MARGINS _maximizedMargins = { 0 };
     bool _isMaximized;
+    winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
+
+    RECT GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
 
@@ -67,6 +54,8 @@ private:
 
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
+
+    void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
     RECT GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested);
 };

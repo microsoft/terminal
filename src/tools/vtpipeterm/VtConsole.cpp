@@ -345,8 +345,12 @@ DWORD VtConsole::_OutputThread()
         bool fSuccess = false;
 
         fSuccess = !!ReadFile(this->outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        if (!fSuccess)
+        {
+            HRESULT hr = GetLastError();
+            exit(hr);
+        }
 
-        THROW_LAST_ERROR_IF(!fSuccess);
         if (this->_active)
         {
             _pfnReadCallback(buffer, dwRead);

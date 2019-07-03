@@ -5,6 +5,7 @@
   <ItemGroup>
     <ClCompile Include="ScreenSizeLimitsTest.cpp" />
     <ClCompile Include="SelectionTest.cpp" />
+    <ClCompile Include="InputTest.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

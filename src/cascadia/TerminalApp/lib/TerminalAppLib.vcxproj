@@ -22,14 +22,18 @@
     </ApplicationDefinition>
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
-  <!-- <ItemGroup>
-    <Page Include="MyUserControl.xaml">
+  <ItemGroup>
+    <Page Include="../MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-  </ItemGroup> -->
+  </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="../App.base.h" />
+    <ClInclude Include="../MinMaxCloseControl.h">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Pane.h" />
     <ClInclude Include="../ColorScheme.h" />
@@ -48,6 +52,9 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="../MinMaxCloseControl.cpp">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Pane.cpp" />
     <ClCompile Include="../ColorScheme.cpp" />
@@ -61,7 +68,9 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="../AppKeyBindings.cpp" />
+    <ClCompile Include="../AppKeyBindings.cpp" >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../App.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
@@ -82,6 +91,10 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../MinMaxCloseControl.idl">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->
@@ -97,7 +110,6 @@
       you also update all the consumers
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-    <ProjectReference Include="..\..\Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.vcxproj" />
 
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
@@ -130,6 +142,13 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
 
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
     <Reference Include="Microsoft.Terminal.TerminalControl">
       <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
@@ -137,12 +156,6 @@
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
 
-    <Reference Include="Microsoft.UI.Xaml.Markup">
-      <HintPath>$(_BinRoot)Microsoft.UI.Xaml.Markup\Microsoft.UI.Xaml.Markup.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
   </ItemGroup>
 
   <!-- ====================== Compiler & Linker Flags ===================== -->
@@ -189,9 +202,11 @@
   <PropertyGroup>
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\</_MUXRoot>
+    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\</_MUXRoot>
+    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\</_MUXAppRoot>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Microsoft.UI.XAML -->
     <Reference Include="$(_MUXRoot)lib\uap10.0\Microsoft.UI.Xaml.winmd">
       <Implementation>Microsoft.UI.Xaml.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
@@ -200,6 +215,16 @@
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
+
+    <!-- Microsoft.UI.XAML.Application -->
+    <Reference Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.winmd">
+      <Implementation>Microsoft.Toolkit.Win32.UI.XamlHost.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>false</Private>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
+    <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
   </ItemGroup>
   <!-- End MUX import -->
 
@@ -207,6 +232,7 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 </Project>

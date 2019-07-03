@@ -18,6 +18,7 @@ namespace ColorTool
         private static bool setDefaults = false;
         private static bool setProperties = true;
         private static bool setUnixStyle = false;
+        private static bool setTerminalStyle = false;
 
         public static void Main(string[] args)
         {
@@ -68,6 +69,11 @@ namespace ColorTool
                     case "-x":
                     case "--xterm":
                         setUnixStyle = true;
+                        setProperties = true;
+                        break;
+                    case "-t":
+                    case "--terminal":
+                        setTerminalStyle = true;
                         setProperties = true;
                         break;
                     case "-o":
@@ -139,6 +145,10 @@ namespace ColorTool
                 if (setUnixStyle)
                 {
                     yield return new VirtualTerminalConsoleTarget();
+                }
+                else if (setTerminalStyle)
+                {
+                    yield return new TerminalSchemeConsoleTarget();
                 }
                 else
                 {

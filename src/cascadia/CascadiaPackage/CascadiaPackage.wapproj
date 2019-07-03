@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
-
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
-    <VersionMinor>1</VersionMinor>
+    <VersionMinor>2</VersionMinor>
   </PropertyGroup>
-
   <PropertyGroup Label="Configuration">
-    <TargetPlatformVersion>10.0.17763.0</TargetPlatformVersion>
-    <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
+    <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
+    <TargetPlatformMinVersion>10.0.18362.0</TargetPlatformMinVersion>
     <!--
     These two properties are very important!
     Without them, msbuild will stomp MinVersion and MaxVersionTested in the
@@ -22,27 +19,22 @@
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
     <EntryPointProjectUniqueName>..\WindowsTerminal\WindowsTerminal.vcxproj</EntryPointProjectUniqueName>
   </PropertyGroup>
-
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
     <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
-
   <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
     <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <PackageCertificateKeyFile>CascadiaPackage_TemporaryKey.pfx</PackageCertificateKeyFile>
   </PropertyGroup>
-
   <ItemGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
-
   <ItemGroup>
     <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
       <SubType>Designer</SubType>
@@ -51,54 +43,211 @@
       <SubType>Designer</SubType>
     </AppxManifest>
   </ItemGroup>
-
   <ItemGroup>
-    <Content Include="Images\LargeTile.scale-100.png" />
-    <Content Include="Images\LargeTile.scale-125.png" />
-    <Content Include="Images\LargeTile.scale-150.png" />
-    <Content Include="Images\LargeTile.scale-200.png" />
-    <Content Include="Images\LargeTile.scale-400.png" />
-    <Content Include="Images\LockScreenLogo.scale-200.png" />
-    <Content Include="Images\SmallTile.scale-100.png" />
-    <Content Include="Images\SmallTile.scale-125.png" />
-    <Content Include="Images\SmallTile.scale-150.png" />
-    <Content Include="Images\SmallTile.scale-200.png" />
-    <Content Include="Images\SmallTile.scale-400.png" />
-    <Content Include="Images\SplashScreen.scale-100.png" />
-    <Content Include="Images\SplashScreen.scale-125.png" />
-    <Content Include="Images\SplashScreen.scale-150.png" />
-    <Content Include="Images\SplashScreen.scale-200.png" />
-    <Content Include="Images\SplashScreen.scale-400.png" />
-    <Content Include="Images\Square150x150Logo.scale-100.png" />
-    <Content Include="Images\Square150x150Logo.scale-125.png" />
-    <Content Include="Images\Square150x150Logo.scale-150.png" />
-    <Content Include="Images\Square150x150Logo.scale-200.png" />
-    <Content Include="Images\Square150x150Logo.scale-400.png" />
-    <Content Include="Images\Square44x44Logo.altform-unplated_targetsize-16.png" />
-    <Content Include="Images\Square44x44Logo.altform-unplated_targetsize-256.png" />
-    <Content Include="Images\Square44x44Logo.altform-unplated_targetsize-32.png" />
-    <Content Include="Images\Square44x44Logo.altform-unplated_targetsize-48.png" />
-    <Content Include="Images\Square44x44Logo.scale-100.png" />
-    <Content Include="Images\Square44x44Logo.scale-125.png" />
-    <Content Include="Images\Square44x44Logo.scale-150.png" />
-    <Content Include="Images\Square44x44Logo.scale-200.png" />
-    <Content Include="Images\Square44x44Logo.scale-400.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-16.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-24.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-256.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-32.png" />
-    <Content Include="Images\Square44x44Logo.targetsize-48.png" />
-    <Content Include="Images\StoreLogo.scale-100.png" />
-    <Content Include="Images\StoreLogo.scale-125.png" />
-    <Content Include="Images\StoreLogo.scale-150.png" />
-    <Content Include="Images\StoreLogo.scale-200.png" />
-    <Content Include="Images\StoreLogo.scale-400.png" />
-    <Content Include="Images\Wide310x150Logo.scale-100.png" />
-    <Content Include="Images\Wide310x150Logo.scale-125.png" />
-    <Content Include="Images\Wide310x150Logo.scale-150.png" />
-    <Content Include="Images\Wide310x150Logo.scale-200.png" />
-    <Content Include="Images\Wide310x150Logo.scale-400.png" />
+    <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-100.png">
+      <Link>Images\LargeTile.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-125.png">
+      <Link>Images\LargeTile.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-150.png">
+      <Link>Images\LargeTile.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-200.png">
+      <Link>Images\LargeTile.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LargeTile.scale-400.png">
+      <Link>Images\LargeTile.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LockScreenLogo.scale-100.png">
+      <Link>Images\LockScreenLogo.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LockScreenLogo.scale-125.png">
+      <Link>Images\LockScreenLogo.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LockScreenLogo.scale-150.png">
+      <Link>Images\LockScreenLogo.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LockScreenLogo.scale-200.png">
+      <Link>Images\LockScreenLogo.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\LockScreenLogo.scale-400.png">
+      <Link>Images\LockScreenLogo.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SmallTile.scale-100.png">
+      <Link>Images\SmallTile.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SmallTile.scale-125.png">
+      <Link>Images\SmallTile.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SmallTile.scale-150.png">
+      <Link>Images\SmallTile.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SmallTile.scale-200.png">
+      <Link>Images\SmallTile.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SmallTile.scale-400.png">
+      <Link>Images\SmallTile.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SplashScreen.scale-100.png">
+      <Link>Images\SplashScreen.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SplashScreen.scale-125.png">
+      <Link>Images\SplashScreen.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SplashScreen.scale-150.png">
+      <Link>Images\SplashScreen.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SplashScreen.scale-200.png">
+      <Link>Images\SplashScreen.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\SplashScreen.scale-400.png">
+      <Link>Images\SplashScreen.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square150x150Logo.scale-100.png">
+      <Link>Images\Square150x150Logo.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square150x150Logo.scale-125.png">
+      <Link>Images\Square150x150Logo.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square150x150Logo.scale-150.png">
+      <Link>Images\Square150x150Logo.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square150x150Logo.scale-200.png">
+      <Link>Images\Square150x150Logo.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square150x150Logo.scale-400.png">
+      <Link>Images\Square150x150Logo.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.scale-100.png">
+      <Link>Images\Square44x44Logo.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.scale-125.png">
+      <Link>Images\Square44x44Logo.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.scale-150.png">
+      <Link>Images\Square44x44Logo.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.scale-200.png">
+      <Link>Images\Square44x44Logo.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.scale-400.png">
+      <Link>Images\Square44x44Logo.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-16.png">
+      <Link>Images\Square44x44Logo.targetsize-16.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-16_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-16_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-20.png">
+      <Link>Images\Square44x44Logo.targetsize-20.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-20_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-20_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-24.png">
+      <Link>Images\Square44x44Logo.targetsize-24.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-24_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-24_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-256.png">
+      <Link>Images\Square44x44Logo.targetsize-256.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-256_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-256_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-30.png">
+      <Link>Images\Square44x44Logo.targetsize-30.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-30_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-30_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-32.png">
+      <Link>Images\Square44x44Logo.targetsize-32.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-32_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-32_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-36.png">
+      <Link>Images\Square44x44Logo.targetsize-36.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-36_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-36_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-40.png">
+      <Link>Images\Square44x44Logo.targetsize-40.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-40_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-40_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-48.png">
+      <Link>Images\Square44x44Logo.targetsize-48.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-48_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-48_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-60.png">
+      <Link>Images\Square44x44Logo.targetsize-60.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-60_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-60_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-64.png">
+      <Link>Images\Square44x44Logo.targetsize-64.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-64_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-64_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-72.png">
+      <Link>Images\Square44x44Logo.targetsize-72.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-72_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-72_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-80.png">
+      <Link>Images\Square44x44Logo.targetsize-80.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-80_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-80_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-96.png">
+      <Link>Images\Square44x44Logo.targetsize-96.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Square44x44Logo.targetsize-96_altform-unplated.png">
+      <Link>Images\Square44x44Logo.targetsize-96_altform-unplated.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\StoreLogo.scale-100.png">
+      <Link>Images\StoreLogo.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\StoreLogo.scale-125.png">
+      <Link>Images\StoreLogo.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\StoreLogo.scale-150.png">
+      <Link>Images\StoreLogo.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\StoreLogo.scale-200.png">
+      <Link>Images\StoreLogo.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\StoreLogo.scale-400.png">
+      <Link>Images\StoreLogo.scale-400.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-100.png">
+      <Link>Images\Wide310x150Logo.scale-100.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-125.png">
+      <Link>Images\Wide310x150Logo.scale-125.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-150.png">
+      <Link>Images\Wide310x150Logo.scale-150.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-200.png">
+      <Link>Images\Wide310x150Logo.scale-200.png</Link>
+    </Content>
+    <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-400.png">
+      <Link>Images\Wide310x150Logo.scale-400.png</Link>
+    </Content>
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png" />
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png" />
     <Content Include="ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-100.png" />
@@ -109,9 +258,7 @@
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
-
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-
   <!--
     This exists to work around Microsoft/microsoft-ui-xaml#494.
     https://github.com/Microsoft/microsoft-ui-xaml/issues/494
@@ -123,12 +270,12 @@
     This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
     here.
   -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.1.190405001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
   <PropertyGroup>
     <WapProjBeforeGenerateAppxManifestDependsOn>
@@ -142,29 +289,25 @@
     </ItemGroup>
   </Target>
   <!-- End workaround -->
-
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
   </ItemGroup>
-
   <!-- Stomp the path to conhost.exe.
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
     adjacent to WindowsTerminal.exe.
    -->
-  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
-    <ItemGroup>
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+    <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
-      <_TemporaryFilteredWapProjOutput
-        Include="@(_FilteredNonWapProjProjectOutput)" />
-      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
-      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
+      <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
+      <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
+      <_FilteredNonWapProjProjectOutput Include="@(_TemporaryFilteredWapProjOutput)">
         <!-- Override the filename for OpenConsole.exe (only) -->
         <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
-        <!-- Blank the SourceProject here to vend all files into the root of the pacakge. -->
-        <SourceProject></SourceProject>
-      </_FilteredNonWapProjProjectOutput>
-    </ItemGroup>
-  </Target>
-
+        <!-- Blank the SourceProject here to vend all files into the root of the package. -->
+        <SourceProject></SourceProject>
+      </_FilteredNonWapProjProjectOutput>
+    </ItemGroup>
+  </Target>
 </Project>
