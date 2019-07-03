@@ -37,7 +37,7 @@ CascadiaSettings::~CascadiaSettings()
 ColorScheme _CreateCampbellScheme()
 {
     ColorScheme campbellScheme{ L"Campbell",
-                                RGB(242, 242, 242),
+                                RGB(204, 204, 204),
                                 RGB(12, 12, 12) };
     auto& campbellTable = campbellScheme.GetTable();
     auto campbellSpan = gsl::span<COLORREF>(&campbellTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
@@ -113,12 +113,12 @@ ColorScheme _CreateOneHalfLightScheme()
 ColorScheme _CreateSolarizedDarkScheme()
 {
     ColorScheme solarizedDarkScheme { L"Solarized Dark",
-                                      RGB(253, 246, 227),
-                                      RGB(  7, 54,  66) };
+                                      RGB(131, 148, 150),
+                                      RGB(  0,  43,  54) };
     auto& solarizedDarkTable = solarizedDarkScheme.GetTable();
     auto solarizedDarkSpan = gsl::span<COLORREF>(&solarizedDarkTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedDarkTable[0]  = RGB(  7, 54, 66);
-    solarizedDarkTable[1]  = RGB(211, 1, 2);
+    solarizedDarkTable[1]  = RGB(220, 50, 47);
     solarizedDarkTable[2]  = RGB(133, 153, 0);
     solarizedDarkTable[3]  = RGB(181, 137, 0);
     solarizedDarkTable[4]  = RGB( 38, 139, 210);
@@ -141,12 +141,12 @@ ColorScheme _CreateSolarizedDarkScheme()
 ColorScheme _CreateSolarizedLightScheme()
 {
     ColorScheme solarizedLightScheme { L"Solarized Light",
-                                       RGB(  7, 54,  66),
+                                       RGB(101, 123, 131),
                                        RGB(253, 246, 227) };
     auto& solarizedLightTable = solarizedLightScheme.GetTable();
     auto solarizedLightSpan = gsl::span<COLORREF>(&solarizedLightTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
     solarizedLightTable[0]  = RGB(  7, 54, 66);
-    solarizedLightTable[1]  = RGB(211, 1, 2);
+    solarizedLightTable[1]  = RGB(220, 50, 47);
     solarizedLightTable[2]  = RGB(133, 153, 0);
     solarizedLightTable[3]  = RGB(181, 137, 0);
     solarizedLightTable[4]  = RGB( 38, 139, 210);
@@ -253,10 +253,22 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
                               KeyChord{ KeyModifiers::Ctrl,
                                         static_cast<int>('T') });
+    keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('D') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
                               KeyChord{ KeyModifiers::Ctrl,
                                         static_cast<int>('W') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::CopyText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('C') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::PasteText,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>('V') });
+
     keyBindings.SetKeyBinding(ShortcutAction::OpenSettings,
                               KeyChord{ KeyModifiers::Ctrl,
                                         VK_OEM_COMMA });

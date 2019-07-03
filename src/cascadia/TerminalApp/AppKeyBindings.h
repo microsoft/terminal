@@ -43,6 +43,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
         DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
         DECLARE_EVENT(NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+        DECLARE_EVENT(DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
         DECLARE_EVENT(NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
         DECLARE_EVENT(NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
         DECLARE_EVENT(CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);

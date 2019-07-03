@@ -65,6 +65,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         }
         resultPtr = FromJson(root);
 
+        if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
+        {
+            throw winrt::hresult_invalid_argument();
+        }
+
         if (saveOnLoad)
         {
             // Logically compare the json we've parsed from the file to what
@@ -236,7 +241,7 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 {
     auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
 
-    auto hOut = CreateFileW(pathToSettingsFile.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    auto hOut = CreateFileW(pathToSettingsFile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         THROW_LAST_ERROR();
@@ -257,7 +262,7 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 std::optional<std::string> CascadiaSettings::_ReadSettings()
 {
     auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
-    const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (hFile == INVALID_HANDLE_VALUE)
     {
         // If the file doesn't exist, that's fine. Just log the error and return

@@ -14,6 +14,7 @@ Author:
 #pragma once
 
 #include "convert.hpp"
+#include <functional>
 
 static_assert(sizeof(unsigned int) == sizeof(wchar_t) * 2,
               "UnicodeRange expects to be able to store a unicode codepoint in an unsigned int");

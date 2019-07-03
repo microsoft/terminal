@@ -15,6 +15,7 @@ using namespace winrt::Windows::System;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
 // Note: Generate GUID using TlgGuid.exe tool
@@ -34,12 +35,6 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
-        App(winrt::TerminalApp::XamlMetaDataProvider())
-    {
-    }
-
-    App::App(Windows::UI::Xaml::Markup::IXamlMetadataProvider const& parentProvider) :
-        base_type(parentProvider),
         _settings{},
         _tabs{},
         _loadedInitialSettings{ false },
@@ -51,6 +46,9 @@ namespace winrt::TerminalApp::implementation
         // then it might look like App just failed to activate, which will
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
+
+        // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
+        Initialize();
     }
 
     // Method Description:
@@ -62,13 +60,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create()
+    void App::Create(uint64_t hWnd)
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create();
+        _Create(hWnd);
     }
 
     App::~App()
@@ -82,7 +80,7 @@ namespace winrt::TerminalApp::implementation
     //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    void App::_Create()
+    void App::_Create(uint64_t parentHwnd)
     {
         _tabView = MUX::Controls::TabView{};
 
@@ -101,7 +99,6 @@ namespace winrt::TerminalApp::implementation
         // another for the settings button.
         auto tabsColDef = Controls::ColumnDefinition();
         auto newTabBtnColDef = Controls::ColumnDefinition();
-
         newTabBtnColDef.Width(GridLengthHelper::Auto());
 
         _tabRow.ColumnDefinitions().Append(tabsColDef);
@@ -114,11 +111,10 @@ namespace winrt::TerminalApp::implementation
         _root.RowDefinitions().Append(tabBarRowDef);
         _root.RowDefinitions().Append(Controls::RowDefinition{});
 
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar() == false)
-        {
-            _root.Children().Append(_tabRow);
-            Controls::Grid::SetRow(_tabRow, 0);
-        }
+        _root.Children().Append(_tabRow);
+
+        Controls::Grid::SetRow(_tabRow, 0);
+
         _root.Children().Append(_tabContent);
         Controls::Grid::SetRow(_tabContent, 1);
         Controls::Grid::SetColumn(_tabView, 0);
@@ -142,7 +138,20 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFlyout();
 
         _tabRow.Children().Append(_tabView);
-        _tabRow.Children().Append(_newTabButton);
+
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
+            Controls::Grid::SetRow(_minMaxCloseControl, 0);
+            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
+            _minMaxCloseControl.Content().Children().Append(_newTabButton);
+
+            _tabRow.Children().Append(_minMaxCloseControl);
+        }
+        else
+        {
+            _tabRow.Children().Append(_newTabButton);
+        }
 
         _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
         _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
@@ -259,7 +268,11 @@ namespace winrt::TerminalApp::implementation
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
-        _ShowDialog(winrt::box_value(title), winrt::box_value(aboutText), buttonText);
+        Controls::TextBlock aboutTextBlock;
+        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.IsTextSelectionEnabled(true);
+
+        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
     }
 
     // Method Description:
@@ -459,6 +472,16 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
     }
 
+    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
+    {
+        if (_minMaxCloseControl)
+        {
+            return _minMaxCloseControl.DragBar();
+        }
+
+        return nullptr;
+    }
+
     // Method Description:
     // - Called when the about button is clicked. See _ShowAboutDialog for more info.
     // Arguments:
@@ -484,6 +507,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
@@ -497,6 +521,8 @@ namespace winrt::TerminalApp::implementation
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
         bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
+        bindings.PasteText([this]() { _PasteText(); });
     }
 
     // Method Description:
@@ -598,9 +624,24 @@ namespace winrt::TerminalApp::implementation
 
                            if (settingsBasename == modifiedBasename)
                            {
-                               this->_ReloadSettings();
+                               this->_DispatchReloadSettings();
                            }
                        });
+    }
+
+    // Method Description:
+    // - Dispatches a settings reload with debounce.
+    //   Text editors implement Save in a bunch of different ways, so
+    //   this stops us from reloading too many times or too quickly.
+    fire_and_forget App::_DispatchReloadSettings()
+    {
+        static constexpr auto FileActivityQuiesceTime{ std::chrono::milliseconds(50) };
+        if (!_settingsReloadQueued.exchange(true))
+        {
+            co_await winrt::resume_after(FileActivityQuiesceTime);
+            _ReloadSettings();
+            _settingsReloadQueued.store(false);
+        }
     }
 
     // Method Description:
@@ -651,6 +692,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& tab : _tabs)
         {
             _UpdateTabIcon(tab);
+            _UpdateTitle(tab);
         }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
@@ -696,14 +738,21 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
+        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
-        // TODO #608: If the settings don't want the terminal's text in the
-        // tab, then display something else.
-        tab->SetTabText(newTabTitle);
+        const auto tabTitle = matchingProfile->GetTabTitle();
+
+        // Checks if tab title has been set in the profile settings and
+        // updates accordingly.
+
+        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
-            _titleChangeHandlers(newTabTitle);
+            _titleChangeHandlers(newActualTitle);
         }
     }
 
@@ -887,18 +936,22 @@ namespace winrt::TerminalApp::implementation
     void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
         // Initialize the new tab
-        TermControl term{ settings };
+
+        // Create a Conhost connection based on the values in our settings object.
+        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+
+        TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+
+        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
@@ -998,6 +1051,14 @@ namespace winrt::TerminalApp::implementation
     {
         const auto control = _GetFocusedControl();
         control.CopySelectionToClipboard(trimTrailingWhitespace);
+    }
+
+    // Method Description:
+    // - Paste text from the Windows Clipboard to the focused terminal
+    void App::_PasteText()
+    {
+        const auto control = _GetFocusedControl();
+        control.PasteTextFromClipboard();
     }
 
     // Method Description:
@@ -1126,6 +1187,19 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Duplicates the current focused tab
+    void App::_DuplicateTabViewItem()
+    {
+        const int& focusedTabIndex = _GetFocusedTabIndex();
+        const auto& _tab = _tabs.at(focusedTabIndex);
+
+        const auto& profileGuid = _tab->GetFocusedProfile();
+        const auto& settings = _settings->MakeSettings(profileGuid);
+
+        _CreateNewTabFromSettings(profileGuid.value(), settings);
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML)
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
@@ -1241,7 +1315,11 @@ namespace winrt::TerminalApp::implementation
         const auto realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
-        TermControl newControl{ controlSettings };
+
+        // Create a Conhost connection based on the values in our settings object.
+        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+
+        TermControl newControl{ controlSettings, controlConnection };
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];

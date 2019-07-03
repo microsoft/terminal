@@ -21,6 +21,7 @@ static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
+static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -71,6 +72,7 @@ Profile::Profile(const winrt::guid& guid) :
     _defaultForeground{},
     _defaultBackground{},
     _colorTable{},
+    _tabTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -271,6 +273,11 @@ Json::Value Profile::ToJson() const
         root[JsonKey(IconKey)] = icon;
     }
 
+    if (_tabTitle)
+    {
+        root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
+    }
+
     if (_startingDirectory)
     {
         root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
@@ -368,6 +375,10 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+    }
+    if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
+    {
+        result._tabTitle = GetWstringFromJson(tabTitle);
     }
 
     // Control Settings
@@ -477,6 +488,15 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value();
 }
 
+// Method Description
+// - Sets this profile's tab title.
+// Arguments:
+// - tabTitle: the tab title
+void Profile::SetTabTitle(std::wstring tabTitle) noexcept
+{
+    _tabTitle = tabTitle;
+}
+
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
@@ -506,6 +526,26 @@ std::wstring_view Profile::GetIconPath() const noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+// Method Description:
+// - Returns true if profile's custom tab title is set, if one is set. Otherwise returns false.
+// Return Value:
+// - true if this profile's custom tab title is set. Otherwise returns false.
+bool Profile::HasTabTitle() const noexcept
+{
+    return _tabTitle.has_value();
+}
+
+// Method Description:
+// - Returns the custom tab title, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's custom tab title, if one is set. Otherwise returns the empty string.
+std::wstring_view Profile::GetTabTitle() const noexcept
+{
+    return HasTabTitle() ?
+               std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
+               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::GetCloseOnExit() const noexcept
