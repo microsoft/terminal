@@ -80,11 +80,13 @@
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\vcpkg-export-20190703-140101.1.0.0\build\native\vcpkg-export-20190703-140101.targets" Condition="Exists('..\..\..\packages\vcpkg-export-20190703-140101.1.0.0\build\native\vcpkg-export-20190703-140101.targets')" />
+  <Import Project="..\..\..\packages\vcpkg-export-20190703-153703.1.0.0\build\native\vcpkg-export-20190703-153703.targets" Condition="Exists('..\..\..\packages\vcpkg-export-20190703-153703.1.0.0\build\native\vcpkg-export-20190703-153703.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\vcpkg-export-20190703-140101.1.0.0\build\native\vcpkg-export-20190703-140101.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-export-20190703-140101.1.0.0\build\native\vcpkg-export-20190703-140101.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\vcpkg-export-20190703-153703.1.0.0\build\native\vcpkg-export-20190703-153703.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-export-20190703-153703.1.0.0\build\native\vcpkg-export-20190703-153703.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\vcpkg-export-20190703-153928.1.0.0\build\native\vcpkg-export-20190703-153928.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-export-20190703-153928.1.0.0\build\native\vcpkg-export-20190703-153928.targets'))" />
   </Target>
+  <Import Project="..\..\..\packages\vcpkg-export-20190703-153928.1.0.0\build\native\vcpkg-export-20190703-153928.targets" Condition="Exists('..\..\..\packages\vcpkg-export-20190703-153928.1.0.0\build\native\vcpkg-export-20190703-153928.targets')" />
 </Project>
