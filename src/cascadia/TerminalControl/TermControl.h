@@ -140,7 +140,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
-        DWORD _GetPressedModifierKeys() const;
+        ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };
