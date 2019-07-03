@@ -505,6 +505,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
@@ -688,6 +689,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& tab : _tabs)
         {
             _UpdateTabIcon(tab);
+            _UpdateTitle(tab);
         }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
@@ -733,14 +735,21 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
+        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
-        // TODO #608: If the settings don't want the terminal's text in the
-        // tab, then display something else.
-        tab->SetTabText(newTabTitle);
+        const auto tabTitle = matchingProfile->GetTabTitle();
+
+        // Checks if tab title has been set in the profile settings and
+        // updates accordingly.
+
+        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
-            _titleChangeHandlers(newTabTitle);
+            _titleChangeHandlers(newActualTitle);
         }
     }
 
@@ -933,13 +942,13 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
@@ -1166,6 +1175,19 @@ namespace winrt::TerminalApp::implementation
             _RemoveTabViewItem(sender);
             eventArgs.Handled(true);
         }
+    }
+
+    // Method Description:
+    // - Duplicates the current focused tab
+    void App::_DuplicateTabViewItem()
+    {
+        const int& focusedTabIndex = _GetFocusedTabIndex();
+        const auto& _tab = _tabs.at(focusedTabIndex);
+
+        const auto& profileGuid = _tab->GetFocusedProfile();
+        const auto& settings = _settings->MakeSettings(profileGuid);
+
+        _CreateNewTabFromSettings(profileGuid.value(), settings);
     }
 
     // Method Description:

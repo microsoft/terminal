@@ -107,6 +107,7 @@ class ScreenBufferTests
 
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
+    TEST_METHOD(VtResizeDECCOLM);
 
     TEST_METHOD(VtSoftResetCursorPosition);
 
@@ -162,6 +163,8 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollUpInMargins);
     TEST_METHOD(ScrollDownInMargins);
+
+    TEST_METHOD(SetOriginMode);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -972,6 +975,137 @@ void ScreenBufferTests::VtResizeComprehensive()
     VERIFY_ARE_EQUAL(expectedViewHeight, newViewHeight);
 }
 
+void ScreenBufferTests::VtResizeDECCOLM()
+{
+    // Run this test in isolation - for one reason or another, this breaks other tests.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto setInitialMargins = L"\x1b[5;15r";
+    const auto setInitialCursor = L"\x1b[10;40HABCDEF";
+    const auto allowDECCOLM = L"\x1b[?40h";
+    const auto disallowDECCOLM = L"\x1b[?40l";
+    const auto setDECCOLM = L"\x1b[?3h";
+    const auto resetDECCOLM = L"\x1b[?3l";
+
+    auto getRelativeCursorPosition = [&]() {
+        return si.GetTextBuffer().GetCursor().GetPosition() - si.GetViewport().Origin();
+    };
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+    auto initialMargins = si.GetRelativeScrollMargins();
+    auto initialCursorPosition = getRelativeCursorPosition();
+
+    auto initialSbHeight = si.GetBufferSize().Height();
+    auto initialSbWidth = si.GetBufferSize().Width();
+    auto initialViewHeight = si.GetViewport().Height();
+    auto initialViewWidth = si.GetViewport().Width();
+
+    Log::Comment(L"By default, setting DECCOLM should have no effect");
+    stateMachine.ProcessString(setDECCOLM);
+
+    auto newSbHeight = si.GetBufferSize().Height();
+    auto newSbWidth = si.GetBufferSize().Width();
+    auto newViewHeight = si.GetViewport().Height();
+    auto newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
+    VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(
+        L"Once DECCOLM is allowed, setting it "
+        L"should change the width to 132 columns "
+        L"and reset the margins and cursor position");
+    stateMachine.ProcessString(allowDECCOLM);
+    stateMachine.ProcessString(setDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(132, newSbWidth);
+    VERIFY_ARE_EQUAL(132, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+    initialMargins = si.GetRelativeScrollMargins();
+    initialCursorPosition = getRelativeCursorPosition();
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(L"If DECCOLM is disallowed, resetting it should have no effect");
+    stateMachine.ProcessString(disallowDECCOLM);
+    stateMachine.ProcessString(resetDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_TRUE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(initialMargins, si.GetRelativeScrollMargins());
+    VERIFY_ARE_EQUAL(initialCursorPosition, getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(initialSbWidth, newSbWidth);
+    VERIFY_ARE_EQUAL(initialViewWidth, newViewWidth);
+
+    stateMachine.ProcessString(setInitialMargins);
+    stateMachine.ProcessString(setInitialCursor);
+
+    initialSbHeight = newSbHeight;
+    initialSbWidth = newSbWidth;
+    initialViewHeight = newViewHeight;
+    initialViewWidth = newViewWidth;
+
+    Log::Comment(
+        L"Once DECCOLM is allowed again, resetting it "
+        L"should change the width to 80 columns "
+        L"and reset the margins and cursor position");
+    stateMachine.ProcessString(allowDECCOLM);
+    stateMachine.ProcessString(resetDECCOLM);
+
+    newSbHeight = si.GetBufferSize().Height();
+    newSbWidth = si.GetBufferSize().Width();
+    newViewHeight = si.GetViewport().Height();
+    newViewWidth = si.GetViewport().Width();
+
+    VERIFY_IS_FALSE(si.AreMarginsSet());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), getRelativeCursorPosition());
+    VERIFY_ARE_EQUAL(initialSbHeight, newSbHeight);
+    VERIFY_ARE_EQUAL(initialViewHeight, newViewHeight);
+    VERIFY_ARE_EQUAL(80, newSbWidth);
+    VERIFY_ARE_EQUAL(80, newViewWidth);
+}
+
 void ScreenBufferTests::VtSoftResetCursorPosition()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -1010,6 +1144,22 @@ void ScreenBufferTests::VtSoftResetCursorPosition()
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
     seq = L"\x1b[!p";
     stateMachine.ProcessString(&seq[0], seq.length());
+    VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
+
+    Log::Comment(
+        L"Set the origin mode, some margins, and move the cursor to 2,2.\n"
+        L"The position should be relative to the top-left of the margin area.");
+    stateMachine.ProcessString(L"\x1b[?6h");
+    stateMachine.ProcessString(L"\x1b[5;10r");
+    stateMachine.ProcessString(L"\x1b[2;2H");
+    VERIFY_ARE_EQUAL(COORD({ 1, 5 }), cursor.GetPosition());
+
+    Log::Comment(
+        L"Execute a soft reset, reapply the margins, and move the cursor to 2,2.\n"
+        L"The position should now be relative to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1b[!p");
+    stateMachine.ProcessString(L"\x1b[5;10r");
+    stateMachine.ProcessString(L"\x1b[2;2H");
     VERIFY_ARE_EQUAL(COORD({ 1, 1 }), cursor.GetPosition());
 }
 
@@ -3068,4 +3218,72 @@ void ScreenBufferTests::ScrollDownInMargins()
         VERIFY_ARE_EQUAL(L"7", iter4->Chars());
         VERIFY_ARE_EQUAL(L"B", iter5->Chars());
     }
+}
+
+void ScreenBufferTests::SetOriginMode()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    const auto view = Viewport::FromDimensions({ 0, 0 }, { 80, 25 });
+    si.SetViewport(view, true);
+
+    // Testing the default state (absolute cursor addressing)
+    Log::Comment(L"By default, setting a margin moves the cursor to the top-left of the screen.");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[6;20r");
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    Log::Comment(L"Cursor addressing is relative to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1B[13;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 12 }), cursor.GetPosition());
+    Log::Comment(L"The cursor can be moved below the bottom margin.");
+    stateMachine.ProcessString(L"\x1B[23;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 22 }), cursor.GetPosition());
+
+    // Testing the effects of DECOM being set (relative cursor addressing)
+    Log::Comment(L"Setting DECOM moves the cursor to the top-left of the margin area.");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[?6h");
+    VERIFY_ARE_EQUAL(COORD({ 0, 5 }), cursor.GetPosition());
+    Log::Comment(L"Setting a margin moves the cursor to the top-left of the margin area.");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[6;20r");
+    VERIFY_ARE_EQUAL(COORD({ 0, 5 }), cursor.GetPosition());
+    Log::Comment(L"Cursor addressing is relative to the top-left of the margin area.");
+    stateMachine.ProcessString(L"\x1B[8;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 12 }), cursor.GetPosition());
+    Log::Comment(L"The cursor cannot be moved below the bottom margin.");
+    stateMachine.ProcessString(L"\x1B[100;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 19 }), cursor.GetPosition());
+
+    // Testing the effects of DECOM being reset (absolute cursor addressing)
+    Log::Comment(L"Resetting DECOM moves the cursor to the top-left of the screen.");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[?6l");
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    Log::Comment(L"Setting a margin moves the cursor to the top-left of the screen.");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[6;20r");
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    Log::Comment(L"Cursor addressing is relative to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1B[13;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 12 }), cursor.GetPosition());
+    Log::Comment(L"The cursor can be moved below the bottom margin.");
+    stateMachine.ProcessString(L"\x1B[23;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 22 }), cursor.GetPosition());
+
+    // Testing the effects of DECOM being set with no margins
+    Log::Comment(L"With no margins, setting DECOM moves the cursor to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1B[r");
+    cursor.SetPosition({ 40, 12 });
+    stateMachine.ProcessString(L"\x1B[?6h");
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    Log::Comment(L"Cursor addressing is still relative to the top-left of the screen.");
+    stateMachine.ProcessString(L"\x1B[13;41H");
+    VERIFY_ARE_EQUAL(COORD({ 40, 12 }), cursor.GetPosition());
+
+    // Reset DECOM so we don't affect future tests
+    stateMachine.ProcessString(L"\x1B[?6l");
 }
