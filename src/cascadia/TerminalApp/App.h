@@ -39,6 +39,7 @@ namespace winrt::TerminalApp::implementation
 
         ~App();
 
+        hstring GetPackageVersion();
         hstring GetTitle();
 
         // -------------------------------- WinRT Events ---------------------------------

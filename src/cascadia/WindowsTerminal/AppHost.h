@@ -17,6 +17,7 @@ public:
     void AppTitleChanged(winrt::hstring newTitle);
     void LastTabClosed();
     void Initialize();
+    winrt::hstring GetPackageVersion();
 
 private:
     bool _useNonClientArea;

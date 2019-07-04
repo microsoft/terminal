@@ -5,6 +5,7 @@
 #include "AppHost.h"
 
 using namespace winrt;
+using namespace Windows::ApplicationModel;
 using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 using namespace Windows::UI::Xaml::Hosting;
@@ -19,6 +20,12 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
+
+    // Create TERM_PROGRAM / TERM_PROGRAM_VERSION environment variables so that each conhost process inherits it.
+    // Shells, shell scripts and console applications can use this information about the hosting environment to
+    // determine how to configure their console environment.
+    SetEnvironmentVariable(L"TERM_PROGRAM", L"WindowsTerminal");
+    SetEnvironmentVariable(L"TERM_PROGRAM_VERSION", host.GetPackageVersion().c_str());
 
     // !!! LOAD BEARING !!!
     // This is _magic_. Do the initial loading of our settings *BEFORE* we

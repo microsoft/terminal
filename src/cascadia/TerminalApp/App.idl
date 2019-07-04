@@ -30,6 +30,7 @@ namespace TerminalApp
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
         event LastTabClosedEventArgs LastTabClosed;
 
+        String GetPackageVersion();
         String GetTitle();
     }
 }

@@ -1137,6 +1137,23 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Gets the package version.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the package version string in the form major.minor.build.revision
+    hstring App::GetPackageVersion()
+    {
+        const auto package = winrt::Windows::ApplicationModel::Package::Current();
+        const auto version = package.Id().Version();
+
+        std::wstringstream versionTextStream;
+        versionTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision;
+        winrt::hstring versionText{ versionTextStream.str() };
+        return versionText;
+    }
+
+    // Method Description:
     // - Gets the title of the currently focused terminal control. If there
     //   isn't a control selected for any reason, returns "Windows Terminal"
     // Arguments:
@@ -1213,7 +1230,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (focusedTabIndex >= _tabs.size())
             {
-                focusedTabIndex = _tabs.size() - 1;
+                focusedTabIndex = gsl::narrow<int>(_tabs.size()) - 1;
             }
 
             if (focusedTabIndex < 0)

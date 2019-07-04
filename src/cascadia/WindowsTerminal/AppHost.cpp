@@ -85,6 +85,17 @@ void AppHost::AppTitleChanged(winrt::hstring newTitle)
 }
 
 // Method Description:
+// - Gets the package version.
+// Arguments:
+// - <none>
+// Return Value:
+// - the package version in the form major.minor.build.revision
+winrt::hstring AppHost::GetPackageVersion()
+{
+    return _app.GetPackageVersion();
+}
+
+// Method Description:
 // - Called when no tab is remaining to close the window.
 // Arguments:
 // - <none>
