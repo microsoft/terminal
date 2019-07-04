@@ -90,7 +90,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"this is the commandline", // clientCommandLine
+                                    L"\"this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
                                     L"", // vtMode
@@ -110,7 +110,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"--vtmode bar this is the commandline", // clientCommandLine
+                                    L"\"--vtmode bar this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
                                     L"", // vtMode
