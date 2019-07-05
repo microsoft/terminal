@@ -1194,8 +1194,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // convert text to HTML format
-        const auto fontData = _terminal->GetFontInfo();
-        const auto htmlData = TextBuffer::GenHTML(bufferData, fontData.GetUnscaledSize().Y, fontData.GetFaceName());
+        const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName());
 
         _terminal->ClearSelection();
 

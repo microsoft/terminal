@@ -1149,12 +1149,12 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int iFontHeightP
 
         // copy all text into the final clipboard data handle. There should be no nulls between rows of
         // characters, but there should be a \0 at the end.
+        COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
         for (UINT iRow = 0; iRow < rows.text.size(); iRow++)
         {
             size_t cbStartOffset = 0;
             size_t cchCharsToPrint = 0;
 
-            COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
             COLORREF fgColor = Blackness;
             COLORREF bkColor = Blackness;
 

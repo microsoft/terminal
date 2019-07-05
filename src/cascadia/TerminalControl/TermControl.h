@@ -20,15 +20,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     public:
         CopyToClipboardEventArgs(hstring text, hstring html) :
-            m_text(text),
-            m_html(html) {}
+            _text(text),
+            _html(html) {}
 
-        hstring Text() { return m_text; };
-        hstring Html() { return m_html; };
+        hstring Text() { return _text; };
+        hstring Html() { return _html; };
 
     private:
-        hstring m_text;
-        hstring m_html;
+        hstring _text;
+        hstring _html;
     };
 
     struct PasteFromClipboardEventArgs :
