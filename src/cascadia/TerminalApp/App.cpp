@@ -445,7 +445,12 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+
+        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        if ((INT_PTR)res <= 32)
+        {
+            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        }
     }
 
     // Method Description:
