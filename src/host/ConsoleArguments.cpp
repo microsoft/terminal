@@ -21,13 +21,13 @@ const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
-std::wstring escape_argument(std::wstring_view ac)
+std::wstring EscapeArgument(std::wstring_view ac)
 {
     if (ac.empty())
     {
         return L"\"\"";
     }
-    bool hasspace = false;
+    bool hasSpace = false;
     auto n = ac.size();
     for (auto c : ac)
     {
@@ -39,13 +39,13 @@ std::wstring escape_argument(std::wstring_view ac)
             break;
         case ' ':
         case '\t':
-            hasspace = true;
+            hasSpace = true;
             break;
         default:
             break;
         }
     }
-    if (hasspace)
+    if (hasSpace)
     {
         n += 2;
     }
@@ -54,7 +54,7 @@ std::wstring escape_argument(std::wstring_view ac)
         return std::wstring{ ac };
     }
     std::wstring buf;
-    if (hasspace)
+    if (hasSpace)
     {
         buf.push_back(L'"');
     }
@@ -83,7 +83,7 @@ std::wstring escape_argument(std::wstring_view ac)
             break;
         }
     }
-    if (hasspace)
+    if (hasSpace)
     {
         for (; slashes > 0; slashes--)
         {
@@ -345,7 +345,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     size_t j = 0;
     for (j = index; j < args.size(); j++)
     {
-        _clientCommandline += escape_argument(args[j]); // escape commandline
+        _clientCommandline += EscapeArgument(args[j]); // escape commandline
         if (j + 1 < args.size())
         {
             _clientCommandline += L" ";
