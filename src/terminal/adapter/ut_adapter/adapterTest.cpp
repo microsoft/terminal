@@ -3173,6 +3173,7 @@ public:
         _testGetSet->_srViewport.Right = 8;
         _testGetSet->_srViewport.Bottom = 8;
         _testGetSet->_fGetConsoleScreenBufferInfoExResult = TRUE;
+        SHORT sScreenHeight = _testGetSet->_srViewport.Bottom - _testGetSet->_srViewport.Top;
 
         Log::Comment(L"Test 1: Verify having both values is valid.");
         _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
@@ -3227,6 +3228,35 @@ public:
         _testGetSet->_srExpectedScrollRegion.Bottom = 0;
         _testGetSet->_SetMarginsHelper(&srTestMargins, 0, 7);
         VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
+        Log::Comment(L"Test 8: Verify setting margins to (1, 0) clears them");
+        // First set,
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 2, 6);
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+        // Then clear
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, 0);
+        _testGetSet->_srExpectedScrollRegion.Top = 0;
+        _testGetSet->_srExpectedScrollRegion.Bottom = 0;
+        VERIFY_IS_TRUE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
+        Log::Comment(L"Test 9: Verify having top and bottom margin the same is invalid.");
+
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 4, 4);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
+        Log::Comment(L"Test 10: Verify having top margin out of bounds is invalid.");
+
+        _testGetSet->_SetMarginsHelper(&srTestMargins, sScreenHeight + 1, sScreenHeight + 10);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
+
+        Log::Comment(L"Test 11: Verify having bottom margin out of bounds is invalid.");
+
+        _testGetSet->_SetMarginsHelper(&srTestMargins, 1, sScreenHeight + 1);
+        _testGetSet->_fPrivateSetScrollingRegionResult = TRUE;
+        VERIFY_IS_FALSE(_pDispatch->SetTopBottomScrollingMargins(srTestMargins.Top, srTestMargins.Bottom));
     }
 
     TEST_METHOD(TabSetClearTests)
