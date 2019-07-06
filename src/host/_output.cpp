@@ -156,21 +156,53 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
                                                                     const COORD target,
                                                                     size_t& used) noexcept
 {
-    // Set used to 0 from the beginning in case we exit early.
-    used = 0;
-
-    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto codepage = gci.OutputCP;
     try
     {
-        // convert to wide chars so we can call the W version of this function
-        const auto wideChars = ConvertToW(codepage, chars);
+        // Set used to 0 from the beginning in case we exit early.
+        used = 0;
 
-        size_t wideCharsWritten = 0;
+        if (chars.size() == 0)
+        {
+            return S_OK;
+        }
+
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        const auto codepage = gci.OutputCP;
+        static Utf8ToWideCharParser parser{ codepage };
+
+        // Update current codepage in case it was changed from last time this was called.
+        // We do this outside the UTF-8 check because the parser drops its state when the codepage changes.
+        parser.SetCodePage(codepage);
+
+        // Convert to wide chars
+        std::wstring wideChars{};
+        if (codepage == CP_UTF8)
+        {
+            std::unique_ptr<wchar_t[]> wideCharBuffer{ nullptr };
+            unsigned int charCount;
+            unsigned int charsConsumed;
+            unsigned int wideCharsGenerated;
+            RETURN_IF_FAILED(SizeTToUInt(chars.size(), &charCount));
+            RETURN_IF_FAILED(parser.Parse(reinterpret_cast<const byte*>(chars.data()),
+                                          charCount,
+                                          charsConsumed,
+                                          wideCharBuffer,
+                                          wideCharsGenerated));
+
+            wideChars.assign(wideCharBuffer.get(), static_cast<size_t>(wideCharsGenerated));
+        }
+        else
+        {
+            // TODO: Do we have an issue with partial DBCS characters here? (Ref: ApiRoutines::WriteConsoleAImpl)
+            wideChars = ConvertToW(codepage, chars);
+        }
+
+        // Call the W version of this function
+        size_t wideCharsWritten{};
         RETURN_IF_FAILED(WriteConsoleOutputCharacterWImpl(OutContext, wideChars, target, wideCharsWritten));
 
         // Create a view over the wide chars and reduce it to the amount actually written (do in two steps to enforce bounds)
-        std::wstring_view writtenView(wideChars);
+        std::wstring_view writtenView{ wideChars };
         writtenView = writtenView.substr(0, wideCharsWritten);
 
         // Look over written wide chars to find equilalent count of ascii chars so we can properly report back
