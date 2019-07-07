@@ -200,7 +200,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         bool fSuccess{};
         const BYTE bitmasks[]{ 0, 0b11000000, 0b11100000, 0b11110000 }; // for comparisons after the Lead Byte was found
 
-        // process the data of the standard input in a loop
+        // process the data of the pipe in a loop
         while (true)
         {
             // copy UTF-8 code units that were remaining from the previously read chunk (if any)
