@@ -198,37 +198,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD dwRead{}; // length of a chunk read
         DWORD dwPartialsLen{}; // number of cached UTF-8 code units
         bool fSuccess{};
-<<<<<<< HEAD
         const BYTE bitmasks[]{ 0, 0b11000000, 0b11100000, 0b11110000 }; // for comparisons after the Lead Byte was found
 
-=======
-        bool fStreamBegin{}; // indicates whether text is left in utf8Partials after the BOM check
-        const BYTE bitmasks[]{ 0, 0b11000000, 0b11100000, 0b11110000 }; // for comparisons after the Lead Byte was found
-
-        // check whether the UTF-8 stream has a Byte Order Mark
-        fSuccess = !!ReadFile(_outPipe.get(), utf8Partials, 3UL, &dwPartialsLen, nullptr);
-        if (!fSuccess)
-        {
-            if (_closing.load())
-            {
-                // This is okay, break out to kill the thread
-                return 0;
-            }
-
-            _disconnectHandlers();
-            return (DWORD)-1;
-        }
-
-        if (utf8Partials[0] == 0xEF && utf8Partials[1] == 0xBB && utf8Partials[2] == 0xBF)
-        {
-            dwPartialsLen = 0; // discard the BOM
-        }
-        else
-        {
-            fStreamBegin = true;
-        }
-
->>>>>>> 85b5509dc00d7fd533a4b1cbec3ce9e5c348d7df
         // process the data of the standard input in a loop
         while (true)
         {
@@ -237,7 +208,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             {
                 std::move(utf8Partials, utf8Partials + dwPartialsLen, buffer);
             }
-<<<<<<< HEAD
 
             // try to read data
             fSuccess = !!ReadFile(_outPipe.get(), &buffer[dwPartialsLen], std::extent<decltype(buffer)>::value - dwPartialsLen, &dwRead, nullptr);
@@ -245,24 +215,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             dwRead += dwPartialsLen;
             dwPartialsLen = 0;
 
-=======
-
-            // try to read data
-            fSuccess = !!ReadFile(_outPipe.get(), &buffer[dwPartialsLen], std::extent<decltype(buffer)>::value - dwPartialsLen, &dwRead, nullptr);
-
-            dwRead += dwPartialsLen;
-            dwPartialsLen = 0;
-
->>>>>>> 85b5509dc00d7fd533a4b1cbec3ce9e5c348d7df
             if (dwRead == 0) // quit if no data has been read and no cached data was left over
             {
                 return 0;
             }
-<<<<<<< HEAD
             else if (!fSuccess)
-=======
-            else if (!fSuccess && !fStreamBegin) // cached data without bytes for completion in the buffer
->>>>>>> 85b5509dc00d7fd533a4b1cbec3ce9e5c348d7df
             {
                 if (_closing.load())
                 {
@@ -303,8 +260,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Pass the output to our registered event handlers
             _outputHandlers(hstr);
-
-            fStreamBegin = false;
         }
 
         return 0;
