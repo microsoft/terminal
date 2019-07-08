@@ -53,10 +53,13 @@ namespace WpfTerminalControl
         private IntPtr hwnd;
         private IntPtr terminal;
         private char? highSurrogate;
+        private int accumulatedDelta;
 
         private static NativeMethods.ScrollCallback callback;
 
         public event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
+
+        public event EventHandler<int> UserScrolled;
 
         public TerminalControl()
         {
@@ -65,6 +68,11 @@ namespace WpfTerminalControl
             this.MessageHook += TerminalControl_MessageHook;
             this.GotFocus += TerminalControl_GotFocus;
             this.Focusable = true;
+        }
+
+        public void UserScroll(int viewTop)
+        {
+            NativeMethods.UserScroll(this.terminal, viewTop);
         }
 
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
@@ -99,6 +107,10 @@ namespace WpfTerminalControl
 
                         NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out int columns, out int rows);
                         this.connection?.Resize((uint)rows, (uint)columns);
+                        break;
+                    case PInvoke.User32.WindowMessage.WM_MOUSEWHEEL:
+                        var delta = (((int)wParam) >> 16);
+                        this.UserScrolled?.Invoke(this, delta);
                         break;
                 }
             }

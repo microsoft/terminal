@@ -20,10 +20,37 @@ namespace WpfTerminalControl
     /// </summary>
     public partial class UserControl1 : UserControl
     {
+        private int accumulatedDelta = 0;
+
         public UserControl1()
         {
             InitializeComponent();
             this.termControl.TerminalScrolled += TermControl_TerminalScrolled;
+            this.termControl.UserScrolled += TermControl_UserScrolled;
+            this.scrollbar.MouseWheel += Scrollbar_MouseWheel;
+        }
+
+        private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            this.TermControl_UserScrolled(sender, e.Delta);
+        }
+
+        private void TermControl_UserScrolled(object sender, int delta)
+        {
+            var lineDelta = 120 / SystemParameters.WheelScrollLines;
+            this.accumulatedDelta += delta;
+
+            if (accumulatedDelta < lineDelta && accumulatedDelta > -lineDelta)
+            {
+                return;
+            }
+
+            Dispatcher.InvokeAsync(() =>
+            {
+                var lines = -this.accumulatedDelta / lineDelta;
+                this.scrollbar.Value += lines;
+                this.accumulatedDelta = 0;
+            });
         }
 
         public ITerminalConnection Connection
@@ -40,15 +67,16 @@ namespace WpfTerminalControl
             {
 
                 this.scrollbar.Minimum = 0;
-                this.scrollbar.Maximum = e.bufferSize;
-                this.scrollbar.Value = e.viewTop + e.viewHeight;
+                this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
+                this.scrollbar.Value = e.viewTop;
                 this.scrollbar.ViewportSize = e.viewHeight;
             });
         }
 
         private void Scrollbar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-
+            var viewTop = (int)this.scrollbar.Value;
+            this.termControl.UserScroll(viewTop);
         }
     }
 }
