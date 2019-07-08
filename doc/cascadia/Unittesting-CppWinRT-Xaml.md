@@ -35,7 +35,7 @@ release with the fix is available.
 By default, most (newly authored) C++/WinRT components are authored as a dll
 that can be used to activate your types. However, you might have other classes
 in that binary that you want to be able to test, which aren't winrt types. If
-the implenmentation is sitting in a DLL, it'll be hard to write a TAEF unittest
+the implementation is sitting in a DLL, it'll be hard to write a TAEF unittest
 dll that can call the pure c++ types you've defined.
 
 The first thing you're going to need to do is move the implementation of your
@@ -59,7 +59,7 @@ the `ConfigurationType` to `StaticLibrary`. This Lib should be responsible for
 building all of your headers, `.cpp` files, `.idl`s for your winrt types, and
 any `.xaml` files you might have.
 
-You'll likely need to place this new file into a seperate directory from the
+You'll likely need to place this new file into a separate directory from the
 existing dll project, as C++/WinRT uses the project directory as the root of the
 intermediate build tree. Each directory should only have one `.vcxproj` file in
 it. For the Terminal project, we created a subdirectory `lib/` underneath
@@ -131,7 +131,7 @@ dir to your `AdditionalLibraryDirectories`, and adding the lib to your
 
 We are NOT adding a reference to the static lib project's .winmd here. As of the
 2.0.190605.7 CppWinRT nuget package, this is enough for MsBuild and Visual
-Studio to be ale to determine that the static lib's  `.winmd` should be included
+Studio to be able to determine that the static lib's  `.winmd` should be included
 in this package.
 
 At this point, you might have some mdmerge errors, which complain about
@@ -140,7 +140,7 @@ of your dependencies (ex `A.dll`) is also a dependency for one of your _other_
 dependencies (ex `B.dll`). In this example, your final output project `C.dll`
 depends on both `A.dll` and `B.dll`, and `B.dll` _also_ depends on `A.dll`. If
 you're seeing this, I recommend adding `Private=false` and
-`CopyLocalSatelliteAssemblies=false` to your dependant dlls. In this example,
+`CopyLocalSatelliteAssemblies=false` to your dependent dlls. In this example,
 add similar code to `B.dll`:
 
 ```xml
@@ -191,7 +191,7 @@ manually from TAEF.
 #### Creating the manifest
 
 First, you need to create a manifest file that lists each dll your test depends
-upon, and each of the types in that dll. For example, here's an exerpt from the
+upon, and each of the types in that dll. For example, here's an excerpt from the
 Terminal's manifest:
 
 ```xml
