@@ -22,6 +22,7 @@
     <ClInclude Include="ConhostConnection.h" />
     <ClInclude Include="AzureConnection.h" />
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="AzureConnectionStrings.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />

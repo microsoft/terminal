@@ -5,11 +5,6 @@
 #include "ConhostConnection.h"
 #include "windows.h"
 #include <sstream>
-// STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
-// We're just gonna manually define it for this prototyping code
-#ifndef STARTF_USESTDHANDLES
-#define STARTF_USESTDHANDLES 0x00000100
-#endif
 
 #include "ConhostConnection.g.cpp"
 
@@ -120,6 +115,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                           this,
                                           0,
                                           nullptr));
+
+        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         // Wind up the conhost! We only do this after we've got everything in place.
         THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));

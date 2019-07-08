@@ -18,6 +18,8 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
+const auto AzureConnString = L"Azure";
+
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
     g_hTerminalAppProvider,
@@ -936,13 +938,13 @@ namespace winrt::TerminalApp::implementation
 
         // Create a connection based on the values in our settings object.
         TerminalConnection::ITerminalConnection connection{ nullptr };
-        if (settings.Commandline() == L"Azure")
+        if (settings.Commandline() == AzureConnString)
         {
-            connection = TerminalConnection::AzureConnection(30, 80);
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
         }
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
 
         TermControl term{ settings, connection };
@@ -1316,13 +1318,13 @@ namespace winrt::TerminalApp::implementation
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
         TerminalConnection::ITerminalConnection controlConnection{ nullptr };
-        if (controlSettings.Commandline() == L"Azure")
+        if (controlSettings.Commandline() == AzureConnString)
         {
-            controlConnection = TerminalConnection::AzureConnection(30, 80);
+            controlConnection = TerminalConnection::AzureConnection(controlSettings.InitialRows(), controlSettings.InitialCols());
         }
         else
         {
-            controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+            controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), controlSettings.InitialRows(), controlSettings.InitialCols(), winrt::guid());
         }
 
         TermControl newControl{ controlSettings, controlConnection };

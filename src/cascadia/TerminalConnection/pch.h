@@ -7,8 +7,8 @@
 
 #pragma once
 
+// Needs to be defined or we get redeclaration errors
 #define WIN32_LEAN_AND_MEAN
-#define _SILENCE_CXX17_ALLOCATOR_VOID_DEPRECATION_WARNING
 
 #include <LibraryIncludes.h>
 

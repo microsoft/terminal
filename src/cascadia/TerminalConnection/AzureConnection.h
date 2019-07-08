@@ -47,9 +47,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
 
-        const utility::string_t _loginUri;
-        const utility::string_t _resourceUri;
-        const utility::string_t _wantedResource;
+        const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
+        const utility::string_t _resourceUri{ U("https://management.azure.com/") };
+        const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
         utility::string_t _tenantID;
         utility::string_t _accessToken;
         utility::string_t _refreshToken;
@@ -64,6 +64,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         web::json::value _getCloudShellUserSettings();
         utility::string_t _getCloudShell();
         utility::string_t _getTerminal(utility::string_t shellType);
+        void _headerHelper(web::http::http_request theRequest);
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };
