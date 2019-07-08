@@ -447,7 +447,7 @@ namespace winrt::TerminalApp::implementation
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
 
         HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
-        if ((INT_PTR)res <= 32)
+        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
         {
             ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
         }
