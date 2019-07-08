@@ -12,7 +12,7 @@ using namespace winrt::Windows::UI::Xaml;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TSFInputControl::TSFInputControl() :
-        _editContext { nullptr }
+        _editContext{ nullptr }
     {
         _Create();
     }
@@ -39,9 +39,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
-        // sets the Input Pane display policy to Manual for now so that it can manually show the 
+        // sets the Input Pane display policy to Manual for now so that it can manually show the
         // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // Should look at Automatic int he Future Add WI TODO 
+        // Should look at Automatic int he Future Add WI TODO
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -71,16 +71,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             L"FontHeight",
             winrt::xaml_typename<double>(),
             winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr
-    );
+            nullptr);
 
     Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontWidthProperty =
         Windows::UI::Xaml::DependencyProperty::Register(
             L"FontWidth",
             winrt::xaml_typename<double>(),
             winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr
-    );
+            nullptr);
 
     void TSFInputControl::NotifyFocusEnter()
     {
@@ -181,7 +179,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
         _canvas.SetTop(_textBlock, clientCursorPos.Y + 2); // TODO figure out how to align
 
-        // width is cursor to end of canvas 
+        // width is cursor to end of canvas
         _textBlock.Width(200); // TODO figure out proper width
         _textBlock.Height(fontHeight);
 
@@ -218,7 +216,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             CoreTextRange newTextRange;
             newTextRange.StartCaretPosition = 0;
             newTextRange.EndCaretPosition = 0;
-            _editContext.NotifySelectionChanged(newTextRange);
+
+            CoreTextRange newTextRange2;
+            newTextRange2.StartCaretPosition = 0;
+            newTextRange2.EndCaretPosition = 0; //_inputBuffer.length();
+           // _editContext.NotifyTextChanged(newTextRange2, 0, newTextRange);
+
+            //_editContext.NotifySelectionChanged(newTextRange);
         }
 
         // clear the buffer for next round
@@ -238,6 +242,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
     {
         OutputDebugString(L"_editContextTextRequested\n");
+
+        // the range the TSF wants to know about
+        auto range = args.Request().Range();
+
+        WCHAR buff[255];
+
+        swprintf_s(buff, ARRAYSIZE(buff), L"Requested Range: Start:%x, End:%x\n", range.StartCaretPosition, range.EndCaretPosition);
+
+        OutputDebugString(buff);
+
+        auto textRequested = _inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition);
+
+        swprintf_s(buff, ARRAYSIZE(buff), L"Text Requested: %s\n", textRequested.c_str());
+
+        OutputDebugString(buff);
+
+        args.Request().Text(winrt::to_hstring(textRequested.c_str()));
     }
 
     void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& args)
@@ -256,17 +277,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto text = args.Text();
         auto range = args.Range();
 
-        _inputBuffer = _inputBuffer.replace(
-            range.StartCaretPosition,
-            range.EndCaretPosition - range.StartCaretPosition,
-            text.c_str()
-        );
-
         WCHAR buff[255];
         swprintf_s(buff, ARRAYSIZE(buff), L"Text: %s\n", text.c_str());
         OutputDebugString(buff);
 
+        _inputBuffer = _inputBuffer.replace(
+            range.StartCaretPosition,
+            range.EndCaretPosition - range.StartCaretPosition,
+            text.c_str());
+
         _textBlock.Text(_inputBuffer);
+
+        // Notify the TSF that the update succeeded
+        args.Result(CoreTextTextUpdatingResult::Succeeded);
     }
 
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& args)
