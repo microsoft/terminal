@@ -9,4 +9,3 @@ const auto noCloudAccount = "You have not set up your cloud shell account yet. P
 const auto requestingCloud = "Requesting for a cloud shell...";
 const auto success = "Succeeded.\r\n";
 const auto requestingTerminal = "Requesting for a terminal (this might take a while)...";
-
