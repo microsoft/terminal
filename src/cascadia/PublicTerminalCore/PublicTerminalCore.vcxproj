@@ -9,7 +9,7 @@
     <ProjectGuid>{84848BFA-931D-42CE-9ADF-01EE54DE7890}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>PublicTerminalCore</RootNamespace>
-    <ProjectName>PublicTerminalCore.DLL</ProjectName>
+    <ProjectName>PublicTerminalCore</ProjectName>
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />

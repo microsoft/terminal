@@ -18,15 +18,15 @@ namespace WpfTerminalControl
     /// <summary>
     /// Interaction logic for UserControl1.xaml
     /// </summary>
-    public partial class UserControl1 : UserControl
+    public partial class TerminalControl : UserControl
     {
         private int accumulatedDelta = 0;
 
-        public UserControl1()
+        public TerminalControl()
         {
             InitializeComponent();
-            this.termControl.TerminalScrolled += TermControl_TerminalScrolled;
-            this.termControl.UserScrolled += TermControl_UserScrolled;
+            this.termContainer.TerminalScrolled += TermControl_TerminalScrolled;
+            this.termContainer.UserScrolled += TermControl_UserScrolled;
             this.scrollbar.MouseWheel += Scrollbar_MouseWheel;
         }
 
@@ -57,7 +57,7 @@ namespace WpfTerminalControl
         {
             set
             {
-                this.termControl.Connection = value;
+                this.termContainer.Connection = value;
             }
         }
 
@@ -76,7 +76,7 @@ namespace WpfTerminalControl
         private void Scrollbar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
             var viewTop = (int)this.scrollbar.Value;
-            this.termControl.UserScroll(viewTop);
+            this.termContainer.UserScroll(viewTop);
         }
     }
 }

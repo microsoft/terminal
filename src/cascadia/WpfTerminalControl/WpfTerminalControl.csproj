@@ -75,7 +75,7 @@
   <ItemGroup>
     <ProjectReference Include="..\PublicTerminalCore\PublicTerminalCore.vcxproj">
       <Project>{84848BFA-931D-42CE-9ADF-01EE54DE7890}</Project>
-      <Name>PublicTerminalCore.DLL</Name>
+      <Name>PublicTerminalCore</Name>
       <OutputItemType>Content</OutputItemType>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </ProjectReference>
@@ -83,16 +83,16 @@
   <ItemGroup>
     <Compile Include="ITerminalConnection.cs" />
     <Compile Include="NativeMethods.cs" />
-    <Compile Include="TerminalControl.cs" />
+    <Compile Include="TerminalContainer.cs" />
     <Compile Include="TerminalSettings.cs" />
-    <Compile Include="UserControl1.xaml.cs">
-      <DependentUpon>UserControl1.xaml</DependentUpon>
+    <Compile Include="TerminalControl.xaml.cs">
+      <DependentUpon>TerminalControl.xaml</DependentUpon>
     </Compile>
     <Page Include="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="UserControl1.xaml">
+    <Page Include="TerminalControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
