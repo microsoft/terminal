@@ -498,15 +498,15 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
             glyphRunDescription.stringLength = run.textLength;
             glyphRunDescription.textPosition = run.textStart;
 
-            // Calculate the position *after* drawing, this will be used if we're in RTL.
+            // Calculate the position *after* drawing, this will be used if we're in RTL. (for DXWrite)
             // Original comment:
             // Shift origin to the right for the next run based on the amount of space consumed.
             auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
                                                _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                               mutableOrigin.x);
+                                               mutableOrigin.x); 
 
-            if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
-                mutableOrigin.x = postOriginX;
+            if (WI_IsFlagSet(glyphRun.bidiLevel, 1)) 
+                mutableOrigin.x = postOriginX; 
 
             // Try to draw it
             RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
@@ -515,9 +515,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
                                                     DWRITE_MEASURING_MODE_NATURAL,
                                                     &glyphRun,
                                                     &glyphRunDescription,
-                                                    nullptr));
+                                                    nullptr)); 
 
-            mutableOrigin.x = postOriginX;
+            mutableOrigin.x = postOriginX; 
 
         }
     }
