@@ -47,7 +47,7 @@ namespace WpfTerminalControl
     ///     <MyNamespace:TerminalControl/>
     ///
     /// </summary>
-    public class TerminalControl : HwndHost
+    public class TerminalContainer : HwndHost
     {
         private ITerminalConnection connection;
         private IntPtr hwnd;
@@ -61,12 +61,10 @@ namespace WpfTerminalControl
 
         public event EventHandler<int> UserScrolled;
 
-        public TerminalControl()
+        public TerminalContainer()
         {
-            //this.SizeChanged += TerminalControl_SizeChanged;
-            this.PreviewKeyDown += TerminalControl_PreviewKeyDown;
-            this.MessageHook += TerminalControl_MessageHook;
-            this.GotFocus += TerminalControl_GotFocus;
+            this.MessageHook += TerminalContainer_MessageHook;
+            this.GotFocus += TerminalContainer_GotFocus;
             this.Focusable = true;
         }
 
@@ -80,12 +78,12 @@ namespace WpfTerminalControl
             NativeMethods.DpiChanged(this.terminal, (int)(96 * newDpi.DpiScaleX));
         }
 
-        private void TerminalControl_GotFocus(object sender, RoutedEventArgs e)
+        private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
         {
             NativeMethods.SetFocus(this.hwnd);
         }
 
-        private IntPtr TerminalControl_MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        private IntPtr TerminalContainer_MessageHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
             if (hwnd == this.hwnd)
             {
@@ -116,21 +114,6 @@ namespace WpfTerminalControl
             }
 
             return IntPtr.Zero;
-        }
-
-        protected override bool TranslateAcceleratorCore(ref MSG msg, ModifierKeys modifiers)
-        {
-            return base.TranslateAcceleratorCore(ref msg, modifiers);
-        }
-
-        private void TerminalControl_PreviewKeyDown(object sender, KeyEventArgs e)
-        {
-            var x = e.Key;
-        }
-
-        protected override bool TranslateCharCore(ref MSG msg, ModifierKeys modifiers)
-        {
-            return false;
         }
 
         private bool HandleChar(char character)
@@ -189,22 +172,6 @@ namespace WpfTerminalControl
                 this.connection.TerminalDisconnected += Connection_TerminalDisconnected;
                 this.connection.Start();
             }
-        }
-
-        private void TerminalControl_SizeChanged(object sender, SizeChangedEventArgs e)
-        {
-                if (this.terminal != IntPtr.Zero)
-                {
-                    var dpiScale = VisualTreeHelper.GetDpi(this);
-                    NativeMethods.TriggerResize(
-                        this.terminal,
-                        this.ActualWidth * dpiScale.DpiScaleX,
-                        this.ActualHeight * dpiScale.DpiScaleY,
-                        out var columns,
-                        out var rows);
-
-                this.connection?.Resize((uint)rows, (uint)columns);
-                }
         }
 
         private void Connection_TerminalDisconnected(object sender, EventArgs e)
