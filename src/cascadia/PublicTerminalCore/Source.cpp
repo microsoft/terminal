@@ -118,10 +118,10 @@ HRESULT HwndTerminal::Initialize()
     return S_OK;
 }
 
-void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> callback) {
+void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> callback)
+{
     _terminal->SetScrollPositionChangedCallback(callback);
 }
-
 
 void HwndTerminal::_UpdateFont(int newDpi)
 {
@@ -203,4 +203,46 @@ void _stdcall UserScroll(void* terminal, int viewTop)
 {
     auto publicTerminal = (HwndTerminal*)terminal;
     publicTerminal->_terminal->UserScrollViewport(viewTop);
+}
+
+void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed)
+{
+    COORD terminalPosition = {
+        static_cast<SHORT>(cursorPosition.X),
+        static_cast<SHORT>(cursorPosition.Y)
+    };
+
+    auto publicTerminal = (HwndTerminal*)terminal;
+    const auto fontSize = publicTerminal->_actualFont.GetSize();
+
+    terminalPosition.X /= fontSize.X;
+    terminalPosition.Y /= fontSize.Y;
+
+    publicTerminal->_terminal->SetSelectionAnchor(terminalPosition);
+    publicTerminal->_terminal->SetBoxSelection(altPressed);
+
+    publicTerminal->_renderer->TriggerSelection();
+}
+
+void _stdcall MoveSelection(void* terminal, COORD cursorPosition)
+{
+    COORD terminalPosition = {
+        static_cast<SHORT>(cursorPosition.X),
+        static_cast<SHORT>(cursorPosition.Y)
+    };
+
+    auto publicTerminal = (HwndTerminal*)terminal;
+    const auto fontSize = publicTerminal->_actualFont.GetSize();
+
+    terminalPosition.X /= fontSize.X;
+    terminalPosition.Y /= fontSize.Y;
+
+    publicTerminal->_terminal->SetEndSelectionPosition(terminalPosition);
+    publicTerminal->_renderer->TriggerSelection();
+}
+
+void _stdcall ClearSelection(void* terminal)
+{
+    auto publicTerminal = (HwndTerminal*)terminal;
+    publicTerminal->_terminal->ClearSelection();
 }

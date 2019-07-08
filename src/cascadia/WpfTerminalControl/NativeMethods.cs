@@ -29,6 +29,15 @@ namespace WpfTerminalControl
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void UserScroll(IntPtr terminal, int viewTop);
 
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void StartSelection(IntPtr terminal, PInvoke.COORD cursorPosition, bool altPressed);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void MoveSelection(IntPtr terminal, PInvoke.COORD cursorPosition);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void ClearSelection(IntPtr terminal);
+
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
 

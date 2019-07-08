@@ -64,6 +64,7 @@ namespace WpfTerminalControl
         public TerminalContainer()
         {
             this.MessageHook += TerminalContainer_MessageHook;
+
             this.GotFocus += TerminalContainer_GotFocus;
             this.Focusable = true;
         }
@@ -93,6 +94,15 @@ namespace WpfTerminalControl
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
                         break;
+                    case PInvoke.User32.WindowMessage.WM_LBUTTONDOWN:
+                        this.LeftClickHandler((int)lParam);
+                        break;
+                    case PInvoke.User32.WindowMessage.WM_MOUSEMOVE:
+                        this.MouseMoveHandler((int)wParam, (int)lParam);
+                        break;
+                    case PInvoke.User32.WindowMessage.WM_KEYDOWN:
+                        NativeMethods.ClearSelection(this.terminal);
+                        break;
                     case PInvoke.User32.WindowMessage.WM_CHAR:
                         this.HandleChar((char)wParam);
                         break;
@@ -114,6 +124,35 @@ namespace WpfTerminalControl
             }
 
             return IntPtr.Zero;
+        }
+
+        private void LeftClickHandler(int lParam)
+        {
+            var altPressed = NativeMethods.GetKeyState((int)PInvoke.User32.VirtualKey.VK_MENU) < 0;
+            var x = (short)(((int)lParam << 16) >> 16);
+            var y = (short)((int)lParam >> 16);
+            PInvoke.COORD cursorPosition = new PInvoke.COORD()
+            {
+                X = x,
+                Y = y,
+            };
+
+            NativeMethods.StartSelection(this.terminal, cursorPosition, altPressed);
+        }
+
+        private void MouseMoveHandler(int wParam, int lParam)
+        {
+            if (((int)wParam & 0x0001) == 1)
+            {
+                var x = (short)(((int)lParam << 16) >> 16);
+                var y = (short)((int)lParam >> 16);
+                PInvoke.COORD cursorPosition = new PInvoke.COORD()
+                {
+                    X = x,
+                    Y = y,
+                };
+                NativeMethods.MoveSelection(this.terminal, cursorPosition);
+            }
         }
 
         private bool HandleChar(char character)
