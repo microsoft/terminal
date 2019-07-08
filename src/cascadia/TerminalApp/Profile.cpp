@@ -77,7 +77,7 @@ Profile::Profile(const winrt::guid& guid) :
     _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
-    _doubleClickDelimiters{ L" /\\" },
+    _doubleClickDelimiters{ L" ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?" },
 
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
