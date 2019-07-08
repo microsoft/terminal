@@ -1,0 +1,8 @@
+namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
+    {
+        TerminalPage();
+    }
+}
