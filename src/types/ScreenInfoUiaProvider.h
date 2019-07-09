@@ -78,7 +78,8 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
-        HWND _GetWindowHandle() const;
+        HWND GetWindowHandle() const;
+        void ChangeViewport(const SMALL_RECT NewWindow);
 
     private:
         // Ref counter for COM object

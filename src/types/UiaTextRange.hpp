@@ -24,7 +24,6 @@ Author(s):
 #include "inc/viewport.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../renderer/inc/IRenderData.hpp"
-//#include "../../buffer/out/cursor.h"
 
 #include <deque>
 #include <tuple>

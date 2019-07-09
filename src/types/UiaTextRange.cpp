@@ -241,6 +241,7 @@ UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData, 
     _id = id;
     ++id;
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgConstructor apiMsg;
     apiMsg.Id = _id;
@@ -382,6 +383,7 @@ void UiaTextRange::SetRangeValues(const Endpoint start, const Endpoint end, cons
 IFACEMETHODIMP_(ULONG)
 UiaTextRange::AddRef()
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
@@ -389,6 +391,7 @@ UiaTextRange::AddRef()
 IFACEMETHODIMP_(ULONG)
 UiaTextRange::Release()
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
 
     const long val = InterlockedDecrement(&_cRefs);
@@ -401,6 +404,7 @@ UiaTextRange::Release()
 
 IFACEMETHODIMP UiaTextRange::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
 
     if (riid == __uuidof(IUnknown))
@@ -449,6 +453,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     OutputDebugString(str.c_str());
     OutputDebugString(L"\n");
 #endif
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgClone apiMsg;
     apiMsg.CloneId = static_cast<UiaTextRange*>(*ppRetVal)->GetId();
@@ -472,6 +477,7 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
                       _end == other->GetEnd() &&
                       _degenerate == other->IsDegenerate());
     }
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgCompare apiMsg;
     apiMsg.OtherId = other == nullptr ? InvalidId : other->GetId();
@@ -518,6 +524,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     // compare them
     *pRetVal = std::clamp(static_cast<int>(ourValue) - static_cast<int>(theirValue), -1, 1);
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgCompareEndpoints apiMsg;
     apiMsg.OtherId = range->GetId();
@@ -566,6 +573,7 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 
         _degenerate = false;
 
+        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //Tracing::s_TraceUia(this, ApiCall::ExpandToEnclosingUnit, &apiMsg);
 
         return S_OK;
@@ -579,6 +587,7 @@ IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeI
                                            _In_ BOOL /*searchBackward*/,
                                            _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindAttribute, nullptr);
     return E_NOTIMPL;
 }
@@ -588,6 +597,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
                                       _In_ BOOL ignoreCase,
                                       _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
 
     *ppRetVal = nullptr;
@@ -598,15 +608,15 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
         // We should actually abstract this out better once Windows Terminal has Search
 
         std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone = std::bind(&UiaTextRange::Clone, this, std::placeholders::_1);
-        return _pData->FindText(text,
-                                searchBackward,
-                                ignoreCase,
-                                ppRetVal,
-                                _start,
-                                _end,
-                                _coordToEndpoint,
-                                _endpointToCoord,
-                                Clone);
+        return _pData->SearchForText(text,
+                                     searchBackward,
+                                     ignoreCase,
+                                     ppRetVal,
+                                     _start,
+                                     _end,
+                                     _coordToEndpoint,
+                                     _endpointToCoord,
+                                     Clone);
     }
     CATCH_RETURN();
 }
@@ -614,6 +624,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
                                                _Out_ VARIANT* pRetVal)
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetAttributeValue, nullptr);
     if (textAttributeId == UIA_IsReadOnlyAttributeId)
     {
@@ -683,6 +694,7 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     }
     CATCH_RETURN();
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangles, nullptr);
 
     return S_OK;
@@ -777,6 +789,7 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 
     *pRetVal = SysAllocString(wstr.c_str());
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*ApiMsgGetText apiMsg;
     apiMsg.Text = wstr.c_str();
@@ -853,6 +866,7 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     // moved.
     _degenerate = false;
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*apiMsg.MovedCount = *pRetVal;
     Tracing::s_TraceUia(this, ApiCall::Move, &apiMsg);*/
@@ -919,6 +933,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     _end = std::get<1>(moveResults);
     _degenerate = std::get<2>(moveResults);
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
     /*apiMsg.MovedCount = *pRetVal;
     Tracing::s_TraceUia(this, ApiCall::MoveEndpointByUnit, &apiMsg);*/
@@ -1031,6 +1046,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     }
     _degenerate = crossedEndpoints;
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::MoveEndpointByRange, &apiMsg);
     return S_OK;
 }
@@ -1061,6 +1077,7 @@ IFACEMETHODIMP UiaTextRange::Select()
         _pData->SelectNewRegion(coordStart, coordEnd);
     }
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::Select, nullptr);
     return S_OK;
 }
@@ -1068,6 +1085,7 @@ IFACEMETHODIMP UiaTextRange::Select()
 // we don't support this
 IFACEMETHODIMP UiaTextRange::AddToSelection()
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::AddToSelection, nullptr);
     return E_NOTIMPL;
 }
@@ -1075,6 +1093,7 @@ IFACEMETHODIMP UiaTextRange::AddToSelection()
 // we don't support this
 IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RemoveFromSelection, nullptr);
     return E_NOTIMPL;
 }
@@ -1153,23 +1172,25 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     try
     {
-        // TODO CARLOS: hook up actually changing the viewport
-        //IConsoleWindow* pIConsoleWindow = _getIConsoleWindow();
-        //pIConsoleWindow->ChangeViewport(newViewport);
+        auto provider = static_cast<Microsoft::Console::Types::ScreenInfoUiaProvider*>(_pProvider);
+        provider->ChangeViewport(newViewport);
     }
     CATCH_RETURN();
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
-    //ApiMsgScrollIntoView apiMsg;
-    //apiMsg.AlignToTop = !!alignToTop;
-    //Tracing::s_TraceUia(this, ApiCall::ScrollIntoView, &apiMsg);
+    /*ApiMsgScrollIntoView apiMsg;
+    apiMsg.AlignToTop = !!alignToTop;
+    Tracing::s_TraceUia(this, ApiCall::ScrollIntoView, &apiMsg);*/
 
     return S_OK;
 }
 
 IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
+
     // we don't have any children
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
     if (*ppRetVal == nullptr)
@@ -2239,6 +2260,6 @@ RECT UiaTextRange::_getTerminalRect() const
 
 HWND UiaTextRange::_getWindowHandle() const
 {
-    auto provider = static_cast<Microsoft::Console::Types::ScreenInfoUiaProvider*>(_pProvider);
-    return provider->_GetWindowHandle();
+    const auto provider = static_cast<Microsoft::Console::Types::ScreenInfoUiaProvider*>(_pProvider);
+    return provider->GetWindowHandle();
 }

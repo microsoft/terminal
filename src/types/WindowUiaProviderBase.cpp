@@ -81,7 +81,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions*
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
 IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patternId*/,
-                                                     _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
+                                                         _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
@@ -151,7 +151,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_res
 {
     try
     {
-        const HWND hwnd = _GetWindowHandle();
+        const HWND hwnd = GetWindowHandle();
         return UiaHostProviderFromHwnd(hwnd, ppProvider);
     }
     catch (...)
@@ -208,7 +208,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
 
 #pragma endregion
 
-HWND WindowUiaProviderBase::_GetWindowHandle() const
+HWND WindowUiaProviderBase::GetWindowHandle() const
 {
     IConsoleWindow* const pConsoleWindow = _baseWindow;
     THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
@@ -220,9 +220,19 @@ HWND WindowUiaProviderBase::_GetWindowHandle() const
 {
     try
     {
-        HWND const hwnd = _GetWindowHandle();
+        HWND const hwnd = GetWindowHandle();
         RETURN_HR_IF((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, !(IsWindow(hwnd)));
     }
     CATCH_RETURN();
     return S_OK;
+}
+
+void WindowUiaProviderBase::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    _baseWindow->ChangeViewport(NewWindow);
+}
+
+RECT WindowUiaProviderBase::GetWindowRect() const
+{
+    return _baseWindow->GetWindowRect();
 }

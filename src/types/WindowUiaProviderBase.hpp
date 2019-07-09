@@ -69,9 +69,10 @@ namespace Microsoft::Console::Types
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
 
         WindowUiaProviderBase(IConsoleWindow* baseWindow);
-        IConsoleWindow* _baseWindow;
 
-        HWND _GetWindowHandle() const;
+        RECT GetWindowRect() const;
+        HWND GetWindowHandle() const;
+        void ChangeViewport(const SMALL_RECT NewWindow);
 
     protected:
         // this is used to prevent the object from
@@ -92,6 +93,8 @@ namespace Microsoft::Console::Types
     private:
         // Ref counter for COM object
         ULONG _cRefs;
+
+        IConsoleWindow* _baseWindow;
     };
 
     namespace WindowUiaProviderTracing

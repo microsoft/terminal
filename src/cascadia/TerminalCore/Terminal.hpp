@@ -101,6 +101,23 @@ public:
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    bool IsAreaSelected() const override;
+    void ClearSelection() override;
+    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+
+    // TODO GitHub #605: Search functionality
+    // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
+    // We should actually abstract this out better once Windows Terminal has Search
+    HRESULT SearchForText(_In_ BSTR text,
+                          _In_ BOOL searchBackward,
+                          _In_ BOOL ignoreCase,
+                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
+                          unsigned int _start,
+                          unsigned int _end,
+                          std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
+                          std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
+                          std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) override;
+
     const std::wstring GetConsoleTitle() const noexcept override;
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -120,7 +137,6 @@ public:
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
-    void ClearSelection() noexcept;
 
     const std::wstring RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
