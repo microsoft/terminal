@@ -3,43 +3,39 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- screenInfoUiaProvider.hpp
+- WindowUiaProviderBase.hpp
 
 Abstract:
-- This module provides UI Automation access to the screen buffer to
+- This module provides UI Automation access to the console window to
   support both automation tests and accessibility (screen reading)
   applications.
-- ConHost and Windows Terminal must implement their own virtual functions separately.
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
 Author(s):
-- Michael Niksa   (MiNiksa)   2017
+- Michael Niksa (MiNiksa)     2017
 - Austin Diviness (AustDi)    2017
-- Carlos Zamora   (CaZamor)   2019
+- Carlos Zamora (cazamor)     2019
 --*/
 
 #pragma once
 
 #include "precomp.h"
-#include "../buffer/out/textBuffer.hpp"
 
 namespace Microsoft::Console::Types
 {
     class IConsoleWindow;
-    class WindowUiaProvider;
-    class Viewport;
+    class ScreenInfoUiaProvider;
 
-    class IScreenInfoUiaProvider :
+    class WindowUiaProviderBase :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
-        public ITextProvider
+        public IRawElementProviderFragmentRoot
     {
     public:
-        IScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
-        virtual ~IScreenInfoUiaProvider();
 
-        [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
+        [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
+        [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
@@ -58,42 +54,26 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
 
         // IRawElementProviderFragment methods
-        IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
-                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+        virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
+                                        _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
         IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
-        IFACEMETHODIMP SetFocus();
+        virtual IFACEMETHODIMP SetFocus() = 0;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
 
-        // ITextProvider
-        IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-        IFACEMETHODIMP GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-        IFACEMETHODIMP RangeFromChild(_In_ IRawElementProviderSimple* childElement,
-                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP RangeFromPoint(_In_ UiaPoint point,
-                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
+        // IRawElementProviderFragmentRoot methods
+        virtual IFACEMETHODIMP ElementProviderFromPoint(_In_ double x,
+                                                        _In_ double y,
+                                                        _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
+        virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
 
-    protected:
-        virtual IConsoleWindow* const _getIConsoleWindow() { return _baseWindow; };
-        virtual const COORD _getScreenBufferCoords() const;
-        virtual const TextBuffer& _getTextBuffer() const;
-        virtual const Viewport _getViewport() const;
-        virtual void _LockConsole() noexcept;
-        virtual void _UnlockConsole() noexcept;
-
-    private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
-        // weak reference to uia parent
-        WindowUiaProvider* const _pUiaParent;
-
-        // weak reference to IConsoleWindow
+        WindowUiaProviderBase(IConsoleWindow* baseWindow);
         IConsoleWindow* _baseWindow;
 
+        HWND _GetWindowHandle() const;
+
+    protected:
         // this is used to prevent the object from
         // signaling an event while it is already in the
         // process of signalling another event.
@@ -105,14 +85,20 @@ namespace Microsoft::Console::Types
         // eventually overflowing the stack.
         // We aren't using this as a cheap locking
         // mechanism for multi-threaded code.
-        std::map<EVENTID, bool> _signalFiringMapping;
+        std::map<EVENTID, bool> _signalEventFiring;
+
+        [[nodiscard]] HRESULT _EnsureValidHwnd() const;
+
+    private:
+        // Ref counter for COM object
+        ULONG _cRefs;
     };
 
-    namespace ScreenInfoUiaProviderTracing
+    namespace WindowUiaProviderTracing
     {
         enum class ApiCall
         {
-            Constructor,
+            Create,
             Signal,
             AddRef,
             Release,
@@ -127,19 +113,15 @@ namespace Microsoft::Console::Types
             GetEmbeddedFragmentRoots,
             SetFocus,
             GetFragmentRoot,
-            GetSelection,
-            GetVisibleRanges,
-            RangeFromChild,
-            RangeFromPoint,
-            GetDocumentRange,
-            GetSupportedTextSelection
+            ElementProviderFromPoint,
+            GetFocus
         };
 
         struct IApiMsg
         {
         };
 
-        struct ApiMsgSignal : public IApiMsg
+        struct ApiMessageSignal : public IApiMsg
         {
             EVENTID Signal;
         };
@@ -147,12 +129,6 @@ namespace Microsoft::Console::Types
         struct ApiMsgNavigate : public IApiMsg
         {
             NavigateDirection Direction;
-        };
-
-        struct ApiMsgGetSelection : public IApiMsg
-        {
-            bool AreaSelected;
-            unsigned int SelectionRowCount;
         };
     }
 }

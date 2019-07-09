@@ -9,6 +9,8 @@
 #include "handle.h"
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "search.h"
+#include "..\types\UiaTextRange.hpp"
 
 #pragma hdrstop
 
@@ -244,6 +246,94 @@ std::vector<Viewport> RenderData::GetSelectionRects() noexcept
     CATCH_LOG();
 
     return result;
+}
+
+// Routine Description:
+// - Determines whether the selection area is empty.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the selection variables contain valid selection data. False otherwise.
+bool RenderData::IsAreaSelected() const
+{
+    return Selection::Instance().IsAreaSelected();
+}
+
+// Routine Description:
+// - If a selection exists, clears it and restores the state.
+//   Will also unblock a blocked write if one exists.
+// Arguments:
+// - <none> (Uses global state)
+// Return Value:
+// - <none>
+void RenderData::ClearSelection()
+{
+    Selection::Instance().ClearSelection();
+}
+
+// Routine Description:
+// - Resets the current selection and selects a new region from the start to end coordinates
+// Arguments:
+// - coordStart - Position to start selection area from
+// - coordEnd - Position to select up to
+// Return Value:
+// - <none>
+void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+{
+    Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+}
+
+// TODO GitHub #605: Search functionality
+// For now, just adding it here to make UiaTextRange easier to create (Accessibility)
+// We should actually abstract this out better once Windows Terminal has Search
+HRESULT RenderData::FindText(_In_ BSTR text,
+                             _In_ BOOL searchBackward,
+                             _In_ BOOL ignoreCase,
+                             _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
+                             unsigned int _start,
+                             unsigned int _end,
+                             std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
+                             std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
+                             std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone)
+{
+    typedef unsigned int Endpoint;
+
+    const std::wstring wstr{ text, SysStringLen(text) };
+    const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
+
+    auto searchDirection = Search::Direction::Forward;
+    Endpoint searchAnchor = _start;
+    if (searchBackward)
+    {
+        searchDirection = Search::Direction::Backward;
+        searchAnchor = _end;
+    }
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
+    const auto& screenInfo = gci.GetActiveOutputBuffer().GetActiveBuffer();
+
+    Search searcher{ screenInfo, wstr, searchDirection, sensitivity, _endpointToCoord(this, searchAnchor) };
+
+    HRESULT hr = S_OK;
+    if (searcher.FindNext())
+    {
+        const auto foundLocation = searcher.GetFoundLocation();
+        const Endpoint start = _coordToEndpoint(this, foundLocation.first);
+        const Endpoint end = _coordToEndpoint(this, foundLocation.second);
+        // make sure what was found is within the bounds of the current range
+        if ((searchDirection == Search::Direction::Forward && end < _end) ||
+            (searchDirection == Search::Direction::Backward && start > _start))
+        {
+            hr = Clone(ppRetVal);
+            if (SUCCEEDED(hr))
+            {
+                UiaTextRange& range = static_cast<UiaTextRange&>(**ppRetVal);
+                range.SetRangeValues(start, end, false);
+            }
+        }
+    }
+    return hr;
 }
 
 // Routine Description:

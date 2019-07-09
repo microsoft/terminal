@@ -57,10 +57,13 @@
     <ClCompile Include="..\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\WindowUiaProvider.cpp">
+    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\IScreenInfoUiaProvider.cpp">
+    <ClCompile Include="..\UiaTextRange.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\WindowUiaProviderBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -89,13 +92,16 @@
     <ClInclude Include="..\utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\WindowUiaProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\IConsoleWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IScreenInfoUiaProvider.h">
+    <ClInclude Include="..\ScreenInfoUiaProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\UiaTextRange.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowUiaProviderBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

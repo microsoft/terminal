@@ -4,115 +4,28 @@
 #include "precomp.h"
 
 #include "IConsoleWindow.hpp"
-#include "WindowUiaProvider.h"
+#include "WindowUiaProviderBase.hpp"
 #include "ScreenInfoUiaProvider.h"
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
+WindowUiaProviderBase::WindowUiaProviderBase(IConsoleWindow* baseWindow) :
     _signalEventFiring{},
     _baseWindow{ baseWindow },
-    _pScreenInfoProvider{ nullptr },
     _cRefs(1)
 {
-}
-
-WindowUiaProvider::~WindowUiaProvider()
-{
-    if (_pScreenInfoProvider)
-    {
-        _pScreenInfoProvider->Release();
-    }
-}
-
-WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
-{
-    WindowUiaProvider* pWindowProvider = nullptr;
-    ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
-    try
-    {
-        pWindowProvider = new WindowUiaProvider(baseWindow);
-        pScreenInfoProvider = new ScreenInfoUiaProvider(pWindowProvider);
-        pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
-
-        return pWindowProvider;
-    }
-    catch (...)
-    {
-        if (nullptr != pWindowProvider)
-        {
-            pWindowProvider->Release();
-        }
-
-        if (nullptr != pScreenInfoProvider)
-        {
-            pScreenInfoProvider->Release();
-        }
-
-        LOG_CAUGHT_EXCEPTION();
-
-        return nullptr;
-    }
-}
-
-[[nodiscard]] HRESULT WindowUiaProvider::Signal(_In_ EVENTID id)
-{
-    HRESULT hr = S_OK;
-
-    // ScreenInfoUiaProvider is responsible for signaling selection
-    // changed events and text changed events
-    if (id == UIA_Text_TextSelectionChangedEventId ||
-        id == UIA_Text_TextChangedEventId)
-    {
-        if (_pScreenInfoProvider)
-        {
-            hr = _pScreenInfoProvider->Signal(id);
-        }
-        else
-        {
-            hr = E_POINTER;
-        }
-        return hr;
-    }
-
-    if (_signalEventFiring.find(id) != _signalEventFiring.end() &&
-        _signalEventFiring[id] == true)
-    {
-        return hr;
-    }
-
-    try
-    {
-        _signalEventFiring[id] = true;
-    }
-    CATCH_RETURN();
-
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-    hr = UiaRaiseAutomationEvent(pProvider, id);
-    _signalEventFiring[id] = false;
-
-    return hr;
-}
-
-[[nodiscard]] HRESULT WindowUiaProvider::SetTextAreaFocus()
-{
-    try
-    {
-        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
-    }
-    CATCH_RETURN();
 }
 
 #pragma region IUnknown
 
 IFACEMETHODIMP_(ULONG)
-WindowUiaProvider::AddRef()
+WindowUiaProviderBase::AddRef()
 {
     return InterlockedIncrement(&_cRefs);
 }
 
 IFACEMETHODIMP_(ULONG)
-WindowUiaProvider::Release()
+WindowUiaProviderBase::Release()
 {
     long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
@@ -122,7 +35,7 @@ WindowUiaProvider::Release()
     return val;
 }
 
-IFACEMETHODIMP WindowUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
+IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
 {
     if (riid == __uuidof(IUnknown))
     {
@@ -157,7 +70,7 @@ IFACEMETHODIMP WindowUiaProvider::QueryInterface(_In_ REFIID riid, _COM_Outptr_r
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
 // Gets UI Automation provider options.
-IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -167,7 +80,7 @@ IFACEMETHODIMP WindowUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOp
 
 // Implementation of IRawElementProviderSimple::get_PatternProvider.
 // Gets the object that supports ISelectionPattern.
-IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*/,
+IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patternId*/,
                                                      _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
     *ppInterface = nullptr;
@@ -178,7 +91,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPatternProvider(_In_ PATTERNID /*patternId*
 
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
-IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
+IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -234,7 +147,7 @@ IFACEMETHODIMP WindowUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId, _
 // Implementation of IRawElementProviderSimple::get_HostRawElementProvider.
 // Gets the default UI Automation provider for the host window. This provider
 // supplies many properties.
-IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
     try
     {
@@ -250,26 +163,7 @@ IFACEMETHODIMP WindowUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
-{
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-    *ppProvider = nullptr;
-    HRESULT hr = S_OK;
-
-    if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
-    {
-        *ppProvider = _pScreenInfoProvider;
-        (*ppProvider)->AddRef();
-
-        // signal that the focus changed
-        LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
-    }
-
-    // For the other directions (parent, next, previous) the default of nullptr is correct
-    return hr;
-}
-
-IFACEMETHODIMP WindowUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
+IFACEMETHODIMP WindowUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     // Root defers this to host, others must implement it...
@@ -278,7 +172,7 @@ IFACEMETHODIMP WindowUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARR
     return S_OK;
 }
 
-IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
+IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -295,7 +189,7 @@ IFACEMETHODIMP WindowUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
     return S_OK;
 }
 
-IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
+IFACEMETHODIMP WindowUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -303,13 +197,7 @@ IFACEMETHODIMP WindowUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_mayben
     return S_OK;
 }
 
-IFACEMETHODIMP WindowUiaProvider::SetFocus()
-{
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-    return Signal(UIA_AutomationFocusChangedEventId);
-}
-
-IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
+IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -320,29 +208,7 @@ IFACEMETHODIMP WindowUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_
 
 #pragma endregion
 
-#pragma region IRawElementProviderFragmentRoot
-
-IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
-                                                           _In_ double /*y*/,
-                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
-{
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-
-    *ppProvider = _pScreenInfoProvider;
-    (*ppProvider)->AddRef();
-
-    return S_OK;
-}
-
-IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
-{
-    RETURN_IF_FAILED(_EnsureValidHwnd());
-    return _pScreenInfoProvider->QueryInterface(IID_PPV_ARGS(ppProvider));
-}
-
-#pragma endregion
-
-HWND WindowUiaProvider::_GetWindowHandle() const
+HWND WindowUiaProviderBase::_GetWindowHandle() const
 {
     IConsoleWindow* const pConsoleWindow = _baseWindow;
     THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
@@ -350,7 +216,7 @@ HWND WindowUiaProvider::_GetWindowHandle() const
     return pConsoleWindow->GetWindowHandle();
 }
 
-[[nodiscard]] HRESULT WindowUiaProvider::_EnsureValidHwnd() const
+[[nodiscard]] HRESULT WindowUiaProviderBase::_EnsureValidHwnd() const
 {
     try
     {

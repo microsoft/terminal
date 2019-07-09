@@ -3,10 +3,10 @@
 
 #include "precomp.h"
 #include "tracing.hpp"
-#include "../interactivity/win32/UiaTextRange.hpp"
-#include "../interactivity/win32/screenInfoUiaProvider.hpp"
+#include "../types/UiaTextRange.hpp"
+#include "../types/ScreenInfoUiaProvider.h"
 
-#include "../types/WindowUiaProvider.h"
+#include "../types/WindowUiaProviderBase.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
@@ -399,647 +399,647 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
 }
 
-void Tracing::s_TraceUia(const UiaTextRange* const range,
-                         const UiaTextRangeTracing::ApiCall apiCall,
-                         const UiaTextRangeTracing::IApiMsg* const apiMsg)
-{
-    unsigned long long id = 0u;
-    bool degenerate = true;
-    Endpoint start = 0u;
-    Endpoint end = 0u;
-    if (range)
-    {
-        id = range->GetId();
-        degenerate = range->IsDegenerate();
-        start = range->GetStart();
-        end = range->GetEnd();
-    }
-
-    switch (apiCall)
-    {
-    case UiaTextRangeTracing::ApiCall::Constructor:
-    {
-        id = static_cast<const UiaTextRangeTracing::ApiMsgConstructor* const>(apiMsg)->Id;
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Constructor",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::AddRef:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::AddRef",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::Release:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Release",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::QueryInterface:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::QueryInterface",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::Clone:
-    {
-        if (apiMsg == nullptr)
-        {
-            return;
-        }
-        auto cloneId = reinterpret_cast<const UiaTextRangeTracing::ApiMsgClone* const>(apiMsg)->CloneId;
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Clone",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(cloneId, "clone's _id"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::Compare:
-    {
-        const UiaTextRangeTracing::ApiMsgCompare* const msg = static_cast<const UiaTextRangeTracing::ApiMsgCompare* const>(apiMsg);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Compare",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->OtherId, "Other's Id"),
-            TraceLoggingValue(msg->Equal, "Equal"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::CompareEndpoints:
-    {
-        const UiaTextRangeTracing::ApiMsgCompareEndpoints* const msg = static_cast<const UiaTextRangeTracing::ApiMsgCompareEndpoints* const>(apiMsg);
-        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
-        const wchar_t* const pTargetEndpoint = _textPatternRangeEndpointToString(msg->TargetEndpoint);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::CompareEndpoints",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->OtherId, "Other's Id"),
-            TraceLoggingValue(pEndpoint, "endpoint"),
-            TraceLoggingValue(pTargetEndpoint, "targetEndpoint"),
-            TraceLoggingValue(msg->Result, "Result"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::ExpandToEnclosingUnit:
-    {
-        const UiaTextRangeTracing::ApiMsgExpandToEnclosingUnit* const msg = static_cast<const UiaTextRangeTracing::ApiMsgExpandToEnclosingUnit* const>(apiMsg);
-        const wchar_t* const pUnitName = _textUnitToString(msg->Unit);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::ExpandToEnclosingUnit",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(pUnitName, "Unit"),
-            TraceLoggingValue(msg->OriginalStart, "Original Start"),
-            TraceLoggingValue(msg->OriginalEnd, "Original End"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::FindAttribute:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::FindAttribute",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::FindText:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::FindText",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::GetAttributeValue:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::GetAttributeValue",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::GetBoundingRectangles:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::GetBoundingRectangles",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::GetEnclosingElement:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::GetEnclosingElement",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::GetText:
-    {
-        const UiaTextRangeTracing::ApiMsgGetText* const msg = static_cast<const UiaTextRangeTracing::ApiMsgGetText* const>(apiMsg);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::GetText",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->Text, "Text"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::Move:
-    {
-        const UiaTextRangeTracing::ApiMsgMove* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMove* const>(apiMsg);
-        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Move",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->OriginalStart, "Original Start"),
-            TraceLoggingValue(msg->OriginalEnd, "Original End"),
-            TraceLoggingValue(unitStr, "unit"),
-            TraceLoggingValue(msg->RequestedCount, "Requested Count"),
-            TraceLoggingValue(msg->MovedCount, "Moved Count"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::MoveEndpointByUnit:
-    {
-        const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const>(apiMsg);
-        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
-        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::MoveEndpointByUnit",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->OriginalStart, "Original Start"),
-            TraceLoggingValue(msg->OriginalEnd, "Original End"),
-            TraceLoggingValue(pEndpoint, "endpoint"),
-            TraceLoggingValue(unitStr, "unit"),
-            TraceLoggingValue(msg->RequestedCount, "Requested Count"),
-            TraceLoggingValue(msg->MovedCount, "Moved Count"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::MoveEndpointByRange:
-    {
-        const UiaTextRangeTracing::ApiMsgMoveEndpointByRange* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMoveEndpointByRange* const>(apiMsg);
-        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
-        const wchar_t* const pTargetEndpoint = _textPatternRangeEndpointToString(msg->TargetEndpoint);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::MoveEndpointByRange",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->OriginalStart, "Original Start"),
-            TraceLoggingValue(msg->OriginalEnd, "Original End"),
-            TraceLoggingValue(pEndpoint, "endpoint"),
-            TraceLoggingValue(pTargetEndpoint, "targetEndpoint"),
-            TraceLoggingValue(msg->OtherId, "Other's _id"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::Select:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::Select",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::AddToSelection:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::AddToSelection",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::RemoveFromSelection:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::RemoveFromSelection",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case UiaTextRangeTracing::ApiCall::ScrollIntoView:
-    {
-        const UiaTextRangeTracing::ApiMsgScrollIntoView* const msg = static_cast<const UiaTextRangeTracing::ApiMsgScrollIntoView* const>(apiMsg);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::ScrollIntoView",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingValue(msg->AlignToTop, "alignToTop"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case UiaTextRangeTracing::ApiCall::GetChildren:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "UiaTextRange::GetChildren",
-            TraceLoggingValue(id, "_id"),
-            TraceLoggingValue(start, "_start"),
-            TraceLoggingValue(end, "_end"),
-            TraceLoggingValue(degenerate, "_degenerate"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    default:
-        break;
-    }
-}
-
-void Tracing::s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const /*pProvider*/,
-                         const ScreenInfoUiaProviderTracing::ApiCall apiCall,
-                         const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
-{
-    switch (apiCall)
-    {
-    case ScreenInfoUiaProviderTracing::ApiCall::Constructor:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::Constructor",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::Signal:
-    {
-        const ScreenInfoUiaProviderTracing::ApiMsgSignal* const msg = static_cast<const ScreenInfoUiaProviderTracing::ApiMsgSignal* const>(apiMsg);
-        const wchar_t* const signalName = _eventIdToString(msg->Signal);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::Signal",
-            TraceLoggingValue(msg->Signal),
-            TraceLoggingValue(signalName, "Event Name"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case ScreenInfoUiaProviderTracing::ApiCall::AddRef:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::AddRef",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::Release:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::Release",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::QueryInterface:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::QueryInterface",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetProviderOptions:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetProviderOptions",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetPatternProvider:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetPatternProvider",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetPropertyValue:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetPropertyValue",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetHostRawElementProvider:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetHostRawElementProvider",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::Navigate:
-    {
-        const ScreenInfoUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const ScreenInfoUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
-        const wchar_t* const direction = _directionToString(msg->Direction);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::Navigate",
-            TraceLoggingValue(direction, "direction"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case ScreenInfoUiaProviderTracing::ApiCall::GetRuntimeId:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetRuntimeId",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetBoundingRectangle:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetBoundingRectangles",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetEmbeddedFragmentRoots",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::SetFocus:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::SetFocus",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetFragmentRoot:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetFragmentRoot",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetSelection:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetSelection",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetVisibleRanges:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetVisibleRanges",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::RangeFromChild:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::RangeFromChild",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::RangeFromPoint:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::RangeFromPoint",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetDocumentRange:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetDocumentRange",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case ScreenInfoUiaProviderTracing::ApiCall::GetSupportedTextSelection:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "ScreenInfoUiaProvider::GetSupportedTextSelection",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    default:
-        break;
-    }
-}
-
-void Tracing::s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const /*pProvider*/,
-                         const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
-                         const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg)
-{
-    switch (apiCall)
-    {
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Create:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::Create",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Signal:
-    {
-        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const>(apiMsg);
-        const wchar_t* const eventName = _eventIdToString(msg->Signal);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::Signal",
-            TraceLoggingValue(msg->Signal, "Signal"),
-            TraceLoggingValue(eventName, "Signal Name"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::AddRef:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::AddRef",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Release:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::Release",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::QueryInterface:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::QueryInterface",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetProviderOptions:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetProviderOptions",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPatternProvider:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetPatternProvider",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPropertyValue:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetPropertyValue",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetHostRawElementProvider:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetHostRawElementProvider",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Navigate:
-    {
-        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
-        const wchar_t* const direction = _directionToString(msg->Direction);
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::Navigate",
-            TraceLoggingValue(direction, "direction"),
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    }
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetRuntimeId:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetRuntimeId",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetBoundingRectangle:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetBoundingRectangle",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetEmbeddedFragmentRoots",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::SetFocus:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::SetFocus",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFragmentRoot:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetFragmentRoot",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::ElementProviderFromPoint:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::ElementProviderFromPoint",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFocus:
-        TraceLoggingWrite(
-            g_hConhostV2EventTraceProvider,
-            "WindowUiaProvider::GetFocus",
-            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-            TraceLoggingKeyword(TraceKeywords::UIA));
-        break;
-    default:
-        break;
-    }
-}
+//void Tracing::s_TraceUia(const UiaTextRange* const range,
+//                         const UiaTextRangeTracing::ApiCall apiCall,
+//                         const UiaTextRangeTracing::IApiMsg* const apiMsg)
+//{
+//    unsigned long long id = 0u;
+//    bool degenerate = true;
+//    Endpoint start = 0u;
+//    Endpoint end = 0u;
+//    if (range)
+//    {
+//        id = range->GetId();
+//        degenerate = range->IsDegenerate();
+//        start = range->GetStart();
+//        end = range->GetEnd();
+//    }
+//
+//    switch (apiCall)
+//    {
+//    case UiaTextRangeTracing::ApiCall::Constructor:
+//    {
+//        id = static_cast<const UiaTextRangeTracing::ApiMsgConstructor* const>(apiMsg)->Id;
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Constructor",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::AddRef:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::AddRef",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::Release:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Release",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::QueryInterface:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::QueryInterface",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::Clone:
+//    {
+//        if (apiMsg == nullptr)
+//        {
+//            return;
+//        }
+//        auto cloneId = reinterpret_cast<const UiaTextRangeTracing::ApiMsgClone* const>(apiMsg)->CloneId;
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Clone",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(cloneId, "clone's _id"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::Compare:
+//    {
+//        const UiaTextRangeTracing::ApiMsgCompare* const msg = static_cast<const UiaTextRangeTracing::ApiMsgCompare* const>(apiMsg);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Compare",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->OtherId, "Other's Id"),
+//            TraceLoggingValue(msg->Equal, "Equal"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::CompareEndpoints:
+//    {
+//        const UiaTextRangeTracing::ApiMsgCompareEndpoints* const msg = static_cast<const UiaTextRangeTracing::ApiMsgCompareEndpoints* const>(apiMsg);
+//        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
+//        const wchar_t* const pTargetEndpoint = _textPatternRangeEndpointToString(msg->TargetEndpoint);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::CompareEndpoints",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->OtherId, "Other's Id"),
+//            TraceLoggingValue(pEndpoint, "endpoint"),
+//            TraceLoggingValue(pTargetEndpoint, "targetEndpoint"),
+//            TraceLoggingValue(msg->Result, "Result"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::ExpandToEnclosingUnit:
+//    {
+//        const UiaTextRangeTracing::ApiMsgExpandToEnclosingUnit* const msg = static_cast<const UiaTextRangeTracing::ApiMsgExpandToEnclosingUnit* const>(apiMsg);
+//        const wchar_t* const pUnitName = _textUnitToString(msg->Unit);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::ExpandToEnclosingUnit",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(pUnitName, "Unit"),
+//            TraceLoggingValue(msg->OriginalStart, "Original Start"),
+//            TraceLoggingValue(msg->OriginalEnd, "Original End"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::FindAttribute:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::FindAttribute",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::FindText:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::FindText",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::GetAttributeValue:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::GetAttributeValue",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::GetBoundingRectangles:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::GetBoundingRectangles",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::GetEnclosingElement:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::GetEnclosingElement",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::GetText:
+//    {
+//        const UiaTextRangeTracing::ApiMsgGetText* const msg = static_cast<const UiaTextRangeTracing::ApiMsgGetText* const>(apiMsg);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::GetText",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->Text, "Text"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::Move:
+//    {
+//        const UiaTextRangeTracing::ApiMsgMove* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMove* const>(apiMsg);
+//        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Move",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->OriginalStart, "Original Start"),
+//            TraceLoggingValue(msg->OriginalEnd, "Original End"),
+//            TraceLoggingValue(unitStr, "unit"),
+//            TraceLoggingValue(msg->RequestedCount, "Requested Count"),
+//            TraceLoggingValue(msg->MovedCount, "Moved Count"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::MoveEndpointByUnit:
+//    {
+//        const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMoveEndpointByUnit* const>(apiMsg);
+//        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
+//        const wchar_t* const unitStr = _textUnitToString(msg->Unit);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::MoveEndpointByUnit",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->OriginalStart, "Original Start"),
+//            TraceLoggingValue(msg->OriginalEnd, "Original End"),
+//            TraceLoggingValue(pEndpoint, "endpoint"),
+//            TraceLoggingValue(unitStr, "unit"),
+//            TraceLoggingValue(msg->RequestedCount, "Requested Count"),
+//            TraceLoggingValue(msg->MovedCount, "Moved Count"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::MoveEndpointByRange:
+//    {
+//        const UiaTextRangeTracing::ApiMsgMoveEndpointByRange* const msg = static_cast<const UiaTextRangeTracing::ApiMsgMoveEndpointByRange* const>(apiMsg);
+//        const wchar_t* const pEndpoint = _textPatternRangeEndpointToString(msg->Endpoint);
+//        const wchar_t* const pTargetEndpoint = _textPatternRangeEndpointToString(msg->TargetEndpoint);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::MoveEndpointByRange",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->OriginalStart, "Original Start"),
+//            TraceLoggingValue(msg->OriginalEnd, "Original End"),
+//            TraceLoggingValue(pEndpoint, "endpoint"),
+//            TraceLoggingValue(pTargetEndpoint, "targetEndpoint"),
+//            TraceLoggingValue(msg->OtherId, "Other's _id"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::Select:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::Select",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::AddToSelection:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::AddToSelection",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::RemoveFromSelection:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::RemoveFromSelection",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case UiaTextRangeTracing::ApiCall::ScrollIntoView:
+//    {
+//        const UiaTextRangeTracing::ApiMsgScrollIntoView* const msg = static_cast<const UiaTextRangeTracing::ApiMsgScrollIntoView* const>(apiMsg);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::ScrollIntoView",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingValue(msg->AlignToTop, "alignToTop"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case UiaTextRangeTracing::ApiCall::GetChildren:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "UiaTextRange::GetChildren",
+//            TraceLoggingValue(id, "_id"),
+//            TraceLoggingValue(start, "_start"),
+//            TraceLoggingValue(end, "_end"),
+//            TraceLoggingValue(degenerate, "_degenerate"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    default:
+//        break;
+//    }
+//}
+//
+//void Tracing::s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const /*pProvider*/,
+//                         const ScreenInfoUiaProviderTracing::ApiCall apiCall,
+//                         const ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg)
+//{
+//    switch (apiCall)
+//    {
+//    case ScreenInfoUiaProviderTracing::ApiCall::Constructor:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::Constructor",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::Signal:
+//    {
+//        const ScreenInfoUiaProviderTracing::ApiMsgSignal* const msg = static_cast<const ScreenInfoUiaProviderTracing::ApiMsgSignal* const>(apiMsg);
+//        const wchar_t* const signalName = _eventIdToString(msg->Signal);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::Signal",
+//            TraceLoggingValue(msg->Signal),
+//            TraceLoggingValue(signalName, "Event Name"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case ScreenInfoUiaProviderTracing::ApiCall::AddRef:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::AddRef",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::Release:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::Release",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::QueryInterface:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::QueryInterface",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetProviderOptions:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetProviderOptions",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetPatternProvider:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetPatternProvider",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetPropertyValue:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetPropertyValue",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetHostRawElementProvider:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetHostRawElementProvider",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::Navigate:
+//    {
+//        const ScreenInfoUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const ScreenInfoUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
+//        const wchar_t* const direction = _directionToString(msg->Direction);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::Navigate",
+//            TraceLoggingValue(direction, "direction"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetRuntimeId:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetRuntimeId",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetBoundingRectangle:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetBoundingRectangles",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetEmbeddedFragmentRoots",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::SetFocus:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::SetFocus",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetFragmentRoot:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetFragmentRoot",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetSelection:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetSelection",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetVisibleRanges:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetVisibleRanges",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::RangeFromChild:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::RangeFromChild",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::RangeFromPoint:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::RangeFromPoint",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetDocumentRange:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetDocumentRange",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case ScreenInfoUiaProviderTracing::ApiCall::GetSupportedTextSelection:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "ScreenInfoUiaProvider::GetSupportedTextSelection",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    default:
+//        break;
+//    }
+//}
+//
+//void Tracing::s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const /*pProvider*/,
+//                         const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
+//                         const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg)
+//{
+//    switch (apiCall)
+//    {
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Create:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::Create",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Signal:
+//    {
+//        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMessageSignal* const>(apiMsg);
+//        const wchar_t* const eventName = _eventIdToString(msg->Signal);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::Signal",
+//            TraceLoggingValue(msg->Signal, "Signal"),
+//            TraceLoggingValue(eventName, "Signal Name"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::AddRef:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::AddRef",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Release:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::Release",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::QueryInterface:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::QueryInterface",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetProviderOptions:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetProviderOptions",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPatternProvider:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetPatternProvider",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetPropertyValue:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetPropertyValue",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetHostRawElementProvider:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetHostRawElementProvider",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::Navigate:
+//    {
+//        const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const msg = static_cast<const Microsoft::Console::Types::WindowUiaProviderTracing::ApiMsgNavigate* const>(apiMsg);
+//        const wchar_t* const direction = _directionToString(msg->Direction);
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::Navigate",
+//            TraceLoggingValue(direction, "direction"),
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    }
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetRuntimeId:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetRuntimeId",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetBoundingRectangle:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetBoundingRectangle",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetEmbeddedFragmentRoots:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetEmbeddedFragmentRoots",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::SetFocus:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::SetFocus",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFragmentRoot:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetFragmentRoot",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::ElementProviderFromPoint:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::ElementProviderFromPoint",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    case Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall::GetFocus:
+//        TraceLoggingWrite(
+//            g_hConhostV2EventTraceProvider,
+//            "WindowUiaProvider::GetFocus",
+//            TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+//            TraceLoggingKeyword(TraceKeywords::UIA));
+//        break;
+//    default:
+//        break;
+//    }
+//}
 
 const wchar_t* const Tracing::_textPatternRangeEndpointToString(int endpoint)
 {
