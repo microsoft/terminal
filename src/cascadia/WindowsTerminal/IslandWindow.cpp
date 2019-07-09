@@ -53,7 +53,7 @@ void IslandWindow::MakeWindow() noexcept
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
     WINRT_VERIFY(CreateWindow(wc.lpszClassName,
                               L"Windows Terminal",
-                              WS_CAPTION | WS_POPUP, // WS_OVERLAPPEDWINDOW,
+                              WS_OVERLAPPEDWINDOW,
                               CW_USEDEFAULT,
                               CW_USEDEFAULT,
                               CW_USEDEFAULT,
