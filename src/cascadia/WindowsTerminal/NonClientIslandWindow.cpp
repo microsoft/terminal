@@ -657,7 +657,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         // you do this here, then a small gap will appear between the titlebar
         // and the content, until the window is moved. However, we do need to
         // keep this here _in general_ for dragging across DPI boundaries.
-        if (!_isMaximized)
+        if (_isMaximized)
         {
             THROW_IF_FAILED(_UpdateFrameMargins());
         }
