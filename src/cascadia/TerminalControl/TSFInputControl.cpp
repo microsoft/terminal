@@ -33,23 +33,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBlock.IsTextSelectionEnabled(false);
         _textBlock.TextDecorations(TextDecorations::Underline);
 
-        // canvas for controlling exact position of the TextBlock
+        // Canvas for controlling exact position of the TextBlock
         _canvas = Windows::UI::Xaml::Controls::Canvas();
         _canvas.Visibility(Visibility::Collapsed);
 
-        // add the textblock to the canvas
+        // add the Textblock to the Canvas
         _canvas.Children().Append(_textBlock);
 
-        // set the content of this control to be the canvas
+        // set the content of this control to be the Canvas
         this->Content(_canvas);
 
-        // Create a CoreTextEditingContext for since we are like a custom edit control
+        // Create a CoreTextEditingContext for since we are acting like a custom edit control
         auto manager = Core::CoreTextServicesManager::GetForCurrentView();
         _editContext = manager.CreateEditContext();
 
         // sets the Input Pane display policy to Manual for now so that it can manually show the
         // software keyboard when the control gains focus and dismiss it when the control loses focus.
-        // Should look at Automatic int he Future Add WI TODO
+        // TODO investigate if we can set this to Automatic
         _editContext.InputPaneDisplayPolicy(Core::CoreTextInputPaneDisplayPolicy::Manual);
 
         // set the input scope to Text because this control is for any text.
@@ -73,20 +73,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _editContext.CompositionCompleted({ this, &TSFInputControl::_compositionCompletedHandler });
     }
-
-    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontHeightProperty =
-        Windows::UI::Xaml::DependencyProperty::Register(
-            L"FontHeight",
-            winrt::xaml_typename<double>(),
-            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr);
-
-    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontWidthProperty =
-        Windows::UI::Xaml::DependencyProperty::Register(
-            L"FontWidth",
-            winrt::xaml_typename<double>(),
-            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr);
 
     // Method Description:
     // - NotifyFocusEnter handler for notifying CoreEditTextContext of focus enter
@@ -411,6 +397,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         OutputDebugString(L"_editContextFormatUpdating\n");
     }
+
+    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontHeightProperty =
+        Windows::UI::Xaml::DependencyProperty::Register(
+            L"FontHeight",
+            winrt::xaml_typename<double>(),
+            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
+            nullptr);
+
+    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontWidthProperty =
+        Windows::UI::Xaml::DependencyProperty::Register(
+            L"FontWidth",
+            winrt::xaml_typename<double>(),
+            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
+            nullptr);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentCursorPosition, _currentCursorPositionHandlers, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentFontInfo, _currentFontInfoHandlers, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
