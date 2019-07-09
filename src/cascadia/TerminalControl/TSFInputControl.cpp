@@ -209,7 +209,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
-        _canvas.SetTop(_textBlock, clientCursorPos.Y + 2); // TODO figure out how to align
+        _canvas.SetTop(_textBlock, static_cast<double>(clientCursorPos.Y) + 2); // TODO figure out how to align
 
         // width is cursor to end of canvas
         _textBlock.Width(200); // TODO figure out proper width
@@ -320,13 +320,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         OutputDebugString(buff);
 
-        auto textRequested = _inputBuffer.substr(range.StartCaretPosition, range.EndCaretPosition - range.StartCaretPosition);
+        try
+        {
+            auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
 
-        swprintf_s(buff, ARRAYSIZE(buff), L"Text Requested: %s\n", textRequested.c_str());
+            swprintf_s(buff, ARRAYSIZE(buff), L"Text Requested: %s\n", textRequested.c_str());
 
-        OutputDebugString(buff);
+            OutputDebugString(buff);
 
-        args.Request().Text(winrt::to_hstring(textRequested.c_str()));
+            args.Request().Text(winrt::to_hstring(textRequested.c_str()));
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
     }
 
     // Method Description:
@@ -377,15 +384,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         swprintf_s(buff, ARRAYSIZE(buff), L"Text: %s\n", text.c_str());
         OutputDebugString(buff);
 
-        _inputBuffer = _inputBuffer.replace(
-            range.StartCaretPosition,
-            range.EndCaretPosition - range.StartCaretPosition,
-            text.c_str());
+        try
+        {
+            _inputBuffer = _inputBuffer.replace(
+                range.StartCaretPosition,
+                static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition),
+                text.c_str());
 
-        _textBlock.Text(_inputBuffer);
+            _textBlock.Text(_inputBuffer);
 
-        // Notify the TSF that the update succeeded
-        args.Result(CoreTextTextUpdatingResult::Succeeded);
+            // Notify the TSF that the update succeeded
+            args.Result(CoreTextTextUpdatingResult::Succeeded);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+
+            // indicate
+            args.Result(CoreTextTextUpdatingResult::Failed);
+        }
     }
 
     // Method Description:
