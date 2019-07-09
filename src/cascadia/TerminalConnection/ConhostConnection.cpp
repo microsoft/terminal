@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "ConhostConnection.h"
 #include "windows.h"
+#include "wil/common.h"
 #include <sstream>
 #include <string_view>
 #include <algorithm>
@@ -234,16 +235,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const BYTE* const endPtr{ buffer + dwRead };
             const BYTE* backIter{ endPtr - 1 };
             // If the last byte in the buffer was a byte belonging to a UTF-8 multi-byte character
-            if ((*backIter & 0b10000000) == 0b10000000)
+            if (WI_AreAllFlagsSet(*backIter & 0b10000000, 0b10000000))
             {
                 // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the buffer
                 for (DWORD dwSequenceLen{ 1UL }, stop{ dwRead < 4UL ? dwRead : 4UL }; dwSequenceLen < stop; ++dwSequenceLen, --backIter)
                 {
                     // If Lead Byte found
-                    if ((*backIter & 0b11000000) == 0b11000000)
+                    if (WI_AreAllFlagsSet(*backIter & 0b11000000, 0b11000000))
                     {
                         // If the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them
-                        if ((*backIter & bitmasks[dwSequenceLen]) != bitmasks[dwSequenceLen - 1])
+                        if (WI_IsAnyFlagClear(*backIter & bitmasks[dwSequenceLen], bitmasks[dwSequenceLen - 1]))
                         {
                             std::move(backIter, endPtr, utf8Partials);
                             dwRead -= dwSequenceLen;
