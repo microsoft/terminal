@@ -843,7 +843,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+        {
+            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+            // macro directly with a VirtualKeyModifiers
+            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+            if (_settings.CopyOnSelect() && _terminal->IsSelectionActive())
+            {
+                CopySelectionToClipboard(!shiftEnabled);
+            }
+        }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             _touchAnchor = std::nullopt;
         }

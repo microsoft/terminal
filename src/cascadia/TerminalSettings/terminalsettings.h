@@ -74,6 +74,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment();
         void BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value);
 
+        bool CopyOnSelect();
+        void CopyOnSelect(bool value);
+
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
 
@@ -113,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
         winrt::Windows::UI::Xaml::HorizontalAlignment _backgroundImageHorizontalAlignment;
         winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
+        bool _copyOnSelect;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;

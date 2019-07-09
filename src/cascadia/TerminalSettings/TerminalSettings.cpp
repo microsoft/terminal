@@ -258,6 +258,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImageVerticalAlignment = value;
     }
 
+    bool TerminalSettings::CopyOnSelect()
+    {
+        return _copyOnSelect;
+    }
+
+    void TerminalSettings::CopyOnSelect(bool value)
+    {
+        _copyOnSelect = value;
+    }
+
     Settings::IKeyBindings TerminalSettings::KeyBindings()
     {
         return _keyBindings;
