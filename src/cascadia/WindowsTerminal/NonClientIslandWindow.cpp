@@ -232,7 +232,10 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     // Get the size of the borders we want to use. The sides and bottom will
     // just be big enough for resizing, but the top will be as big as we need
     // for the non-client content.
-    MARGINS margins = GetFrameMargins();
+    // MARGINS margins = GetFrameMargins();
+
+    MARGINS margins = { 0, 0, 0, 1 };
+
     // Extend the frame into the client area.
     return DwmExtendFrameIntoClientArea(_window.get(), &margins);
 }
@@ -337,7 +340,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
     // First call DwmDefWindowProc. This might handle things like the
     // min/max/close buttons for us.
-    const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
+    // const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
+    const bool dwmHandledMessage = false;
 
     switch (message)
     {
@@ -391,19 +395,22 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         ForceResize();
         break;
     }
-    case WM_NCACTIVATE:
-    case WM_NCPAINT:
+    case WM_PAINT:
     {
         if (!_dragBar)
         {
             return 0;
         }
+        HWND hwnd = _window.get();
 
-        const auto hdc = wil::GetDC(_window.get());
-        if (hdc.get())
+        PAINTSTRUCT ps{ 0 };
+        HDC hdc = BeginPaint(hwnd, &ps);
+
+        if (hdc)
         {
             const auto scale = GetCurrentDpiScale();
             const auto dpi = ::GetDpiForWindow(_window.get());
+            // Get the dimensions of the drag borders for the sides of the window.
             const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
             const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
             const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
@@ -415,31 +422,105 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
+            RECT dragBarRect = GetDragAreaRect();
+            dragBarRect.left += xPos;
+            dragBarRect.right += xPos;
+            dragBarRect.bottom += yPos;
+            dragBarRect.top += yPos;
+            // ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            ::FillRect(hdc, &dragBarRect, _backgroundBrush.get());
+
             RECT windowRect = {};
             ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
             RECT clientRect = { 0, 0, cx, yPos };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
 
             clientRect = { 0, 0, xPos, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
 
             clientRect = { 0, cy - yPos, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
 
+            // Draw the right window border
             clientRect = { cx - xPos, 0, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-            RECT dragBarRect = GetDragAreaRect();
-            dragBarRect.left += xPos;
-            dragBarRect.right += xPos;
-            dragBarRect.bottom += yPos;
-            dragBarRect.top += yPos;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
         }
-        return 0;
+
+        EndPaint(hwnd, &ps);
+        return TRUE;
+    }
+    // We need to update our NC area on WM_NCACTIVATE as well, otherwise it will
+    // update the NC area with the aero-style titlebar/border on focus gain/loss
+    case WM_NCACTIVATE:
+    case WM_NCPAINT:
+    {
+        // if (!_dragBar)
+        // {
+        //     return 0;
+        // }
+
+        // // const auto hdc = wil::GetDC(_window.get());
+        // ////////////////////////////////////////////////////////////////////////
+        // HRGN hrgn = (HRGN)wParam;
+        // HWND hwnd = _window.get();
+        // HDC hdcEx = ::GetDCEx(hwnd, hrgn, DCX_CACHE | DCX_WINDOW | DCX_INTERSECTRGN);
+        // if (hdcEx == nullptr)
+        // {
+        //     auto gle = ::GetLastError();
+        //     gle;
+        //     auto a = 0;
+        //     a++;
+        // }
+        // const auto hdc = wil::unique_hdc_window(wil::window_dc(hdcEx));
+        // ////////////////////////////////////////////////////////////////////////
+        // // Seems to do nothing different than just GetDC
+        // // const auto hdc = wil::GetWindowDC(_window.get());
+
+        // if (hdc.get())
+        // // if (hdcEx)
+        // {
+        //     const auto scale = GetCurrentDpiScale();
+        //     const auto dpi = ::GetDpiForWindow(_window.get());
+        //     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+        //     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+        //     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
+        //     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+
+        //     const auto backgroundBrush = _dragBar.Background();
+        //     const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+        //     const auto backgroundColor = backgroundSolidBrush.Color();
+        //     const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
+        //     _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
+
+        //     RECT windowRect = {};
+        //     ::GetWindowRect(_window.get(), &windowRect);
+        //     const auto cx = windowRect.right - windowRect.left;
+        //     const auto cy = windowRect.bottom - windowRect.top;
+
+        //     RECT clientRect = { 0, 0, cx, yPos };
+        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+        //     clientRect = { 0, 0, xPos, cy };
+        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+        //     clientRect = { 0, cy - yPos, cx, cy };
+        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+        //     // Draw the right window border
+        //     clientRect = { cx - xPos, 0, cx, cy };
+        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+        //     RECT dragBarRect = GetDragAreaRect();
+        //     dragBarRect.left += xPos;
+        //     dragBarRect.right += xPos;
+        //     dragBarRect.bottom += yPos;
+        //     dragBarRect.top += yPos;
+        //     ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+        // }
+        // return 0;
     }
     case WM_LBUTTONDOWN:
     {
