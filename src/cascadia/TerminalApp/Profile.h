@@ -52,7 +52,7 @@ public:
 
     bool HasIcon() const noexcept;
     std::wstring_view GetIconPath() const noexcept;
-    void SetIconPath(std::wstring_view path) noexcept;
+    void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;
 

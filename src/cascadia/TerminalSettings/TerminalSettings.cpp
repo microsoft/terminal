@@ -61,7 +61,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
     void TerminalSettings::SetColorTableEntry(int32_t index, uint32_t value)
     {
-        THROW_HR_IF(E_INVALIDARG, index > _colorTable.size());
+        auto const colorTableCount = gsl::narrow_cast<decltype(index)>(_colorTable.size());
+        THROW_HR_IF(E_INVALIDARG, index >= colorTableCount);
         _colorTable[index] = value;
     }
 
