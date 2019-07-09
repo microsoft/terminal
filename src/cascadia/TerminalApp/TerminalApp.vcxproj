@@ -36,6 +36,10 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="App.base.h" />
+    <ClInclude Include="TerminalPage.h">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -58,9 +62,17 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="TerminalPage.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
+    <Midl Include="TerminalPage.idl">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -119,6 +131,9 @@
     <!-- This is needed to be able to reference the XamlApplication type. -->
   </ItemGroup>
   <ItemGroup>
+    <Page Include="TerminalPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>

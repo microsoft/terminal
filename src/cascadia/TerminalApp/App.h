@@ -26,7 +26,6 @@ namespace winrt::TerminalApp::implementation
         App();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
-        Windows::UI::Xaml::UIElement GetTabs() noexcept;
 
         // Gets the current dragglable area in the non client region of the top level window
         Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
@@ -52,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The two roots currently are _root and _tabRow
         // (which is a root when the tabs are in the titlebar.)
-        Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
