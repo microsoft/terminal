@@ -229,11 +229,11 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    // Get the size of the borders we want to use. The sides and bottom will
-    // just be big enough for resizing, but the top will be as big as we need
-    // for the non-client content.
-    // MARGINS margins = GetFrameMargins();
-
+    // Set frame margines with just a single pixel on the bottom. We don't
+    // really want a window frame at all - we're drawing all of it. We
+    // especially don't want a top margin - that's where the caption buttons
+    // are, and we're drawing those. So just set a single pixel on the bottom,
+    // because the method won't work with {0}.
     MARGINS margins = { 0, 0, 0, 1 };
 
     // Extend the frame into the client area.
@@ -340,8 +340,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
     // First call DwmDefWindowProc. This might handle things like the
     // min/max/close buttons for us.
-    // const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
-    const bool dwmHandledMessage = false;
+    const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
+    // const bool dwmHandledMessage = false;
 
     switch (message)
     {
@@ -390,23 +390,23 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         }
         break;
     }
+
     case WM_EXITSIZEMOVE:
     {
         ForceResize();
         break;
     }
+
     case WM_PAINT:
     {
         if (!_dragBar)
         {
             return 0;
         }
-        HWND hwnd = _window.get();
 
         PAINTSTRUCT ps{ 0 };
-        HDC hdc = BeginPaint(hwnd, &ps);
-
-        if (hdc)
+        const auto hdc = wil::BeginPaint(_window.get(), &ps);
+        if (hdc.get())
         {
             const auto scale = GetCurrentDpiScale();
             const auto dpi = ::GetDpiForWindow(_window.get());
@@ -416,112 +416,46 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
             const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
+            // Create brush for borders, titlebar color.
             const auto backgroundBrush = _dragBar.Background();
             const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
             const auto backgroundColor = backgroundSolidBrush.Color();
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
+            // Fill in the area between the non-client content and the caption buttons.
             RECT dragBarRect = GetDragAreaRect();
             dragBarRect.left += xPos;
             dragBarRect.right += xPos;
             dragBarRect.bottom += yPos;
             dragBarRect.top += yPos;
-            // ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
-            ::FillRect(hdc, &dragBarRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
 
             RECT windowRect = {};
             ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
+            // Draw the top window border
             RECT clientRect = { 0, 0, cx, yPos };
-            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
+            // Draw the left window border
             clientRect = { 0, 0, xPos, cy };
-            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
+            // Draw the bottom window border
             clientRect = { 0, cy - yPos, cx, cy };
-            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
             // Draw the right window border
             clientRect = { cx - xPos, 0, cx, cy };
-            ::FillRect(hdc, &clientRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
         }
 
-        EndPaint(hwnd, &ps);
-        return TRUE;
+        return 0;
     }
-    // We need to update our NC area on WM_NCACTIVATE as well, otherwise it will
-    // update the NC area with the aero-style titlebar/border on focus gain/loss
-    case WM_NCACTIVATE:
-    case WM_NCPAINT:
-    {
-        // if (!_dragBar)
-        // {
-        //     return 0;
-        // }
 
-        // // const auto hdc = wil::GetDC(_window.get());
-        // ////////////////////////////////////////////////////////////////////////
-        // HRGN hrgn = (HRGN)wParam;
-        // HWND hwnd = _window.get();
-        // HDC hdcEx = ::GetDCEx(hwnd, hrgn, DCX_CACHE | DCX_WINDOW | DCX_INTERSECTRGN);
-        // if (hdcEx == nullptr)
-        // {
-        //     auto gle = ::GetLastError();
-        //     gle;
-        //     auto a = 0;
-        //     a++;
-        // }
-        // const auto hdc = wil::unique_hdc_window(wil::window_dc(hdcEx));
-        // ////////////////////////////////////////////////////////////////////////
-        // // Seems to do nothing different than just GetDC
-        // // const auto hdc = wil::GetWindowDC(_window.get());
-
-        // if (hdc.get())
-        // // if (hdcEx)
-        // {
-        //     const auto scale = GetCurrentDpiScale();
-        //     const auto dpi = ::GetDpiForWindow(_window.get());
-        //     const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-        //     const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-        //     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-        //     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
-
-        //     const auto backgroundBrush = _dragBar.Background();
-        //     const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
-        //     const auto backgroundColor = backgroundSolidBrush.Color();
-        //     const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
-        //     _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
-
-        //     RECT windowRect = {};
-        //     ::GetWindowRect(_window.get(), &windowRect);
-        //     const auto cx = windowRect.right - windowRect.left;
-        //     const auto cy = windowRect.bottom - windowRect.top;
-
-        //     RECT clientRect = { 0, 0, cx, yPos };
-        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-        //     clientRect = { 0, 0, xPos, cy };
-        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-        //     clientRect = { 0, cy - yPos, cx, cy };
-        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-        //     // Draw the right window border
-        //     clientRect = { cx - xPos, 0, cx, cy };
-        //     ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
-
-        //     RECT dragBarRect = GetDragAreaRect();
-        //     dragBarRect.left += xPos;
-        //     dragBarRect.right += xPos;
-        //     dragBarRect.bottom += yPos;
-        //     dragBarRect.top += yPos;
-        //     ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
-        // }
-        // return 0;
-    }
     case WM_LBUTTONDOWN:
     {
         POINT point1 = {};
