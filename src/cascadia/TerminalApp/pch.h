@@ -32,6 +32,7 @@
 #include <winrt/Windows.UI.Text.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
+#include <winrt/Windows.UI.Xaml.Markup.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>

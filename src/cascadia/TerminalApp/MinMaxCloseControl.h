@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
 
     private:
         void _OnMaximize(byte flag);
-        wil::unique_hwnd _window;
+        HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
     };
 }
 

@@ -19,12 +19,12 @@ namespace winrt::TerminalApp::implementation
 
     uint64_t MinMaxCloseControl::ParentWindowHandle() const
     {
-        return reinterpret_cast<uint64_t>(_window.get());
+        return reinterpret_cast<uint64_t>(_window);
     }
 
     void MinMaxCloseControl::ParentWindowHandle(uint64_t handle)
     {
-        _window.reset(reinterpret_cast<HWND>(handle));
+        _window = reinterpret_cast<HWND>(handle);
     }
 
     void MinMaxCloseControl::_OnMaximize(byte flag)
@@ -35,16 +35,16 @@ namespace winrt::TerminalApp::implementation
             ::GetCursorPos(&point1);
             const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
             WINDOWPLACEMENT placement = { sizeof(placement) };
-            ::GetWindowPlacement(_window.get(), &placement);
+            ::GetWindowPlacement(_window, &placement);
             if (placement.showCmd == SW_SHOWNORMAL)
             {
                 winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateMaximized", false);
-                ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
+                ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
             }
             else if (placement.showCmd == SW_SHOWMAXIMIZED)
             {
                 winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateNormal", false);
-                ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
+                ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
             }
         }
     }
@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_window)
         {
-            ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MINIMIZE | HTMINBUTTON, 0);
+            ::PostMessage(_window, WM_SYSCOMMAND, SC_MINIMIZE | HTMINBUTTON, 0);
         }
     }
 
