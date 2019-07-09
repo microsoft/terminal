@@ -4,11 +4,7 @@
 #include "pch.h"
 #include "ConhostConnection.h"
 #include "windows.h"
-#include "wil/common.h"
 #include <sstream>
-#include <string_view>
-#include <algorithm>
-#include <type_traits>
 // STARTF_USESTDHANDLES is only defined in WINAPI_PARTITION_DESKTOP
 // We're just gonna manually define it for this prototyping code
 #ifndef STARTF_USESTDHANDLES
@@ -244,7 +240,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     if (WI_AreAllFlagsSet(*backIter, 0b11000000))
                     {
                         // If the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them
-                        if (WI_IsAnyFlagClear(*backIter & bitmasks[dwSequenceLen], bitmasks[dwSequenceLen - 1]))
+                        if ((*backIter & bitmasks[dwSequenceLen]) != bitmasks[dwSequenceLen - 1])
                         {
                             std::move(backIter, endPtr, utf8Partials);
                             dwRead -= dwSequenceLen;
