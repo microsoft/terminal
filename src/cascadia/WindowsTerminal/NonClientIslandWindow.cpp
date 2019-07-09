@@ -34,10 +34,16 @@ NonClientIslandWindow::~NonClientIslandWindow()
 {
 }
 
-void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs)
+// Method Description:
+// - Called when the app's size changes. When that happens, the size of the drag
+//   bar may have changed. If it has, we'll need to update the WindowRgn of the
+//   interop window.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/, winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
-    // InvalidateRect(NULL, NULL, TRUE);
-    // ForceResize();
     _UpdateDragRegion();
 }
 
@@ -115,10 +121,23 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 }
 
+// Method Description:
+// - Update the region of our window that is the draggable area. This happens in
+//   response to a OnDragBarSizeChanged event. We'll calculate the areas of the
+//   window that we want to display XAML content in, and set the window region
+//   of our child xaml-island window to that region. That way, the parent window
+//   will still get NCHITTEST'ed _outside_ the XAML content area, for things
+//   like dragging and resizing.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void NonClientIslandWindow::_UpdateDragRegion()
 {
     if (_dragBar)
     {
+        // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
+        // better than that.
         const auto windowRect = GetWindowRect();
         const auto width = windowRect.right - windowRect.left;
         const auto height = windowRect.bottom - windowRect.top;
@@ -158,7 +177,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
         auto clientRegion = wil::unique_hrgn(CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight));
         winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
-        // winrt::check_bool(InvalidateRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
 }
 
@@ -371,7 +389,6 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     // First call DwmDefWindowProc. This might handle things like the
     // min/max/close buttons for us.
     const bool dwmHandledMessage = DwmDefWindowProc(_window.get(), message, wParam, lParam, &lRet);
-    // const bool dwmHandledMessage = false;
 
     switch (message)
     {
@@ -433,13 +450,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             return 0;
         }
-        RECT updateRect{ 0 };
-        const bool updateRectResult = ::GetUpdateRect(_window.get(), &updateRect, false);
-        if (updateRectResult == 0)
-        {
-            break;
-        }
-
+        
         PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
@@ -693,7 +704,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         // you do this here, then a small gap will appear between the titlebar
         // and the content, until the window is moved. However, we do need to
         // keep this here _in general_ for dragging across DPI boundaries.
-        if (_isMaximized)
+        if (!_isMaximized)
         {
             THROW_IF_FAILED(_UpdateFrameMargins());
         }
