@@ -85,4 +85,6 @@ The list of valid settings can be found in the [Profiles.json Documentation](../
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
-2. Please add more Tips and Tricks
+2. Terminal `fontSize` can be changed by holding `Ctrl` and scrolling with mouse.
+3. Terminal `acrylicOpacity` can be changed by holding `Ctrl+Shift` and scrolling with mouse given `useAcrylic` is set to `true` in profiles.json.
+4. Please add more Tips and Tricks
