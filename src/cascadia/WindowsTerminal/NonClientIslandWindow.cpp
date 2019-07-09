@@ -36,8 +36,9 @@ NonClientIslandWindow::~NonClientIslandWindow()
 
 void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs)
 {
-    InvalidateRect(NULL, NULL, TRUE);
-    ForceResize();
+    // InvalidateRect(NULL, NULL, TRUE);
+    // ForceResize();
+    _UpdateDragRegion();
 }
 
 void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
@@ -101,8 +102,6 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
     const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
-
     if (_rootGrid)
     {
         winrt::Windows::Foundation::Size size{ (windowsWidth / scale) + 0.5f, (windowsHeight / scale) + 0.5f };
@@ -113,8 +112,40 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Arrange(finalRect);
     }
 
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+}
+
+void NonClientIslandWindow::_UpdateDragRegion()
+{
     if (_dragBar)
     {
+        const auto windowRect = GetWindowRect();
+        const auto width = windowRect.right - windowRect.left;
+        const auto height = windowRect.bottom - windowRect.top;
+
+        const auto scale = GetCurrentDpiScale();
+        const auto dpi = ::GetDpiForWindow(_window.get());
+
+        const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+        const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+
+        // If we're maximized, we don't want to use the frame as our margins,
+        // instead we want to use the margins from the maximization. If we included
+        // the left&right sides of the frame in this calculation while maximized,
+        // you' have a few pixels of the window border on the sides while maximized,
+        // which most apps do not have.
+        const auto bordersWidth = _isMaximized ?
+                                      (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
+                                      (dragX * 2);
+        const auto bordersHeight = _isMaximized ?
+                                       (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
+                                       (dragY * 2);
+
+        const auto windowsWidth = width - bordersWidth;
+        const auto windowsHeight = height - bordersHeight;
+        const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
+        const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+
         const auto dragBarRect = GetDragAreaRect();
         const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
 
@@ -127,9 +158,8 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         auto clientRegion = wil::unique_hrgn(CreateRectRgn(0, nonClientHeight, windowsWidth, windowsHeight));
         winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
+        // winrt::check_bool(InvalidateRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
-
-    winrt::check_hresult(_UpdateFrameMargins());
 }
 
 // Method Description:
@@ -402,6 +432,12 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         if (!_dragBar)
         {
             return 0;
+        }
+        RECT updateRect{ 0 };
+        const bool updateRectResult = ::GetUpdateRect(_window.get(), &updateRect, false);
+        if (updateRectResult == 0)
+        {
+            break;
         }
 
         PAINTSTRUCT ps{ 0 };
