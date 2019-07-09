@@ -85,4 +85,6 @@ The list of valid settings can be found in the [Profiles.json Documentation](../
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
-2. Please add more Tips and Tricks
+2. Terminal zoom can be changed by holding `Ctrl` and scrolling with mouse.
+3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding `Ctrl+Shift` and scrolling with mouse.
+4. Please add more Tips and Tricks
