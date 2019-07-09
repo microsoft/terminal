@@ -239,7 +239,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     // If Lead Byte found
                     if (WI_AreAllFlagsSet(*backIter, 0b11000000))
                     {
-                        // If the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them
+                        // If the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them:
+                        //  Use the bitmask at index `dwSequenceLen`. Compare the result with the value at the index down. If they
+                        //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
+                        //  sequence is a complete UTF-8 code point and the whole buffer is ready for the conversion to hstring.
                         if ((*backIter & bitmasks[dwSequenceLen]) != bitmasks[dwSequenceLen - 1])
                         {
                             std::move(backIter, endPtr, utf8Partials);
