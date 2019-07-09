@@ -9,9 +9,11 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
+// hack to account for offset caused by tabs
+#define TABS_OFFSET 34
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr }
     {
@@ -188,7 +190,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(ShortAdd(clientCursorPos.Y, gsl::narrow_cast<SHORT>(windowBounds.Y), &screenCursorPos.Y));
 
         // TODO: add tabs offset, currently a hack, since we can't determine the actual screen position of the control
-        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, 34, &screenCursorPos.Y));
+        THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, TABS_OFFSET, &screenCursorPos.Y));
 
         // Get scale factor for view
         double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
@@ -197,7 +199,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().TextBounds(ScaleRect(selectionRect, scaleFactor));
 
-        //This is the bounds of the whole control
+        // This is the bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
 
@@ -214,7 +216,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBlock.Height(fontHeight);
 
         //SHORT foo = _actualFont.GetUnscaledSize().Y;
-        // TODO: font claims to be 12, but on screen 14 looks correct
+        // TODO: font claims to be 12, but on screen 14 look more correct
         _textBlock.FontSize(14);
 
         _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
@@ -245,6 +247,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& args)
     {
+        OutputDebugString(L"CompositionCompleted\n");
+
+        // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
             WCHAR buff[255];
@@ -258,25 +263,24 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // call event handler with data handled by parent
             _compositionCompletedHandlers(hstr);
 
-            // tell the server that we've cleared the buffer
-            CoreTextRange newTextRange;
-            newTextRange.StartCaretPosition = 0;
-            newTextRange.EndCaretPosition = 0;
+            // clear the buffer for next round
+            _inputBuffer.clear();
+            _textBlock.Text(L"");
 
-            CoreTextRange newTextRange2;
-            newTextRange2.StartCaretPosition = 0;
-            newTextRange2.EndCaretPosition = 0; //_inputBuffer.length();
+            // tell the input server that we've cleared the buffer
+            CoreTextRange emptyTextRange;
+            emptyTextRange.StartCaretPosition = 0;
+            emptyTextRange.EndCaretPosition = 0;
 
-            _editContext.NotifyTextChanged(newTextRange2, 0, newTextRange);
-            _editContext.NotifySelectionChanged(newTextRange);
+            // indicate text is now 0
+            _editContext.NotifyTextChanged(emptyTextRange, 0, emptyTextRange);
+            _editContext.NotifySelectionChanged(emptyTextRange);
+
+            // hide the controls until composition starts again
+            _canvas.Visibility(Visibility::Collapsed);
+            _textBlock.Visibility(Visibility::Collapsed);
+            OutputDebugString(L"CompositionCompleted: Done\n");
         }
-
-        // clear the buffer for next round
-        _inputBuffer.clear();
-        _textBlock.Text(L"");
-        _canvas.Visibility(Visibility::Collapsed);
-        _textBlock.Visibility(Visibility::Collapsed);
-        OutputDebugString(L"CompositionCompleted\n");
     }
 
     // Method Description:
