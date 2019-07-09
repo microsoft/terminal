@@ -81,11 +81,11 @@
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\vcpkg-export-20190708-112558.1.0.0\build\native\vcpkg-export-20190708-112558.targets" Condition="Exists('..\..\..\packages\vcpkg-export-20190708-112558.1.0.0\build\native\vcpkg-export-20190708-112558.targets')" />
+  <Import Project="..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets" Condition="Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\vcpkg-export-20190708-112558.1.0.0\build\native\vcpkg-export-20190708-112558.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-export-20190708-112558.1.0.0\build\native\vcpkg-export-20190708-112558.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets'))" />
   </Target>
 </Project>
