@@ -11,12 +11,20 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr }
     {
         _Create();
     }
 
+    // Method Description:
+    // - Creates XAML controls for displaying user input and hooks up CoreTextEditContext handlers
+    //   for handling text input from the Text Services Framework.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TSFInputControl::_Create()
     {
         // TextBlock for user input form TSF
@@ -80,6 +88,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             winrt::xaml_typename<TerminalControl::TSFInputControl>(),
             nullptr);
 
+    // Method Description:
+    // - NotifyFocusEnter handler for notifying CoreEditTextContext of focus enter
+    //   when TerminalControl receives focus.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TSFInputControl::NotifyFocusEnter()
     {
         if (_editContext != nullptr)
@@ -89,6 +104,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - NotifyFocusEnter handler for notifying CoreEditTextContext of focus leaving.
+    //   when TerminalControl no longer has focus.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void TSFInputControl::NotifyFocusLeave()
     {
         if (_editContext != nullptr)
@@ -98,7 +120,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    static Rect ScaleRect(Rect rect, double scale)
+    // Method Description:
+    // - Scales a Rect based on a scale factor
+    // Arguments:
+    // - rect: Rect to scale by scale
+    // - scale: amount to scale rect by
+    // Return Value:
+    // - Rect scaled by scale
+    inline Rect ScaleRect(Rect rect, double scale)
     {
         const float scaleLocal = gsl::narrow<float>(scale);
         rect.X *= scaleLocal;
@@ -108,17 +137,32 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return rect;
     }
 
+    // Method Description:
+    // - Converts a COLORREF to Color
+    // Arguments:
+    // - colorref: COLORREF to convert to Color
+    // Return Value:
+    // - Color containing the RGB values from colorref
     inline winrt::Windows::UI::Color ColorRefToColor(const COLORREF& colorref)
     {
         winrt::Windows::UI::Color color;
-        //color.A = static_cast<BYTE>(colorref >> 24);
         color.R = GetRValue(colorref);
         color.G = GetGValue(colorref);
         color.B = GetBValue(colorref);
         return color;
     }
 
-    // documentation says application should handle this event
+    // Method Description:
+    // - Handler for LayoutRequested event by CoreEditContext responsible
+    //   for returning the current position the IME should be placed
+    //   in screen coordinates on the screen.  TSFInputControls internal
+    //   XAML controls (TextBlock/Canvas) are also positioned and updated.
+    //   NOTE: documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request.
+    // - args: CoreTextLayoutRequestedEventArgs to be updated with position information.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
     {
         OutputDebugString(L"_editContextlayoutRequested\n");
@@ -190,6 +234,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBlock.FontFamily(Media::FontFamily(fontArgs->FontFace()));
     }
 
+    // Method Description:
+    // - Handler for CompositionStarted event by CoreEditContext responsible
+    //   for making internal TSFInputControl controls visisble.
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextCompositionStartedEventArgs. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& args)
     {
         OutputDebugString(L"CompositionStarted\n");
@@ -197,9 +249,17 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _textBlock.Visibility(Visibility::Visible);
     }
 
+    // Method Description:
+    // - Handler for CompositionCompleted event by CoreEditContext responsible
+    //   for making internal TSFInputControl controls visisble.
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextCompositionCompletedEventArgs. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& args)
     {
-        if (/* !args.IsCanceled() TODO? only && */ !_inputBuffer.empty())
+        if (!_inputBuffer.empty())
         {
             WCHAR buff[255];
 
@@ -220,9 +280,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             CoreTextRange newTextRange2;
             newTextRange2.StartCaretPosition = 0;
             newTextRange2.EndCaretPosition = 0; //_inputBuffer.length();
-           // _editContext.NotifyTextChanged(newTextRange2, 0, newTextRange);
 
-            //_editContext.NotifySelectionChanged(newTextRange);
+            _editContext.NotifyTextChanged(newTextRange2, 0, newTextRange);
+            _editContext.NotifySelectionChanged(newTextRange);
         }
 
         // clear the buffer for next round
@@ -233,12 +293,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         OutputDebugString(L"CompositionCompleted\n");
     }
 
-    // documentation says application should handle this event
+    // Method Description:
+    // - Handler for FocusRemoved event by CoreEditContext responsible
+    //   for removing focus for the TSFInputControl control accordingly
+    //   when focus was forecibly removed from text input control. (TODO)
+    //   NOTE: Documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - object: CoreTextCompositionStartedEventArgs. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& object)
     {
         OutputDebugString(L"FocusRemoved\n");
     }
 
+    // Method Description:
+    // - Handler for TextRequested event by CoreEditContext responsible
+    //   for returning the range of text requeted.
+    //   NOTE: Documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextTextRequestedEventArgs to be updated with requested range text.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
     {
         OutputDebugString(L"_editContextTextRequested\n");
@@ -261,16 +339,44 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         args.Request().Text(winrt::to_hstring(textRequested.c_str()));
     }
 
+    // Method Description:
+    // - Handler for SelectionRequested event by CoreEditContext responsible
+    //   for returning the currently selected text.
+    //   TSFInputControl currently doesn't allow selection, so nothing happens.
+    //   NOTE: Documentation says application should handle this event
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextSelectionRequestedEventArgs for providing data for the SelectionRequested event. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& args)
     {
         OutputDebugString(L"_editContextSelectionRequested\n");
     }
 
+    // Method Description:
+    // - Handler for SelectionUpdating event by CoreEditContext responsible
+    //   for handling modifications to the range of text currently selected.
+    //   TSFInputControl doesn't currently allow selection, so nothing happens.
+    //   NOTE: Documentation says application should set its selection range accordingly
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextSelectionUpdatingEventArgs for providing data for the SelectionUpdating event. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, CoreTextSelectionUpdatingEventArgs const& args)
     {
         OutputDebugString(L"_editContextSelectionUpdating\n");
     }
 
+    // Method Description:
+    // - Handler for TextUpdating event by CoreEditContext responsible
+    //   for handling text updates.
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextTextUpdatingEventArgs contains new text to update buffer with.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
         OutputDebugString(L"_editContextTextUpdating\n");
@@ -292,6 +398,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         args.Result(CoreTextTextUpdatingResult::Succeeded);
     }
 
+    // Method Description:
+    // - Handler for FormatUpdating event by CoreEditContext responsible
+    //   for handling different format updates for a particular range of text.
+    //   TSFInputControl doesn't do anything with this event.
+    // Arguments:
+    // - sender: CoreTextEditContext sending the request. Not used in method.
+    // - args: CoreTextFormatUpdatingEventArgs Provides data for the FormatUpdating event. Not used in method.
+    // Return Value:
+    // - <none>
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& args)
     {
         OutputDebugString(L"_editContextFormatUpdating\n");

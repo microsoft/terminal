@@ -1532,11 +1532,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return terminalPosition;
     }
 
+    // Method Description:
+    // - Composition Completion handler for the TSFInputControl that
+    //   handles writing text out to TerminalConnection
+    // Arguments:
+    // - text: the text to write to TerminalConnection 
+    // Return Value:
+    // - <none>
     void TermControl::_CompositionCompleted(winrt::hstring text)
     {
         _connection.WriteInput(text);
     }
 
+    // Method Description:
+    // - CurrentCursorPosition handler for the TSFInputControl that
+    //   handles returning current cursor position.
+    // Arguments:
+    // - eventArgs: event for storing the current cursor position
+    // Return Value:
+    // - <none>
     void TermControl::_CurrentCursorPositionHandler(const IInspectable& /*sender*/, const CursorPositionEventArgs& eventArgs)
     {
         COORD cursorPos = _terminal->GetCursorPosition();
@@ -1544,6 +1558,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         eventArgs.CurrentPosition(p);
     }
 
+    // Method Description:
+    // - FontInfo handler for the TSFInputControl that
+    //   handles returning current font information
+    // Arguments:
+    // - eventArgs: event for storing the current font information
+    // Return Value:
+    // - <none>
     void TermControl::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
     {
         COORD cursorPos = _actualFont.GetSize();
