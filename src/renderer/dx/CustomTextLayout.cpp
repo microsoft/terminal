@@ -502,7 +502,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
             // that would be consumed. We are doing this calculation now, not after,
             // because if the text is RTL then we need to advance immediately, before the 
             // write call since DirectX expects the origin to the RIGHT of the text for RTL.
-            auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+            const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
                                                _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
                                                mutableOrigin.x);
             
