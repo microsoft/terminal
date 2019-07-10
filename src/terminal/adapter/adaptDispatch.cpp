@@ -1332,39 +1332,36 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const SHORT sTopMargin,
         SHORT sActualTop = sTopMargin;
         SHORT sActualBottom = sBottomMargin;
         SHORT sScreenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
-        if (sActualTop == 0 && sActualBottom == 0)
+        // The default top margin is line 1
+        if (sActualTop == 0)
         {
-            // Disable Margins
-            // This case is valid, and nothing changes.
+            sActualTop = 1;
         }
-        else if (sActualBottom == 0)
+        // The default bottom margin is the screen height
+        if (sActualBottom == 0)
         {
             sActualBottom = sScreenHeight;
         }
-        else if (sActualBottom < sActualTop)
-        {
-            fSuccess = false;
-        }
-        else if ((sActualTop == 0 || sActualTop == 1) && sActualBottom == sScreenHeight)
-        {
-            // Client requests setting margins to the entire screen
-            //    - clear them instead of setting them.
-            // This is for apps like `apt` (NOT `apt-get` which set scroll
-            //      margins, but don't use the alt buffer.)
-            // Some apps will use 0 as a top, some will use 1. Both should behave the same.
-            sActualBottom = 0;
-        }
-        // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-        if (sActualTop > 0)
-        {
-            sActualTop -= 1;
-        }
-        if (sActualBottom > 0)
-        {
-            sActualBottom -= 1;
-        }
+        // The top margin must be less than the bottom margin, and the
+        // bottom margin must be less than or equal to the screen height
+        fSuccess = (sActualTop < sActualBottom && sActualBottom <= sScreenHeight);
         if (fSuccess)
         {
+            if (sActualTop == 1 && sActualBottom == sScreenHeight)
+            {
+                // Client requests setting margins to the entire screen
+                //    - clear them instead of setting them.
+                // This is for apps like `apt` (NOT `apt-get` which set scroll
+                //      margins, but don't use the alt buffer.)
+                sActualTop = 0;
+                sActualBottom = 0;
+            }
+            else
+            {
+                // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                sActualTop -= 1;
+                sActualBottom -= 1;
+            }
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
             fSuccess = !!_conApi->PrivateSetScrollingRegion(&_srScrollMargins);
