@@ -184,9 +184,12 @@ namespace winrt::TerminalApp::implementation
         auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
         const auto title = resourceLoader.GetString(L"AboutTitleText");
         const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
-        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText\n");
-        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText\n");
-        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText\n");
+        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText");
+        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = resourceLoader.GetString(L"GettingStartedUriValue");
+        const auto documentationUriValue = resourceLoader.GetString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = resourceLoader.GetString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -203,10 +206,6 @@ namespace winrt::TerminalApp::implementation
         gettingStarted.Text(gettingStartedLabel);
         documentation.Text(documentationLabel);
         releaseNotes.Text(releaseNotesLabel);
-
-        std::wstring gettingStartedUriValue{ L"https://aka.ms/terminal-getting-started" };
-        std::wstring documentationUriValue{ L"https://aka.ms/terminal-documentation" };
-        std::wstring releaseNotesUriValue{ L"https://aka.ms/terminal-release-notes" };
 
         winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
         winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };

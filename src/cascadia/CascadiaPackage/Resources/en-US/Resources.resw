@@ -168,4 +168,13 @@
     <value>Release Notes
 </value>
   </data>
+  <data name="DocumentationUriValue" xml:space="preserve">
+    <value>https://aka.ms/terminal-documentation</value>
+  </data>
+  <data name="GettingStartedUriValue" xml:space="preserve">
+    <value>https://aka.ms/terminal-getting-started</value>
+  </data>
+  <data name="ReleaseNotesUriValue" xml:space="preserve">
+    <value>https://aka.ms/terminal-release-notes</value>
+  </data>
 </root>
