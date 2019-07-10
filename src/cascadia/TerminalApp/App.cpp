@@ -102,6 +102,12 @@ namespace winrt::TerminalApp::implementation
         {
             _minMaxCloseControl.Visibility(Visibility::Collapsed);
         }
+        // uint32_t index = 0;
+        // _tabRow.Children().IndexOf(_newTabButton, index);
+        // _tabRow.Children().RemoveAt(index);
+        // auto fooBtn = Controls::Button();
+        // fooBtn.Content(winrt::box_value({ L"foo" }));
+        // _tabView.RightCustomContent(fooBtn);
 
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {

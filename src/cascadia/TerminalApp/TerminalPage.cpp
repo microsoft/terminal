@@ -27,4 +27,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
     {
     }
+
+    void TerminalPage::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    {
+    }
+
 }
