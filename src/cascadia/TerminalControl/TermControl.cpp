@@ -171,9 +171,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         uint32_t bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
-        // Apply padding to the root Grid
+        // Apply padding as swapChainPanel's margin
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        _root.Padding(thickness);
+        _swapChainPanel.Margin(thickness);
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
@@ -1527,8 +1527,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Exclude padding from cursor position calculation
         COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
-            static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
+            static_cast<SHORT>(cursorPosition.X - _swapChainPanel.Margin().Left),
+            static_cast<SHORT>(cursorPosition.Y - _swapChainPanel.Margin().Top)
         };
 
         const auto fontSize = _actualFont.GetSize();

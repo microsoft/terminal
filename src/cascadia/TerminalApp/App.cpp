@@ -6,6 +6,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "App.g.cpp"
+#include "TerminalPage.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -76,110 +77,43 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Create all of the initial UI elements of the Terminal app.
-    //    * Creates the tab bar, initially hidden.
-    //    * Creates the tab content area, which is where we'll display the tabs/panes.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
     void App::_Create(uint64_t parentHwnd)
     {
-        _tabView = MUX::Controls::TabView{};
+        /* !!! TODO
+           This is not the correct way to host a XAML page. This exists today because we valued
+           getting a .xaml over tearing out all of the terminal logic and splitting it across App
+           and Page.
+           The work to clarify the boundary between app global state and "terminal page" state
+           is tracked in GH#1878.
+        */
+        auto terminalPage = winrt::make_self<TerminalPage>();
+        _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
+        _tabContent = terminalPage->TabContent();
+        _tabRow = terminalPage->TabRow();
+        _tabView = terminalPage->TabView();
+        _newTabButton = terminalPage->NewTabButton();
 
-        _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
-        _tabView.TabClosing({ this, &App::_OnTabClosing });
-        _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
+        _minMaxCloseControl = terminalPage->MinMaxCloseControl();
+        _minMaxCloseControl.ParentWindowHandle(parentHwnd);
 
-        _root = Controls::Grid{};
+        if (!_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            _minMaxCloseControl.Visibility(Visibility::Collapsed);
+        }
 
-        _tabRow = Controls::Grid{};
-        _tabRow.Name(L"Tab Row");
-        _tabContent = Controls::Grid{};
-        _tabContent.Name(L"Tab Content");
-
-        // Set up two columns in the tabs row - one for the tabs themselves, and
-        // another for the settings button.
-        auto tabsColDef = Controls::ColumnDefinition();
-        auto newTabBtnColDef = Controls::ColumnDefinition();
-        newTabBtnColDef.Width(GridLengthHelper::Auto());
-
-        _tabRow.ColumnDefinitions().Append(tabsColDef);
-        _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
-
-        // Set up two rows - one for the tabs, the other for the tab content,
-        // the terminal panes.
-        auto tabBarRowDef = Controls::RowDefinition();
-        tabBarRowDef.Height(GridLengthHelper::Auto());
-        _root.RowDefinitions().Append(tabBarRowDef);
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-
-        _root.Children().Append(_tabRow);
-
-        Controls::Grid::SetRow(_tabRow, 0);
-
-        _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabContent, 1);
-        Controls::Grid::SetColumn(_tabView, 0);
-
-        // Create the new tab button.
-        _newTabButton = Controls::SplitButton{};
-        Controls::SymbolIcon newTabIco{};
-        newTabIco.Symbol(Controls::Symbol::Add);
-        _newTabButton.Content(newTabIco);
-        Controls::Grid::SetRow(_newTabButton, 0);
-        Controls::Grid::SetColumn(_newTabButton, 1);
-        _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
-
-        // When the new tab button is clicked, open the default profile
+        // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);
         });
-
-        // Populate the new tab button's flyout with entries for each profile
-        _CreateNewTabFlyout();
-
-        _tabRow.Children().Append(_tabView);
-
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
-        {
-            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
-            Controls::Grid::SetRow(_minMaxCloseControl, 0);
-            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
-            _minMaxCloseControl.Content().Children().Append(_newTabButton);
-
-            _tabRow.Children().Append(_minMaxCloseControl);
-        }
-        else
-        {
-            _tabRow.Children().Append(_newTabButton);
-        }
-
-        _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
-        _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
-
-        // Here, we're doing the equivalent of defining the _tabRow as the
-        // following: <Grid Background="{ThemeResource
-        // ApplicationPageBackgroundThemeBrush}"> We need to set the Background
-        // to that ThemeResource, so it'll be colored appropriately regardless
-        // of what theme the user has selected.
-        // We're looking up the Style we've defined in App.xaml, and applying it
-        // here. A ResourceDictionary is a Map<IInspectable, IInspectable>, so
-        // you'll need to try_as to get the type we actually want.
-        auto res = Resources();
-        IInspectable key = winrt::box_value(L"BackgroundGridThemeStyle");
-        if (res.HasKey(key))
-        {
-            IInspectable g = res.Lookup(key);
-            winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
-            _root.Style(style);
-            _tabRow.Style(style);
-        }
-
-        // Apply the UI theme from our settings to our UI elements
-        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
-
-        _OpenNewTab(std::nullopt);
-
+        _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
+        _tabView.TabClosing({ this, &App::_OnTabClosing });
+        _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
         _root.Loaded({ this, &App::_OnLoaded });
+
+        _CreateNewTabFlyout();
+        _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
     }
@@ -212,9 +146,10 @@ namespace winrt::TerminalApp::implementation
         dialog.Content(contentElement);
         dialog.CloseButtonText(closeButtonText);
 
-        // IMPORTANT: Add the dialog to the _root UIElement before you show it,
-        // so it knows how to attach to the XAML content.
-        _root.Children().Append(dialog);
+        // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
+        // Since we're hosting the dialog in a Xaml island, we need to connect it to the
+        // xaml tree somehow.
+        dialog.XamlRoot(_root.XamlRoot());
 
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
@@ -447,7 +382,12 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+
+        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        {
+            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        }
     }
 
     // Method Description:
@@ -764,17 +704,11 @@ namespace winrt::TerminalApp::implementation
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
         _root.RequestedTheme(newTheme);
-        _tabRow.RequestedTheme(newTheme);
     }
 
     UIElement App::GetRoot() noexcept
     {
         return _root;
-    }
-
-    UIElement App::GetTabs() noexcept
-    {
-        return _tabRow;
     }
 
     void App::_SetFocusedTabIndex(int tabIndex)
