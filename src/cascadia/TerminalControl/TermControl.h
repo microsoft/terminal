@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
-        TermControl(Settings::IControlSettings settings);
+        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         hstring Title();
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
+        void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
 
@@ -114,8 +115,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);
-        void _MouseClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
-        void _MouseMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _PointerPressedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        void _PointerMovedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _PointerReleasedHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _MouseWheelHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
@@ -134,10 +135,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
 
-        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
-        Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+        bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
+        bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
-        Settings::KeyModifiers _GetPressedModifierKeys() const;
+        void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
+        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
+
+        DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
     };

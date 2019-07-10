@@ -1,0 +1,13 @@
+﻿namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass MinMaxCloseControl : Windows.UI.Xaml.Controls.StackPanel
+    {
+        MinMaxCloseControl();
+
+        Windows.UI.Xaml.Controls.Grid Content{ get; };
+        Windows.UI.Xaml.Controls.Border DragBar{ get; };
+
+        UInt64 ParentWindowHandle;
+    }
+}

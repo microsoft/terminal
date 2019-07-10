@@ -47,13 +47,19 @@ namespace winrt::TerminalApp::implementation
         switch (action)
         {
         case ShortcutAction::CopyText:
-            _CopyTextHandlers();
+            _CopyTextHandlers(true);
+            return true;
+        case ShortcutAction::CopyTextWithoutNewlines:
+            _CopyTextHandlers(false);
             return true;
         case ShortcutAction::PasteText:
             _PasteTextHandlers();
             return true;
         case ShortcutAction::NewTab:
             _NewTabHandlers();
+            return true;
+        case ShortcutAction::DuplicateTab:
+            _DuplicateTabHandlers();
             return true;
         case ShortcutAction::OpenSettings:
             _OpenSettingsHandlers();
@@ -215,6 +221,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
