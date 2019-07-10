@@ -15,6 +15,9 @@
     <WarningLevel>4</WarningLevel>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)' == 'AnyCPU'">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Platform)' == 'ARM64'">
     <PlatformTarget>ARM64</PlatformTarget>
   </PropertyGroup>
