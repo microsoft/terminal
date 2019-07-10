@@ -77,12 +77,13 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    void _DoSplit(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
-    bool _DoResize(const winrt::TerminalApp::Direction& direction);
-    bool _DoNavigateFocus(const winrt::TerminalApp::Direction& direction);
+
+    bool _Resize(const winrt::TerminalApp::Direction& direction);
+    bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
 
@@ -91,7 +92,7 @@ private:
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 
-    winrt::Windows::Foundation::Size _GetMinSize();
+    winrt::Windows::Foundation::Size _GetMinSize() const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

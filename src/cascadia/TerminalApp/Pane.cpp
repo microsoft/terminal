@@ -12,6 +12,7 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
 static const int PaneSeparatorSize = 4;
+static const float Half = 0.50f;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -59,8 +60,8 @@ void Pane::ResizeContent(const Size& newSize)
     {
         const auto paneSizes = _GetPaneSizes(width);
 
-        Size firstSize{ paneSizes.first, height };
-        Size secondSize{ paneSizes.second, height };
+        const Size firstSize{ paneSizes.first, height };
+        const Size secondSize{ paneSizes.second, height };
         _firstChild->ResizeContent(firstSize);
         _secondChild->ResizeContent(secondSize);
     }
@@ -68,8 +69,8 @@ void Pane::ResizeContent(const Size& newSize)
     {
         const auto paneSizes = _GetPaneSizes(height);
 
-        Size firstSize{ width, paneSizes.first };
-        Size secondSize{ width, paneSizes.second };
+        const Size firstSize{ width, paneSizes.first };
+        const Size secondSize{ width, paneSizes.second };
         _firstChild->ResizeContent(firstSize);
         _secondChild->ResizeContent(secondSize);
     }
@@ -86,7 +87,7 @@ void Pane::ResizeContent(const Size& newSize)
 //   decreasing the size of our first child.
 // Return Value:
 // - false if we couldn't resize this pane in the given direction, else true.
-bool Pane::_DoResize(const Direction& direction)
+bool Pane::_Resize(const Direction& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
@@ -96,7 +97,7 @@ bool Pane::_DoResize(const Direction& direction)
     float amount = .05f;
     if (direction == Direction::Right || direction == Direction::Down)
     {
-        amount *= -1.0f;
+        amount = -amount;
     }
 
     // Make sure we're not making a pane explode here by resizing it to 0 characters.
@@ -136,7 +137,7 @@ bool Pane::_DoResize(const Direction& direction)
 // Method Description:
 // - Moves the separator between panes, as to resize each child on either size
 //   of the separator. Tries to move a separator in the given direction. The
-//   separatior moved is the separator that's closest depth-wise to the
+//   separator moved is the separator that's closest depth-wise to the
 //   currently focused pane, that's also in the correct direction to be moved.
 //   If there isn't such a separator, then this method returns false, as we
 //   couldn't handle the resize.
@@ -161,7 +162,7 @@ bool Pane::ResizePane(const Direction& direction)
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
     if (firstIsFocused || secondIsFocused)
     {
-        return _DoResize(direction);
+        return _Resize(direction);
     }
     else
     {
@@ -176,11 +177,11 @@ bool Pane::ResizePane(const Direction& direction)
         // either.
         if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
         {
-            return _firstChild->ResizePane(direction) || _DoResize(direction);
+            return _firstChild->ResizePane(direction) || _Resize(direction);
         }
         else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
         {
-            return _secondChild->ResizePane(direction) || _DoResize(direction);
+            return _secondChild->ResizePane(direction) || _Resize(direction);
         }
     }
     return false;
@@ -196,7 +197,7 @@ bool Pane::ResizePane(const Direction& direction)
 // - direction: The direction to move the focus in.
 // Return Value:
 // - true if we handled this focus move request.
-bool Pane::_DoNavigateFocus(const Direction& direction)
+bool Pane::_NavigateFocus(const Direction& direction)
 {
     if (!DirectionMatchesSplit(direction, _splitState))
     {
@@ -250,7 +251,7 @@ bool Pane::NavigateFocus(const Direction& direction)
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
     if (firstIsFocused || secondIsFocused)
     {
-        return _DoNavigateFocus(direction);
+        return _NavigateFocus(direction);
     }
     else
     {
@@ -265,11 +266,11 @@ bool Pane::NavigateFocus(const Direction& direction)
         // we couldn't handle it either.
         if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
         {
-            return _firstChild->NavigateFocus(direction) || _DoNavigateFocus(direction);
+            return _firstChild->NavigateFocus(direction) || _NavigateFocus(direction);
         }
         else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
         {
-            return _secondChild->NavigateFocus(direction) || _DoNavigateFocus(direction);
+            return _secondChild->NavigateFocus(direction) || _NavigateFocus(direction);
         }
     }
     return false;
@@ -570,7 +571,7 @@ void Pane::_CloseChild(const bool closeFirst)
         const auto oldFirstToken = _firstClosedToken;
         const auto oldSecondToken = _secondClosedToken;
         const auto oldFirst = _firstChild;
-        const auto oldSecond = _secondClosedToken;
+        const auto oldSecond = _secondChild;
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
@@ -581,9 +582,14 @@ void Pane::_CloseChild(const bool closeFirst)
         // Set up new close handlers on the children
         _SetupChildCloseHandlers();
 
-        // Revoke the old event handlers.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
+        // Revoke the old event handlers on our new children
+        _firstChild->Closed(remainingChild->_firstClosedToken);
+        _secondChild->Closed(remainingChild->_secondClosedToken);
+
+        // Revoke event handlers on old panes and controls
+        oldFirst->Closed(oldFirstToken);
+        oldSecond->Closed(oldSecondToken);
+        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -785,7 +791,7 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
         return;
     }
 
-    _DoSplit(SplitState::Vertical, profile, control);
+    _Split(SplitState::Vertical, profile, control);
 }
 
 // Method Description:
@@ -813,7 +819,7 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
         return;
     }
 
-    _DoSplit(SplitState::Horizontal, profile, control);
+    _Split(SplitState::Horizontal, profile, control);
 }
 
 // Method Description:
@@ -825,7 +831,7 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl& control)
+void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -837,8 +843,8 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
 
     _splitState = splitType;
 
-    _firstPercent = { .50f };
-    _secondPercent = { .50f };
+    _firstPercent = { Half };
+    _secondPercent = { Half };
 
     _CreateSplitContent();
 
@@ -898,7 +904,7 @@ std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
 // Return Value:
 // - The minimum size that this pane can be resized to and still have a visible
 //   character.
-Size Pane::_GetMinSize()
+Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {

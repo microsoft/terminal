@@ -14,8 +14,10 @@ static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
 
 static constexpr std::string_view CopyTextKey{ "copy" };
+static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view NewTabKey{ "newTab" };
+static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
 static constexpr std::string_view NewTabWithProfile0Key{ "newTabProfile0" };
 static constexpr std::string_view NewTabWithProfile1Key{ "newTabProfile1" };
 static constexpr std::string_view NewTabWithProfile2Key{ "newTabProfile2" };
@@ -68,8 +70,10 @@ static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" };
 // about here.
 static const std::map<std::string_view, ShortcutAction, std::less<>> commandNames{
     { CopyTextKey, ShortcutAction::CopyText },
+    { CopyTextWithoutNewlinesKey, ShortcutAction::CopyTextWithoutNewlines },
     { PasteTextKey, ShortcutAction::PasteText },
     { NewTabKey, ShortcutAction::NewTab },
+    { DuplicateTabKey, ShortcutAction::DuplicateTab },
     { NewTabWithProfile0Key, ShortcutAction::NewTabProfile0 },
     { NewTabWithProfile1Key, ShortcutAction::NewTabProfile1 },
     { NewTabWithProfile2Key, ShortcutAction::NewTabProfile2 },

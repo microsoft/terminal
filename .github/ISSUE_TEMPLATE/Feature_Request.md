@@ -7,6 +7,19 @@ assignees: ''
 
 ---
 
+<!-- 
+🚨🚨🚨🚨🚨🚨🚨🚨🚨🚨
+
+I ACKNOWLEDGE THE FOLLOWING BEFORE PROCEEDING:
+1. If I delete this entire template and go my own path, the core team may close my issue without further explanation or engagement.
+2. If I list multiple bugs/concerns in this one issue, the core team may close my issue without further explanation or engagement.
+3. If I write an issue that has many duplicates, the core team may close my issue without further explanation or engagement (and without necessarily spending time to find the exact duplicate ID number).
+4. If I leave the title incomplete when filing the issue, the core team may close my issue without further explanation or engagement.
+5. If I file something completely blank in the body, the core team may close my issue without further explanation or engagement.
+
+All good? Then proceed!
+-->
+
 # Summary of the new feature/enhancement
 
 <!-- 

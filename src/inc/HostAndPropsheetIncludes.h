@@ -35,8 +35,6 @@ typedef NTSTATUS *PNTSTATUS;
 
 #include <winuser.h>
 
-#include <uxtheme.h>
-
 #include <cwchar>
 
 // Only remaining item from w32gdip.h. There's probably a better way to do this as well.
