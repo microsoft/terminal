@@ -503,8 +503,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
             // because if the text is RTL then we need to advance immediately, before the 
             // write call since DirectX expects the origin to the RIGHT of the text for RTL.
             const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
-                                               _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                               mutableOrigin.x);
+                                                     _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                                     mutableOrigin.x);
             
             // Check for RTL, if it is, apply space adjustment. 
             if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
