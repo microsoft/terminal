@@ -81,7 +81,6 @@ private:
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
-    bool _Resize(const winrt::TerminalApp::Direction& direction);
 
     bool _Resize(const winrt::TerminalApp::Direction& direction);
     bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
