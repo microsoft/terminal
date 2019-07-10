@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "App.h"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
-#include <winrt/Windows.UI.Xaml.Documents.h>
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
@@ -185,6 +184,9 @@ namespace winrt::TerminalApp::implementation
         auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
         const auto title = resourceLoader.GetString(L"AboutTitleText");
         const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
+        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText\n");
+        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText\n");
+        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText\n");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -196,18 +198,15 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
         winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
         winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
-        winrt::hstring gettingStartedLabel = L"Getting Started\n";
-        winrt::hstring documentationLabel = L"Documentation\n";
-        winrt::hstring releaseNotesLabel = L"Release Notes\n";
         std::wstringstream aboutTextStream;
 
         gettingStarted.Text(gettingStartedLabel);
         documentation.Text(documentationLabel);
         releaseNotes.Text(releaseNotesLabel);
 
-        std::wstring gettingStartedUriValue{ L"https://github.com/microsoft/terminal/blob/master/doc/user-docs/UsingJsonSettings.md" };
-        std::wstring documentationUriValue{ L"https://github.com/microsoft/terminal/blob/master/doc/user-docs/index.md" };
-        std::wstring releaseNotesUriValue{ L"https://github.com/microsoft/terminal/releases" };
+        std::wstring gettingStartedUriValue{ L"https://aka.ms/terminal-getting-started" };
+        std::wstring documentationUriValue{ L"https://aka.ms/terminal-documentation" };
+        std::wstring releaseNotesUriValue{ L"https://aka.ms/terminal-release-notes" };
 
         winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
         winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
@@ -451,7 +450,7 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
+        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://aka.ms/terminal-feedback" });
     }
 
     Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
