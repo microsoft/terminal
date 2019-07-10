@@ -239,7 +239,8 @@ namespace WpfTerminalControl
 
         protected override void DestroyWindowCore(HandleRef hwnd)
         {
-            throw new NotImplementedException();
+            NativeMethods.DestroyTerminal(terminal);
+            terminal = IntPtr.Zero;
         }
 
         private void OnScroll(int viewTop, int viewHeight, int bufferSize)

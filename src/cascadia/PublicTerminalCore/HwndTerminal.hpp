@@ -14,6 +14,7 @@ extern "C" {
     __declspec(dllexport) void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
     __declspec(dllexport) void _stdcall MoveSelection(void* terminal, COORD cursorPosition);
     __declspec(dllexport) void _stdcall ClearSelection(void* terminal);
+    __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
 
     enum CursorStyle
     {
@@ -30,6 +31,7 @@ extern "C" {
 struct HwndTerminal {
 public:
     HwndTerminal(HWND hwnd);
+    ~HwndTerminal();
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
