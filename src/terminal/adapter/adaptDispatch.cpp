@@ -39,6 +39,9 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
                              AdaptDefaults* const pDefaults) :
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
+    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
+    _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
@@ -48,8 +51,6 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
     _srScrollMargins = { 0 }; // initially, there are no scroll margins.
-    _fIsSetColumnsEnabled = false; // by default, DECSCPP is disabled.
-    // TODO:10086990 - Create a setting to re-enable this.
 }
 
 void AdaptDispatch::Print(const wchar_t wchPrintable)
@@ -327,6 +328,14 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
             if (*puiRow != 0)
             {
                 uiRow = *puiRow - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+
+                // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
+                // line numbers start at the top margin of the scrolling region, and cannot move below the bottom.
+                if (_fIsOriginModeRelative && _srScrollMargins.Bottom != 0)
+                {
+                    uiRow += _srScrollMargins.Top;
+                    uiRow = std::min<decltype(uiRow)>(uiRow, _srScrollMargins.Bottom);
+                }
             }
             else
             {
@@ -443,6 +452,7 @@ bool AdaptDispatch::CursorSavePosition()
         // VT is also 1 based, not 0 based, so correct by 1.
         _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
         _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
+        _fIsSavedOriginModeRelative = _fIsOriginModeRelative;
     }
 
     return fSuccess;
@@ -460,7 +470,13 @@ bool AdaptDispatch::CursorRestorePosition()
     unsigned int const uiRow = _coordSavedCursor.Y;
     unsigned int const uiCol = _coordSavedCursor.X;
 
-    return _CursorMovePosition(&uiRow, &uiCol);
+    // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
+    _fIsOriginModeRelative = false;
+    bool const fSuccess = _CursorMovePosition(&uiRow, &uiCol);
+
+    // Once the cursor position is restored, we can then restore the actual origin mode.
+    _fIsOriginModeRelative = _fIsSavedOriginModeRelative;
+    return fSuccess;
 }
 
 // Routine Description:
@@ -927,6 +943,12 @@ bool AdaptDispatch::_CursorPositionReport() const
         coordCursorPos.X++;
         coordCursorPos.Y++;
 
+        // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+        if (_fIsOriginModeRelative)
+        {
+            coordCursorPos.Y -= _srScrollMargins.Top;
+        }
+
         // Now send it back into the input channel of the console.
         // First format the response string.
         wchar_t pwszResponseBuffer[50];
@@ -1055,12 +1077,6 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 {
-    if (!_fIsSetColumnsEnabled)
-    {
-        // Only set columns if that option is available. Return true, as this is technically a successful handling.
-        return true;
-    }
-
     SHORT sColumns;
     bool fSuccess = SUCCEEDED(UIntToShort(uiColumns, &sColumns));
     if (fSuccess)
@@ -1079,23 +1095,34 @@ bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 }
 
 // Routine Description:
-// - DECCOLM not only sets the number of columns, but also clears the screen buffer, resets the page margins, and places the cursor at 1,1
+// - DECCOLM not only sets the number of columns, but also clears the screen buffer,
+//    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:
 // - uiColumns - Number of columns
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
 {
+    if (!_fIsDECCOLMAllowed)
+    {
+        // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
+        return true;
+    }
+
     bool fSuccess = SetColumns(uiColumns);
     if (fSuccess)
     {
-        fSuccess = CursorPosition(1, 1);
+        fSuccess = SetOriginMode(false);
         if (fSuccess)
         {
-            fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
+            fSuccess = CursorPosition(1, 1);
             if (fSuccess)
             {
-                fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
+                fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
+                if (fSuccess)
+                {
+                    fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
+                }
             }
         }
     }
@@ -1114,11 +1141,18 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModePara
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
         fSuccess = _DoDECCOLMHelper(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
         break;
+    case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+        // The cursor is also moved to the new home position when the origin mode is set or reset.
+        fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
+        break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         fSuccess = EnableCursorBlinking(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
+        break;
+    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        fSuccess = EnableDECCOLMSupport(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         fSuccess = EnableVT200MouseMode(fEnable);
@@ -1253,6 +1287,20 @@ bool AdaptDispatch::InsertLine(_In_ unsigned int const uiDistance)
 bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 {
     return !!_conApi->DeleteLines(uiDistance);
+}
+
+// Routine Description:
+// - DECOM - Sets the cursor addressing origin mode to relative or absolute.
+//    When relative, line numbers start at top margin of the user-defined scrolling region.
+//    When absolute, line numbers are independent of the scrolling region.
+// Arguments:
+// - fRelativeMode - set to true to use relative addressing, false for absolute addressing.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetOriginMode(const bool fRelativeMode)
+{
+    _fIsOriginModeRelative = fRelativeMode;
+    return true;
 }
 
 // Routine Description:
@@ -1472,7 +1520,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
-//    Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
+//  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //    Autowrap                    DECAWM      No autowrap.
 //    National replacement        DECNRCM     Multinational set.
 //        character set
@@ -1501,6 +1549,10 @@ bool AdaptDispatch::SoftReset()
     bool fSuccess = CursorVisibility(true); // Cursor enabled.
     if (fSuccess)
     {
+        fSuccess = SetOriginMode(false); // Absolute cursor addressing.
+    }
+    if (fSuccess)
+    {
         fSuccess = SetCursorKeysMode(false); // Normal characters.
     }
     if (fSuccess)
@@ -1523,8 +1575,9 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        // Save cursor state: Home position.
+        // Save cursor state: Home position; Absolute addressing.
         _coordSavedCursor = { 1, 1 };
+        _fIsSavedOriginModeRelative = false;
     }
 
     return fSuccess;
@@ -1558,16 +1611,16 @@ bool AdaptDispatch::HardReset()
         fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
     }
 
-    // Cursor to 1,1
-    if (fSuccess)
-    {
-        fSuccess = CursorPosition(1, 1);
-    }
-
     // Sets the SGR state to normal.
     if (fSuccess)
     {
         fSuccess = SoftReset();
+    }
+
+    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
+    if (fSuccess)
+    {
+        fSuccess = CursorPosition(1, 1);
     }
 
     // delete all current tab stops and reapply
@@ -1677,6 +1730,18 @@ bool AdaptDispatch::_EraseScrollback()
 bool AdaptDispatch::_EraseAll()
 {
     return !!_conApi->PrivateEraseAll();
+}
+
+// Routine Description:
+// - Enables or disables support for the DECCOLM escape sequence.
+// Arguments:
+// - fEnabled - set to true to allow DECCOLM to be used, false to disallow.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableDECCOLMSupport(const bool fEnabled)
+{
+    _fIsDECCOLMAllowed = fEnabled;
+    return true;
 }
 
 //Routine Description:

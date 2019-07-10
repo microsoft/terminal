@@ -91,7 +91,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
     {
         // move off by highlighting the lead half too.
         // alters position.X
-        _mutableViewport.DecrementInBounds(position);
+        _buffer->GetSize().DecrementInBounds(position);
     }
     return position.X;
 }
@@ -116,7 +116,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
     {
         // move off by highlighting the trailing half too.
         // alters position.X
-        _mutableViewport.IncrementInBounds(position);
+        _buffer->GetSize().IncrementInBounds(position);
     }
     return position.X;
 }

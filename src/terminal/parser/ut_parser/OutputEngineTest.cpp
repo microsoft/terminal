@@ -641,6 +641,8 @@ public:
         _fIsAltBuffer{ false },
         _fCursorKeysMode{ false },
         _fCursorBlinking{ true },
+        _fIsOriginModeRelative{ false },
+        _fIsDECCOLMAllowed{ false },
         _uiWindowWidth{ 80 }
     {
         memset(_rgOptions, s_uiGraphicsCleared, sizeof(_rgOptions));
@@ -801,11 +803,18 @@ public:
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<unsigned int>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
+        case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+            // The cursor is also moved to the new home position when the origin mode is set or reset.
+            fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
+            break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
         case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
+            break;
+        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+            fSuccess = EnableDECCOLMSupport(fEnable);
             break;
         case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
             fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
@@ -860,6 +869,18 @@ public:
         return true;
     }
 
+    bool SetOriginMode(const bool fRelativeMode) override
+    {
+        _fIsOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool EnableDECCOLMSupport(const bool fEnabled) override
+    {
+        _fIsDECCOLMAllowed = fEnabled;
+        return true;
+    }
+
     bool UseAlternateScreenBuffer() override
     {
         _fIsAltBuffer = true;
@@ -899,6 +920,8 @@ public:
     bool _fIsAltBuffer;
     bool _fCursorKeysMode;
     bool _fCursorBlinking;
+    bool _fIsOriginModeRelative;
+    bool _fIsDECCOLMAllowed;
     unsigned int _uiWindowWidth;
 
     static const size_t s_cMaxOptions = 16;
@@ -1193,6 +1216,30 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestOriginMode)
+    {
+        StatefulDispatch* pDispatch = new StatefulDispatch;
+        VERIFY_IS_NOT_NULL(pDispatch);
+        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+
+        mach.ProcessString(L"\x1b[?6h", 5);
+        VERIFY_IS_TRUE(pDispatch->_fIsOriginModeRelative);
+        VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
+        VERIFY_ARE_EQUAL(pDispatch->_uiColumn, 1u);
+
+        pDispatch->ClearState();
+        pDispatch->_fIsOriginModeRelative = true;
+
+        mach.ProcessString(L"\x1b[?6l", 5);
+        VERIFY_IS_FALSE(pDispatch->_fIsOriginModeRelative);
+        VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
+        VERIFY_ARE_EQUAL(pDispatch->_uiColumn, 1u);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestCursorBlinking)
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
@@ -1261,6 +1308,24 @@ class StateMachineExternalTest final
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
         mach.ProcessString(L"\x1b[?1049l", 8);
         VERIFY_IS_FALSE(pDispatch->_fIsAltBuffer);
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestEnableDECCOLMSupport)
+    {
+        StatefulDispatch* pDispatch = new StatefulDispatch;
+        VERIFY_IS_NOT_NULL(pDispatch);
+        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+
+        mach.ProcessString(L"\x1b[?40h");
+        VERIFY_IS_TRUE(pDispatch->_fIsDECCOLMAllowed);
+
+        pDispatch->ClearState();
+        pDispatch->_fIsDECCOLMAllowed = true;
+
+        mach.ProcessString(L"\x1b[?40l");
+        VERIFY_IS_FALSE(pDispatch->_fIsDECCOLMAllowed);
 
         pDispatch->ClearState();
     }

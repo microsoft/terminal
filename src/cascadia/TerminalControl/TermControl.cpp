@@ -22,12 +22,12 @@ using namespace winrt::Microsoft::Terminal::Settings;
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TermControl::TermControl() :
-        TermControl(Settings::TerminalSettings{})
+        TermControl(Settings::TerminalSettings{}, TerminalConnection::ITerminalConnection{ nullptr })
     {
     }
 
-    TermControl::TermControl(Settings::IControlSettings settings) :
-        _connection{ TerminalConnection::ConhostConnection(winrt::to_hstring("cmd.exe"), winrt::hstring(), 30, 80, winrt::guid()) },
+    TermControl::TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection) :
+        _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
         _controlRoot{ nullptr },
@@ -96,12 +96,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Controls::Grid::SetColumn(swapChainPanel, 0);
         Controls::Grid::SetColumn(_scrollBar, 1);
 
-        _root = container;
+        Controls::Grid root{};
+        Controls::Image bgImageLayer{};
+        root.Children().Append(bgImageLayer);
+        root.Children().Append(container);
+
+        _root = root;
+        _bgImageLayer = bgImageLayer;
+
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
 
         _ApplyUISettings();
-        _ApplyConnectionSettings();
 
         // These are important:
         // 1. When we get tapped, focus us
@@ -175,9 +181,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         uint32_t bg = _settings.DefaultBackground();
         _BackgroundColorChanged(bg);
 
-        // Apply padding to the root Grid
+        // Apply padding as swapChainPanel's margin
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        _root.Padding(thickness);
+        _swapChainPanel.Margin(thickness);
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
@@ -193,15 +199,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Set up the brush used to display the control's background.
+    // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
-    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
-    //       from _settings.
-    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
-    //       respecting the opacity and stretch mode settings from _settings.
-    //   * Falls back to a solid color background from _settings if acrylic is not
-    //       enabled and no background image is present.
+    //   * If acrylic is not enabled, setup a solid color background, otherwise
+    //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
     // - Does not apply background color outside of acrylic mode;
@@ -246,23 +248,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _root.Background(acrylic);
             }
         }
-        else if (!_settings.BackgroundImage().empty())
+        else
+        {
+            Media::SolidColorBrush solidColor{};
+            _root.Background(solidColor);
+        }
+
+        if (!_settings.BackgroundImage().empty())
         {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the existing brush is an image brush, and if not
-            // construct a new one
-            auto brush = _root.Background().try_as<Media::ImageBrush>();
-
-            if (brush == nullptr)
-            {
-                brush = Media::ImageBrush{};
-            }
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
             // set a new image source for the brush
-            auto imageSource = brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+            auto imageSource = _bgImageLayer.Source().try_as<Media::Imaging::BitmapImage>();
 
             if (imageSource == nullptr ||
                 imageSource.UriSource() == nullptr ||
@@ -273,23 +272,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
-                brush.ImageSource(image);
+                _bgImageLayer.Source(image);
+                _bgImageLayer.HorizontalAlignment(HorizontalAlignment::Center);
+                _bgImageLayer.VerticalAlignment(VerticalAlignment::Center);
             }
 
             // Apply stretch and opacity settings
-            brush.Stretch(_settings.BackgroundImageStretchMode());
-            brush.Opacity(_settings.BackgroundImageOpacity());
-
-            // Apply brush if it isn't already there
-            if (_root.Background() != brush)
-            {
-                _root.Background(brush);
-            }
+            _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
+            _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
         }
         else
         {
-            Media::SolidColorBrush solidColor{};
-            _root.Background(solidColor);
+            _bgImageLayer.Source(nullptr);
         }
     }
 
@@ -312,48 +306,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             bgColor.B = B;
             bgColor.A = 255;
 
-            if (_settings.UseAcrylic())
+            if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
             {
-                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
-                {
-                    acrylic.FallbackColor(bgColor);
-                    acrylic.TintColor(bgColor);
-                }
-
-                // If we're acrylic, we want to make sure that the default BG color
-                // is transparent, so we can see the acrylic effect on text with the
-                // default BG color.
-                _settings.DefaultBackground(ARGB(0, R, G, B));
+                acrylic.FallbackColor(bgColor);
+                acrylic.TintColor(bgColor);
             }
-            else if (!_settings.BackgroundImage().empty())
+            else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
             {
-                // This currently applies no changes to the image background
-                // brush itself.
-
-                // Set the default background as transparent to prevent the
-                // DX layer from overwriting the background image
-                _settings.DefaultBackground(ARGB(0, R, G, B));
+                solidColor.Color(bgColor);
             }
-            else
-            {
-                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-                {
-                    solidColor.Color(bgColor);
-                }
 
-                _settings.DefaultBackground(RGB(R, G, B));
-            }
+            // Set the default background as transparent to prevent the
+            // DX layer from overwriting the background image or acrylic effect
+            _settings.DefaultBackground(ARGB(0, R, G, B));
         });
-    }
-
-    // Method Description:
-    // - Create a connection based on the values in our settings object.
-    //   * Gets the commandline and working directory out of the _settings and
-    //     creates a ConhostConnection with the given commandline and starting
-    //     directory.
-    void TermControl::_ApplyConnectionSettings()
-    {
-        _connection = TerminalConnection::ConhostConnection(_settings.Commandline(), _settings.StartingDirectory(), 30, 80, winrt::guid());
     }
 
     TermControl::~TermControl()
@@ -1111,7 +1077,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Process a resize event that was initiated by the user. This can either be due to the user resizing the window (causing the swapchain to resize) or due to the DPI changing (causing us to need to resize the buffer to match)
+    // - Process a resize event that was initiated by the user. This can either
+    //   be due to the user resizing the window (causing the swapchain to
+    //   resize) or due to the DPI changing (causing us to need to resize the
+    //   buffer to match)
     // Arguments:
     // - newWidth: the new width of the swapchain, in pixels.
     // - newHeight: the new height of the swapchain, in pixels.
@@ -1120,6 +1089,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         SIZE size;
         size.cx = static_cast<long>(newWidth);
         size.cy = static_cast<long>(newHeight);
+
+        // Don't actually resize so small that a single character wouldn't fit
+        // in either dimension. The buffer really doesn't like being size 0.
+        if (size.cx < _actualFont.GetSize().X || size.cy < _actualFont.GetSize().Y)
+        {
+            return;
+        }
 
         // Tell the dx engine that our window is now the new size.
         THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
@@ -1383,6 +1359,48 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Get the size of a single character of this control. The size is in
+    //   DIPs. If you need it in _pixels_, you'll need to multiply by the
+    //   current display scaling.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The dimensions of a single character of this control, in DIPs
+    winrt::Windows::Foundation::Size TermControl::CharacterDimensions() const
+    {
+        const auto fontSize = _actualFont.GetSize();
+        return { gsl::narrow_cast<float>(fontSize.X), gsl::narrow_cast<float>(fontSize.Y) };
+    }
+
+    // Method Description:
+    // - Get the absolute minimum size that this control can be resized to and
+    //   still have 1x1 character visible. This includes the space needed for
+    //   the scrollbar and the padding.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The minimum size that this terminal control can be resized to and still
+    //   have a visible character.
+    winrt::Windows::Foundation::Size TermControl::MinimumSize() const
+    {
+        const auto fontSize = _actualFont.GetSize();
+        double width = fontSize.X;
+        double height = fontSize.Y;
+        // Reserve additional space if scrollbar is intended to be visible
+        if (_settings.ScrollState() == ScrollbarState::Visible)
+        {
+            width += _scrollBar.ActualWidth();
+        }
+
+        // Account for the size of any padding
+        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
+        width += thickness.Left + thickness.Right;
+        height += thickness.Top + thickness.Bottom;
+
+        return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
+    }
+
+    // Method Description:
     // - Create XAML Thickness object based on padding props provided.
     //   Used for controlling the TermControl XAML Grid container's Padding prop.
     // Arguments:
@@ -1506,8 +1524,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Exclude padding from cursor position calculation
         COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - _root.Padding().Left),
-            static_cast<SHORT>(cursorPosition.Y - _root.Padding().Top)
+            static_cast<SHORT>(cursorPosition.X - _swapChainPanel.Margin().Left),
+            static_cast<SHORT>(cursorPosition.Y - _swapChainPanel.Margin().Top)
         };
 
         const auto fontSize = _actualFont.GetSize();
