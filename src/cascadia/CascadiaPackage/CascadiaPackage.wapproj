@@ -22,6 +22,7 @@
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
     <EntryPointProjectUniqueName>..\WindowsTerminal\WindowsTerminal.vcxproj</EntryPointProjectUniqueName>
+    <DebuggerType>NativeOnly</DebuggerType>
   </PropertyGroup>
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
@@ -310,4 +311,25 @@
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>
+
+  <!-- Move all the PRI files that would be packaged into the appx into _PriFile so that
+       GenerateProjectPriFile catches them. This requires us to move payload collection
+       up before GenerateProjectPriFile, when it is typically _after_ it (because the
+       DesktopBridge project type is built to only prepare the payload during appx manifest
+       generation.
+
+       Since PRI file generation is _before_ manifest generation (for possibly obvious or
+       important reasons), that doesn't work for us.
+  -->
+  <PropertyGroup>
+    <_GenerateProjectPriFileDependsOn>OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
+  </PropertyGroup>
+  <Target Name="OpenConsoleLiftDesktopBridgePriFiles" DependsOnTargets="_ConvertItems">
+    <ItemGroup>
+      <_PriFile Include="@(_NonWapProjProjectOutput)" Condition="'%(Extension)' == '.pri'" />
+      <!-- Remove all other .pri files from the appx payload. -->
+      <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri'" />
+    </ItemGroup>
+  </Target>
+
 </Project>

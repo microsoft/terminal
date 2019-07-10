@@ -15,6 +15,12 @@
     <ProjectGuid>{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
     <ProjectName>TerminalApp</ProjectName>
     <RootNamespace>TerminalApp</RootNamespace>
+    <!--
+      This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
+      We have to do this to overcome a layout issue in the WAP packaging project.
+      When we do this, the XBF ends up in resources.pri.
+    -->
+    <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
