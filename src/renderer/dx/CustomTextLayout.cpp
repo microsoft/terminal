@@ -498,15 +498,15 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
             glyphRunDescription.stringLength = run.textLength;
             glyphRunDescription.textPosition = run.textStart;
 
-            // Calculate the origin for the next run based on the amount of space 
+            // Calculate the origin for the next run based on the amount of space
             // that would be consumed. We are doing this calculation now, not after,
-            // because if the text is RTL then we need to advance immediately, before the 
+            // because if the text is RTL then we need to advance immediately, before the
             // write call since DirectX expects the origin to the RIGHT of the text for RTL.
             const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
                                                      _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
                                                      mutableOrigin.x);
-            
-            // Check for RTL, if it is, apply space adjustment. 
+
+            // Check for RTL, if it is, apply space adjustment.
             if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
             {
                 mutableOrigin.x = postOriginX;
@@ -521,10 +521,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
                                                     &glyphRunDescription,
                                                     nullptr));
 
-            // Either way, we should be at this point by the end of writing this sequence, 
+            // Either way, we should be at this point by the end of writing this sequence,
             // whether it was LTR or RTL.
             mutableOrigin.x = postOriginX;
-
         }
     }
     CATCH_RETURN();
