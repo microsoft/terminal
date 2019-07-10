@@ -1350,13 +1350,10 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     }
     else
     {
-        const auto margins = screenInfo.GetAbsoluteScrollMargins();
-        const bool marginsSet = margins.BottomInclusive() > margins.Top();
-
         // If we don't have margins, or the cursor is within the boundaries of the margins
         // It's important to check if the cursor is in the margins,
         //      If it's not, but the margins are set, then we don't want to scroll anything
-        if (!marginsSet || margins.IsInBounds(oldCursorPosition))
+        if (screenInfo.IsCursorInMargins(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
             const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
@@ -1396,20 +1393,17 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] HRESULT DoSrvMoveCursorVertically(SCREEN_INFORMATION& screenInfo, const short lines)
 {
     auto& cursor = screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor();
-    const int currentCursorY = cursor.GetPosition().Y;
-    SMALL_RECT margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-    const auto marginsSet = margins.Bottom > margins.Top;
-    const auto cursorInMargins = currentCursorY <= margins.Bottom && currentCursorY >= margins.Top;
     COORD clampedPos = { cursor.GetPosition().X, cursor.GetPosition().Y + lines };
 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
     // Make sure the cursor stays inside the margins, but only if it started there
-    if (marginsSet && cursorInMargins)
+    if (screenInfo.AreMarginsSet() && screenInfo.IsCursorInMargins(cursor.GetPosition()))
     {
         try
         {
+            const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
             const auto v = clampedPos.Y;
             const auto lo = margins.Top;
             const auto hi = margins.Bottom;
@@ -2037,8 +2031,7 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     auto& screenInfo = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
     auto& textBuffer = screenInfo.GetTextBuffer();
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
-    const auto margins = screenInfo.GetAbsoluteScrollMargins();
-    if (margins.IsInBounds(cursorPosition))
+    if (screenInfo.IsCursorInMargins(cursorPosition))
     {
         const auto screenEdges = screenInfo.GetBufferSize().ToInclusive();
         // Rectangle to cut out of the existing buffer
