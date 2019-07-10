@@ -151,6 +151,7 @@ private:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
+    std::wstring _doubleClickDelimiters;
     void _ExpandDoubleClickSelectionLeft(const COORD position);
     void _ExpandDoubleClickSelectionRight(const COORD position);
     const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;

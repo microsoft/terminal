@@ -133,6 +133,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _snapOnInput = settings.SnapOnInput();
 
+    _doubleClickDelimiters = settings.DoubleClickDelimiters();
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -597,21 +599,7 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 // - true if cell data contains the delimiter.
 const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
 {
-    // TODO GitHub #988: hook up delimiters to Settings
-    const std::wstring_view delimiters[] = {
-        L" ",
-        L"/",
-        L"\\"
-    };
-
-    for (const auto delimiter : delimiters)
-    {
-        if (cellChar == delimiter)
-        {
-            return true;
-        }
-    }
-    return false;
+    return _doubleClickDelimiters.find(cellChar) != std::wstring_view::npos;
 }
 
 // Method Description:
