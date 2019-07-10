@@ -28,6 +28,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     <SplitButton
                         x:Name="NewTabButton"
                         Click="OnNewTabButtonClick"
+                        Background="Transparent"
                         VerticalAlignment="Stretch"
                         HorizontalAlignment="Left">
                         <SymbolIcon Symbol="Add" />

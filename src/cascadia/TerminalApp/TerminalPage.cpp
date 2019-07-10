@@ -30,6 +30,9 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
+        auto windowWidth = Root().ActualWidth();
+        auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
+        TabView().MaxWidth(windowWidth - minMaxCloseWidth);
     }
 
 }

@@ -130,7 +130,7 @@
     </StackPanel.Resources>
 
     <Grid x:Name="Content"></Grid>
-    <Border Height="36.0" MinWidth="160.0" x:Name="DragBar" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" DoubleTapped="DragBar_DoubleTapped"/>
+    <Border Height="36.0" MinWidth="45.0" x:Name="DragBar" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" DoubleTapped="DragBar_DoubleTapped"/>
     <Button Height="36.0" Width="45.0" x:Name="Minimize" Style="{StaticResource CaptionButton}" Click="Minimize_Click"
             AutomationProperties.Name="Minimize">
         <Button.Resources>
