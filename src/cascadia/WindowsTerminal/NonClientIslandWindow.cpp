@@ -85,31 +85,37 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         return;
     }
 
-    const auto scale = GetCurrentDpiScale();
-    const auto dpi = ::GetDpiForWindow(_window.get());
+    // const auto scale = GetCurrentDpiScale();
+    // const auto dpi = ::GetDpiForWindow(_window.get());
 
-    const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-    const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+    // const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+    // const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
 
-    // If we're maximized, we don't want to use the frame as our margins,
-    // instead we want to use the margins from the maximization. If we included
-    // the left&right sides of the frame in this calculation while maximized,
-    // you' have a few pixels of the window border on the sides while maximized,
-    // which most apps do not have.
-    const auto bordersWidth = _isMaximized ?
-                                  (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
-                                  (dragX * 2);
-    const auto bordersHeight = _isMaximized ?
-                                   (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
-                                   (dragY * 2);
+    // // If we're maximized, we don't want to use the frame as our margins,
+    // // instead we want to use the margins from the maximization. If we included
+    // // the left&right sides of the frame in this calculation while maximized,
+    // // you' have a few pixels of the window border on the sides while maximized,
+    // // which most apps do not have.
+    // const auto bordersWidth = _isMaximized ?
+    //                               (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
+    //                               (dragX * 2);
+    // const auto bordersHeight = _isMaximized ?
+    //                                (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
+    //                                (dragY * 2);
 
-    const auto windowsWidth = width - bordersWidth;
-    const auto windowsHeight = height - bordersHeight;
-    const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-    const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+    // const auto windowsWidth = width - bordersWidth;
+    // const auto windowsHeight = height - bordersHeight;
+    // const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
+    // const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
+    _UpdateInternalMetrics();
+
+    const auto windowsWidth = RECT_WIDTH(&_clientArea);
+    const auto windowsHeight = RECT_HEIGHT(&_clientArea);
     if (_rootGrid)
     {
+        const auto scale = GetCurrentDpiScale();
+
         winrt::Windows::Foundation::Size size{ (windowsWidth / scale) + 0.5f, (windowsHeight / scale) + 0.5f };
         _rootGrid.Height(size.Height);
         _rootGrid.Width(size.Width);
@@ -118,7 +124,7 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Arrange(finalRect);
     }
 
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, _clientArea.left, _clientArea.top, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 }
 
 // Method Description:
@@ -136,37 +142,10 @@ void NonClientIslandWindow::_UpdateDragRegion()
 {
     if (_dragBar)
     {
-        // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
-        // better than that.
-        const auto windowRect = GetWindowRect();
-        const auto width = windowRect.right - windowRect.left;
-        const auto height = windowRect.bottom - windowRect.top;
-
-        const auto scale = GetCurrentDpiScale();
-        const auto dpi = ::GetDpiForWindow(_window.get());
-
-        const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
-        const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
-
-        // If we're maximized, we don't want to use the frame as our margins,
-        // instead we want to use the margins from the maximization. If we included
-        // the left&right sides of the frame in this calculation while maximized,
-        // you' have a few pixels of the window border on the sides while maximized,
-        // which most apps do not have.
-        const auto bordersWidth = _isMaximized ?
-                                      (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
-                                      (dragX * 2);
-        const auto bordersHeight = _isMaximized ?
-                                       (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
-                                       (dragY * 2);
-
-        const auto windowsWidth = width - bordersWidth;
-        const auto windowsHeight = height - bordersHeight;
-        const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
-        const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
-
         const auto dragBarRect = GetDragAreaRect();
         const auto nonClientHeight = dragBarRect.bottom - dragBarRect.top;
+        const auto windowsWidth = RECT_WIDTH(&_clientArea);
+        const auto windowsHeight = RECT_HEIGHT(&_clientArea);
 
         auto nonClientRegion = wil::unique_hrgn(CreateRectRgn(0, 0, 0, 0));
         auto nonClientLeftRegion = wil::unique_hrgn(CreateRectRgn(0, 0, dragBarRect.left, nonClientHeight));
@@ -178,6 +157,49 @@ void NonClientIslandWindow::_UpdateDragRegion()
         winrt::check_bool(CombineRgn(_dragBarRegion.get(), nonClientRegion.get(), clientRegion.get(), RGN_OR));
         winrt::check_bool(SetWindowRgn(_interopWindowHandle, _dragBarRegion.get(), true));
     }
+}
+
+void NonClientIslandWindow::_UpdateInternalMetrics()
+{
+    // TODO:GH#1897 This is largely duplicated from OnSize, and we should do
+    // better than that.
+    _windowRect = GetWindowRect();
+    const auto width = _windowRect.right - _windowRect.left;
+    const auto height = _windowRect.bottom - _windowRect.top;
+
+    // const auto scale = GetCurrentDpiScale();
+    const auto dpi = _currentDpi; // ::GetDpiForWindow(_window.get());
+
+    const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
+    const auto dragX = ::GetSystemMetricsForDpi(SM_CXDRAG, dpi);
+    _dragSize = { dragX, dragY };
+
+    // If we're maximized, we don't want to use the frame as our margins,
+    // instead we want to use the margins from the maximization. If we included
+    // the left&right sides of the frame in this calculation while maximized,
+    // you' have a few pixels of the window border on the sides while maximized,
+    // which most apps do not have.
+    const auto bordersWidth = _isMaximized ?
+                                  (_maximizedMargins.cxLeftWidth + _maximizedMargins.cxRightWidth) :
+                                  (dragX * 2);
+    const auto bordersHeight = _isMaximized ?
+                                   (_maximizedMargins.cyBottomHeight + _maximizedMargins.cyTopHeight) :
+                                   (dragY * 2);
+    _borderSize = { bordersWidth, bordersHeight };
+
+    const auto windowsWidth = width - bordersWidth;
+    const auto windowsHeight = height - bordersHeight;
+    const auto xPos = _isMaximized ? _maximizedMargins.cxLeftWidth : dragX;
+    const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
+
+    // TODO
+    // Wait this isn't the client area. This is just the area inside the
+    // borders. (which yea is all our client area but still)
+    // I think I want to keep this structure, but maybe rename it
+    _clientArea.left = xPos;
+    _clientArea.top = yPos;
+    _clientArea.right = xPos + windowsWidth;
+    _clientArea.bottom = yPos + windowsHeight;
 }
 
 // Method Description:
@@ -450,11 +472,12 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             return 0;
         }
-        
+
         PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
         {
+            // Todo this shit can get pulled too
             const auto scale = GetCurrentDpiScale();
             const auto dpi = ::GetDpiForWindow(_window.get());
             // Get the dimensions of the drag borders for the sides of the window.
@@ -472,10 +495,19 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
             // Fill in the area between the non-client content and the caption buttons.
             RECT dragBarRect = GetDragAreaRect();
-            dragBarRect.left += xPos;
-            dragBarRect.right += xPos;
-            dragBarRect.bottom += yPos;
-            dragBarRect.top += yPos;
+            // dragBarRect.left += xPos;
+            // dragBarRect.right += xPos;
+            // dragBarRect.bottom += yPos;
+            // dragBarRect.top += yPos;
+
+            // This would paint the _entire_ window area, but I think we want to
+            // be more precise about it (in case we want different titlebar and
+            // border colors)
+            dragBarRect.left = 0;
+            dragBarRect.top = 0;
+            dragBarRect.right = RECT_WIDTH(&_windowRect);
+            dragBarRect.bottom = RECT_HEIGHT(&_windowRect);
+
             ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
 
             RECT windowRect = {};
@@ -483,21 +515,21 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
-            // Draw the top window border
-            RECT clientRect = { 0, 0, cx, yPos };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Draw the top window border
+            // RECT clientRect = { 0, 0, cx, yPos };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
-            // Draw the left window border
-            clientRect = { 0, 0, xPos, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Draw the left window border
+            // clientRect = { 0, 0, xPos, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
-            // Draw the bottom window border
-            clientRect = { 0, cy - yPos, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Draw the bottom window border
+            // clientRect = { 0, cy - yPos, cx, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
-            // Draw the right window border
-            clientRect = { cx - xPos, 0, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Draw the right window border
+            // clientRect = { cx - xPos, 0, cx, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
         }
 
         return 0;

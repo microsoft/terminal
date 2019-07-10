@@ -46,6 +46,13 @@ private:
     bool _isMaximized;
     winrt::Windows::UI::Xaml::Controls::Border _dragBar{ nullptr };
 
+    // TODO: These should be Viewport's
+    RECT _windowRect{ 0 };
+    SIZE _dragSize{ 0 };
+    SIZE _borderSize{ 0 };
+    RECT _clientArea{ 0 };
+    // RECT _titlebarArea{ 0 };
+
     RECT GetDragAreaRect() const noexcept;
 
     [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
@@ -55,6 +62,7 @@ private:
     void _HandleActivateWindow();
     bool _HandleWindowPosChanging(WINDOWPOS* const windowPos);
     void _UpdateDragRegion();
+    void _UpdateInternalMetrics();
 
     void OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable sender, winrt::Windows::UI::Xaml::SizeChangedEventArgs eventArgs);
 
