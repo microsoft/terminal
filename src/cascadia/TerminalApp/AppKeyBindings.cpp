@@ -169,7 +169,6 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ResizePaneDown:
             _ResizePaneHandlers(Direction::Down);
             return true;
-
         case ShortcutAction::MoveFocusLeft:
             _MoveFocusHandlers(Direction::Left);
             return true;
@@ -182,7 +181,6 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::MoveFocusDown:
             _MoveFocusHandlers(Direction::Down);
             return true;
-
         default:
             return false;
         }
