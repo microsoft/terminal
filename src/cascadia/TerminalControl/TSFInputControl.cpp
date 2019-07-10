@@ -87,7 +87,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            OutputDebugString(L"_NotifyFocusEnter\n");
             _editContext.NotifyFocusEnter();
         }
     }
@@ -103,7 +102,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (_editContext != nullptr)
         {
-            OutputDebugString(L"_NotifyFocusLeave\n");
             //_editContext.NotifyFocusLeave();
         }
     }
@@ -153,7 +151,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_layoutRequestedHandler(CoreTextEditContext sender, CoreTextLayoutRequestedEventArgs const& args)
     {
-        OutputDebugString(L"_editContextlayoutRequested\n");
         auto request = args.Request();
 
         // Get window in screen coordinates, this is the entire window including tabs
@@ -164,20 +161,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _currentCursorPositionHandlers(*this, *cursorArgs);
         COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) }; //_terminal->GetCursorPosition();
 
-        WCHAR buff[100];
-        StringCchPrintfW(buff, sizeof(buff), L"Cursor x:%d, y:%d\n", cursorPos.X, cursorPos.Y);
-        OutputDebugString(buff);
-
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _currentFontInfoHandlers(*this, *fontArgs);
 
         const float fontWidth = fontArgs->FontSize().X;
         const float fontHeight = fontArgs->FontSize().Y;
-
-        StringCchPrintfW(buff, sizeof(buff), L"Window x:%f,y:%f\n", windowBounds.X, windowBounds.Y);
-
-        OutputDebugString(buff);
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
@@ -202,10 +191,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // This is the bounds of the whole control
         Rect controlRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
         request.LayoutBounds().ControlBounds(ScaleRect(controlRect, scaleFactor));
-
-        StringCchPrintfW(buff, sizeof(buff), L"clientCursorPos - x:%d,y:%d\n", clientCursorPos.X, clientCursorPos.Y);
-
-        OutputDebugString(buff);
 
         // position textblock to cursor position
         _canvas.SetLeft(_textBlock, clientCursorPos.X);
@@ -232,7 +217,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionStartedHandler(CoreTextEditContext sender, CoreTextCompositionStartedEventArgs const& args)
     {
-        OutputDebugString(L"CompositionStarted\n");
         _canvas.Visibility(Visibility::Visible);
         _textBlock.Visibility(Visibility::Visible);
     }
@@ -247,17 +231,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_compositionCompletedHandler(CoreTextEditContext sender, CoreTextCompositionCompletedEventArgs const& args)
     {
-        OutputDebugString(L"CompositionCompleted\n");
-
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            WCHAR buff[255];
-
-            swprintf_s(buff, ARRAYSIZE(buff), L"Completed Text: %s\n", _inputBuffer.c_str());
-
-            OutputDebugString(buff);
-
             auto hstr = to_hstring(_inputBuffer.c_str());
 
             // call event handler with data handled by parent
@@ -279,7 +255,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // hide the controls until composition starts again
             _canvas.Visibility(Visibility::Collapsed);
             _textBlock.Visibility(Visibility::Collapsed);
-            OutputDebugString(L"CompositionCompleted: Done\n");
         }
     }
 
@@ -295,7 +270,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_focusRemovedHandler(CoreTextEditContext sender, winrt::Windows::Foundation::IInspectable const& object)
     {
-        OutputDebugString(L"FocusRemoved\n");
     }
 
     // Method Description:
@@ -309,24 +283,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
     {
-        OutputDebugString(L"_editContextTextRequested\n");
-
         // the range the TSF wants to know about
         auto range = args.Request().Range();
-
-        WCHAR buff[255];
-
-        swprintf_s(buff, ARRAYSIZE(buff), L"Requested Range: Start:%x, End:%x\n", range.StartCaretPosition, range.EndCaretPosition);
-
-        OutputDebugString(buff);
 
         try
         {
             auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
-
-            swprintf_s(buff, ARRAYSIZE(buff), L"Text Requested: %s\n", textRequested.c_str());
-
-            OutputDebugString(buff);
 
             args.Request().Text(winrt::to_hstring(textRequested.c_str()));
         }
@@ -348,7 +310,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_selectionRequestedHandler(CoreTextEditContext sender, CoreTextSelectionRequestedEventArgs const& args)
     {
-        OutputDebugString(L"_editContextSelectionRequested\n");
     }
 
     // Method Description:
@@ -363,7 +324,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_selectionUpdatingHandler(CoreTextEditContext sender, CoreTextSelectionUpdatingEventArgs const& args)
     {
-        OutputDebugString(L"_editContextSelectionUpdating\n");
     }
 
     // Method Description:
@@ -376,13 +336,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
-        OutputDebugString(L"_editContextTextUpdating\n");
         auto text = args.Text();
         auto range = args.Range();
-
-        WCHAR buff[255];
-        swprintf_s(buff, ARRAYSIZE(buff), L"Text: %s\n", text.c_str());
-        OutputDebugString(buff);
 
         try
         {
@@ -416,7 +371,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& args)
     {
-        OutputDebugString(L"_editContextFormatUpdating\n");
     }
 
     Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontHeightProperty =
