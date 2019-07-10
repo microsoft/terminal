@@ -51,6 +51,10 @@ static constexpr std::string_view SwitchToTab8Key{ "switchToTab8" };
 static constexpr std::string_view OpenSettingsKey{ "openSettings" };
 static constexpr std::string_view SplitHorizontalKey{ "splitHorizontal" };
 static constexpr std::string_view SplitVerticalKey{ "splitVertical" };
+static constexpr std::string_view ResizePaneLeftKey{ "resizePaneLeft" };
+static constexpr std::string_view ResizePaneRightKey{ "resizePaneRight" };
+static constexpr std::string_view ResizePaneUpKey{ "resizePaneUp" };
+static constexpr std::string_view ResizePaneDownKey{ "resizePaneDown" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -97,6 +101,10 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { SwitchToTab8Key, ShortcutAction::SwitchToTab8 },
     { SplitHorizontalKey, ShortcutAction::SplitHorizontal },
     { SplitVerticalKey, ShortcutAction::SplitVertical },
+    { ResizePaneLeftKey, ShortcutAction::ResizePaneLeft },
+    { ResizePaneRightKey, ShortcutAction::ResizePaneRight },
+    { ResizePaneUpKey, ShortcutAction::ResizePaneUp },
+    { ResizePaneDownKey, ShortcutAction::ResizePaneDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
 };
 

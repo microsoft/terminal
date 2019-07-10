@@ -114,6 +114,8 @@ namespace winrt::TerminalApp::implementation
 
         _CreateNewTabFlyout();
         _OpenNewTab(std::nullopt);
+
+        _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
     }
 
     // Method Description:
@@ -458,6 +460,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
         bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         bindings.PasteText([this]() { _PasteText(); });
     }
@@ -968,6 +971,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attempt to move a separator between panes, as to resize each child on
+    //   either size of the separator. See Pane::ResizePane for details.
+    // - Moves a separator on the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the separator in.
+    // Return Value:
+    // - <none>
+    void App::_ResizePane(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->ResizePane(direction);
+    }
+
+    // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
@@ -1254,6 +1271,23 @@ namespace winrt::TerminalApp::implementation
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
+    }
+
+    // Method Description:
+    // - Called when our tab content size changes. This updates each tab with
+    //   the new size, so they have a chance to update each of their panes with
+    //   the new size.
+    // Arguments:
+    // - e: the SizeChangedEventArgs with the new size of the tab content area.
+    // Return Value:
+    // - <none>
+    void App::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    {
+        const auto newSize = e.NewSize();
+        for (auto& tab : _tabs)
+        {
+            tab->ResizeContent(newSize);
+        }
     }
 
     // Method Description:

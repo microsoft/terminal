@@ -60,6 +60,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
         DECLARE_EVENT(ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
         DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
+        DECLARE_EVENT(ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
         // clang-format on
 
     private:
