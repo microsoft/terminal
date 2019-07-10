@@ -76,6 +76,11 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     }
 }
 
+HwndTerminal::~HwndTerminal()
+{
+    DestroyWindow(_hwnd);
+}
+
 HRESULT HwndTerminal::Initialize()
 {
     _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
@@ -245,4 +250,10 @@ void _stdcall ClearSelection(void* terminal)
 {
     auto publicTerminal = (HwndTerminal*)terminal;
     publicTerminal->_terminal->ClearSelection();
+}
+
+void _stdcall DestroyTerminal(void* terminal)
+{
+    auto publicTerminal = (HwndTerminal*)terminal;
+    delete publicTerminal;
 }
