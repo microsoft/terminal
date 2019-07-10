@@ -152,10 +152,6 @@ private:
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _doubleClickDelimiters;
-    void _ExpandDoubleClickSelectionLeft(const COORD position);
-    void _ExpandDoubleClickSelectionRight(const COORD position);
-    const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
-    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 
     std::shared_mutex _readWriteLock;
 
@@ -198,5 +194,9 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const;
     const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    void _ExpandDoubleClickSelectionLeft(const COORD position);
+    void _ExpandDoubleClickSelectionRight(const COORD position);
+    const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
+    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
 };
