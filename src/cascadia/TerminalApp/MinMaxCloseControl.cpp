@@ -54,6 +54,11 @@ namespace winrt::TerminalApp::implementation
         _OnMaximize(HTMAXBUTTON);
     }
 
+    void MinMaxCloseControl::DoubleClickDragBar()
+    {
+        _OnMaximize(HTCAPTION);
+    }
+
     void MinMaxCloseControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
     {
         _OnMaximize(HTCAPTION);

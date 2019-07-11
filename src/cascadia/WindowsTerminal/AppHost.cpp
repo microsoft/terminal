@@ -69,7 +69,12 @@ void AppHost::Initialize()
 
     AppTitleChanged(_app.GetTitle());
 
-    _window->OnAppInitialized(_app);
+    _window->SetContent(_app.GetRoot());
+    if (_useNonClientArea)
+    {
+        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(_app.GetTitlebarContent());
+    }
+    _window->OnAppInitialized();
 }
 
 // Method Description:

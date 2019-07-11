@@ -91,17 +91,31 @@ namespace winrt::TerminalApp::implementation
         auto terminalPage = winrt::make_self<TerminalPage>();
         _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
         _tabContent = terminalPage->TabContent();
-        _tabRow = terminalPage->TabRow();
-        _tabView = terminalPage->TabView();
-        _newTabButton = terminalPage->NewTabButton();
+        // _tabRow = terminalPage->TabRow();
+        _tabRow = TerminalApp::TabRowControl();
+        _tabView = _tabRow.TabView();
+        _newTabButton = _tabRow.NewTabButton();
 
-        _minMaxCloseControl = terminalPage->MinMaxCloseControl();
-        _minMaxCloseControl.ParentWindowHandle(parentHwnd);
+        // _minMaxCloseControl = terminalPage->MinMaxCloseControl();
+        // _minMaxCloseControl.ParentWindowHandle(parentHwnd);
 
-        if (!_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
-            _minMaxCloseControl.Visibility(Visibility::Collapsed);
+            // // Remove the TabView from the page. We'll hang on to it, we need to
+            // // put it in the titlebar.
+            // uint32_t index = 0;
+            // // terminalPage->Root().Children().IndexOf(_tabView, index);
+            // // terminalPage->Root().Children().RemoveAt(index);
+            // terminalPage->Root().Children().Clear();
+            // terminalPage->Root().Children().Append(_tabContent);
         }
+        else
+        {
+            // _minMaxCloseControl.Visibility(Visibility::Collapsed);
+            terminalPage->SetTabRow(_tabRow);
+            Controls::Grid::SetRow(_tabRow, 0);
+        }
+
         // uint32_t index = 0;
         // _tabRow.Children().IndexOf(_newTabButton, index);
         // _tabRow.Children().RemoveAt(index);
@@ -418,15 +432,15 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
     }
 
-    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
-    {
-        if (_minMaxCloseControl)
-        {
-            return _minMaxCloseControl.DragBar();
-        }
+    // Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
+    // {
+    //     // if (_minMaxCloseControl)
+    //     // {
+    //     //     return _minMaxCloseControl.DragBar();
+    //     // }
 
-        return nullptr;
-    }
+    //     return nullptr;
+    // }
 
     // Method Description:
     // - Called when the about button is clicked. See _ShowAboutDialog for more info.
@@ -716,6 +730,11 @@ namespace winrt::TerminalApp::implementation
     {
         return _root;
     }
+    UIElement App::GetTitlebarContent() noexcept
+    {
+        // return _tabView;
+        return _tabRow;
+    }
 
     void App::_SetFocusedTabIndex(int tabIndex)
     {
@@ -878,7 +897,11 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                                                                   settings.StartingDirectory(),
+                                                                                                   30,
+                                                                                                   80,
+                                                                                                   winrt::guid());
 
         TermControl term{ settings, connection };
 
@@ -1265,7 +1288,11 @@ namespace winrt::TerminalApp::implementation
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
+                                                                                                          controlSettings.StartingDirectory(),
+                                                                                                          30,
+                                                                                                          80,
+                                                                                                          winrt::guid());
 
         TermControl newControl{ controlSettings, controlConnection };
 

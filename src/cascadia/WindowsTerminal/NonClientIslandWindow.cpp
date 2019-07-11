@@ -42,17 +42,73 @@ NonClientIslandWindow::~NonClientIslandWindow()
 // - <unused>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/, winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
+void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                 winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
     _UpdateDragRegion();
 }
 
-void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
+void NonClientIslandWindow::OnAppInitialized()
 {
-    _dragBar = app.GetDragBar();
+    // _titlebarAndContent = Controls::Grid{};
+    // Controls::RowDefinition titlebarRow{};
+    // Controls::RowDefinition contentRow{};
+    // titlebarRow.Height(GridLengthHelper::Auto());
+
+    // _titlebarAndContent.RowDefinitions().Append(titlebarRow);
+    // _titlebarAndContent.RowDefinitions().Append(contentRow);
+
+    // _titlebar = winrt::TerminalApp::TitlebarControl{};
+
+    // // _dragBar = app.GetDragBar();
+    // _dragBar = _titlebar.DragBar();
+
+    // _titlebarAndContent.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+
+    // _titlebarAndContent.Children().Append(_titlebar);
+    // _titlebarAndContent.Children().Append(_rootGrid);
+
+    // Controls::Grid::SetRow(_titlebar, 0);
+    // Controls::Grid::SetRow(_rootGrid, 1);
+
+    // _titlebar.Content(app.GetTitlebarContent());
+    IslandWindow::OnAppInitialized();
+}
+
+void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    // IslandWindow::OnAppInitialized();
+
+    // _titlebarAndContent = Controls::Grid{};
+    _clientContent = content;
+    _rootGrid.Children().Clear();
+    Controls::RowDefinition titlebarRow{};
+    Controls::RowDefinition contentRow{};
+    titlebarRow.Height(GridLengthHelper::Auto());
+
+    _rootGrid.RowDefinitions().Append(titlebarRow);
+    _rootGrid.RowDefinitions().Append(contentRow);
+
+    _titlebar = winrt::TerminalApp::TitlebarControl{};
+
+    // _dragBar = app.GetDragBar();
+    _dragBar = _titlebar.DragBar();
+
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
-    IslandWindow::OnAppInitialized(app);
+    _rootGrid.Children().Append(_titlebar);
+    _rootGrid.Children().Append(content);
+
+    Controls::Grid::SetRow(_titlebar, 0);
+    Controls::Grid::SetRow(content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>(), 1);
+
+    // _titlebar.Content(app.GetTitlebarContent());
+    // IslandWindow::OnAppInitialized(app);
+}
+
+void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _titlebar.Content(content);
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
@@ -450,7 +506,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             return 0;
         }
-        
+
         PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())

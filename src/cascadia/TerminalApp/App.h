@@ -26,9 +26,10 @@ namespace winrt::TerminalApp::implementation
         App();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
+        Windows::UI::Xaml::UIElement GetTitlebarContent() noexcept;
 
-        // Gets the current dragglable area in the non client region of the top level window
-        Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
+        // // Gets the current dragglable area in the non client region of the top level window
+        // Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
 
         void Create(uint64_t hParentWnd);
         void LoadSettings();
@@ -53,10 +54,13 @@ namespace winrt::TerminalApp::implementation
         // (which is a root when the tabs are in the titlebar.)
         Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
-        Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+
+        // Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+        TerminalApp::TabRowControl _tabRow{ nullptr };
+
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
+        // winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 

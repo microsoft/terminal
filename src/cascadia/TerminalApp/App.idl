@@ -4,8 +4,7 @@
 namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
-    [default_interface]
-    runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
+    [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
     {
         App();
 
@@ -21,7 +20,8 @@ namespace TerminalApp
         void LoadSettings();
 
         Windows.UI.Xaml.UIElement GetRoot();
-        Windows.UI.Xaml.Controls.Border GetDragBar{ get; };
+        Windows.UI.Xaml.UIElement GetTitlebarContent();
+        // Windows.UI.Xaml.Controls.Border GetDragBar{ get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();

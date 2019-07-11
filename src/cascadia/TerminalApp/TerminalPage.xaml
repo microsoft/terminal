@@ -10,20 +10,15 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"  SizeChanged="Root_SizeChanged">
+    <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid x:Name="TabRow" Grid.Row="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+        <!-- <Grid x:Name="TabRow" Grid.Row="0">
 
-            <mux:TabView x:Name="TabView" Grid.Column="0">
+            <mux:TabView x:Name="TabView">
                 <mux:TabView.RightCustomContent>
                     <SplitButton
                         x:Name="NewTabButton"
@@ -35,13 +30,7 @@ the MIT License. See LICENSE in the project root for license information. -->
                     </SplitButton>
                 </mux:TabView.RightCustomContent>
             </mux:TabView>
-
-
-            <local:MinMaxCloseControl
-                Grid.Column="2"
-                x:Name="MinMaxCloseControl"
-                HorizontalAlignment="Right" />
-        </Grid>
+        </Grid> -->
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
     </Grid>

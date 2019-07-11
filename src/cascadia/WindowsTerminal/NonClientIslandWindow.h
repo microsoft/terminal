@@ -36,9 +36,15 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
-    void OnAppInitialized(winrt::TerminalApp::App app) override;
+    // void OnAppInitialized(winrt::TerminalApp::App app) override;
+    void OnAppInitialized() override;
+    void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
+    void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
 
 private:
+    winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
+    winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
+
     wil::unique_hbrush _backgroundBrush;
     wil::unique_hrgn _dragBarRegion;
 

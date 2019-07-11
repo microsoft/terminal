@@ -23,6 +23,8 @@ namespace winrt::TerminalApp::implementation
         uint64_t ParentWindowHandle() const;
         void ParentWindowHandle(uint64_t handle);
 
+        void DoubleClickDragBar();
+
     private:
         void _OnMaximize(byte flag);
         HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.

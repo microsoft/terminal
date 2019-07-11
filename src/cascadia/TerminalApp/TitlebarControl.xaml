@@ -1,0 +1,50 @@
+﻿<Grid
+    x:Class="TerminalApp.TitlebarControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    x:Name="Root"
+    HorizontalAlignment="Stretch"
+    VerticalAlignment="Top"
+    SizeChanged="Root_SizeChanged"
+    d:DesignHeight="36"
+    d:DesignWidth="400">
+
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="Auto"/>
+        <ColumnDefinition Width="*"/>
+        <ColumnDefinition Width="Auto"/>
+    </Grid.ColumnDefinitions>
+
+    <Grid x:Name="ContentRoot" Grid.Column="0"></Grid>
+    <Border
+        x:Name="DragBar"
+        Grid.Column="1"
+        MinWidth="45.0"
+        Background="Magenta"
+        DoubleTapped="DragBar_DoubleTapped"/>
+
+    <!-- <mux:TabView x:Name="TabView" Grid.Column="0">
+        <mux:TabView.RightCustomContent>
+            <SplitButton
+                x:Name="NewTabButton"
+                Click="OnNewTabButtonClick"
+                Background="Transparent"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Left">
+                <SymbolIcon Symbol="Add" />
+            </SplitButton>
+        </mux:TabView.RightCustomContent>
+    </mux:TabView> -->
+
+
+    <local:MinMaxCloseControl
+        Grid.Column="2"
+        x:Name="MinMaxCloseControl"
+        HorizontalAlignment="Right" />
+</Grid>
+

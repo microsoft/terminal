@@ -3,9 +3,9 @@
 
 namespace TerminalApp
 {
-    [default_interface]
-    runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
         TerminalPage();
+        void SetTabRow(Windows.UI.Xaml.FrameworkElement content);
     }
 }

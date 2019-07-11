@@ -5,24 +5,23 @@
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
-#include "TerminalPage.g.h"
+#include "TabRowControl.g.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TerminalPage : TerminalPageT<TerminalPage>
+    struct TabRowControl : TabRowControlT<TabRowControl>
     {
-        TerminalPage();
+        TabRowControl();
 
         void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
 
         // void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
-        void SetTabRow(Windows::UI::Xaml::FrameworkElement content);
     };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TerminalPage : TerminalPageT<TerminalPage, implementation::TerminalPage>
+    struct TabRowControl : TabRowControlT<TabRowControl, implementation::TabRowControl>
     {
     };
 }

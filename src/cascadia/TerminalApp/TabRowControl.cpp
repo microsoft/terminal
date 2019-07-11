@@ -2,20 +2,20 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "TerminalPage.h"
+#include "TabRowControl.h"
 
-#include "TerminalPage.g.cpp"
+#include "TabRowControl.g.cpp"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage()
+    TabRowControl::TabRowControl()
     {
-        // The generated code will by default attempt to load from ms-appx://TerminalApp/TerminalPage.xaml.
+        // The generated code will by default attempt to load from ms-appx://TerminalApp/TabRowControl.xaml.
         // We'll force it to load from the root of the appx instead.
-        const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///TerminalPage.xaml" };
+        const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///TabRowControl.xaml" };
         winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);
     }
 
@@ -24,21 +24,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender
     // - event arguments
-    void TerminalPage::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
+    void TabRowControl::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
     {
     }
 
-    // void TerminalPage::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    // void TabRowControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     // {
     //     auto windowWidth = Root().ActualWidth();
     //     auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
     //     TabView().MaxWidth(windowWidth - minMaxCloseWidth);
     // }
 
-    void TerminalPage::SetTabRow(Windows::UI::Xaml::FrameworkElement content)
-    {
-        // ContentRoot().Children().Clear();
-        Root().Children().Append(content);
-        Controls::Grid::SetRow(content, 0);
-    }
 }

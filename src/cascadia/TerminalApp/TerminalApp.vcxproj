@@ -28,6 +28,20 @@
     </ApplicationDefinition>
   </ItemGroup>
   <!-- When we add other user controls, they should go in here as so: -->
+  <ItemGroup>
+    <Page Include="TerminalPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="MinMaxCloseControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TitlebarControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
   <!-- <ItemGroup>
     <Page Include="MyUserControl.xaml">
       <SubType>Designer</SubType>
@@ -42,6 +56,12 @@
     </ClInclude>
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TitlebarControl.h">
+      <DependentUpon>TitlebarControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TabRowControl.h">
+      <DependentUpon>TabRowControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Tab.h" />
     <ClInclude Include="Pane.h" />
@@ -69,14 +89,12 @@
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
-    <Midl Include="TerminalPage.idl">
-      <DependentUpon>TerminalPage.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <Midl Include="MinMaxCloseControl.idl">
-      <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
+    <ClCompile Include="TitlebarControl.cpp">
+      <DependentUpon>TitlebarControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TabRowControl.cpp">
+      <DependentUpon>TabRowControl.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Tab.cpp" />
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
@@ -109,6 +127,22 @@
       <DependentUpon>App.xaml</DependentUpon>
     </Midl>
     <Midl Include="AppKeyBindings.idl" />
+    <Midl Include="TerminalPage.idl">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="MinMaxCloseControl.idl">
+      <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TitlebarControl.idl">
+      <DependentUpon>TitlebarControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TabRowControl.idl">
+      <DependentUpon>TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -129,14 +163,6 @@
       <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
     </ProjectReference>
     <!-- This is needed to be able to reference the XamlApplication type. -->
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="TerminalPage.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Include="MinMaxCloseControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
   <PropertyGroup>
     <!--
