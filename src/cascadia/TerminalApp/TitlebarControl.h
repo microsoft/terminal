@@ -15,14 +15,22 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl();
 
-        uint64_t ParentWindowHandle();
+        uint64_t ParentWindowHandle() const;
         void ParentWindowHandle(uint64_t handle);
 
         Windows::UI::Xaml::UIElement Content();
         void Content(Windows::UI::Xaml::UIElement content);
 
-        void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
         void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
+
+        void Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e);
+
+    private:
+        void _OnMaximize(byte flag);
+        HWND _window{ nullptr }; // non-owning handle; should not be freed in the dtor.
     };
 }
 

@@ -4,12 +4,11 @@
     {
         MinMaxCloseControl();
 
-        // Windows.UI.Xaml.Controls.Grid Content { get; };
-        // Windows.UI.Xaml.Controls.Border DragBar { get; };
+        void Maximize();
+        void RestoreDown();
 
-        UInt64 ParentWindowHandle;
-
-        // TODO: probably just do this in TitlebarControl
-        void DoubleClickDragBar();
+        Windows.UI.Xaml.Controls.Button MinimizeButton { get; };
+        Windows.UI.Xaml.Controls.Button MaximizeButton { get; };
+        Windows.UI.Xaml.Controls.Button CloseButton { get; };
     }
 }

@@ -17,64 +17,26 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);
     }
 
-    uint64_t MinMaxCloseControl::ParentWindowHandle() const
+    void MinMaxCloseControl::Maximize()
     {
-        return reinterpret_cast<uint64_t>(_window);
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
     }
 
-    void MinMaxCloseControl::ParentWindowHandle(uint64_t handle)
+    void MinMaxCloseControl::RestoreDown()
     {
-        _window = reinterpret_cast<HWND>(handle);
+        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
     }
 
-    void MinMaxCloseControl::_OnMaximize(byte flag)
-    {
-        if (_window)
-        {
-            POINT point1 = {};
-            ::GetCursorPos(&point1);
-            const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
-            WINDOWPLACEMENT placement = { sizeof(placement) };
-            ::GetWindowPlacement(_window, &placement);
-            if (placement.showCmd == SW_SHOWNORMAL)
-            {
-                winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateMaximized", false);
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
-            }
-            else if (placement.showCmd == SW_SHOWMAXIMIZED)
-            {
-                winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateNormal", false);
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
-            }
-        }
-    }
-
-    void MinMaxCloseControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
-    {
-        _OnMaximize(HTMAXBUTTON);
-    }
-
-    void MinMaxCloseControl::DoubleClickDragBar()
-    {
-        _OnMaximize(HTCAPTION);
-    }
-
-    void MinMaxCloseControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
-    {
-        _OnMaximize(HTCAPTION);
-    }
-
+    // These need to be defined here to make the compiler happy. They do nothing
+    // on their own, it's up to the control that's embedding us to set a
+    // callback when these buttons are pressed.
     void MinMaxCloseControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
-        if (_window)
-        {
-            ::PostMessage(_window, WM_SYSCOMMAND, SC_MINIMIZE | HTMINBUTTON, 0);
-        }
     }
-
+    void MinMaxCloseControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    {
+    }
     void MinMaxCloseControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
-        ::PostQuitMessage(0);
     }
-
 }
