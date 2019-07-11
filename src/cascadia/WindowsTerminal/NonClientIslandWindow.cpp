@@ -611,7 +611,7 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             // Calculate the maxmized window overhang by getting the size of the window frame.
             // We use the style without WS_CAPTION otherwise the caption height is included.
             // Only remove WS_DLGFRAME since WS_CAPTION = WS_DLGFRAME | WS_BORDER,
-            // but WS_BORDER is needed as it modifies the calculation of the width of the frame. 
+            // but WS_BORDER is needed as it modifies the calculation of the width of the frame.
             const auto targetStyle = windowStyle & ~WS_DLGFRAME;
             AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), _currentDpi);
 
