@@ -15,6 +15,8 @@
 
 #include <conpty-universal.h>
 #include "../../types/inc/Utils.hpp"
+#include "../../types/inc/UTF8OutPipeReader.hpp"
+
 
 using namespace ::Microsoft::Console;
 
@@ -189,34 +191,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConhostConnection::_OutputThread()
     {
-        const size_t bufferSize = 4096;
-        BYTE buffer[bufferSize]{ 0 };
-        BYTE utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
-        DWORD dwRead{}; // length of a chunk read
-        DWORD dwPartialsLen{}; // number of cached UTF-8 code units
-        bool fSuccess{};
-        const BYTE bitmasks[]{ 0, 0b11000000, 0b11100000, 0b11110000 }; // for comparisons after the Lead Byte was found
+        static UTF8OutPipeReader pipeReader{ _outPipe };
+        std::string_view strView{};
 
         // process the data of the output pipe in a loop
         while (true)
         {
-            // copy UTF-8 code units that were remaining from the previously read chunk (if any)
-            if (dwPartialsLen != 0)
-            {
-                std::move(utf8Partials, utf8Partials + dwPartialsLen, buffer);
-            }
-
-            // try to read data
-            fSuccess = !!ReadFile(_outPipe.get(), &buffer[dwPartialsLen], std::extent<decltype(buffer)>::value - dwPartialsLen, &dwRead, nullptr);
-
-            dwRead += dwPartialsLen;
-            dwPartialsLen = 0;
-
-            if (dwRead == 0) // quit if no data has been read and no cached data was left over
-            {
-                return 0;
-            }
-            else if (!fSuccess)
+            HRESULT result = pipeReader.Read(strView);
+            if (FAILED(result))
             {
                 if (_closing.load())
                 {
@@ -227,35 +209,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _disconnectHandlers();
                 return (DWORD)-1;
             }
-
-            const BYTE* const endPtr{ buffer + dwRead };
-            const BYTE* backIter{ endPtr - 1 };
-            // If the last byte in the buffer was a byte belonging to a UTF-8 multi-byte character
-            if (WI_AreAllFlagsSet(*backIter, 0b10000000))
+            else if (strView.empty())
             {
-                // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the buffer
-                for (DWORD dwSequenceLen{ 1UL }, stop{ dwRead < 4UL ? dwRead : 4UL }; dwSequenceLen < stop; ++dwSequenceLen, --backIter)
-                {
-                    // If Lead Byte found
-                    if (WI_AreAllFlagsSet(*backIter, 0b11000000))
-                    {
-                        // If the Lead Byte indicates that the last bytes in the buffer is a partial UTF-8 code point then cache them:
-                        //  Use the bitmask at index `dwSequenceLen`. Compare the result with the value at the index down. If they
-                        //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
-                        //  sequence is a complete UTF-8 code point and the whole buffer is ready for the conversion to hstring.
-                        if ((*backIter & bitmasks[dwSequenceLen]) != bitmasks[dwSequenceLen - 1])
-                        {
-                            std::move(backIter, endPtr, utf8Partials);
-                            dwRead -= dwSequenceLen;
-                            dwPartialsLen = dwSequenceLen;
-                        }
-
-                        break;
-                    }
-                }
+                return 0;
             }
+
             // Convert buffer to hstring
-            const std::string_view strView{ reinterpret_cast<char*>(buffer), dwRead };
             auto hstr{ winrt::to_hstring(strView) };
 
             // Pass the output to our registered event handlers
