@@ -517,6 +517,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
+        // import value from WinUser (convert from milli-seconds to micro-seconds)
+        _multiClickTimer = GetDoubleClickTime() * 1000;
+
         _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
         _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
@@ -675,12 +678,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // handle ALT key
                 _terminal->SetBoxSelection(altEnabled);
 
-                if (_IsTripleClick(cursorPosition, point.Timestamp()))
+                if (_NumberOfClicks(cursorPosition, point.Timestamp()) == 3)
                 {
                     _terminal->TripleClickSelection(terminalPosition);
                     _renderer->TriggerSelection();
                 }
-                else if (_IsDoubleClick(cursorPosition, point.Timestamp()))
+                else if (_NumberOfClicks(cursorPosition, point.Timestamp()) == 2)
                 {
                     _terminal->DoubleClickSelection(terminalPosition);
                     _renderer->TriggerSelection();
@@ -1540,47 +1543,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Checks if a double click occurred
+    // - Returns the number of clicks that occurred (double and triple click support)
     // Arguments:
     // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
     //    NOTE: origin (0,0) is top-left.
     // - clickTime: the timestamp that the click occurred
     // Return Value:
-    // - true if the new click was at the same location within the time delta
-    const bool TermControl::_IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const
+    // - number of clicks if the new click was at the same location within the time delta
+    const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime) const
     {
-        if (clickPos == _lastMouseClickPos)
+        // if click occurred at a different location or past the multiClickTimer...
+        Timestamp delta;
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClick, &delta));
+        if (clickPos != _lastMouseClickPos && delta > _multiClickTimer)
         {
-            TimeStamp delta;
-            UInt64Sub(clickTime, _lastMouseClick, &delta);
-            if (delta < multiClickTimer)
-            {
-                return true;
-            }
+            // exit early. This is a single click.
+            return 1;
         }
-        return false;
-    }
 
-    // Method Description:
-    // - Checks if a triple click occurred
-    // Arguments:
-    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
-    //    NOTE: origin (0,0) is top-left.
-    // - clickTime: the timestamp that the click occurred
-    // Return Value:
-    // - true if the new click was at the same location within the time delta after a double click having occurred
-    const bool TermControl::_IsTripleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const
-    {
-        if (_doubleClickOccurred && clickPos == _lastMouseClickPos)
-        {
-            TimeStamp delta;
-            UInt64Sub(clickTime, _lastMouseClick, &delta);
-            if (delta < multiClickTimer)
-            {
-                return true;
-            }
-        }
-        return false;
+        return _doubleClickOccurred ? 3 : 2;
+
     }
 
     // -------------------------------- WinRT Events ---------------------------------

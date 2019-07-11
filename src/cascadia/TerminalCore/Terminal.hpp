@@ -196,7 +196,7 @@ private:
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
     void _ExpandDoubleClickSelectionLeft(const COORD position);
     void _ExpandDoubleClickSelectionRight(const COORD position);
-    const bool _DoubleClickDelimiterCheck(std::wstring_view cellChar) const;
+    const bool _isWordDelimiter(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
 };

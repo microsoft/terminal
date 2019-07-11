@@ -32,12 +32,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     struct TermControl : TermControlT<TermControl>
     {
-        using TimeStamp = uint64_t;
-
-        // represents 0.5 seconds (or 500 ms). Denoted in microseconds
-        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
-        const TimeStamp multiClickTimer = 500000;
-
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
@@ -107,7 +101,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
-        TimeStamp _lastMouseClick;
+        using Timestamp = uint64_t;
+
+        // imported from WinUser
+        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
+        Timestamp _multiClickTimer;
+        Timestamp _lastMouseClick;
         bool _doubleClickOccurred;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
 
@@ -157,8 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
-        const bool _IsDoubleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const;
-        const bool _IsTripleClick(winrt::Windows::Foundation::Point clickPos, TimeStamp clickTime) const;
+        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime) const;
     };
 }
 

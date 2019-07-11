@@ -139,7 +139,7 @@ void Terminal::DoubleClickSelection(const COORD position)
     // if you double click a delimiter, just select that one cell
     COORD positionWithOffsets = _ConvertToBufferCell(position);
     const auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    if (_DoubleClickDelimiterCheck(cellChar))
+    if (_isWordDelimiter(cellChar))
     {
         SetSelectionAnchor(position);
         return;
@@ -265,13 +265,13 @@ void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
     COORD positionWithOffsets = _ConvertToBufferCell(position);
     const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != 0 && !_DoubleClickDelimiterCheck(cellChar))
+    while (positionWithOffsets.X != 0 && !_isWordDelimiter(cellChar))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != 0 || _DoubleClickDelimiterCheck(cellChar))
+    if (positionWithOffsets.X != 0 || _isWordDelimiter(cellChar))
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -300,13 +300,13 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
     COORD positionWithOffsets = _ConvertToBufferCell(position);
     const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_DoubleClickDelimiterCheck(cellChar))
+    while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_isWordDelimiter(cellChar))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() || _DoubleClickDelimiterCheck(cellChar))
+    if (positionWithOffsets.X != bufferViewport.RightInclusive() || _isWordDelimiter(cellChar))
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
@@ -323,7 +323,7 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
 // - true if cell data contains the delimiter.
-const bool Terminal::_DoubleClickDelimiterCheck(std::wstring_view cellChar) const
+const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 {
     return _doubleClickDelimiters.find(cellChar) != std::wstring_view::npos;
 }
