@@ -166,7 +166,7 @@ void Tab::SetTabText(const winrt::hstring& text)
     // Copy the hstring, so we don't capture a dead reference
     winrt::hstring textCopy{ text };
     _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [text = std::move(textCopy), this]() {
-        _tabViewItem.Header(text);
+        _tabViewItem.Header(winrt::box_value(text));
     });
 }
 
@@ -211,6 +211,30 @@ void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
 void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
 {
     _rootPane->SplitHorizontal(profile, control);
+}
+
+// Method Description:
+// - Update the size of our panes to fill the new given size. This happens when
+//   the window is resized.
+// Arguments:
+// - newSize: the amount of space that the panes have to fill now.
+// Return Value:
+// - <none>
+void Tab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
+{
+    _rootPane->ResizeContent(newSize);
+}
+
+// Method Description:
+// - Attempt to move a separator between panes, as to resize each child on
+//   either size of the separator. See Pane::ResizePane for details.
+// Arguments:
+// - direction: The direction to move the separator in.
+// Return Value:
+// - <none>
+void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
+{
+    _rootPane->ResizePane(direction);
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

@@ -9,6 +9,8 @@ namespace TerminalApp
     {
         App();
 
+        void Initialize();
+
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
         // then it might look like TermApp just failed to activate, which will
@@ -19,7 +21,6 @@ namespace TerminalApp
         void LoadSettings();
 
         Windows.UI.Xaml.UIElement GetRoot();
-        Windows.UI.Xaml.UIElement GetTabs();
         Windows.UI.Xaml.Controls.Border GetDragBar{ get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);

@@ -45,6 +45,23 @@ BEGIN_MODULE()
     MODULE_PROPERTY(L"WinPerf.WPRProfile", L"ConsolePerf.wprp")
     MODULE_PROPERTY(L"WinPerf.WPRProfileId", L"ConsolePerf.Verbose.File")
     MODULE_PROPERTY(L"WinPerf.Regions", L"ConsolePerf.Regions.xml")
+
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l1-2-1.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l2-2-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l3-2-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\mincore\\priv_sdk\\lib\\$arch\\api-ms-win-core-console-ansi-l2-1-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl1.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl2.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl3.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\windows\\inc\\winconp.h")
+
+    // Public
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\external\\sdk\\inc\\wincon.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\external\\sdk\\inc\\wincontypes.h")
+
+    // Relative to _NTTREE
+    MODULE_PROPERTY(L"BinaryUnderTest", L"conhostv1.dll")
+    MODULE_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
 END_MODULE()
 
 MODULE_SETUP(ModuleSetup)
