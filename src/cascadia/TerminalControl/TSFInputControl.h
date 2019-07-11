@@ -10,7 +10,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public CursorPositionEventArgsT<CursorPositionEventArgs>
     {
     public:
-        CursorPositionEventArgs() {};
+        CursorPositionEventArgs(){};
 
         Windows::Foundation::Point CurrentPosition()
         {
@@ -30,7 +30,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         public FontInfoEventArgsT<FontInfoEventArgs>
     {
     public:
-        FontInfoEventArgs() {};
+        FontInfoEventArgs(){};
 
         Windows::Foundation::Point FontSize()
         {

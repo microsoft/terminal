@@ -40,7 +40,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
         _cursorTimer{},
-        _tsfInputControl { nullptr }
+        _tsfInputControl{ nullptr }
     {
         _Create();
     }
@@ -1017,7 +1017,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
         _focused = true;
-        
+
         if (_tsfInputControl != nullptr)
         {
             _tsfInputControl.NotifyFocusEnter();
@@ -1588,7 +1588,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Composition Completion handler for the TSFInputControl that
     //   handles writing text out to TerminalConnection
     // Arguments:
-    // - text: the text to write to TerminalConnection 
+    // - text: the text to write to TerminalConnection
     // Return Value:
     // - <none>
     void TermControl::_CompositionCompleted(winrt::hstring text)
@@ -1625,13 +1625,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         eventArgs.FontFace(_actualFont.GetFaceName());
     }
 
-
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl, CopyToClipboard,       _clipboardCopyHandlers,         TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
     // clang-format on
 
