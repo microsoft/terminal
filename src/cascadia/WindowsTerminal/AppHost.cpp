@@ -61,8 +61,7 @@ AppHost::~AppHost()
 void AppHost::Initialize()
 {
     _window->Initialize();
-    const auto handle = _window->GetHandle();
-    _app.Create(reinterpret_cast<uint64_t>(handle));
+    _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
     _app.LastTabClosed({ this, &AppHost::LastTabClosed });

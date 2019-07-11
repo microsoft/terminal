@@ -50,37 +50,19 @@ void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IIn
 
 void NonClientIslandWindow::OnAppInitialized()
 {
-    // _titlebarAndContent = Controls::Grid{};
-    // Controls::RowDefinition titlebarRow{};
-    // Controls::RowDefinition contentRow{};
-    // titlebarRow.Height(GridLengthHelper::Auto());
+    // Tell the TitlebarControl about our window handle
+    _titlebar.ParentWindowHandle(reinterpret_cast<uint64_t>(GetHandle()));
 
-    // _titlebarAndContent.RowDefinitions().Append(titlebarRow);
-    // _titlebarAndContent.RowDefinitions().Append(contentRow);
-
-    // _titlebar = winrt::TerminalApp::TitlebarControl{};
-
-    // // _dragBar = app.GetDragBar();
-    // _dragBar = _titlebar.DragBar();
-
-    // _titlebarAndContent.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
-
-    // _titlebarAndContent.Children().Append(_titlebar);
-    // _titlebarAndContent.Children().Append(_rootGrid);
-
-    // Controls::Grid::SetRow(_titlebar, 0);
-    // Controls::Grid::SetRow(_rootGrid, 1);
-
-    // _titlebar.Content(app.GetTitlebarContent());
     IslandWindow::OnAppInitialized();
 }
 
 void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
-    // IslandWindow::OnAppInitialized();
-
-    // _titlebarAndContent = Controls::Grid{};
     _clientContent = content;
+
+    // Set up our grid of content. We'll use _rootGrid as our root element, and
+    // add two children to it - the TitlebarControl, and the param `content` as
+    // the "client content"
     _rootGrid.Children().Clear();
     Controls::RowDefinition titlebarRow{};
     Controls::RowDefinition contentRow{};
@@ -89,9 +71,8 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     _rootGrid.RowDefinitions().Append(titlebarRow);
     _rootGrid.RowDefinitions().Append(contentRow);
 
+    // Create our titlebar control
     _titlebar = winrt::TerminalApp::TitlebarControl{};
-
-    // _dragBar = app.GetDragBar();
     _dragBar = _titlebar.DragBar();
 
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
@@ -100,10 +81,14 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     _rootGrid.Children().Append(content);
 
     Controls::Grid::SetRow(_titlebar, 0);
-    Controls::Grid::SetRow(content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>(), 1);
-
-    // _titlebar.Content(app.GetTitlebarContent());
-    // IslandWindow::OnAppInitialized(app);
+    // SetRow only works on FrameworkElement's, so cast it to a FWE before
+    // calling. We know that our content is a Grid, so we don't need to worry
+    // about this.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
+    {
+        Controls::Grid::SetRow(fwe, 1);
+    }
 }
 
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
@@ -117,7 +102,12 @@ RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
-        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{ 0.0f, 0.0f, static_cast<float>(_dragBar.ActualWidth()), static_cast<float>(_dragBar.ActualHeight()) };
+        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
+            0.0f,
+            0.0f,
+            static_cast<float>(_dragBar.ActualWidth()),
+            static_cast<float>(_dragBar.ActualHeight())
+        };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         RECT dragBarRect = {
             static_cast<LONG>(clientDragBarRect.X * scale),

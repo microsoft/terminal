@@ -34,24 +34,7 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::Content(Windows::UI::Xaml::UIElement content)
     {
-        // ContentRoot().Children().Clear();
-
-        // winrt::Windows::UI::Xaml::Controls::Button foo;
-        // foo.Content(winrt::box_value({ L"foo" }));
-        // ContentRoot().Children().Append(foo);
-        auto bar = content.try_as<TerminalApp::TabRowControl>();
-        if (!bar)
-        {
-            auto a = 0;
-            a++;
-        }
-        auto baz = bar.NewTabButton();
-        auto baa = bar.TabView();
-        if (!baa)
-        {
-            auto a = 0;
-            a++;
-        }
+        ContentRoot().Children().Clear();
         ContentRoot().Children().Append(content);
     }
 

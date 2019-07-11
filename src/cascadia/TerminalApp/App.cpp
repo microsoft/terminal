@@ -61,13 +61,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create(uint64_t hWnd)
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create(hWnd);
+        _Create();
     }
 
     App::~App()
@@ -79,7 +79,7 @@ namespace winrt::TerminalApp::implementation
     // - Create all of the initial UI elements of the Terminal app.
     //    * Initializes the first terminal control, using the default profile,
     //      and adds it to our list of tabs.
-    void App::_Create(uint64_t parentHwnd)
+    void App::_Create()
     {
         /* !!! TODO
            This is not the correct way to host a XAML page. This exists today because we valued

@@ -31,7 +31,7 @@ namespace winrt::TerminalApp::implementation
         // // Gets the current dragglable area in the non client region of the top level window
         // Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
 
-        void Create(uint64_t hParentWnd);
+        void Create();
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
@@ -75,7 +75,7 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
-        void _Create(uint64_t parentHWnd);
+        void _Create();
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
