@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
+        Windows::Foundation::Size CharacterDimensions() const;
+        Windows::Foundation::Size MinimumSize() const;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
@@ -71,6 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
+        Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;

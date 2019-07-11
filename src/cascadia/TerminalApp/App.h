@@ -26,7 +26,6 @@ namespace winrt::TerminalApp::implementation
         App();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
-        Windows::UI::Xaml::UIElement GetTabs() noexcept;
 
         // Gets the current dragglable area in the non client region of the top level window
         Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
@@ -52,7 +51,7 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The two roots currently are _root and _tabRow
         // (which is a root when the tabs are in the titlebar.)
-        Windows::UI::Xaml::Controls::Grid _root{ nullptr };
+        Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
@@ -104,6 +103,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _OpenNewTab(std::optional<int> profileIndex);
+        void _DuplicateTabViewItem();
         void _CloseFocusedTab();
         void _SelectNextTab(const bool bMoveRight);
         void _SelectTab(const int tabIndex);
@@ -121,12 +121,14 @@ namespace winrt::TerminalApp::implementation
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
+        void _ResizePane(const Direction& direction);
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
+        void _OnContentSizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
 
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
 

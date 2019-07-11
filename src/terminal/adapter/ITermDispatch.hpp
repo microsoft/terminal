@@ -49,6 +49,7 @@ public:
     virtual bool SetCursorKeysMode(const bool fApplicationMode) = 0; // DECCKM
     virtual bool SetKeypadMode(const bool fApplicationMode) = 0; // DECKPAM, DECKPNM
     virtual bool EnableCursorBlinking(const bool fEnable) = 0; // ATT610
+    virtual bool SetOriginMode(const bool fRelativeMode) = 0; // DECOM
     virtual bool SetTopBottomScrollingMargins(const SHORT sTopMargin, const SHORT sBottomMargin) = 0; // DECSTBM
     virtual bool ReverseLineFeed() = 0; // RI
     virtual bool SetWindowTitle(std::wstring_view title) = 0; // OscWindowTitle
@@ -58,6 +59,7 @@ public:
     virtual bool ForwardTab(const SHORT sNumTabs) = 0; // CHT
     virtual bool BackwardsTab(const SHORT sNumTabs) = 0; // CBT
     virtual bool TabClear(const SHORT sClearType) = 0; // TBC
+    virtual bool EnableDECCOLMSupport(const bool fEnabled) = 0; // ?40
     virtual bool EnableVT200MouseMode(const bool fEnabled) = 0; // ?1000
     virtual bool EnableUTF8ExtendedMouseMode(const bool fEnabled) = 0; // ?1005
     virtual bool EnableSGRExtendedMouseMode(const bool fEnabled) = 0; // ?1006

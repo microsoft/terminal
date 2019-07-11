@@ -3,12 +3,21 @@
 
 namespace TerminalApp
 {
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
     enum ShortcutAction
     {
         CopyText = 0,
         CopyTextWithoutNewlines,
         PasteText,
         NewTab,
+        DuplicateTab,
         NewTabProfile0,
         NewTabProfile1,
         NewTabProfile2,
@@ -40,12 +49,17 @@ namespace TerminalApp
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ResizePaneLeft,
+        ResizePaneRight,
+        ResizePaneUp,
+        ResizePaneDown,
         OpenSettings
     };
 
     delegate void CopyTextEventArgs(Boolean trimWhitespace);
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
+    delegate void DuplicateTabEventArgs();
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
@@ -62,6 +76,7 @@ namespace TerminalApp
     delegate void ScrollUpPageEventArgs();
     delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
+    delegate void ResizePaneEventArgs(Direction direction);
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -74,6 +89,7 @@ namespace TerminalApp
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
+        event DuplicateTabEventArgs DuplicateTab;
         event NewTabWithProfileEventArgs NewTabWithProfile;
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
@@ -90,5 +106,6 @@ namespace TerminalApp
         event ScrollUpPageEventArgs ScrollUpPage;
         event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
+        event ResizePaneEventArgs ResizePane;
     }
 }

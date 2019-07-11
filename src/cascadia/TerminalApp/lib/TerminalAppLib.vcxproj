@@ -26,6 +26,9 @@
     <Page Include="../MinMaxCloseControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../TerminalPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -33,6 +36,10 @@
     <ClInclude Include="../App.base.h" />
     <ClInclude Include="../MinMaxCloseControl.h">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TerminalPage.h">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Pane.h" />
@@ -54,6 +61,10 @@
   <ItemGroup>
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalPage.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Pane.cpp" />
@@ -93,6 +104,10 @@
     <Midl Include="../AppKeyBindings.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalPage.idl">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

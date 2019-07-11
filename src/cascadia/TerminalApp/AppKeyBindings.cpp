@@ -58,6 +58,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::NewTab:
             _NewTabHandlers();
             return true;
+        case ShortcutAction::DuplicateTab:
+            _DuplicateTabHandlers();
+            return true;
         case ShortcutAction::OpenSettings:
             _OpenSettingsHandlers();
             return true;
@@ -154,6 +157,18 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::SwitchToTab8:
             _SwitchToTabHandlers(8);
             return true;
+        case ShortcutAction::ResizePaneLeft:
+            _ResizePaneHandlers(Direction::Left);
+            return true;
+        case ShortcutAction::ResizePaneRight:
+            _ResizePaneHandlers(Direction::Right);
+            return true;
+        case ShortcutAction::ResizePaneUp:
+            _ResizePaneHandlers(Direction::Up);
+            return true;
+        case ShortcutAction::ResizePaneDown:
+            _ResizePaneHandlers(Direction::Down);
+            return true;
 
         default:
             return false;
@@ -218,6 +233,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
@@ -234,5 +250,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
     DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
     DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
     // clang-format on
 }
