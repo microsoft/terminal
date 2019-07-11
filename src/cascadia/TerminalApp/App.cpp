@@ -449,7 +449,9 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://aka.ms/terminal-feedback" });
+        const auto feedbackUriValue = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView().GetString(L"FeedbackUriValue");
+
+        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
 
     Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
