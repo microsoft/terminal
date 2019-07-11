@@ -6,13 +6,21 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     x:Name="Root"
     HorizontalAlignment="Stretch"
     VerticalAlignment="Top"
     SizeChanged="Root_SizeChanged"
     d:DesignHeight="36"
+    Background="{ThemeResource SystemControlForegroundAccentBrush}"
     d:DesignWidth="400">
+
+    <!-- TODO: Background="{ThemeResource TabViewBackground}" Is _very_
+    pleasing, but wrong. While that's great for us, it's not so general-purpose.
+    This xaml should probably be a template thing, where the background is a
+    resource that the app hosting this control can override. Then, it App.xaml,
+    we'd make sure to set the resource for our background to the appropriate
+    color. SystemControlForegroundAccentBrush also works nicely, to use the
+    accent color. -->
 
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto"/>
@@ -20,27 +28,13 @@
         <ColumnDefinition Width="Auto"/>
     </Grid.ColumnDefinitions>
 
-    <Grid x:Name="ContentRoot" Grid.Column="0"></Grid>
+    <Grid x:Name="ContentRoot" Grid.Column="0" />
+
     <Border
         x:Name="DragBar"
         Grid.Column="1"
         MinWidth="45.0"
-        Background="Magenta"
         DoubleTapped="DragBar_DoubleTapped"/>
-
-    <!-- <mux:TabView x:Name="TabView" Grid.Column="0">
-        <mux:TabView.RightCustomContent>
-            <SplitButton
-                x:Name="NewTabButton"
-                Click="OnNewTabButtonClick"
-                Background="Transparent"
-                VerticalAlignment="Stretch"
-                HorizontalAlignment="Left">
-                <SymbolIcon Symbol="Add" />
-            </SplitButton>
-        </mux:TabView.RightCustomContent>
-    </mux:TabView> -->
-
 
     <local:MinMaxCloseControl
         Grid.Column="2"

@@ -510,7 +510,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
             // Create brush for borders, titlebar color.
-            const auto backgroundBrush = _dragBar.Background();
+            const auto backgroundBrush = _titlebar.Background();
             const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
             const auto backgroundColor = backgroundSolidBrush.Color();
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
