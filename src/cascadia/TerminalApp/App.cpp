@@ -179,32 +179,74 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, and the version.
+    //   Name, version, getting started link, documentation link, and release
+    //   Notes link.
     void App::_ShowAboutDialog()
     {
         auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
         const auto title = resourceLoader.GetString(L"AboutTitleText");
         const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
+        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText");
+        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = resourceLoader.GetString(L"GettingStartedUriValue");
+        const auto documentationUriValue = resourceLoader.GetString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = resourceLoader.GetString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
+        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
+        winrt::Windows::UI::Xaml::Documents::Run about;
+        winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
+        winrt::Windows::UI::Xaml::Documents::Run documentation;
+        winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
         std::wstringstream aboutTextStream;
+
+        gettingStarted.Text(gettingStartedLabel);
+        documentation.Text(documentationLabel);
+        releaseNotes.Text(releaseNotesLabel);
+
+        winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
+        winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
+        winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
+
+        gettingStartedLink.NavigateUri(gettingStartedUri);
+        documentationLink.NavigateUri(documentationUri);
+        releaseNotesLink.NavigateUri(releaseNotesUri);
+
+        gettingStartedLink.Inlines().Append(gettingStarted);
+        documentationLink.Inlines().Append(documentation);
+        releaseNotesLink.Inlines().Append(releaseNotes);
 
         // Format our about text. It will look like the following:
         // <Display Name>
         // Version: <Major>.<Minor>.<Build>.<Revision>
+        // Getting Started
+        // Documentation
+        // Release Notes
 
         aboutTextStream << packageName.c_str() << L"\n";
 
         aboutTextStream << versionLabel.c_str() << L" ";
-        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision;
+        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
 
         winrt::hstring aboutText{ aboutTextStream.str() };
+        about.Text(aboutText);
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
+        gettingStartedLink.Foreground(blueBrush);
+        documentationLink.Foreground(blueBrush);
+        releaseNotesLink.Foreground(blueBrush);
+
         Controls::TextBlock aboutTextBlock;
-        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.Inlines().Append(about);
+        aboutTextBlock.Inlines().Append(gettingStartedLink);
+        aboutTextBlock.Inlines().Append(documentationLink);
+        aboutTextBlock.Inlines().Append(releaseNotesLink);
         aboutTextBlock.IsTextSelectionEnabled(true);
 
         _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
@@ -409,7 +451,9 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
+        const auto feedbackUriValue = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView().GetString(L"FeedbackUriValue");
+
+        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
 
     Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
