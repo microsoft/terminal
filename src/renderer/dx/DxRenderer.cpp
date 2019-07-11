@@ -10,6 +10,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
+#include <VersionHelpers.h>
 
 #pragma hdrstop
 
@@ -191,7 +192,16 @@ DxEngine::~DxEngine()
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+
+        // DXGI_SCALING_NONE is only valid on Windows 8+
+        if (IsWindows8OrGreater())
+        {
+            SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+        }
+        else
+        {
+            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+        }
 
         switch (_chainMode)
         {
@@ -886,7 +896,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
@@ -1248,9 +1258,9 @@ float DxEngine::GetScaling() const noexcept
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
 {
-    Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
@@ -1352,12 +1362,12 @@ float DxEngine::GetScaling() const noexcept
 // - style - Normal, italic, etc.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_FindFontFace(const std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT weight,
                                                                                DWRITE_FONT_STRETCH stretch,
                                                                                DWRITE_FONT_STYLE style) const
 {
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
@@ -1394,9 +1404,9 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                                  FontInfo& actual,
                                                  const int dpi,
-                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
 {
     try
     {
@@ -1508,7 +1518,7 @@ float DxEngine::GetScaling() const noexcept
 
         fontFace = face;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(&lineSpacing));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
