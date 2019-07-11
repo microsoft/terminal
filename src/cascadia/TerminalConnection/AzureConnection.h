@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         enum class State
         {
             accessStored,
-            deviceFlow, 
+            deviceFlow,
             tenantChoice,
             storeTokens,
             termConnecting,
