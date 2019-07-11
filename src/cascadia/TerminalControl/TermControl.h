@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
         Timestamp _multiClickTimer;
         Timestamp _lastMouseClick;
-        bool _doubleClickOccurred;
+        unsigned int _multiClickCounter;
         std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
 
         // Event revokers -- we need to deregister ourselves before we die,
@@ -156,7 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
-        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime) const;
+        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
     };
 }
 
