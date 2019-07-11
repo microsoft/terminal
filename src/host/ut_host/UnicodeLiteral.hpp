@@ -1,5 +1,5 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#define REMOTE_STRING L"ñremote ìnpipe:pipe=foo,server=barî\t"
+#define REMOTE_STRING L"‚Äìremote ‚Äúnpipe:pipe=foo,server=bar‚Äù\t"
 #define EXPECTED_REMOTE_STRING L"-remote \"npipe:pipe=foo,server=bar\""
