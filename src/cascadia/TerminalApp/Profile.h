@@ -49,7 +49,6 @@ public:
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
-    void SetDoubleClickDelimiters(std::wstring delimiters) noexcept;
 
     bool HasIcon() const noexcept;
     std::wstring_view GetIconPath() const noexcept;
@@ -81,7 +80,6 @@ private:
     uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
-    std::wstring _doubleClickDelimiters;
 
     std::wstring _commandline;
     std::wstring _fontFace;

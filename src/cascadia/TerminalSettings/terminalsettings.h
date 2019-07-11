@@ -45,8 +45,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CursorShape(winrt::Microsoft::Terminal::Settings::CursorStyle const& value) noexcept;
         uint32_t CursorHeight();
         void CursorHeight(uint32_t value);
-        hstring DoubleClickDelimiters();
-        void DoubleClickDelimiters(hstring const& value);
+        hstring WordDelimiters();
+        void WordDelimiters(hstring const& value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _cursorColor;
         Settings::CursorStyle _cursorShape;
         uint32_t _cursorHeight;
-        hstring _doubleClickDelimiters;
+        hstring _wordDelimiters;
 
         bool _useAcrylic;
         bool _closeOnExit;

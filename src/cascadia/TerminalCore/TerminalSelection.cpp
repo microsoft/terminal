@@ -325,7 +325,7 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
 // - true if cell data contains the delimiter.
 const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 {
-    return _doubleClickDelimiters.find(cellChar) != std::wstring_view::npos;
+    return _wordDelimiters.find(cellChar) != std::wstring_view::npos;
 }
 
 // Method Description:

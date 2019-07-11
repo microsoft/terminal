@@ -151,7 +151,7 @@ private:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
-    std::wstring _doubleClickDelimiters;
+    std::wstring _wordDelimiters;
 
     std::shared_mutex _readWriteLock;
 

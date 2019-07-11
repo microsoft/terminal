@@ -27,7 +27,6 @@ static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
-static constexpr std::string_view DoubleClickDelimitersKey{ "doubleClickDelimiters" };
 
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
@@ -79,7 +78,6 @@ Profile::Profile(const winrt::guid& guid) :
     _cursorColor{ DEFAULT_CURSOR_COLOR },
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
-    _doubleClickDelimiters{ DEFAULT_DOUBLE_CLICK_DELIMITERS },
 
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
@@ -204,11 +202,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.BackgroundImageStretchMode(_backgroundImageStretchMode.value());
     }
 
-    if (!_doubleClickDelimiters.empty())
-    {
-        terminalSettings.DoubleClickDelimiters(winrt::to_hstring(_doubleClickDelimiters.c_str()));
-    }
-
     return terminalSettings;
 }
 
@@ -258,7 +251,6 @@ Json::Value Profile::ToJson() const
         root[JsonKey(CursorHeightKey)] = _cursorHeight;
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
-    root[JsonKey(DoubleClickDelimitersKey)] = winrt::to_string(_doubleClickDelimiters);
 
     ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
@@ -384,10 +376,6 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
-    if (auto doubleClickDelimiters{ json[JsonKey(DoubleClickDelimitersKey)] })
-    {
-        result._doubleClickDelimiters = GetWstringFromJson(doubleClickDelimiters);
-    }
     if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
     {
         result._tabTitle = GetWstringFromJson(tabTitle);
@@ -493,11 +481,6 @@ void Profile::SetDefaultForeground(COLORREF defaultForeground) noexcept
 void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 {
     _defaultBackground = defaultBackground;
-}
-
-void Profile::SetDoubleClickDelimiters(std::wstring delimiters) noexcept
-{
-    _doubleClickDelimiters = delimiters;
 }
 
 bool Profile::HasIcon() const noexcept
