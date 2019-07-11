@@ -21,6 +21,7 @@ using namespace web::http;
 using namespace web::http::client;
 using namespace web::websockets::client;
 using namespace concurrency::streams;
+using namespace winrt::Windows::Security::Credentials;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
@@ -107,50 +108,109 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             return;
         }
 
-        // This case only happens when the user has multiple tenants
-        // and we require their input for which tenant they want
-        if (_needInput)
+        // Parse the input differently depending on which state we're in
+        switch (_state)
         {
-            int tenantNum = -1;
-            while (tenantNum < 0 || tenantNum >= _maxSize)
+        // The user has stored connection settings, let them choose one of them, create a new one or remove all stored ones
+        case State::accessStored:
+        {
+            std::string s = winrt::to_string(data);
+            int storeNum = -1;
+            try
             {
-                if (_closing.load())
+                storeNum = std::stoi(s);
+            }
+            catch (...)
+            {
+                if (s != "n" && s != "r")
                 {
-                    _needInput = false;
+                    _outputHandlers(invalidAccessInput);
                     return;
                 }
-                try
+                else if (s == "r")
                 {
-                    tenantNum = std::stoi(winrt::to_string(data));
-                }
-                catch (...)
-                {
-                    _outputHandlers(winrt::to_hstring(nonNumberError));
+                    std::lock_guard<std::mutex> lg{ _commonMutex };
+                    _removeOrNew = true;
+                    _canProceed.notify_one();
                     return;
                 }
-                if (tenantNum >= _maxSize)
+                else
                 {
-                    _outputHandlers(winrt::to_hstring(numOutOfBoundsError));
+                    std::lock_guard<std::mutex> lg{ _commonMutex };
+                    _removeOrNew = false;
+                    _canProceed.notify_one();
                     return;
                 }
             }
-            std::lock_guard<std::mutex> lg{ _tenantNumMutex };
+            if (storeNum >= _maxStored)
+            {
+                _outputHandlers(winrt::to_hstring(numOutOfBoundsError));
+                return;
+            }
+            std::lock_guard<std::mutex> lg{ _commonMutex };
+            _storedNumber = storeNum;
+            _canProceed.notify_one();
+            return;
+        }
+        // The user has multiple tenants in their Azure account, let them choose one of them
+        case State::tenantChoice:
+        {
+            int tenantNum = -1;
+            try
+            {
+                tenantNum = std::stoi(winrt::to_string(data));
+            }
+            catch (...)
+            {
+                _outputHandlers(winrt::to_hstring(nonNumberError));
+                return;
+            }
+            if (tenantNum >= _maxSize)
+            {
+                _outputHandlers(winrt::to_hstring(numOutOfBoundsError));
+                return;
+            }
+            std::lock_guard<std::mutex> lg{ _commonMutex };
             _tenantNumber = tenantNum;
             _canProceed.notify_one();
             return;
         }
-
-        if (!_termConnected)
+        // User has the option to save their connection settings for future logins
+        case State::storeTokens:
         {
+            std::string s = winrt::to_string(data);
+            if (s != "y" && s != "n")
+            {
+                _outputHandlers(winrt::to_hstring(invalidStoreInput));
+                return;
+            }
+            else if (s == "y")
+            {
+                std::lock_guard<std::mutex> lg{ _commonMutex };
+                _store = true;
+                _canProceed.notify_one();
+            }
+            else
+            {
+                std::lock_guard<std::mutex> lg{ _commonMutex };
+                _store = false;
+                _canProceed.notify_one();
+            }
             return;
         }
-        // Send the message over the websocket
-        websocket_outgoing_message msg;
-        const auto str = winrt::to_string(data);
-        msg.set_utf8_message(str);
+        // We are connected, send user's input over the websocket
+        case State::termConnected:
+        {
+            websocket_outgoing_message msg;
+            const auto str = winrt::to_string(data);
+            msg.set_utf8_message(str);
 
-        auto msgSentTask = _cloudShellSocket.send(msg);
-        msgSentTask.wait();
+            auto msgSentTask = _cloudShellSocket.send(msg);
+            msgSentTask.wait();
+        }
+        default:
+            return;
+        }
     }
 
     // Method description:
@@ -160,7 +220,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_connected || !_termConnected)
+        if (!_connected || !(_state == State::termConnected))
         {
             _initialRows = rows;
             _initialCols = columns;
@@ -194,7 +254,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         if (!_closing.exchange(true))
         {
             _canProceed.notify_all();
-            if (_termConnected)
+            if (_state == State::termConnected)
             {
                 // Close the websocket connection
                 auto closedTask = _cloudShellSocket.close();
@@ -220,135 +280,278 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - return status
     DWORD AzureConnection::_OutputThread()
     {
-        // Azure authentication starts here:
-        // Step 1a: initiate device code flow
-        const auto deviceCodeResponse = _getDeviceCode();
-
-        // Step 1b: print the message and store the device code, polling interval and expiry
-        const auto message = deviceCodeResponse.at(L"message").as_string();
-        _outputHandlers(message + codeExpiry);
-        const auto devCode = deviceCodeResponse.at(L"device_code").as_string();
-        const auto pollInterval = std::stoi(deviceCodeResponse.at(L"interval").as_string());
-        const auto expiresIn = std::stoi(deviceCodeResponse.at(L"expires_in").as_string());
-
-        // Step 2: wait for user authentication and obtain the access/refresh tokens
-        json::value authenticatedResponse;
-        try
-        {
-            authenticatedResponse = _waitForUser(devCode, pollInterval, expiresIn);
-        }
-        catch (...)
-        {
-            _outputHandlers(winrt::to_hstring("Exit."));
-            return E_FAIL;
-        }
-
-        _accessToken = authenticatedResponse.at(L"access_token").as_string();
-        _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
-
-        // Step 3: getting the tenants and the required tenant id
-        const auto tenantsResponse = _getTenants();
-        const auto tenantList = tenantsResponse.at(L"value").as_array();
-
-        if (tenantList.size() == 0)
-        {
-            _outputHandlers(winrt::to_hstring(noTenants));
-            return E_FAIL;
-        }
-        else if (tenantList.size() == 1)
-        {
-            _tenantID = tenantList.at(0).at(L"tenantId").as_string();
-        }
-        else
-        {
-            _maxSize = tenantList.size();
-            for (int i = 0; i < _maxSize; i++)
-            {
-                auto str = L"Tenant " + std::to_wstring(i) + L": " + tenantList.at(i).at(L"displayName").as_string() + L" (" + tenantList.at(i).at(L"tenantId").as_string() + L")\r\n";
-                _outputHandlers(str);
-            }
-            const auto str = L"Please enter the desired tenant number (a number from 0 to " + std::to_wstring((_maxSize - 1)) + L" inclusive).\r\n";
-            _outputHandlers(str);
-            _needInput = true;
-            // Use a lock to wait for the user to input a valid number
-            std::unique_lock<std::mutex> tenantNumberLock{ _tenantNumMutex };
-            _canProceed.wait(tenantNumberLock, [=]() {
-                return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _closing.load();
-            });
-            // User might have closed the tab while we waited for input
-            if (_closing.load())
-            {
-                return S_FALSE;
-            }
-            _needInput = false;
-            _tenantID = tenantList.at(_tenantNumber).at(L"tenantId").as_string();
-        }
-
-        // Step 4: refresh token to get a new one specific to the desired tenant ID
-        const auto refreshResponse = _refreshTokens();
-        _accessToken = refreshResponse.at(L"access_token").as_string();
-        _refreshToken = refreshResponse.at(L"refresh_token").as_string();
-
-        // Step 5: use new access token to get user's cloud shell settings
-        const auto settingsResponse = _getCloudShellUserSettings();
-        if (settingsResponse.has_field(L"error"))
-        {
-            _outputHandlers(winrt::to_hstring(noCloudAccount));
-            return E_FAIL;
-        }
-
-        // Step 6: request for a cloud shell
-        _outputHandlers(winrt::to_hstring(requestingCloud));
-        _cloudShellUri = _getCloudShell();
-        _outputHandlers(winrt::to_hstring(success));
-
-        // Step 7: request for a terminal for said cloud shell
-        // We only support bash for now, so don't bother with the user's preferred shell
-        // fyi: we can't call powershell yet because it sends VT sequences we don't support yet
-        // TODO: GitHub #1883
-        //const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
-        const auto shellType = L"bash";
-        _outputHandlers(winrt::to_hstring(requestingTerminal));
-        const auto socketUri = _getTerminal(shellType);
-        _outputHandlers(winrt::to_hstring("\r\n"));
-
-        // Step 8: connecting to said terminal
-        const auto connReqTask = _cloudShellSocket.connect(socketUri);
-        connReqTask.wait();
-
-        _termConnected = true;
-
         while (true)
         {
-            // Read from websocket
-            pplx::task<websocket_incoming_message> msgT;
-            try
+            switch (_state)
             {
-                msgT = _cloudShellSocket.receive();
-                msgT.wait();
-            }
-            catch (...)
+            // Initial state, check if the user has any stored connection settings and allow them to login with those
+            // or allow them to login with a different account or allow them to remove the saved settings
+            case State::accessStored:
             {
-                // Websocket has been closed
-                _termConnected = false;
-                if (!_closing.load())
+                auto vault = PasswordVault();
+                winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
+                // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+                try
                 {
-                    _disconnectHandlers();
+                    credList = vault.FindAllByResource(resource);
+                }
+                catch (...)
+                {
+                    // No credentials are stored, so start the device flow
+                    _state = State::deviceFlow;
+                    break;
+                }
+                _maxStored = credList.Size();
+                // Display the user's saved connection settings
+                for (int i = 0; i < _maxStored; i++)
+                {
+                    auto entry = credList.GetAt(i);
+                    auto nameJson = json::value::parse(entry.UserName().c_str());
+                    auto str = L"Tenant " + std::to_wstring(i) + L": " + nameJson.at(L"displayName").as_string() + L" (" + nameJson.at(L"tenantID").as_string() + L")\r\n";
+                    _outputHandlers(str);
+                }
+                _outputHandlers(L"Please enter the desired tenant number (a number from 0 to " + std::to_wstring((_maxStored - 1)) + L" inclusive)\r\n");
+                _outputHandlers(newLogin);
+                _outputHandlers(removeStored);
+
+                std::unique_lock<std::mutex> storedLock{ _commonMutex };
+                _canProceed.wait(storedLock, [=]() {
+                    return (_storedNumber >= 0 && _storedNumber < _maxStored) || _removeOrNew.has_value() || _closing.load();
+                });
+                // User might have closed the tab while we waited for input
+                if (_closing.load())
+                {
                     return S_FALSE;
                 }
+                else if (_removeOrNew.has_value() && _removeOrNew.value())
+                {
+                    // User wants to remove the stored settings
+                    _removeCredentials();
+                    _state = State::deviceFlow;
+                    break;
+                }
+                else if (_removeOrNew.has_value() && !_removeOrNew.value())
+                {
+                    // User wants to login with a different account
+                    _state = State::deviceFlow;
+                    break;
+                }
+                // User wants to login with one of the saved connection settings
+                auto desiredCredential = credList.GetAt(_storedNumber);
+                desiredCredential.RetrievePassword();
+                auto nameJson = json::value::parse(desiredCredential.UserName().c_str());
+                auto passWordJson = json::value::parse(desiredCredential.Password().c_str());
+                _displayName = nameJson.at(L"displayName").as_string();
+                _tenantID = nameJson.at(L"tenantID").as_string();
+                _accessToken = passWordJson.at(L"accessToken").as_string();
+                _refreshToken = passWordJson.at(L"refreshToken").as_string();
+                _expiry = std::stoi(passWordJson.at(L"expiry").as_string());
+
+                const auto t1 = std::chrono::system_clock::now();
+                const auto timeNow = std::chrono::duration_cast<std::chrono::seconds>(t1.time_since_epoch()).count();
+
+                // Check if the token is close to expiring and refresh if so
+                if (timeNow + _expireLimit > _expiry)
+                {
+                    _outputHandlers(L"Refreshing...\r\n");
+                    const auto refreshResponse = _refreshTokens();
+                    _accessToken = refreshResponse.at(L"access_token").as_string();
+                    _refreshToken = refreshResponse.at(L"refresh_token").as_string();
+                    _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
+                    // Store the updated tokens under the same username
+                    _storeCredential();
+                }
+
+                // We have everything we need, so go ahead and connect
+                _state = State::termConnecting;
                 break;
             }
-            auto msg = msgT.get();
-            auto msgStringTask = msg.extract_string();
-            auto msgString = msgStringTask.get();
+            // User has no saved connection settings or has opted to login with a different account
+            // Azure authentication starts here
+            case State::deviceFlow:
+            {
+                // Initiate device code flow
+                const auto deviceCodeResponse = _getDeviceCode();
 
-            // Convert to hstring
-            const auto hstr = winrt::to_hstring(msgString);
+                // Print the message and store the device code, polling interval and expiry
+                const auto message = deviceCodeResponse.at(L"message").as_string();
+                _outputHandlers(message + codeExpiry);
+                const auto devCode = deviceCodeResponse.at(L"device_code").as_string();
+                const auto pollInterval = std::stoi(deviceCodeResponse.at(L"interval").as_string());
+                const auto expiresIn = std::stoi(deviceCodeResponse.at(L"expires_in").as_string());
 
-            // Pass the output to our registered event handlers
-            _outputHandlers(hstr);
+                // Wait for user authentication and obtain the access/refresh tokens
+                json::value authenticatedResponse;
+                try
+                {
+                    authenticatedResponse = _waitForUser(devCode, pollInterval, expiresIn);
+                }
+                catch (...)
+                {
+                    _outputHandlers(winrt::to_hstring("Exit."));
+                    return E_FAIL;
+                }
+
+                _accessToken = authenticatedResponse.at(L"access_token").as_string();
+                _refreshToken = authenticatedResponse.at(L"refresh_token").as_string();
+
+                // Get the tenants and the required tenant id
+                const auto tenantsResponse = _getTenants();
+                _tenantList = tenantsResponse.at(L"value");
+                const auto tenantListAsArray = _tenantList.as_array();
+                if (tenantListAsArray.size() == 0)
+                {
+                    _outputHandlers(winrt::to_hstring(noTenants));
+                    return E_FAIL;
+                }
+                else if (_tenantList.size() == 1)
+                {
+                    _tenantID = tenantListAsArray.at(0).at(L"tenantId").as_string();
+                    _displayName = tenantListAsArray.at(0).at(L"displayName").as_string();
+
+                    // We have to refresh now that we have the tenantID
+                    const auto refreshResponse = _refreshTokens();
+                    _accessToken = refreshResponse.at(L"access_token").as_string();
+                    _refreshToken = refreshResponse.at(L"refresh_token").as_string();
+                    _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
+
+                    _state = State::storeTokens;
+                    break;
+                }
+                else
+                {
+                    _state = State::tenantChoice;
+                    break;
+                }
+            }
+            // User has multiple tenants in their Azure account, they need to choose which one to connect to
+            case State::tenantChoice:
+            {
+                const auto tenantListAsArray = _tenantList.as_array();
+                _maxSize = tenantListAsArray.size();
+                for (int i = 0; i < _maxSize; i++)
+                {
+                    auto str = L"Tenant " + std::to_wstring(i) + L": " + tenantListAsArray.at(i).at(L"displayName").as_string() + L" (" + tenantListAsArray.at(i).at(L"tenantId").as_string() + L")\r\n";
+                    _outputHandlers(str);
+                }
+                const auto str = L"Please enter the desired tenant number (a number from 0 to " + std::to_wstring((_maxSize - 1)) + L" inclusive).\r\n";
+                _outputHandlers(str);
+                // Use a lock to wait for the user to input a valid number
+                std::unique_lock<std::mutex> tenantNumberLock{ _commonMutex };
+                _canProceed.wait(tenantNumberLock, [=]() {
+                    return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _closing.load();
+                });
+                // User might have closed the tab while we waited for input
+                if (_closing.load())
+                {
+                    return S_FALSE;
+                }
+                _tenantID = tenantListAsArray.at(_tenantNumber).at(L"tenantId").as_string();
+                _displayName = tenantListAsArray.at(_tenantNumber).at(L"displayName").as_string();
+
+                // We have to refresh now that we have the tenantID
+                const auto refreshResponse = _refreshTokens();
+                _accessToken = refreshResponse.at(L"access_token").as_string();
+                _refreshToken = refreshResponse.at(L"refresh_token").as_string();
+                _expiry = std::stoi(refreshResponse.at(L"expires_on").as_string());
+
+                _state = State::storeTokens;
+                break;
+            }
+            // Ask the user if they want to save these connection settings for future logins
+            case State::storeTokens:
+            {
+                _outputHandlers(winrt::to_hstring(storePrompt));
+                // Wait for user input
+                std::unique_lock<std::mutex> storeLock{ _commonMutex };
+                _canProceed.wait(storeLock, [=]() {
+                    return _store.has_value() || _closing.load();
+                });
+                // User might have closed the tab while we waited for input
+                if (_closing.load())
+                {
+                    return S_FALSE;
+                }
+
+                if (_store.value())
+                {
+                    // User has opted to store the connection settings
+                    _storeCredential();
+                }
+
+                _state = State::termConnecting;
+                break;
+            }
+            // Connect to Azure, we only get here once we have everything we need (tenantID, accessToken, refreshToken)
+            case State::termConnecting:
+            {
+                // Get user's cloud shell settings
+                const auto settingsResponse = _getCloudShellUserSettings();
+                if (settingsResponse.has_field(L"error"))
+                {
+                    _outputHandlers(winrt::to_hstring(noCloudAccount));
+                    return E_FAIL;
+                }
+
+                // Request for a cloud shell
+                _outputHandlers(winrt::to_hstring(requestingCloud));
+                _cloudShellUri = _getCloudShell();
+                _outputHandlers(winrt::to_hstring(success));
+
+                // Request for a terminal for said cloud shell
+                // We only support bash for now, so don't bother with the user's preferred shell
+                // fyi: we can't call powershell yet because it sends VT sequences we don't support yet
+                // TODO: GitHub #1883
+                //const auto shellType = settingsResponse.at(L"properties").at(L"preferredShellType").as_string();
+                const auto shellType = L"bash";
+                _outputHandlers(winrt::to_hstring(requestingTerminal));
+                const auto socketUri = _getTerminal(shellType);
+                _outputHandlers(winrt::to_hstring("\r\n"));
+
+                // Step 8: connecting to said terminal
+                const auto connReqTask = _cloudShellSocket.connect(socketUri);
+                connReqTask.wait();
+
+                _state = State::termConnected;
+                break;
+            }
+            // We are connected, continuously read from the websocket until its closed
+            case State::termConnected:
+            {
+                while (true)
+                {
+                    // Read from websocket
+                    pplx::task<websocket_incoming_message> msgT;
+                    try
+                    {
+                        msgT = _cloudShellSocket.receive();
+                        msgT.wait();
+                    }
+                    catch (...)
+                    {
+                        // Websocket has been closed
+                        //_termConnected = false;
+                        if (!_closing.load())
+                        {
+                            _disconnectHandlers();
+                            return S_FALSE;
+                        }
+                        break;
+                    }
+                    auto msg = msgT.get();
+                    auto msgStringTask = msg.extract_string();
+                    auto msgString = msgStringTask.get();
+
+                    // Convert to hstring
+                    const auto hstr = winrt::to_hstring(msgString);
+
+                    // Pass the output to our registered event handlers
+                    _outputHandlers(hstr);
+                }
+                return S_OK;
+            }
+            }
         }
-        return S_OK;
     }
 
     // Method description:
@@ -468,7 +671,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
         refreshRequest.set_body(body, L"application/x-www-form-urlencoded");
-        refreshRequest.headers().add(L"User-Agent", L"Terminal");
+        refreshRequest.headers().add(L"User-Agent", resource);
 
         // Send the request and return the response as a json value
         return _requestHelper(refreshClient, refreshRequest);
@@ -548,6 +751,55 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         theRequest.headers().add(L"Accept", L"application/json");
         theRequest.headers().add(L"Content-Type", L"application/json");
         theRequest.headers().add(L"Authorization", L"Bearer " + _accessToken);
-        theRequest.headers().add(L"User-Agent", L"Terminal");
+        theRequest.headers().add(L"User-Agent", resource);
+    }
+
+    // Method description:
+    // - helper function to store the credentials
+    // - we store the display name, tenant ID, access/refresh tokens, and token expiry
+    void AzureConnection::_storeCredential()
+    {
+        auto vault = PasswordVault();
+        json::value userName;
+        userName[U("displayName")] = json::value::string(_displayName);
+        userName[U("tenantID")] = json::value::string(_tenantID);
+        json::value passWord;
+        passWord[U("accessToken")] = json::value::string(_accessToken);
+        passWord[U("refreshToken")] = json::value::string(_refreshToken);
+        passWord[U("expiry")] = json::value::string(std::to_wstring(_expiry));
+        auto newCredential = PasswordCredential(resource, userName.serialize(), passWord.serialize());
+        vault.Add(newCredential);
+        _outputHandlers(winrt::to_hstring(tokensStored));
+    }
+
+    // Method description:
+    // - helper function to remove all stored credentials
+    void AzureConnection::_removeCredentials()
+    {
+        auto vault = PasswordVault();
+        winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
+        // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
+        try
+        {
+            credList = vault.FindAllByResource(resource);
+        }
+        catch (...)
+        {
+            // No credentials are stored, so just return
+            _outputHandlers(winrt::to_hstring(noTokens));
+            return;
+        }
+        while (credList.Size() > 0)
+        {
+            try
+            {
+                vault.Remove(credList.GetAt(0));
+            }
+            catch (...)
+            {
+                _outputHandlers(winrt::to_hstring(tokensRemoved));
+                return;
+            }
+        }
     }
 }

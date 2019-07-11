@@ -32,14 +32,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
+        int _storedNumber{ -1 };
+        int _maxStored;
         int _tenantNumber{ -1 };
         int _maxSize;
         std::condition_variable _canProceed;
-        std::mutex _tenantNumMutex;
+        std::mutex _commonMutex;
+
+        enum class State
+        {
+            accessStored,
+            deviceFlow, 
+            tenantChoice,
+            storeTokens,
+            termConnecting,
+            termConnected
+        };
+
+        State _state{ State::accessStored };
+
+        std::optional<bool> _store;
+        std::optional<bool> _removeOrNew;
 
         bool _connected{};
-        bool _termConnected{ false };
-        bool _needInput{ false };
         std::atomic<bool> _closing{ false };
 
         wil::unique_handle _hOutputThread;
@@ -50,9 +65,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
         const utility::string_t _wantedResource{ U("https://management.core.windows.net/") };
+        int _expireLimit{ 2700 };
+        web::json::value _tenantList;
+        utility::string_t _displayName;
         utility::string_t _tenantID;
         utility::string_t _accessToken;
         utility::string_t _refreshToken;
+        int _expiry;
         utility::string_t _cloudShellUri;
         utility::string_t _terminalID;
 
@@ -65,6 +84,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         utility::string_t _getCloudShell();
         utility::string_t _getTerminal(utility::string_t shellType);
         void _headerHelper(web::http::http_request theRequest);
+        void _storeCredential();
+        void _removeCredentials();
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };
