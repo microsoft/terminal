@@ -19,7 +19,6 @@ using namespace Windows::Foundation::Numerics;
 // Return Value:
 // - String resource retrieved from that ID.
 static std::wstring GetStringResource(const UINT id)
-
 {
     // Calling LoadStringW with a pointer-sized storage and no length will return a read-only pointer
     // directly to the resource data instead of copying it immediately into a buffer.
