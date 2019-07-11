@@ -94,6 +94,14 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
+
+    // When the size of the titlebar content changes, we want to make sure to
+    // update the size of the drag region as well.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
+    {
+        fwe.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    }
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
@@ -164,7 +172,13 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Arrange(finalRect);
     }
 
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+    winrt::check_bool(SetWindowPos(_interopWindowHandle,
+                                   HWND_TOP,
+                                   xPos,
+                                   yPos,
+                                   windowsWidth,
+                                   windowsHeight,
+                                   SWP_SHOWWINDOW));
 }
 
 // Method Description:
@@ -364,11 +378,14 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     // First get the monitor pointer from either the active window or the default location (0,0,0,0)
     HMONITOR hMonitor = nullptr;
 
-    // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
-    // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
+    // NOTE: We must use the nearest monitor because sometimes the system moves
+    // the window around into strange spots while performing snap and Win+D
+    // operations. Those operations won't work correctly if we use
+    // MONITOR_DEFAULTTOPRIMARY.
     if (!EqualRect(&rc, &rcZero))
     {
-        // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.
+        // For invalid window handles or when we were passed a non-zero
+        // suggestion rectangle, get the monitor from the rect.
         hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
     }
     else
@@ -377,8 +394,9 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         hMonitor = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     }
 
-    // If for whatever reason there is no monitor, we're going to give back whatever we got since we can't figure anything out.
-    // We won't adjust the DPI either. That's OK. DPI doesn't make much sense with no display.
+    // If for whatever reason there is no monitor, we're going to give back
+    // whatever we got since we can't figure anything out. We won't adjust the
+    // DPI either. That's OK. DPI doesn't make much sense with no display.
     if (nullptr == hMonitor)
     {
         return rc;
@@ -390,9 +408,11 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
     GetMonitorInfoW(hMonitor, &MonitorInfo);
 
-    // We have to make a correction to the work area. If we actually consume the entire work area (by maximizing the window)
-    // The window manager will render the borders off-screen.
-    // We need to pad the work rectangle with the border dimensions to represent the actual max outer edges of the window rect.
+    // We have to make a correction to the work area. If we actually consume the
+    // entire work area (by maximizing the window). The window manager will
+    // render the borders off-screen. We need to pad the work rectangle with the
+    // border dimensions to represent the actual max outer edges of the window
+    // rect.
     WINDOWINFO wi = { 0 };
     wi.cbSize = sizeof(WINDOWINFO);
     GetWindowInfo(_window.get(), &wi);
@@ -511,7 +531,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
             // Create brush for borders, titlebar color.
             const auto backgroundBrush = _titlebar.Background();
-            const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
             const auto backgroundColor = backgroundSolidBrush.Color();
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));

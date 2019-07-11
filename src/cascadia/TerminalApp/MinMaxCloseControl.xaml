@@ -131,7 +131,7 @@
 
     <!-- <Grid x:Name="Content"></Grid> -->
     <!-- <Border Height="36.0" MinWidth="45.0" x:Name="DragBar" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" DoubleTapped="DragBar_DoubleTapped"/> -->
-    <Button Height="36.0" Width="45.0" x:Name="Minimize" Style="{StaticResource CaptionButton}" Click="Minimize_Click"
+    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="Minimize" Style="{StaticResource CaptionButton}" Click="Minimize_Click"
             AutomationProperties.Name="Minimize">
         <Button.Resources>
             <ResourceDictionary>
@@ -139,7 +139,7 @@
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" Width="45.0" x:Name="Maximize" Style="{StaticResource CaptionButton}" Click="Maximize_Click"
+    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="Maximize" Style="{StaticResource CaptionButton}" Click="Maximize_Click"
             AutomationProperties.Name="Maximize">
         <Button.Resources>
             <ResourceDictionary>
@@ -148,7 +148,7 @@
             </ResourceDictionary>
         </Button.Resources>
     </Button>
-    <Button Height="36.0" Width="45.0" x:Name="Close" Style="{StaticResource CaptionButton}" Click="Close_Click"
+    <Button Height="36.0" MinWidth="45.0" Width="45.0" x:Name="Close" Style="{StaticResource CaptionButton}" Click="Close_Click"
             AutomationProperties.Name="Close">
         <Button.Resources>
             <ResourceDictionary>

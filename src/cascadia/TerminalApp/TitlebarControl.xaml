@@ -11,7 +11,7 @@
     VerticalAlignment="Top"
     SizeChanged="Root_SizeChanged"
     d:DesignHeight="36"
-    Background="{ThemeResource SystemControlForegroundAccentBrush}"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     d:DesignWidth="400">
 
     <!-- TODO: Background="{ThemeResource TabViewBackground}" Is _very_

@@ -45,8 +45,10 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
     {
-        auto windowWidth = ActualWidth();
-        auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
-        ContentRoot().MaxWidth(windowWidth - minMaxCloseWidth);
+        const auto windowWidth = ActualWidth();
+        const auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
+        const auto dragBarMinWidth = DragBar().MinWidth();
+        const auto maxWidth = windowWidth - minMaxCloseWidth - dragBarMinWidth;
+        ContentRoot().MaxWidth(maxWidth);
     }
 }
