@@ -39,7 +39,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
-        _cursorTimer{}
+        _cursorTimer{},
+        _lastMouseClick{},
+        _lastMouseClickPos{}
     {
         _Create();
     }
@@ -514,6 +516,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
+        // import value from WinUser (convert from milli-seconds to micro-seconds)
+        _multiClickTimer = GetDoubleClickTime() * 1000;
+
         _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
         _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
@@ -669,13 +674,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-                // save location before rendering
-                _terminal->SetSelectionAnchor(terminalPosition);
-
                 // handle ALT key
                 _terminal->SetBoxSelection(altEnabled);
 
-                _renderer->TriggerSelection();
+                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+
+                // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
+                // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
+                const unsigned int MAX_CLICK_COUNT = 3;
+                const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+
+                if (multiClickMapper == 3)
+                {
+                    _terminal->TripleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                }
+                else if (multiClickMapper == 2)
+                {
+                    _terminal->DoubleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                }
+                else
+                {
+                    // save location before rendering
+                    _terminal->SetSelectionAnchor(terminalPosition);
+
+                    _renderer->TriggerSelection();
+                    _lastMouseClick = point.Timestamp();
+                    _lastMouseClickPos = cursorPosition;
+                }
             }
             else if (point.Properties().IsRightButtonPressed())
             {
@@ -1519,13 +1546,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return terminalPosition;
     }
 
-    // clang-format off
+    // Method Description:
+    // - Returns the number of clicks that occurred (double and triple click support)
+    // Arguments:
+    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    //    NOTE: origin (0,0) is top-left.
+    // - clickTime: the timestamp that the click occurred
+    // Return Value:
+    // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
+    // - otherwise, 1
+    const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime)
+    {
+        // if click occurred at a different location or past the multiClickTimer...
+        Timestamp delta;
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClick, &delta));
+        if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
+        {
+            // exit early. This is a single click.
+            _multiClickCounter = 1;
+        }
+        else
+        {
+            _multiClickCounter++;
+        }
+        return _multiClickCounter;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl, CopyToClipboard,       _clipboardCopyHandlers,         TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
     // clang-format on
 
