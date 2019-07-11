@@ -14,6 +14,7 @@ namespace winrt::TerminalApp::implementation
         TerminalPage();
 
         void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
+        void TabView_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e);
     };
 }
 

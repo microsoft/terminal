@@ -23,21 +23,28 @@ the MIT License. See LICENSE in the project root for license information. -->
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
-            <mux:TabView x:Name="TabView" Grid.Column="0" />
+            <mux:TabView x:Name="TabView" Grid.Column="0"
+									 SelectionChanged="TabView_SelectionChanged" />
 
             <SplitButton
                 x:Name="NewTabButton"
                 Grid.Column="1"
                 Click="OnNewTabButtonClick"
-                VerticalAlignment="Stretch"
+							  Background="{ThemeResource SystemChromeLowColor}"
+								VerticalAlignment="Stretch"
                 HorizontalAlignment="Left">
-                <SymbolIcon Symbol="Add" />
-            </SplitButton>
+								<Viewbox MaxHeight="15"
+										MaxWidth="15">
+
+									<SymbolIcon Symbol="Add" />
+
+								</Viewbox>
+						</SplitButton>
 
             <local:MinMaxCloseControl
                 x:Name="MinMaxCloseControl"
                 Grid.Column="3"
-                HorizontalAlignment="Right" />
+								HorizontalAlignment="Right" />
         </Grid>
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
