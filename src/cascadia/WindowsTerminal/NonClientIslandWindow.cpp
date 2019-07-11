@@ -607,27 +607,19 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             ((suggestedWidth > maxWidth) ||
              (suggestedHeight > maxHeight)))
         {
-            auto offset = 0;
-            // Determine which side of the window to use for the offset
-            //  calculation. If the taskbar is on the left or top of the screen,
-            //  then the x or y coordinate of the work rect might not be 0.
-            //  Check both, and use whichever is 0.
-            if (rcMaximum.left == 0)
-            {
-                offset = windowPos->x;
-            }
-            else if (rcMaximum.top == 0)
-            {
-                offset = windowPos->y;
-            }
-            const auto offsetX = offset;
-            const auto offsetY = offset;
+            RECT frame{};
+            // Calculate the maxmized window overhang by getting the size of the window frame.
+            // We use the style without WS_CAPTION otherwise the caption height is included.
+            // Only remove WS_DLGFRAME since WS_CAPTION = WS_DLGFRAME | WS_BORDER,
+            // but WS_BORDER is needed as it modifies the calculation of the width of the frame. 
+            const auto targetStyle = windowStyle & ~WS_DLGFRAME;
+            AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), _currentDpi);
 
-            _maximizedMargins.cxRightWidth = -offset;
-            _maximizedMargins.cxLeftWidth = -offset;
-
-            _maximizedMargins.cyTopHeight = -offset;
-            _maximizedMargins.cyBottomHeight = -offset;
+            // Frame left and top will be negative
+            _maximizedMargins.cxLeftWidth = frame.left * -1;
+            _maximizedMargins.cyTopHeight = frame.top * -1;
+            _maximizedMargins.cxRightWidth = frame.right;
+            _maximizedMargins.cyBottomHeight = frame.bottom;
 
             _isMaximized = true;
             THROW_IF_FAILED(_UpdateFrameMargins());
