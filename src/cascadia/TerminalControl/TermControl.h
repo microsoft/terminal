@@ -107,6 +107,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
 
+        using Timestamp = uint64_t;
+
+        // imported from WinUser
+        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
+        Timestamp _multiClickTimer;
+        Timestamp _lastMouseClick;
+        unsigned int _multiClickCounter;
+        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
+
         // Event revokers -- we need to deregister ourselves before we die,
         // lest we get callbacks afterwards.
         winrt::Windows::UI::Xaml::Controls::Control::SizeChanged_revoker _sizeChangedRevoker;
@@ -158,6 +167,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
 
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
     };
