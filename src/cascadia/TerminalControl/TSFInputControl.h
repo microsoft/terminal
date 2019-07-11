@@ -32,12 +32,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         FontInfoEventArgs(){};
 
-        Windows::Foundation::Point FontSize()
+        Windows::Foundation::Size FontSize()
         {
             return _curSize;
         }
 
-        void FontSize(Windows::Foundation::Point newSize)
+        void FontSize(Windows::Foundation::Size newSize)
         {
             _curSize = newSize;
         }
@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     private:
         winrt::hstring _fontFace;
-        Windows::Foundation::Point _curSize;
+        Windows::Foundation::Size _curSize;
     };
 
     struct TSFInputControl : TSFInputControlT<TSFInputControl>
@@ -62,31 +62,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     public:
         TSFInputControl();
 
-        double FontWidth()
-        {
-            return winrt::unbox_value<double>(GetValue(_fontWidthProperty));
-        }
-
-        void FontWidth(double const& value)
-        {
-            SetValue(_fontWidthProperty, winrt::box_value(value));
-        }
-
-        double FontHeight()
-        {
-            return winrt::unbox_value<double>(GetValue(_fontHeightProperty));
-        }
-
-        void FontHeight(double const& value)
-        {
-            SetValue(_fontHeightProperty, winrt::box_value(value));
-        }
-
         void NotifyFocusEnter();
         void NotifyFocusLeave();
-
-        static Windows::UI::Xaml::DependencyProperty FontHeightProperty() { return _fontHeightProperty; }
-        static Windows::UI::Xaml::DependencyProperty FontWidthProperty() { return _fontWidthProperty; }
 
         static void OnCompositionChanged(Windows::UI::Xaml::DependencyObject const&, Windows::UI::Xaml::DependencyPropertyChangedEventArgs const&);
 
@@ -96,9 +73,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
 
     private:
-        static Windows::UI::Xaml::DependencyProperty _fontHeightProperty;
-        static Windows::UI::Xaml::DependencyProperty _fontWidthProperty;
-
         void _layoutRequestedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextLayoutRequestedEventArgs const& args);
         void _compositionStartedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextCompositionStartedEventArgs const& args);
         void _compositionCompletedHandler(winrt::Windows::UI::Text::Core::CoreTextEditContext sender, winrt::Windows::UI::Text::Core::CoreTextCompositionCompletedEventArgs const& args);

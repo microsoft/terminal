@@ -171,11 +171,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             Media::SolidColorBrush foregroundBrush{};
             foregroundBrush.Color(ColorRefToColor(_settings.DefaultForeground()));
             _tsfInputControl.Foreground(foregroundBrush);
-
-            // set TSF Font Family
-            //_tsfInputControl.FontFamily(Media::FontFamily(_actualFont.GetFaceName()));
-            //_tsfInputControl.FontWidth(_actualFont.GetSize().X);
-            //_tsfInputControl.FontHeight(_actualFont.GetSize().Y);
         });
     }
 
@@ -1619,9 +1614,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControl::_FontInfoHandler(const IInspectable& /*sender*/, const FontInfoEventArgs& eventArgs)
     {
-        COORD cursorPos = _actualFont.GetSize();
-        Windows::Foundation::Point p = { gsl::narrow<float>(cursorPos.X), gsl::narrow<float>(cursorPos.Y) };
-        eventArgs.FontSize(p);
+        eventArgs.FontSize(CharacterDimensions());
         eventArgs.FontFace(_actualFont.GetFaceName());
     }
 

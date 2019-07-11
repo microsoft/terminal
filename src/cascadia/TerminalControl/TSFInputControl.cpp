@@ -10,7 +10,7 @@ using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
 // hack to account for offset caused by tabs
-#define TABS_OFFSET 34
+#define TABS_OFFSET 38
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -165,8 +165,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
         _currentFontInfoHandlers(*this, *fontArgs);
 
-        const float fontWidth = fontArgs->FontSize().X;
-        const float fontHeight = fontArgs->FontSize().Y;
+        const float fontWidth = fontArgs->FontSize().Width;
+        const float fontHeight = fontArgs->FontSize().Height;
 
         // Convert text buffer cursor position to client coordinate position within the window
         COORD clientCursorPos;
@@ -372,20 +372,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& args)
     {
     }
-
-    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontHeightProperty =
-        Windows::UI::Xaml::DependencyProperty::Register(
-            L"FontHeight",
-            winrt::xaml_typename<double>(),
-            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr);
-
-    Windows::UI::Xaml::DependencyProperty TSFInputControl::_fontWidthProperty =
-        Windows::UI::Xaml::DependencyProperty::Register(
-            L"FontWidth",
-            winrt::xaml_typename<double>(),
-            winrt::xaml_typename<TerminalControl::TSFInputControl>(),
-            nullptr);
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentCursorPosition, _currentCursorPositionHandlers, TerminalControl::TSFInputControl, TerminalControl::CursorPositionEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TSFInputControl, CurrentFontInfo, _currentFontInfoHandlers, TerminalControl::TSFInputControl, TerminalControl::FontInfoEventArgs);
