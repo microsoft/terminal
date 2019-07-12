@@ -28,7 +28,3 @@ namespace winrt::TerminalApp::implementation
     {
     }
 }
-
-void winrt::TerminalApp::implementation::TerminalPage::TabView_SelectionChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::SelectionChangedEventArgs const& e)
-{
-}

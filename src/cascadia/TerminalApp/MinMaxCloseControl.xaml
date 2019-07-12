@@ -6,8 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-		Background="{ThemeResource SystemChromeLowColor}"
-	  HorizontalAlignment="Left"
+    Background="{ThemeResource SystemChromeLowColor}"
+    HorizontalAlignment="Left"
     VerticalAlignment="Top"
     Orientation="Horizontal"
     d:DesignHeight="36"
@@ -18,12 +18,12 @@
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Light">
                     <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
-                    <StaticResource x:Key="CaptionButtonBackground" ResourceKey="SystemChromeLowColor"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -31,12 +31,12 @@
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <x:Double x:Key="CaptionButtonStrokeWidth">1.0</x:Double>
-                    <StaticResource x:Key="CaptionButtonBackground" ResourceKey="SystemChromeLowColor"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPointerOver" ResourceKey="SystemControlBackgroundBaseLowBrush"/>
                     <StaticResource x:Key="CaptionButtonBackgroundPressed" ResourceKey="SystemControlBackgroundBaseMediumLowBrush"/>
                     <StaticResource x:Key="CaptionButtonStroke" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePointerOver" ResourceKey="SystemControlForegroundBaseHighBrush"/>
                     <StaticResource x:Key="CaptionButtonStrokePressed" ResourceKey="SystemControlForegroundBaseHighBrush"/>
+                    <SolidColorBrush x:Key="CaptionButtonBackground" Color="Transparent" />
                     <SolidColorBrush x:Key="CloseButtonBackgroundPointerOver" Color="Red"/>
                     <SolidColorBrush x:Key="CloseButtonStrokePointerOver" Color="White"/>
                     <SolidColorBrush x:Key="CloseButtonBackgroundPressed" Color="#f1707a"/>
@@ -131,9 +131,10 @@
 
     <Grid x:Name="Content"></Grid>
 	<Border Height="36.0"
-					MinWidth="160.0"
-					x:Name="DragBar"
-					Background="{ThemeResource SystemChromeLowColor}" DoubleTapped="DragBar_DoubleTapped"/>
+            MinWidth="160.0"
+            x:Name="DragBar"
+            Background="{ThemeResource SystemChromeLowColor}"
+            DoubleTapped="DragBar_DoubleTapped"/>
     <Button Height="36.0" Width="45.0" x:Name="Minimize" Style="{StaticResource CaptionButton}" Click="Minimize_Click"
             AutomationProperties.Name="Minimize">
         <Button.Resources>
