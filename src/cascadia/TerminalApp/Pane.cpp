@@ -229,7 +229,7 @@ bool Pane::_NavigateFocus(const Direction& direction)
 //     direction, we'll return false. This will indicate to our parent that they
 //     should try and move the focus themselves. In this way, the focus can move
 //     up and down the tree to the correct pane.
-// - This method is _very_ similar to ResizePane. Both are trying to fine the
+// - This method is _very_ similar to ResizePane. Both are trying to find the
 //   right separator to move (focus) in a direction.
 // Arguments:
 // - direction: The direction to move the focus in.
