@@ -33,6 +33,9 @@
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ui.xaml.input.h>
 #include <winrt/Windows.UI.Xaml.Hosting.h>
+#include "winrt/Windows.UI.Xaml.Markup.h"
+#include "winrt/Windows.UI.Xaml.Documents.h"
+
 #include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>

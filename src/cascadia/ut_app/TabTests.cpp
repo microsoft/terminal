@@ -47,16 +47,16 @@ namespace TerminalAppUnitTests
 
         TEST_CLASS_SETUP(ClassSetup)
         {
-            OSVERSIONINFO osvi{ 0 };
-            // ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
-            osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-            GetVersionEx(&osvi);
-            auto buildNumber = osvi.dwBuildNumber;
-            buildNumber;
-            DebugBreak();
-            if (buildNumber < 18295)
+            OSVERSIONINFOEX verisonInfo = { 0 };
+            verisonInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+            verisonInfo.dwBuildNumber = 18295;
+            DWORDLONG conditionMask = 0;
+            VER_SET_CONDITION(conditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+            const auto result = VerifyVersionInfo(&verisonInfo, VER_BUILDNUMBER, conditionMask);
+            if (!result)
             {
                 Log::Result(TestResults::Result::Skipped);
+                return false;
             }
 
             winrt::init_apartment(winrt::apartment_type::single_threaded);
