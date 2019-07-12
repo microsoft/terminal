@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //
 // Module Name:
-// - AppKeyBindingsSerialization.hpp
+// - AppKeyBindingsSerialization.h
 //
 // Abstract:
 // - A couple helper functions for serializing/deserializing an AppKeyBindings

@@ -62,8 +62,8 @@
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="TerminalPage.cpp">
-      <DependentUpon>TerminalPage.xaml</DependentUpon>
+    <ClCompile Include="../TerminalPage.cpp">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
@@ -106,8 +106,8 @@
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-    <Midl Include="TerminalPage.idl">
-      <DependentUpon>TerminalPage.xaml</DependentUpon>
+    <Midl Include="../TerminalPage.idl">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
