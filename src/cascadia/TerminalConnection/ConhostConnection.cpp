@@ -17,7 +17,6 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/UTF8OutPipeReader.hpp"
 
-
 using namespace ::Microsoft::Console;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
