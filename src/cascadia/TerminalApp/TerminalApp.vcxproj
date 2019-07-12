@@ -185,7 +185,6 @@
   </PropertyGroup>
   <Target Name="OpenConsolePlaceAppXbfAtRootOfResourceTree" DependsOnTargets="GetPackagingOutputs">
     <ItemGroup>
-      <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
       <_RelocatedAppXamlData Include="@(PackagingOutputs)" Condition="'%(Filename)' == 'App' and ('%(Extension)' == '.xaml' or '%(Extension)' == '.xbf')" />
       <PackagingOutputs Remove="@(_RelocatedAppXamlData)" />
       <PackagingOutputs Include="@(_RelocatedAppXamlData)">
