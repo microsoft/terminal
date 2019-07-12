@@ -29,9 +29,13 @@ the MIT License. See LICENSE in the project root for license information. -->
                 x:Name="NewTabButton"
                 Grid.Column="1"
                 Click="OnNewTabButtonClick"
+                Background="{ThemeResource SystemChromeLowColor}"
                 VerticalAlignment="Stretch"
                 HorizontalAlignment="Left">
-                <SymbolIcon Symbol="Add" />
+                <Viewbox MaxHeight="15"
+                         MaxWidth="15">
+                    <SymbolIcon Symbol="Add" />
+                </Viewbox>
             </SplitButton>
 
             <local:MinMaxCloseControl
