@@ -24,7 +24,6 @@ Author(s):
 #include <wil\resource.h>
 #include <string_view>
 
-
 class UTF8OutPipeReader final
 {
 public:
@@ -68,4 +67,3 @@ private:
     BYTE _utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
     DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
 };
-
