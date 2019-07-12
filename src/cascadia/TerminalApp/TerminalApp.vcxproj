@@ -172,4 +172,25 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+
+  <!--
+    By default, the PRI file will contain resource paths beginning with the
+    project name. Since we enabled XBF embedding, this *also* includes App.xbf.
+    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    To make that happen, we have to disable the prepending of the project name
+    to the App xaml files.
+  -->
+  <PropertyGroup>
+    <_GenerateProjectPriFileDependsOn>OpenConsolePlaceAppXbfAtRootOfResourceTree;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
+  </PropertyGroup>
+  <Target Name="OpenConsolePlaceAppXbfAtRootOfResourceTree" DependsOnTargets="GetPackagingOutputs">
+    <ItemGroup>
+      <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
+      <_RelocatedAppXamlData Include="@(PackagingOutputs)" Condition="'%(Filename)' == 'App' and ('%(Extension)' == '.xaml' or '%(Extension)' == '.xbf')" />
+      <PackagingOutputs Remove="@(_RelocatedAppXamlData)" />
+      <PackagingOutputs Include="@(_RelocatedAppXamlData)">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
 </Project>
