@@ -14,9 +14,6 @@ namespace winrt::TerminalApp::implementation
         TerminalPage();
 
         void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
-
-        // void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
-        void SetTabRow(Windows::UI::Xaml::FrameworkElement content);
     };
 }
 

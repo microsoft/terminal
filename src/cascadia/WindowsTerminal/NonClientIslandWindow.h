@@ -36,7 +36,6 @@ public:
 
     MARGINS GetFrameMargins() const noexcept;
 
-    // void OnAppInitialized(winrt::TerminalApp::App app) override;
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);

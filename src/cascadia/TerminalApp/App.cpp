@@ -459,16 +459,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
 
-    // Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
-    // {
-    //     // if (_minMaxCloseControl)
-    //     // {
-    //     //     return _minMaxCloseControl.DragBar();
-    //     // }
-
-    //     return nullptr;
-    // }
-
     // Method Description:
     // - Called when the about button is clicked. See _ShowAboutDialog for more info.
     // Arguments:
@@ -757,9 +747,9 @@ namespace winrt::TerminalApp::implementation
     {
         return _root;
     }
+
     UIElement App::GetTitlebarContent() noexcept
     {
-        // return _tabView;
         return _tabRow;
     }
 

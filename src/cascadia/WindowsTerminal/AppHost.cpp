@@ -68,6 +68,8 @@ void AppHost::Initialize()
 
     AppTitleChanged(_app.GetTitle());
 
+    // Set up the content of the application. If the app has a custom titlebar,
+    // set that content as well.
     _window->SetContent(_app.GetRoot());
     if (_useNonClientArea)
     {

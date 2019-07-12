@@ -27,12 +27,4 @@ namespace winrt::TerminalApp::implementation
     void TabRowControl::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
     {
     }
-
-    // void TabRowControl::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
-    // {
-    //     auto windowWidth = Root().ActualWidth();
-    //     auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
-    //     TabView().MaxWidth(windowWidth - minMaxCloseWidth);
-    // }
-
 }

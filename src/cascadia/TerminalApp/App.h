@@ -55,12 +55,10 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
 
-        // Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
         TerminalApp::TabRowControl _tabRow{ nullptr };
 
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        // winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 

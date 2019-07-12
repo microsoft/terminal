@@ -28,17 +28,4 @@ namespace winrt::TerminalApp::implementation
     {
     }
 
-    // void TerminalPage::Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e)
-    // {
-    //     auto windowWidth = Root().ActualWidth();
-    //     auto minMaxCloseWidth = MinMaxCloseControl().ActualWidth();
-    //     TabView().MaxWidth(windowWidth - minMaxCloseWidth);
-    // }
-
-    void TerminalPage::SetTabRow(Windows::UI::Xaml::FrameworkElement content)
-    {
-        // ContentRoot().Children().Clear();
-        Root().Children().Append(content);
-        Controls::Grid::SetRow(content, 0);
-    }
 }
