@@ -39,6 +39,7 @@
     </ClInclude>
     <ClInclude Include="../TerminalPage.h">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Pane.h" />
@@ -63,6 +64,7 @@
     </ClCompile>
     <ClCompile Include="../TerminalPage.cpp">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Pane.cpp" />
