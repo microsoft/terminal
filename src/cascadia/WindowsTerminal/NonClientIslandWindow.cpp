@@ -118,7 +118,8 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Arrange(finalRect);
     }
 
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_TOP, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+    // I'm not sure that HWND_BOTTOM is any different than HWND_TOP for us.
+    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
 }
 
 // Method Description:
@@ -142,7 +143,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
         const auto width = windowRect.right - windowRect.left;
         const auto height = windowRect.bottom - windowRect.top;
 
-        const auto scale = GetCurrentDpiScale();
         const auto dpi = ::GetDpiForWindow(_window.get());
 
         const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
@@ -277,7 +277,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    // Set frame margines with just a single pixel on the bottom. We don't
+    // Set frame margins with just a single pixel on the bottom. We don't
     // really want a window frame at all - we're drawing all of it. We
     // especially don't want a top margin - that's where the caption buttons
     // are, and we're drawing those. So just set a single pixel on the bottom,
@@ -450,7 +450,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             return 0;
         }
-        
+
         PAINTSTRUCT ps{ 0 };
         const auto hdc = wil::BeginPaint(_window.get(), &ps);
         if (hdc.get())
@@ -470,18 +470,18 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
-            // Fill in the area between the non-client content and the caption buttons.
-            RECT dragBarRect = GetDragAreaRect();
-            dragBarRect.left += xPos;
-            dragBarRect.right += xPos;
-            dragBarRect.bottom += yPos;
-            dragBarRect.top += yPos;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
-
             RECT windowRect = {};
             ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
+
+            // Fill in the _entire_ titlebar area.
+            RECT dragBarRect = {};
+            dragBarRect.left = xPos;
+            dragBarRect.right = xPos + cx;
+            dragBarRect.top = yPos;
+            dragBarRect.bottom = yPos + cy;
+            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
 
             // Draw the top window border
             RECT clientRect = { 0, 0, cx, yPos };
