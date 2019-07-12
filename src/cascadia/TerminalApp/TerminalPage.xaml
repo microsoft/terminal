@@ -16,21 +16,7 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- <Grid x:Name="TabRow" Grid.Row="0">
-
-            <mux:TabView x:Name="TabView">
-                <mux:TabView.RightCustomContent>
-                    <SplitButton
-                        x:Name="NewTabButton"
-                        Click="OnNewTabButtonClick"
-                        Background="Transparent"
-                        VerticalAlignment="Stretch"
-                        HorizontalAlignment="Left">
-                        <SymbolIcon Symbol="Add" />
-                    </SplitButton>
-                </mux:TabView.RightCustomContent>
-            </mux:TabView>
-        </Grid> -->
+        <local:TabRowControl x:Name="TabRow" Grid.Row="0" />
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
     </Grid>

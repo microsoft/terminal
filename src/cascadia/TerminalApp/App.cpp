@@ -91,37 +91,20 @@ namespace winrt::TerminalApp::implementation
         auto terminalPage = winrt::make_self<TerminalPage>();
         _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
         _tabContent = terminalPage->TabContent();
-        // _tabRow = terminalPage->TabRow();
-        _tabRow = TerminalApp::TabRowControl();
+        _tabRow = terminalPage->TabRow();
         _tabView = _tabRow.TabView();
         _newTabButton = _tabRow.NewTabButton();
 
-        // _minMaxCloseControl = terminalPage->MinMaxCloseControl();
-        // _minMaxCloseControl.ParentWindowHandle(parentHwnd);
-
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
-            // // Remove the TabView from the page. We'll hang on to it, we need to
-            // // put it in the titlebar.
-            // uint32_t index = 0;
-            // // terminalPage->Root().Children().IndexOf(_tabView, index);
-            // // terminalPage->Root().Children().RemoveAt(index);
-            // terminalPage->Root().Children().Clear();
-            // terminalPage->Root().Children().Append(_tabContent);
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (terminalPage->Root().Children().IndexOf(_tabRow, index))
+            {
+                terminalPage->Root().Children().RemoveAt(index);
+            }
         }
-        else
-        {
-            // _minMaxCloseControl.Visibility(Visibility::Collapsed);
-            terminalPage->SetTabRow(_tabRow);
-            Controls::Grid::SetRow(_tabRow, 0);
-        }
-
-        // uint32_t index = 0;
-        // _tabRow.Children().IndexOf(_newTabButton, index);
-        // _tabRow.Children().RemoveAt(index);
-        // auto fooBtn = Controls::Button();
-        // fooBtn.Content(winrt::box_value({ L"foo" }));
-        // _tabView.RightCustomContent(fooBtn);
 
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
