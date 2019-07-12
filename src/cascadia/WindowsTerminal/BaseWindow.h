@@ -89,6 +89,7 @@ public:
                 // do nothing.
                 break;
             }
+            break;
         }
         case CM_UPDATE_TITLE:
         {
