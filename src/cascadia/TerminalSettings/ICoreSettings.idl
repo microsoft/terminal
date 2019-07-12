@@ -27,6 +27,7 @@ namespace Microsoft.Terminal.Settings
         UInt32 CursorColor;
         CursorStyle CursorShape;
         UInt32 CursorHeight;
+        String WordDelimiters;
     };
 
 }

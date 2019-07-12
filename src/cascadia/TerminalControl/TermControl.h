@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
+        Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
@@ -99,6 +100,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // If this is set, then we assume we are in the middle of panning the
         //      viewport via touch input.
         std::optional<winrt::Windows::Foundation::Point> _touchAnchor;
+
+        using Timestamp = uint64_t;
+
+        // imported from WinUser
+        // Used for PointerPoint.Timestamp Property (https://docs.microsoft.com/en-us/uwp/api/windows.ui.input.pointerpoint.timestamp#Windows_UI_Input_PointerPoint_Timestamp)
+        Timestamp _multiClickTimer;
+        Timestamp _lastMouseClick;
+        unsigned int _multiClickCounter;
+        std::optional<winrt::Windows::Foundation::Point> _lastMouseClickPos;
 
         // Event revokers -- we need to deregister ourselves before we die,
         // lest we get callbacks afterwards.
@@ -146,6 +156,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DWORD _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
+        const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
     };
 }
 

@@ -39,7 +39,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
         _leadingSurrogate{},
-        _cursorTimer{}
+        _cursorTimer{},
+        _lastMouseClick{},
+        _lastMouseClickPos{}
     {
         _Create();
     }
@@ -93,7 +95,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Controls::Grid::SetColumn(swapChainPanel, 0);
         Controls::Grid::SetColumn(_scrollBar, 1);
 
-        _root = container;
+        Controls::Grid root{};
+        Controls::Image bgImageLayer{};
+        root.Children().Append(bgImageLayer);
+        root.Children().Append(container);
+
+        _root = root;
+        _bgImageLayer = bgImageLayer;
+
         _swapChainPanel = swapChainPanel;
         _controlRoot.Content(_root);
 
@@ -189,15 +198,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Set up the brush used to display the control's background.
+    // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
-    //   * Prioritizes the acrylic background if chosen, respecting acrylicOpacity
-    //       from _settings.
-    //   * If acrylic is not enabled and a backgroundImage is present, it is used,
-    //       respecting the opacity and stretch mode settings from _settings.
-    //   * Falls back to a solid color background from _settings if acrylic is not
-    //       enabled and no background image is present.
+    //   * If acrylic is not enabled, setup a solid color background, otherwise
+    //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
     // - Does not apply background color outside of acrylic mode;
@@ -242,23 +247,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _root.Background(acrylic);
             }
         }
-        else if (!_settings.BackgroundImage().empty())
+        else
+        {
+            Media::SolidColorBrush solidColor{};
+            _root.Background(solidColor);
+        }
+
+        if (!_settings.BackgroundImage().empty())
         {
             Windows::Foundation::Uri imageUri{ _settings.BackgroundImage() };
-
-            // Check if the existing brush is an image brush, and if not
-            // construct a new one
-            auto brush = _root.Background().try_as<Media::ImageBrush>();
-
-            if (brush == nullptr)
-            {
-                brush = Media::ImageBrush{};
-            }
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
             // set a new image source for the brush
-            auto imageSource = brush.ImageSource().try_as<Media::Imaging::BitmapImage>();
+            auto imageSource = _bgImageLayer.Source().try_as<Media::Imaging::BitmapImage>();
 
             if (imageSource == nullptr ||
                 imageSource.UriSource() == nullptr ||
@@ -269,23 +271,18 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // may well be both large and somewhere out on the
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
-                brush.ImageSource(image);
+                _bgImageLayer.Source(image);
+                _bgImageLayer.HorizontalAlignment(HorizontalAlignment::Center);
+                _bgImageLayer.VerticalAlignment(VerticalAlignment::Center);
             }
 
             // Apply stretch and opacity settings
-            brush.Stretch(_settings.BackgroundImageStretchMode());
-            brush.Opacity(_settings.BackgroundImageOpacity());
-
-            // Apply brush if it isn't already there
-            if (_root.Background() != brush)
-            {
-                _root.Background(brush);
-            }
+            _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
+            _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
         }
         else
         {
-            Media::SolidColorBrush solidColor{};
-            _root.Background(solidColor);
+            _bgImageLayer.Source(nullptr);
         }
     }
 
@@ -308,37 +305,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             bgColor.B = B;
             bgColor.A = 255;
 
-            if (_settings.UseAcrylic())
+            if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
             {
-                if (auto acrylic = _root.Background().try_as<Media::AcrylicBrush>())
-                {
-                    acrylic.FallbackColor(bgColor);
-                    acrylic.TintColor(bgColor);
-                }
-
-                // If we're acrylic, we want to make sure that the default BG color
-                // is transparent, so we can see the acrylic effect on text with the
-                // default BG color.
-                _settings.DefaultBackground(ARGB(0, R, G, B));
+                acrylic.FallbackColor(bgColor);
+                acrylic.TintColor(bgColor);
             }
-            else if (!_settings.BackgroundImage().empty())
+            else if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
             {
-                // This currently applies no changes to the image background
-                // brush itself.
-
-                // Set the default background as transparent to prevent the
-                // DX layer from overwriting the background image
-                _settings.DefaultBackground(ARGB(0, R, G, B));
+                solidColor.Color(bgColor);
             }
-            else
-            {
-                if (auto solidColor = _root.Background().try_as<Media::SolidColorBrush>())
-                {
-                    solidColor.Color(bgColor);
-                }
 
-                _settings.DefaultBackground(RGB(R, G, B));
-            }
+            // Set the default background as transparent to prevent the
+            // DX layer from overwriting the background image or acrylic effect
+            _settings.DefaultBackground(ARGB(0, R, G, B));
         });
     }
 
@@ -537,6 +516,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _cursorTimer = std::nullopt;
         }
 
+        // import value from WinUser (convert from milli-seconds to micro-seconds)
+        _multiClickTimer = GetDoubleClickTime() * 1000;
+
         _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
         _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
@@ -692,13 +674,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto cursorPosition = point.Position();
                 const auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
-                // save location before rendering
-                _terminal->SetSelectionAnchor(terminalPosition);
-
                 // handle ALT key
                 _terminal->SetBoxSelection(altEnabled);
 
-                _renderer->TriggerSelection();
+                auto clickCount = _NumberOfClicks(cursorPosition, point.Timestamp());
+
+                // This formula enables the number of clicks to cycle properly between single-, double-, and triple-click.
+                // To increase the number of acceptable click states, simply increment MAX_CLICK_COUNT and add another if-statement
+                const unsigned int MAX_CLICK_COUNT = 3;
+                const auto multiClickMapper = clickCount > MAX_CLICK_COUNT ? ((clickCount + MAX_CLICK_COUNT - 1) % MAX_CLICK_COUNT) + 1 : clickCount;
+
+                if (multiClickMapper == 3)
+                {
+                    _terminal->TripleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                }
+                else if (multiClickMapper == 2)
+                {
+                    _terminal->DoubleClickSelection(terminalPosition);
+                    _renderer->TriggerSelection();
+                }
+                else
+                {
+                    // save location before rendering
+                    _terminal->SetSelectionAnchor(terminalPosition);
+
+                    _renderer->TriggerSelection();
+                    _lastMouseClick = point.Timestamp();
+                    _lastMouseClickPos = cursorPosition;
+                }
             }
             else if (point.Properties().IsRightButtonPressed())
             {
@@ -1542,13 +1546,38 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return terminalPosition;
     }
 
-    // clang-format off
+    // Method Description:
+    // - Returns the number of clicks that occurred (double and triple click support)
+    // Arguments:
+    // - clickPos: the (x,y) position of a given cursor (i.e.: mouse cursor).
+    //    NOTE: origin (0,0) is top-left.
+    // - clickTime: the timestamp that the click occurred
+    // Return Value:
+    // - if the click is in the same position as the last click and within the timeout, the number of clicks within that time window
+    // - otherwise, 1
+    const unsigned int TermControl::_NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime)
+    {
+        // if click occurred at a different location or past the multiClickTimer...
+        Timestamp delta;
+        THROW_IF_FAILED(UInt64Sub(clickTime, _lastMouseClick, &delta));
+        if (clickPos != _lastMouseClickPos || delta > _multiClickTimer)
+        {
+            // exit early. This is a single click.
+            _multiClickCounter = 1;
+        }
+        else
+        {
+            _multiClickCounter++;
+        }
+        return _multiClickCounter;
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TermControl, TitleChanged,          _titleChangedHandlers,          TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TermControl, ConnectionClosed,      _connectionClosedHandlers,      TerminalControl::ConnectionClosedEventArgs);
-    DEFINE_EVENT(TermControl, CopyToClipboard,       _clipboardCopyHandlers,         TerminalControl::CopyToClipboardEventArgs);
+    DEFINE_EVENT(TermControl, TitleChanged, _titleChangedHandlers, TerminalControl::TitleChangedEventArgs);
+    DEFINE_EVENT(TermControl, ConnectionClosed, _connectionClosedHandlers, TerminalControl::ConnectionClosedEventArgs);
+    DEFINE_EVENT(TermControl, CopyToClipboard, _clipboardCopyHandlers, TerminalControl::CopyToClipboardEventArgs);
     DEFINE_EVENT(TermControl, ScrollPositionChanged, _scrollPositionChangedHandlers, TerminalControl::ScrollPositionChangedEventArgs);
     // clang-format on
 

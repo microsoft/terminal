@@ -163,6 +163,9 @@ class ScreenBufferTests
 
     TEST_METHOD(ScrollUpInMargins);
     TEST_METHOD(ScrollDownInMargins);
+    TEST_METHOD(InsertLinesInMargins);
+    TEST_METHOD(DeleteLinesInMargins);
+    TEST_METHOD(ReverseLineFeedInMargins);
 
     TEST_METHOD(SetOriginMode);
 };
@@ -3213,6 +3216,232 @@ void ScreenBufferTests::ScrollDownInMargins()
         auto iter5 = tbi.GetCellDataAt({ 0, 5 });
         VERIFY_ARE_EQUAL(L"A", iter0->Chars());
         VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::InsertLinesInMargins()
+{
+    Log::Comment(
+        L"Does the common scrolling setup, then inserts two lines inside the "
+        L"margin boundaries, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    // Move to column 5 of line 3
+    stateMachine.ProcessString(L"\x1b[3;5H");
+    // Insert 2 lines
+    stateMachine.ProcessString(L"\x1b[2L");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"5", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"6", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+
+    Log::Comment(
+        L"Does the common scrolling setup, then inserts one line with no "
+        L"margins set, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Clear the scroll margins
+    stateMachine.ProcessString(L"\x1b[r");
+    // Move to column 5 of line 2
+    stateMachine.ProcessString(L"\x1b[2;5H");
+    // Insert 1 line
+    stateMachine.ProcessString(L"\x1b[L");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::DeleteLinesInMargins()
+{
+    Log::Comment(
+        L"Does the common scrolling setup, then deletes two lines inside the "
+        L"margin boundaries, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    // Move to column 5 of line 3
+    stateMachine.ProcessString(L"\x1b[3;5H");
+    // Delete 2 lines
+    stateMachine.ProcessString(L"\x1b[2M");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"5", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+
+    Log::Comment(
+        L"Does the common scrolling setup, then deletes one line with no "
+        L"margins set, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Clear the scroll margins
+    stateMachine.ProcessString(L"\x1b[r");
+    // Move to column 5 of line 2
+    stateMachine.ProcessString(L"\x1b[2;5H");
+    // Delete 1 line
+    stateMachine.ProcessString(L"\x1b[M");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"6", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"7", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"B", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::ReverseLineFeedInMargins()
+{
+    Log::Comment(
+        L"Does the common scrolling setup, then executes a reverse line feed "
+        L"below the top margin, and verifies the rows have what we'd expect.");
+
+    _CommonScrollingSetup();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    // Move to column 5 of line 2, the top margin
+    stateMachine.ProcessString(L"\x1b[2;5H");
+    // Execute a reverse line feed (RI)
+    stateMachine.ProcessString(L"\x1bM");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"A", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter1->Chars());
+        VERIFY_ARE_EQUAL(L"5", iter2->Chars());
+        VERIFY_ARE_EQUAL(L"6", iter3->Chars());
+        VERIFY_ARE_EQUAL(L"7", iter4->Chars());
+        VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+
+    Log::Comment(
+        L"Does the common scrolling setup, then executes a reverse line feed "
+        L"with the top margin at the top of the screen, and verifies the rows "
+        L"have what we'd expect.");
+
+    _CommonScrollingSetup();
+    // Set the top scroll margin to the top of the screen
+    stateMachine.ProcessString(L"\x1b[1;5r");
+    // Move to column 5 of line 1, the top of the screen
+    stateMachine.ProcessString(L"\x1b[1;5H");
+    // Execute a reverse line feed (RI)
+    stateMachine.ProcessString(L"\x1bM");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+    {
+        auto iter0 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter1 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter2 = tbi.GetCellDataAt({ 0, 2 });
+        auto iter3 = tbi.GetCellDataAt({ 0, 3 });
+        auto iter4 = tbi.GetCellDataAt({ 0, 4 });
+        auto iter5 = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"\x20", iter0->Chars());
+        VERIFY_ARE_EQUAL(L"A", iter1->Chars());
         VERIFY_ARE_EQUAL(L"5", iter2->Chars());
         VERIFY_ARE_EQUAL(L"6", iter3->Chars());
         VERIFY_ARE_EQUAL(L"7", iter4->Chars());
