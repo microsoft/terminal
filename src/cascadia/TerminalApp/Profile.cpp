@@ -40,7 +40,7 @@ static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
-static constexpr std::string_view BackgroundimageStretchModeKey{ "backgroundImageStretchMode" };
+static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
 static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
 
 // Possible values for Scrollbar state
@@ -316,7 +316,7 @@ Json::Value Profile::ToJson() const
 
     if (_backgroundImageStretchMode)
     {
-        root[JsonKey(BackgroundimageStretchModeKey)] = SerializeImageStretchMode(_backgroundImageStretchMode.value()).data();
+        root[JsonKey(BackgroundImageStretchModeKey)] = SerializeImageStretchMode(_backgroundImageStretchMode.value()).data();
     }
 
     if (_backgroundImageAlignment)
@@ -456,7 +456,7 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._backgroundImageOpacity = backgroundImageOpacity.asFloat();
     }
-    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundimageStretchModeKey)] })
+    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] })
     {
         result._backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
     }
