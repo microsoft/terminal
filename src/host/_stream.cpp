@@ -516,7 +516,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                         WORD CharType;
 
                         GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
-                        if (CharType == C1_CNTRL)
+                        if (WI_IsFlagSet(CharType, C1_CNTRL))
                         {
                             ConvertOutputToUnicode(gci.OutputCP,
                                                    (LPSTR)&RealUnicodeChar,
