@@ -511,26 +511,29 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     }
                     else
                     {
-                        // As a special favor to incompetent apps that attempt to display control chars,
-                        // convert to corresponding OEM Glyph Chars
-                        WORD CharType;
-
-                        GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
-                        if (WI_IsFlagSet(CharType, C1_CNTRL))
-                        {
-                            ConvertOutputToUnicode(gci.OutputCP,
-                                                   (LPSTR)&RealUnicodeChar,
-                                                   1,
-                                                   LocalBufPtr,
-                                                   1);
-                        }
-                        else if (Char == UNICODE_NULL)
+                        if (Char == UNICODE_NULL)
                         {
                             *LocalBufPtr = UNICODE_SPACE;
                         }
                         else
                         {
-                            *LocalBufPtr = Char;
+                            // As a special favor to incompetent apps that attempt to display control chars,
+                            // convert to corresponding OEM Glyph Chars
+                            WORD CharType;
+
+                            GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
+                            if (WI_IsFlagSet(CharType, C1_CNTRL))
+                            {
+                                ConvertOutputToUnicode(gci.OutputCP,
+                                                       (LPSTR)&RealUnicodeChar,
+                                                       1,
+                                                       LocalBufPtr,
+                                                       1);
+                            }
+                            else
+                            {
+                                *LocalBufPtr = Char;
+                            }
                         }
 
                         LocalBufPtr++;
