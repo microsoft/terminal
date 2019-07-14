@@ -92,6 +92,7 @@
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="KeyChordSerialization.cpp" />
+    <ClCompile Include="ResourceAccessor.cpp" />
     <ClCompile Include="Utils.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -118,6 +119,7 @@
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <PRIResource Include="Resources\en-US\Resources.resw" />
     <None Include="packages.config" />
     <None Include="TerminalApp.def" />
   </ItemGroup>
