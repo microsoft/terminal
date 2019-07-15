@@ -90,7 +90,7 @@ class UTF8OutPipeReaderTests
 
     struct ThreadData
     {
-        HANDLE& writeTo;
+        wil::unique_hfile& inPipe;
         std::string& utf8TestString;
     };
 
@@ -100,8 +100,8 @@ class UTF8OutPipeReaderTests
         ThreadData* pThreadData{ reinterpret_cast<ThreadData*>(threadArg) };
         DWORD length{};
 
-        WriteFile(pThreadData->writeTo, pThreadData->utf8TestString.c_str(), static_cast<DWORD>(pThreadData->utf8TestString.size()), &length, nullptr);
-        CloseHandle(pThreadData->writeTo);
+        WriteFile(pThreadData->inPipe.get(), pThreadData->utf8TestString.c_str(), static_cast<DWORD>(pThreadData->utf8TestString.size()), &length, nullptr);
+        pThreadData->inPipe.reset();
 
         return 0;
     }
@@ -119,9 +119,11 @@ class UTF8OutPipeReaderTests
         CreatePipe(&readFrom, &writeTo, &sa, 0); // create the pipe handles
 
         wil::unique_hfile outPipe{ readFrom };
+        wil::unique_hfile inPipe{ writeTo };
+
         static UTF8OutPipeReader reader{ outPipe }; // declare a static instance of UTF8OutPipeReader
 
-        ThreadData data{ writeTo, utf8TestString };
+        ThreadData data{ inPipe, utf8TestString };
 
         wil::unique_handle threadHandle{ CreateThread(nullptr, 0, WritePipeThread, &data, 0, nullptr) }; // create a thread that writes to the pipe
         RETURN_HR_IF_NULL(E_FAIL, threadHandle.get());
