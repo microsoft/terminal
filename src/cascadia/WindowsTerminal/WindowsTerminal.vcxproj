@@ -2,7 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
 
   <PropertyGroup>
     <ConfigurationType>Application</ConfigurationType>
@@ -103,7 +103,6 @@
 
   </ItemGroup>
 
-
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
@@ -145,8 +144,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets'))" />
   </Target>
 
@@ -154,6 +153,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets')" />
 </Project>

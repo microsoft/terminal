@@ -96,9 +96,6 @@
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <!-- Manually link with the TerminalAppLib.lib we've built. -->
-      <AdditionalLibraryDirectories>$(_BinRoot)\TerminalAppLib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-
       <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
