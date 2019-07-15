@@ -1139,13 +1139,10 @@ CEditSessionObject::Release()
                 // Create Cicero Display Attribute Manager
                 //
                 pTmpDispAttr = new (std::nothrow) CicDisplayAttributeMgr;
-                if (pTmpDispAttr)
+                if (pTmpDispAttr && SUCCEEDED(hr = pTmpDispAttr->InitDisplayAttributeInstance(pcat)))
                 {
-                    if (SUCCEEDED(hr = pTmpDispAttr->InitDisplayAttributeInstance(pcat)))
-                    {
-                        *pCicCatMgr = pTmpCat;
-                        *pCicDispAttr = pTmpDispAttr;
-                    }
+                    *pCicCatMgr = pTmpCat;
+                    *pCicDispAttr = pTmpDispAttr;
                 }
             }
         }

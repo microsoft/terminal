@@ -86,7 +86,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        //ERROR!!
+        FAIL_FAST_IF(NT_SUCCESS(Status));
+        UnlockConsole();
+        pMessage->SetReplyStatus(Status);
+        return pMessage;
     }
 
     // Complete the request.
@@ -102,16 +106,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
     UnlockConsole();
 
     return nullptr;
-
-Error:
-
-    FAIL_FAST_IF(NT_SUCCESS(Status));
-
-    UnlockConsole();
-
-    pMessage->SetReplyStatus(Status);
-
-    return pMessage;
 }
 
 // Routine Description:

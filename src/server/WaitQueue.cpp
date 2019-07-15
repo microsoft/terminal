@@ -82,7 +82,7 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
         ConsoleWaitBlock* const WaitBlock = (*it);
         if (nullptr == WaitBlock)
         {
-            break;
+            return fResult;
         }
 
         auto const nextIt = std::next(it); // we have to capture next before it is potentially erased
@@ -94,7 +94,7 @@ bool ConsoleWaitQueue::NotifyWaiters(const bool fNotifyAll,
 
         if (!fNotifyAll)
         {
-            break;
+            return fResult;
         }
 
         it = nextIt;

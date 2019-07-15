@@ -75,7 +75,7 @@ namespace MiniTerm
                 writer.AutoFlush = true;
                 writer.WriteLine(@"cd \");
 
-                while (true)
+                for (;;)
                 {
                     // send input character-by-character to the pipe
                     char key = Console.ReadKey(intercept: true).KeyChar;

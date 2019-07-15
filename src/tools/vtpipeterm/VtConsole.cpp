@@ -339,7 +339,7 @@ DWORD VtConsole::_OutputThread()
 {
     BYTE buffer[256];
     DWORD dwRead;
-    while (true)
+    for (;;)
     {
         dwRead = 0;
         bool fSuccess = false;

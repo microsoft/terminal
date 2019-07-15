@@ -252,7 +252,7 @@ VOID ConIoSrvComm::ServiceInputPipe()
 
     CIS_EVENT Event = { 0 };
 
-    while (TRUE)
+    for (;;)
     {
         Ret = ReadFile(_pipeReadHandle,
                        &Event,
@@ -394,28 +394,25 @@ VOID ConIoSrvComm::HandleFocusEvent(PCIS_EVENT Event)
                 }
             }
         }
-        else
+        else if (pWddmConEngine->IsInitialized())
         {
-            if (pWddmConEngine->IsInitialized())
-            {
-                // Wait for the currently running paint operation, if any,
-                // and prevent further attempts to render.
-                Renderer->WaitForPaintCompletionAndDisable(1000);
+            // Wait for the currently running paint operation, if any,
+            // and prevent further attempts to render.
+            Renderer->WaitForPaintCompletionAndDisable(1000);
 
-                // Relinquish control of the graphics device (only one
-                // DirectX application may control the device at any one
-                // time).
-                LOG_IF_FAILED(pWddmConEngine->Disable());
+            // Relinquish control of the graphics device (only one
+            // DirectX application may control the device at any one
+            // time).
+            LOG_IF_FAILED(pWddmConEngine->Disable());
 
-                // Let the Console IO Server that we have relinquished
-                // control of the display.
-                ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
-                Ret = WriteFile(_pipeWriteHandle,
-                                &ReplyEvent,
-                                sizeof(CIS_EVENT),
-                                NULL,
-                                NULL);
-            }
+            // Let the Console IO Server that we have relinquished
+            // control of the display.
+            ReplyEvent.Type = CIS_EVENT_TYPE_FOCUS_ACK;
+            Ret = WriteFile(_pipeWriteHandle,
+                            &ReplyEvent,
+                            sizeof(CIS_EVENT),
+                            NULL,
+                            NULL);
         }
     }
     break;

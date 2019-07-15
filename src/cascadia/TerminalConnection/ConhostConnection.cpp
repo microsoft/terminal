@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const size_t bufferSize = 4096;
         BYTE buffer[bufferSize];
         DWORD dwRead;
-        while (true)
+        for (;;)
         {
             dwRead = 0;
             bool fSuccess = false;

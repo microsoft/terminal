@@ -42,7 +42,7 @@ Notes:
         return ProcessCommandListInput
 
     ProcessCommandListInput
-        while (TRUE)
+        for (;;)
             GetChar
             if (wait)
                 return wait

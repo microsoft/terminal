@@ -28,6 +28,7 @@ Author(s):
 // UNICODE_NULL is a Windows macro definition
 const wchar_t UNICODE_BACKSPACE = 0x8;
 const wchar_t UNICODE_DEL = 0x7f;
+const wchar_t UNICODE_ESC = 0x1b
 // NOTE: This isn't actually a backspace. It's a graphical block. But
 // I believe it's emitted by one of our ANSI/OEM --> Unicode conversions.
 // We should dig further into this in the future.
