@@ -20,13 +20,13 @@ namespace TerminalApp
         void LoadSettings();
 
         Windows.UI.Xaml.UIElement GetRoot();
-        Windows.UI.Xaml.UIElement GetTitlebarContent();
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
         event LastTabClosedEventArgs LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.UIElement> SetTitleBarContent;
 
         String GetTitle();
     }

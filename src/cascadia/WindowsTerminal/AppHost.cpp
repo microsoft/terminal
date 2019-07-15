@@ -61,6 +61,14 @@ AppHost::~AppHost()
 void AppHost::Initialize()
 {
     _window->Initialize();
+
+    if (_useNonClientArea)
+    {
+        // Register our callbar for when the app's non-client content changes.
+        // This has to be done _before_ App::Create, as the app might set the
+        // content in Create.
+        _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+    }
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
@@ -71,10 +79,6 @@ void AppHost::Initialize()
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
     _window->SetContent(_app.GetRoot());
-    if (_useNonClientArea)
-    {
-        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(_app.GetTitlebarContent());
-    }
     _window->OnAppInitialized();
 }
 
@@ -188,4 +192,20 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+}
+
+// Method Description:
+// - Called when the app wants to set its titlebar content. We'll take the
+//   UIElement and set the Content property of our Titlebar that element.
+// Arguments:
+// - sender: unused
+// - arg: the UIElement to use as the new Titlebar content.
+// Return Value:
+// - <none>
+void AppHost::_UpdateTitleBarContent(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::UIElement& arg)
+{
+    if (_useNonClientArea)
+    {
+        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+    }
 }

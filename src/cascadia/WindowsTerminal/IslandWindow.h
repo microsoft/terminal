@@ -23,7 +23,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    void Initialize();
+    virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 

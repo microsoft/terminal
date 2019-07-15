@@ -91,6 +91,9 @@ namespace winrt::TerminalApp::implementation
             {
                 terminalPage->Root().Children().RemoveAt(index);
             }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
         }
 
         // Event Bindings (Early)
@@ -738,11 +741,6 @@ namespace winrt::TerminalApp::implementation
     UIElement App::GetRoot() noexcept
     {
         return _root;
-    }
-
-    UIElement App::GetTitlebarContent() noexcept
-    {
-        return _tabRow;
     }
 
     void App::_SetFocusedTabIndex(int tabIndex)
@@ -1402,4 +1400,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
+
 }

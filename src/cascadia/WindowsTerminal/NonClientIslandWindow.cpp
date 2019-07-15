@@ -56,13 +56,13 @@ void NonClientIslandWindow::OnAppInitialized()
     IslandWindow::OnAppInitialized();
 }
 
-void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+void NonClientIslandWindow::Initialize()
 {
-    _clientContent = content;
+    IslandWindow::Initialize();
 
-    // Set up our grid of content. We'll use _rootGrid as our root element, and
-    // add two children to it - the TitlebarControl, and the param `content` as
-    // the "client content"
+    // Set up our grid of content. We'll use _rootGrid as our root element.
+    // There will be two children of this grid - the TitlebarControl, and the
+    // "client content"
     _rootGrid.Children().Clear();
     Controls::RowDefinition titlebarRow{};
     Controls::RowDefinition contentRow{};
@@ -78,9 +78,22 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
     _rootGrid.Children().Append(_titlebar);
-    _rootGrid.Children().Append(content);
 
     Controls::Grid::SetRow(_titlebar, 0);
+}
+
+// Method Description:
+// - Set the content of the "client area" of our window to the given content.
+// Arguments:
+// - content: the new UI element to use as the client content
+// Return Value:
+// - <none>
+void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _clientContent = content;
+
+    _rootGrid.Children().Append(content);
+
     // SetRow only works on FrameworkElement's, so cast it to a FWE before
     // calling. We know that our content is a Grid, so we don't need to worry
     // about this.
@@ -91,6 +104,12 @@ void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement conte
     }
 }
 
+// Method Description:
+// - Set the content of the "titlebar area" of our window to the given content.
+// Arguments:
+// - content: the new UI element to use as the titlebar content
+// Return Value:
+// - <none>
 void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _titlebar.Content(content);
