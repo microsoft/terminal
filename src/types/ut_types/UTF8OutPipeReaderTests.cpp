@@ -25,7 +25,7 @@ class UTF8OutPipeReaderTests
         //   1    2    3    4
         // 0xF0 0x90 0x8D 0x88
         //
-        // For the test a std::string is filled with 4102 '.' characters to make sure it exceeds the
+        // For the test a std::string is filled with 4104 '.' characters to make sure it exceeds the
         //  buffer size of 4096 bytes in UTF8OutPipeReader.
         //
         // This figure shows how the string is getting changed for the 7 sub-tests. The digits 1 to 4
@@ -50,79 +50,44 @@ class UTF8OutPipeReaderTests
         // The test is positive if both hstrings are equal.
 
         const size_t bufferSize{ 4096 }; // NOTE: This has to match the buffer size in UTF8OutPipeReader!
-        int subTestCounter{}; // contains the number of performed sub-tests
-        int successCounter{}; // contains the number of passed sub-tests
-
         std::string utf8TestString(bufferSize + 8, '.'); // create a test string with the required size
 
         // Test 1:
         //                                                           ||
         utf8TestString.replace(bufferSize - 6, 12, "S\xF0\x90\x8D\x88TUVWXYZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 2:
         //                                                          | |
         utf8TestString.replace(bufferSize - 6, 12, "ST\xF0\x90\x8D\x88UVWXYZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 3:
         //                                                       |   |
         utf8TestString.replace(bufferSize - 6, 12, "STU\xF0\x90\x8D\x88VWXYZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 4:
         //                                                    |   |
         utf8TestString.replace(bufferSize - 6, 12, "STUV\xF0\x90\x8D\x88WXYZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 5:
         //                                                 |   |
         utf8TestString.replace(bufferSize - 6, 12, "STUVW\xF0\x90\x8D\x88XYZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 6:
         //                                               |  |
         utf8TestString.replace(bufferSize - 6, 12, "STUVWX\xF0\x90\x8D\x88YZ");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
 
         // Test 7:
         //                                               ||
         utf8TestString.replace(bufferSize - 6, 12, "STUVWXY\xF0\x90\x8D\x88Z");
-        if (SUCCEEDED(RunTest(utf8TestString)))
-        {
-            ++successCounter;
-        }
-        ++subTestCounter;
-
-        // Fail if not all of the sub-tests passed.
-        VERIFY_ARE_EQUAL(successCounter, subTestCounter);
+        VERIFY_SUCCEEDED(RunTest(utf8TestString));
     }
 
-private:
     struct ThreadData
     {
         HANDLE& writeTo;
@@ -158,24 +123,16 @@ private:
 
         ThreadData data{ writeTo, utf8TestString };
 
-        HANDLE threadHandle{ CreateThread(nullptr, 0, WritePipeThread, &data, 0, nullptr) }; // create a thread that writes to the pipe
-        if (threadHandle == nullptr)
-        {
-            CloseHandle(writeTo);
-            return static_cast<HRESULT>(-1L);
-        }
+        wil::unique_handle threadHandle{ CreateThread(nullptr, 0, WritePipeThread, &data, 0, nullptr) }; // create a thread that writes to the pipe
+        RETURN_HR_IF_NULL(E_FAIL, threadHandle.get());
 
         // process the chunks that we get from UTF8OutPipeReader::Read
         while (true)
         {
             // get a chunk of UTF-8 data
-            HRESULT ret{ reader.Read(strView) };
-            if (FAILED(ret))
-            {
-                CloseHandle(threadHandle);
-                return static_cast<HRESULT>(-1L);
-            }
-            else if (strView.empty())
+            RETURN_IF_FAILED(reader.Read(strView));
+
+            if (strView.empty())
             {
                 // this is okay, no data left in the pipe
                 break;
@@ -185,8 +142,7 @@ private:
             utf16Actual = utf16Actual + winrt::to_hstring(strView);
         }
 
-        WaitForSingleObject(threadHandle, 2000);
-        CloseHandle(threadHandle);
+        WaitForSingleObject(threadHandle.get(), 2000);
 
         // the test passed if both hstrings are equal
         if (utf16Actual == utf16Expected)
@@ -194,6 +150,6 @@ private:
             return S_OK;
         }
 
-        return static_cast<HRESULT>(-1L);
+        return E_FAIL;
     }
 };

@@ -38,7 +38,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(wil::unique_hfile& outPipe) :
     }
     else if (!fSuccess) // reading failed
     {
-        return static_cast<HRESULT>(-1);
+        return E_FAIL;
     }
 
     const BYTE* const endPtr{ _buffer + dwRead };
