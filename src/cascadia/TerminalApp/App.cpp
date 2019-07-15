@@ -729,13 +729,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Update the current theme of the application. This will manually update
-    //   all of the elements in our UI to match the given theme.
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
     // Arguments:
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
         _root.RequestedTheme(newTheme);
+        // Propagate the event to the host layer, so it can update its own UI
+        _requestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement App::GetRoot() noexcept
@@ -1401,5 +1404,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
-
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 }

@@ -218,3 +218,19 @@ void IslandWindow::OnAppInitialized()
     const auto size = GetPhysicalSize();
     OnSize(size.cx, size.cy);
 }
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the root UI
+//   element of the entire XAML tree, so that all UI elements get the theme
+//   applied.
+// Arguments:
+// - arg: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+{
+    _rootGrid.RequestedTheme(requestedTheme);
+    // Invalidate the window rect, so that we'll repaint any elements we're
+    // drawing ourselves to match the new theme
+    ::InvalidateRect(_window.get(), nullptr, false);
+}

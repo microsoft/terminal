@@ -27,6 +27,8 @@ public:
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
+    void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+
 protected:
     void ForceResize()
     {

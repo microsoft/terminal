@@ -27,6 +27,7 @@ namespace TerminalApp
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
         event LastTabClosedEventArgs LastTabClosed;
         event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
 
         String GetTitle();
     }

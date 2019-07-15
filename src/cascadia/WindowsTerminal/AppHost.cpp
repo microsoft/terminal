@@ -69,6 +69,8 @@ void AppHost::Initialize()
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
+    _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
@@ -208,4 +210,17 @@ void AppHost::_UpdateTitleBarContent(const winrt::TerminalApp::App&, const winrt
     {
         (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
     }
+}
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll forward this to the
+//   IslandWindow, so it can update the root UI element of the entire XAML tree.
+// Arguments:
+// - sender: unused
+// - arg: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+{
+    _window->UpdateTheme(arg);
 }
