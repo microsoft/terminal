@@ -10,7 +10,7 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <mux:TabView x:Name="TabView">
+    <mux:TabView x:Name="TabView" VerticalAlignment="Bottom">
 
         <mux:TabView.RightCustomContent>
             <SplitButton
