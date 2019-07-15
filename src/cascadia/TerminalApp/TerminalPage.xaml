@@ -16,7 +16,37 @@ the MIT License. See LICENSE in the project root for license information. -->
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
+<!-- <<<<<<< HEAD -->
         <local:TabRowControl x:Name="TabRow" Grid.Row="0" />
+<!-- =======
+        <Grid x:Name="TabRow" Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <mux:TabView x:Name="TabView" Grid.Column="0" />
+
+            <SplitButton
+                x:Name="NewTabButton"
+                Grid.Column="1"
+                Click="OnNewTabButtonClick"
+                Background="{ThemeResource SystemChromeLowColor}"
+                VerticalAlignment="Stretch"
+                HorizontalAlignment="Left">
+                <Viewbox MaxHeight="15"
+                         MaxWidth="15">
+                    <SymbolIcon Symbol="Add" />
+                </Viewbox>
+            </SplitButton>
+
+            <local:MinMaxCloseControl
+                x:Name="MinMaxCloseControl"
+                Grid.Column="3"
+                HorizontalAlignment="Right" />
+        </Grid>
+>>>>>>> origin/master -->
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
     </Grid>

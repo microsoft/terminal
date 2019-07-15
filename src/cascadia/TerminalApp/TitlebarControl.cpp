@@ -13,8 +13,7 @@ namespace winrt::TerminalApp::implementation
 {
     TitlebarControl::TitlebarControl()
     {
-        const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///TitlebarControl.xaml" };
-        winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);
+        InitializeComponent();
 
         // Register our event handlers on the MMC buttons.
         MinMaxCloseControl().MinimizeClick({ this, &TitlebarControl::Minimize_Click });
