@@ -537,18 +537,22 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
-            // Fill in the area between the non-client content and the caption buttons.
-            RECT dragBarRect = GetDragAreaRect();
-            dragBarRect.left += xPos;
-            dragBarRect.right += xPos;
-            dragBarRect.bottom += yPos;
-            dragBarRect.top += yPos;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
-
             RECT windowRect = {};
             ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
+
+            // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
+            // window rect here, the single pixel of the bottom border (set in
+            // _UpdateFrameMargins) will be drawn, and blend with whatever the
+            // border color is.
+            RECT dragBarRect = GetDragAreaRect();
+            const auto dragHeight = RECT_HEIGHT(&dragBarRect);
+            dragBarRect.left = 0;
+            dragBarRect.right = cx;
+            dragBarRect.top = 0;
+            dragBarRect.bottom = dragHeight + yPos;
+            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
 
             // Draw the top window border
             RECT clientRect = { 0, 0, cx, yPos };
