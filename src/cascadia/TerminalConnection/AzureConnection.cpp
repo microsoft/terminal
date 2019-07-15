@@ -96,9 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
-    // - writes input over the connection
-    // - (in the case of multiple tenants, we will need input from the user for which tenant they
-    // -  wish to connect to, and that input is handled here too)
+    // - handles the different possible inputs in the different states
     // Arguments:
     // the user's input
     void AzureConnection::WriteInput(hstring const& data)
@@ -477,6 +475,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     // User has opted to store the connection settings
                     _storeCredential();
+                    _outputHandlers(winrt::to_hstring(tokensStored));
                 }
 
                 _state = State::termConnecting;
@@ -769,7 +768,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         passWord[U("expiry")] = json::value::string(std::to_wstring(_expiry));
         auto newCredential = PasswordCredential(resource, userName.serialize(), passWord.serialize());
         vault.Add(newCredential);
-        _outputHandlers(winrt::to_hstring(tokensStored));
     }
 
     // Method description:
