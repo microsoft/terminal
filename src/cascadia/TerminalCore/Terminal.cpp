@@ -260,6 +260,14 @@ bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
         ch = UNICODE_SPACE;
     }
 
+    // Manually handle Escape here. If we let it fall through, it'll come
+    // back up through the character handler. It's registered as a translation
+    // in TerminalInput, so we'll let TerminalInput control it.
+    if (vkey == VK_ESCAPE)
+    {
+        ch = UNICODE_ESC;
+    }
+
     keyEv.SetCharData(ch);
 
     const bool manuallyHandled = ch != UNICODE_NULL;
