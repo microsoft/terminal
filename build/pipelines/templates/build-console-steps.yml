@@ -14,6 +14,21 @@ steps:
 - task: VisualStudioTestPlatformInstaller@1
   displayName: Ensure VSTest Platform
 
+- task: CacheBeta@0
+  inputs:
+    key: |
+      $(Build.SourcesDirectory)/build/.nuget/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/TerminalApp/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/TerminalConnection/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/TerminalControl/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/TerminalCore/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/TerminalSettings/packages.config
+      $(Build.SourcesDirectory)/src/cascadia/WindowsTerminal/packages.config
+      $(Build.SourcesDirectory)/src/host/ft_uia/packages.config
+      $(Build.SourcesDirectory)/src/terminal/parser/ut_parser/packages.config
+    path: packages
+    cacheHitVar: CACHE_RESTORED
+
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
@@ -24,6 +39,7 @@ steps:
     configPath: NuGet.config
     restoreSolution: OpenConsole.sln
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
+  condition: ne(variables.CACHE_RESTORED, 'true')
 
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
   displayName: 'NuGet restore packages for CI'
@@ -34,6 +50,7 @@ steps:
     externalFeedCredentials: 'TAEF NuGet Feed'
     nugetConfigPath: build/config/NuGet.config
     restoreDirectory: '$(Build.SourcesDirectory)/packages'
+  condition: ne(variables.CACHE_RESTORED, 'true')
 
 - task: VSBuild@1
   displayName: 'Build solution **\OpenConsole.sln'
