@@ -457,7 +457,7 @@ namespace Conhost.UIA.Tests
                 visibleRanges = textPattern.GetVisibleRanges();
                 testRange = visibleRanges.First().Clone();
                 // move range back to the top
-                while (true)
+                for (;;)
                 {
                     int moveCount = testRange.Move(TextUnit.Line, -1);
                     if (moveCount == 0)
@@ -512,7 +512,7 @@ namespace Conhost.UIA.Tests
                 // move all the way to the bottom
                 visibleRanges = textPattern.GetVisibleRanges();
                 testRange = visibleRanges.Last().Clone();
-                while (true)
+                for (;;)
                 {
                     int moved = testRange.Move(TextUnit.Line, 1);
                     if (moved == 0)
@@ -571,7 +571,7 @@ namespace Conhost.UIA.Tests
                 // move all the way to the top
                 visibleRanges = textPattern.GetVisibleRanges();
                 testRange = visibleRanges.First().Clone();
-                while (true)
+                for (;;)
                 {
                     int moved = testRange.Move(TextUnit.Line, -1);
                     if (moved == 0)

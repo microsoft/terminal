@@ -47,7 +47,6 @@ MouseInput::~MouseInput()
 // - true iff uiButton is a button message to translate
 bool MouseInput::s_IsButtonMsg(const unsigned int uiButton)
 {
-    bool fIsButton = false;
     switch (uiButton)
     {
     case WM_LBUTTONDBLCLK:
@@ -61,10 +60,10 @@ bool MouseInput::s_IsButtonMsg(const unsigned int uiButton)
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        fIsButton = true;
-        break;
+        return true;
+    default:
+        return false;
     }
-    return fIsButton;
 }
 
 // Routine Description:
@@ -87,7 +86,6 @@ bool MouseInput::s_IsHoverMsg(const unsigned int uiButtonCode)
 // - true iff uiButton is a button down event
 bool MouseInput::s_IsButtonDown(const unsigned int uiButton)
 {
-    bool fIsButtonDown = false;
     switch (uiButton)
     {
     case WM_LBUTTONDBLCLK:
@@ -98,10 +96,9 @@ bool MouseInput::s_IsButtonDown(const unsigned int uiButton)
     case WM_MBUTTONDBLCLK:
     case WM_MOUSEWHEEL:
     case WM_MOUSEHWHEEL:
-        fIsButtonDown = true;
-        break;
+        return true;
     }
-    return fIsButtonDown;
+    return false;
 }
 
 // Routine Description:

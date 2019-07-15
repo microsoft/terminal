@@ -36,7 +36,7 @@ namespace VTApp2
             }
             if (!fSuccess) return;
 
-            while (true)
+            for (;;)
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(false);
                 switch (keyInfo.KeyChar)

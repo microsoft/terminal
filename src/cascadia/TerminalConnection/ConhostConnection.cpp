@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::string_view strView{};
 
         // process the data of the output pipe in a loop
-        while (true)
+        for (;;)
         {
             HRESULT result = pipeReader.Read(strView);
             if (FAILED(result))

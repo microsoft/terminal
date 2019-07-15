@@ -354,7 +354,7 @@ void InputTests::TestReadConsolePasswordScenario()
     VERIFY_IS_NOT_NULL(buf);
     wchar_t* bufPtr = buf.get();
 
-    while (true)
+    for (;;)
     {
         wchar_t ch;
         DWORD c;

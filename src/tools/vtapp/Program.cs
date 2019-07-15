@@ -23,7 +23,7 @@ namespace VTApp
             
             Console.WriteLine("VT Tester");
 
-            while (true)
+            for (;;)
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(true);
 

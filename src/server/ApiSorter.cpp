@@ -182,14 +182,10 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         Status = NTSTATUS_FROM_HRESULT(Status);
     }
 
-    if (!ReplyPending)
+    if (ReplyPending)
     {
-        goto Complete;
+        return nullptr;
     }
-
-    return nullptr;
-
-Complete:
 
     Message->SetReplyStatus(Status);
 
