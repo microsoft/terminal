@@ -7,7 +7,7 @@
 // This keeps a console session alive and doesn't interfere with tests or other hooks.
 int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 {
-    for(;;)
+    for (;;)
     {
         SleepEx(INFINITE, FALSE);
     }
