@@ -7,10 +7,8 @@
         void Maximize();
         void RestoreDown();
 
-        // Windows.UI.Xaml.Controls.Button MinimizeButton { get; };
-        Windows.UI.Xaml.Controls.Button MaximizeButton { get; };
-        Windows.UI.Xaml.Controls.Button CloseButton { get; };
-
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
+        event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;
+        event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> CloseClick;
     }
 }

@@ -8,40 +8,47 @@
 #include "MinMaxCloseControl.h"
 
 #include "MinMaxCloseControl.g.cpp"
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
     MinMaxCloseControl::MinMaxCloseControl()
     {
         const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///MinMaxCloseControl.xaml" };
-        winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);
+        Application::LoadComponent(*this, resourceLocator, Controls::Primitives::ComponentResourceLocation::Nested);
     }
 
     void MinMaxCloseControl::Maximize()
     {
-        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
+        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
     }
 
     void MinMaxCloseControl::RestoreDown()
     {
-        winrt::Windows::UI::Xaml::VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
+        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
     }
 
-    // These need to be defined here to make the compiler happy. They do nothing
-    // on their own, it's up to the control that's embedding us to set a
-    // callback when these buttons are pressed.
-    void MinMaxCloseControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    // These event handlers simply forward each buttons click events up to the
+    // events we've exposed.
+    void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                            RoutedEventArgs const& e)
     {
         _minimizeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                            RoutedEventArgs const& e)
     {
+        _maximizeClickHandlers(*this, e);
     }
-    void MinMaxCloseControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                         RoutedEventArgs const& e)
     {
+        _closeClickHandlers(*this, e);
     }
 
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
 
 }

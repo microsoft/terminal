@@ -19,11 +19,16 @@ namespace winrt::TerminalApp::implementation
         void Maximize();
         void RestoreDown();
 
-        void Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
-        void Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                            winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
+                         winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
     };
 }
 
