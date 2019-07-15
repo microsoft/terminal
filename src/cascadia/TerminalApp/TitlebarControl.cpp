@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         _window = reinterpret_cast<HWND>(handle);
     }
 
-    void TitlebarControl::_OnMaximize(byte flag)
+    void TitlebarControl::_OnMaximizeOrRestore(byte flag)
     {
         if (_window)
         {
@@ -76,12 +76,12 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
-        _OnMaximize(HTMAXBUTTON);
+        _OnMaximizeOrRestore(HTMAXBUTTON);
     }
 
     void TitlebarControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
     {
-        _OnMaximize(HTCAPTION);
+        _OnMaximizeOrRestore(HTCAPTION);
     }
 
     void TitlebarControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)

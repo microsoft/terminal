@@ -28,9 +28,6 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
         Windows::UI::Xaml::UIElement GetTitlebarContent() noexcept;
 
-        // // Gets the current dragglable area in the non client region of the top level window
-        // Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
-
         void Create();
         void LoadSettings();
 
@@ -54,9 +51,7 @@ namespace winrt::TerminalApp::implementation
         // (which is a root when the tabs are in the titlebar.)
         Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
-
         TerminalApp::TabRowControl _tabRow{ nullptr };
-
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
@@ -73,7 +68,6 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
-        void _Create();
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,

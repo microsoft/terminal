@@ -67,20 +67,7 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create();
-    }
 
-    App::~App()
-    {
-        TraceLoggingUnregister(g_hTerminalAppProvider);
-    }
-
-    // Method Description:
-    // - Create all of the initial UI elements of the Terminal app.
-    //    * Initializes the first terminal control, using the default profile,
-    //      and adds it to our list of tabs.
-    void App::_Create()
-    {
         /* !!! TODO
            This is not the correct way to host a XAML page. This exists today because we valued
            getting a .xaml over tearing out all of the terminal logic and splitting it across App
@@ -119,6 +106,11 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
+    }
+
+    App::~App()
+    {
+        TraceLoggingUnregister(g_hTerminalAppProvider);
     }
 
     // Method Description:
