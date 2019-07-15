@@ -6,6 +6,19 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 
+// using namespace std;
+// #include <gdiplus.h>
+
+#ifndef max
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#endif
+#include <gdiplus.h>
+#undef max
+#undef min
+
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
 using namespace winrt::Windows::UI;
@@ -24,14 +37,20 @@ constexpr int RECT_HEIGHT(const RECT* const pRect)
     return pRect->bottom - pRect->top;
 }
 
+Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+ULONG_PTR gdiplusToken;
+
 NonClientIslandWindow::NonClientIslandWindow() noexcept :
     IslandWindow{},
     _isMaximized{ false }
 {
+    // Initialize GDI+.
+    Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 }
 
 NonClientIslandWindow::~NonClientIslandWindow()
 {
+    Gdiplus::GdiplusShutdown(gdiplusToken);
 }
 
 // Method Description:
@@ -536,34 +555,59 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
 
+            const auto debugColor0 = RGB(255, 0, 255);
+            const auto debugBrush0 = wil::unique_hbrush(CreateSolidBrush(debugColor0));
+            const auto debugColor1 = RGB(0, 255, 255);
+            const auto debugBrush1 = wil::unique_hbrush(CreateSolidBrush(debugColor1));
+            const auto debugColor2 = RGB(255, 255, 0);
+            const auto debugBrush2 = wil::unique_hbrush(CreateSolidBrush(debugColor2));
+            const auto debugColor3 = RGB(1, 1, 1);
+            const auto debugBrush3 = wil::unique_hbrush(CreateSolidBrush(debugColor3));
+            const auto debugColor4 = RGB(255, 0, 0);
+            const auto debugBrush4 = wil::unique_hbrush(CreateSolidBrush(debugColor4));
+
             RECT windowRect = {};
             ::GetWindowRect(_window.get(), &windowRect);
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
-            // Fill in the _entire_ titlebar area.
-            RECT dragBarRect = {};
-            dragBarRect.left = xPos;
-            dragBarRect.right = xPos + cx;
-            dragBarRect.top = yPos;
-            dragBarRect.bottom = yPos + cy;
-            ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            Gdiplus::Graphics graphics(hdc.get());
+            Gdiplus::Color bgColor{ 255, 255, 0, 0 };
+            Gdiplus::SolidBrush solidBrush(bgColor);
 
-            // Draw the top window border
-            RECT clientRect = { 0, 0, cx, yPos };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // const RECT wholeWindowRelativeToWindow = { 0, 0, cx, cy };
+            // ::FillRect(hdc.get(), &wholeWindowRelativeToWindow, debugBrush3.get());
+            auto result = graphics.FillRectangle(&solidBrush, 0, 0, cx, cy);
+            // auto result = graphics.FillRectangle(&solidBrush, 200, 200, 200, 200);
+            result;
 
-            // Draw the left window border
-            clientRect = { 0, 0, xPos, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Fill in the _entire_ titlebar area.
+            RECT dragBarRect = GetDragAreaRect();
+            // dragBarRect.left = xPos;
+            // dragBarRect.right = xPos + cx;
+            // dragBarRect.top = yPos;
+            // dragBarRect.bottom = yPos + cy;
+            // ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
+            ::FillRect(hdc.get(), &dragBarRect, debugBrush1.get());
+
+            // // Draw the top window border
+            // RECT clientRect = { 0, 0, cx, yPos };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+
+            // // Draw the left window border
+            // clientRect = { 0, 0, xPos, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
 
             // Draw the bottom window border
-            clientRect = { 0, cy - yPos, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // clientRect = { 0, cy - yPos, cx, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // ::FillRect(hdc.get(), &clientRect, debugBrush2.get());
+            // ::FillRect(hdc.get(), &clientRect, debugBrush3.get());
+            // ::FillRect(hdc.get(), &clientRect, debugBrush4.get());
 
-            // Draw the right window border
-            clientRect = { cx - xPos, 0, cx, cy };
-            ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
+            // // Draw the right window border
+            // clientRect = { cx - xPos, 0, cx, cy };
+            // ::FillRect(hdc.get(), &clientRect, _backgroundBrush.get());
         }
 
         return 0;

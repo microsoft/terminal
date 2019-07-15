@@ -36,7 +36,7 @@
       <AdditionalIncludeDirectories>"$(OpenConsoleDir)src\cascadia\TerminalCore\lib\Generated Files";%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>gdi32.lib;dwmapi.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdi32.lib;gdiplus.lib;dwmapi.lib;Shcore.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
