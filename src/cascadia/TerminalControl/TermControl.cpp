@@ -673,9 +673,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 return;
             }
 
-            const auto modifiers = args.KeyModifiers();
-            const auto altEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu);
-            const auto shiftEnabled = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+            // macro directly with a VirtualKeyModifiers
+            const auto altEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Menu));
+            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
             if (point.Properties().IsLeftButtonPressed())
             {
@@ -848,9 +850,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto point = args.GetCurrentPoint(_root);
         const auto delta = point.Properties().MouseWheelDelta();
         // Get the state of the Ctrl & Shift keys
-        const auto modifiers = args.KeyModifiers();
-        const auto ctrlPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control);
-        const auto shiftPressed = WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift);
+        // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
+        // directly with a VirtualKeyModifiers
+        const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+        const auto ctrlPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Control));
+        const auto shiftPressed = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
         if (ctrlPressed && shiftPressed)
         {
