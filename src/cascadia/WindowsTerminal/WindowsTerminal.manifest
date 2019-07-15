@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+
+  <!-- This file is copied into ut_app/TerminalApp.Unit.Tests.manifest as part
+  of the pre-build step for that project. Changes should only be made to the
+  WindowsTerminal version of the file. -->
+
   <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
     <application>
         <!-- Windows 10 1903 -->
@@ -22,7 +27,7 @@
     Whenever you add new cppwinrt classes, make sure to add them here.
     If you need help with the syntax, the generated AppxManifest.xml should have
     the classes and files all listed in it.
-    
+
     TODO MSFT#21300206: Switch to automatically generating these.
   -->
   <file name="TerminalSettings.dll" hashalg="SHA1">

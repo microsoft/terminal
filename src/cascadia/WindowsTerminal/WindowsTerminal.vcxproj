@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+
   <PropertyGroup>
     <ConfigurationType>Application</ConfigurationType>
     <SubSystem>Windows</SubSystem>
@@ -73,29 +75,13 @@
   <!-- Dependencies -->
   <ItemGroup>
     <!-- Manually include the .pri files from the app project as content files. -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.pri">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile>
-    <!-- Manually include the xbf files from the app project as content files -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\*.xbf">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile>
-    <!--
-      The reason why this is needed for ARM64 is unknown,
-      If not added, the centenial package will fail to include the XamlHost dll.
-    -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\Microsoft.Toolkit.Win32.UI.XamlHost.dll" Condition="'$(Platform)'=='ARM64'">
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.pri">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
 
-    <!--
-      The reason why this is needed for ARM64 is unknown,
-      If not added, the centenial package will fail to include the XamlHost dll.
-    -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalApp\Microsoft.Toolkit.Win32.UI.XamlHost.dll" Condition="'$(Platform)'=='ARM64'">
+    <!-- Manually include the xbf files from the app project as content files -->
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.xbf">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
@@ -108,9 +94,33 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+    <!-- Don't add a ProjectReference to TerminalApp here. If you do, the
+    packaging project will find the TerminalApp.pri from both the TerminalAppLib
+    and TerminalApp project, and we only want this lib project's pri file. We'll
+    manually add a reference to the TerminalApp winmd and dll below, because we
+    still need those. -->
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Manually reference TerminalApp, since we can't use a ProjectReference. -->
+    <Reference Include="TerminalApp">
+      <HintPath>$(_BinRoot)\TerminalApp\TerminalApp.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_BinRoot)\TerminalApp\TerminalApp.dll" />
+
+  </ItemGroup>
+
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application
@@ -126,6 +136,7 @@
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -133,13 +144,15 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets'))" />
   </Target>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
   <Import Project="..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.1\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets')" />
 </Project>

@@ -90,7 +90,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"this is the commandline", // clientCommandLine
+                                    L"\"this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
                                     L"", // vtMode
@@ -110,7 +110,7 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                    INVALID_HANDLE_VALUE,
                    INVALID_HANDLE_VALUE,
                    ConsoleArguments(commandline,
-                                    L"--vtmode bar this is the commandline", // clientCommandLine
+                                    L"\"--vtmode bar this is the commandline\"", // clientCommandLine
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
                                     L"", // vtMode
@@ -214,6 +214,26 @@ void ConsoleArgumentsTests::ArgSplittingTests()
                                     INVALID_HANDLE_VALUE,
                                     INVALID_HANDLE_VALUE,
                                     L"a\\\\b c", // vtMode
+                                    0, // width
+                                    0, // height
+                                    false, // forceV1
+                                    false, // headless
+                                    true, // createServerHandle
+                                    0, // serverHandle
+                                    0, // signalHandle
+                                    false), // inheritCursor
+                   true); // successful parse?
+
+    commandline = L"conhost.exe this is the commandline";
+    ArgTestsRunner(L"#9 commandline no quotes",
+                   commandline,
+                   INVALID_HANDLE_VALUE,
+                   INVALID_HANDLE_VALUE,
+                   ConsoleArguments(commandline,
+                                    L"this is the commandline", // clientCommandLine
+                                    INVALID_HANDLE_VALUE,
+                                    INVALID_HANDLE_VALUE,
+                                    L"", // vtMode
                                     0, // width
                                     0, // height
                                     false, // forceV1

@@ -3,6 +3,14 @@
 
 namespace TerminalApp
 {
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
     enum ShortcutAction
     {
         CopyText = 0,
@@ -41,6 +49,10 @@ namespace TerminalApp
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ResizePaneLeft,
+        ResizePaneRight,
+        ResizePaneUp,
+        ResizePaneDown,
         OpenSettings
     };
 
@@ -64,6 +76,7 @@ namespace TerminalApp
     delegate void ScrollUpPageEventArgs();
     delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
+    delegate void ResizePaneEventArgs(Direction direction);
 
     [default_interface]
     runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -93,5 +106,6 @@ namespace TerminalApp
         event ScrollUpPageEventArgs ScrollUpPage;
         event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
+        event ResizePaneEventArgs ResizePane;
     }
 }

@@ -49,6 +49,35 @@ ColorScheme _CreateCampbellScheme()
 
 // clang-format off
 
+ColorScheme _CreateVintageScheme()
+{
+    // as per https://github.com/microsoft/terminal/issues/1781
+    ColorScheme vintageScheme { L"Vintage",
+                                RGB(192, 192, 192),
+                                RGB(  0,   0,   0) };
+    auto& vintageTable = vintageScheme.GetTable();
+    auto vintageSpan = gsl::span<COLORREF>(&vintageTable[0], gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE));
+    vintageTable[0]  = RGB(  0,   0,   0); // black
+    vintageTable[1]  = RGB(128,   0,   0); // dark red
+    vintageTable[2]  = RGB(  0, 128,   0); // dark green
+    vintageTable[3]  = RGB(128, 128,   0); // dark yellow
+    vintageTable[4]  = RGB(  0,   0, 128); // dark blue
+    vintageTable[5]  = RGB(128,   0, 128); // dark magenta
+    vintageTable[6]  = RGB(  0, 128, 128); // dark cyan
+    vintageTable[7]  = RGB(192, 192, 192); // gray
+    vintageTable[8]  = RGB(128, 128, 128); // dark gray
+    vintageTable[9]  = RGB(255,   0,   0); // red
+    vintageTable[10] = RGB(  0, 255,   0); // green
+    vintageTable[11] = RGB(255, 255,   0); // yellow
+    vintageTable[12] = RGB(  0,   0, 255); // blue
+    vintageTable[13] = RGB(255,   0, 255); // magenta
+    vintageTable[14] = RGB(  0, 255, 255); // cyan
+    vintageTable[15] = RGB(255, 255, 255); // white
+    Utils::SetColorTableAlpha(vintageSpan, 0xff);
+
+    return vintageScheme;
+}
+
 ColorScheme _CreateOneHalfDarkScheme()
 {
     // First 8 dark colors per: https://github.com/sonph/onehalf/blob/master/putty/onehalf-dark.reg
@@ -179,6 +208,7 @@ ColorScheme _CreateSolarizedLightScheme()
 void CascadiaSettings::_CreateDefaultSchemes()
 {
     _globals.GetColorSchemes().emplace_back(_CreateCampbellScheme());
+    _globals.GetColorSchemes().emplace_back(_CreateVintageScheme());
     _globals.GetColorSchemes().emplace_back(_CreateOneHalfDarkScheme());
     _globals.GetColorSchemes().emplace_back(_CreateOneHalfLightScheme());
     _globals.GetColorSchemes().emplace_back(_CreateSolarizedDarkScheme());

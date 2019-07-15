@@ -2899,6 +2899,24 @@ bool SCREEN_INFORMATION::AreMarginsSet() const noexcept
     return _scrollMargins.BottomInclusive() > _scrollMargins.Top();
 }
 
+// Routine Description:
+// - Determines whether a cursor position is within the vertical bounds of the
+//      scroll margins, or the margins aren't set.
+// Parameters:
+// - cursorPosition - The cursor position to test
+// Return value:
+// - true iff the position is in bounds.
+bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noexcept
+{
+    // If the margins aren't set, then any position is considered in bounds.
+    if (!AreMarginsSet())
+    {
+        return true;
+    }
+    const auto margins = GetAbsoluteScrollMargins().ToInclusive();
+    return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
+}
+
 // Method Description:
 // - Gets the region of the buffer that should be used for scrolling within the
 //      scroll margins. If the scroll margins aren't set, it returns the entire
