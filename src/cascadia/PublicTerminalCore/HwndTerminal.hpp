@@ -14,6 +14,8 @@ extern "C" {
     __declspec(dllexport) void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
     __declspec(dllexport) void _stdcall MoveSelection(void* terminal, COORD cursorPosition);
     __declspec(dllexport) void _stdcall ClearSelection(void* terminal);
+    __declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
+    __declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
     __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
 
     enum CursorStyle
@@ -53,5 +55,7 @@ private:
     friend void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
     friend void _stdcall MoveSelection(void* terminal, COORD cursorPosition);
     friend void _stdcall ClearSelection(void* terminal);
+    friend const wchar_t* _stdcall GetSelection(void* terminal);
+    friend bool _stdcall IsSelectionActive(void* terminal);
     void _UpdateFont(int newDpi);
 };
