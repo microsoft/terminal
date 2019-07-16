@@ -187,6 +187,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         return nullptr;
     }
 
+Complete:
     Message->SetReplyStatus(Status);
 
     return Message;
