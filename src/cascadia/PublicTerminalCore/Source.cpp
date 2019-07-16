@@ -251,6 +251,31 @@ void _stdcall ClearSelection(void* terminal)
     auto publicTerminal = (HwndTerminal*)terminal;
     publicTerminal->_terminal->ClearSelection();
 }
+bool _stdcall IsSelectionActive(void* terminal)
+{
+    auto publicTerminal = (HwndTerminal*)terminal;
+    bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    return selectionActive;
+}
+
+// Copies the selected text into the clipboard.
+const wchar_t* _stdcall GetSelection(void* terminal)
+{
+    auto publicTerminal = (HwndTerminal*)terminal;
+
+    std::wstring selectedText = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+
+    const wchar_t* text = selectedText.c_str();
+    ULONG textSize = (wcslen(text) * sizeof(wchar_t)) + sizeof(wchar_t);
+    wchar_t* returnText = NULL;
+
+    returnText = (wchar_t*)::CoTaskMemAlloc(textSize);
+    wcscpy_s(returnText, textSize, text);
+
+    ClearSelection(terminal);
+
+    return returnText;
+}
 
 void _stdcall DestroyTerminal(void* terminal)
 {
