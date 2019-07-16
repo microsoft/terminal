@@ -357,7 +357,7 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 [[nodiscard]] HRESULT NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    // Set frame margines with just a single pixel on the bottom. We don't
+    // Set frame margins with just a single pixel on the bottom. We don't
     // really want a window frame at all - we're drawing all of it. We
     // especially don't want a top margin - that's where the caption buttons
     // are, and we're drawing those. So just set a single pixel on the bottom,
