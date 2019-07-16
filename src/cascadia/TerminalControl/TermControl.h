@@ -122,7 +122,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -153,7 +152,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
-        DWORD _GetPressedModifierKeys() const;
+        ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

@@ -15,6 +15,7 @@
 
 #include <conpty-universal.h>
 #include "../../types/inc/Utils.hpp"
+#include "../../types/inc/UTF8OutPipeReader.hpp"
 
 using namespace ::Microsoft::Console;
 
@@ -189,39 +190,36 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConhostConnection::_OutputThread()
     {
-        const size_t bufferSize = 4096;
-        BYTE buffer[bufferSize];
-        DWORD dwRead;
+        static UTF8OutPipeReader pipeReader{ _outPipe };
+        std::string_view strView{};
+
+        // process the data of the output pipe in a loop
         while (true)
         {
-            dwRead = 0;
-            bool fSuccess = false;
-
-            fSuccess = !!ReadFile(_outPipe.get(), buffer, bufferSize, &dwRead, nullptr);
-            if (!fSuccess)
+            HRESULT result = pipeReader.Read(strView);
+            if (FAILED(result))
             {
                 if (_closing.load())
                 {
                     // This is okay, break out to kill the thread
                     return 0;
                 }
-                else
-                {
-                    _disconnectHandlers();
-                    return (DWORD)-1;
-                }
+
+                _disconnectHandlers();
+                return (DWORD)-1;
             }
-            if (dwRead == 0)
+            else if (strView.empty())
             {
-                continue;
+                return 0;
             }
+
             // Convert buffer to hstring
-            char* pchStr = (char*)(buffer);
-            std::string str{ pchStr, dwRead };
-            auto hstr = winrt::to_hstring(str);
+            auto hstr{ winrt::to_hstring(strView) };
 
             // Pass the output to our registered event handlers
             _outputHandlers(hstr);
         }
+
+        return 0;
     }
 }
