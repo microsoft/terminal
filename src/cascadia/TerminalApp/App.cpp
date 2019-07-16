@@ -1208,7 +1208,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (focusedTabIndex >= _tabs.size())
             {
-                focusedTabIndex = _tabs.size() - 1;
+                focusedTabIndex = static_cast<int>(_tabs.size()) - 1;
             }
 
             if (focusedTabIndex < 0)
