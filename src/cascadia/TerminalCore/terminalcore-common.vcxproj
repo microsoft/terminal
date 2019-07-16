@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="..\ControlKeyStates.hpp" />
     <ClInclude Include="..\TerminalDispatch.hpp" />
     <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\pch.h" />
