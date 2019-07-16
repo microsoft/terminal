@@ -16,15 +16,11 @@
     <RootNamespace>Microsoft.Terminal.TerminalControl</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
@@ -72,4 +68,5 @@
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cascadia\SharedPch\SharedPch.props" />
 </Project>

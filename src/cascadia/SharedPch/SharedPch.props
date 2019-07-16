@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros">
+    <SharedPchDir>$(SolutionDir)src\cascadia\SharedPch\$(Platform)\$(Configuration)\</SharedPchDir>
+    <SharedPch>$(SharedPchDir)pch.pch</SharedPch>
+    <SharedPchObj>$(SharedPchDir)pch.obj</SharedPchObj>
+    <SharedPdb>$(SharedPchDir)SharedPch.pdb</SharedPdb>
+    <SharedIdb>$(SharedPchDir)SharedPch.idb</SharedIdb>
+    <SharedDest Condition="'$(ConfigurationType)' != 'StaticLibrary'">$(IntDir)vc$(PlatformToolsetVersion)</SharedDest>
+    <SharedDest Condition="'$(ConfigurationType)' == 'StaticLibrary'">$(IntDir)$(ProjectName)</SharedDest>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)\src\cascadia\SharedPch;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeaderOutputFile>$(SharedPch)</PrecompiledHeaderOutputFile>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <BuildMacro Include="SharedPchDir">
+      <Value>$(SharedPchDir)</Value>
+    </BuildMacro>
+    <BuildMacro Include="SharedPch">
+      <Value>$(SharedPch)</Value>
+    </BuildMacro>
+    <BuildMacro Include="SharedPdb">
+      <Value>$(SharedPdb)</Value>
+    </BuildMacro>
+    <BuildMacro Include="SharedIdb">
+      <Value>$(SharedIdb)</Value>
+    </BuildMacro>
+    <Link Include="$(SharedPchObj)"/>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\SharedPch\SharedPch.vcxproj">
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Target Name="CopySharedPDBs" BeforeTargets="ClCompile">
+      <Copy SourceFiles="$(SharedPdb)"
+            DestinationFiles="$(SharedDest).pdb" 
+            Condition="Exists($(SharedPdb))" />
+      <Copy SourceFiles="$(SharedIdb)"
+            DestinationFiles="$(SharedDest).idb" 
+            Condition="Exists($(SharedIdb))" />
+  </Target>
+</Project>

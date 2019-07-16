@@ -56,7 +56,6 @@
     <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
-    <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
@@ -82,9 +81,6 @@
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
-    <ClCompile Include="pch.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
@@ -213,6 +209,7 @@
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cascadia\SharedPch\SharedPch.props" />
 
   <!-- Manually include MUX here, instead of importing its targets file. We need
   to reference its winmd, but very specifically with the

@@ -10,13 +10,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="pch.cpp" />
     <ClCompile Include="EchoConnection.cpp" />
     <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
     <ClInclude Include="ConhostConnection.h" />
   </ItemGroup>
@@ -26,10 +24,9 @@
     <Midl Include="EchoConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TerminalConnection.def" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>
