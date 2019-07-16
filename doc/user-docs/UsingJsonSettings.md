@@ -125,4 +125,4 @@ More information about UWP URI schemes [here](https://docs.microsoft.com/en-us/w
 3. Instead of using a UWP URI you can use a:
     1. URL such as
 `http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg` 
-    2. Local file location such as `C:\Users\Public\Pictures\openlogo.jpg`
+    2. Local file location such as `C:\\Users\\Public\\Pictures\\openlogo.jpg` (make sure to use double-escapes instead of single)
