@@ -36,6 +36,12 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
+  <Target Name="RemoveStaticWinmdReferenceForSharedPch" BeforeTargets="GetCppWinRTStaticWinMDReferences">
+    <ItemGroup>
+      <CppWinRTStaticProjectReferences Remove="@(CppWinRTStaticProjectReferences)"
+                                       Condition="'%(ReferenceOutputAssembly)' != 'true'" />
+    </ItemGroup>
+  </Target>
   <Target Name="CopySharedPDBs" BeforeTargets="ClCompile">
       <Copy SourceFiles="$(SharedPdb)"
             DestinationFiles="$(SharedDest).pdb" 
