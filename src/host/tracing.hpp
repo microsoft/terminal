@@ -94,17 +94,20 @@ public:
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
-    //static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
-    //                       const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
-    //                       const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    /*
+    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
+                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
+                           const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
 
-    //static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
-    //                       const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
-    //                       const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProvider* const pProvider,
+                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::ApiCall apiCall,
+                           const Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing::IApiMsg* const apiMsg);
 
-    //static void s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const pProvider,
-    //                       const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
-    //                       const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg);
+    static void s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const pProvider,
+                           const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
+                           const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg);
+    */
 
 private:
     static ULONG s_ulDebugFlag;

@@ -399,6 +399,7 @@ void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept
         TraceLoggingLevel(WINEVENT_LEVEL_ERROR));
 }
 
+// TODO GitHub #1914: Re-attach Tracing to UIA Tree
 //void Tracing::s_TraceUia(const UiaTextRange* const range,
 //                         const UiaTextRangeTracing::ApiCall apiCall,
 //                         const UiaTextRangeTracing::IApiMsg* const apiMsg)

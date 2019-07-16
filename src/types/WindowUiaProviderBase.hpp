@@ -33,7 +33,6 @@ namespace Microsoft::Console::Types
         public IRawElementProviderFragmentRoot
     {
     public:
-
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
 

@@ -142,24 +142,24 @@ namespace Microsoft::Console::Types
 
         // degenerate range
         static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                     _In_ IRawElementProviderSimple* const pProvider);
+                                    _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
         static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                     _In_ IRawElementProviderSimple* const pProvider,
-                                     const Cursor& cursor);
+                                    _In_ IRawElementProviderSimple* const pProvider,
+                                    const Cursor& cursor);
 
         // specific endpoint range
         static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                     _In_ IRawElementProviderSimple* const pProvider,
-                                     const Endpoint start,
-                                     const Endpoint end,
-                                     const bool degenerate);
+                                    _In_ IRawElementProviderSimple* const pProvider,
+                                    const Endpoint start,
+                                    const Endpoint end,
+                                    const bool degenerate);
 
         // range from a UiaPoint
         static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                     _In_ IRawElementProviderSimple* const pProvider,
-                                     const UiaPoint point);
+                                    _In_ IRawElementProviderSimple* const pProvider,
+                                    const UiaPoint point);
 
         ~UiaTextRange();
 
@@ -233,24 +233,24 @@ namespace Microsoft::Console::Types
     private:
         // degenerate range
         UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
-                      _In_ IRawElementProviderSimple* const pProvider);
+                     _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
         UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
-                      _In_ IRawElementProviderSimple* const pProvider,
-                      const Cursor& cursor);
+                     _In_ IRawElementProviderSimple* const pProvider,
+                     const Cursor& cursor);
 
         // specific endpoint range
         UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
-                      _In_ IRawElementProviderSimple* const pProvider,
-                      const Endpoint start,
-                      const Endpoint end,
-                      const bool degenerate);
+                     _In_ IRawElementProviderSimple* const pProvider,
+                     const Endpoint start,
+                     const Endpoint end,
+                     const bool degenerate);
 
         // range from a UiaPoint
         UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
-                      _In_ IRawElementProviderSimple* const pProvider,
-                      const UiaPoint point);
+                     _In_ IRawElementProviderSimple* const pProvider,
+                     const UiaPoint point);
 
         UiaTextRange(const UiaTextRange& a);
 
@@ -284,6 +284,7 @@ namespace Microsoft::Console::Types
         // then both endpoints will contain the same value.
         bool _degenerate;
 
+        static const COORD _getScreenBufferCoords(Microsoft::Console::Render::IRenderData* pData);
         COORD _getScreenFontSize() const;
 
         static const unsigned int _getTotalRows(Microsoft::Console::Render::IRenderData* pData);

@@ -1202,6 +1202,11 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 
 #pragma endregion
 
+const COORD UiaTextRange::_getScreenBufferCoords(Microsoft::Console::Render::IRenderData* pData)
+{
+    return pData->GetTextBuffer().GetSize().Dimensions();
+}
+
 COORD UiaTextRange::_getScreenFontSize() const
 {
     COORD coordRet = _pData->GetFontInfo().GetSize();
@@ -1233,7 +1238,7 @@ const unsigned int UiaTextRange::_getTotalRows(Microsoft::Console::Render::IRend
 const unsigned int UiaTextRange::_getRowWidth(Microsoft::Console::Render::IRenderData* pData)
 {
     // make sure that we can't leak a 0
-    return std::max(static_cast<unsigned int>(pData->GetTextBuffer().GetSize().Dimensions().X), 1u);
+    return std::max(static_cast<unsigned int>(_getScreenBufferCoords(pData).X), 1u);
 }
 
 // Routine Description:

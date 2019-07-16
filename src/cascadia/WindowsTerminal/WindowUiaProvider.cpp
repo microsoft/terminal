@@ -144,8 +144,8 @@ IFACEMETHODIMP WindowUiaProvider::SetFocus()
 #pragma region IRawElementProviderFragmentRoot
 
 IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
-                                                            _In_ double /*y*/,
-                                                            _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+                                                           _In_ double /*y*/,
+                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 

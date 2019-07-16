@@ -37,10 +37,10 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IConsole
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         Microsoft::Console::Render::IRenderData* renderData = &gci.renderData;
 
-
         pScreenInfoProvider = new Microsoft::Console::Types::ScreenInfoUiaProvider(renderData, pWindowProvider);
         pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
 
+        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
 
         return pWindowProvider;
@@ -142,8 +142,8 @@ IFACEMETHODIMP WindowUiaProvider::SetFocus()
 #pragma region IRawElementProviderFragmentRoot
 
 IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
-                                                            _In_ double /*y*/,
-                                                            _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+                                                           _In_ double /*y*/,
+                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
