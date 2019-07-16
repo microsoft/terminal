@@ -9,6 +9,7 @@ Abstract:
 - This module provides UI Automation access to the screen buffer to
   support both automation tests and accessibility (screen reading)
   applications.
+- ConHost and Windows Terminal must use IRenderData to have access to the proper information
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
@@ -21,19 +22,23 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
+#include "../buffer/out/textBuffer.hpp"
+#include "../renderer/inc/IRenderData.hpp"
 
 namespace Microsoft::Console::Types
 {
     class IConsoleWindow;
-    class WindowUiaProvider;
+    class WindowUiaProviderBase;
+    class Viewport;
 
-    class ScreenInfoUiaProvider final :
+    class ScreenInfoUiaProvider :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                              _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
@@ -73,15 +78,18 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
+        HWND GetWindowHandle() const;
+        void ChangeViewport(const SMALL_RECT NewWindow);
+
     private:
         // Ref counter for COM object
         ULONG _cRefs;
 
         // weak reference to uia parent
-        WindowUiaProvider* const _pUiaParent;
+        WindowUiaProviderBase* const _pUiaParent;
 
-        // weak reference to IWindow (IConsoleWindow or BaseWindow)
-        IConsoleWindow* _baseWindow;
+        // weak reference to IRenderData
+        Microsoft::Console::Render::IRenderData* _pData;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
@@ -96,7 +104,11 @@ namespace Microsoft::Console::Types
         // mechanism for multi-threaded code.
         std::map<EVENTID, bool> _signalFiringMapping;
 
-        //const COORD _getScreenBufferCoords() const;
+        const COORD _getScreenBufferCoords() const;
+        const TextBuffer& _getTextBuffer() const;
+        const Viewport _getViewport() const;
+        void _LockConsole() noexcept;
+        void _UnlockConsole() noexcept;
     };
 
     namespace ScreenInfoUiaProviderTracing

@@ -59,9 +59,13 @@
     </ClCompile>
     <ClCompile Include="..\UTF8OutPipeReader.cpp">
     <ClCompile Include="..\WindowUiaProvider.cpp">
+    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
+    <ClCompile Include="..\UiaTextRange.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\WindowUiaProviderBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -94,12 +98,16 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WindowUiaProvider.h">
+    <ClInclude Include="..\IConsoleWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\ScreenInfoUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\IConsoleWindow.hpp">
+    <ClInclude Include="..\UiaTextRange.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowUiaProviderBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
