@@ -1,4 +1,6 @@
-﻿//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
 // Declaration of the MainUserControl class.
 //
 
@@ -13,10 +15,7 @@ namespace winrt::TerminalApp::implementation
 {
     struct TitlebarControl : TitlebarControlT<TitlebarControl>
     {
-        TitlebarControl();
-
-        uint64_t ParentWindowHandle() const;
-        void ParentWindowHandle(uint64_t handle);
+        TitlebarControl(uint64_t handle);
 
         Windows::UI::Xaml::UIElement Content();
         void Content(Windows::UI::Xaml::UIElement content);

@@ -196,14 +196,14 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 // - Called when the window is minimized to the taskbar.
 void IslandWindow::OnMinimize()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
 // Method Description:
 // - Called when the window is restored from having been minimized.
 void IslandWindow::OnRestore()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
 void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)

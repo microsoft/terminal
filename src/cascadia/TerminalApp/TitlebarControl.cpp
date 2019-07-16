@@ -1,4 +1,6 @@
-﻿//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
 // TitlebarControl.xaml.cpp
 // Implementation of the TitlebarControl class
 //
@@ -11,7 +13,8 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    TitlebarControl::TitlebarControl()
+    TitlebarControl::TitlebarControl(uint64_t handle) : 
+        _window{ reinterpret_cast<HWND>(handle) }
     {
         InitializeComponent();
 
@@ -41,35 +44,22 @@ namespace winrt::TerminalApp::implementation
         ContentRoot().MaxWidth(maxWidth);
     }
 
-    uint64_t TitlebarControl::ParentWindowHandle() const
-    {
-        return reinterpret_cast<uint64_t>(_window);
-    }
-
-    void TitlebarControl::ParentWindowHandle(uint64_t handle)
-    {
-        _window = reinterpret_cast<HWND>(handle);
-    }
-
     void TitlebarControl::_OnMaximizeOrRestore(byte flag)
     {
-        if (_window)
+        POINT point1 = {};
+        ::GetCursorPos(&point1);
+        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        WINDOWPLACEMENT placement = { sizeof(placement) };
+        ::GetWindowPlacement(_window, &placement);
+        if (placement.showCmd == SW_SHOWNORMAL)
         {
-            POINT point1 = {};
-            ::GetCursorPos(&point1);
-            const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
-            WINDOWPLACEMENT placement = { sizeof(placement) };
-            ::GetWindowPlacement(_window, &placement);
-            if (placement.showCmd == SW_SHOWNORMAL)
-            {
-                MinMaxCloseControl().Maximize();
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
-            }
-            else if (placement.showCmd == SW_SHOWMAXIMIZED)
-            {
-                MinMaxCloseControl().RestoreDown();
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
-            }
+            MinMaxCloseControl().Maximize();
+            ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
+        }
+        else if (placement.showCmd == SW_SHOWMAXIMIZED)
+        {
+            MinMaxCloseControl().RestoreDown();
+            ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
         }
     }
 

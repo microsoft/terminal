@@ -19,8 +19,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Bound in the Xaml editor to the [+] button.
     // Arguments:
-    // - sender
-    // - event arguments
+    // <unused>
     void TabRowControl::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
     {
     }

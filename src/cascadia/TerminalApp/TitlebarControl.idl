@@ -1,12 +1,13 @@
-﻿namespace TerminalApp
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
 {
     [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
     {
-        TitlebarControl();
+        TitlebarControl(UInt64 parentWindowHandle);
 
         Windows.UI.Xaml.UIElement Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };
-
-        UInt64 ParentWindowHandle;
     }
 }

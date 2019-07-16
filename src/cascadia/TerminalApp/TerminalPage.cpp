@@ -15,14 +15,4 @@ namespace winrt::TerminalApp::implementation
     {
         InitializeComponent();
     }
-
-    // Method Description:
-    // - Bound in the Xaml editor to the [+] button.
-    // Arguments:
-    // - sender
-    // - event arguments
-    void TerminalPage::OnNewTabButtonClick(IInspectable const&, Controls::SplitButtonClickEventArgs const&)
-    {
-    }
-
 }

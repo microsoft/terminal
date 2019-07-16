@@ -1,4 +1,6 @@
-﻿//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
 // MinMaxCloseControl.xaml.cpp
 // Implementation of the MinMaxCloseControl class
 //
