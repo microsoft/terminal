@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "BaseWindow.h"
 #include "../types/IConsoleWindow.hpp"
-#include "../types/WindowUiaProvider.h"
+#include "WindowUiaProvider.hpp"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "..\types\IConsoleWindow.hpp"
-#include "..\types\WindowUiaProvider.h"
+#include "..\types\WindowUiaProviderBase.hpp"
 
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)

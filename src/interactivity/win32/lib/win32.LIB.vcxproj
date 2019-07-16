@@ -19,9 +19,7 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\screenInfoUiaProvider.cpp" />
     <ClCompile Include="..\SystemConfigurationProvider.cpp" />
-    <ClCompile Include="..\UiaTextRange.cpp" />
     <ClCompile Include="..\Window.cpp" />
     <ClCompile Include="..\WindowDpiApi.cpp" />
     <ClCompile Include="..\WindowIme.cpp" />
@@ -29,6 +27,7 @@
     <ClCompile Include="..\WindowMetrics.cpp" />
     <ClCompile Include="..\WindowProc.cpp" />
     <ClCompile Include="..\windowtheme.cpp" />
+    <ClCompile Include="..\windowUiaProvider.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AccessibilityNotifier.hpp" />
@@ -42,15 +41,14 @@
     <ClInclude Include="..\Menu.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\resource.h" />
-    <ClInclude Include="..\screenInfoUiaProvider.hpp" />
     <ClInclude Include="..\SystemConfigurationProvider.hpp" />
-    <ClInclude Include="..\UiaTextRange.hpp" />
     <ClInclude Include="..\Window.hpp" />
     <ClInclude Include="..\WindowDpiApi.hpp" />
     <ClInclude Include="..\WindowIme.hpp" />
     <ClInclude Include="..\WindowMetrics.hpp" />
     <ClInclude Include="..\WindowIo.hpp" />
     <ClInclude Include="..\windowtheme.hpp" />
+    <ClInclude Include="..\windowUiaProvider.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{06EC74CB-9A12-429C-B551-8532EC964726}</ProjectGuid>

@@ -31,7 +31,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"
-#include "..\..\types\WindowUiaProvider.h"
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
