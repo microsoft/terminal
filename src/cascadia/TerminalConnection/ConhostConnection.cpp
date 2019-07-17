@@ -190,7 +190,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConhostConnection::_OutputThread()
     {
-        static UTF8OutPipeReader pipeReader{ _outPipe };
+        UTF8OutPipeReader pipeReader{ _outPipe };
         std::string_view strView{};
 
         // process the data of the output pipe in a loop
