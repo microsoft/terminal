@@ -48,7 +48,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     if (!fSuccess) // reading failed (we must check this first, because dwRead will also be 0.)
     {
         auto lastError = GetLastError();
-        if (GetLastError() == ERROR_BROKEN_PIPE)
+        if (lastError == ERROR_BROKEN_PIPE)
         {
             // This is a successful, but detectable, exit.
             // There is a chance that we put some partials into the buffer. Since
