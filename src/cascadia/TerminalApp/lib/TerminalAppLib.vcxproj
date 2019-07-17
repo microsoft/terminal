@@ -139,8 +139,7 @@
 
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+    <_BinRoot>$(OpenConsoleDir)bin\$(Platform)\$(Configuration)\</_BinRoot>
   </PropertyGroup>
 
   <PropertyGroup>

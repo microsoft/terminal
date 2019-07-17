@@ -917,7 +917,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollBar.Value(static_cast<int>(newValue));
     }
 
-    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender,
+    void TermControl::_ScrollbarChangeHandler(Windows::Foundation::IInspectable const& /*sender*/,
                                               Controls::Primitives::RangeBaseValueChangedEventArgs const& args)
     {
         const auto newValue = args.NewValue();

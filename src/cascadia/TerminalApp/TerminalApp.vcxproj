@@ -88,4 +88,22 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- I am a hack around something broken in VS 16.3 -->
+  <Target Name="_RemoveTerminalAppLibImplementationFromReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_TerminalAppLibProjectReference Include="@(_ResolvedProjectReferencePaths)" Condition="'%(Filename)' == 'TerminalApp'" />
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)">
+        <Implementation />
+      </_ResolvedProjectReferencePaths>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_RestoreTerminalAppLibImplementationFromReference" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)" />
+    </ItemGroup>
+  </Target>
 </Project>

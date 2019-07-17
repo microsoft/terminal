@@ -3,7 +3,6 @@
   <!-- By default, binplace our output under the bin/ directory in the root of
        the project.  -->
   <PropertyGroup>
-    <OutDir>$(SolutionDir)\bin\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(SolutionDir)\obj\$(Platform)\$(Configuration)\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemGroup>

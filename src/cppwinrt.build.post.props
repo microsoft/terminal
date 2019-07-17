@@ -1,11 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
-  <PropertyGroup>
-    <!-- OutDir is inherited from common.build.post.props -->
-    <OutputPath>$(OutDir)</OutputPath>
-  </PropertyGroup>
-
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
     directory on its own, it just assumes it exists.

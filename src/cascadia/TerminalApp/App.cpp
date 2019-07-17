@@ -153,6 +153,7 @@ namespace winrt::TerminalApp::implementation
 
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+        (void)result;
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown.
@@ -1076,7 +1077,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void App::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& eventArgs)
+    void App::_OnTabSelectionChanged(const IInspectable& sender, const Controls::SelectionChangedEventArgs& /* eventArgs */)
     {
         auto tabView = sender.as<MUX::Controls::TabView>();
         auto selectedIndex = tabView.SelectedIndex();
@@ -1111,7 +1112,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void App::_OnTabClosing(const IInspectable& sender, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
+    void App::_OnTabClosing(const IInspectable& /* sender */, const MUX::Controls::TabViewTabClosingEventArgs& eventArgs)
     {
         const auto tabViewItem = eventArgs.Item();
         _RemoveTabViewItem(tabViewItem);
@@ -1126,7 +1127,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - sender: the control that originated this event
     // - eventArgs: the event's constituent arguments
-    void App::_OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs)
+    void App::_OnTabItemsChanged(const IInspectable& /* sender */, const Windows::Foundation::Collections::IVectorChangedEventArgs& /* eventArgs */)
     {
         _UpdateTabView();
     }
@@ -1204,11 +1205,11 @@ namespace winrt::TerminalApp::implementation
         _tabs.erase(_tabs.begin() + tabIndexFromControl);
         _tabView.Items().RemoveAt(tabIndexFromControl);
 
-        if (tabIndexFromControl == focusedTabIndex)
+        if (static_cast<size_t>(tabIndexFromControl) == focusedTabIndex)
         {
             if (focusedTabIndex >= _tabs.size())
             {
-                focusedTabIndex = _tabs.size() - 1;
+                focusedTabIndex = gsl::narrow_cast<int>(_tabs.size() - 1);
             }
 
             if (focusedTabIndex < 0)
