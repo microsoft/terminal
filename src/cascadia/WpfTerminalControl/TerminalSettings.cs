@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Media;
 
-namespace WpfTerminalControl
+namespace Microsoft.Terminal.Wpf
 {
     public class TerminalSettings
     {

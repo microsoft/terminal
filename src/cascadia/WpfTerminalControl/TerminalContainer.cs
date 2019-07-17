@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
 
-namespace WpfTerminalControl
+namespace Microsoft.Terminal.Wpf
 {
     /// <summary>
     /// Follow steps 1a or 1b and then 2 to use this custom control in a XAML file.
@@ -40,7 +40,6 @@ namespace WpfTerminalControl
         private IntPtr hwnd;
         private IntPtr terminal;
         private char? highSurrogate;
-        private int accumulatedDelta;
 
         private static NativeMethods.ScrollCallback callback;
 

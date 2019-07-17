@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace WpfTerminalControl
+namespace Microsoft.Terminal.Wpf
 {
     internal static class NativeMethods
     {
