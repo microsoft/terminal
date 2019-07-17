@@ -1660,8 +1660,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex] = std::stod(token, idx);
-                paddingPropIndex++;
+                thicknessArr[paddingPropIndex++] = std::stod(token, idx);
             }
         }
         catch (...)
