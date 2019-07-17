@@ -32,13 +32,13 @@ UTF8OutPipeReader::UTF8OutPipeReader(wil::unique_hfile& outPipe) :
     dwRead += _dwPartialsLen;
     _dwPartialsLen = 0;
 
-    if (dwRead == 0) // quit if no data has been read and no cached data was left over
-    {
-        return S_OK;
-    }
-    else if (!fSuccess) // reading failed
+    if (!fSuccess) // reading failed (we must check this first, because dwRead will also be 0.)
     {
         return E_FAIL;
+    }
+    else if (dwRead == 0) // quit if no data has been read and no cached data was left over
+    {
+        return S_OK;
     }
 
     const BYTE* const endPtr{ _buffer + dwRead };
