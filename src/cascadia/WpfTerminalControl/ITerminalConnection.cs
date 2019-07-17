@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace WpfTerminalControl
+namespace Microsoft.Terminal.Wpf
 {
     public class TerminalOutputEventArgs: EventArgs
     {
