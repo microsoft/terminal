@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void UseAcrylic(bool value);
         bool CloseOnExit();
         void CloseOnExit(bool value);
+        bool ConvertPasteLineEndings();
+        void ConvertPasteLineEndings(bool value);
         double TintOpacity();
         void TintOpacity(double value);
         hstring Padding();
@@ -102,6 +104,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
 
+        bool _convertPasteLineEndings;
         bool _useAcrylic;
         bool _closeOnExit;
         double _tintOpacity;

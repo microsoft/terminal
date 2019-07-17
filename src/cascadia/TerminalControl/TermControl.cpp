@@ -956,11 +956,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - mouseDelta: the mouse wheel delta that triggered this event.
     void TermControl::_MouseZoomHandler(const double mouseDelta)
     {
-        const auto fontDelta = mouseDelta < 0 ? -1 : 1;
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + (mouseDelta < 0 ? -1 : 1)), static_cast<short>(1));
             const auto* fontFace = _settings.FontFace().c_str();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
@@ -1202,18 +1201,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // endings
         if (_settings.ConvertPasteLineEndings())
         {
-            std::wstring stripped(wstr);
-
-            std::wstring::size_type pos = 0;
-
-            // Lament that the stl string does not have
-            // a search/replace method
-            while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
-            {
-                stripped.replace(pos + 1, 1, L"");
-                pos++;
-            }
-
+            const static std::wregex rgx{ L"\n\r" };
+            std::wstring stripped = std::regex_replace(wstr, rgx, L"\n");
             _SendInputToConnection(stripped);
         }
         else
@@ -1283,11 +1272,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
+        if (!_closing && (_terminal->IsCursorBlinkingAllowed() || !_terminal->IsCursorVisible()))
         {
-            return;
+            _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
         }
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
 
     // Method Description:
