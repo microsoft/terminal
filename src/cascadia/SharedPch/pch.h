@@ -7,7 +7,21 @@
 
 #pragma once
 
+// Ignore checked iterators warning from VC compiler.
+#define _SCL_SECURE_NO_WARNINGS
+
+// Block minwindef.h min/max macros to prevent <algorithm> conflict
+#define NOMINMAX
+
 #define WIN32_LEAN_AND_MEAN
+
+#define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
+
+#include <windows.h>
+#include <stdlib.h>
+#include <string.h>
+#include <shellscalingapi.h>
+
 
 #include <LibraryIncludes.h>
 // This is inexplicable, but for whatever reason, cppwinrt conflicts with the
@@ -37,8 +51,7 @@
 #include "winrt/Windows.UI.Xaml.Markup.h"
 #include "winrt/Windows.UI.Xaml.Documents.h"
 
-#include <winrt/Microsoft.Toolkit.Win32.UI.XamlHost.h>
-
+#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <winrt/Windows.System.h>
