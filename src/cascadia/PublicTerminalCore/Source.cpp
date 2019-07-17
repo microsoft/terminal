@@ -266,11 +266,18 @@ const wchar_t* _stdcall GetSelection(void* terminal)
     std::wstring selectedText = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
 
     const wchar_t* text = selectedText.c_str();
-    ULONG textSize = (wcslen(text) * sizeof(wchar_t)) + sizeof(wchar_t);
+    size_t textChars = wcslen(text) + 1;
+    size_t textBytes = textChars * sizeof(wchar_t);
     wchar_t* returnText = NULL;
 
-    returnText = (wchar_t*)::CoTaskMemAlloc(textSize);
-    wcscpy_s(returnText, textSize, text);
+    returnText = (wchar_t*)::CoTaskMemAlloc(textBytes);
+
+    if (returnText == nullptr)
+    {
+        return nullptr;
+    }
+
+    wcscpy_s(returnText, textChars, text);
 
     ClearSelection(terminal);
 
