@@ -1205,11 +1205,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const static std::wregex rgx{ L"\n\r" };
             std::wstring stripped = std::regex_replace(wstr, rgx, L"\n");
             _SendInputToConnection(stripped);
+            return;
         }
-        else
-        {
-            _SendInputToConnection(wstr);
-        }
+
+        _SendInputToConnection(wstr);
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -1399,11 +1398,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControl::Title()
     {
-        if (!_initializedTerminal)
-            return L"";
-
-        hstring hstr(_terminal->GetConsoleTitle());
-        return hstr;
+        if (_initializedTerminal)
+        {
+            hstring hstr(_terminal->GetConsoleTitle());
+            return hstr;
+        }
+        return L"";
     }
 
     // Method Description:
