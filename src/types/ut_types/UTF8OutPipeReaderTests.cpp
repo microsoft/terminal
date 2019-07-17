@@ -121,7 +121,7 @@ class UTF8OutPipeReaderTests
         wil::unique_hfile outPipe{ readFrom };
         wil::unique_hfile inPipe{ writeTo };
 
-        static UTF8OutPipeReader reader{ outPipe }; // declare a static instance of UTF8OutPipeReader
+        UTF8OutPipeReader reader{ outPipe }; // declare a static instance of UTF8OutPipeReader
 
         ThreadData data{ inPipe, utf8TestString };
 
