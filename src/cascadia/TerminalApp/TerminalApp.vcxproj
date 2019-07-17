@@ -78,12 +78,6 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
-
-  <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
       Setting this will tell cppwinrt.build.post.props to copy our output from
@@ -102,5 +96,22 @@
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
 
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <Target Name="_RemoveTerminalAppLibImplementationFromReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_TerminalAppLibProjectReference Include="@(_ResolvedProjectReferencePaths)" Condition="'%(Filename)' == 'TerminalApp'" />
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)">
+        <Implementation />
+      </_ResolvedProjectReferencePaths>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_RestoreTerminalAppLibImplementationFromReference" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)" />
+    </ItemGroup>
+  </Target>
 
 </Project>

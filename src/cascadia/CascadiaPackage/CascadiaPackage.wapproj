@@ -260,24 +260,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-  <!--
-    Microsoft.UI.Xaml contains some <Content> resource files that need to be included in our package.
-    For some reason, they're not rolled up through dependent projects; if they were, their paths would
-    be wrong.
-
-    WAP Packaging projects don't actually support nuget package references, so we added one manually.
-
-    This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
-    here.
-  -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
-  <!-- End workaround -->
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
@@ -286,8 +268,13 @@
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it
     adjacent to WindowsTerminal.exe.
    -->
-  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
+  <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems" DependsOnTargets="GetPackagingOutputs">
     <ItemGroup>
+      <_FilteredNonWapProjProjectOutput Include="@(PackagingOutputs)" Condition="'%(Extension)' != '.pri' AND
+                                                                      '%(PackagingOutputs.OutputGroup)' != 'GetResolvedSDKReferences' AND
+                                                                      '%(PackagingOutputs.OutputGroup)' != '_GetProjectArchitecture' AND
+                                                                      '%(PackagingOutputs.OutputGroup)' != 'EmbedOutputGroupForPackaging'"/>
+
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
       <_TemporaryFilteredWapProjOutput Include="@(_FilteredNonWapProjProjectOutput)" />
       <_FilteredNonWapProjProjectOutput Remove="@(_TemporaryFilteredWapProjOutput)" />
@@ -308,16 +295,16 @@
 
        Since PRI file generation is _before_ manifest generation (for possibly obvious or
        important reasons), that doesn't work for us.
-  -->
   <PropertyGroup>
     <_GenerateProjectPriFileDependsOn>OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
   </PropertyGroup>
   <Target Name="OpenConsoleLiftDesktopBridgePriFiles" DependsOnTargets="_ConvertItems">
     <ItemGroup>
       <_PriFile Include="@(_NonWapProjProjectOutput)" Condition="'%(Extension)' == '.pri'" />
-      <!-- Remove all other .pri files from the appx payload. -->
+      <! Remove all other .pri files from the appx payload. 
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri'" />
     </ItemGroup>
   </Target>
+  -->
 
 </Project>
