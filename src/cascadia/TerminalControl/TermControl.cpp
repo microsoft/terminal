@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TermControl.h"
+#include <regex>
 #include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
@@ -956,11 +957,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - mouseDelta: the mouse wheel delta that triggered this event.
     void TermControl::_MouseZoomHandler(const double mouseDelta)
     {
-        const auto fontDelta = mouseDelta < 0 ? -1 : 1;
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + (mouseDelta < 0 ? -1 : 1)), static_cast<short>(1));
             const auto* fontFace = _settings.FontFace().c_str();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
@@ -1192,6 +1192,26 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Pre-process (if necessary) text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, respecting
+    //   appropriate terminal settings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Check settings to see if we should be converting line
+        // endings
+        if (_settings.ConvertPasteLineEndings())
+        {
+            const static std::wregex rgx{ L"\n\r" };
+            std::wstring stripped = std::regex_replace(wstr, rgx, L"\n");
+            _SendInputToConnection(stripped);
+        }
+        else
+        {
+            _SendInputToConnection(wstr);
+        }
+    }
+
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
@@ -1253,12 +1273,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
+        if (!_closing && (_terminal->IsCursorBlinkingAllowed() || !_terminal->IsCursorVisible()))
         {
-            return;
+            _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
         }
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
+}
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
@@ -1300,25 +1320,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-        // Tell the dx engine that our window is now the new size.
-        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
+    // Tell the dx engine that our window is now the new size.
+    THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
 
-        // Invalidate everything
-        _renderer->TriggerRedrawAll();
+    // Invalidate everything
+    _renderer->TriggerRedrawAll();
 
-        // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+    // Convert our new dimensions to characters
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                       { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+    const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-        // If this function succeeds with S_FALSE, then the terminal didn't
-        //      actually change size. No need to notify the connection of this
-        //      no-op.
-        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-        // I believe we'll need support for CSI 2J, and additionally I think
-        //      we're resetting the viewport to the top
-        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
-        if (SUCCEEDED(hr) && hr != S_FALSE)
+    // If this function succeeds with S_FALSE, then the terminal didn't
+    //      actually change size. No need to notify the connection of this
+    //      no-op.
+    // TODO: MSFT:20642295 Resizing the buffer will corrupt it
+    // I believe we'll need support for CSI 2J, and additionally I think
+    //      we're resetting the viewport to the top
+    const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+    if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
@@ -1408,7 +1428,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
@@ -1428,7 +1448,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
-
             if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
             {
                 localAutoScrollTimer.Stop();
@@ -1636,13 +1655,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
         try
         {
-            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
+            while (std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()))
             {
                 // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex] = std::stod(token, idx);
+                thicknessArr[paddingPropIndex++] = std::stod(token, idx);
             }
         }
         catch (...)
