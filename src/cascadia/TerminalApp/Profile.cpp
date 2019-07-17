@@ -35,6 +35,7 @@ static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
 static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
+static constexpr std::string_view ConvertPasteLineEndingsKey{ "convertPasteLineEndings" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
