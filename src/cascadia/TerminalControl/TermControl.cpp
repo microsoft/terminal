@@ -1192,6 +1192,36 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
+    // Method Description:
+    // - Pre-process (if necessary) text pasted (presumably from the clipboard)
+    //   before sending it over the terminal's connection, respecting
+    //   appropriate terminal settings
+    void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
+    {
+        // Check settings to see if we should be converting line
+        // endings
+        if (_settings.ConvertPasteLineEndings())
+        {
+            std::wstring stripped(wstr);
+
+            std::wstring::size_type pos = 0;
+
+            // Lament that the stl string does not have
+            // a search/replace method
+            while ((pos = stripped.find(L"\r\n", pos)) != std::wstring::npos)
+            {
+                stripped.replace(pos + 1, 1, L"");
+                pos++;
+            }
+
+            _SendInputToConnection(stripped);
+        }
+        else
+        {
+            _SendInputToConnection(wstr);
+        }
+    }
+
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
     {
         _connection.WriteInput(wstr);
@@ -1408,7 +1438,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // attach TermControl::_SendInputToConnection() as the clipboardDataHandler.
         // This is called when the clipboard data is loaded.
-        auto clipboardDataHandler = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
+        auto clipboardDataHandler = std::bind(&TermControl::_SendPastedTextToConnection, this, std::placeholders::_1);
         auto pasteArgs = winrt::make_self<PasteFromClipboardEventArgs>(clipboardDataHandler);
 
         // send paste event up to TermApp
@@ -1636,13 +1666,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
         try
         {
-            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
+            while (std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()))
             {
                 // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
                 thicknessArr[paddingPropIndex] = std::stod(token, idx);
+                paddingPropIndex++
             }
         }
         catch (...)

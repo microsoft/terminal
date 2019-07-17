@@ -100,6 +100,7 @@ Profile::Profile(const winrt::guid& guid) :
     _useAcrylic{ false },
     _scrollbarState{},
     _closeOnExit{ true },
+    _convertPasteLineEndings{},
     _padding{ DEFAULT_PADDING },
     _icon{},
     _backgroundImage{},
@@ -165,6 +166,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
     terminalSettings.CloseOnExit(_closeOnExit);
+    if (_convertPasteLineEndings)
+    {
+        terminalSettings.ConvertPasteLineEndings(_convertPasteLineEndings.value());
+    }
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
@@ -284,10 +289,16 @@ Json::Value Profile::ToJson() const
     root[JsonKey(CloseOnExitKey)] = _closeOnExit;
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
+    if (_convertPasteLineEndings)
+    {
+        root[JsonKey(ConvertPasteLineEndingsKey)] = _convertPasteLineEndings.value();
+    }
+
     if (_connectionType)
     {
         root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
     }
+    
     if (_scrollbarState)
     {
         const auto scrollbarState = winrt::to_string(_scrollbarState.value());
@@ -452,6 +463,10 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
     {
         result._closeOnExit = closeOnExit.asBool();
+    }
+    if (auto convertPasteLineEndings{ json[JsonKey(ConvertPasteLineEndingsKey)] })
+    {
+        result._convertPasteLineEndings = convertPasteLineEndings.asBool();
     }
     if (auto padding{ json[JsonKey(PaddingKey)] })
     {
