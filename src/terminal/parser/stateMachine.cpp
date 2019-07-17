@@ -853,8 +853,16 @@ void StateMachine::_EventEscape(const wchar_t wch)
     }
     else if (s_IsIntermediate(wch))
     {
-        _ActionCollect(wch);
-        _EnterEscapeIntermediate();
+        if (_pEngine->DispatchIntermediatesFromEscape())
+        {
+            _ActionEscDispatch(wch);
+            _EnterGround();
+        }
+        else
+        {
+            _ActionCollect(wch);
+            _EnterEscapeIntermediate();
+        }
     }
     else if (s_IsCsiIndicator(wch))
     {

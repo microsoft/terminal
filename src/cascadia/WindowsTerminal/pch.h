@@ -48,3 +48,6 @@ Abstract:
 //  * Media for ScaleTransform
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
+
+#include <wil/resource.h>
+#include <wil/win32_helpers.h>

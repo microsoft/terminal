@@ -35,4 +35,6 @@ jobs:
       platform: arm64
       additionalBuildArguments: /p:WindowsTerminalReleaseBuild=true
 
+  - template: ./templates/check-formatting.yml
+
   - template: ./templates/release-sign-and-bundle.yml

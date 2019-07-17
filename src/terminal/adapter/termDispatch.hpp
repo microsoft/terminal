@@ -46,6 +46,7 @@ public:
     bool SetCursorKeysMode(const bool /*fApplicationMode*/) override { return false; } // DECCKM
     bool SetKeypadMode(const bool /*fApplicationMode*/) override { return false; } // DECKPAM, DECKPNM
     bool EnableCursorBlinking(const bool /*fEnable*/) override { return false; } // ATT610
+    bool SetOriginMode(const bool /*fRelativeMode*/) override { return false; }; // DECOM
     bool SetTopBottomScrollingMargins(const SHORT /*sTopMargin*/, const SHORT /*sBottomMargin*/) override { return false; } // DECSTBM
     bool ReverseLineFeed() override { return false; } // RI
     bool SetWindowTitle(std::wstring_view /*title*/) override { return false; } // OscWindowTitle
@@ -55,6 +56,7 @@ public:
     bool ForwardTab(const SHORT /*sNumTabs*/) override { return false; } // CHT
     bool BackwardsTab(const SHORT /*sNumTabs*/) override { return false; } // CBT
     bool TabClear(const SHORT /*sClearType*/) override { return false; } // TBC
+    bool EnableDECCOLMSupport(const bool /*fEnabled*/) override { return false; } // ?40
     bool EnableVT200MouseMode(const bool /*fEnabled*/) override { return false; } // ?1000
     bool EnableUTF8ExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1005
     bool EnableSGRExtendedMouseMode(const bool /*fEnabled*/) override { return false; } // ?1006

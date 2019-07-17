@@ -4,12 +4,15 @@
 #include "pch.h"
 #include "Pane.h"
 
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::TerminalApp;
 
 static const int PaneSeparatorSize = 4;
+static const float Half = 0.50f;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -34,6 +37,243 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             _root.Style(style);
         }
     }
+}
+
+// Method Description:
+// - Update the size of this pane. Resizes each of our columns so they have the
+//   same relative sizes, given the newSize.
+// - Because we're just manually setting the row/column sizes in pixels, we have
+//   to be told our new size, we can't just use our own OnSized event, because
+//   that _won't fire when we get smaller_.
+// Arguments:
+// - newSize: the amount of space that this pane has to fill now.
+// Return Value:
+// - <none>
+void Pane::ResizeContent(const Size& newSize)
+{
+    const auto width = newSize.Width;
+    const auto height = newSize.Height;
+
+    _CreateRowColDefinitions(newSize);
+
+    if (_splitState == SplitState::Vertical)
+    {
+        const auto paneSizes = _GetPaneSizes(width);
+
+        const Size firstSize{ paneSizes.first, height };
+        const Size secondSize{ paneSizes.second, height };
+        _firstChild->ResizeContent(firstSize);
+        _secondChild->ResizeContent(secondSize);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        const auto paneSizes = _GetPaneSizes(height);
+
+        const Size firstSize{ width, paneSizes.first };
+        const Size secondSize{ width, paneSizes.second };
+        _firstChild->ResizeContent(firstSize);
+        _secondChild->ResizeContent(secondSize);
+    }
+}
+
+// Method Description:
+// - Adjust our child percentages to increase the size of one of our children
+//   and decrease the size of the other.
+// - Adjusts the separation amount by 5%
+// - Does nothing if the direction doesn't match our current split direction
+// Arguments:
+// - direction: the direction to move our separator. If it's down or right,
+//   we'll be increasing the size of the first of our children. Else, we'll be
+//   decreasing the size of our first child.
+// Return Value:
+// - false if we couldn't resize this pane in the given direction, else true.
+bool Pane::_Resize(const Direction& direction)
+{
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        return false;
+    }
+
+    float amount = .05f;
+    if (direction == Direction::Right || direction == Direction::Down)
+    {
+        amount = -amount;
+    }
+
+    // Make sure we're not making a pane explode here by resizing it to 0 characters.
+    const bool changeWidth = _splitState == SplitState::Vertical;
+
+    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                           gsl::narrow_cast<float>(_root.ActualHeight()) };
+    // actualDimension is the size in DIPs of this pane in the direction we're
+    // resizing.
+    auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
+    actualDimension -= PaneSeparatorSize;
+
+    const auto firstMinSize = _firstChild->_GetMinSize();
+    const auto secondMinSize = _secondChild->_GetMinSize();
+
+    // These are the minimum amount of space we need for each of our children
+    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
+    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
+
+    const auto firstMinPercent = firstMinDimension / actualDimension;
+    const auto secondMinPercent = secondMinDimension / actualDimension;
+
+    // Make sure that the first pane doesn't get bigger than the space we need
+    // to reserve for the second.
+    const auto firstMaxPercent = 1.0f - secondMinPercent;
+
+    _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
+    // Update the other child to fill the remaining percent
+    _secondPercent = 1.0f - _firstPercent.value();
+
+    // Resize our columns to match the new percentages.
+    ResizeContent(actualSize);
+
+    return true;
+}
+
+// Method Description:
+// - Moves the separator between panes, as to resize each child on either size
+//   of the separator. Tries to move a separator in the given direction. The
+//   separator moved is the separator that's closest depth-wise to the
+//   currently focused pane, that's also in the correct direction to be moved.
+//   If there isn't such a separator, then this method returns false, as we
+//   couldn't handle the resize.
+// Arguments:
+// - direction: The direction to move the separator in.
+// Return Value:
+// - true if we or a child handled this resize request.
+bool Pane::ResizePane(const Direction& direction)
+{
+    // If we're a leaf, do nothing. We can't possibly have a descendant with a
+    // separator the correct direction.
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    // Check if either our first or second child is the currently focused leaf.
+    // If it is, and the requested resize direction matches our separator, then
+    // we're the pane that needs to adjust its separator.
+    // If our separator is the wrong direction, then we can't handle it.
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    if (firstIsFocused || secondIsFocused)
+    {
+        return _Resize(direction);
+    }
+    else
+    {
+        // If neither of our children were the focused leaf, then recurse into
+        // our children and see if they can handle the resize.
+        // For each child, if it has a focused descendant, try having that child
+        // handle the resize.
+        // If the child wasn't able to handle the resize, it's possible that
+        // there were no descendants with a separator the correct direction. If
+        // our separator _is_ the correct direction, then we should be the pane
+        // to resize. Otherwise, just return false, as we couldn't handle it
+        // either.
+        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
+        {
+            return _firstChild->ResizePane(direction) || _Resize(direction);
+        }
+        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+        {
+            return _secondChild->ResizePane(direction) || _Resize(direction);
+        }
+    }
+    return false;
+}
+
+// Method Description:
+// - Attempts to handle moving focus to one of our children. If our split
+//   direction isn't appropriate for the move direction, then we'll return
+//   false, to try and let our parent handle the move. If our child we'd move
+//   focus to is already focused, we'll also return false, to again let our
+//   parent try and handle the focus movement.
+// Arguments:
+// - direction: The direction to move the focus in.
+// Return Value:
+// - true if we handled this focus move request.
+bool Pane::_NavigateFocus(const Direction& direction)
+{
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        return false;
+    }
+
+    const bool focusSecond = (direction == Direction::Right) || (direction == Direction::Down);
+
+    const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
+
+    // If the child we want to move focus to is _already_ focused, return false,
+    // to try and let our parent figure it out.
+    if (newlyFocusedChild->WasLastFocused())
+    {
+        return false;
+    }
+
+    // Transfer focus to our child, and update the focus of our tree.
+    newlyFocusedChild->_FocusFirstChild();
+    UpdateFocus();
+
+    return true;
+}
+
+// Method Description:
+// - Attempts to move focus to one of our children. If we have a focused child,
+//   we'll try to move the focus in the direction requested.
+//   - If there isn't a pane that exists as a child of this pane in the correct
+//     direction, we'll return false. This will indicate to our parent that they
+//     should try and move the focus themselves. In this way, the focus can move
+//     up and down the tree to the correct pane.
+// - This method is _very_ similar to ResizePane. Both are trying to find the
+//   right separator to move (focus) in a direction.
+// Arguments:
+// - direction: The direction to move the focus in.
+// Return Value:
+// - true if we or a child handled this focus move request.
+bool Pane::NavigateFocus(const Direction& direction)
+{
+    // If we're a leaf, do nothing. We can't possibly have a descendant with a
+    // separator the correct direction.
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    // Check if either our first or second child is the currently focused leaf.
+    // If it is, and the requested move direction matches our separator, then
+    // we're the pane that needs to handle this focus move.
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastFocused;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastFocused;
+    if (firstIsFocused || secondIsFocused)
+    {
+        return _NavigateFocus(direction);
+    }
+    else
+    {
+        // If neither of our children were the focused leaf, then recurse into
+        // our children and see if they can handle the focus move.
+        // For each child, if it has a focused descendant, try having that child
+        // handle the focus move.
+        // If the child wasn't able to handle the focus move, it's possible that
+        // there were no descendants with a separator the correct direction. If
+        // our separator _is_ the correct direction, then we should be the pane
+        // to move focus into our other child. Otherwise, just return false, as
+        // we couldn't handle it either.
+        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
+        {
+            return _firstChild->NavigateFocus(direction) || _NavigateFocus(direction);
+        }
+        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+        {
+            return _secondChild->NavigateFocus(direction) || _NavigateFocus(direction);
+        }
+    }
+    return false;
 }
 
 // Method Description:
@@ -331,7 +571,7 @@ void Pane::_CloseChild(const bool closeFirst)
         const auto oldFirstToken = _firstClosedToken;
         const auto oldSecondToken = _secondClosedToken;
         const auto oldFirst = _firstChild;
-        const auto oldSecond = _secondClosedToken;
+        const auto oldSecond = _secondChild;
 
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
@@ -342,9 +582,14 @@ void Pane::_CloseChild(const bool closeFirst)
         // Set up new close handlers on the children
         _SetupChildCloseHandlers();
 
-        // Revoke the old event handlers.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
+        // Revoke the old event handlers on our new children
+        _firstChild->Closed(remainingChild->_firstClosedToken);
+        _secondChild->Closed(remainingChild->_secondClosedToken);
+
+        // Revoke event handlers on old panes and controls
+        oldFirst->Closed(oldFirstToken);
+        oldSecond->Closed(oldSecondToken);
+        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -411,6 +656,61 @@ void Pane::_SetupChildCloseHandlers()
 }
 
 // Method Description:
+// - Sets up row/column definitions for this pane. There are three total
+//   row/cols. The middle one is for the separator. The first and third are for
+//   each of the child panes, and are given a size in pixels, based off the
+//   availiable space, and the percent of the space they respectively consume,
+//   which is stored in _firstPercent and _secondPercent.
+// - Does nothing if our split state is currently set to SplitState::None
+// Arguments:
+// - rootSize: The dimensions in pixels that this pane (and its children should consume.)
+// Return Value:
+// - <none>
+void Pane::_CreateRowColDefinitions(const Size& rootSize)
+{
+    if (_splitState == SplitState::Vertical)
+    {
+        _root.ColumnDefinitions().Clear();
+
+        // Create three columns in this grid: one for each pane, and one for the separator.
+        auto separatorColDef = Controls::ColumnDefinition();
+        separatorColDef.Width(GridLengthHelper::Auto());
+
+        const auto paneSizes = _GetPaneSizes(rootSize.Width);
+
+        auto firstColDef = Controls::ColumnDefinition();
+        firstColDef.Width(GridLengthHelper::FromPixels(paneSizes.first));
+
+        auto secondColDef = Controls::ColumnDefinition();
+        secondColDef.Width(GridLengthHelper::FromPixels(paneSizes.second));
+
+        _root.ColumnDefinitions().Append(firstColDef);
+        _root.ColumnDefinitions().Append(separatorColDef);
+        _root.ColumnDefinitions().Append(secondColDef);
+    }
+    else if (_splitState == SplitState::Horizontal)
+    {
+        _root.RowDefinitions().Clear();
+
+        // Create three rows in this grid: one for each pane, and one for the separator.
+        auto separatorRowDef = Controls::RowDefinition();
+        separatorRowDef.Height(GridLengthHelper::Auto());
+
+        const auto paneSizes = _GetPaneSizes(rootSize.Height);
+
+        auto firstRowDef = Controls::RowDefinition();
+        firstRowDef.Height(GridLengthHelper::FromPixels(paneSizes.first));
+
+        auto secondRowDef = Controls::RowDefinition();
+        secondRowDef.Height(GridLengthHelper::FromPixels(paneSizes.second));
+
+        _root.RowDefinitions().Append(firstRowDef);
+        _root.RowDefinitions().Append(separatorRowDef);
+        _root.RowDefinitions().Append(secondRowDef);
+    }
+}
+
+// Method Description:
 // - Initializes our UI for a new split in this pane. Sets up row/column
 //   definitions, and initializes the separator grid. Does nothing if our split
 //   state is currently set to SplitState::None
@@ -420,16 +720,13 @@ void Pane::_SetupChildCloseHandlers()
 // - <none>
 void Pane::_CreateSplitContent()
 {
+    Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                     gsl::narrow_cast<float>(_root.ActualHeight()) };
+
+    _CreateRowColDefinitions(actualSize);
+
     if (_splitState == SplitState::Vertical)
     {
-        // Create three columns in this grid: one for each pane, and one for the separator.
-        auto separatorColDef = Controls::ColumnDefinition();
-        separatorColDef.Width(GridLengthHelper::Auto());
-
-        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-        _root.ColumnDefinitions().Append(separatorColDef);
-        _root.ColumnDefinitions().Append(Controls::ColumnDefinition{});
-
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
         _separatorRoot.Width(PaneSeparatorSize);
@@ -438,14 +735,6 @@ void Pane::_CreateSplitContent()
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        // Create three rows in this grid: one for each pane, and one for the separator.
-        auto separatorRowDef = Controls::RowDefinition();
-        separatorRowDef.Height(GridLengthHelper::Auto());
-
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-        _root.RowDefinitions().Append(separatorRowDef);
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
         _separatorRoot.Height(PaneSeparatorSize);
@@ -502,7 +791,7 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
         return;
     }
 
-    _DoSplit(SplitState::Vertical, profile, control);
+    _Split(SplitState::Vertical, profile, control);
 }
 
 // Method Description:
@@ -530,7 +819,7 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
         return;
     }
 
-    _DoSplit(SplitState::Horizontal, profile, control);
+    _Split(SplitState::Horizontal, profile, control);
 }
 
 // Method Description:
@@ -542,7 +831,7 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl& control)
+void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -553,6 +842,9 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
     _connectionClosedToken.value = 0;
 
     _splitState = splitType;
+
+    _firstPercent = { Half };
+    _secondPercent = { Half };
 
     _CreateSplitContent();
 
@@ -578,6 +870,54 @@ void Pane::_DoSplit(SplitState splitType, const GUID& profile, const TermControl
     _SetupChildCloseHandlers();
 
     _lastFocused = false;
+}
+
+// Method Description:
+// - Gets the size in pixels of each of our children, given the full size they
+//   should fill. Accounts for the size of the separator that should be between
+//   them as well.
+// Arguments:
+// - fullSize: the amount of space in pixels that should be filled by our
+//   children and their separator
+// Return Value:
+// - a pair with the size of our first child and the size of our second child,
+//   respectively.
+std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
+{
+    if (_IsLeaf())
+    {
+        THROW_HR(E_FAIL);
+    }
+
+    const auto sizeMinusSeparator = fullSize - PaneSeparatorSize;
+    const auto firstSize = sizeMinusSeparator * _firstPercent.value();
+    const auto secondSize = sizeMinusSeparator * _secondPercent.value();
+    return { firstSize, secondSize };
+}
+
+// Method Description:
+// - Get the absolute minimum size that this pane can be resized to and still
+//   have 1x1 character visible, in each of its children. This includes the
+//   space needed for the separator.
+// Arguments:
+// - <none>
+// Return Value:
+// - The minimum size that this pane can be resized to and still have a visible
+//   character.
+Size Pane::_GetMinSize() const
+{
+    if (_IsLeaf())
+    {
+        return _control.MinimumSize();
+    }
+    else
+    {
+        const auto firstSize = _firstChild->_GetMinSize();
+        const auto secondSize = _secondChild->_GetMinSize();
+        const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
+        const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
+        return { newWidth, newHeight };
+    }
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
