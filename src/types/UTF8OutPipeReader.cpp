@@ -6,11 +6,24 @@
 #include <type_traits>
 #include <utility>
 
-UTF8OutPipeReader::UTF8OutPipeReader(wil::unique_hfile& outPipe) :
+UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     _outPipe{ outPipe }
 {
 }
 
+// Method Description:
+//   Populates a string_view with *complete* UTF-8 codepoints read from the pipe.
+//   If it receives an incomplete codepoint, it will cache it until it can be completed.
+//   Note: This method trusts that the other end will, in fact, send complete codepoints.
+// Arguments:
+//   - strView: on return, populated with successfully-read codepoints.
+// Return Value:
+//   An HRESULT indicating whether the read was successful. For the purposes of this
+//   method, a closed pipe is considered a successful (but false!) read. All other errors
+//   are translated into an appropriate status code.
+//   S_OK for a successful read
+//   S_FALSE for a read on a closed pipe
+//   E_* (anything) for a failed read
 [[nodiscard]] HRESULT UTF8OutPipeReader::Read(_Out_ std::string_view& strView)
 {
     DWORD dwRead{};
@@ -18,7 +31,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(wil::unique_hfile& outPipe) :
 
     // in case of early escaping
     *_buffer = 0;
-    strView = reinterpret_cast<char*>(_buffer);
+    strView = std::string_view{ reinterpret_cast<char*>(_buffer), 0 };
 
     // copy UTF-8 code units that were remaining from the previously read chunk (if any)
     if (_dwPartialsLen != 0)
@@ -27,18 +40,29 @@ UTF8OutPipeReader::UTF8OutPipeReader(wil::unique_hfile& outPipe) :
     }
 
     // try to read data
-    fSuccess = !!ReadFile(_outPipe.get(), &_buffer[_dwPartialsLen], std::extent<decltype(_buffer)>::value - _dwPartialsLen, &dwRead, nullptr);
+    fSuccess = !!ReadFile(_outPipe, &_buffer[_dwPartialsLen], std::extent<decltype(_buffer)>::value - _dwPartialsLen, &dwRead, nullptr);
 
     dwRead += _dwPartialsLen;
     _dwPartialsLen = 0;
 
+    if (!fSuccess) // reading failed (we must check this first, because dwRead will also be 0.)
+    {
+        auto lastError = GetLastError();
+        if (lastError == ERROR_BROKEN_PIPE)
+        {
+            // This is a successful, but detectable, exit.
+            // There is a chance that we put some partials into the buffer. Since
+            // the pipe has closed, they're just invalid now. They're not worth
+            // reporting.
+            return S_FALSE;
+        }
+
+        return HRESULT_FROM_WIN32(lastError);
+    }
+
     if (dwRead == 0) // quit if no data has been read and no cached data was left over
     {
         return S_OK;
-    }
-    else if (!fSuccess) // reading failed
-    {
-        return E_FAIL;
     }
 
     const BYTE* const endPtr{ _buffer + dwRead };
