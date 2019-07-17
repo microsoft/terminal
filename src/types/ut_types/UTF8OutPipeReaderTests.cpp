@@ -109,19 +109,17 @@ class UTF8OutPipeReaderTests
     // Performs the sub-tests.
     HRESULT RunTest(std::string& utf8TestString)
     {
-        HANDLE readFrom{ INVALID_HANDLE_VALUE }, writeTo{ INVALID_HANDLE_VALUE }; // pipe handles
-        SECURITY_ATTRIBUTES sa{ sizeof(SECURITY_ATTRIBUTES) };
-
         std::string_view strView{}; // contains the chunk that we get from UTF8OutPipeReader::Read
         const winrt::hstring utf16Expected{ winrt::to_hstring(utf8TestString) }; // contains the whole string converted to UTF-16
         winrt::hstring utf16Actual{}; // will be concatenated from the converted chunks
 
-        CreatePipe(&readFrom, &writeTo, &sa, 0); // create the pipe handles
+        wil::unique_hfile outPipe{};
+        wil::unique_hfile inPipe{};
 
-        wil::unique_hfile outPipe{ readFrom };
-        wil::unique_hfile inPipe{ writeTo };
+        SECURITY_ATTRIBUTES sa{ sizeof(SECURITY_ATTRIBUTES) };
+        CreatePipe(&outPipe, &inPipe, &sa, 0); // create the pipe handles
 
-        UTF8OutPipeReader reader{ outPipe }; // declare a static instance of UTF8OutPipeReader
+        UTF8OutPipeReader reader{ outPipe.get() };
 
         ThreadData data{ inPipe, utf8TestString };
 
@@ -132,7 +130,7 @@ class UTF8OutPipeReaderTests
         while (true)
         {
             // get a chunk of UTF-8 data
-            RETURN_IF_FAILED(reader.Read(strView));
+            THROW_IF_FAILED(reader.Read(strView));
 
             if (strView.empty())
             {
