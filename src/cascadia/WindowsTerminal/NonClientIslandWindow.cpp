@@ -50,9 +50,6 @@ void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IIn
 
 void NonClientIslandWindow::OnAppInitialized()
 {
-    // Tell the TitlebarControl about our window handle
-    _titlebar.ParentWindowHandle(reinterpret_cast<uint64_t>(GetHandle()));
-
     IslandWindow::OnAppInitialized();
 }
 
@@ -72,7 +69,7 @@ void NonClientIslandWindow::Initialize()
     _rootGrid.RowDefinitions().Append(contentRow);
 
     // Create our titlebar control
-    _titlebar = winrt::TerminalApp::TitlebarControl{};
+    _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
     _dragBar = _titlebar.DragBar();
 
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });

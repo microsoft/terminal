@@ -10,4 +10,8 @@
     <OpenConsoleDir>$(MSBuildThisFileDirectory)</OpenConsoleDir>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(PkgRoot)'==''">
+    <PkgRoot>$(MSBuildThisFileDirectory)/packages/</PkgRoot>
+  </PropertyGroup>
+
 </Project>

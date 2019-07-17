@@ -75,13 +75,13 @@
   <!-- Dependencies -->
   <ItemGroup>
     <!-- Manually include the .pri files from the app project as content files. -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.pri">
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppDll\*.pri">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
 
     <!-- Manually include the xbf files from the app project as content files -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.xbf">
+    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppDll\*.xbf">
       <DeploymentContent>true</DeploymentContent>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </NativeReferenceFile>
@@ -94,6 +94,7 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalAppDll.vcxproj" />
     <!-- Don't add a ProjectReference to TerminalApp here. If you do, the
     packaging project will find the TerminalApp.pri from both the TerminalAppLib
     and TerminalApp project, and we only want this lib project's pri file. We'll
@@ -109,17 +110,7 @@
     <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Manually reference TerminalApp, since we can't use a ProjectReference. -->
-    <Reference Include="TerminalApp">
-      <HintPath>$(_BinRoot)\TerminalApp\TerminalApp.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)\TerminalApp\TerminalApp.dll" />
 
-  </ItemGroup>
 
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order

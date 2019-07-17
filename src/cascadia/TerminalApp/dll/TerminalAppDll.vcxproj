@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+  <Import Project="$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+  <PropertyGroup>
+    <!-- cppwinrt.build.pre.props depends on these settings: -->
+    <!-- build a dll, not exe (Application) -->
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <!-- sets a bunch of Windows Universal properties -->
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+  </PropertyGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-55BD-4AC7-AC72-F16E576FDD12}</ProjectGuid>
+    <ProjectName>TerminalAppDll</ProjectName>
+    <RootNamespace>TerminalApp</RootNamespace>
+    <!--
+      This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
+      We have to do this to overcome a layout issue in the WAP packaging project.
+      When we do this, the XBF ends up in resources.pri.
+    -->
+    <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
+  </PropertyGroup>
+
+  <!-- DO NOT ADD FILES HERE. Any TerminalApp files should be placed in
+  terminal-app-common.vcxproj instead. Only DLL-specific files should be
+  included in this file. -->
+  <Import Project="..\terminal-app-common.vcxproj" />
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+
+  </ItemGroup>
+  <PropertyGroup>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="$(PkgRoot)Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(PkgRoot)Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(PkgRoot)Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgRoot)Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
+    <Error Condition="!Exists('$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+  </Target>
+  <Import Project="$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('$(PkgRoot)Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+
+  <!--
+    By default, the PRI file will contain resource paths beginning with the
+    project name. Since we enabled XBF embedding, this *also* includes App.xbf.
+    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    To make that happen, we have to disable the prepending of the project name
+    to the App xaml files.
+  -->
+  <PropertyGroup>
+    <_GenerateProjectPriFileDependsOn>OpenConsolePlaceAppXbfAtRootOfResourceTree;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
+  </PropertyGroup>
+  <Target Name="OpenConsolePlaceAppXbfAtRootOfResourceTree" DependsOnTargets="GetPackagingOutputs">
+    <ItemGroup>
+      <_RelocatedAppXamlData Include="@(PackagingOutputs)" Condition="'%(Filename)' == 'App' and ('%(Extension)' == '.xaml' or '%(Extension)' == '.xbf')" />
+      <PackagingOutputs Remove="@(_RelocatedAppXamlData)" />
+      <PackagingOutputs Include="@(_RelocatedAppXamlData)">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+</Project>
