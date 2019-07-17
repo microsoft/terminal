@@ -1201,7 +1201,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // endings
         if (_settings.ConvertPasteLineEndings())
         {
-            const static std::wregex rgx{ L"\n\r" };
+            const static std::regex rgx{ L"\n\r" };
             std::wstring stripped = std::regex_replace(wstr, rgx, L"\n");
             _SendInputToConnection(stripped);
         }
