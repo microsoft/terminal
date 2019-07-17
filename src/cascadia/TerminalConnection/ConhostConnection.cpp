@@ -190,14 +190,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     DWORD ConhostConnection::_OutputThread()
     {
-        static UTF8OutPipeReader pipeReader{ _outPipe };
+        UTF8OutPipeReader pipeReader{ _outPipe.get() };
         std::string_view strView{};
 
         // process the data of the output pipe in a loop
         while (true)
         {
             HRESULT result = pipeReader.Read(strView);
-            if (FAILED(result))
+            if (FAILED(result) || result == S_FALSE)
             {
                 if (_closing.load())
                 {
@@ -208,7 +208,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 _disconnectHandlers();
                 return (DWORD)-1;
             }
-            else if (strView.empty())
+
+            if (strView.empty())
             {
                 return 0;
             }

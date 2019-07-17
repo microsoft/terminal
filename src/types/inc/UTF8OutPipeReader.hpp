@@ -27,12 +27,10 @@ Author(s):
 class UTF8OutPipeReader final
 {
 public:
-    UTF8OutPipeReader(wil::unique_hfile& outPipe);
+    UTF8OutPipeReader(HANDLE outPipe);
     [[nodiscard]] HRESULT Read(_Out_ std::string_view& strView);
 
 private:
-    wil::unique_hfile& _outPipe;
-
     enum _Utf8BitMasks : BYTE
     {
         IsAsciiByte = 0b0'0000000, // Any byte representing an ASCII character has the MSB set to 0
@@ -63,6 +61,7 @@ private:
         _Utf8BitMasks::IsLeadByteThreeByteSequence,
     };
 
+    HANDLE _outPipe; // non-owning reference to a pipe.
     BYTE _buffer[4096]{ 0 }; // buffer for the chunk read
     BYTE _utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
     DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
