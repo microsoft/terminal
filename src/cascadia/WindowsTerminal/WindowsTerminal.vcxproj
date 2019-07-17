@@ -89,10 +89,6 @@
   <PropertyGroup Label="Globals">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
-  <PropertyGroup>
-    <!-- DON'T REDIRECT OUR OUTPUT -->
-    <NoOutputRedirection>true</NoOutputRedirection>
-  </PropertyGroup>
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
