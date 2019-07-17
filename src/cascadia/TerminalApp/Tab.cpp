@@ -237,4 +237,16 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
     _rootPane->ResizePane(direction);
 }
 
+// Method Description:
+// - Attempt to move focus between panes, as to focus the child on
+//   the other side of the separator. See Pane::NavigateFocus for details.
+// Arguments:
+// - direction: The direction to move the focus in.
+// Return Value:
+// - <none>
+void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
+{
+    _rootPane->NavigateFocus(direction);
+}
+
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

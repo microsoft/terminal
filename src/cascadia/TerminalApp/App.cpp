@@ -505,6 +505,7 @@ namespace winrt::TerminalApp::implementation
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
         bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
         bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         bindings.PasteText([this]() { _PasteText(); });
     }
@@ -1026,6 +1027,20 @@ namespace winrt::TerminalApp::implementation
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
         _tabs[focusedTabIndex]->ResizePane(direction);
+    }
+
+    // Method Description:
+    // - Attempt to move focus between panes, as to focus the child on
+    //   the other side of the separator. See Pane::NavigateFocus for details.
+    // - Moves the focus of the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - <none>
+    void App::_MoveFocus(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->NavigateFocus(direction);
     }
 
     // Method Description:
