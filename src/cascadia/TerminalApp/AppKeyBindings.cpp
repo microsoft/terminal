@@ -169,7 +169,18 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::ResizePaneDown:
             _ResizePaneHandlers(Direction::Down);
             return true;
-
+        case ShortcutAction::MoveFocusLeft:
+            _MoveFocusHandlers(Direction::Left);
+            return true;
+        case ShortcutAction::MoveFocusRight:
+            _MoveFocusHandlers(Direction::Right);
+            return true;
+        case ShortcutAction::MoveFocusUp:
+            _MoveFocusHandlers(Direction::Up);
+            return true;
+        case ShortcutAction::MoveFocusDown:
+            _MoveFocusHandlers(Direction::Down);
+            return true;
         default:
             return false;
         }
@@ -251,5 +262,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
     DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
     DEFINE_EVENT(AppKeyBindings, ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
+    DEFINE_EVENT(AppKeyBindings, MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
     // clang-format on
 }
