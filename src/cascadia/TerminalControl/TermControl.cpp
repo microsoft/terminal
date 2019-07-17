@@ -1198,8 +1198,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   appropriate terminal settings
     void TermControl::_SendPastedTextToConnection(const std::wstring& wstr)
     {
-        // Check settings to see if we should be converting line
-        // endings
+        // Check settings to see if we should be converting line endings
         if (_settings.ConvertPasteLineEndings())
         {
             const static std::wregex rgx{ L"\n\r" };
@@ -1661,7 +1660,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex++] = std::stod(token, idx);
+                thicknessArr[paddingPropIndex] = std::stod(token, idx);
+                paddingPropIndex++
             }
         }
         catch (...)
