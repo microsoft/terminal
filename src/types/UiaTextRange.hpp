@@ -20,7 +20,6 @@ Author(s):
 
 #include "precomp.h"
 
-#include "IConsoleWindow.hpp"
 #include "inc/viewport.hpp"
 #include "../buffer/out/textBuffer.hpp"
 #include "../renderer/inc/IRenderData.hpp"

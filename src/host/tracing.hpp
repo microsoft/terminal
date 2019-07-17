@@ -21,17 +21,6 @@ Author(s):
 
 #include "../types/inc/Viewport.hpp"
 
-namespace Microsoft::Console::Types
-{
-    class WindowUiaProvider;
-
-    namespace WindowUiaProviderTracing
-    {
-        enum class ApiCall;
-        struct IApiMsg;
-    }
-}
-
 namespace Microsoft::Console::Interactivity::Win32
 {
     class UiaTextRange;

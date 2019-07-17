@@ -11,6 +11,7 @@
 
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Types;
 
 ULONG Scrolling::s_ucWheelScrollLines = 0;
 ULONG Scrolling::s_ucWheelScrollChars = 0;
@@ -30,7 +31,7 @@ bool Scrolling::s_IsInScrollMode()
 void Scrolling::s_DoScroll()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     if (!s_IsInScrollMode())
     {
         // clear any selection we may have -- can't scroll and select at the same time
@@ -48,7 +49,7 @@ void Scrolling::s_DoScroll()
 void Scrolling::s_ClearScroll()
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
     WI_ClearFlag(gci.Flags, CONSOLE_SCROLLING);
     if (pWindow != nullptr)
     {
@@ -58,7 +59,7 @@ void Scrolling::s_ClearScroll()
 
 void Scrolling::s_ScrollIfNecessary(const SCREEN_INFORMATION& ScreenInfo)
 {
-    Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
     Selection* const pSelection = &Selection::Instance();
@@ -202,7 +203,7 @@ void Scrolling::s_HandleMouseWheel(_In_ bool isMouseWheel,
 bool Scrolling::s_HandleKeyScrollingEvent(const INPUT_KEY_INFO* const pKeyInfo)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     FAIL_FAST_IF_NULL(pWindow);
 
     const WORD VirtualKeyCode = pKeyInfo->GetVirtualKey();

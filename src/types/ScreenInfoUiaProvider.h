@@ -27,7 +27,6 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class IConsoleWindow;
     class WindowUiaProviderBase;
     class Viewport;
 

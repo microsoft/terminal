@@ -23,6 +23,8 @@ Author(s):
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
+
 namespace Microsoft::Console::Interactivity
 {
     class ServiceLocator final
@@ -52,8 +54,8 @@ namespace Microsoft::Console::Interactivity
             return static_cast<T*>(LocateConsoleInputThread());
         }
 
-        [[nodiscard]] static NTSTATUS SetConsoleWindowInstance(_In_ Microsoft::Console::Types::IConsoleWindow* window);
-        static Microsoft::Console::Types::IConsoleWindow* LocateConsoleWindow();
+        [[nodiscard]] static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow* window);
+        static IConsoleWindow* LocateConsoleWindow();
         template<typename T>
         static T* LocateConsoleWindow()
         {
@@ -102,7 +104,7 @@ namespace Microsoft::Console::Interactivity
         // TODO: MSFT 15344939 - some implementations of IConsoleWindow are currently singleton
         // classes so we can't own a pointer to them here. fix this so s_consoleWindow can follow the
         // pattern of the rest of the service interface pointers.
-        static Microsoft::Console::Types::IConsoleWindow* s_consoleWindow;
+        static IConsoleWindow* s_consoleWindow;
         static std::unique_ptr<IWindowMetrics> s_windowMetrics;
         static std::unique_ptr<IHighDpiApi> s_highDpiApi;
         static std::unique_ptr<ISystemConfigurationProvider> s_systemConfigurationProvider;

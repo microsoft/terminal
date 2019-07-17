@@ -89,6 +89,9 @@ namespace Microsoft::Console::Types
 
         [[nodiscard]] HRESULT _EnsureValidHwnd() const;
 
+        const OLECHAR* AutomationIdPropertyName = L"Console Window";
+        const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Console Host Window";
+
     private:
         // Ref counter for COM object
         ULONG _cRefs;

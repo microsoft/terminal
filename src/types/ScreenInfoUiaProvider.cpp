@@ -5,7 +5,6 @@
 
 #include "ScreenInfoUiaProvider.h"
 
-#include "IConsoleWindow.hpp"
 #include "WindowUiaProviderBase.hpp"
 #include "UiaTextRange.hpp"
 
@@ -33,7 +32,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
 }
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                             _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent) :
+                                             _In_ WindowUiaProviderBase* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     _signalFiringMapping{},
     _cRefs(1),
@@ -639,7 +638,7 @@ const TextBuffer& ScreenInfoUiaProvider::_getTextBuffer() const
     return _pData->GetTextBuffer();
 }
 
-const Microsoft::Console::Types::Viewport ScreenInfoUiaProvider::_getViewport() const
+const Viewport ScreenInfoUiaProvider::_getViewport() const
 {
     return _pData->GetViewport();
 }
