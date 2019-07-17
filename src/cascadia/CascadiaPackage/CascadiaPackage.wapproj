@@ -279,8 +279,7 @@
         <!-- Override the filename for OpenConsole.exe (only) -->
         <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
-        <SourceProject>
-        </SourceProject>
+        <SourceProject></SourceProject>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>

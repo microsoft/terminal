@@ -1205,11 +1205,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const static std::wregex rgx{ L"\n\r" };
             std::wstring stripped = std::regex_replace(wstr, rgx, L"\n");
             _SendInputToConnection(stripped);
+            return;
         }
-        else
-        {
-            _SendInputToConnection(wstr);
-        }
+
+        _SendInputToConnection(wstr);
     }
 
     void TermControl::_SendInputToConnection(const std::wstring& wstr)
@@ -1278,7 +1277,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
         }
     }
-}
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
@@ -1320,25 +1318,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-    // Tell the dx engine that our window is now the new size.
-    THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
+        // Tell the dx engine that our window is now the new size.
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
 
-    // Invalidate everything
-    _renderer->TriggerRedrawAll();
+        // Invalidate everything
+        _renderer->TriggerRedrawAll();
 
-    // Convert our new dimensions to characters
-    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-    const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-    // If this function succeeds with S_FALSE, then the terminal didn't
-    //      actually change size. No need to notify the connection of this
-    //      no-op.
-    // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-    // I believe we'll need support for CSI 2J, and additionally I think
-    //      we're resetting the viewport to the top
-    const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
-    if (SUCCEEDED(hr) && hr != S_FALSE)
+        // If this function succeeds with S_FALSE, then the terminal didn't
+        //      actually change size. No need to notify the connection of this
+        //      no-op.
+        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
+        // I believe we'll need support for CSI 2J, and additionally I think
+        //      we're resetting the viewport to the top
+        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
@@ -1399,11 +1397,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     hstring TermControl::Title()
     {
-        if (!_initializedTerminal)
-            return L"";
-
-        hstring hstr(_terminal->GetConsoleTitle());
-        return hstr;
+        if (_initializedTerminal)
+        {
+            hstring hstr(_terminal->GetConsoleTitle());
+            return hstr;
+        }
+        return L"";
     }
 
     // Method Description:
@@ -1448,6 +1447,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
+
             if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
             {
                 localAutoScrollTimer.Stop();
@@ -1789,11 +1789,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // exit early. This is a single click.
             _multiClickCounter = 1;
+            return 1; //return single click
         }
-        else
-        {
-            _multiClickCounter++;
-        }
+
+        _multiClickCounter++;
         return _multiClickCounter;
     }
 

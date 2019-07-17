@@ -295,7 +295,7 @@ Json::Value Profile::ToJson() const
 
     if (_convertPasteLineEndings)
     {
-        root[JsonKey(ConvertPasteLineEndingsKey)] = winrt::to_string(_convertPasteLineEndings.value());
+        root[JsonKey(ConvertPasteLineEndingsKey)] = _convertPasteLineEndings.value();
     }
 
     if (_connectionType)
@@ -303,11 +303,6 @@ Json::Value Profile::ToJson() const
         root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
     }
 
-    if (_connectionType)
-    {
-        root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
-    }
-    
     if (_scrollbarState)
     {
         const auto scrollbarState = winrt::to_string(_scrollbarState.value());
