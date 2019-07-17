@@ -39,7 +39,7 @@ using namespace Microsoft::Console::Types;
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
 
-[[nodiscard]] LRESULT CALLBACK Microsoft::Console::Interactivity::Win32::Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     // Save the pointer here to the specific window instance when one is created
     if (Message == WM_CREATE)
@@ -61,7 +61,7 @@ using namespace Microsoft::Console::Types;
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
-[[nodiscard]] LRESULT CALLBACK Microsoft::Console::Interactivity::Win32::Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
@@ -777,7 +777,7 @@ using namespace Microsoft::Console::Types;
 // Helper handler methods for specific cases within the large window procedure are in this section
 #pragma region Message Handlers
 
-void Microsoft::Console::Interactivity::Win32::Window::_HandleWindowPosChanged(const LPARAM lParam)
+void Window::_HandleWindowPosChanged(const LPARAM lParam)
 {
     HWND hWnd = GetWindowHandle();
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -822,7 +822,7 @@ void Microsoft::Console::Interactivity::Win32::Window::_HandleWindowPosChanged(c
 // - <none>
 // Return Value:
 // - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
-[[nodiscard]] HRESULT Microsoft::Console::Interactivity::Win32::Window::_HandlePaint() const
+[[nodiscard]] HRESULT Window::_HandlePaint() const
 {
     HWND const hwnd = GetWindowHandle();
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
@@ -860,7 +860,7 @@ void Microsoft::Console::Interactivity::Win32::Window::_HandleWindowPosChanged(c
 // - Console - Pointer to CONSOLE_INFORMATION structure
 // Return Value:
 // - <none>
-void Microsoft::Console::Interactivity::Win32::Window::_HandleDrop(const WPARAM wParam) const
+void Window::_HandleDrop(const WPARAM wParam) const
 {
     WCHAR szPath[MAX_PATH];
     BOOL fAddQuotes;
@@ -888,7 +888,7 @@ void Microsoft::Console::Interactivity::Win32::Window::_HandleDrop(const WPARAM 
     }
 }
 
-[[nodiscard]] LRESULT Microsoft::Console::Interactivity::Win32::Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
+[[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
 {
     LRESULT retVal = 0;
 
@@ -912,7 +912,7 @@ void Microsoft::Console::Interactivity::Win32::Window::_HandleDrop(const WPARAM 
 // Dispatchers are used to post or send a window message into the queue from other portions of the codebase without accessing internal properties directly
 #pragma region Dispatchers
 
-BOOL Microsoft::Console::Interactivity::Win32::Window::PostUpdateWindowSize() const
+BOOL Window::PostUpdateWindowSize() const
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
@@ -931,17 +931,17 @@ BOOL Microsoft::Console::Interactivity::Win32::Window::PostUpdateWindowSize() co
     return PostMessageW(GetWindowHandle(), CM_SET_WINDOW_SIZE, (WPARAM)&ScreenInfo, 0);
 }
 
-BOOL Microsoft::Console::Interactivity::Win32::Window::SendNotifyBeep() const
+BOOL Window::SendNotifyBeep() const
 {
     return SendNotifyMessageW(GetWindowHandle(), CM_BEEP, 0, 0);
 }
 
-BOOL Microsoft::Console::Interactivity::Win32::Window::PostUpdateScrollBars() const
+BOOL Window::PostUpdateScrollBars() const
 {
     return PostMessageW(GetWindowHandle(), CM_UPDATE_SCROLL_BARS, (WPARAM)&GetScreenInfo(), 0);
 }
 
-BOOL Microsoft::Console::Interactivity::Win32::Window::PostUpdateExtendedEditKeys() const
+BOOL Window::PostUpdateExtendedEditKeys() const
 {
     return PostMessageW(GetWindowHandle(), CM_UPDATE_EDITKEYS, 0, 0);
 }

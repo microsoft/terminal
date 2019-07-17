@@ -1172,7 +1172,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     try
     {
-        auto provider = static_cast<Microsoft::Console::Types::ScreenInfoUiaProvider*>(_pProvider);
+        auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
         provider->ChangeViewport(newViewport);
     }
     CATCH_RETURN();
@@ -2265,6 +2265,6 @@ RECT UiaTextRange::_getTerminalRect() const
 
 HWND UiaTextRange::_getWindowHandle() const
 {
-    const auto provider = static_cast<Microsoft::Console::Types::ScreenInfoUiaProvider*>(_pProvider);
+    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
     return provider->GetWindowHandle();
 }

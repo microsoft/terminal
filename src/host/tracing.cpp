@@ -247,7 +247,7 @@ void Tracing::s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a)
         TraceLoggingKeyword(TraceKeywords::API));
 }
 
-void Tracing::s_TraceWindowViewport(const Microsoft::Console::Types::Viewport& viewport)
+void Tracing::s_TraceWindowViewport(const Viewport& viewport)
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,

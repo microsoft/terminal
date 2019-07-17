@@ -9,6 +9,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization
@@ -22,7 +23,7 @@ std::unique_ptr<IHighDpiApi> ServiceLocator::s_highDpiApi;
 std::unique_ptr<ISystemConfigurationProvider> ServiceLocator::s_systemConfigurationProvider;
 std::unique_ptr<IInputServices> ServiceLocator::s_inputServices;
 
-Microsoft::Console::Types::IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
+IConsoleWindow* ServiceLocator::s_consoleWindow = nullptr;
 
 Globals ServiceLocator::s_globals;
 
@@ -103,7 +104,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Set Methods
 
-[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ Microsoft::Console::Types::IConsoleWindow* window)
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
     NTSTATUS status = STATUS_SUCCESS;
 
@@ -127,7 +128,7 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
 
 #pragma region Location Methods
 
-Microsoft::Console::Types::IConsoleWindow* ServiceLocator::LocateConsoleWindow()
+IConsoleWindow* ServiceLocator::LocateConsoleWindow()
 {
     return s_consoleWindow;
 }

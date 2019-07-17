@@ -9,9 +9,10 @@
 #include "../host/renderData.hpp"
 #include "../inc/ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow) :
+WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
     _pScreenInfoProvider{ nullptr },
     WindowUiaProviderBase(baseWindow)
 {
@@ -25,7 +26,7 @@ WindowUiaProvider::~WindowUiaProvider()
     }
 }
 
-WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IConsoleWindow* baseWindow)
+WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
     Microsoft::Console::Types::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;

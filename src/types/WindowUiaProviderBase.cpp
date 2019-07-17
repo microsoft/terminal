@@ -106,7 +106,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyI
     }
     else if (propertyId == UIA_AutomationIdPropertyId)
     {
-        pVariant->bstrVal = SysAllocString(L"Terminal Window");
+        pVariant->bstrVal = SysAllocString(AutomationIdPropertyName);
         if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
@@ -134,7 +134,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyI
     }
     else if (propertyId == UIA_ProviderDescriptionPropertyId)
     {
-        pVariant->bstrVal = SysAllocString(L"Microsoft Windows Terminal Window");
+        pVariant->bstrVal = SysAllocString(ProviderDescriptionPropertyName);
         if (pVariant->bstrVal != nullptr)
         {
             pVariant->vt = VT_BSTR;
