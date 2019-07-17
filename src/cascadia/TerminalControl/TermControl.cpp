@@ -1661,7 +1661,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
                 thicknessArr[paddingPropIndex] = std::stod(token, idx);
-                paddingPropIndex++
+                paddingPropIndex++;
             }
         }
         catch (...)
