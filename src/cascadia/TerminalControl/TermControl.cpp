@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TermControl.h"
+#include <regex>
 #include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
