@@ -493,6 +493,7 @@ namespace winrt::TerminalApp::implementation
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
+        bindings.ClosePane([this]() { _CloseFocusedPane(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
         bindings.ScrollDown([this]() { _Scroll(1); });
@@ -984,6 +985,17 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
         _RemoveTabViewItem(focusedTab->GetTabViewItem());
+    }
+
+    // Method Description:
+    // - Close the currently focused pane. If the pane is the last pane in the
+    //   tab, the tab will also be closed. This will happen when we handle the
+    //   tab's Closed event.
+    void App::_CloseFocusedPane()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        focusedTab->ClosePane();
     }
 
     // Method Description:
