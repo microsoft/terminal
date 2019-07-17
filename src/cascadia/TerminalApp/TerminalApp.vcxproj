@@ -26,6 +26,7 @@
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
     in here - put them in TerminalAppLib.vcxproj instead! -->
+    <ClInclude Include="pch.h" />
     <ClInclude Include="TerminalPage.h" />
     <ClInclude Include="MinMaxCloseControl.h" />
     <ClInclude Include="AppKeyBindings.h" />
@@ -34,6 +35,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <!-- Don't put source files in here - put them in TerminalAppLib.vcxproj instead! -->
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -96,6 +100,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="$(OpenConsoleDir)src\cascadia\SharedPch\SharedPch.props" />
+
 </Project>
