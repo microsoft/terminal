@@ -168,6 +168,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererDx", "src\renderer\dx\lib\dx.vcxproj", "{48D21369-3D7B-4431-9967-24E81292CF62}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalConnection", "src\cascadia\TerminalConnection\TerminalConnection.vcxproj", "{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-E26F-4680-90EC-BE4F2617312B} = {CA5CAD1A-E26F-4680-90EC-BE4F2617312B}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalCore", "src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj", "{CA5CAD1A-ABCD-429C-B551-8562EC954746}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -177,6 +180,7 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalControl", "src\cascadia\TerminalControl\TerminalControl.vcxproj", "{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}"
 	ProjectSection(ProjectDependencies) = postProject
 		{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B} = {CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}
+		{CA5CAD1A-E26F-4680-90EC-BE4F2617312B} = {CA5CAD1A-E26F-4680-90EC-BE4F2617312B}
 		{CA5CAD1A-ABCD-429C-B551-8562EC954746} = {CA5CAD1A-ABCD-429C-B551-8562EC954746}
 		{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907} = {CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907}
 		{1CF55140-EF6A-4736-A403-957E4F7430BB} = {1CF55140-EF6A-4736-A403-957E4F7430BB}
@@ -184,6 +188,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalControl", "src\casc
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "WindowsTerminal", "src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj", "{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}"
 	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-E26F-4680-90EC-BE4F2617312B} = {CA5CAD1A-E26F-4680-90EC-BE4F2617312B}
 		{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED} = {CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}
 		{CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12} = {CA5CAD1A-44BD-4AC7-AC72-F16E576FDD12}
 		{CA5CAD1A-ABCD-429C-B551-8562EC954746} = {CA5CAD1A-ABCD-429C-B551-8562EC954746}
@@ -200,6 +205,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalApp", "src\cascadia
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TerminalSettings", "src\cascadia\TerminalSettings\TerminalSettings.vcxproj", "{CA5CAD1A-D7EC-4107-B7C6-79CB77AE2907}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA5CAD1A-E26F-4680-90EC-BE4F2617312B} = {CA5CAD1A-E26F-4680-90EC-BE4F2617312B}
+	EndProjectSection
 EndProject
 Project("{C7167F0D-BC9F-4E6E-AFE1-012C56B48DB5}") = "OpenConsolePackage", "pkg\appx\OpenConsolePackage.wapproj", "{2D310963-F3E0-4EE5-8AC6-FBC94DCC3310}"
 EndProject
