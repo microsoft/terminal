@@ -20,11 +20,14 @@ public:
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;
-    virtual void OnAppInitialized(winrt::TerminalApp::App app);
+    virtual void OnAppInitialized();
+    virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
 
-    void Initialize();
+    virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
+
+    void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
 protected:
     void ForceResize()

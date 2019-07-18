@@ -61,26 +61,13 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create(uint64_t hWnd)
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create(hWnd);
-    }
 
-    App::~App()
-    {
-        TraceLoggingUnregister(g_hTerminalAppProvider);
-    }
-
-    // Method Description:
-    // - Create all of the initial UI elements of the Terminal app.
-    //    * Initializes the first terminal control, using the default profile,
-    //      and adds it to our list of tabs.
-    void App::_Create(uint64_t parentHwnd)
-    {
         /* !!! TODO
            This is not the correct way to host a XAML page. This exists today because we valued
            getting a .xaml over tearing out all of the terminal logic and splitting it across App
@@ -92,15 +79,21 @@ namespace winrt::TerminalApp::implementation
         _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
         _tabContent = terminalPage->TabContent();
         _tabRow = terminalPage->TabRow();
-        _tabView = terminalPage->TabView();
-        _newTabButton = terminalPage->NewTabButton();
+        _tabView = _tabRow.TabView();
+        _newTabButton = _tabRow.NewTabButton();
 
-        _minMaxCloseControl = terminalPage->MinMaxCloseControl();
-        _minMaxCloseControl.ParentWindowHandle(parentHwnd);
-
-        if (!_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
-            _minMaxCloseControl.Visibility(Visibility::Collapsed);
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (terminalPage->Root().Children().IndexOf(_tabRow, index))
+            {
+                terminalPage->Root().Children().RemoveAt(index);
+            }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
         }
 
         // Event Bindings (Early)
@@ -116,6 +109,14 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
+    }
+
+    App::~App()
+    {
+        if (g_hTerminalAppProvider)
+        {
+            TraceLoggingUnregister(g_hTerminalAppProvider);
+        }
     }
 
     // Method Description:
@@ -456,16 +457,6 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
 
-    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
-    {
-        if (_minMaxCloseControl)
-        {
-            return _minMaxCloseControl.DragBar();
-        }
-
-        return nullptr;
-    }
-
     // Method Description:
     // - Called when the about button is clicked. See _ShowAboutDialog for more info.
     // Arguments:
@@ -742,13 +733,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Update the current theme of the application. This will manually update
-    //   all of the elements in our UI to match the given theme.
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
     // Arguments:
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
         _root.RequestedTheme(newTheme);
+        // Propagate the event to the host layer, so it can update its own UI
+        _requestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement App::GetRoot() noexcept
@@ -917,7 +911,11 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        auto connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                                settings.StartingDirectory(),
+                                                                30,
+                                                                80,
+                                                                winrt::guid());
 
         TermControl term{ settings, connection };
 
@@ -1318,7 +1316,11 @@ namespace winrt::TerminalApp::implementation
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+        auto controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
+                                                                       controlSettings.StartingDirectory(),
+                                                                       30,
+                                                                       80,
+                                                                       winrt::guid());
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1419,4 +1421,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 }
