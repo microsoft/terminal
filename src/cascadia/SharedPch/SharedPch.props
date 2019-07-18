@@ -2,7 +2,8 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros">
-    <SharedPchDir>$(SolutionDir)src\cascadia\SharedPch\$(Platform)\$(Configuration)\</SharedPchDir>
+    <SharedPchDir Condition="$(Platform) != 'Win32'">$(SolutionDir)src\cascadia\SharedPch\$(Platform)\$(Configuration)\</SharedPchDir>
+    <SharedPchDir Condition="$(Platform) == 'Win32'">$(SolutionDir)src\cascadia\SharedPch\$(Configuration)\</SharedPchDir>
     <SharedPch>$(SharedPchDir)pch.pch</SharedPch>
     <SharedPchObj>$(SharedPchDir)pch.obj</SharedPchObj>
     <SharedPdb>$(SharedPchDir)SharedPch.pdb</SharedPdb>
