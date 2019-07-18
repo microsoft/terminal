@@ -38,6 +38,9 @@
     <Page Include="../RichTextBoxControlHost.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../MediaControlHost.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -52,6 +55,10 @@
     </ClInclude>
     <ClInclude Include="../RichTextBoxControlHost.h">
       <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../MediaControlHost.h">
+      <DependentUpon>../MediaControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
@@ -89,6 +96,10 @@
     </ClCompile>
     <ClCompile Include="../RichTextBoxControlHost.cpp">
       <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../MediaControlHost.cpp">
+      <DependentUpon>../MediaControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
@@ -143,6 +154,10 @@
     </Midl>
     <Midl Include="../RichTextBoxControlHost.idl">
       <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../MediaControlHost.idl">
+      <DependentUpon>../MediaControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../IControlHost.idl" />

@@ -1,0 +1,129 @@
+<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+the MIT License. See LICENSE in the project root for license information. -->
+<Grid
+    x:Class="TerminalApp.MediaControlHost"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:Name="_Root"
+    Background="{ThemeResource SystemChromeLowColor}"
+    mc:Ignorable="d">
+
+    <!-- <Grid.Resources>
+        <Style TargetType="AppBarButton">
+            <Setter Property="IsCompact" Value="True"/>
+        </Style>
+    </Grid.Resources> -->
+
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <RelativePanel
+        Grid.Row="0"
+        HorizontalAlignment="Stretch">
+        <!-- <RelativePanel.Resources>
+            <Style TargetType="Button">
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Margin" Value="0,0,8,0" />
+            </Style>
+        </RelativePanel.Resources> -->
+        <!-- <Button
+            x:Name="openFileButton"
+            AutomationProperties.Name="Open file"
+            ToolTipService.ToolTip="Open file">
+            <Button.Content>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8E5;"/>
+            </Button.Content>
+        </Button> -->
+        <!-- <Button
+            x:Name="saveFileButton"
+            AutomationProperties.Name="Save file"
+            ToolTipService.ToolTip="Save file"
+            RelativePanel.RightOf="openFileButton">
+            <Button.Content>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74E;"/>
+            </Button.Content>
+        </Button> -->
+        <Button
+            x:Name="_CloseButton"
+            Background="Transparent"
+            AutomationProperties.Name="Close"
+            ToolTipService.ToolTip="Close"
+            RelativePanel.AlignRightWithPanel="True">
+            <Button.Content>
+                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8BB;"/>
+            </Button.Content>
+        </Button>
+    </RelativePanel>
+
+    <!-- <StackPanel
+        Grid.Row="0"
+        Orientation="Horizontal">
+        <AppBarButton x:Name="_OpenFileButton"
+                      Icon="OpenFile"/>
+
+        <AppBarButton Icon="Save"
+                      Margin="8,0,0,0"/>
+
+        <AppBarButton Icon="Bold"
+                      Margin="0,0,8,0"/>
+
+        <AppBarButton x:Name="_ItalicButton"
+                      Icon="Italic"
+                      Margin="0,0,8,0"/>
+
+        <AppBarButton x:Name="_UnderlineButton"
+                      Icon="Underline"/>
+
+    </StackPanel> -->
+
+
+    <!-- <StackPanel
+        Grid.Row="0"
+        Orientation="Horizontal">
+        <Button>
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8E5;"/>
+        </Button>
+
+        <Button>
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE74E;"/>
+        </Button>
+
+        <Button>
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8DD;"/>
+        </Button>
+
+        <Button>
+            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8DB;"/>
+        </Button>
+
+    </StackPanel> -->
+    <!-- <Button
+        Grid.Row="0">
+        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8E5;"/>
+        Foo
+    </Button> -->
+    <!-- <TextBlock>Foo</TextBlock> -->
+
+    <RichEditBox x:Name="_Editor"
+                 Grid.Row="1"
+                 Height="100"
+                  />
+    <StackPanel Grid.Row="2">
+        <TextBlock x:Name="_Title">
+            Title
+        </TextBlock>
+        <TextBlock x:Name="_Band">
+            Band
+        </TextBlock>
+
+    </StackPanel>
+
+</Grid>
