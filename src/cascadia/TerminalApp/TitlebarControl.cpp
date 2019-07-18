@@ -13,7 +13,7 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    TitlebarControl::TitlebarControl(uint64_t handle) : 
+    TitlebarControl::TitlebarControl(uint64_t handle) :
         _window{ reinterpret_cast<HWND>(handle) }
     {
         InitializeComponent();
