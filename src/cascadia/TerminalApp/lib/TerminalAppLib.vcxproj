@@ -258,7 +258,7 @@
       <Implementation>Microsoft.UI.Xaml.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <Private>false</Private>
+      <Private>true</Private>
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
