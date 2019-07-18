@@ -44,7 +44,7 @@ Pane::Pane(const GUID& profile, const IControlHost& control, const bool lastFocu
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_control.GetControl());
+    _root.Children().Append(_control.GetRoot());
     _connectionClosedToken = _control.CloseRequested({ this, &Pane::_ControlClosedHandler2 });
 
     // Set the background of the pane to match that of the theme's default grid
@@ -596,7 +596,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _separatorRoot = { nullptr };
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_control.GetControl());
+        _root.Children().Append(_control.GetRoot());
 
         if (_lastFocused)
         {

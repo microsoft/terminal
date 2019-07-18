@@ -35,6 +35,9 @@
     <Page Include="../TerminalPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../RichTextBoxControlHost.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -45,6 +48,10 @@
     </ClInclude>
     <ClInclude Include="../TerminalPage.h">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../RichTextBoxControlHost.h">
+      <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
@@ -78,6 +85,10 @@
     </ClCompile>
     <ClCompile Include="../TerminalPage.cpp">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../RichTextBoxControlHost.cpp">
+      <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
@@ -128,6 +139,10 @@
     </Midl>
     <Midl Include="../TerminalPage.idl">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../RichTextBoxControlHost.idl">
+      <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../IControlHost.idl" />

@@ -15,6 +15,11 @@ namespace winrt::TerminalApp::implementation
         return _control.GetControl();
     }
 
+    Windows::UI::Xaml::UIElement TermControlHost::GetRoot()
+    {
+        return _control.GetControl();
+    }
+
     void TermControlHost::Close()
     {
         _control.Close();

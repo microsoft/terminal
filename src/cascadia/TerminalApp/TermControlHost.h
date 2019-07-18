@@ -10,6 +10,7 @@ namespace winrt::TerminalApp::implementation
         TermControlHost(Microsoft::Terminal::TerminalControl::TermControl control);
 
         Windows::UI::Xaml::Controls::Control GetControl();
+        Windows::UI::Xaml::UIElement GetRoot();
 
         void Close();
         hstring GetTitle();

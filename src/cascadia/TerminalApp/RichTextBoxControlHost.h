@@ -1,12 +1,12 @@
 #pragma once
-#include "TextBlockControlHost.g.h"
+#include "RichTextBoxControlHost.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
-    struct TextBlockControlHost : TextBlockControlHostT<TextBlockControlHost>
+    struct RichTextBoxControlHost : RichTextBoxControlHostT<RichTextBoxControlHost>
     {
-        TextBlockControlHost();
+        RichTextBoxControlHost();
 
         Windows::UI::Xaml::Controls::Control GetControl();
         Windows::UI::Xaml::UIElement GetRoot();
@@ -17,13 +17,13 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangedHandlers, TerminalApp::IControlHost, Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
-    private:
-        winrt::Windows::UI::Xaml::Controls::RichEditBox _textBox{ nullptr };
+        // private:
+        //     winrt::Windows::UI::Xaml::Controls::RichEditBox _textBox{ nullptr };
     };
 }
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TextBlockControlHost : TextBlockControlHostT<TextBlockControlHost, implementation::TextBlockControlHost>
+    struct RichTextBoxControlHost : RichTextBoxControlHostT<RichTextBoxControlHost, implementation::RichTextBoxControlHost>
     {
     };
 }

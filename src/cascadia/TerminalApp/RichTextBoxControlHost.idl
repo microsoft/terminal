@@ -1,0 +1,19 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// Even though this is in the same directory, we're building from a child
+// directory, so the midl compiler gets confused. TODO: This shouldn't need the
+// "../". Maybe there's a build rule we can add (gross) or we can just live with
+// it.
+import "../IControlHost.idl";
+
+namespace TerminalApp
+{
+    // I can't tell you how important it is that the base class of your custom
+    // element is the UIElement that's at the root of the xaml file.
+    [default_interface] runtimeclass RichTextBoxControlHost : Windows.UI.Xaml.Controls.Grid, IControlHost
+    {
+        RichTextBoxControlHost();
+    };
+
+}

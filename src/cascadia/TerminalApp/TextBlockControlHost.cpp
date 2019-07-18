@@ -21,6 +21,11 @@ namespace winrt::TerminalApp::implementation
     {
         return _textBox;
     }
+    Windows::UI::Xaml::UIElement TextBlockControlHost::GetRoot()
+    {
+        return _textBox;
+    }
+
     void TextBlockControlHost::Close()
     {
         throw hresult_not_implemented();
