@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="WindowsTerminal.manifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="AppHost.cpp" />
+    <ClCompile Include="IslandWindow.cpp" />
+    <ClCompile Include="NonClientIslandWindow.cpp" />
+    <ClCompile Include="Manager.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="AppHost.h" />
+    <ClInclude Include="BaseWindow.h" />
+    <ClInclude Include="IslandWindow.h" />
+    <ClInclude Include="NonClientIslandWindow.h" />
+    <ClInclude Include="Manager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="WindowsTerminal.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+</Project>

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "AppHost.h"
+#include "Manager.h"
 #include "resource.h"
 
 using namespace winrt;
@@ -102,6 +103,9 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
 
+    // Create a manager object for IPC.
+    Manager manager;
+
     // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
@@ -132,5 +136,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         TranslateMessage(&message);
         DispatchMessage(&message);
     }
+
+    manager.NotifyExit();
+
     return 0;
 }
