@@ -117,6 +117,7 @@ namespace winrt::TerminalApp::implementation
         void _SplitVertical(const std::optional<GUID>& profileGuid);
         void _SplitHorizontal(const std::optional<GUID>& profileGuid);
         void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
+        void _OpenTestPane();
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window

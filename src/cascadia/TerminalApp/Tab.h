@@ -8,7 +8,7 @@
 class Tab
 {
 public:
-    Tab(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    Tab(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
 
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem GetTabViewItem();
     winrt::Windows::UI::Xaml::UIElement GetRootElement();
@@ -19,8 +19,8 @@ public:
     void SetFocused(const bool focused);
 
     void Scroll(const int delta);
-    void AddVerticalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void AddHorizontalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void AddVerticalSplit(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
+    void AddHorizontalSplit(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
 
     void UpdateFocus();
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);

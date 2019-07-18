@@ -181,6 +181,11 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::MoveFocusDown:
             _MoveFocusHandlers(Direction::Down);
             return true;
+
+        case ShortcutAction::OpenTestPane:
+            _OpenTestPaneHandlers();
+            return true;
+
         default:
             return false;
         }
@@ -263,5 +268,6 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
     DEFINE_EVENT(AppKeyBindings, ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
     DEFINE_EVENT(AppKeyBindings, MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
+    DEFINE_EVENT(AppKeyBindings, OpenTestPane,      _OpenTestPaneHandlers,      TerminalApp::OpenTestPaneEventArgs);
     // clang-format on
 }

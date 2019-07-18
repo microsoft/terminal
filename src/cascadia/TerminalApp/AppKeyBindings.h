@@ -62,6 +62,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
         DECLARE_EVENT(ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
         DECLARE_EVENT(MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
+        DECLARE_EVENT(OpenTestPane,      _OpenTestPaneHandlers,      TerminalApp::OpenTestPaneEventArgs);
         // clang-format on
 
     private:

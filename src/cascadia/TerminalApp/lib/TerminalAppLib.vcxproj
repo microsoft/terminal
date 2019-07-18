@@ -57,9 +57,17 @@
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../AppKeyBindings.h"  >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TermControlHost.h" >
+      <DependentUpon>../TermControlHost.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TextBlockControlHost.h" >
+      <DependentUpon>../TextBlockControlHost.idl</DependentUpon>
     </ClInclude>
   </ItemGroup>
 
@@ -91,6 +99,12 @@
     <ClCompile Include="../App.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../TermControlHost.cpp" >
+      <DependentUpon>../TermControlHost.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../TextBlockControlHost.cpp" >
+      <DependentUpon>../TextBlockControlHost.idl</DependentUpon>
+    </ClCompile>
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -116,6 +130,9 @@
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="../IControlHost.idl" />
+    <Midl Include="../TermControlHost.idl" />
+    <Midl Include="../TextBlockControlHost.idl" />
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->

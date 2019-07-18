@@ -14,13 +14,38 @@ using namespace winrt::TerminalApp;
 static const int PaneSeparatorSize = 4;
 static const float Half = 0.50f;
 
-Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
+// Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
+//     _control{ control },
+//     _lastFocused{ lastFocused },
+//     _profile{ profile }
+// {
+//     _root.Children().Append(_control.GetControl());
+//     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+
+//     // Set the background of the pane to match that of the theme's default grid
+//     // background. This way, we'll match the small underline under the tabs, and
+//     // the UI will be consistent on bot light and dark modes.
+//     const auto res = Application::Current().Resources();
+//     const auto key = winrt::box_value(L"BackgroundGridThemeStyle");
+//     if (res.HasKey(key))
+//     {
+//         const auto g = res.Lookup(key);
+//         const auto style = g.try_as<winrt::Windows::UI::Xaml::Style>();
+//         // try_as fails by returning nullptr
+//         if (style)
+//         {
+//             _root.Style(style);
+//         }
+//     }
+// }
+
+Pane::Pane(const GUID& profile, const IControlHost& control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
     _root.Children().Append(_control.GetControl());
-    _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+    _connectionClosedToken = _control.CloseRequested({ this, &Pane::_ControlClosedHandler2 });
 
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
@@ -37,6 +62,11 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
             _root.Style(style);
         }
     }
+}
+
+void Pane::_ControlClosedHandler2(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::ClosedEventArgs& args)
+{
+    _ControlClosedHandler();
 }
 
 // Method Description:
@@ -301,11 +331,12 @@ void Pane::_ControlClosedHandler()
         return;
     }
 
-    if (_control.ShouldCloseOnExit())
-    {
-        // Fire our Closed event to tell our parent that we should be removed.
-        _closedHandlers();
-    }
+    // TODO: move this to the TerminalControlHost
+    // if (_control.ShouldCloseOnExit())
+    // {
+    //     // Fire our Closed event to tell our parent that we should be removed.
+    //     _closedHandlers();
+    // }
 }
 
 // Method Description:
@@ -361,7 +392,13 @@ std::shared_ptr<Pane> Pane::GetFocusedPane()
 TermControl Pane::GetFocusedTerminalControl()
 {
     auto lastFocused = GetFocusedPane();
-    return lastFocused ? lastFocused->_control : nullptr;
+    // return lastFocused ? lastFocused->_control : nullptr;
+    if (lastFocused)
+    {
+        auto termControlHost = lastFocused->_control.try_as<TermControlHost>();
+        return termControlHost ? termControlHost.Terminal() : nullptr;
+    }
+    return nullptr;
 }
 
 // Method Description:
@@ -483,9 +520,13 @@ void Pane::UpdateSettings(const TerminalSettings& settings, const GUID& profile)
     }
     else
     {
+        // TODO check if out profile is nullopt. If it is, then we don't have a terminal
         if (profile == _profile)
         {
-            _control.UpdateSettings(settings);
+            if (auto termControlHost = _control.try_as<TermControlHost>())
+            {
+                termControlHost.Terminal().UpdateSettings(settings);
+            }
         }
     }
 }
@@ -525,7 +566,8 @@ void Pane::_CloseChild(const bool closeFirst)
         _profile = remainingChild->_profile;
 
         // Add our new event handler before revoking the old one.
-        _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+        // _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+        _connectionClosedToken = _control.CloseRequested({ this, &Pane::_ControlClosedHandler2 });
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -533,8 +575,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // they'll trigger only our event handler for the control's close.
         _firstChild->Closed(_firstClosedToken);
         _secondChild->Closed(_secondClosedToken);
-        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
-        remainingChild->_control.ConnectionClosed(remainingChild->_connectionClosedToken);
+        // closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
+        // remainingChild->_control.ConnectionClosed(remainingChild->_connectionClosedToken);
+        closedChild->_control.CloseRequested(closedChild->_connectionClosedToken);
+        remainingChild->_control.CloseRequested(remainingChild->_connectionClosedToken);
 
         // If either of our children was focused, we want to take that focus from
         // them.
@@ -589,7 +633,8 @@ void Pane::_CloseChild(const bool closeFirst)
         // Revoke event handlers on old panes and controls
         oldFirst->Closed(oldFirstToken);
         oldSecond->Closed(oldSecondToken);
-        closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
+        // closedChild->_control.ConnectionClosed(closedChild->_connectionClosedToken);
+        closedChild->_control.CloseRequested(closedChild->_connectionClosedToken);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -774,7 +819,8 @@ void Pane::_ApplySplitDefinitions()
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::SplitVertical(const GUID& profile, const TermControl& control)
+// void Pane::SplitVertical(const GUID& profile, const TermControl& control)
+void Pane::SplitVertical(const GUID& profile, const IControlHost& control)
 {
     // If we're not the leaf, recurse into our children to split them.
     if (!_IsLeaf())
@@ -803,7 +849,8 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
+// void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
+void Pane::SplitHorizontal(const GUID& profile, const IControlHost& control)
 {
     if (!_IsLeaf())
     {
@@ -831,14 +878,16 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+// void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& control)
+void Pane::_Split(SplitState splitType, const GUID& profile, const IControlHost& control)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
     // revoke our handler - the child will take care of the control now.
-    _control.ConnectionClosed(_connectionClosedToken);
+    // _control.ConnectionClosed(_connectionClosedToken);
+    _control.CloseRequested(_connectionClosedToken);
     _connectionClosedToken.value = 0;
 
     _splitState = splitType;

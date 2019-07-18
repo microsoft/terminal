@@ -33,7 +33,8 @@ public:
         Horizontal = 2
     };
 
-    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool lastFocused = false);
+    // Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool lastFocused = false);
+    Pane(const GUID& profile, const winrt::TerminalApp::IControlHost& control, const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetFocusedPane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
@@ -49,15 +50,18 @@ public:
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-    void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    // void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    // void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void SplitHorizontal(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
+    void SplitVertical(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
-    winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+    // winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
+    winrt::TerminalApp::IControlHost _control{ nullptr };
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
@@ -77,7 +81,8 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    // void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    void _Split(SplitState splitType, const GUID& profile, const winrt::TerminalApp::IControlHost& control);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
@@ -89,6 +94,7 @@ private:
 
     void _FocusFirstChild();
     void _ControlClosedHandler();
+    void _ControlClosedHandler2(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::ClosedEventArgs& args);
 
     std::pair<float, float> _GetPaneSizes(const float& fullSize);
 

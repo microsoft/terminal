@@ -8,10 +8,11 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::TerminalApp;
 
 static const int TabViewFontSize = 12;
 
-Tab::Tab(const GUID& profile, const TermControl& control)
+Tab::Tab(const GUID& profile, const IControlHost& control)
 {
     _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -195,7 +196,7 @@ void Tab::Scroll(const int delta)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
+void Tab::AddVerticalSplit(const GUID& profile, const IControlHost& control)
 {
     _rootPane->SplitVertical(profile, control);
 }
@@ -208,7 +209,7 @@ void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
+void Tab::AddHorizontalSplit(const GUID& profile, const IControlHost& control)
 {
     _rootPane->SplitHorizontal(profile, control);
 }

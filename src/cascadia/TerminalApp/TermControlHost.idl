@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// Even though this is in the same directory, we're building from a child
+// directory, so the midl compiler gets confused. TODO: This shouldn't need the
+// "../". Maybe there's a build rule we can add (gross) or we can just live with
+// it.
+import "../IControlHost.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TermControlHost : IControlHost
+    {
+        TermControlHost(Microsoft.Terminal.TerminalControl.TermControl control);
+        Microsoft.Terminal.TerminalControl.TermControl Terminal { get; };
+    };
+
+}

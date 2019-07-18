@@ -508,6 +508,7 @@ namespace winrt::TerminalApp::implementation
         bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
         bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         bindings.PasteText([this]() { _PasteText(); });
+        bindings.OpenTestPane([this]() { _OpenTestPane(); });
     }
 
     // Method Description:
@@ -920,13 +921,15 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
 
         TermControl term{ settings, connection };
+        TermControlHost controlHost{ term };
 
         // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, controlHost));
 
         const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Hookup our event handlers to the new terminal
+        // TODO: non-terminal tabs? what do for these events?
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
@@ -1307,6 +1310,7 @@ namespace winrt::TerminalApp::implementation
     //   this is nullopt, use the default profile.
     void App::_SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid)
     {
+        // TODO: how do we split for non-terminal controls?
         // Do nothing if we're requesting no split.
         if (splitType == Pane::SplitState::None)
         {
@@ -1321,15 +1325,39 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
 
         TermControl newControl{ controlSettings, controlConnection };
+        TermControlHost controlHost{ newControl };
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
+        // TODO: what do we do about these events that might not make sense for non-terminal controls
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
-                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
+        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, controlHost) :
+                                                           focusedTab->AddVerticalSplit(realGuid, controlHost);
+    }
+
+    void App::_OpenTestPane()
+    {
+        const auto splitType = Pane::SplitState::Vertical;
+
+        // TODO: how do we split for non-terminal controls?
+        // Do nothing if we're requesting no split.
+
+        GUID realGuid = { 0 };
+
+        TextBlockControlHost controlHost{};
+
+        const int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+
+        // // TODO: what do we do about these events that might not make sense for non-terminal controls
+        // // Hookup our event handlers to the new terminal
+        // _RegisterTerminalEvents(newControl, focusedTab);
+
+        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, controlHost) :
+                                                           focusedTab->AddVerticalSplit(realGuid, controlHost);
     }
 
     // Method Description:
