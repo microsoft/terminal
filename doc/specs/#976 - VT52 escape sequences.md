@@ -2,7 +2,7 @@
 author: James Holderness @j4james
 created on: 2019-07-17
 last updated: 2019-07-17
-issue id: #976
+issue id: 976
 ---
 
 # VT52 Escape Sequences
