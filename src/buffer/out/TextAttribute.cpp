@@ -82,6 +82,32 @@ bool TextAttribute::IsLegacy() const noexcept
 }
 
 // Routine Description:
+// - Makes this TextAttribute's foreground color the same as the other one.
+// Arguments:
+// - The TextAttribute to copy the foreground color from
+// Return Value:
+// - <none>
+void TextAttribute::SetForegroundFrom(const TextAttribute& other) noexcept
+{
+    _foreground = other._foreground;
+    WI_ClearAllFlags(_wAttrLegacy, FG_ATTRS);
+    _wAttrLegacy |= (other._wAttrLegacy & FG_ATTRS);
+}
+
+// Routine Description:
+// - Makes this TextAttribute's background color the same as the other one.
+// Arguments:
+// - The TextAttribute to copy the background color from
+// Return Value:
+// - <none>
+void TextAttribute::SetBackgroundFrom(const TextAttribute& other) noexcept
+{
+    _background = other._background;
+    WI_ClearAllFlags(_wAttrLegacy, BG_ATTRS);
+    _wAttrLegacy |= (other._wAttrLegacy & BG_ATTRS);
+}
+
+// Routine Description:
 // - Calculates rgb colors based off of current color table and active modification attributes.
 // Arguments:
 // - colorTable: the current color table rgb values.

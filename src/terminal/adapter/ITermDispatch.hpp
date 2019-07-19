@@ -89,6 +89,9 @@ public:
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
 
+    virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
+    virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
+
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 
     virtual bool ResetMode(const DispatchTypes::ModeParams param) = 0; // DECRST

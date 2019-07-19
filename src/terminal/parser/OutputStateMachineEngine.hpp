@@ -131,7 +131,11 @@ namespace Microsoft::Console::VirtualTerminal
             DECREQTPARM_RequestTerminalParameters = VTID("x"),
             DECSCUSR_SetCursorStyle = VTID(" q"),
             DECSTR_SoftReset = VTID("!p"),
-            DECSCPP_SetColumnsPerPage = VTID("$|")
+            DECSCPP_SetColumnsPerPage = VTID("$|"),
+            XT_PushSgr = VTID("#{"),
+            XT_PushSgrAlias = VTID("#p"),
+            XT_PopSgr = VTID("#}"),
+            XT_PopSgrAlias = VTID("#q"),
         };
 
         enum Vt52ActionCodes : uint64_t

@@ -589,6 +589,19 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
         success = _dispatch->SoftReset();
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECSTR);
         break;
+
+    case CsiActionCodes::XT_PushSgr:
+    case CsiActionCodes::XT_PushSgrAlias:
+        success = _dispatch->PushGraphicsRendition(parameters);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPUSHSGR);
+        break;
+
+    case CsiActionCodes::XT_PopSgr:
+    case CsiActionCodes::XT_PopSgrAlias:
+        success = _dispatch->PopGraphicsRendition();
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::XTPOPSGR);
+        break;
+
     default:
         // If no functions to call, overall dispatch was a failure.
         success = false;
