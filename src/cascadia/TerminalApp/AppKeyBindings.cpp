@@ -102,6 +102,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::CloseTab:
             _CloseTabHandlers();
             return true;
+        case ShortcutAction::ClosePane:
+            _ClosePaneHandlers();
+            return true;
 
         case ShortcutAction::ScrollUp:
             _ScrollUpHandlers();
@@ -249,6 +252,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ClosePane,         _ClosePaneHandlers,         TerminalApp::ClosePaneEventArgs);
     DEFINE_EVENT(AppKeyBindings, SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);

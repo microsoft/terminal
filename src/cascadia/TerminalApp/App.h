@@ -102,6 +102,7 @@ namespace winrt::TerminalApp::implementation
         void _OpenNewTab(std::optional<int> profileIndex);
         void _DuplicateTabViewItem();
         void _CloseFocusedTab();
+        void _CloseFocusedPane();
         void _SelectNextTab(const bool bMoveRight);
         void _SelectTab(const int tabIndex);
 
