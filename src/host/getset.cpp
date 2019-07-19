@@ -26,7 +26,7 @@
 #define VALID_TEXT_ATTRIBUTES (FG_ATTRS | BG_ATTRS | META_ATTRS)
 
 #define INPUT_MODES (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT | ENABLE_VIRTUAL_TERMINAL_INPUT)
-#define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE)
+#define OUTPUT_MODES (ENABLE_PROCESSED_OUTPUT | ENABLE_WRAP_AT_EOL_OUTPUT | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_LVB_GRID_WORLDWIDE | ENABLE_PASSTHROUGH_MODE)
 #define PRIVATE_MODES (ENABLE_INSERT_MODE | ENABLE_QUICK_EDIT_MODE | ENABLE_AUTO_POSITION | ENABLE_EXTENDED_FLAGS)
 
 using namespace Microsoft::Console::Types;
@@ -394,7 +394,14 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
 
         SCREEN_INFORMATION& screenInfo = context.GetActiveBuffer();
         const DWORD dwOldMode = screenInfo.OutputMode;
-        const DWORD dwNewMode = mode;
+        DWORD preprocessNewMode = mode;
+
+        if (!gci.IsInVtIoMode() &&
+            (WI_IsFlagSet(preprocessNewMode, ENABLE_PASSTHROUGH_MODE)))
+        {
+            WI_ClearFlag(preprocessNewMode, ENABLE_PASSTHROUGH_MODE);
+        }
+        const DWORD dwNewMode = preprocessNewMode;
 
         screenInfo.OutputMode = dwNewMode;
 
@@ -411,6 +418,22 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
                  WI_IsFlagClear(dwOldMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
         {
             screenInfo.SetDefaultVtTabStops();
+        }
+
+        if (gci.IsInVtIoMode())
+        {
+            // if we're moving from passthrough on->off
+            if (WI_IsFlagClear(dwNewMode, ENABLE_PASSTHROUGH_MODE) &&
+                WI_IsFlagSet(dwOldMode, ENABLE_PASSTHROUGH_MODE))
+            {
+                gci.GetVtIo()->SetPassthroughMode(false);
+            }
+            // if we're moving from passthrough off->on
+            else if (WI_IsFlagSet(dwNewMode, ENABLE_PASSTHROUGH_MODE) &&
+                     WI_IsFlagClear(dwOldMode, ENABLE_PASSTHROUGH_MODE))
+            {
+                gci.GetVtIo()->SetPassthroughMode(true);
+            }
         }
 
         gci.SetVirtTermLevel(WI_IsFlagSet(dwNewMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ? 1 : 0);

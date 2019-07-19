@@ -417,3 +417,14 @@ HRESULT VtEngine::RequestCursor() noexcept
     RETURN_IF_FAILED(_Flush());
     return S_OK;
 }
+
+void VtEngine::SetPassthroughMode(const bool enable)
+{
+    _passthroughMode = enable;
+}
+
+void VtEngine::PassthroughString(const std::wstring& wstr)
+{
+    LOG_IF_FAILED(WriteTerminalW(wstr));
+    LOG_IF_FAILED(_Flush());
+}

@@ -71,6 +71,9 @@ Revision History:
 #define CONSOLE_SUSPENDED (CONSOLE_OUTPUT_SUSPENDED)
 // clang-format on
 
+// ENABLE_LVB_GRID_WORLDWIDE is 0x0010
+#define ENABLE_PASSTHROUGH_MODE 0x0020
+
 class COOKED_READ_DATA;
 class CommandHistory;
 

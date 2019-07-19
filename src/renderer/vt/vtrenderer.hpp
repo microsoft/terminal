@@ -95,6 +95,9 @@ namespace Microsoft::Console::Render
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
 
+        void SetPassthroughMode(const bool enable);
+        void PassthroughString(const std::wstring& wstr);
+
     protected:
         wil::unique_hfile _hFile;
         std::string _buffer;
@@ -132,6 +135,8 @@ namespace Microsoft::Console::Render
         Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
+
+        bool _passthroughMode{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;

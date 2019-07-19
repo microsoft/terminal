@@ -24,6 +24,10 @@ using namespace Microsoft::Console::Types;
     {
         return S_FALSE;
     }
+    if (_passthroughMode)
+    {
+        return S_FALSE;
+    }
 
     // If there's nothing to do, quick return
     bool somethingToDo = _fInvalidRectUsed ||

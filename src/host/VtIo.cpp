@@ -397,3 +397,14 @@ void VtIo::_ShutdownIfNeeded()
         ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
     }
 }
+
+void VtIo::SetPassthroughMode(const bool enable)
+{
+    _pVtRenderEngine->SetPassthroughMode(enable);
+}
+void VtIo::PassthroughString(std::wstring_view view)
+{
+    std::wstring wstr{ view };
+    // LOG_IF_FAILED(_pVtRenderEngine->WriteTerminalW(wstr));
+    _pVtRenderEngine->PassthroughString(wstr);
+}
