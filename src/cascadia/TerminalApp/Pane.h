@@ -55,6 +55,8 @@ public:
     void SplitHorizontal(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
     void SplitVertical(const GUID& profile, const winrt::TerminalApp::IControlHost& control);
 
+    void Close();
+
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:

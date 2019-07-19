@@ -35,6 +35,12 @@
     <Page Include="../TerminalPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../TitlebarControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="../TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="../RichTextBoxControlHost.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -52,6 +58,12 @@
     <ClInclude Include="../TerminalPage.h">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../TitlebarControl.h">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TabRowControl.h">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="../RichTextBoxControlHost.h">
       <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
@@ -93,6 +105,12 @@
     <ClCompile Include="../TerminalPage.cpp">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../TitlebarControl.cpp">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../TabRowControl.cpp">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="../RichTextBoxControlHost.cpp">
       <DependentUpon>../RichTextBoxControlHost.xaml</DependentUpon>
@@ -150,6 +168,14 @@
     </Midl>
     <Midl Include="../TerminalPage.idl">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TitlebarControl.idl">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TabRowControl.idl">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../RichTextBoxControlHost.idl">
@@ -279,7 +305,7 @@
       <Implementation>Microsoft.UI.Xaml.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <Private>false</Private>
+      <Private>true</Private>
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />

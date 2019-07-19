@@ -340,6 +340,18 @@ void Pane::_ControlClosedHandler()
 }
 
 // Method Description:
+// - Fire our Closed event to tell our parent that we should be removed.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::Close()
+{
+    // Fire our Closed event to tell our parent that we should be removed.
+    _closedHandlers();
+}
+
+// Method Description:
 // - Get the root UIElement of this pane. There may be a single TermControl as a
 //   child, or an entire tree of grids and panes as children of this element.
 // Arguments:

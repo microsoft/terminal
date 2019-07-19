@@ -30,6 +30,8 @@
     <ClInclude Include="TerminalPage.h" />
     <ClInclude Include="MinMaxCloseControl.h" />
     <ClInclude Include="AppKeyBindings.h" />
+    <ClInclude Include="TitlebarControl.h" />
+    <ClInclude Include="TabRowControl.h" />
     <ClInclude Include="App.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
