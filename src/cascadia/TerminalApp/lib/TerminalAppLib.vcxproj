@@ -47,6 +47,9 @@
     <Page Include="../MediaControlHost.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../WebViewHost.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -71,6 +74,10 @@
     </ClInclude>
     <ClInclude Include="../MediaControlHost.h">
       <DependentUpon>../MediaControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../WebViewHost.h">
+      <DependentUpon>../WebViewHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
@@ -118,6 +125,10 @@
     </ClCompile>
     <ClCompile Include="../MediaControlHost.cpp">
       <DependentUpon>../MediaControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../WebViewHost.cpp">
+      <DependentUpon>../WebViewHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
@@ -184,6 +195,10 @@
     </Midl>
     <Midl Include="../MediaControlHost.idl">
       <DependentUpon>../MediaControlHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../WebViewHost.idl">
+      <DependentUpon>../WebViewHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../IControlHost.idl" />

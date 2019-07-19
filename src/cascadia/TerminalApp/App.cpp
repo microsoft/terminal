@@ -1363,7 +1363,8 @@ namespace winrt::TerminalApp::implementation
 
         // TextBlockControlHost controlHost{};
         // RichTextBoxControlHost controlHost{};
-        MediaControlHost controlHost{};
+        // MediaControlHost controlHost{};
+        WebViewHost controlHost{};
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
