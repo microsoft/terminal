@@ -7,25 +7,49 @@ using namespace winrt::Windows::Media;
 
 namespace winrt::TerminalApp::implementation
 {
+    fire_and_forget GetSystemMedia()
+    {
+        co_await winrt::resume_background();
+        auto thing = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::RequestAsync();
+        auto mgr = thing.get();
+        // auto foo = co_await thing.get();
+        auto session = mgr.GetCurrentSession();
+        auto foo = session.GetPlaybackInfo();
+        auto mediaAsync = session.TryGetMediaPropertiesAsync();
+        auto media = mediaAsync.get();
+        auto artist = media.AlbumArtist();
+        auto title = media.Title();
+        std::wstring realTitle = title.c_str();
+        std::wstring realArtist = artist.c_str();
+    }
+
     MediaControlHost::MediaControlHost()
     {
         InitializeComponent();
+        // auto session = winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::GetCurrentSession();
+        // session.z
 
-        winrt::Windows::Media::SystemMediaTransportControls _control{ nullptr };
-        _control = SystemMediaTransportControls::GetForCurrentView();
-        // _control.IsPlayEnabled(true);
-        if (_control)
-        {
-            auto du = _control.DisplayUpdater();
-            auto musicProps = du.MusicProperties();
-            auto videoProps = du.VideoProperties();
-            if (musicProps)
-            {
-                auto songTitle = du.MusicProperties().Title();
-                this->_Title().Text(songTitle);
-            }
-        }
-        // = SystemMediaTransportControls.GetForCurrentView();
+        //     winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager mgr{};
+        // // winrt::Windows::Media::GlobalSystemMediaTransportControlsSessionManager mgr{};
+
+        // winrt::Windows::Media::SystemMediaTransportControls _control{ nullptr };
+        // _control = SystemMediaTransportControls::GetForCurrentView();
+        // // _control.IsPlayEnabled(true);
+        // if (_control)
+        // {
+        //     auto du = _control.DisplayUpdater();
+        //     auto musicProps = du.MusicProperties();
+        //     auto videoProps = du.VideoProperties();
+        //     if (musicProps)
+        //     {
+        //         auto songTitle = du.MusicProperties().Title();
+        //         this->_Title().Text(songTitle);
+        //     }
+        // }
+        // // = SystemMediaTransportControls.GetForCurrentView();
+        Loaded([this](auto&&, auto&&) {
+            GetSystemMedia();
+        });
     }
 
     // Windows::UI::Xaml::Controls::Control MediaControlHost::GetControl()

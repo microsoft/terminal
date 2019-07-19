@@ -1362,9 +1362,10 @@ namespace winrt::TerminalApp::implementation
         GUID realGuid = { 0 };
 
         // TextBlockControlHost controlHost{};
-        RichTextBoxControlHost controlHost{};
-        // MediaControlHost controlHost{};
+        // RichTextBoxControlHost controlHost{};
+        MediaControlHost controlHost{};
         // WebViewHost controlHost{};
+        // SettingsHost controlHost{};
 
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];

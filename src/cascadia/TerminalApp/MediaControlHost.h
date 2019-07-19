@@ -2,6 +2,7 @@
 #include "MediaControlHost.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include <winrt/Windows.Media.h>
+#include <winrt/Windows.Media.Control.h>
 
 namespace winrt::TerminalApp::implementation
 {
