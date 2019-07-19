@@ -12,8 +12,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalPage : TerminalPageT<TerminalPage>
     {
         TerminalPage();
-
-        void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
     };
 }
 

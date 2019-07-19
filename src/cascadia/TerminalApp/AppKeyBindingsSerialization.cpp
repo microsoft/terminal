@@ -30,6 +30,7 @@ static constexpr std::string_view NewTabWithProfile8Key{ "newTabProfile8" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view CloseWindowKey{ "closeWindow" };
 static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
 static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
@@ -55,6 +56,10 @@ static constexpr std::string_view ResizePaneLeftKey{ "resizePaneLeft" };
 static constexpr std::string_view ResizePaneRightKey{ "resizePaneRight" };
 static constexpr std::string_view ResizePaneUpKey{ "resizePaneUp" };
 static constexpr std::string_view ResizePaneDownKey{ "resizePaneDown" };
+static constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" };
+static constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" };
+static constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" };
+static constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -82,6 +87,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { NewWindowKey, ShortcutAction::NewWindow },
     { CloseWindowKey, ShortcutAction::CloseWindow },
     { CloseTabKey, ShortcutAction::CloseTab },
+    { ClosePaneKey, ShortcutAction::ClosePane },
     { NextTabKey, ShortcutAction::NextTab },
     { PrevTabKey, ShortcutAction::PrevTab },
     { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
@@ -105,6 +111,10 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { ResizePaneRightKey, ShortcutAction::ResizePaneRight },
     { ResizePaneUpKey, ShortcutAction::ResizePaneUp },
     { ResizePaneDownKey, ShortcutAction::ResizePaneDown },
+    { MoveFocusLeftKey, ShortcutAction::MoveFocusLeft },
+    { MoveFocusRightKey, ShortcutAction::MoveFocusRight },
+    { MoveFocusUpKey, ShortcutAction::MoveFocusUp },
+    { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
 };
 

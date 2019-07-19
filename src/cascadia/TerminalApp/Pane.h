@@ -47,9 +47,12 @@ public:
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
+    bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    void Close();
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
@@ -80,7 +83,9 @@ private:
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();
     void _ApplySplitDefinitions();
+
     bool _Resize(const winrt::TerminalApp::Direction& direction);
+    bool _NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
     void _CloseChild(const bool closeFirst);
 

@@ -76,7 +76,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const DWORD modifiers) override;
+    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
