@@ -7,7 +7,6 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
-#include "ResourceAccessor.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -41,7 +40,8 @@ namespace winrt::TerminalApp::implementation
         _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
-        _dialogLock{}
+        _dialogLock{},
+        _resourceLoader{ L"TerminalApp/Resources" }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -171,9 +171,9 @@ namespace winrt::TerminalApp::implementation
     void App::_ShowOkDialog(const winrt::hstring& titleKey,
                             const winrt::hstring& contentKey)
     {
-        auto title = ResourceAccessor::GetLocalizedString(titleKey);
-        auto message = ResourceAccessor::GetLocalizedString(contentKey);
-        auto buttonText = ResourceAccessor::GetLocalizedString(L"Ok");
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto message = _resourceLoader.GetLocalizedString(contentKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
     }
@@ -184,14 +184,14 @@ namespace winrt::TerminalApp::implementation
     //   Notes link.
     void App::_ShowAboutDialog()
     {
-        const auto title = ResourceAccessor::GetLocalizedString(L"AboutTitleText");
-        const auto versionLabel = ResourceAccessor::GetLocalizedString(L"VersionLabelText");
-        const auto gettingStartedLabel = ResourceAccessor::GetLocalizedString(L"GettingStartedLabelText");
-        const auto documentationLabel = ResourceAccessor::GetLocalizedString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = ResourceAccessor::GetLocalizedString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = ResourceAccessor::GetLocalizedString(L"GettingStartedUriValue");
-        const auto documentationUriValue = ResourceAccessor::GetLocalizedString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = ResourceAccessor::GetLocalizedString(L"ReleaseNotesUriValue");
+        const auto title = _resourceLoader.GetLocalizedString(L"AboutTitleText");
+        const auto versionLabel = _resourceLoader.GetLocalizedString(L"VersionLabelText");
+        const auto gettingStartedLabel = _resourceLoader.GetLocalizedString(L"GettingStartedLabelText");
+        const auto documentationLabel = _resourceLoader.GetLocalizedString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = _resourceLoader.GetLocalizedString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = _resourceLoader.GetLocalizedString(L"GettingStartedUriValue");
+        const auto documentationUriValue = _resourceLoader.GetLocalizedString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = _resourceLoader.GetLocalizedString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -236,7 +236,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);
 
-        const auto buttonText = ResourceAccessor::GetLocalizedString(L"Ok");
+        const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         gettingStartedLink.Foreground(blueBrush);
         documentationLink.Foreground(blueBrush);
@@ -369,7 +369,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text(ResourceAccessor::GetLocalizedString(L"SettingsMenuItem"));
+            settingsItem.Text(_resourceLoader.GetLocalizedString(L"SettingsMenuItem"));
 
             Controls::SymbolIcon ico{};
             ico.Symbol(Controls::Symbol::Setting);
@@ -386,7 +386,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(ResourceAccessor::GetLocalizedString(L"FeedbackMenuItem"));
+            feedbackFlyout.Text(_resourceLoader.GetLocalizedString(L"FeedbackMenuItem"));
 
             Controls::FontIcon feedbackIco{};
             feedbackIco.Glyph(L"\xE939");
@@ -398,7 +398,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the about button.
             auto aboutFlyout = Controls::MenuFlyoutItem{};
-            aboutFlyout.Text(ResourceAccessor::GetLocalizedString(L"AboutMenuItem"));
+            aboutFlyout.Text(_resourceLoader.GetLocalizedString(L"AboutMenuItem"));
 
             Controls::SymbolIcon aboutIco{};
             aboutIco.Symbol(Controls::Symbol::Help);
@@ -451,7 +451,7 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = ResourceAccessor::GetLocalizedString(L"FeedbackUriValue");
+        const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
 
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }

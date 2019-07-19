@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 #include "App.g.h"
 #include "App.base.h"
+#include "ScopedResourceLoader.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -64,6 +65,8 @@ namespace winrt::TerminalApp::implementation
 
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
+
+        ScopedResourceLoader _resourceLoader;
 
         wil::unique_folder_change_reader_nothrow _reader;
 
