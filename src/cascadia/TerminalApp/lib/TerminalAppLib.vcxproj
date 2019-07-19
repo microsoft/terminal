@@ -50,6 +50,9 @@
     <Page Include="../WebViewHost.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../SettingsHost.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -78,6 +81,10 @@
     </ClInclude>
     <ClInclude Include="../WebViewHost.h">
       <DependentUpon>../WebViewHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../SettingsHost.h">
+      <DependentUpon>../SettingsHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
@@ -129,6 +136,10 @@
     </ClCompile>
     <ClCompile Include="../WebViewHost.cpp">
       <DependentUpon>../WebViewHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../SettingsHost.cpp">
+      <DependentUpon>../SettingsHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
@@ -198,7 +209,11 @@
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../WebViewHost.idl">
-      <DependentUpon>../WebViewHost.xaml</DependentUpon>
+      <DependentUpon>../SettingsHost.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../SettingsHost.idl">
+      <DependentUpon>../SettingsHost.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="../IControlHost.idl" />
