@@ -7,7 +7,7 @@ namespace TerminalApp
 
     interface IControlHost
     {
-        Windows.UI.Xaml.Controls.Control GetControl();
+        // Windows.UI.Xaml.Controls.Control GetControl();
         Windows.UI.Xaml.UIElement GetRoot();
 
         event Windows.Foundation.TypedEventHandler<IControlHost, ClosedEventArgs> CloseRequested;
@@ -18,7 +18,7 @@ namespace TerminalApp
         Windows.Foundation.Size MinimumSize { get; };
 
         // Other things we'll need:
-        // * bool IsFocused();
-        // * void Focus()
+        Boolean IsFocused();
+        void Focus();
     }
 }

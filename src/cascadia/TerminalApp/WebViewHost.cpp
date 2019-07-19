@@ -39,10 +39,10 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
-    Windows::UI::Xaml::Controls::Control WebViewHost::GetControl()
-    {
-        return _Editor();
-    }
+    // Windows::UI::Xaml::Controls::Control WebViewHost::GetControl()
+    // {
+    //     return _Editor();
+    // }
 
     Windows::UI::Xaml::UIElement WebViewHost::GetRoot()
     {
@@ -62,6 +62,15 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::Size WebViewHost::MinimumSize() const
     {
         return { 32, 32 };
+    }
+
+    bool WebViewHost::IsFocused()
+    {
+        return _Editor().FocusState() != FocusState::Unfocused;
+    }
+    void WebViewHost::Focus()
+    {
+        _Editor().Focus(FocusState::Programmatic);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(WebViewHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);

@@ -17,10 +17,10 @@ namespace winrt::TerminalApp::implementation
         // _textBox.Text(L"I am a TextBox");
     }
 
-    Windows::UI::Xaml::Controls::Control TextBlockControlHost::GetControl()
-    {
-        return _textBox;
-    }
+    // Windows::UI::Xaml::Controls::Control TextBlockControlHost::GetControl()
+    // {
+    //     return _textBox;
+    // }
     Windows::UI::Xaml::UIElement TextBlockControlHost::GetRoot()
     {
         return _textBox;
@@ -39,6 +39,15 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::Size TextBlockControlHost::MinimumSize() const
     {
         return { 32, 32 };
+    }
+
+    bool TextBlockControlHost::IsFocused() const
+    {
+        return _textBox.FocusState() != FocusState::Unfocused;
+    }
+    void TextBlockControlHost::Focus()
+    {
+        _textBox.Focus(FocusState::Programmatic);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TextBlockControlHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);

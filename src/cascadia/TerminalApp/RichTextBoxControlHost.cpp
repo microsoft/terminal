@@ -10,13 +10,12 @@ namespace winrt::TerminalApp::implementation
     RichTextBoxControlHost::RichTextBoxControlHost()
     {
         InitializeComponent();
-
     }
 
-    Windows::UI::Xaml::Controls::Control RichTextBoxControlHost::GetControl()
-    {
-        return _Editor();
-    }
+    // Windows::UI::Xaml::Controls::Control RichTextBoxControlHost::GetControl()
+    // {
+    //     return _Editor();
+    // }
 
     Windows::UI::Xaml::UIElement RichTextBoxControlHost::GetRoot()
     {
@@ -36,6 +35,15 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::Size RichTextBoxControlHost::MinimumSize() const
     {
         return { 32, 32 };
+    }
+
+    bool RichTextBoxControlHost::IsFocused() 
+    {
+        return _Editor().FocusState() != winrt::Windows::UI::Xaml::FocusState::Unfocused;
+    }
+    void RichTextBoxControlHost::Focus()
+    {
+        _Editor().Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(RichTextBoxControlHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);

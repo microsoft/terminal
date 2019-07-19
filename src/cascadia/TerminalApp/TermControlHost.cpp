@@ -10,10 +10,10 @@ namespace winrt::TerminalApp::implementation
         // TODO: Hookup the control's titlechanged event, closed event
     }
 
-    Windows::UI::Xaml::Controls::Control TermControlHost::GetControl()
-    {
-        return _control.GetControl();
-    }
+    // Windows::UI::Xaml::Controls::Control TermControlHost::GetControl()
+    // {
+    //     return _control.GetControl();
+    // }
 
     Windows::UI::Xaml::UIElement TermControlHost::GetRoot()
     {
@@ -38,6 +38,15 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::Size TermControlHost::MinimumSize() const
     {
         return _control.MinimumSize();
+    }
+
+    bool TermControlHost::IsFocused()
+    {
+        return _control.GetControl().FocusState() != winrt::Windows::UI::Xaml::FocusState::Unfocused;
+    }
+    void TermControlHost::Focus()
+    {
+        _control.GetControl().Focus(winrt::Windows::UI::Xaml::FocusState::Programmatic);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TermControlHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);

@@ -28,10 +28,10 @@ namespace winrt::TerminalApp::implementation
         // = SystemMediaTransportControls.GetForCurrentView();
     }
 
-    Windows::UI::Xaml::Controls::Control MediaControlHost::GetControl()
-    {
-        return _Editor();
-    }
+    // Windows::UI::Xaml::Controls::Control MediaControlHost::GetControl()
+    // {
+    //     return _Editor();
+    // }
 
     Windows::UI::Xaml::UIElement MediaControlHost::GetRoot()
     {
@@ -51,6 +51,15 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::Foundation::Size MediaControlHost::MinimumSize() const
     {
         return { 32, 32 };
+    }
+
+    bool MediaControlHost::IsFocused()
+    {
+        return _Editor().FocusState() != FocusState::Unfocused;
+    }
+    void MediaControlHost::Focus()
+    {
+        _Editor().Focus(FocusState::Programmatic);
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MediaControlHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);
