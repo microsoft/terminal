@@ -24,6 +24,8 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
+GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
 CascadiaSettings::CascadiaSettings() :
     _globals{},
     _profiles{}
@@ -239,13 +241,16 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
+#ifndef _M_ARM64
     auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
     azureCloudShellProfile.SetCommandline(L"Azure");
     azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
     azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
-    azureCloudShellProfile.SetAcrylicOpacity(0.6);
+    azureCloudShellProfile.SetAcrylicOpacity(0.85);
     azureCloudShellProfile.SetUseAcrylic(true);
     azureCloudShellProfile.SetCloseOnExit(false);
+    azureCloudShellProfile.SetConnectionType(AzureConnectionType);
+#endif
 
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
@@ -269,7 +274,9 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+#ifndef _M_ARM64
     _profiles.emplace_back(azureCloudShellProfile);
+#endif
     try
     {
         _AppendWslProfiles(_profiles);

@@ -22,9 +22,9 @@
     <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">arm64-windows</VcpkgTriplet>
   </PropertyGroup>
   <ItemGroup>
-    <ClInclude Include="AzureClientID.h" />
-    <ClInclude Include="AzureConnection.h" />
-    <ClInclude Include="AzureConnectionStrings.h" />
+    <ClInclude Include="AzureClientID.h" Condition="'$(Platform)'!='ARM64'" />
+    <ClInclude Include="AzureConnection.h" Condition="'$(Platform)'!='ARM64'" />
+    <ClInclude Include="AzureConnectionStrings.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConhostConnection.h">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
@@ -34,7 +34,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="AzureConnection.cpp" />
+    <ClCompile Include="AzureConnection.cpp" Condition="'$(Platform)'!='ARM64'" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -47,10 +47,10 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="AzureConnection.idl" />
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
+    <Midl Include="AzureConnection.idl" Condition="'$(Platform)'!='ARM64'" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -20,6 +20,8 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "Profile.h"
 
+extern GUID AzureConnectionType;
+
 namespace TerminalApp
 {
     class CascadiaSettings;

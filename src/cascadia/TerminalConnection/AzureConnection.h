@@ -46,7 +46,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             tenantChoice,
             storeTokens,
             termConnecting,
-            termConnected
+            termConnected,
+            noConnect
         };
 
         State _state{ State::accessStored };
@@ -61,6 +62,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
+        HRESULT _accessHelper();
+        HRESULT _deviceFlowHelper();
+        HRESULT _tenantChoiceHelper();
+        HRESULT _storeHelper();
+        HRESULT _connectHelper();
 
         const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
@@ -86,6 +92,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void _headerHelper(web::http::http_request theRequest);
         void _storeCredential();
         void _removeCredentials();
+        std::wstring _strFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID);
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };

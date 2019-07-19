@@ -19,8 +19,6 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
-const auto AzureConnString = L"Azure";
-
 // Note: Generate GUID using TlgGuid.exe tool
 TRACELOGGING_DEFINE_PROVIDER(
     g_hTerminalAppProvider,
@@ -918,15 +916,7 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection{ nullptr };
-        if (settings.Commandline() == AzureConnString)
-        {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
-        }
-        else
-        {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
-        }
+        const auto connection = _CreateConnectionFromsettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -1312,15 +1302,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        TerminalConnection::ITerminalConnection controlConnection{ nullptr };
-        if (controlSettings.Commandline() == AzureConnString)
-        {
-            controlConnection = TerminalConnection::AzureConnection(controlSettings.InitialRows(), controlSettings.InitialCols());
-        }
-        else
-        {
-            controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), controlSettings.InitialRows(), controlSettings.InitialCols(), winrt::guid());
-        }
+        const auto controlConnection = _CreateConnectionFromsettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1414,6 +1396,33 @@ namespace winrt::TerminalApp::implementation
             auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
             menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
         }
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromsettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+#ifndef _M_ARM64
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType)
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+        }
+        else
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+        }
+#else
+        connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+#endif
+
+        return connection;
     }
 
     // -------------------------------- WinRT Events ---------------------------------
