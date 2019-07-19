@@ -11,6 +11,7 @@
 #include "renderFontDefaults.hpp"
 
 #include "ApiRoutines.h"
+#include "ConsoleArguments.hpp"
 
 #include "../types/inc/GlyphWidth.hpp"
 
@@ -31,15 +32,15 @@ using namespace Microsoft::Console::Render;
 const UINT CONSOLE_EVENT_FAILURE_ID = 21790;
 const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
-[[nodiscard]] HRESULT ConsoleServerInitialization(_In_ HANDLE Server, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT ConsoleServerInitialization(const ConsoleArguments& args)
 {
     Globals& Globals = ServiceLocator::LocateGlobals();
 
     try
     {
-        Globals.pDeviceComm = new DeviceComm(Server);
+        Globals.pDeviceComm = new DeviceComm(args.GetServerHandle());
 
-        Globals.launchArgs = *args;
+        Globals.launchArgs = args;
 
         Globals.uiOEMCP = GetOEMCP();
         Globals.uiWindowsCP = GetACP();
@@ -245,10 +246,10 @@ void ConsoleCheckDebug()
 #endif
 }
 
-[[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(_In_ HANDLE Server, const ConsoleArguments* const args)
+[[nodiscard]] HRESULT ConsoleCreateIoThreadLegacy(const ConsoleArguments& args)
 {
     auto& g = ServiceLocator::LocateGlobals();
-    RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
+    RETURN_IF_FAILED(ConsoleServerInitialization(args));
     RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.

@@ -19,7 +19,7 @@ namespace Microsoft::Console::VirtualTerminal
         VtIo();
         virtual ~VtIo() override = default;
 
-        [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
+        [[nodiscard]] HRESULT Initialize(const ConsoleArguments args);
 
         [[nodiscard]] HRESULT CreateAndStartSignalThread() noexcept;
         [[nodiscard]] HRESULT CreateIoHandlers() noexcept;

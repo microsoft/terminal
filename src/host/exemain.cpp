@@ -196,7 +196,7 @@ int CALLBACK wWinMain(
         {
             if (args.ShouldCreateServerHandle())
             {
-                hr = Entrypoints::StartConsoleForCmdLine(args.GetClientCommandline().c_str(), args.ShouldSendToManager(), &args);
+                hr = Entrypoints::StartConsoleForCmdLine(args);
             }
             else
             {
@@ -204,7 +204,7 @@ int CALLBACK wWinMain(
 
                 if (SUCCEEDED(hr))
                 {
-                    hr = Entrypoints::StartConsoleForServerHandle(args.GetServerHandle(), args.ShouldSendToManager(), &args);
+                    hr = Entrypoints::StartConsoleForServerHandle(args);
                 }
             }
         }

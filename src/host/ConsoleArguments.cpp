@@ -287,7 +287,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
 // - S_OK if we could successfully parse the given text and store it in the handle value location.
 // - E_INVALIDARG if we couldn't parse the text as a valid hex-encoded handle number OR
 //                if the handle value was already filled.
-[[nodiscard]] HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ DWORD& handleAsVal)
+[[nodiscard]] HRESULT ConsoleArguments::s_ParseHandleArg(const std::wstring& handleAsText, _Inout_ HANDLE& handleAsVal)
 {
     HRESULT hr = S_OK;
 
@@ -298,13 +298,15 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     }
     else if (0 == handleAsVal)
     {
-        handleAsVal = wcstoul(handleAsText.c_str(), nullptr /*endptr*/, 16 /*base*/);
+        const auto handleAsUlong = wcstoul(handleAsText.c_str(), nullptr /*endptr*/, 16 /*base*/);
 
         // If the handle didn't parse into a reasonable handle ID, invalid.
-        if (handleAsVal == 0)
+        if (handleAsUlong == 0)
         {
             hr = E_INVALIDARG;
         }
+
+        handleAsVal = UlongToHandle(handleAsUlong);
     }
     else
     {
@@ -560,12 +562,12 @@ bool ConsoleArguments::InConptyMode() const noexcept
     return IsValidHandle(_vtInHandle) || IsValidHandle(_vtOutHandle) || HasSignalHandle();
 }
 
-bool ConsoleArguments::IsHeadless() const
+bool ConsoleArguments::IsHeadless() const noexcept
 {
     return _headless;
 }
 
-bool ConsoleArguments::ShouldCreateServerHandle() const
+bool ConsoleArguments::ShouldCreateServerHandle() const noexcept
 {
     return _createServerHandle;
 }
@@ -575,52 +577,57 @@ bool ConsoleArguments::ShouldSendToManager() const noexcept
     return _forceManager;
 }
 
-HANDLE ConsoleArguments::GetServerHandle() const
+HANDLE ConsoleArguments::GetServerHandle() const noexcept
 {
-    return ULongToHandle(_serverHandle);
+    return _serverHandle;
 }
 
-HANDLE ConsoleArguments::GetSignalHandle() const
+void ConsoleArguments::SetServerHandle(const HANDLE server) noexcept
 {
-    return ULongToHandle(_signalHandle);
+    _serverHandle = server;
 }
 
-HANDLE ConsoleArguments::GetVtInHandle() const
+HANDLE ConsoleArguments::GetSignalHandle() const noexcept
+{
+    return _signalHandle;
+}
+
+HANDLE ConsoleArguments::GetVtInHandle() const noexcept
 {
     return _vtInHandle;
 }
 
-HANDLE ConsoleArguments::GetVtOutHandle() const
+HANDLE ConsoleArguments::GetVtOutHandle() const noexcept
 {
     return _vtOutHandle;
 }
 
-std::wstring ConsoleArguments::GetClientCommandline() const
+std::wstring_view ConsoleArguments::GetClientCommandline() const noexcept
 {
     return _clientCommandline;
 }
 
-std::wstring ConsoleArguments::GetVtMode() const
+std::wstring ConsoleArguments::GetVtMode() const noexcept
 {
     return _vtMode;
 }
 
-bool ConsoleArguments::GetForceV1() const
+bool ConsoleArguments::GetForceV1() const noexcept
 {
     return _forceV1;
 }
 
-short ConsoleArguments::GetWidth() const
+short ConsoleArguments::GetWidth() const noexcept
 {
     return _width;
 }
 
-short ConsoleArguments::GetHeight() const
+short ConsoleArguments::GetHeight() const noexcept
 {
     return _height;
 }
 
-bool ConsoleArguments::GetInheritCursor() const
+bool ConsoleArguments::GetInheritCursor() const noexcept
 {
     return _inheritCursor;
 }

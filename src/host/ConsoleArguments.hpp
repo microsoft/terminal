@@ -33,24 +33,26 @@ public:
 
     bool HasVtHandles() const;
     bool InConptyMode() const noexcept;
-    bool IsHeadless() const;
-    bool ShouldCreateServerHandle() const;
+    bool IsHeadless() const noexcept;
+    bool ShouldCreateServerHandle() const noexcept;
     bool ShouldSendToManager() const noexcept;
 
-    HANDLE GetServerHandle() const;
-    HANDLE GetVtInHandle() const;
-    HANDLE GetVtOutHandle() const;
+    HANDLE GetServerHandle() const noexcept;
+    void SetServerHandle(const HANDLE server) noexcept;
+
+    HANDLE GetVtInHandle() const noexcept;
+    HANDLE GetVtOutHandle() const noexcept;
 
     bool HasSignalHandle() const;
-    HANDLE GetSignalHandle() const;
+    HANDLE GetSignalHandle() const noexcept;
 
-    std::wstring GetClientCommandline() const;
-    std::wstring GetVtMode() const;
-    bool GetForceV1() const;
+    std::wstring_view GetClientCommandline() const noexcept;
+    std::wstring GetVtMode() const noexcept;
+    bool GetForceV1() const noexcept;
 
-    short GetWidth() const;
-    short GetHeight() const;
-    bool GetInheritCursor() const;
+    short GetWidth() const noexcept;
+    short GetHeight() const noexcept;
+    bool GetInheritCursor() const noexcept;
 
     void SetExpectedSize(COORD dimensions) noexcept;
 
@@ -123,8 +125,8 @@ private:
 
     bool _forceManager;
     bool _createServerHandle;
-    DWORD _serverHandle;
-    DWORD _signalHandle;
+    HANDLE _serverHandle;
+    HANDLE _signalHandle;
     bool _inheritCursor;
 
     bool _recievedEarlySizeChange;
@@ -147,7 +149,7 @@ private:
                                                       _Inout_ size_t& index);
 
     [[nodiscard]] static HRESULT s_ParseHandleArg(const std::wstring& handleAsText,
-                                                  _Inout_ DWORD& handleAsVal);
+                                                  _Inout_ HANDLE& handle);
 
 #ifdef UNIT_TESTING
     friend class ConsoleArgumentsTests;

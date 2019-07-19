@@ -70,14 +70,14 @@ VtIo::VtIo() :
     return S_OK;
 }
 
-[[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments* const pArgs)
+[[nodiscard]] HRESULT VtIo::Initialize(const ConsoleArguments args)
 {
-    _lookingForCursorPosition = pArgs->GetInheritCursor();
+    _lookingForCursorPosition = args.GetInheritCursor();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
-    if (pArgs->InConptyMode())
+    if (args.InConptyMode())
     {
-        return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
+        return _Initialize(args.GetVtInHandle(), args.GetVtOutHandle(), args.GetVtMode(), args.GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
     else

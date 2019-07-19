@@ -10,19 +10,18 @@
 #include "winbasep.h"
 
 #include "..\types\Manager.h"
+#include "..\host\ConsoleArguments.hpp"
 
-[[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle,
-                                                               const bool forceManager,
-                                                               const ConsoleArguments* const args)
+[[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const ConsoleArguments& args)
 {
-    if (forceManager)
+    if (args.ShouldSendToManager())
     {
-        Manager::s_TrySendToManager(ServerHandle);
+        Manager::s_TrySendToManager(args.GetServerHandle());
         return S_OK;
     }
     else
     {
-        return ConsoleCreateIoThreadLegacy(ServerHandle, args);
+        return ConsoleCreateIoThreadLegacy(args);
     }
 }
 
@@ -31,9 +30,7 @@
 #pragma warning(push)
 #pragma warning(disable : 4702)
 
-[[nodiscard]] HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine,
-                                                          const bool forceManager,
-                                                          const ConsoleArguments* const args)
+[[nodiscard]] HRESULT Entrypoints::StartConsoleForCmdLine(ConsoleArguments& args)
 {
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
@@ -51,7 +48,8 @@
                                                                    L"\\Reference",
                                                                    FALSE));
 
-        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), forceManager, args));
+        args.SetServerHandle(ServerHandle.get());
+        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(args));
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.
@@ -155,6 +153,8 @@
                                                              NULL));
 
         // We have to copy the command line string we're given because CreateProcessW has to be called with mutable data.
+        PCWSTR pwszCmdLine = args.GetClientCommandline().data();
+
         if (wcslen(pwszCmdLine) == 0)
         {
             // If they didn't give us one, just launch cmd.exe.
