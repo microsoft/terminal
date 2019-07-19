@@ -287,8 +287,8 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('D') });
 
-    keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                              KeyChord{ KeyModifiers::Ctrl,
+    keyBindings.SetKeyBinding(ShortcutAction::ClosePane,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('W') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CopyText,

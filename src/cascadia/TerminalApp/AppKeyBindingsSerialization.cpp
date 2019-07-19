@@ -30,6 +30,7 @@ static constexpr std::string_view NewTabWithProfile8Key{ "newTabProfile8" };
 static constexpr std::string_view NewWindowKey{ "newWindow" };
 static constexpr std::string_view CloseWindowKey{ "closeWindow" };
 static constexpr std::string_view CloseTabKey{ "closeTab" };
+static constexpr std::string_view ClosePaneKey{ "closePane" };
 static constexpr std::string_view SwitchtoTabKey{ "switchToTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view PrevTabKey{ "prevTab" };
@@ -86,6 +87,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { NewWindowKey, ShortcutAction::NewWindow },
     { CloseWindowKey, ShortcutAction::CloseWindow },
     { CloseTabKey, ShortcutAction::CloseTab },
+    { ClosePaneKey, ShortcutAction::ClosePane },
     { NextTabKey, ShortcutAction::NextTab },
     { PrevTabKey, ShortcutAction::PrevTab },
     { IncreaseFontSizeKey, ShortcutAction::IncreaseFontSize },
