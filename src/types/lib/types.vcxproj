@@ -5,6 +5,7 @@
     <ClCompile Include="..\CodepointWidthDetector.cpp" />
     <ClCompile Include="..\convert.cpp" />
     <ClCompile Include="..\GlyphWidth.cpp" />
+    <ClCompile Include="..\Manager.cpp" />
     <ClCompile Include="..\MouseEvent.cpp" />
     <ClCompile Include="..\FocusEvent.cpp" />
     <ClCompile Include="..\IInputEvent.cpp" />
@@ -26,6 +27,7 @@
     <ClInclude Include="..\inc\IInputEvent.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\Manager.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\utils.hpp" />
   </ItemGroup>

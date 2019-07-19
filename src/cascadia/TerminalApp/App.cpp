@@ -1158,6 +1158,13 @@ namespace winrt::TerminalApp::implementation
         return { L"Windows Terminal" };
     }
 
+    void App::IncomingConnection()
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+            _OpenNewTab(std::nullopt);
+        });
+    }
+
     // Method Description:
     // - Additional responses to clicking on a TabView's item. Currently, just remove tab with middle click
     // Arguments:

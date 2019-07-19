@@ -14,6 +14,7 @@ public:
     AppHost() noexcept;
     virtual ~AppHost();
 
+    void IncomingConnection();
     void AppTitleChanged(winrt::hstring newTitle);
     void LastTabClosed();
     void Initialize();

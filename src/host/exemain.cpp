@@ -7,6 +7,7 @@
 #include "srvinit.h"
 #include "..\server\Entrypoints.h"
 #include "..\interactivity\inc\ServiceLocator.hpp"
+#include "..\types\Manager.h"
 
 // Define TraceLogging provider
 TRACELOGGING_DEFINE_PROVIDER(
@@ -195,7 +196,7 @@ int CALLBACK wWinMain(
         {
             if (args.ShouldCreateServerHandle())
             {
-                hr = Entrypoints::StartConsoleForCmdLine(args.GetClientCommandline().c_str(), &args);
+                hr = Entrypoints::StartConsoleForCmdLine(args.GetClientCommandline().c_str(), args.ShouldSendToManager(), &args);
             }
             else
             {
@@ -203,7 +204,7 @@ int CALLBACK wWinMain(
 
                 if (SUCCEEDED(hr))
                 {
-                    hr = Entrypoints::StartConsoleForServerHandle(args.GetServerHandle(), &args);
+                    hr = Entrypoints::StartConsoleForServerHandle(args.GetServerHandle(), args.ShouldSendToManager(), &args);
                 }
             }
         }

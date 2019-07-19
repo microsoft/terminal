@@ -33,6 +33,7 @@ SOURCES= \
     ..\FocusEvent.cpp \
     ..\GlyphWidth.cpp \
     ..\KeyEvent.cpp \
+    ..\Manager.cpp \
     ..\MenuEvent.cpp \
     ..\ModifierKeyState.cpp \
     ..\MouseEvent.cpp \

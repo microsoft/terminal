@@ -1,8 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "pch.h"
-
 class Manager final
 {
 public:
@@ -10,6 +8,9 @@ public:
     virtual ~Manager();
 
     void NotifyExit();
+
+    static void s_RegisterOnConnection(std::function<void()> func);
+    static bool s_TrySendToManager(const HANDLE server);
 
     Manager(const Manager&) = delete;
     Manager(Manager&&) = delete;
@@ -26,12 +27,20 @@ private:
 
     enum class ManagerMessageTypes
     {
-        GetManagerPid
+        GetManagerPid,
+        SendConnection
     };
 
     struct ManagerMessageQuery
     {
         ManagerMessageTypes type;
+        union
+        {
+            struct SendConnection
+            {
+                HANDLE handle;
+            } sendConn;
+        } query;
     };
 
     struct ManagerMessageReply
@@ -43,11 +52,16 @@ private:
             {
                 DWORD id;
             } getPid;
+            struct SendConnection
+            {
+                bool ok;
+            } sendConn;
         } reply;
     };
 
-    ManagerMessageReply _ask(ManagerMessageQuery query);
-    ManagerMessageReply _getPid();
+    static ManagerMessageReply _ask(ManagerMessageQuery query);
+    static ManagerMessageReply _getPid(ManagerMessageQuery query);
+    static ManagerMessageReply _sendConnection(ManagerMessageQuery query);
 
     void _becomeServer();
     void _serverLoop();

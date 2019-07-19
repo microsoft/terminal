@@ -40,6 +40,8 @@ namespace winrt::TerminalApp::implementation
 
         hstring GetTitle();
 
+        void IncomingConnection();
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);

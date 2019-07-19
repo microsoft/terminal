@@ -35,6 +35,7 @@ public:
     bool InConptyMode() const noexcept;
     bool IsHeadless() const;
     bool ShouldCreateServerHandle() const;
+    bool ShouldSendToManager() const noexcept;
 
     HANDLE GetServerHandle() const;
     HANDLE GetVtInHandle() const;
@@ -66,6 +67,7 @@ public:
     static const std::wstring_view INHERIT_CURSOR_ARG;
     static const std::wstring_view FEATURE_ARG;
     static const std::wstring_view FEATURE_PTY_ARG;
+    static const std::wstring_view FORCE_MANAGER_ARG;
 
 private:
 #ifdef UNIT_TESTING
@@ -119,6 +121,7 @@ private:
     short _width;
     short _height;
 
+    bool _forceManager;
     bool _createServerHandle;
     DWORD _serverHandle;
     DWORD _signalHandle;

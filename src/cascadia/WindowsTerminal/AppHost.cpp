@@ -72,6 +72,11 @@ void AppHost::Initialize()
     _window->OnAppInitialized(_app);
 }
 
+void AppHost::IncomingConnection()
+{
+    _app.IncomingConnection();
+}
+
 // Method Description:
 // - Called when the app's title changes. Fires off a window message so we can
 //   update the window's title on the main thread.

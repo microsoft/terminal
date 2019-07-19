@@ -45,7 +45,6 @@
   </PropertyGroup>
   <!-- Source Files -->
   <ItemGroup>
-    <ClInclude Include="Manager.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="AppHost.h" />
@@ -54,7 +53,6 @@
     <ClInclude Include="NonClientIslandWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Manager.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

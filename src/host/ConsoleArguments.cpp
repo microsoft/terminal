@@ -20,6 +20,7 @@ const std::wstring_view ConsoleArguments::HEIGHT_ARG = L"--height";
 const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor";
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
+const std::wstring_view ConsoleArguments::FORCE_MANAGER_ARG = L"--manager";
 
 std::wstring EscapeArgument(std::wstring_view ac)
 {
@@ -102,7 +103,8 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _vtOutHandle(hStdOut),
     _recievedEarlySizeChange{ false },
     _originalWidth{ -1 },
-    _originalHeight{ -1 }
+    _originalHeight{ -1 },
+    _forceManager{ false }
 {
     _clientCommandline = L"";
     _vtMode = L"";
@@ -467,6 +469,12 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
         {
             hr = s_HandleFeatureValue(args, i);
         }
+        else if (arg == FORCE_MANAGER_ARG)
+        {
+            _forceManager = true;
+            s_ConsumeArg(args, i);
+            hr = S_OK;
+        }
         else if (arg == HEADLESS_ARG)
         {
             _headless = true;
@@ -560,6 +568,11 @@ bool ConsoleArguments::IsHeadless() const
 bool ConsoleArguments::ShouldCreateServerHandle() const
 {
     return _createServerHandle;
+}
+
+bool ConsoleArguments::ShouldSendToManager() const noexcept
+{
+    return _forceManager;
 }
 
 HANDLE ConsoleArguments::GetServerHandle() const

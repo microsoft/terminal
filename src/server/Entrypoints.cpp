@@ -9,10 +9,21 @@
 
 #include "winbasep.h"
 
+#include "..\types\Manager.h"
+
 [[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle,
+                                                               const bool forceManager,
                                                                const ConsoleArguments* const args)
 {
-    return ConsoleCreateIoThreadLegacy(ServerHandle, args);
+    if (forceManager)
+    {
+        Manager::s_TrySendToManager(ServerHandle);
+        return S_OK;
+    }
+    else
+    {
+        return ConsoleCreateIoThreadLegacy(ServerHandle, args);
+    }
 }
 
 // this function has unreachable code due to its unusual lifetime. We
@@ -21,6 +32,7 @@
 #pragma warning(disable : 4702)
 
 [[nodiscard]] HRESULT Entrypoints::StartConsoleForCmdLine(_In_ PCWSTR pwszCmdLine,
+                                                          const bool forceManager,
                                                           const ConsoleArguments* const args)
 {
     // Create a scope because we're going to exit thread if everything goes well.
@@ -39,7 +51,7 @@
                                                                    L"\\Reference",
                                                                    FALSE));
 
-        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), args));
+        RETURN_IF_NTSTATUS_FAILED(Entrypoints::StartConsoleForServerHandle(ServerHandle.get(), forceManager, args));
 
         // If we get to here, we have transferred ownership of the server handle to the console, so release it.
         // Keep a copy of the value so we can open the client handles even though we're no longer the owner.

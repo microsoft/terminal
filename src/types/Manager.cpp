@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "pch.h"
+#include "precomp.h"
 #include "Manager.h"
 
 static constexpr std::wstring_view MUTEX_NAME = L"Local\\WindowsTerminalManager";
@@ -64,6 +64,44 @@ void Manager::NotifyExit()
     _exit.SetEvent();
 }
 
+bool Manager::s_TrySendToManager(const HANDLE server)
+{
+    try
+    {
+        // Get PID from remote process.
+        ManagerMessageQuery query;
+        query.type = ManagerMessageTypes::GetManagerPid;
+
+        auto reply = _ask(query);
+        const auto processId = reply.reply.getPid.id;
+
+        // Open for handle duping.
+        wil::unique_handle otherProcess(OpenProcess(PROCESS_DUP_HANDLE, FALSE, processId));
+        THROW_LAST_ERROR_IF_NULL(otherProcess.get());
+
+        // Send handle into that process.
+        HANDLE targetHandle;
+        THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), server,
+                                                  otherProcess.get(), &targetHandle,
+                                                  0,
+                                                  FALSE,
+                                                  DUPLICATE_SAME_ACCESS));
+
+        // Tell remote process about new handle ID
+        query.type = ManagerMessageTypes::SendConnection;
+        query.query.sendConn.handle = targetHandle;
+
+        reply = _ask(query);
+
+        return true;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return false;
+    }
+}
+
 void Manager::_becomeServer()
 {
     // lock?
@@ -75,7 +113,7 @@ void Manager::_becomeServer()
     // enter loop to make server connections
     _serverWork = std::async(std::launch::async, [this] {
         _serverLoop();
-    });
+                             });
 }
 
 void Manager::_serverLoop()
@@ -122,9 +160,11 @@ void Manager::_serverLoop()
         }
         else if (ret == WAIT_OBJECT_0 + 1)
         {
-            auto future = std::async(std::launch::async, [this, &pipe] {
-                _perClientLoop(std::move(pipe));
+            const auto loosePipeHandle = pipe.release();
+            auto future = std::async(std::launch::async, [this, loosePipeHandle] {
+                _perClientLoop(wil::unique_handle(loosePipeHandle));
             });
+            _perClientWork.push_back(std::move(future));
         }
         else if (ret == WAIT_FAILED)
         {
@@ -139,8 +179,8 @@ void Manager::_serverLoop()
 
 void Manager::_perClientLoop(wil::unique_handle pipe)
 {
-    bool keepGoing = true;
-    while (keepGoing)
+    /*bool keepGoing = true;
+    while (keepGoing)*/
     {
         ManagerMessageQuery query;
         DWORD bytesRead = 0;
@@ -154,7 +194,10 @@ void Manager::_perClientLoop(wil::unique_handle pipe)
         switch (query.type)
         {
         case ManagerMessageTypes::GetManagerPid:
-            reply = _getPid();
+            reply = _getPid(query);
+            break;
+        case ManagerMessageTypes::SendConnection:
+            reply = _sendConnection(query);
             break;
         default:
             THROW_HR(E_NOTIMPL);
@@ -180,12 +223,12 @@ Manager::ManagerMessageReply Manager::_ask(Manager::ManagerMessageQuery query)
                                              &reply,
                                              sizeof(reply),
                                              &bytesRead,
-                                             NMPWAIT_USE_DEFAULT_WAIT));
+                                             NMPWAIT_WAIT_FOREVER));
 
     return reply;
 }
 
-Manager::ManagerMessageReply Manager::_getPid()
+Manager::ManagerMessageReply Manager::_getPid(ManagerMessageQuery /*query*/)
 {
     ManagerMessageReply reply;
 
@@ -194,3 +237,30 @@ Manager::ManagerMessageReply Manager::_getPid()
 
     return reply;
 }
+
+static std::vector<std::function<void()>> s_onConnection;
+
+Manager::ManagerMessageReply Manager::_sendConnection(ManagerMessageQuery query)
+{
+    const auto server = query.query.sendConn.handle;
+    server;
+
+    // create new conhost connection...
+    for (const auto& func : s_onConnection)
+    {
+        func();
+    }
+
+    ManagerMessageReply reply;
+
+    reply.type = ManagerMessageTypes::SendConnection;
+    reply.reply.sendConn.ok = true;
+
+    return reply;
+}
+
+void Manager::s_RegisterOnConnection(std::function<void()> func)
+{
+    s_onConnection.push_back(func);
+}
+
