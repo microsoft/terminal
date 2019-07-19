@@ -40,7 +40,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 //      the pipe.
 [[nodiscard]] HRESULT XtermEngine::StartPaint() noexcept
 {
-    RETURN_IF_FAILED(VtEngine::StartPaint());
+    const auto hr = VtEngine::StartPaint();
+    if (hr == S_FALSE)
+    {
+        return hr;
+    }
 
     _trace.TraceLastText(_lastText);
 

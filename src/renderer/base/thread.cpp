@@ -242,3 +242,8 @@ void RenderThread::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     ResetEvent(_hPaintEnabledEvent);
     WaitForSingleObject(_hPaintCompletedEvent, dwTimeoutMs);
 }
+
+void RenderThread::WaitForPaintCompletion(const DWORD dwTimeoutMs)
+{
+    WaitForSingleObject(_hPaintCompletedEvent, dwTimeoutMs);
+}

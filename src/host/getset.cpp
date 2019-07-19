@@ -427,12 +427,21 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
                 WI_IsFlagSet(dwOldMode, ENABLE_PASSTHROUGH_MODE))
             {
                 gci.GetVtIo()->SetPassthroughMode(false);
+                // Trigger a redaw all, to sync us back up.
+                ServiceLocator::LocateGlobals().pRender->TriggerRedrawAll();
             }
             // if we're moving from passthrough off->on
             else if (WI_IsFlagSet(dwNewMode, ENABLE_PASSTHROUGH_MODE) &&
                      WI_IsFlagClear(dwOldMode, ENABLE_PASSTHROUGH_MODE))
             {
+                // DebugBreak();
+                // Trigger a frame NOW, to flush any state since the last frame
+                RECT dummy{ 0 };
+                // ServiceLocator::LocateGlobals().pRender->TriggerSystemRedraw(&dummy);
+                // ServiceLocator::LocateGlobals().pRender->WaitForPaintCompletion(1000);
+                LOG_IF_FAILED(ServiceLocator::LocateGlobals().pRender->PaintFrame());
                 gci.GetVtIo()->SetPassthroughMode(true);
+                ServiceLocator::LocateGlobals().pRender->WaitForPaintCompletion(1000);
             }
         }
 

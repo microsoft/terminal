@@ -947,8 +947,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         const size_t cch = BufferSize / sizeof(WCHAR);
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.GetVtIo()->PassthroughString({ pwchRealUnicode, cch });
-        *pcb += BufferSize;
-        return STATUS_SUCCESS;
+        // *pcb += BufferSize;
+        // return STATUS_SUCCESS;
     }
 
     if (!WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING) ||

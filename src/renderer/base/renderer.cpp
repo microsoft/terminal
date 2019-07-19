@@ -507,6 +507,11 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     _pThread->WaitForPaintCompletionAndDisable(dwTimeoutMs);
 }
 
+void Renderer::WaitForPaintCompletion(const DWORD dwTimeoutMs)
+{
+    _pThread->WaitForPaintCompletion(dwTimeoutMs);
+}
+
 // Routine Description:
 // - Paint helper to fill in the background color of the invalid area within the frame.
 // Arguments:

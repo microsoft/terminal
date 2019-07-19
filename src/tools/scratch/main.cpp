@@ -74,5 +74,33 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     wprintf(L"Press a key to continue\n");
     _getch();
 
+    printf(csi("0m").c_str());
+    wprintf(L"Time for something more complicated...\n");
+    Sleep(500);
+    printf(csi("2;1H").c_str());
+    printf(csi("44m").c_str());
+    printf(csi("K").c_str());
+    Sleep(500);
+
+    printf(csi("9;1H").c_str());
+    printf(csi("46m").c_str());
+    printf(csi("K").c_str());
+    Sleep(500);
+
+    printf(csi("3;8r").c_str());
+    printf(csi("3;1H").c_str());
+    printf(csi("0m").c_str());
+    Sleep(500);
+
+    for (int i = 0; i < 10; i++)
+    {
+        wprintf(L"Print in the margins %d\n", i);
+        Sleep(500);
+    }
+
+    printf(csi("r").c_str());
+    wprintf(L"Press a key to continue\n");
+    _getch();
+
     return 0;
 }
