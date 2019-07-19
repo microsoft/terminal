@@ -402,6 +402,10 @@ void VtIo::SetPassthroughMode(const bool enable)
 {
     _pVtRenderEngine->SetPassthroughMode(enable);
 }
+bool VtIo::IsInPassthroughMode()
+{
+    return _pVtRenderEngine->IsInPassthroughMode();
+}
 void VtIo::PassthroughString(std::wstring_view view)
 {
     std::wstring wstr{ view };

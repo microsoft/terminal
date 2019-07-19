@@ -77,7 +77,28 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
         {
             return S_FALSE;
         }
-        _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
+
+        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        if (gci.GetVtIo()->IsInPassthroughMode())
+        {
+            try
+            {
+                std::deque<std::unique_ptr<IInputEvent>> inputEvents;
+                for (size_t i = 0; i < cchSequence; i++)
+                {
+                    inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwsSequence[i], 0));
+                }
+                gci.GetActiveInputBuffer()->Write(inputEvents);
+            }
+            catch (...)
+            {
+                LOG_HR(wil::ResultFromCaughtException());
+            }
+        }
+        else
+        {
+            _pInputStateMachine->ProcessString(pwsSequence.get(), cchSequence);
+        }
     }
     CATCH_RETURN();
 

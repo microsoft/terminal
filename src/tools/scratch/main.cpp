@@ -34,8 +34,7 @@ std::string osc(std::string seq)
     return fullSeq;
 }
 
-// This wmain exists for help in writing scratch programs while debugging.
-int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
+void testOutput()
 {
     wprintf(L"Attempting to start passthrough mode...\n");
     auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -101,6 +100,80 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
     printf(csi("r").c_str());
     wprintf(L"Press a key to continue\n");
     _getch();
+}
 
+void launchChild(int argc, WCHAR* argv[])
+{
+    auto hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    auto hIn = GetStdHandle(STD_INPUT_HANDLE);
+
+    DWORD dwMode = 0;
+    THROW_LAST_ERROR_IF(!GetConsoleMode(hOut, &dwMode));
+    dwMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+    dwMode |= DISABLE_NEWLINE_AUTO_RETURN;
+    dwMode |= ENABLE_PASSTHROUGH_MODE;
+    THROW_LAST_ERROR_IF(!SetConsoleMode(hOut, dwMode));
+
+    DWORD dwInMode = 0;
+    GetConsoleMode(hIn, &dwInMode);
+    dwInMode = ENABLE_VIRTUAL_TERMINAL_INPUT;
+    SetConsoleMode(hIn, dwInMode);
+
+    std::wstring commandline = L"";
+    for (int i = 0; i < argc; i++)
+    {
+        commandline += (argv[i]);
+        commandline += (L" ");
+    }
+
+    std::unique_ptr<wchar_t[]> mutableCommandline = std::make_unique<wchar_t[]>(commandline.length() + 1);
+    THROW_IF_NULL_ALLOC(mutableCommandline);
+
+    HRESULT hr = StringCchCopy(mutableCommandline.get(), commandline.length() + 1, commandline.c_str());
+    THROW_IF_FAILED(hr);
+
+    STARTUPINFO si = { 0 };
+    si.cb = sizeof(STARTUPINFOW);
+    PROCESS_INFORMATION _piClient;
+
+    bool fSuccess = !!CreateProcessW(
+        nullptr,
+        mutableCommandline.get(),
+        nullptr, // lpProcessAttributes
+        nullptr, // lpThreadAttributes
+        true, // bInheritHandles
+        false, // dwCreationFlags
+        nullptr, // lpEnvironment
+        nullptr, // lpCurrentDirectory
+        &si, // lpStartupInfo
+        &_piClient // lpProcessInformation
+    );
+    THROW_LAST_ERROR_IF(!fSuccess);
+
+    // Sleep(10000);
+    WaitForSingleObject(_piClient.hProcess, INFINITE);
+}
+
+// This wmain exists for help in writing scratch programs while debugging.
+int __cdecl wmain(int argc, WCHAR* argv[])
+{
+    for (int i = 0; i < argc; i++)
+    {
+        wprintf(argv[i]);
+        wprintf(L" ");
+    }
+
+    if (argc > 1)
+    {
+        std::wstring arg1 = argv[1];
+        if (arg1 == L"--test")
+        {
+            testOutput();
+        }
+        else if (arg1 == L"--")
+        {
+            launchChild(argc - 2, &argv[2]);
+        }
+    }
     return 0;
 }

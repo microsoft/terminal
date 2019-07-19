@@ -97,6 +97,7 @@ namespace Microsoft::Console::Render
 
         void SetPassthroughMode(const bool enable);
         void PassthroughString(const std::wstring& wstr);
+        bool IsInPassthroughMode();
 
     protected:
         wil::unique_hfile _hFile;

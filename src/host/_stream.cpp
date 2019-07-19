@@ -941,11 +941,12 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                   const DWORD dwFlags,
                                   _Inout_opt_ PSHORT const psScrollY)
 {
-    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PASSTHROUGH_MODE))
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    if (gci.IsInVtIoMode() && gci.GetVtIo()->IsInPassthroughMode())
+    // if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PASSTHROUGH_MODE))
     {
         const size_t BufferSize = *pcb;
         const size_t cch = BufferSize / sizeof(WCHAR);
-        CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         gci.GetVtIo()->PassthroughString({ pwchRealUnicode, cch });
         // *pcb += BufferSize;
         // return STATUS_SUCCESS;

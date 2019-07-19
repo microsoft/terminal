@@ -21,4 +21,4 @@ rem Generate a unique name, so that we can debug multiple revisions of the binar
 (xcopy /Y %_last_build%\scratch.exe %TEMP%\%copy_dir%\scratch.exe*) > nul
 
 echo Launching %TEMP%\%copy_dir%\scratch.exe...
-%TEMP%\%copy_dir%\scratch.exe
+%TEMP%\%copy_dir%\scratch.exe %*

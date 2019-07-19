@@ -428,3 +428,8 @@ void VtEngine::PassthroughString(const std::wstring& wstr)
     LOG_IF_FAILED(WriteTerminalW(wstr));
     LOG_IF_FAILED(_Flush());
 }
+
+bool VtEngine::IsInPassthroughMode()
+{
+    return _passthroughMode;
+}

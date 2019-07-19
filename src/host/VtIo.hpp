@@ -38,6 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         void SetPassthroughMode(const bool enable);
         void PassthroughString(std::wstring_view view);
+        bool IsInPassthroughMode();
 
     private:
         // After CreateIoHandlers is called, these will be invalid.
