@@ -255,6 +255,11 @@ bool TextAttribute::IsOverlined() const noexcept
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL);
 }
 
+bool TextAttribute::IsDoublyUnderlined() const noexcept
+{
+    return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::DoublyUnderlined);
+}
+
 bool TextAttribute::IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -270,7 +275,7 @@ void TextAttribute::SetFaint(bool isFaint) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Faint, isFaint);
 }
 
-void TextAttribute::SetItalics(bool isItalic) noexcept
+void TextAttribute::SetItalic(bool isItalic) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Italics, isItalic);
 }
@@ -290,15 +295,20 @@ void TextAttribute::SetCrossedOut(bool isCrossedOut) noexcept
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::CrossedOut, isCrossedOut);
 }
 
-void TextAttribute::SetUnderline(bool isUnderlined) noexcept
+void TextAttribute::SetUnderlined(bool isUnderlined) noexcept
 {
     // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_UNDERSCORE, isUnderlined);
 }
 
-void TextAttribute::SetOverline(bool isOverlined) noexcept
+void TextAttribute::SetOverlined(bool isOverlined) noexcept
 {
     WI_UpdateFlag(_wAttrLegacy, COMMON_LVB_GRID_HORIZONTAL, isOverlined);
+}
+
+void TextAttribute::SetDoublyUnderlined(bool isDoublyUnderlined) noexcept
+{
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::DoublyUnderlined, isDoublyUnderlined);
 }
 
 void TextAttribute::SetReverseVideo(bool isReversed) noexcept

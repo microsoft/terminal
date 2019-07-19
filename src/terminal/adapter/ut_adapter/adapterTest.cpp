@@ -81,7 +81,7 @@ public:
             VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
             VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
             VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
-            VERIFY_ARE_EQUAL(_expectedAttributes, sbiex.wAttributes);
+            VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
         }
         return _setConsoleScreenBufferInfoExResult;
     }
@@ -764,7 +764,6 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    WORD _expectedAttributes = 0;
     bool _privateSetCursorKeysModeResult = false;
     bool _privateSetKeypadModeResult = false;
     bool _cursorKeysApplicationMode = false;
