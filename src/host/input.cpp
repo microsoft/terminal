@@ -111,6 +111,7 @@ void HandleGenericKeyEvent(_In_ KeyEvent keyEvent, const bool generateBreak)
 
     if (keyEvent.IsCtrlPressed() &&
         !keyEvent.IsAltPressed() &&
+        !keyEvent.IsShiftPressed() &&
         keyEvent.IsKeyDown())
     {
         // check for ctrl-c, if in line input mode.
