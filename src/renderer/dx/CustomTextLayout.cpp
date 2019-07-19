@@ -7,6 +7,7 @@
 
 #include <wrl.h>
 #include <wrl/client.h>
+#include <VersionHelpers.h>
 
 using namespace Microsoft::Console::Render;
 
@@ -19,10 +20,10 @@ using namespace Microsoft::Console::Render;
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
-CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
+CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                    IDWriteTextAnalyzer1* const analyzer,
-                                   IDWriteTextFormat2* const format,
-                                   IDWriteFontFace5* const font,
+                                   IDWriteTextFormat* const format,
+                                   IDWriteFontFace1* const font,
                                    std::basic_string_view<Cluster> const clusters,
                                    size_t const width) :
     _factory{ factory },
@@ -134,7 +135,11 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
 
         // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
-        RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+        // Fallback routines are not available below Windows 8.1, so just skip them and let a replacement character happen.
+        if (IsWindows8Point1OrGreater())
+        {
+            RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+        }
 
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
