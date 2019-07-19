@@ -3,7 +3,7 @@
 
 #include "pch.h"
 
-#include "ResourceAccessor.h"
+#include "ScopedResourceLoader.h"
 
 using namespace ::winrt::Windows::ApplicationModel::Resources::Core;
 
