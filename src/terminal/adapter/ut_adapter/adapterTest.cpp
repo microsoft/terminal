@@ -689,16 +689,24 @@ public:
         return _fSetCursorColorResult;
     }
 
-    BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) override
+    BOOL PrivateGetConsoleScreenBufferLegacyAttributes(_Out_ WORD* const pwAttributes) override
     {
-        Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
+        Log::Comment(L"PrivateGetConsoleScreenBufferLegacyAttributes MOCK returning data...");
 
-        if (pwAttributes != nullptr && _fPrivateGetConsoleScreenBufferAttributesResult)
+        if (pwAttributes != nullptr && _fPrivateGetConsoleScreenBufferLegacyAttributesResult)
         {
             *pwAttributes = _wAttribute;
         }
 
-        return _fPrivateGetConsoleScreenBufferAttributesResult;
+        return _fPrivateGetConsoleScreenBufferLegacyAttributesResult;
+    }
+
+    void PrivateGetConsoleScreenBufferAttributes(_Out_ TextAttribute& attributes) override
+    {
+        Log::Comment(L"PrivateGetConsoleScreenBufferAttributes MOCK returning data...");
+
+        // TODO
+        attributes = TextAttribute();
     }
 
     BOOL PrivateRefreshWindow() override
@@ -871,7 +879,7 @@ public:
         _fPrivateWriteConsoleControlInputResult = TRUE;
         _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
-        _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
+        _fPrivateGetConsoleScreenBufferLegacyAttributesResult = TRUE;
         _fMoveToBottomResult = true;
 
         _PrepCharsBuffer(wch, wAttr);
@@ -1394,7 +1402,7 @@ public:
     BOOL _fSetConsoleXtermTextAttributeResult = false;
     BOOL _fSetConsoleRGBTextAttributeResult = false;
     BOOL _fPrivateSetLegacyAttributesResult = false;
-    BOOL _fPrivateGetConsoleScreenBufferAttributesResult = false;
+    BOOL _fPrivateGetConsoleScreenBufferLegacyAttributesResult = false;
     BOOL _fSetCursorStyleResult = false;
     CursorType _ExpectedCursorStyle;
     BOOL _fSetCursorColorResult = false;
@@ -2505,7 +2513,7 @@ public:
         Log::Comment(L"Test 2: Gracefully fail when getting buffer information fails.");
 
         _testGetSet->PrepData();
-        _testGetSet->_fPrivateGetConsoleScreenBufferAttributesResult = FALSE;
+        _testGetSet->_fPrivateGetConsoleScreenBufferLegacyAttributesResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch->SetGraphicsRendition(rgOptions, cOptions));
 

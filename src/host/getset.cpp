@@ -1651,7 +1651,7 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
 // - pwAttributes - Pointer to space that will receive color attributes data
 // Return Value:
 // - STATUS_SUCCESS if we succeeded or STATUS_INVALID_PARAMETER for bad params (nullptr).
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo, _Out_ WORD* const pwAttributes)
+[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferLegacyAttributes(_In_ const SCREEN_INFORMATION& screenInfo, _Out_ WORD* const pwAttributes)
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1667,6 +1667,12 @@ void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
 
     return Status;
 }
+
+void DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo, TextAttribute& attributes)
+{
+    attributes = screenInfo.GetActiveBuffer().GetAttributes();
+}
+
 
 // Routine Description:
 // - A private API call for forcing the renderer to repaint the screen. If the

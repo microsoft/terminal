@@ -629,9 +629,21 @@ BOOL ConhostInternalGetSet::SetCursorStyle(const CursorType cursorType)
 // - pwAttributes - Pointer to space to receive color attributes data
 // Return Value:
 // - TRUE if successful. FALSE otherwise.
-BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes)
+BOOL ConhostInternalGetSet::PrivateGetConsoleScreenBufferLegacyAttributes(_Out_ WORD* const pwAttributes)
 {
-    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferAttributes(_io.GetActiveOutputBuffer(), pwAttributes));
+    return NT_SUCCESS(DoSrvPrivateGetConsoleScreenBufferLegacyAttributes(_io.GetActiveOutputBuffer(), pwAttributes));
+}
+
+// Routine Description:
+// - Retrieves the default color attributes information for the active screen buffer.
+// - This function is used to optimize SGR calls in lieu of calling GetConsoleScreenBufferInfoEx.
+// Arguments:
+// - pAttributes - Pointer to space to receive color attributes data
+// Return Value:
+// - TRUE if successful. FALSE otherwise.
+void ConhostInternalGetSet::PrivateGetConsoleScreenBufferAttributes(_Out_ TextAttribute& attributes)
+{
+    DoSrvPrivateGetConsoleScreenBufferAttributes(_io.GetActiveOutputBuffer(), attributes);
 }
 
 // Routine Description:

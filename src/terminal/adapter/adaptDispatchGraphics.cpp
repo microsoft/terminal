@@ -400,7 +400,7 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
     // because it has to fill the Largest Window Size by asking the OS and wastes time memcpying colors and other data
     // we do not need to resolve this Set Graphics Rendition request.
     WORD attr;
-    bool fSuccess = !!_conApi->PrivateGetConsoleScreenBufferAttributes(&attr);
+    bool fSuccess = !!_conApi->PrivateGetConsoleScreenBufferLegacyAttributes(&attr);
 
     if (fSuccess)
     {

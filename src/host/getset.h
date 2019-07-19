@@ -16,6 +16,7 @@ Revision History:
 
 #pragma once
 #include "../inc/conattrs.hpp"
+#include "../buffer/out/TextAttribute.hpp"
 class SCREEN_INFORMATION;
 
 void DoSrvPrivateSetLegacyAttributes(SCREEN_INFORMATION& screenInfo,
@@ -67,8 +68,9 @@ void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
 void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
                          const COLORREF cursorColor);
 
-[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferAttributes(const SCREEN_INFORMATION& screenInfo,
-                                                                    _Out_ WORD* const pwAttributes);
+[[nodiscard]] NTSTATUS DoSrvPrivateGetConsoleScreenBufferLegacyAttributes(const SCREEN_INFORMATION& screenInfo,
+                                                                          _Out_ WORD* const pwAttributes);
+void DoSrvPrivateGetConsoleScreenBufferAttributes(_In_ const SCREEN_INFORMATION& screenInfo, TextAttribute& attributes);
 
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 

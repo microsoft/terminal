@@ -17,6 +17,7 @@ Author(s):
 
 #include "..\..\types\inc\IInputEvent.hpp"
 #include "..\..\inc\conattrs.hpp"
+#include "..\..\buffer\out\TextAttribute.hpp"
 
 #include <deque>
 #include <memory>
@@ -87,7 +88,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL PrivateEraseAll() = 0;
         virtual BOOL SetCursorStyle(const CursorType cursorType) = 0;
         virtual BOOL SetCursorColor(const COLORREF cursorColor) = 0;
-        virtual BOOL PrivateGetConsoleScreenBufferAttributes(_Out_ WORD* const pwAttributes) = 0;
+        virtual BOOL PrivateGetConsoleScreenBufferLegacyAttributes(_Out_ WORD* const pwAttributes) = 0;
+        virtual void PrivateGetConsoleScreenBufferAttributes(_Out_ TextAttribute& attributes) = 0;
         virtual BOOL PrivatePrependConsoleInput(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                 _Out_ size_t& eventsWritten) = 0;
         virtual BOOL PrivateWriteConsoleControlInput(_In_ KeyEvent key) = 0;
