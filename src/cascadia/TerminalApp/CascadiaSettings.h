@@ -63,9 +63,8 @@ private:
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadSettings();
 
-    static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
+    static bool _isPowerShellCoreInstalledInPath(_In_ PCWSTR programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
-    static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
     static Profile _CreateDefaultProfile(const std::wstring_view name);
 };

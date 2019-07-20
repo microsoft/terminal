@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include <wil/stl.h>
 #include <argb.h>
 #include <conattrs.hpp>
 #include <io.h>
@@ -498,9 +499,9 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true iff powershell core (pwsh.exe) is present in the given path
-bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
+bool CascadiaSettings::_isPowerShellCoreInstalledInPath(_In_ PCWSTR programFileEnv, std::filesystem::path& cmdline)
 {
-    std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
+    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnv) };
     psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
@@ -604,27 +605,6 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             profileStorage.emplace_back(WSLDistro);
         }
     }
-}
-
-// Function Description:
-// - Get a environment variable string.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// Return Value:
-// - a string of the expending environment-variable string.
-std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view source)
-{
-    std::wstring result{};
-    DWORD requiredSize = 0;
-    do
-    {
-        result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
-    } while (requiredSize != result.size());
-
-    // Trim the terminating null character
-    result.resize(requiredSize - 1);
-    return result;
 }
 
 // Method Description:

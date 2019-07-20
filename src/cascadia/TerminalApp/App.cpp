@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "App.h"
+#include <wil/stl.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "App.g.cpp"
@@ -1248,8 +1249,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile.HasIcon())
         {
-            auto path = profile.GetIconPath();
-            winrt::hstring iconPath{ path };
+            std::wstring path{ profile.GetIconPath() };
+            std::wstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            winrt::hstring iconPath{ envExpandedPath };
             winrt::Windows::Foundation::Uri iconUri{ iconPath };
             Controls::BitmapIconSource iconSource;
             // Make sure to set this to false, so we keep the RGB data of the

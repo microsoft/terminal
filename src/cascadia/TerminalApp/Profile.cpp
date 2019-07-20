@@ -483,7 +483,7 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
 
 bool Profile::HasIcon() const noexcept
 {
-    return _icon.has_value();
+    return _icon.has_value() && !_icon.value().empty();
 }
 
 // Method Description
