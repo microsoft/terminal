@@ -45,6 +45,18 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 
+        winrt::TerminalApp::AppKeyBindings GetKeybindingsFromSettings();
+
+        /*std::basic_string_view<Profile> GetProfilesFromSettings();
+
+        GUID GetDefaultProfileFromSettings();
+
+        TerminalSettings MakeSettingsFromProfile(GUID profileGuid);
+
+        Profile* FindProfileFromSettings(GUID profileGuid);
+
+        bool GetAlwaysShowTabs();*/
+
     private:
         // If you add controls here, but forget to null them either here or in
         // the ctor, you're going to have a bad time. It'll mysteriously fail to
