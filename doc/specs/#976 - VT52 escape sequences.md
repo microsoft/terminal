@@ -44,7 +44,7 @@ Changing back from VT52 mode to ANSI mode would need to be achieved with a separ
 Most of the missing VT52 functionality can be implemented in terms of existing VT100 methods.
  
 * The _Cursor Up_, _Cursor Down_, _Cursor Left_, and _Cursor Right_ commands are already implemented.
-* The _Enter Graphics Mode_ and _Exit Graphics Mode_ commands can probably use the existing `DesignateCharset` method, although this would require a new `VTCharacterSets` option with a corresponding table of characters.
+* The _Enter Graphics Mode_ and _Exit Graphics Mode_ commands can probably use the existing `DesignateCharset` method, although this would require a new `VTCharacterSets` option with a corresponding table of characters (see below).
 * The _Reverse Line Feed_ command can use the existing `ReverseLineFeed` method.
 * The _Erase to End of Display_ and _Erase to End of Line_ commands can use the existing `EraseInDisplay` and `EraseInLine` methods.
 * The _Cursor Home_ and _Direct Cursor Address_ commands can probably be implemented using the `CursorPosition` method. Technically the _Direct Cursor Address_ has different rules for the boundary conditions, but nobody seems to get that right, so it's probably not that big a deal.
@@ -53,6 +53,47 @@ Most of the missing VT52 functionality can be implemented in terms of existing V
 * The _Enter ANSI Mode_ command can just call through to the new mode selection method in the `AdaptDispatch` class as discussed in the _Changing Modes_ section above.
 
 There are also a few VT52 print commands, but those are not technically part of the core command set, so they can probably be considered out of scope for now.
+
+### Graphic Mode Character Set
+
+The table below lists suggested mappings for the _Graphics Mode_ character set, based on the descriptions in the [VT102 User Guide](https://vt100.net/docs/vt102-ug/table5-15.html).
+
+Note that there is only the one _fraction numerator_ character in Unicode, so superscript digits have instead been used for the numerators 3, 5, and 7. There are also not enough _horizontal scan line_ characters (for the _bar at scan x_ characters), so each of them is used twice to cover the full range.
+
+ASCII Character	|Mapped Glyph   |Unicode Value  |Spec Description
+----------------|---------------|---------------|----------------
+_               |               |U+0020         |Blank
+`               |               |U+0020         |Reserved
+a               |█              |U+2588         |Solid rectangle
+b               |⅟              |U+215F         |1/
+c               |³              |U+00B3         |3/
+d               |⁵              |U+2075         |5/
+e               |⁷              |U+2077         |7/
+f               |°              |U+00B0         |Degrees
+g               |±              |U+00B1         |Plus or minus
+h               |→              |U+2192         |Right arrow
+i               |…              |U+2026         |Ellipsis (dots)
+j               |÷              |U+00F7         |Divide by
+k               |↓              |U+2193         |Down arrow
+l               |⎺              |U+23BA         |Bar at scan 0
+m               |⎺              |U+23BA         |Bar at scan 1
+n               |⎻              |U+23BB         |Bar at scan 2
+o               |⎻              |U+23BB         |Bar at scan 3
+p               |⎼              |U+23BC         |Bar at scan 4
+q               |⎼              |U+23BC         |Bar at scan 5
+r               |⎽              |U+23BD         |Bar at scan 6
+s               |⎽              |U+23BD         |Bar at scan 7
+t               |₀              |U+2080         |Subscript 0
+u               |₁              |U+2081         |Subscript 1
+v               |₂              |U+2082         |Subscript 2
+w               |₃              |U+2083         |Subscript 3
+x               |₄              |U+2084         |Subscript 4
+y               |₅              |U+2085         |Subscript 5
+z               |₆              |U+2086         |Subscript 6
+{               |₇              |U+2087         |Subscript 7
+\|              |₈              |U+2088         |Subscript 8
+}               |₉              |U+2089         |Subscript 9
+\~              |¶              |U+00B6         |Paragraph
 
 ## UI/UX Design
 
