@@ -98,12 +98,12 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\u2510', // L'\x6b',   -> Upper-right corner
     L'\u250c', // L'\x6c',   -> Upper-left corner
     L'\u2514', // L'\x6d',   -> Lower-left corner
-    L'\u253C', // L'\x6e',   -> crossing lines
-    L'\u23ba', // L'\x6f',   -> HORIZONTAL SCAN LINE-3
-    L'\u23bb', // L'\x70',   -> HORIZONTAL SCAN LINE-3
-    L'\u2500', // L'\x71',   -> HORIZONTAL SCAN LINE-5
-    L'\u23bc', // L'\x72',   -> HORIZONTAL SCAN LINE-7
-    L'\u23bd', // L'\x73',   -> HORIZONTAL SCAN LINE-7
+    L'\u253C', // L'\x6e',   -> Crossing lines
+    L'\u23ba', // L'\x6f',   -> Horizontal line - Scan 1
+    L'\u23bb', // L'\x70',   -> Horizontal line - Scan 3
+    L'\u2500', // L'\x71',   -> Horizontal line - Scan 5
+    L'\u23bc', // L'\x72',   -> Horizontal line - Scan 7
+    L'\u23bd', // L'\x73',   -> Horizontal line - Scan 9
     L'\u251c', // L'\x74',   -> Left "T"
     L'\u2524', // L'\x75',   -> Right "T"
     L'\u2534', // L'\x76',   -> Bottom "T"
