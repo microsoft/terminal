@@ -83,7 +83,7 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\x5c',
     L'\x5d',
     L'\x5e',
-    L'\x5f',
+    L'\u0020', // L'\x5f',   -> Blank
     L'\u25C6', // L'\x60',   -> Diamond
     L'\u2592', // L'\x61',   -> Checkerboard
     L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
@@ -157,7 +157,7 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
 {
     wchar_t wchFound = wch;
     if (_wchCurrentCharset == DispatchTypes::VTCharacterSets::USASCII ||
-        wch < '\x60' || wch > '\x7f') // filter out the region we know is unchanged
+        wch < '\x5f' || wch > '\x7f') // filter out the region we know is unchanged
     {
         ; // do nothing, these are the same as default.
     }
