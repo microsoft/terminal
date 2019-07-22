@@ -22,8 +22,17 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangedHandlers, TerminalApp::IControlHost, Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
 
-        // private:
+    private:
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession _session{ nullptr };
         //     winrt::Windows::UI::Xaml::Controls::RichEditBox _textBox{ nullptr };
+        fire_and_forget _SetupMediaManager();
+        void _MediaPropertiesChanged(winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession session,
+                                     winrt::Windows::Media::Control::MediaPropertiesChangedEventArgs args);
+        void _PlaybackInfoChanged(winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession session,
+                                  winrt::Windows::Media::Control::PlaybackInfoChangedEventArgs args);
+        // void _TimelinePropertiesChanged(winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession session,
+        //                              winrt::Windows::Media::Control::MediaPropertiesChangedEventArgs args);
+        void _UpdateMediaInfo(winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession session);
     };
 }
 namespace winrt::TerminalApp::factory_implementation
