@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "MediaControlHost.h"
 #include "MediaControlHost.g.cpp"
+using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::Media;
@@ -13,10 +14,9 @@ namespace winrt::TerminalApp::implementation
         auto media = mediaAsync.get();
         auto artist = media.AlbumArtist();
         auto title = media.Title();
-        std::wstring realTitle = title.c_str();
-        std::wstring realArtist = artist.c_str();
 
         auto info = session.GetPlaybackInfo();
+        _playbackState = info.PlaybackStatus();
 
         Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, artist, title, info]() {
             _Title().Text(title);
@@ -45,19 +45,6 @@ namespace winrt::TerminalApp::implementation
     {
         _UpdateMediaInfo(session);
 
-        auto mediaAsync = session.TryGetMediaPropertiesAsync();
-        auto media = mediaAsync.get();
-        auto info = session.GetPlaybackInfo();
-        auto status = info.PlaybackStatus();
-
-        if (status == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
-        {
-            _PlayPauseIcon().Glyph(L"&#xE769");
-        }
-        else if (status == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused)
-        {
-            _PlayPauseIcon().Glyph(L"&#xE768");
-        }
     }
 
     fire_and_forget MediaControlHost::_SetupMediaManager()
@@ -85,6 +72,10 @@ namespace winrt::TerminalApp::implementation
     MediaControlHost::MediaControlHost()
     {
         InitializeComponent();
+
+        _PreviousButton().Click({ this, &MediaControlHost::_PreviousClick });
+        _PlayPauseButton().Click({ this, &MediaControlHost::_PlayPauseClick });
+        _NextButton().Click({ this, &MediaControlHost::_NextClick });
 
         Loaded([this](auto&&, auto&&) {
             _SetupMediaManager();
@@ -120,6 +111,63 @@ namespace winrt::TerminalApp::implementation
     void MediaControlHost::Focus()
     {
         _PlayPauseButton().Focus(FocusState::Programmatic);
+    }
+
+    void MediaControlHost::_PreviousClick(IInspectable const& sender,
+                                          RoutedEventArgs const& e)
+    {
+        _DispatchPreviousClick();
+    }
+    void MediaControlHost::_NextClick(IInspectable const& sender,
+                                      RoutedEventArgs const& e)
+    {
+        _DispatchNextClick();
+    }
+    void MediaControlHost::_PlayPauseClick(IInspectable const& sender,
+                                           RoutedEventArgs const& e)
+    {
+        _DispatchPlayPauseClick();
+    }
+
+    fire_and_forget MediaControlHost::_DispatchPreviousClick()
+    {
+        co_await winrt::resume_background();
+        if (_session)
+        {
+            if (_playbackState == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
+            {
+                _session.TrySkipPreviousAsync();
+            }
+        }
+    }
+
+    fire_and_forget MediaControlHost::_DispatchNextClick()
+    {
+        co_await winrt::resume_background();
+        if (_session)
+        {
+            if (_playbackState == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
+            {
+                _session.TrySkipNextAsync();
+            }
+        }
+    }
+
+    fire_and_forget MediaControlHost::_DispatchPlayPauseClick()
+    {
+        co_await winrt::resume_background();
+        if (_session)
+        {
+            auto foo = _playbackState;
+            if (_playbackState == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
+            {
+                _session.TryPauseAsync();
+            }
+            else if (_playbackState == Control::GlobalSystemMediaTransportControlsSessionPlaybackStatus::Paused)
+            {
+                _session.TryPlayAsync();
+            }
+        }
     }
 
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MediaControlHost, CloseRequested, _closeRequestedHandlers, TerminalApp::IControlHost, TerminalApp::ClosedEventArgs);

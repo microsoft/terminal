@@ -10,10 +10,10 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:Name="_Root"
     Background="{ThemeResource SystemChromeLowColor}"
+    VerticalAlignment="Stretch"
     mc:Ignorable="d">
 
     <Grid.RowDefinitions>
-        <RowDefinition Height="Auto" />
         <RowDefinition Height="Auto" />
         <RowDefinition Height="*" />
     </Grid.RowDefinitions>
@@ -34,37 +34,40 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Button>
     </RelativePanel>
 
+    <StackPanel Grid.Row="1">
+        <StackPanel
+            x:Name="_Buttons"
+            Orientation="Horizontal"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
 
-    <RichEditBox x:Name="_Editor"
-                 Grid.Row="1"
-                 Height="100"
-                  />
+            <StackPanel.Resources>
+                <Style TargetType="Button">
+                    <Setter Property="Background" Value="Transparent"></Setter>
+                </Style>
+            </StackPanel.Resources>
 
-    <StackPanel x:Name="_Buttons" Grid.Row="1" Orientation="Horizontal">
-        <Button x:Name="_PreviousButton">
-            <Button.Content>
+            <Button x:Name="_PreviousButton">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;"/>
-            </Button.Content>
-        </Button>
-        <Button x:Name="_PlayPauseButton">
-            <Button.Content>
+            </Button>
+            <Button x:Name="_PlayPauseButton">
                 <!-- Pause is xE769 -->
                 <FontIcon x:Name="_PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE768;"/>
-            </Button.Content>
-        </Button>
-        <Button x:Name="_NextButton">
-            <Button.Content>
+            </Button>
+            <Button x:Name="_NextButton">
                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;"/>
-            </Button.Content>
-        </Button>
+            </Button>
 
-    </StackPanel>
+        </StackPanel>
 
-    <StackPanel Grid.Row="2">
-        <TextBlock x:Name="_Title">
+        <TextBlock
+            TextWrapping="WrapWholeWords"
+            HorizontalAlignment="Center" x:Name="_Title" FontSize="20">
             Title
         </TextBlock>
-        <TextBlock x:Name="_Band">
+        <TextBlock
+            TextWrapping="WrapWholeWords"
+            HorizontalAlignment="Center" x:Name="_Band">
             Band
         </TextBlock>
 
