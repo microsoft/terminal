@@ -193,6 +193,7 @@ DxEngine::~DxEngine()
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 
+#ifdef EXTERNAL_BUILD
         // DXGI_SCALING_NONE is only valid on Windows 8+
         if (IsWindows8OrGreater())
         {
@@ -202,6 +203,9 @@ DxEngine::~DxEngine()
         {
             SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
         }
+#else
+        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
+#endif
 
         switch (_chainMode)
         {

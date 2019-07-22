@@ -134,13 +134,17 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
 
+#ifdef EXTERNAL_BUILD
         // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
         // Fallback routines are not available below Windows 8.1, so just skip them and let a replacement character happen.
         if (IsWindows8Point1OrGreater())
         {
             RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
         }
-
+#else
+        // Windows build os version always > Windows 8.1
+        RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
+#endif
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
         {
