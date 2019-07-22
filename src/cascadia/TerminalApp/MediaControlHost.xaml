@@ -19,9 +19,18 @@ the MIT License. See LICENSE in the project root for license information. -->
     </Grid.RowDefinitions>
 
     <RelativePanel
+        Margin="8,0,0,8"
         Grid.Row="0"
         HorizontalAlignment="Stretch">
 
+        <TextBlock
+            FontWeight="Bold"
+            RelativePanel.AlignLeftWithPanel="True"
+            TextWrapping="WrapWholeWords"
+            FontSize="16"
+            x:Name="_CurrentlyPlayingText">
+            Currently Playing:
+        </TextBlock>
         <Button
             x:Name="_CloseButton"
             Background="Transparent"
@@ -34,43 +43,62 @@ the MIT License. See LICENSE in the project root for license information. -->
         </Button>
     </RelativePanel>
 
-    <StackPanel Grid.Row="1">
-        <StackPanel
-            x:Name="_Buttons"
-            Orientation="Horizontal"
+    <Grid Grid.Row="1" Margin="8,2,8,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Image
+            x:Name="_Thumbnail"
+            Grid.Row="0"
+            Stretch="Uniform"
             HorizontalAlignment="Center"
-            VerticalAlignment="Center">
+            VerticalAlignment="Center"></Image>
 
-            <StackPanel.Resources>
-                <Style TargetType="Button">
-                    <Setter Property="Background" Value="Transparent"></Setter>
-                </Style>
-            </StackPanel.Resources>
+        <StackPanel
+            Grid.Row="1"
+            Orientation="Vertical">
 
-            <Button x:Name="_PreviousButton">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;"/>
-            </Button>
-            <Button x:Name="_PlayPauseButton">
-                <!-- Pause is xE769 -->
-                <FontIcon x:Name="_PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE768;"/>
-            </Button>
-            <Button x:Name="_NextButton">
-                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;"/>
-            </Button>
+            <StackPanel
+                x:Name="_Buttons"
+                Orientation="Horizontal"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+
+                <StackPanel.Resources>
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="Transparent"></Setter>
+                    </Style>
+                </StackPanel.Resources>
+
+                <Button x:Name="_PreviousButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE892;"/>
+                </Button>
+                <Button x:Name="_PlayPauseButton">
+                    <!-- Pause is xE769 -->
+                    <FontIcon x:Name="_PlayPauseIcon" FontFamily="Segoe MDL2 Assets" Glyph="&#xE768;"/>
+                </Button>
+                <Button x:Name="_NextButton">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE893;"/>
+                </Button>
+
+            </StackPanel>
+
+            <TextBlock
+                TextWrapping="WrapWholeWords"
+                HorizontalAlignment="Center" x:Name="_Title" FontSize="20">
+
+            </TextBlock>
+
+            <TextBlock
+                TextWrapping="WrapWholeWords"
+                HorizontalAlignment="Center" x:Name="_Band">
+
+            </TextBlock>
 
         </StackPanel>
 
-        <TextBlock
-            TextWrapping="WrapWholeWords"
-            HorizontalAlignment="Center" x:Name="_Title" FontSize="20">
-            Title
-        </TextBlock>
-        <TextBlock
-            TextWrapping="WrapWholeWords"
-            HorizontalAlignment="Center" x:Name="_Band">
-            Band
-        </TextBlock>
-
-    </StackPanel>
+    </Grid>
 
 </Grid>

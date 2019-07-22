@@ -32,6 +32,16 @@ namespace winrt::TerminalApp::implementation
                 _PlayPauseIcon().Glyph(L"\xE768");
             }
         });
+
+        auto thumb = media.Thumbnail();
+        auto streamAsync = thumb.OpenReadAsync();
+        auto stream = streamAsync.get();
+
+        Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, stream]() {
+            Media::Imaging::BitmapImage bitmapImage{};
+            bitmapImage.SetSourceAsync(stream);
+            _Thumbnail().Source(bitmapImage);
+        });
     }
 
     void MediaControlHost::_MediaPropertiesChanged(Control::GlobalSystemMediaTransportControlsSession session,
@@ -44,7 +54,6 @@ namespace winrt::TerminalApp::implementation
                                                 Control::PlaybackInfoChangedEventArgs args)
     {
         _UpdateMediaInfo(session);
-
     }
 
     fire_and_forget MediaControlHost::_SetupMediaManager()

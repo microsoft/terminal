@@ -3,6 +3,9 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include <winrt/Windows.Media.h>
 #include <winrt/Windows.Media.Control.h>
+#include <winrt/Windows.ui.xaml.media.h>
+#include <winrt/Windows.ui.xaml.media.imaging.h>
+#include <winrt/Windows.storage.streams.h>
 
 namespace winrt::TerminalApp::implementation
 {
