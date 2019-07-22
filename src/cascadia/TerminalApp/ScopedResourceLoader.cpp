@@ -7,8 +7,6 @@
 
 using namespace ::winrt::Windows::ApplicationModel::Resources::Core;
 
-//static constexpr std::wstring_view resourceLocatorBase{ L"TerminalApp/Resources" };
-
 ScopedResourceLoader::ScopedResourceLoader(const std::wstring_view resourceLocatorBase) :
     _resourceMap{ ResourceManager::Current().MainResourceMap().GetSubtree(resourceLocatorBase) },
     _resourceContext{ ResourceContext::GetForViewIndependentUse() }
