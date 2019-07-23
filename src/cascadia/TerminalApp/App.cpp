@@ -1400,7 +1400,7 @@ namespace winrt::TerminalApp::implementation
     //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
     //      in the same order that XAML would put them as well.
     // Return Value:
-    // - a WinRT hstring representation of the key modifiers for the shortcut
+    // - a string representation of the key modifiers for the shortcut
     //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
     static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
     {
