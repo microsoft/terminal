@@ -135,7 +135,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
         //
         RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
-        
+
         // Ensure that a font face is attached to every run
         for (auto& run : _runs)
         {
@@ -785,10 +785,10 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
     {
         // Get the font fallback first
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        if(_format.As(&format1) != S_OK)
+        if (_format.As(&format1) != S_OK)
         {
-        	// If IDWriteTextFormat1 does not exist, return directly.
-        	return S_OK;
+            // If IDWriteTextFormat1 does not exist, return directly.
+            return S_OK;
         }
         RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
 
