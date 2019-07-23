@@ -76,7 +76,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const DWORD modifiers) override;
+    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
@@ -117,6 +117,8 @@ public:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     const bool IsSelectionActive() const noexcept;
+    void DoubleClickSelection(const COORD position);
+    void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
@@ -149,6 +151,7 @@ private:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
+    std::wstring _wordDelimiters;
 
     std::shared_mutex _readWriteLock;
 
@@ -191,5 +194,9 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const;
     const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    void _ExpandDoubleClickSelectionLeft(const COORD position);
+    void _ExpandDoubleClickSelectionRight(const COORD position);
+    const bool _isWordDelimiter(std::wstring_view cellChar) const;
+    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
 };

@@ -3,6 +3,14 @@
 
 namespace TerminalApp
 {
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
     enum ShortcutAction
     {
         CopyText = 0,
@@ -22,6 +30,7 @@ namespace TerminalApp
         NewWindow,
         CloseWindow,
         CloseTab,
+        ClosePane,
         NextTab,
         PrevTab,
         SplitVertical,
@@ -41,6 +50,14 @@ namespace TerminalApp
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ResizePaneLeft,
+        ResizePaneRight,
+        ResizePaneUp,
+        ResizePaneDown,
+        MoveFocusLeft,
+        MoveFocusRight,
+        MoveFocusUp,
+        MoveFocusDown,
         OpenSettings
     };
 
@@ -52,6 +69,7 @@ namespace TerminalApp
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();
+    delegate void ClosePaneEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
     delegate void SplitVerticalEventArgs();
@@ -64,9 +82,10 @@ namespace TerminalApp
     delegate void ScrollUpPageEventArgs();
     delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
+    delegate void ResizePaneEventArgs(Direction direction);
+    delegate void MoveFocusEventArgs(Direction direction);
 
-    [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
@@ -81,6 +100,7 @@ namespace TerminalApp
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
         event CloseTabEventArgs CloseTab;
+        event ClosePaneEventArgs ClosePane;
         event SwitchToTabEventArgs SwitchToTab;
         event NextTabEventArgs NextTab;
         event PrevTabEventArgs PrevTab;
@@ -93,5 +113,7 @@ namespace TerminalApp
         event ScrollUpPageEventArgs ScrollUpPage;
         event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
+        event ResizePaneEventArgs ResizePane;
+        event MoveFocusEventArgs MoveFocus;
     }
 }

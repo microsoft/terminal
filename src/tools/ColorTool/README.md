@@ -43,7 +43,7 @@ Options:
 
 ## Installing 
 
-Just [download the latest colortool release](https://github.com/Microsoft/console/releases) and extract the zip file. 
+Just [download the latest colortool release](https://github.com/microsoft/terminal/releases/tag/1904.29002) and extract the zip file. 
 
 ## Building
 
