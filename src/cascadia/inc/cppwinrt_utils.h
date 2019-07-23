@@ -68,3 +68,15 @@ private:                                    \
 #define DEFINE_GETSET_PROPERTY(className, type, name) \
     type className::name() { return _##name; }        \
     void className::name(const type& value) { _##name = value; }
+
+#define DEFINE_OBSERVABLE_GETSET_PROPERTY(type, name, event)                       \
+public:                                                                            \
+    type name() { return _##name; };                                               \
+    void name(const type& value)                                                   \
+    {                                                                              \
+        _##name = value;                                                           \
+        event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
+    };                                                                             \
+                                                                                   \
+private:                                                                           \
+    type _##name;

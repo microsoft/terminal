@@ -41,6 +41,9 @@
     <Page Include="../TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../ActionList.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -58,6 +61,9 @@
     </ClInclude>
     <ClInclude Include="../TabRowControl.h">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../ActionList.h">
+      <DependentUpon>../ActionList.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Pane.h" />
@@ -93,6 +99,9 @@
     </ClCompile>
     <ClCompile Include="../TabRowControl.cpp">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../ActionList.cpp">
+      <DependentUpon>../ActionList.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Pane.cpp" />
@@ -153,6 +162,10 @@
     </Midl>
     <Midl Include="../TabRowControl.idl">
       <DependentUpon>../TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../ActionList.idl">
+      <DependentUpon>../ActionList.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>

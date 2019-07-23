@@ -5,7 +5,8 @@ import "../ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass Action {
+    [default_interface] runtimeclass Action : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
         Action();
 
         String Name;

@@ -13,7 +13,9 @@ using namespace winrt::Windows::Data::Json;
 
 namespace winrt::TerminalApp::implementation
 {
-    DEFINE_GETSET_PROPERTY(Action, winrt::hstring, Name);
+    // DEFINE_GETSET_PROPERTY(Action, winrt::hstring, Name);
     DEFINE_GETSET_PROPERTY(Action, winrt::hstring, IconPath);
     DEFINE_GETSET_PROPERTY(Action, winrt::TerminalApp::ShortcutAction, Command);
+    DEFINE_EVENT(Action, PropertyChanged, _propertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+
 }

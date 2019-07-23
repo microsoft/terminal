@@ -48,6 +48,7 @@ constexpr std::string_view MoveFocusLeftKey{ "moveFocusLeft" };
 constexpr std::string_view MoveFocusRightKey{ "moveFocusRight" };
 constexpr std::string_view MoveFocusUpKey{ "moveFocusUp" };
 constexpr std::string_view MoveFocusDownKey{ "moveFocusDown" };
+constexpr std::string_view ToggleCommandPaletteKey{ "toggleCommandPalette" };
 
 // Specifically use a map here over an unordered_map. We want to be able to
 // iterate over these entries in-order when we're serializing the keybindings.
@@ -104,4 +105,5 @@ const std::map<std::string_view, winrt::TerminalApp::ShortcutAction, std::less<>
     { MoveFocusUpKey, winrt::TerminalApp::ShortcutAction::MoveFocusUp },
     { MoveFocusDownKey, winrt::TerminalApp::ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, winrt::TerminalApp::ShortcutAction::OpenSettings },
+    { ToggleCommandPaletteKey, winrt::TerminalApp::ShortcutAction::ToggleCommandPalette },
 };

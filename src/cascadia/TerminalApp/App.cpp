@@ -82,6 +82,7 @@ namespace winrt::TerminalApp::implementation
         _tabRow = terminalPage->TabRow();
         _tabView = _tabRow.TabView();
         _newTabButton = _tabRow.NewTabButton();
+        _commandPalette = terminalPage->_ActionList();
 
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
@@ -500,6 +501,7 @@ namespace winrt::TerminalApp::implementation
         _actionDispatch.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
         _actionDispatch.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         _actionDispatch.PasteText([this]() { _PasteText(); });
+        _actionDispatch.ToggleCommandPalette([this]() { _ToggleCommandPalette(); });
     }
 
     // Method Description:
@@ -512,28 +514,6 @@ namespace winrt::TerminalApp::implementation
     void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
         bindings.SetDispatch(_actionDispatch);
-        // // Hook up the KeyBinding object's events to our handlers.
-        // // They should all be hooked up here, regardless of whether or not
-        // //      there's an actual keychord for them.
-        // bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        // bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        // bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        // bindings.ClosePane([this]() { _CloseFocusedPane(); });
-        // bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        // bindings.ScrollUp([this]() { _Scroll(-1); });
-        // bindings.ScrollDown([this]() { _Scroll(1); });
-        // bindings.NextTab([this]() { _SelectNextTab(true); });
-        // bindings.PrevTab([this]() { _SelectNextTab(false); });
-        // bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        // bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        // bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        // bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        // bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        // bindings.OpenSettings([this]() { _OpenSettings(); });
-        // bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        // bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
-        // bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        // bindings.PasteText([this]() { _PasteText(); });
     }
 
     // Method Description:
@@ -1127,6 +1107,12 @@ namespace winrt::TerminalApp::implementation
         {
             _SetFocusedTabIndex(tabIndex);
         }
+    }
+
+    void App::_ToggleCommandPalette()
+    {
+        const bool isVisible = _commandPalette.Visibility() == Visibility::Visible;
+        _commandPalette.Visibility(isVisible ? Visibility::Collapsed : Visibility::Visible);
     }
 
     // Method Description:

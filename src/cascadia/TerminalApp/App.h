@@ -55,6 +55,7 @@ namespace winrt::TerminalApp::implementation
         TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        TerminalApp::ActionList _commandPalette{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
@@ -124,6 +125,7 @@ namespace winrt::TerminalApp::implementation
         void _ScrollPage(int delta);
         void _ResizePane(const Direction& direction);
         void _MoveFocus(const Direction& direction);
+        void _ToggleCommandPalette();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);

@@ -58,6 +58,7 @@ namespace TerminalApp
         MoveFocusRight,
         MoveFocusUp,
         MoveFocusDown,
+        ToggleCommandPalette,
         OpenSettings
     };
 
@@ -84,6 +85,7 @@ namespace TerminalApp
     delegate void OpenSettingsEventArgs();
     delegate void ResizePaneEventArgs(Direction direction);
     delegate void MoveFocusEventArgs(Direction direction);
+    delegate void ToggleCommandPaletteEventArgs();
 
     [default_interface] runtimeclass ShortcutActionDispatch {
         ShortcutActionDispatch();
@@ -113,5 +115,6 @@ namespace TerminalApp
         event OpenSettingsEventArgs OpenSettings;
         event ResizePaneEventArgs ResizePane;
         event MoveFocusEventArgs MoveFocus;
+        event ToggleCommandPaletteEventArgs ToggleCommandPalette;
     }
 }

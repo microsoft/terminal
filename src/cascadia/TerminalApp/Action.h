@@ -12,9 +12,12 @@ namespace winrt::TerminalApp::implementation
     {
         Action() = default;
 
-        DECLARE_GETSET_PROPERTY(winrt::hstring, Name);
+        // DECLARE_GETSET_PROPERTY(winrt::hstring, Name);
         DECLARE_GETSET_PROPERTY(winrt::hstring, IconPath);
         DECLARE_GETSET_PROPERTY(winrt::TerminalApp::ShortcutAction, Command);
+
+        DECLARE_EVENT(PropertyChanged, _propertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        DEFINE_OBSERVABLE_GETSET_PROPERTY(winrt::hstring, Name, _propertyChanged);
     };
 }
 

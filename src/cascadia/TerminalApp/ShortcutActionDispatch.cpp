@@ -155,6 +155,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::MoveFocusDown:
             _MoveFocusHandlers(Direction::Down);
             return true;
+        case ShortcutAction::ToggleCommandPalette:
+            _ToggleCommandPaletteHandlers();
+            return true;
         default:
             return false;
         }
@@ -186,5 +189,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(ShortcutActionDispatch, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
     DEFINE_EVENT(ShortcutActionDispatch, ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
     DEFINE_EVENT(ShortcutActionDispatch, MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
+    DEFINE_EVENT(ShortcutActionDispatch, ToggleCommandPalette, _ToggleCommandPaletteHandlers, TerminalApp::ToggleCommandPaletteEventArgs);
+    // Adding an event here? make sure to add to ShortcutActionSerializationKeys too!
     // clang-format on
 }
