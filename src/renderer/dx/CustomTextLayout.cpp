@@ -788,7 +788,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         if (FAILED(_format.As(&format1)))
         {
             // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
-            return S_OK;
+            return S_FALSE;
         }
         RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
 
