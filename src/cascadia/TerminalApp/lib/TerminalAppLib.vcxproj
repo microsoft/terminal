@@ -70,6 +70,7 @@
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../ShortcutActionDispatch.h" />
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
@@ -106,6 +107,9 @@
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ShortcutActionDispatch.cpp" >
+      <DependentUpon>../ShortcutActionDispatch.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../App.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
@@ -126,6 +130,7 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../ShortcutActionDispatch.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>

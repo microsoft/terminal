@@ -69,6 +69,8 @@ namespace winrt::TerminalApp::implementation
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
+        winrt::TerminalApp::ShortcutActionDispatch _actionDispatch{ nullptr };
+
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
@@ -82,6 +84,7 @@ namespace winrt::TerminalApp::implementation
         void _OpenSettings();
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
+        void _RegisterActionCallbacks();
 
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();

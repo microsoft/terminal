@@ -40,7 +40,8 @@ namespace winrt::TerminalApp::implementation
         _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
-        _dialogLock{}
+        _dialogLock{},
+        _actionDispatch{}
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -95,6 +96,8 @@ namespace winrt::TerminalApp::implementation
             // Inform the host that our titlebar content has changed.
             _setTitleBarContentHandlers(*this, _tabRow);
         }
+
+        _RegisterActionCallbacks();
 
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
@@ -470,6 +473,36 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - TODO
+    // Arguments:
+    // - bindings: A AppKeyBindings object to wire up with our event handlers
+    void App::_RegisterActionCallbacks()
+    {
+        // Hook up the KeyBinding object's events to our handlers.
+        // They should all be hooked up here, regardless of whether or not
+        //      there's an actual keychord for them.
+        _actionDispatch.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        _actionDispatch.DuplicateTab([this]() { _DuplicateTabViewItem(); });
+        _actionDispatch.CloseTab([this]() { _CloseFocusedTab(); });
+        _actionDispatch.ClosePane([this]() { _CloseFocusedPane(); });
+        _actionDispatch.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
+        _actionDispatch.ScrollUp([this]() { _Scroll(-1); });
+        _actionDispatch.ScrollDown([this]() { _Scroll(1); });
+        _actionDispatch.NextTab([this]() { _SelectNextTab(true); });
+        _actionDispatch.PrevTab([this]() { _SelectNextTab(false); });
+        _actionDispatch.SplitVertical([this]() { _SplitVertical(std::nullopt); });
+        _actionDispatch.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
+        _actionDispatch.ScrollUpPage([this]() { _ScrollPage(-1); });
+        _actionDispatch.ScrollDownPage([this]() { _ScrollPage(1); });
+        _actionDispatch.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        _actionDispatch.OpenSettings([this]() { _OpenSettings(); });
+        _actionDispatch.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        _actionDispatch.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
+        _actionDispatch.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
+        _actionDispatch.PasteText([this]() { _PasteText(); });
+    }
+
+    // Method Description:
     // - Register our event handlers with the given keybindings object. This
     //   should be done regardless of what the events are actually bound to -
     //   this simply ensures the AppKeyBindings object will call us correctly
@@ -478,28 +511,29 @@ namespace winrt::TerminalApp::implementation
     // - bindings: A AppKeyBindings object to wire up with our event handlers
     void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
-        // Hook up the KeyBinding object's events to our handlers.
-        // They should all be hooked up here, regardless of whether or not
-        //      there's an actual keychord for them.
-        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.ClosePane([this]() { _CloseFocusedPane(); });
-        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _Scroll(-1); });
-        bindings.ScrollDown([this]() { _Scroll(1); });
-        bindings.NextTab([this]() { _SelectNextTab(true); });
-        bindings.PrevTab([this]() { _SelectNextTab(false); });
-        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
-        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        bindings.PasteText([this]() { _PasteText(); });
+        bindings.SetDispatch(_actionDispatch);
+        // // Hook up the KeyBinding object's events to our handlers.
+        // // They should all be hooked up here, regardless of whether or not
+        // //      there's an actual keychord for them.
+        // bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        // bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
+        // bindings.CloseTab([this]() { _CloseFocusedTab(); });
+        // bindings.ClosePane([this]() { _CloseFocusedPane(); });
+        // bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
+        // bindings.ScrollUp([this]() { _Scroll(-1); });
+        // bindings.ScrollDown([this]() { _Scroll(1); });
+        // bindings.NextTab([this]() { _SelectNextTab(true); });
+        // bindings.PrevTab([this]() { _SelectNextTab(false); });
+        // bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
+        // bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
+        // bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
+        // bindings.ScrollDownPage([this]() { _ScrollPage(1); });
+        // bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        // bindings.OpenSettings([this]() { _OpenSettings(); });
+        // bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        // bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
+        // bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
+        // bindings.PasteText([this]() { _PasteText(); });
     }
 
     // Method Description:
