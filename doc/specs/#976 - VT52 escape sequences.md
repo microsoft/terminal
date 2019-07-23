@@ -17,7 +17,7 @@ The existing VT52 commands aren't currently implemented as a separate mode, so t
 
 ## Solution Design
 
-The basic idea is to add support for the [DECANM private mode sequence](https://vt100.net/docs/vt100-ug/chapter3.html#DECANM), which can then be used to switch from the default _ANSI_ mode, to a new _VT52_ mode.
+The basic idea is to add support for the [DECANM private mode sequence](https://vt100.net/docs/vt100-ug/chapter3.html#DECANM), which can then be used to switch from the default _ANSI_ mode, to a new _VT52_ mode. Once in _VT52_ mode, there is a separate [_Enter ANSI Mode_ sequence](https://vt100.net/docs/vt100-ug/chapter3.html#VT52ANSI) (`ESC <`) to switch back again.
 
 In terms of implementation, there are a number of areas of the system that would need to be updated.
 
@@ -37,20 +37,20 @@ Technically the VT52 keyboard doesn't map directly to a typical PC keyboard, so 
 
 The `_PrivateModeParamsHelper` method in the `AdaptDispatch` class would need to be extended to handle the DECANM mode parameter, and trigger a function to switch to VT52 mode. The typical pattern for this seems to be through a `PrivateXXX` method in the `ConGetSet` interface. Then the `ConhostInternalGetSet` implementation can pass that flag on to the active output buffer's `StateMachine`, and the active input buffer's `TerminalInput` instance.
 
-Changing back from VT52 mode to ANSI mode would need to be achieved with a separate VT52 command, since the VT100 CSI mode sequences would no longer be active. This would be handled in the same place as the other VT52 commands, in the `OutputStateMachineEngine`, and then passed on to the mode selection method in the `AdaptDispatch` class described above (essentially the equivalent of the DECANM private mode being set).
+Changing back from VT52 mode to ANSI mode would need to be achieved with a separate VT52 command (`ESC <`), since the VT100 CSI mode sequences would no longer be active. This would be handled in the same place as the other VT52 commands, in the `OutputStateMachineEngine`, and then passed on to the mode selection method in the `AdaptDispatch` class described above (essentially the equivalent of the DECANM private mode being set).
 
 ### Additional VT52 Commands
 
 Most of the missing VT52 functionality can be implemented in terms of existing VT100 methods.
  
-* The _Cursor Up_, _Cursor Down_, _Cursor Left_, and _Cursor Right_ commands are already implemented.
-* The _Enter Graphics Mode_ and _Exit Graphics Mode_ commands can probably use the existing `DesignateCharset` method, although this would require a new `VTCharacterSets` option with a corresponding table of characters (see below).
-* The _Reverse Line Feed_ command can use the existing `ReverseLineFeed` method.
-* The _Erase to End of Display_ and _Erase to End of Line_ commands can use the existing `EraseInDisplay` and `EraseInLine` methods.
-* The _Cursor Home_ and _Direct Cursor Address_ commands can probably be implemented using the `CursorPosition` method. Technically the _Direct Cursor Address_ has different rules for the boundary conditions, but nobody seems to get that right, so it's probably not that big a deal.
-* The _Identify_ command may be the only one that doesn't build on existing functionality, but it should be a fairly trivial addition to the `AdaptDispatch` class.
-* The _Enter Keypad Mode_ and _Exit Keypad Mode_ commands can use the existing `SetKeypadMode` method, assuming the `Terminal Input` class already knows to generate different sequences when in VT52 mode.
-* The _Enter ANSI Mode_ command can just call through to the new mode selection method in the `AdaptDispatch` class as discussed in the _Changing Modes_ section above.
+* The _Cursor Up_ (`ESC A`), _Cursor Down_ (`ESC B`), _Cursor Left_ (`ESC D`), and _Cursor Right_ (`ESC C`) commands are already implemented.
+* The _Enter Graphics Mode_ (`ESC F`) and _Exit Graphics Mode_ (`ESC G`) commands can probably use the existing `DesignateCharset` method, although this would require a new `VTCharacterSets` option with a corresponding table of characters (see below).
+* The _Reverse Line Feed_ (`ESC I`) command can use the existing `ReverseLineFeed` method.
+* The _Erase to End of Display_ (`ESC J`) and _Erase to End of Line_ (`ESC K`) commands can use the existing `EraseInDisplay` and `EraseInLine` methods.
+* The _Cursor Home_ (`ESC H`) and _Direct Cursor Address_ (`ESC Y`) commands can probably be implemented using the `CursorPosition` method. Technically the _Direct Cursor Address_ has different rules for the boundary conditions, but nobody seems to get that right, so it's probably not that big a deal.
+* The _Identify_ (`ESC Z`) command may be the only one that doesn't build on existing functionality, but it should be a fairly trivial addition to the `AdaptDispatch` class.
+* The _Enter Keypad Mode_ (`ESC =`) and _Exit Keypad Mode_ (`ESC >`) commands can use the existing `SetKeypadMode` method, assuming the `Terminal Input` class already knows to generate different sequences when in VT52 mode.
+* The _Enter ANSI Mode_ (`ESC <`) command can just call through to the new mode selection method in the `AdaptDispatch` class as discussed in the _Changing Modes_ section above.
 
 There are also a few VT52 print commands, but those are not technically part of the core command set, so they can probably be considered out of scope for now.
 
