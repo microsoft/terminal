@@ -37,7 +37,6 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
-        static winrt::hstring FormatOverrideShortcutText(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
         // clang-format off
         DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);

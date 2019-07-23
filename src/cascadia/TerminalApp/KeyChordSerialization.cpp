@@ -68,21 +68,7 @@ static const std::unordered_map<int32_t, std::wstring_view> vkeyNamePairs {
     { VK_F22        , L"f22" },
     { VK_F23        , L"f23" },
     { VK_F24        , L"f24" },
-    { VK_OEM_PLUS   , L"plus" },
-    { VK_OEM_COMMA  , L"," },
-    { VK_OEM_MINUS  , L"-" },
-    { VK_OEM_PERIOD , L"." }
-// TODO:
-// These all look like they'd be good keybindings, but change based on keyboard
-// layout. How do we deal with that?
-// #define VK_OEM_NEC_EQUAL  0x92   // '=' key on numpad
-// #define VK_OEM_1          0xBA   // ';:' for US
-// #define VK_OEM_2          0xBF   // '/?' for US
-// #define VK_OEM_3          0xC0   // '`~' for US
-// #define VK_OEM_4          0xDB  //  '[{' for US
-// #define VK_OEM_5          0xDC  //  '\|' for US
-// #define VK_OEM_6          0xDD  //  ']}' for US
-// #define VK_OEM_7          0xDE  //  ''"' for US
+    { VK_OEM_PLUS   , L"plus" }
 };
 // clang-format on
 
@@ -178,6 +164,25 @@ winrt::Microsoft::Terminal::Settings::KeyChord KeyChordSerialization::FromString
                 }
             }
 
+            // If we haven't found a key, attempt a keyboard mapping
+            if (!foundKey && part.size() == 1)
+            {
+                auto oemVk = VkKeyScanW(part[0]);
+                if (oemVk != -1)
+                {
+                    vkey = oemVk & 0xFF;
+                    auto oemModifiers = (oemVk & 0xFF00) >> 8;
+                    // We're using WI_SetFlagIf instead of WI_UpdateFlag because we want to be strictly additive
+                    // to the user's specified modifiers. ctrl+| should be the same as ctrl+shift+\,
+                    // but if we used WI_UpdateFlag, ctrl+shift+\ would turn _off_ Shift because \ doesn't
+                    // require it.
+                    WI_SetFlagIf(modifiers, KeyModifiers::Shift, WI_IsFlagSet(oemModifiers, 1U));
+                    WI_SetFlagIf(modifiers, KeyModifiers::Ctrl, WI_IsFlagSet(oemModifiers, 2U));
+                    WI_SetFlagIf(modifiers, KeyModifiers::Alt, WI_IsFlagSet(oemModifiers, 4U));
+                    foundKey = true;
+                }
+            }
+
             // If we weren't able to find a match, throw an exception.
             if (!foundKey)
             {
@@ -239,6 +244,16 @@ winrt::hstring KeyChordSerialization::ToString(const KeyChord& chord)
         {
             buffer += vkeyNamePairs.at(vkey);
             serializedSuccessfully = true;
+        }
+        else
+        {
+            auto mappedChar = MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+            if (mappedChar != 0)
+            {
+                wchar_t mappedWch = gsl::narrow_cast<wchar_t>(mappedChar);
+                buffer += std::wstring_view{ &mappedWch, 1 };
+                serializedSuccessfully = true;
+            }
         }
     }
 
