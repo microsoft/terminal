@@ -56,3 +56,15 @@ private:                                                                        
 #define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                                        \
     winrt::event_token className::name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return eventHandler.add(handler); } \
     void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
+#define DECLARE_GETSET_PROPERTY(type, name) \
+public:                                     \
+    type name();                            \
+    void name(const type& value);           \
+                                            \
+private:                                    \
+    type _##name;
+
+#define DEFINE_GETSET_PROPERTY(className, type, name) \
+    type className::name() { return _##name; }        \
+    void className::name(const type& value) { _##name = value; }

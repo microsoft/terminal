@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "../ShortcutActionDispatch.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass Action {
+        Action();
+
+        String Name;
+        String IconPath;
+        ShortcutAction Command;
+    }
+}

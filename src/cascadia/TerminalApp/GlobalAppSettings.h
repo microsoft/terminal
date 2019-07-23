@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
+#include "Action.h"
 
 namespace TerminalApp
 {
@@ -62,6 +63,7 @@ private:
     winrt::TerminalApp::AppKeyBindings _keybindings;
 
     std::vector<ColorScheme> _colorSchemes;
+    std::vector<winrt::TerminalApp::Action> _actions;
 
     int32_t _initialRows;
     int32_t _initialCols;

@@ -31,6 +31,7 @@ static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
     _keybindings{},
+    _actions{},
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
