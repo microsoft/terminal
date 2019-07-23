@@ -446,7 +446,6 @@ void Profile::SetFontFace(std::wstring fontFace) noexcept
 
 void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
 {
-    static_assert(noexcept(_schemeName = std::move(schemeName)));
     _schemeName = std::move(schemeName);
 }
 

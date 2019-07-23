@@ -828,7 +828,7 @@ namespace winrt::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex >= gsl::narrow_cast<decltype(realIndex)>(profiles.size()))
+            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
             {
                 return;
             }
@@ -1217,10 +1217,10 @@ namespace winrt::TerminalApp::implementation
 
         if (tabIndexFromControl == focusedTabIndex)
         {
-            auto const focusedTabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
-            if (focusedTabIndex >= focusedTabCount)
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
             {
-                focusedTabIndex = focusedTabCount - 1;
+                focusedTabIndex = tabCount - 1;
             }
             else if (focusedTabIndex < 0)
             {
