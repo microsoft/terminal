@@ -108,15 +108,15 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
 
-    auto lambda = std::function<void()>([&] {
-        host.IncomingConnection();
-    });
-
     // Create a manager object for IPC.
     Manager manager;
 
-    Manager::s_RegisterOnConnection(lambda);
+    // Create and register on connection callbacks from the manager into the application host.
+    std::function<void(HANDLE)> onHandleConnection = std::bind(&AppHost::IncomingConnectionByHandle, &host, std::placeholders::_1);
+    std::function<void(std::wstring_view, std::wstring_view)> onLaunchConnection = std::bind(&AppHost::IncomingConnectionByLaunch, &host, std::placeholders::_1, std::placeholders::_2);
 
+    Manager::s_RegisterOnConnection(onHandleConnection);
+    Manager::s_RegisterOnConnection(onLaunchConnection);
 
     // !!! LOAD BEARING !!!
     // This is _magic_. Do the initial loading of our settings *BEFORE* we

@@ -201,6 +201,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
 // - startingDirectory: The directory to start the process in
 // - w: The initial width of the pty, in characters
 // - h: The initial height of the pty, in characters
+// - hServer: An optional handle to a server connection handle already established for this PTY.
 // - hInput: A handle to the pipe for writing input to the pty.
 // - hOutput: A handle to the pipe for reading the output of the pty.
 // - hSignal: A handle to the pipe for writing signal messages to the pty.
@@ -216,6 +217,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
                                                                std::optional<std::wstring> startingDirectory,
                                                                const unsigned short w,
                                                                const unsigned short h,
+                                                               std::optional<HANDLE> const hServer,
                                                                HANDLE* const hInput,
                                                                HANDLE* const hOutput,
                                                                HANDLE* const hSignal,
@@ -254,6 +256,11 @@ bool SignalResizeWindow(const HANDLE hSignal,
     SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
     SetHandleInformation(signalPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
+    if (hServer.has_value())
+    {
+        SetHandleInformation(hServer.value(), HANDLE_FLAG_INHERIT, 1);
+    }
+
     std::wstring conhostCmdline = L"conhost.exe";
     conhostCmdline += L" --headless";
     std::wstringstream ss;
@@ -264,9 +271,19 @@ bool SignalResizeWindow(const HANDLE hSignal,
     }
 
     ss << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide);
+
+    if (hServer.has_value())
+    {
+        ss << L" --server 0x" << std::hex << HandleToUlong(hServer.value());
+    }
+
     conhostCmdline += ss.str();
-    conhostCmdline += L" -- ";
-    conhostCmdline += cmdline;
+
+    if (!hServer.has_value())
+    {
+        conhostCmdline += L" -- ";
+        conhostCmdline += cmdline;
+    }
 
     STARTUPINFO si = { 0 };
     si.cb = sizeof(STARTUPINFOW);

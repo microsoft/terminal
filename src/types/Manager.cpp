@@ -39,6 +39,7 @@ Manager::Manager() :
     else
     {
         ManagerMessageQuery query;
+        query.size = sizeof(query);
         query.type = ManagerMessageTypes::GetManagerPid;
 
         const auto reply = _ask(query);
@@ -50,7 +51,7 @@ Manager::Manager() :
 
             WaitForSingleObject(managerProcess.get(), INFINITE);
             _becomeServer();
-        });
+         });
     }
 }
 
@@ -70,6 +71,7 @@ bool Manager::s_TrySendToManager(const HANDLE server)
     {
         // Get PID from remote process.
         ManagerMessageQuery query;
+        query.size = sizeof(query);
         query.type = ManagerMessageTypes::GetManagerPid;
 
         auto reply = _ask(query);
@@ -88,12 +90,51 @@ bool Manager::s_TrySendToManager(const HANDLE server)
                                                   DUPLICATE_SAME_ACCESS));
 
         // Tell remote process about new handle ID
+        query.size = sizeof(query);
         query.type = ManagerMessageTypes::SendConnection;
         query.query.sendConn.handle = targetHandle;
 
         reply = _ask(query);
 
-        return true;
+        return reply.reply.sendConn.ok;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return false;
+    }
+}
+
+bool Manager::s_TrySendToManager(const std::wstring_view cmdline,
+                                 const std::wstring_view workingDir)
+{
+    try
+    {
+        // Figure out how much data we actually need to send with the variable length strings
+        size_t size = sizeof(ManagerMessageQuery) + 1;
+        size += 2*(cmdline.size() + 1);
+        size += 2*(workingDir.size() + 1);
+
+        // Make a big buffer to hold it all contiguously
+        const auto buffer = std::make_unique<byte[]>(size);
+
+        // Make pointers to fill up each piece of data
+        const auto query = reinterpret_cast<ManagerMessageQuery*>(buffer.get());
+        const auto cmdPayload = reinterpret_cast<PWCHAR>(buffer.get() + sizeof(ManagerMessageQuery) + 1);
+        const auto workingPayload = reinterpret_cast<PWCHAR>(buffer.get() + sizeof(ManagerMessageQuery) + 1 + (cmdline.size() + 1) * 2);
+
+        // Tell the remote process the command line and working directory
+        query->size = gsl::narrow<DWORD>(size);
+        query->type = ManagerMessageTypes::SendCmdAndWorking;
+        query->query.sendCmdAndWorking.cmd = gsl::narrow<DWORD>(cmdline.size());
+        query->query.sendCmdAndWorking.working = gsl::narrow<DWORD>(workingDir.size());
+
+        THROW_IF_FAILED(StringCchCopyW(cmdPayload, cmdline.size() + 1, cmdline.data()));
+        THROW_IF_FAILED(StringCchCopyW(workingPayload, workingDir.size() + 1, workingDir.data()));
+
+        const auto reply = _ask(*query);
+
+        return reply.reply.sendConn.ok;
     }
     catch (...)
     {
@@ -163,7 +204,7 @@ void Manager::_serverLoop()
             const auto loosePipeHandle = pipe.release();
             auto future = std::async(std::launch::async, [this, loosePipeHandle] {
                 _perClientLoop(wil::unique_handle(loosePipeHandle));
-            });
+                                     });
             _perClientWork.push_back(std::move(future));
         }
         else if (ret == WAIT_FAILED)
@@ -184,11 +225,30 @@ void Manager::_perClientLoop(wil::unique_handle pipe)
     {
         ManagerMessageQuery query;
         DWORD bytesRead = 0;
-        THROW_IF_WIN32_BOOL_FALSE(ReadFile(pipe.get(),
-                                           &query,
-                                           sizeof(query),
-                                           &bytesRead,
-                                           nullptr));
+        SetLastError(S_OK);
+        const auto result = ReadFile(pipe.get(),
+                                     &query,
+                                     sizeof(query),
+                                     &bytesRead,
+                                     nullptr);
+
+        // False is OK if it's ERROR_MORE_DATA.
+        const auto gle = GetLastError();
+        THROW_LAST_ERROR_IF(!result && gle != ERROR_MORE_DATA);
+
+        std::unique_ptr<byte[]> buffer;
+        if (gle == ERROR_MORE_DATA)
+        {
+            const auto remainingBytes = query.size - gsl::narrow<DWORD>(sizeof(query));
+            buffer = std::make_unique<byte[]>(remainingBytes);
+
+            bytesRead = 0;
+            THROW_IF_WIN32_BOOL_FALSE(ReadFile(pipe.get(),
+                                               buffer.get(),
+                                               remainingBytes,
+                                               &bytesRead,
+                                               nullptr));
+        }
 
         ManagerMessageReply reply;
         switch (query.type)
@@ -198,6 +258,9 @@ void Manager::_perClientLoop(wil::unique_handle pipe)
             break;
         case ManagerMessageTypes::SendConnection:
             reply = _sendConnection(query);
+            break;
+        case ManagerMessageTypes::SendCmdAndWorking:
+            reply = _sendCmdAndWorking(query, buffer);
             break;
         default:
             THROW_HR(E_NOTIMPL);
@@ -212,14 +275,14 @@ void Manager::_perClientLoop(wil::unique_handle pipe)
     }
 }
 
-Manager::ManagerMessageReply Manager::_ask(Manager::ManagerMessageQuery query)
+Manager::ManagerMessageReply Manager::_ask(Manager::ManagerMessageQuery& query)
 {
     ManagerMessageReply reply;
 
     DWORD bytesRead = 0;
     THROW_IF_WIN32_BOOL_FALSE(CallNamedPipeW(PIPE_NAME.data(),
                                              &query,
-                                             sizeof(query),
+                                             query.size,
                                              &reply,
                                              sizeof(reply),
                                              &bytesRead,
@@ -238,17 +301,21 @@ Manager::ManagerMessageReply Manager::_getPid(ManagerMessageQuery /*query*/)
     return reply;
 }
 
-static std::vector<std::function<void()>> s_onConnection;
+static std::vector<std::function<void(HANDLE)>> s_onHandleConnection;
+
+void Manager::s_RegisterOnConnection(std::function<void(HANDLE)> func)
+{
+    s_onHandleConnection.push_back(func);
+}
 
 Manager::ManagerMessageReply Manager::_sendConnection(ManagerMessageQuery query)
 {
-    const auto server = query.query.sendConn.handle;
-    server;
+    const auto serverHandle = query.query.sendConn.handle;
 
     // create new conhost connection...
-    for (const auto& func : s_onConnection)
+    for (const auto& func : s_onHandleConnection)
     {
-        func();
+        func(serverHandle);
     }
 
     ManagerMessageReply reply;
@@ -259,8 +326,32 @@ Manager::ManagerMessageReply Manager::_sendConnection(ManagerMessageQuery query)
     return reply;
 }
 
-void Manager::s_RegisterOnConnection(std::function<void()> func)
+static std::vector<std::function<void(std::wstring_view, std::wstring_view)>> s_onLaunchConnection;
+
+void Manager::s_RegisterOnConnection(std::function<void(std::wstring_view, std::wstring_view)> func)
 {
-    s_onConnection.push_back(func);
+    s_onLaunchConnection.push_back(func);
+}
+
+Manager::ManagerMessageReply Manager::_sendCmdAndWorking(ManagerMessageQuery query, std::unique_ptr<BYTE[]>& buffer)
+{
+    const auto cmd = query.query.sendCmdAndWorking.cmd;
+    const auto work = query.query.sendCmdAndWorking.working;
+
+    std::wstring_view cmdline(reinterpret_cast<wchar_t*>(buffer.get() + 1), cmd);
+    std::wstring_view workingDir(reinterpret_cast<wchar_t*>(buffer.get() + 1 + (cmd + 1) * 2), work);
+
+    // create new conhost connection...
+    for (const auto& func : s_onLaunchConnection)
+    {
+        func(cmdline, workingDir);
+    }
+
+    ManagerMessageReply reply;
+
+    reply.type = ManagerMessageTypes::SendCmdAndWorking;
+    reply.reply.sendCmdAndWorking.ok = true;
+
+    return reply;
 }
 

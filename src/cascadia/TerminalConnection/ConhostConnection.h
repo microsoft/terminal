@@ -10,6 +10,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     struct ConhostConnection : ConhostConnectionT<ConhostConnection>
     {
         ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, const uint32_t rows, const uint32_t cols, const guid& guid);
+        ConhostConnection(const uint64_t server, const uint32_t rows, const uint32_t cols, const guid& guid);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
@@ -41,6 +42,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_handle _hOutputThread;
         wil::unique_process_information _piConhost;
         wil::unique_handle _hJob;
+        wil::unique_handle _hServer;
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();

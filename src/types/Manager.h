@@ -9,8 +9,11 @@ public:
 
     void NotifyExit();
 
-    static void s_RegisterOnConnection(std::function<void()> func);
+    static void s_RegisterOnConnection(std::function<void(HANDLE)> func);
+    static void s_RegisterOnConnection(std::function<void(std::wstring_view, std::wstring_view)> func);
     static bool s_TrySendToManager(const HANDLE server);
+    static bool s_TrySendToManager(const std::wstring_view cmdline,
+                                   const std::wstring_view workingDir);
 
     Manager(const Manager&) = delete;
     Manager(Manager&&) = delete;
@@ -28,11 +31,13 @@ private:
     enum class ManagerMessageTypes
     {
         GetManagerPid,
-        SendConnection
+        SendConnection,
+        SendCmdAndWorking
     };
 
     struct ManagerMessageQuery
     {
+        DWORD size;
         ManagerMessageTypes type;
         union
         {
@@ -40,6 +45,11 @@ private:
             {
                 HANDLE handle;
             } sendConn;
+            struct SendCmdAndWorking
+            {
+                DWORD cmd;
+                DWORD working;
+            } sendCmdAndWorking;
         } query;
     };
 
@@ -56,12 +66,17 @@ private:
             {
                 bool ok;
             } sendConn;
+            struct SendCmdAndWorking
+            {
+                bool ok;
+            } sendCmdAndWorking;
         } reply;
     };
 
-    static ManagerMessageReply _ask(ManagerMessageQuery query);
+    static ManagerMessageReply _ask(ManagerMessageQuery& query);
     static ManagerMessageReply _getPid(ManagerMessageQuery query);
     static ManagerMessageReply _sendConnection(ManagerMessageQuery query);
+    static ManagerMessageReply _sendCmdAndWorking(ManagerMessageQuery query, std::unique_ptr<byte[]>& buffer);
 
     void _becomeServer();
     void _serverLoop();

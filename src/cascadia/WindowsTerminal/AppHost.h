@@ -14,7 +14,8 @@ public:
     AppHost() noexcept;
     virtual ~AppHost();
 
-    void IncomingConnection();
+    void IncomingConnectionByHandle(HANDLE handle);
+    void IncomingConnectionByLaunch(std::wstring_view cmdline, std::wstring_view workingDir);
     void AppTitleChanged(winrt::hstring newTitle);
     void LastTabClosed();
     void Initialize();

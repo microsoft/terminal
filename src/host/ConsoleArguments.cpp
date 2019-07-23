@@ -104,7 +104,8 @@ ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
     _recievedEarlySizeChange{ false },
     _originalWidth{ -1 },
     _originalHeight{ -1 },
-    _forceManager{ false }
+    _forceManager{ false },
+    _workingDirectory{ wil::GetCurrentDirectoryW().get() }
 {
     _clientCommandline = L"";
     _vtMode = L"";

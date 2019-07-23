@@ -111,6 +111,8 @@ private:
 
     std::wstring _clientCommandline;
 
+    std::wstring _workingDirectory;
+
     HANDLE _vtInHandle;
 
     HANDLE _vtOutHandle;

@@ -37,6 +37,23 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    ConhostConnection::ConhostConnection(const uint64_t server,
+                                         const uint32_t initialRows,
+                                         const uint32_t initialCols,
+                                         const guid& initialGuid) :
+        _initialRows{ initialRows },
+        _initialCols{ initialCols },
+        _commandline{},
+        _startingDirectory{},
+        _guid{ initialGuid },
+        _hServer{ reinterpret_cast<HANDLE>(server) }
+    {
+        if (_guid == guid{})
+        {
+            _guid = Utils::CreateGuid();
+        }
+    }
+
     winrt::guid ConhostConnection::Guid() const noexcept
     {
         return _guid;
@@ -71,6 +88,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             startingDirectory = _startingDirectory;
         }
 
+        std::optional<HANDLE> server;
+        if (_hServer)
+        {
+            server = _hServer.get();
+        }
+
         EnvironmentVariableMapW extraEnvVars;
         {
             // Convert connection Guid to string and ignore the enclosing '{}'.
@@ -88,6 +111,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          startingDirectory,
                          static_cast<short>(_initialCols),
                          static_cast<short>(_initialRows),
+                         server,
                          &_inPipe,
                          &_outPipe,
                          &_signalPipe,

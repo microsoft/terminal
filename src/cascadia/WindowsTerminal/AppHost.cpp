@@ -72,9 +72,14 @@ void AppHost::Initialize()
     _window->OnAppInitialized(_app);
 }
 
-void AppHost::IncomingConnection()
+void AppHost::IncomingConnectionByHandle(HANDLE handle)
 {
-    _app.IncomingConnection();
+    _app.IncomingConnection(reinterpret_cast<uint64_t>(handle));
+}
+
+void AppHost::IncomingConnectionByLaunch(std::wstring_view cmdline, std::wstring_view workingDir)
+{
+    _app.IncomingConnection(winrt::hstring(cmdline), winrt::hstring(workingDir));
 }
 
 // Method Description:

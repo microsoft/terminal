@@ -911,12 +911,20 @@ namespace winrt::TerminalApp::implementation
     //      currently displayed, it will be shown.
     // Arguments:
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    void App::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings, std::optional<uint64_t> serverHandle)
     {
         // Initialize the new tab
 
+        TerminalConnection::ITerminalConnection connection = nullptr;
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        if (!serverHandle)
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        }
+        else
+        {
+            connection = TerminalConnection::ConhostConnection(serverHandle.value(), 30, 80, winrt::guid());
+        }
 
         TermControl term{ settings, connection };
 
@@ -1158,10 +1166,30 @@ namespace winrt::TerminalApp::implementation
         return { L"Windows Terminal" };
     }
 
-    void App::IncomingConnection()
+    void App::IncomingConnection(uint64_t serverHandle)
     {
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-            _OpenNewTab(std::nullopt);
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, serverHandle]() {
+            // Getting Guid for default profile
+            const auto globalSettings = _settings->GlobalSettings();
+            auto profileGuid = globalSettings.GetDefaultProfile();
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+
+            _CreateNewTabFromSettings(profileGuid, settings, serverHandle);
+        });
+    }
+
+    void App::IncomingConnection(hstring cmdline, hstring workingDir)
+    {
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, cmdline, workingDir]() {
+            // Getting Guid for default profile
+            const auto globalSettings = _settings->GlobalSettings();
+            auto profileGuid = globalSettings.GetDefaultProfile();
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+
+            settings.Commandline(cmdline);
+            settings.StartingDirectory(workingDir);
+
+            _CreateNewTabFromSettings(profileGuid, settings);
         });
     }
 

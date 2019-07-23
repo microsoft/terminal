@@ -16,13 +16,14 @@
 {
     if (args.ShouldSendToManager())
     {
-        Manager::s_TrySendToManager(args.GetServerHandle());
-        return S_OK;
+        if (Manager::s_TrySendToManager(args.GetServerHandle()))
+        {
+            SleepEx(INFINITE, FALSE);
+            return S_OK;
+        }
     }
-    else
-    {
-        return ConsoleCreateIoThreadLegacy(args);
-    }
+    
+    return ConsoleCreateIoThreadLegacy(args);
 }
 
 // this function has unreachable code due to its unusual lifetime. We
@@ -32,6 +33,15 @@
 
 [[nodiscard]] HRESULT Entrypoints::StartConsoleForCmdLine(ConsoleArguments& args)
 {
+    if (args.ShouldSendToManager())
+    {
+        if (Manager::s_TrySendToManager(args.GetClientCommandline(), L"C:\\windows\\system32"))
+        {
+            SleepEx(INFINITE, FALSE);
+            return S_OK;
+        }
+    }
+
     // Create a scope because we're going to exit thread if everything goes well.
     // This scope will ensure all C++ objects and smart pointers get a chance to destruct before ExitThread is called.
     {
