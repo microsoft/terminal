@@ -16,9 +16,15 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Action> FilteredActions();
         void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Action> const& actions);
 
+        void FilterTextChanged(Windows::Foundation::IInspectable const& sender,
+                               Windows::UI::Xaml::RoutedEventArgs const& args);
+
     private:
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Action> _filteredActions{ nullptr };
         Windows::Foundation::Collections::IVector<TerminalApp::Action> _allActions{ nullptr };
+
+        void _UpdateFilteredActions();
+        static bool _FilterMatchesName(winrt::hstring searchText, winrt::hstring name);
     };
 }
 
