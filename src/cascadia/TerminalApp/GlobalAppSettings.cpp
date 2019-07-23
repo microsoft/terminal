@@ -6,16 +6,17 @@
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "AppKeyBindingsSerialization.h"
+#include "ActionSerialization.h"
 #include "Utils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
@@ -164,6 +165,17 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
+    Json::Value actionsArrayJson;
+    for (const auto& action : _actions)
+    {
+        try
+        {
+            actionsArrayJson.append(ActionSerialization::ToJson(action));
+        }
+        CATCH_LOG();
+    }
+    jsonObject[JsonKey(ActionsKey)] = actionsArrayJson;
+
     return jsonObject;
 }
 
@@ -219,6 +231,21 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
+    }
+
+    if (auto actionsArray{ json[JsonKey(ActionsKey)] })
+    {
+        for (const auto& value : actionsArray)
+        {
+            if (value.isObject())
+            {
+                try
+                {
+                    result._actions.push_back(ActionSerialization::FromJson(value));
+                }
+                CATCH_LOG();
+            }
+        }
     }
 
     return result;

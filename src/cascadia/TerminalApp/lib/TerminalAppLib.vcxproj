@@ -66,7 +66,9 @@
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
     <ClInclude Include="../AppKeyBindingsSerialization.h" />
+    <ClInclude Include="../ActionSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../ShortcutActionSerializationKeys.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
@@ -100,6 +102,7 @@
     <ClCompile Include="../CascadiaSettings.cpp" />
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
+    <ClCompile Include="../ActionSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="pch.cpp">
