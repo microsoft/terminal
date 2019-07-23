@@ -52,7 +52,14 @@ Most of the missing VT52 functionality can be implemented in terms of existing V
 * The _Enter Keypad Mode_ (`ESC =`) and _Exit Keypad Mode_ (`ESC >`) commands can use the existing `SetKeypadMode` method, assuming the `Terminal Input` class already knows to generate different sequences when in VT52 mode.
 * The _Enter ANSI Mode_ (`ESC <`) command can just call through to the new mode selection method in the `AdaptDispatch` class as discussed in the _Changing Modes_ section above.
 
-There are also a few VT52 print commands, but those are not technically part of the core command set, so they can probably be considered out of scope for now.
+There are also a few VT52 print commands, but those are not technically part of the core command set, and considering we don't yet support any of the VT102 print commands, I think they can probably be considered out of scope for now. Briefly they are:
+
+* _Auto Print_ on (`ESC ^`) and off (`ESC _`) commands. In auto print mode, a display line prints after you move the cursor off the line, or during an auto wrap.
+* _Print Controller_ on (`ESC W`) and off (`ESC X`) commands. When enabled, the terminal transmits received characters to the printer without displaying them.
+* The _Print Cursor Line_ (`ESC V`) command prints the display line with the cursor.
+* The _Print Screen_ (`ESC ]`) command prints the screen (or at least the scrolling region).
+
+I suspect most, if not all of these, would be direct equivalents of the VT102 print commands, if we ever implemented those.
 
 ### Graphic Mode Character Set
 
