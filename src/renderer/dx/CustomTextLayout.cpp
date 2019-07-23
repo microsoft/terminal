@@ -787,7 +787,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
         if (_format.As(&format1) != S_OK)
         {
-            // If IDWriteTextFormat1 does not exist, return directly.
+            // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
             return S_OK;
         }
         RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
