@@ -8,7 +8,7 @@
   * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
   
 #### Other related repositories include:
-  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
+  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 
 ### Build Status
 

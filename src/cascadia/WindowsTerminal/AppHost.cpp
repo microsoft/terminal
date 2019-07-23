@@ -41,7 +41,10 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
+    // destruction order is important for proper teardown here
+    _window = nullptr;
     _app.Close();
+    _app = nullptr;
 }
 
 // Method Description:
@@ -57,7 +60,6 @@ AppHost::~AppHost()
 // - <none>
 void AppHost::Initialize()
 {
-    _app.Initialize();
     _window->Initialize();
 
     if (_useNonClientArea)

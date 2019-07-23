@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 #include "App.g.h"
 #include "App.base.h"
+#include "ScopedResourceLoader.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -65,6 +66,8 @@ namespace winrt::TerminalApp::implementation
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
 
+        ScopedResourceLoader _resourceLoader;
+
         wil::unique_folder_change_reader_nothrow _reader;
 
         std::atomic<bool> _settingsReloadQueued{ false };
@@ -100,6 +103,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _OpenNewTab(std::optional<int> profileIndex);
+        void _DuplicateTabViewItem();
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _SelectNextTab(const bool bMoveRight);

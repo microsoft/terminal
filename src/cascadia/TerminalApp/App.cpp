@@ -40,7 +40,8 @@ namespace winrt::TerminalApp::implementation
         _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
-        _dialogLock{}
+        _dialogLock{},
+        _resourceLoader{ L"TerminalApp/Resources" }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -48,10 +49,8 @@ namespace winrt::TerminalApp::implementation
         // cause you to chase down the rabbit hole of "why is App not
         // registered?" when it definitely is.
 
-        // See GH#1339. This is a workaround for MSFT:22116519
-        // We need this to prevent an occasional crash on teardown
-        AddRef();
-        m_inner.as<::IUnknown>()->Release();
+        // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
+        Initialize();
     }
 
     // Method Description:
@@ -172,10 +171,9 @@ namespace winrt::TerminalApp::implementation
     void App::_ShowOkDialog(const winrt::hstring& titleKey,
                             const winrt::hstring& contentKey)
     {
-        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = resourceLoader.GetString(titleKey);
-        auto message = resourceLoader.GetString(contentKey);
-        auto buttonText = resourceLoader.GetString(L"Ok");
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto message = _resourceLoader.GetLocalizedString(contentKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
     }
@@ -186,15 +184,14 @@ namespace winrt::TerminalApp::implementation
     //   Notes link.
     void App::_ShowAboutDialog()
     {
-        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        const auto title = resourceLoader.GetString(L"AboutTitleText");
-        const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
-        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText");
-        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = resourceLoader.GetString(L"GettingStartedUriValue");
-        const auto documentationUriValue = resourceLoader.GetString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = resourceLoader.GetString(L"ReleaseNotesUriValue");
+        const auto title = _resourceLoader.GetLocalizedString(L"AboutTitleText");
+        const auto versionLabel = _resourceLoader.GetLocalizedString(L"VersionLabelText");
+        const auto gettingStartedLabel = _resourceLoader.GetLocalizedString(L"GettingStartedLabelText");
+        const auto documentationLabel = _resourceLoader.GetLocalizedString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = _resourceLoader.GetLocalizedString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = _resourceLoader.GetLocalizedString(L"GettingStartedUriValue");
+        const auto documentationUriValue = _resourceLoader.GetLocalizedString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = _resourceLoader.GetLocalizedString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
@@ -239,7 +236,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);
 
-        const auto buttonText = resourceLoader.GetString(L"Ok");
+        const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         gettingStartedLink.Foreground(blueBrush);
         documentationLink.Foreground(blueBrush);
@@ -372,7 +369,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text(L"Settings");
+            settingsItem.Text(_resourceLoader.GetLocalizedString(L"SettingsMenuItem"));
 
             Controls::SymbolIcon ico{};
             ico.Symbol(Controls::Symbol::Setting);
@@ -389,7 +386,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(L"Feedback");
+            feedbackFlyout.Text(_resourceLoader.GetLocalizedString(L"FeedbackMenuItem"));
 
             Controls::FontIcon feedbackIco{};
             feedbackIco.Glyph(L"\xE939");
@@ -401,7 +398,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the about button.
             auto aboutFlyout = Controls::MenuFlyoutItem{};
-            aboutFlyout.Text(L"About");
+            aboutFlyout.Text(_resourceLoader.GetLocalizedString(L"AboutMenuItem"));
 
             Controls::SymbolIcon aboutIco{};
             aboutIco.Symbol(Controls::Symbol::Help);
@@ -454,7 +451,7 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView().GetString(L"FeedbackUriValue");
+        const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
 
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
@@ -484,6 +481,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.ClosePane([this]() { _CloseFocusedPane(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
@@ -670,6 +668,7 @@ namespace winrt::TerminalApp::implementation
         for (auto& tab : _tabs)
         {
             _UpdateTabIcon(tab);
+            _UpdateTitle(tab);
         }
 
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
@@ -715,14 +714,21 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
+        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
 
-        // TODO #608: If the settings don't want the terminal's text in the
-        // tab, then display something else.
-        tab->SetTabText(newTabTitle);
+        const auto tabTitle = matchingProfile->GetTabTitle();
+
+        // Checks if tab title has been set in the profile settings and
+        // updates accordingly.
+
+        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
-            _titleChangeHandlers(newTabTitle);
+            _titleChangeHandlers(newActualTitle);
         }
     }
 
@@ -916,13 +922,13 @@ namespace winrt::TerminalApp::implementation
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
 
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
@@ -1188,6 +1194,19 @@ namespace winrt::TerminalApp::implementation
             _RemoveTabViewItem(sender);
             eventArgs.Handled(true);
         }
+    }
+
+    // Method Description:
+    // - Duplicates the current focused tab
+    void App::_DuplicateTabViewItem()
+    {
+        const int& focusedTabIndex = _GetFocusedTabIndex();
+        const auto& _tab = _tabs.at(focusedTabIndex);
+
+        const auto& profileGuid = _tab->GetFocusedProfile();
+        const auto& settings = _settings->MakeSettings(profileGuid);
+
+        _CreateNewTabFromSettings(profileGuid.value(), settings);
     }
 
     // Method Description:
