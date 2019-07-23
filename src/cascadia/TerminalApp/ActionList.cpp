@@ -17,6 +17,7 @@ namespace winrt::TerminalApp::implementation
         InitializeComponent();
 
         _filteredActions = winrt::single_threaded_observable_vector<winrt::TerminalApp::Action>();
+        _allActions = winrt::single_threaded_vector<winrt::TerminalApp::Action>();
 
         Action action1{};
         action1.Name(L"Foo");
@@ -33,5 +34,16 @@ namespace winrt::TerminalApp::implementation
     Windows::Foundation::Collections::IObservableVector<Action> ActionList::FilteredActions()
     {
         return _filteredActions;
+    }
+
+    void ActionList::SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Action> const& actions)
+    {
+        _allActions = actions;
+
+        _filteredActions.Clear();
+        for (auto action : _allActions)
+        {
+            _filteredActions.Append(action);
+        }
     }
 }

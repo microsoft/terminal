@@ -13,12 +13,12 @@ namespace winrt::TerminalApp::implementation
     {
         ActionList();
 
-        // void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
-
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Action> FilteredActions();
+        void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Action> const& actions);
 
     private:
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Action> _filteredActions{ nullptr };
+        Windows::Foundation::Collections::IVector<TerminalApp::Action> _allActions{ nullptr };
     };
 }
 

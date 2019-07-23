@@ -58,6 +58,8 @@ public:
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
+    const std::vector<winrt::TerminalApp::Action>& GetActions() const noexcept;
+
 private:
     GUID _defaultProfile;
     winrt::TerminalApp::AppKeyBindings _keybindings;

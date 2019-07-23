@@ -100,6 +100,14 @@ namespace winrt::TerminalApp::implementation
 
         _RegisterActionCallbacks();
 
+        // TODO: Update the command palette when settings reload
+        auto actionsCollection = winrt::single_threaded_vector<winrt::TerminalApp::Action>();
+        for (auto& action : _settings->GlobalSettings().GetActions())
+        {
+            actionsCollection.Append(action);
+        }
+        _commandPalette.SetActions(actionsCollection);
+
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
             this->_OpenNewTab(std::nullopt);

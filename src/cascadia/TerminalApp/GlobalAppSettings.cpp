@@ -59,6 +59,11 @@ std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
     return _colorSchemes;
 }
 
+const std::vector<winrt::TerminalApp::Action>& GlobalAppSettings::GetActions() const noexcept
+{
+    return _actions;
+}
+
 void GlobalAppSettings::SetDefaultProfile(const GUID defaultProfile) noexcept
 {
     _defaultProfile = defaultProfile;

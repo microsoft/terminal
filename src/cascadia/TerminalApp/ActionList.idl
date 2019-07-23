@@ -10,5 +10,7 @@ namespace TerminalApp
         ActionList();
 
         Windows.Foundation.Collections.IObservableVector<Action> FilteredActions { get; };
+
+        void SetActions(Windows.Foundation.Collections.IVector<Action> actions);
     }
 }
