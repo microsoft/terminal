@@ -262,24 +262,6 @@
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-  <!--
-    Microsoft.UI.Xaml contains some <Content> resource files that need to be included in our package.
-    For some reason, they're not rolled up through dependent projects; if they were, their paths would
-    be wrong.
-
-    WAP Packaging projects don't actually support nuget package references, so we added one manually.
-
-    This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
-    here.
-  -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
-  <!-- End workaround -->
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />

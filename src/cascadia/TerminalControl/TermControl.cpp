@@ -606,9 +606,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (bindings)
         {
             KeyChord chord(
-                WI_IsAnyFlagSet(modifiers, CTRL_PRESSED),
-                WI_IsAnyFlagSet(modifiers, ALT_PRESSED),
-                WI_IsFlagSet(modifiers, SHIFT_PRESSED),
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
                 vkey);
             handled = bindings.TryKeyChord(chord);
         }
@@ -1473,8 +1473,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   find out which modifiers (ctrl, alt, shift) are pressed in events that
     //   don't necessarily include that state.
     // Return Value:
-    // - The combined ControlKeyState flags as a bitfield.
-    DWORD TermControl::_GetPressedModifierKeys() const
+    // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
@@ -1488,24 +1488,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         struct KeyModifier
         {
             VirtualKey vkey;
-            DWORD flag;
+            ControlKeyStates flags;
         };
 
         constexpr std::array<KeyModifier, 5> modifiers{ {
-            { VirtualKey::RightMenu, RIGHT_ALT_PRESSED },
-            { VirtualKey::LeftMenu, LEFT_ALT_PRESSED },
-            { VirtualKey::RightControl, RIGHT_CTRL_PRESSED },
-            { VirtualKey::LeftControl, LEFT_CTRL_PRESSED },
-            { VirtualKey::Shift, SHIFT_PRESSED },
+            { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
+            { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
+            { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
+            { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
+            { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
         } };
 
-        DWORD flags = 0;
+        ControlKeyStates flags;
 
         for (const auto& mod : modifiers)
         {
             const auto state = window.GetKeyState(mod.vkey);
             const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
-            flags |= isDown ? mod.flag : 0;
+
+            if (isDown)
+            {
+                flags |= mod.flags;
+            }
         }
 
         return flags;

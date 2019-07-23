@@ -74,51 +74,15 @@
   </ItemGroup>
   <!-- Dependencies -->
   <ItemGroup>
-    <!-- Manually include the .pri files from the app project as content files. -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.pri">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile>
-
-    <!-- Manually include the xbf files from the app project as content files -->
-    <NativeReferenceFile Include="$(OpenConsoleDir)$(Platform)\$(Configuration)\TerminalAppLib\*.xbf">
-      <DeploymentContent>true</DeploymentContent>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </NativeReferenceFile>
-
-    <!--
-      the packaging project wont recurse through our dependencies, you have to
-      make sure that if you add a cppwinrt dependency to any of these projects,
-      you also update all the consumers
-    -->
+    <!-- Even though we do have proper recursive dependencies, we want to keep some of these here
+         so that the AppX Manifest contains their activatable classes. -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
-    <!-- Don't add a ProjectReference to TerminalApp here. If you do, the
-    packaging project will find the TerminalApp.pri from both the TerminalAppLib
-    and TerminalApp project, and we only want this lib project's pri file. We'll
-    manually add a reference to the TerminalApp winmd and dll below, because we
-    still need those. -->
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-
-  </ItemGroup>
-
-  <PropertyGroup>
-    <!-- A small helper for paths to the compiled cppwinrt projects -->
-    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
-    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <!-- Manually reference TerminalApp, since we can't use a ProjectReference. -->
-    <Reference Include="TerminalApp">
-      <HintPath>$(_BinRoot)\TerminalApp\TerminalApp.winmd</HintPath>
-      <IsWinMDFile>true</IsWinMDFile>
-      <Private>false</Private>
-      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-    </Reference>
-    <ReferenceCopyLocalPaths Include="$(_BinRoot)\TerminalApp\TerminalApp.dll" />
-
   </ItemGroup>
 
   <!--
@@ -156,7 +120,11 @@
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.0-rc\build\native\Microsoft.VCRTForwarders.140.targets')" />
 
-  <!-- Override GetPackagingOutputs to roll up all our dependencies (yuge) -->
+  <!-- Override GetPackagingOutputs to roll up all our dependencies.
+       This ensures that when the WAP packaging project asks what files go into
+       the package, we tell it.
+       This is a heavily stripped version of the one in Microsoft.*.AppxPackage.targets.
+  -->
   <PropertyGroup>
     <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
     <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
@@ -178,4 +146,6 @@
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
   </Target>
+  
+  <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
 </Project>
