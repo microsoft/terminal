@@ -749,7 +749,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
-       if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
             if (_terminal->IsSelectionActive() && point.Properties().IsLeftButtonPressed())
             {
