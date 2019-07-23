@@ -6,6 +6,7 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "App.g.cpp"
+#include "TerminalPage.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -62,126 +63,62 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create(uint64_t hWnd)
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
         TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create(hWnd);
+
+        /* !!! TODO
+           This is not the correct way to host a XAML page. This exists today because we valued
+           getting a .xaml over tearing out all of the terminal logic and splitting it across App
+           and Page.
+           The work to clarify the boundary between app global state and "terminal page" state
+           is tracked in GH#1878.
+        */
+        auto terminalPage = winrt::make_self<TerminalPage>();
+        _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
+        _tabContent = terminalPage->TabContent();
+        _tabRow = terminalPage->TabRow();
+        _tabView = _tabRow.TabView();
+        _newTabButton = _tabRow.NewTabButton();
+
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (terminalPage->Root().Children().IndexOf(_tabRow, index))
+            {
+                terminalPage->Root().Children().RemoveAt(index);
+            }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
+        }
+
+        // Event Bindings (Early)
+        _newTabButton.Click([this](auto&&, auto&&) {
+            this->_OpenNewTab(std::nullopt);
+        });
+        _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
+        _tabView.TabClosing({ this, &App::_OnTabClosing });
+        _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
+        _root.Loaded({ this, &App::_OnLoaded });
+
+        _CreateNewTabFlyout();
+        _OpenNewTab(std::nullopt);
+
+        _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
     }
 
     App::~App()
     {
-        TraceLoggingUnregister(g_hTerminalAppProvider);
-    }
-
-    // Method Description:
-    // - Create all of the initial UI elements of the Terminal app.
-    //    * Creates the tab bar, initially hidden.
-    //    * Creates the tab content area, which is where we'll display the tabs/panes.
-    //    * Initializes the first terminal control, using the default profile,
-    //      and adds it to our list of tabs.
-    void App::_Create(uint64_t parentHwnd)
-    {
-        _tabView = MUX::Controls::TabView{};
-
-        _tabView.SelectionChanged({ this, &App::_OnTabSelectionChanged });
-        _tabView.TabClosing({ this, &App::_OnTabClosing });
-        _tabView.Items().VectorChanged({ this, &App::_OnTabItemsChanged });
-
-        _root = Controls::Grid{};
-
-        _tabRow = Controls::Grid{};
-        _tabRow.Name(L"Tab Row");
-        _tabContent = Controls::Grid{};
-        _tabContent.Name(L"Tab Content");
-
-        // Set up two columns in the tabs row - one for the tabs themselves, and
-        // another for the settings button.
-        auto tabsColDef = Controls::ColumnDefinition();
-        auto newTabBtnColDef = Controls::ColumnDefinition();
-        newTabBtnColDef.Width(GridLengthHelper::Auto());
-
-        _tabRow.ColumnDefinitions().Append(tabsColDef);
-        _tabRow.ColumnDefinitions().Append(newTabBtnColDef);
-
-        // Set up two rows - one for the tabs, the other for the tab content,
-        // the terminal panes.
-        auto tabBarRowDef = Controls::RowDefinition();
-        tabBarRowDef.Height(GridLengthHelper::Auto());
-        _root.RowDefinitions().Append(tabBarRowDef);
-        _root.RowDefinitions().Append(Controls::RowDefinition{});
-
-        _root.Children().Append(_tabRow);
-
-        Controls::Grid::SetRow(_tabRow, 0);
-
-        _root.Children().Append(_tabContent);
-        Controls::Grid::SetRow(_tabContent, 1);
-        Controls::Grid::SetColumn(_tabView, 0);
-
-        // Create the new tab button.
-        _newTabButton = Controls::SplitButton{};
-        Controls::SymbolIcon newTabIco{};
-        newTabIco.Symbol(Controls::Symbol::Add);
-        _newTabButton.Content(newTabIco);
-        Controls::Grid::SetRow(_newTabButton, 0);
-        Controls::Grid::SetColumn(_newTabButton, 1);
-        _newTabButton.VerticalAlignment(VerticalAlignment::Stretch);
-        _newTabButton.HorizontalAlignment(HorizontalAlignment::Left);
-
-        // When the new tab button is clicked, open the default profile
-        _newTabButton.Click([this](auto&&, auto&&) {
-            this->_OpenNewTab(std::nullopt);
-        });
-
-        // Populate the new tab button's flyout with entries for each profile
-        _CreateNewTabFlyout();
-
-        _tabRow.Children().Append(_tabView);
-
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (g_hTerminalAppProvider)
         {
-            _minMaxCloseControl = winrt::TerminalApp::MinMaxCloseControl(parentHwnd);
-            Controls::Grid::SetRow(_minMaxCloseControl, 0);
-            Controls::Grid::SetColumn(_minMaxCloseControl, 1);
-            _minMaxCloseControl.Content().Children().Append(_newTabButton);
-
-            _tabRow.Children().Append(_minMaxCloseControl);
+            TraceLoggingUnregister(g_hTerminalAppProvider);
         }
-        else
-        {
-            _tabRow.Children().Append(_newTabButton);
-        }
-
-        _tabContent.VerticalAlignment(VerticalAlignment::Stretch);
-        _tabContent.HorizontalAlignment(HorizontalAlignment::Stretch);
-
-        // Here, we're doing the equivalent of defining the _tabRow as the
-        // following: <Grid Background="{ThemeResource
-        // ApplicationPageBackgroundThemeBrush}"> We need to set the Background
-        // to that ThemeResource, so it'll be colored appropriately regardless
-        // of what theme the user has selected.
-        // We're looking up the Style we've defined in App.xaml, and applying it
-        // here. A ResourceDictionary is a Map<IInspectable, IInspectable>, so
-        // you'll need to try_as to get the type we actually want.
-        auto res = Resources();
-        IInspectable key = winrt::box_value(L"BackgroundGridThemeStyle");
-        if (res.HasKey(key))
-        {
-            IInspectable g = res.Lookup(key);
-            winrt::Windows::UI::Xaml::Style style = g.try_as<winrt::Windows::UI::Xaml::Style>();
-            _root.Style(style);
-            _tabRow.Style(style);
-        }
-
-        // Apply the UI theme from our settings to our UI elements
-        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
-
-        _OpenNewTab(std::nullopt);
-
-        _root.Loaded({ this, &App::_OnLoaded });
     }
 
     // Method Description:
@@ -212,9 +149,10 @@ namespace winrt::TerminalApp::implementation
         dialog.Content(contentElement);
         dialog.CloseButtonText(closeButtonText);
 
-        // IMPORTANT: Add the dialog to the _root UIElement before you show it,
-        // so it knows how to attach to the XAML content.
-        _root.Children().Append(dialog);
+        // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
+        // Since we're hosting the dialog in a Xaml island, we need to connect it to the
+        // xaml tree somehow.
+        dialog.XamlRoot(_root.XamlRoot());
 
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
@@ -244,32 +182,74 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, and the version.
+    //   Name, version, getting started link, documentation link, and release
+    //   Notes link.
     void App::_ShowAboutDialog()
     {
         auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
         const auto title = resourceLoader.GetString(L"AboutTitleText");
         const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
+        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText");
+        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = resourceLoader.GetString(L"GettingStartedUriValue");
+        const auto documentationUriValue = resourceLoader.GetString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = resourceLoader.GetString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
+        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
+        winrt::Windows::UI::Xaml::Documents::Run about;
+        winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
+        winrt::Windows::UI::Xaml::Documents::Run documentation;
+        winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
         std::wstringstream aboutTextStream;
+
+        gettingStarted.Text(gettingStartedLabel);
+        documentation.Text(documentationLabel);
+        releaseNotes.Text(releaseNotesLabel);
+
+        winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
+        winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
+        winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
+
+        gettingStartedLink.NavigateUri(gettingStartedUri);
+        documentationLink.NavigateUri(documentationUri);
+        releaseNotesLink.NavigateUri(releaseNotesUri);
+
+        gettingStartedLink.Inlines().Append(gettingStarted);
+        documentationLink.Inlines().Append(documentation);
+        releaseNotesLink.Inlines().Append(releaseNotes);
 
         // Format our about text. It will look like the following:
         // <Display Name>
         // Version: <Major>.<Minor>.<Build>.<Revision>
+        // Getting Started
+        // Documentation
+        // Release Notes
 
         aboutTextStream << packageName.c_str() << L"\n";
 
         aboutTextStream << versionLabel.c_str() << L" ";
-        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision;
+        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
 
         winrt::hstring aboutText{ aboutTextStream.str() };
+        about.Text(aboutText);
 
         const auto buttonText = resourceLoader.GetString(L"Ok");
 
+        gettingStartedLink.Foreground(blueBrush);
+        documentationLink.Foreground(blueBrush);
+        releaseNotesLink.Foreground(blueBrush);
+
         Controls::TextBlock aboutTextBlock;
-        aboutTextBlock.Text(aboutText);
+        aboutTextBlock.Inlines().Append(about);
+        aboutTextBlock.Inlines().Append(gettingStartedLink);
+        aboutTextBlock.Inlines().Append(documentationLink);
+        aboutTextBlock.Inlines().Append(releaseNotesLink);
         aboutTextBlock.IsTextSelectionEnabled(true);
 
         _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
@@ -447,7 +427,12 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
 
         const auto settingsPath = CascadiaSettings::GetSettingsPath();
-        ShellExecute(nullptr, L"open", settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+
+        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        {
+            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+        }
     }
 
     // Method Description:
@@ -469,17 +454,9 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        winrt::Windows::System::Launcher::LaunchUriAsync({ L"https://github.com/microsoft/Terminal/issues" });
-    }
+        const auto feedbackUriValue = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView().GetString(L"FeedbackUriValue");
 
-    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
-    {
-        if (_minMaxCloseControl)
-        {
-            return _minMaxCloseControl.DragBar();
-        }
-
-        return nullptr;
+        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
     }
 
     // Method Description:
@@ -508,6 +485,7 @@ namespace winrt::TerminalApp::implementation
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
+        bindings.ClosePane([this]() { _CloseFocusedPane(); });
         bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
         bindings.ScrollUp([this]() { _Scroll(-1); });
         bindings.ScrollDown([this]() { _Scroll(1); });
@@ -519,6 +497,8 @@ namespace winrt::TerminalApp::implementation
         bindings.ScrollDownPage([this]() { _ScrollPage(1); });
         bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
         bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
         bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
         bindings.PasteText([this]() { _PasteText(); });
     }
@@ -747,24 +727,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Update the current theme of the application. This will manually update
-    //   all of the elements in our UI to match the given theme.
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
     // Arguments:
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
         _root.RequestedTheme(newTheme);
-        _tabRow.RequestedTheme(newTheme);
+        // Propagate the event to the host layer, so it can update its own UI
+        _requestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement App::GetRoot() noexcept
     {
         return _root;
-    }
-
-    UIElement App::GetTabs() noexcept
-    {
-        return _tabRow;
     }
 
     void App::_SetFocusedTabIndex(int tabIndex)
@@ -928,7 +905,11 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        auto connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                                settings.StartingDirectory(),
+                                                                30,
+                                                                80,
+                                                                winrt::guid());
 
         TermControl term{ settings, connection };
 
@@ -998,6 +979,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Close the currently focused pane. If the pane is the last pane in the
+    //   tab, the tab will also be closed. This will happen when we handle the
+    //   tab's Closed event.
+    void App::_CloseFocusedPane()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        focusedTab->ClosePane();
+    }
+
+    // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
     //      down a number of lines. Negative values of `delta` will move the
     //      view up, and positive values will move the viewport down.
@@ -1024,6 +1016,34 @@ namespace winrt::TerminalApp::implementation
         const auto control = _GetFocusedControl();
         const auto termHeight = control.GetViewHeight();
         _tabs[focusedTabIndex]->Scroll(termHeight * delta);
+    }
+
+    // Method Description:
+    // - Attempt to move a separator between panes, as to resize each child on
+    //   either size of the separator. See Pane::ResizePane for details.
+    // - Moves a separator on the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the separator in.
+    // Return Value:
+    // - <none>
+    void App::_ResizePane(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->ResizePane(direction);
+    }
+
+    // Method Description:
+    // - Attempt to move focus between panes, as to focus the child on
+    //   the other side of the separator. See Pane::NavigateFocus for details.
+    // - Moves the focus of the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - <none>
+    void App::_MoveFocus(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->NavigateFocus(direction);
     }
 
     // Method Description:
@@ -1193,7 +1213,7 @@ namespace winrt::TerminalApp::implementation
         {
             if (focusedTabIndex >= _tabs.size())
             {
-                focusedTabIndex = _tabs.size() - 1;
+                focusedTabIndex = static_cast<int>(_tabs.size()) - 1;
             }
 
             if (focusedTabIndex < 0)
@@ -1288,7 +1308,11 @@ namespace winrt::TerminalApp::implementation
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
         // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+        auto controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
+                                                                       controlSettings.StartingDirectory(),
+                                                                       30,
+                                                                       80,
+                                                                       winrt::guid());
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1300,6 +1324,23 @@ namespace winrt::TerminalApp::implementation
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
+    }
+
+    // Method Description:
+    // - Called when our tab content size changes. This updates each tab with
+    //   the new size, so they have a chance to update each of their panes with
+    //   the new size.
+    // Arguments:
+    // - e: the SizeChangedEventArgs with the new size of the tab content area.
+    // Return Value:
+    // - <none>
+    void App::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
+    {
+        const auto newSize = e.NewSize();
+        for (auto& tab : _tabs)
+        {
+            tab->ResizeContent(newSize);
+        }
     }
 
     // Method Description:
@@ -1372,4 +1413,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 }

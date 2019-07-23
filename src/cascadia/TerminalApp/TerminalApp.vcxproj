@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
   <PropertyGroup>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
@@ -18,85 +19,31 @@
   </PropertyGroup>
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
-    <!-- HERE BE DRAGONS:
-      For any types that use XAML information, if their .idl, .cpp, and .h
-      aren't all marked DependentUpon the corresponding .xaml file,
-      XamlTypeInfo.g.h won't pick it up correctly.
-    -->
-    <ApplicationDefinition Include="App.xaml">
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
+    <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
   </ItemGroup>
-  <!-- When we add other user controls, they should go in here as so: -->
-  <!-- <ItemGroup>
-    <Page Include="MyUserControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup> -->
+
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="App.base.h" />
-    <ClInclude Include="MinMaxCloseControl.h">
-      <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="Tab.h" />
-    <ClInclude Include="Pane.h" />
-    <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="GlobalAppSettings.h" />
-    <ClInclude Include="Profile.h" />
-    <ClInclude Include="CascadiaSettings.h" />
-    <ClInclude Include="AppKeyBindingsSerialization.h" />
-    <ClInclude Include="KeyChordSerialization.h" />
-    <ClInclude Include="Utils.h" />
+    <!-- Only put headers for winrt types in here. Don't put other header files
+    in here - put them in TerminalAppLib.vcxproj instead! -->
     <ClInclude Include="pch.h" />
-    <ClInclude Include="AppKeyBindings.h">
-      <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="App.h">
-      <DependentUpon>App.xaml</DependentUpon>
-    </ClInclude>
+    <ClInclude Include="TerminalPage.h" />
+    <ClInclude Include="MinMaxCloseControl.h" />
+    <ClInclude Include="AppKeyBindings.h" />
+    <ClInclude Include="TitlebarControl.h" />
+    <ClInclude Include="TabRowControl.h" />
+    <ClInclude Include="App.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="MinMaxCloseControl.cpp">
-      <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
-    </ClCompile>
-    <Midl Include="MinMaxCloseControl.idl">
-      <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
-      <SubType>Code</SubType>
-    </Midl>
-    <ClCompile Include="Tab.cpp" />
-    <ClCompile Include="Pane.cpp" />
-    <ClCompile Include="ColorScheme.cpp" />
-    <ClCompile Include="GlobalAppSettings.cpp" />
-    <ClCompile Include="Profile.cpp" />
-    <ClCompile Include="CascadiaSettings.cpp" />
-    <ClCompile Include="CascadiaSettingsSerialization.cpp" />
-    <ClCompile Include="AppKeyBindingsSerialization.cpp" />
-    <ClCompile Include="KeyChordSerialization.cpp" />
-    <ClCompile Include="Utils.cpp" />
+    <!-- Don't put source files in here - put them in TerminalAppLib.vcxproj instead! -->
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="AppKeyBindings.cpp">
-      <DependentUpon>AppKeyBindings.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="App.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
-    you want to use jsoncpp -->
-    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
-      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
-    <Midl Include="App.idl">
-      <DependentUpon>App.xaml</DependentUpon>
-    </Midl>
-    <Midl Include="AppKeyBindings.idl" />
+    <!-- DON'T PUT IDL FILES HERE! Put them in TerminalApp.vcxproj -->
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -113,16 +60,31 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj">
-      <Project>{CA5CAD1A-44BD-4AC7-AC72-6CA5B3AB89ED}</Project>
+
+    <!-- The midl compiler however, _will_ aggregate our winmd dependencies
+    somehow. So make sure to only include top-level dependencies here (don't
+    include Settings and Connection, since Control will include them for us) -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
+
+    <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
+    our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
+    manually reference the lib -->
+
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" >
+      <Private>true</Private>
+      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-    <!-- This is needed to be able to reference the XamlApplication type. -->
+
   </ItemGroup>
-  <ItemGroup>
-    <Page Include="MinMaxCloseControl.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -140,15 +102,35 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+
+  <!--
+    This is a terrible, terrible rule. There exists a bug in Visual Studio 2019 16.2 and 16.3 previews
+    where ResolveAssemblyReferences will try and fail to parse a .lib when it produces a .winmd.
+    To fix that, we have to _temporarily_ replace the %(Implementation) on any winmd-producing
+    static library references with the empty string so as to make ResolveAssemblyReferences
+    not try to read it.
+
+    Upstream problem report:
+    https://developercommunity.visualstudio.com/content/problem/629524/static-library-reference-causes-there-was-a-proble.html
+  -->
+  <Target Name="_RemoveTerminalAppLibImplementationFromReference" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_TerminalAppLibProjectReference Include="@(_ResolvedProjectReferencePaths)" Condition="'%(Filename)' == 'TerminalApp'" />
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)">
+        <Implementation />
+      </_ResolvedProjectReferencePaths>
+    </ItemGroup>
   </Target>
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+
+  <Target Name="_RestoreTerminalAppLibImplementationFromReference" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
+      <_ResolvedProjectReferencePaths Include="@(_TerminalAppLibProjectReference)" />
+    </ItemGroup>
+  </Target>
+  <!-- End "terrible, terrible rule" -->
+
 </Project>

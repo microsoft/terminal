@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl : TermControlT<TermControl>
     {
         TermControl();
-        TermControl(Settings::IControlSettings settings);
+        TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         Windows::UI::Xaml::UIElement GetRoot();
         Windows::UI::Xaml::Controls::UserControl GetControl();
@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
+        Windows::Foundation::Size CharacterDimensions() const;
+        Windows::Foundation::Size MinimumSize() const;
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);
@@ -71,6 +73,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
+        Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
         event_token _connectionOutputEventToken;
@@ -93,9 +96,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         double _autoScrollVelocity;
         std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
         Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
-		static constexpr double _AutoScrollTimerInterval = 1.0 / 30.0;
         std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
-        std::optional<Windows::Foundation::Point> _autoScrollingCursorPosition;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
@@ -127,7 +128,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -163,11 +163,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
-        DWORD _GetPressedModifierKeys() const;
+        ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
-
         double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
     };
 }

@@ -36,8 +36,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _closing{ false },
         _lastScrollOffset{ std::nullopt },
         _autoScrollVelocity{ 0 },
+        _autoScrollingPointerPoint{ std::nullopt },
         _autoScrollTimer{},
-        _autoScrollingCursorPosition{ std::nullopt },
+        _lastAutoScrollUpdateTime{ std::nullopt },
         _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false },
         _touchAnchor{ std::nullopt },
@@ -503,7 +504,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        _autoScrollTimer.Interval(std::chrono::microseconds(static_cast<int>(1000000 * _AutoScrollTimerInterval)));
+        static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
+        _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         // Set up blinking cursor
@@ -747,49 +749,34 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(_root);
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+       if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
             if (_terminal->IsSelectionActive() && point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
-                _SetEndSelectionPointAtCurstor(cursorPosition);
+                _SetEndSelectionPointAtCursor(cursorPosition);
 
-                const double cursorBelowBottomDist = cursorPosition.Y - _root.Padding().Top - _swapChainPanel.ActualHeight();
-                const double cursorAboveTopDist = -cursorPosition.Y + _root.Padding().Top;
-                constexpr double distThreashold = 2.0;
+                const double cursorBelowBottomDist = cursorPosition.Y - _swapChainPanel.Margin().Top - _swapChainPanel.ActualHeight();
+                const double cursorAboveTopDist = -1 * cursorPosition.Y + _swapChainPanel.Margin().Top;
 
-                if (cursorBelowBottomDist > distThreashold)
+                constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
+                double newAutoScrollVelocity = 0.0;
+                if (cursorBelowBottomDist > MinAutoScrollDist)
                 {
-                    _autoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
+                    newAutoScrollVelocity = _GetAutoScrollSpeed(cursorBelowBottomDist);
                 }
-                else if (cursorAboveTopDist > distThreashold)
+                else if (cursorAboveTopDist > MinAutoScrollDist)
                 {
-                    _autoScrollVelocity = -_GetAutoScrollSpeed(cursorAboveTopDist);
-                }
-                else
-                {
-                    _autoScrollVelocity = 0;
+                    newAutoScrollVelocity = -1.0 * _GetAutoScrollSpeed(cursorAboveTopDist);
                 }
 
-                if (_autoScrollVelocity != 0)
+                if (newAutoScrollVelocity != 0)
                 {
-                    _autoScrollingCursorPosition = cursorPosition;
-
-                    // Apparently this check is not necessary but greatly improves performance
-                    if (!_autoScrollTimer.IsEnabled())
-                    {
-                        _autoScrollTimer.Start();
-                    }
+                    _TryStartAutoScroll(point, newAutoScrollVelocity);
                 }
                 else
                 {
-                    _autoScrollingCursorPosition = std::nullopt;
-
-                    // Apparently this check is not necessary but greatly improves performance
-                    if (_autoScrollTimer.IsEnabled())
-                    {
-                        _autoScrollTimer.Stop();
-                    }
+                    _TryStopAutoScroll(ptr.PointerId());
                 }
             }
         }
@@ -846,9 +833,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _touchAnchor = std::nullopt;
         }
 
-        _autoScrollVelocity = 0;
-        _autoScrollTimer.Stop();
-        _autoScrollingCursorPosition = std::nullopt;
+        _TryStopAutoScroll(ptr.PointerId());
 
         args.Handled(true);
     }
@@ -864,6 +849,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         const auto point = args.GetCurrentPoint(_root);
         const auto delta = point.Properties().MouseWheelDelta();
+
         // Get the state of the Ctrl & Shift keys
         // static_cast to a uint32_t because we can't use the WI_IsFlagSet macro
         // directly with a VirtualKeyModifiers
@@ -963,9 +949,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (_terminal->IsSelectionActive() && pointerPoint.Properties().IsLeftButtonPressed())
         {
-            // If user is mouse selecting and scrolls, he then points at new character.
+            // If user is mouse selecting and scrolls, they then point at new character.
             //      Make sure selection reflects that immediately.
-            _SetEndSelectionPointAtCurstor(pointerPoint.Position());
+            _SetEndSelectionPointAtCursor(pointerPoint.Position());
         }
     }
 
@@ -1065,36 +1051,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Starts new pointer related auto scroll behavior, or continues existing one.
-    //      Does nothing when there is already auto scroll associated with another pointer.
-    // Arguments:
-    // - pointerPoint: info about pointer that causes auto scroll. Pointer's position
-    //      is later used to update selection.
-    // - scrollVelocity: target velocity of scrolling in characters / sec
-    void TermControl::_TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity)
-    {
-        // Allow only one pointer at the time
-        if (!_autoScrollingPointerPoint.has_value() || _autoScrollingPointerPoint.value().PointerId() == pointerPoint.PointerId())
-        {
-            _autoScrollingPointerPoint = pointerPoint;
-            _autoScrollVelocity = scrollVelocity;
-
-            // If this is first time the auto scroll update is about to be called,
-            //      kick-start it by initializing its time delta as if it started now
-            if (!_lastAutoScrollUpdateTime.has_value())
-            {
-                _lastAutoScrollUpdateTime = std::chrono::high_resolution_clock::now();
-            }
-
-            // Apparently this check is not necessary but greatly improves performance
-            if (!_autoScrollTimer.IsEnabled())
-            {
-                _autoScrollTimer.Start();
-            }
-        }
-    }
-
-    // Method Description:
     // - Stops auto scroll if it's active and is associated with supplied pointer id.
     // Arguments:
     // - pointerId: id of pointer for which to stop auto scroll
@@ -1128,7 +1084,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             if (_lastAutoScrollUpdateTime.has_value())
             {
-                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / 1000000.0;
+                static constexpr double microSecPerSec = 1000000.0;
+                const double deltaTime = std::chrono::duration_cast<std::chrono::microseconds>(timeNow - _lastAutoScrollUpdateTime.value()).count() / microSecPerSec;
                 _scrollBar.Value(_scrollBar.Value() + _autoScrollVelocity * deltaTime);
 
                 if (_autoScrollingPointerPoint.has_value())
@@ -1249,8 +1206,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
-    // - cursorPosition: in pixels
-    void TermControl::_SetEndSelectionPointAtCurstor(const Windows::Foundation::Point cursorPosition)
+    // - cursorPosition: in pixels, relative to the origin of the control
+    void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
         auto terminalPosition = _GetTerminalPosition(cursorPosition);
 
@@ -1340,24 +1297,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Called continuously to smoothly scroll viewport when user is
-    //      mouse selecting outside it (to 'follow' the cursor).
-    // Arguments:
-    // - none
-    void TermControl::_UpdateAutoScroll(Windows::Foundation::IInspectable const& /* sender */,
-                                        Windows::Foundation::IInspectable const& /* e */)
-    {
-        if (_autoScrollVelocity != 0)
-        {
-            _scrollBar.Value(_scrollBar.Value() + _autoScrollVelocity * _AutoScrollTimerInterval);
-            if (_autoScrollingCursorPosition.has_value())
-            {
-                _SetEndSelectionPointAtCurstor(_autoScrollingCursorPosition.value());
-            }
-        }
-    }
-
-    // Method Description:
     // - Update the postion and size of the scrollbar to match the given
     //      viewport top, viewport height, and buffer size.
     //   Additionally fires a ScrollPositionChanged event for anyone who's
@@ -1431,6 +1370,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
+            }
+
+            if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
+            {
+                localAutoScrollTimer.Stop();
+                // _autoScrollTimer timer, now stopped, is destroyed.
             }
 
             if (auto localConnection{ std::exchange(_connection, nullptr) })
@@ -1669,8 +1614,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //   find out which modifiers (ctrl, alt, shift) are pressed in events that
     //   don't necessarily include that state.
     // Return Value:
-    // - a KeyModifiers value with flags set for each key that's pressed.
-    Settings::KeyModifiers TermControl::_GetPressedModifierKeys() const
+    // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    ControlKeyStates TermControl::_GetPressedModifierKeys() const
     {
         CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
@@ -1680,13 +1625,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Sometimes with the key down, the state is Down | Locked.
         // Sometimes with the key up, the state is Locked.
         // IsFlagSet(Down) is the only correct solution.
-        const auto ctrlKeyState = window.GetKeyState(VirtualKey::Control);
-        const auto shiftKeyState = window.GetKeyState(VirtualKey::Shift);
-        const auto altKeyState = window.GetKeyState(VirtualKey::Menu);
 
-        const auto ctrl = WI_IsFlagSet(ctrlKeyState, CoreVirtualKeyStates::Down);
-        const auto shift = WI_IsFlagSet(shiftKeyState, CoreVirtualKeyStates::Down);
-        const auto alt = WI_IsFlagSet(altKeyState, CoreVirtualKeyStates::Down);
+        struct KeyModifier
+        {
+            VirtualKey vkey;
+            ControlKeyStates flags;
+        };
+
+        constexpr std::array<KeyModifier, 5> modifiers{ {
+            { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
+            { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
+            { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
+            { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
+            { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+        } };
+
+        ControlKeyStates flags;
+
+        for (const auto& mod : modifiers)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
+
+            if (isDown)
+            {
+                flags |= mod.flags;
+            }
+        }
 
         return flags;
     }
@@ -1760,16 +1725,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - Calculates speed of single axis of auto scrolling. It has to allow for both
     //      fast and precise selection.
     // Arguments:
-    // - cursorDistanceFromBorder: distance from viewport border to curstor, in pixels. Must be non-negative.
+    // - cursorDistanceFromBorder: distance from viewport border to cursor, in pixels. Must be non-negative.
     // Return Value:
     // - positive speed in characters / sec
     double TermControl::_GetAutoScrollSpeed(double cursorDistanceFromBorder) const
     {
-        //TODO: Maybe account for space beyond border that user has available
+        // The numbers below just feel well, feel free to change.
+        // TODO: Maybe account for space beyond border that user has available
         return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
     }
 
-    // clang-format off
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
