@@ -1,5 +1,5 @@
 # TL;DR 
-Just want to download the Windows Terminal? Get the [new Temrinal FREE in the Windows Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) now! It'll automatically be updated with new features they are released.
+Just want to download the Windows Terminal? Get the [new Terminal FREE in the Windows Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) now! It'll automatically be updated with new features they are released.
 
 # Welcome\! 
 #### This repository contains the source code for:
