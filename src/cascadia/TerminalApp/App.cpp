@@ -916,7 +916,7 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        const auto connection = _CreateConnectionFromsettings(profileGuid, settings);
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -1302,7 +1302,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        const auto controlConnection = _CreateConnectionFromsettings(realGuid, controlSettings);
+        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1405,7 +1405,7 @@ namespace winrt::TerminalApp::implementation
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection App::_CreateConnectionFromsettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };

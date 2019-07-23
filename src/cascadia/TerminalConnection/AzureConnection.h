@@ -41,16 +41,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         enum class State
         {
-            accessStored,
-            deviceFlow,
-            tenantChoice,
-            storeTokens,
-            termConnecting,
-            termConnected,
-            noConnect
+            AccessStored,
+            DeviceFlow,
+            TenantChoice,
+            StoreTokens,
+            TermConnecting,
+            TermConnected,
+            NoConnect
         };
 
-        State _state{ State::accessStored };
+        State _state{ State::AccessStored };
 
         std::optional<bool> _store;
         std::optional<bool> _removeOrNew;
@@ -62,11 +62,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
-        HRESULT _accessHelper();
-        HRESULT _deviceFlowHelper();
-        HRESULT _tenantChoiceHelper();
-        HRESULT _storeHelper();
-        HRESULT _connectHelper();
+        HRESULT _AccessHelper();
+        HRESULT _DeviceFlowHelper();
+        HRESULT _TenantChoiceHelper();
+        HRESULT _StoreHelper();
+        HRESULT _ConnectHelper();
 
         const utility::string_t _loginUri{ U("https://login.microsoftonline.com/") };
         const utility::string_t _resourceUri{ U("https://management.azure.com/") };
@@ -81,18 +81,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         utility::string_t _cloudShellUri;
         utility::string_t _terminalID;
 
-        web::json::value _requestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
-        web::json::value _getDeviceCode();
-        web::json::value _waitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
-        web::json::value _getTenants();
-        web::json::value _refreshTokens();
-        web::json::value _getCloudShellUserSettings();
-        utility::string_t _getCloudShell();
-        utility::string_t _getTerminal(utility::string_t shellType);
-        void _headerHelper(web::http::http_request theRequest);
-        void _storeCredential();
-        void _removeCredentials();
-        std::wstring _strFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID);
+        web::json::value _RequestHelper(web::http::client::http_client theClient, web::http::http_request theRequest);
+        web::json::value _GetDeviceCode();
+        web::json::value _WaitForUser(utility::string_t deviceCode, int pollInterval, int expiresIn);
+        web::json::value _GetTenants();
+        web::json::value _RefreshTokens();
+        web::json::value _GetCloudShellUserSettings();
+        utility::string_t _GetCloudShell();
+        utility::string_t _GetTerminal(utility::string_t shellType);
+        void _HeaderHelper(web::http::http_request theRequest);
+        void _StoreCredential();
+        void _RemoveCredentials();
+        std::wstring _StrFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID);
 
         web::websockets::client::websocket_client _cloudShellSocket;
     };
