@@ -24,7 +24,7 @@ Author(s):
 
 namespace Microsoft::Console::Types
 {
-    class IConsoleWindow;
+    class IUiaWindow;
     class ScreenInfoUiaProvider;
 
     class WindowUiaProviderBase :
@@ -67,7 +67,7 @@ namespace Microsoft::Console::Types
                                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         virtual IFACEMETHODIMP GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
 
-        WindowUiaProviderBase(IConsoleWindow* baseWindow);
+        WindowUiaProviderBase(IUiaWindow* baseWindow);
 
         RECT GetWindowRect() const;
         HWND GetWindowHandle() const;
@@ -96,7 +96,7 @@ namespace Microsoft::Console::Types
         // Ref counter for COM object
         ULONG _cRefs;
 
-        IConsoleWindow* _baseWindow;
+        IUiaWindow* _baseWindow;
     };
 
     namespace WindowUiaProviderTracing

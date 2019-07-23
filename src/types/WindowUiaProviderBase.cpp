@@ -3,13 +3,13 @@
 
 #include "precomp.h"
 
-#include "IConsoleWindow.hpp"
+#include "IUiaWindow.h"
 #include "WindowUiaProviderBase.hpp"
 #include "ScreenInfoUiaProvider.h"
 
 using namespace Microsoft::Console::Types;
 
-WindowUiaProviderBase::WindowUiaProviderBase(IConsoleWindow* baseWindow) :
+WindowUiaProviderBase::WindowUiaProviderBase(IUiaWindow* baseWindow) :
     _signalEventFiring{},
     _baseWindow{ baseWindow },
     _cRefs(1)
@@ -176,7 +176,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    const IConsoleWindow* const pConsoleWindow = _baseWindow;
+    const IUiaWindow* const pConsoleWindow = _baseWindow;
     RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pConsoleWindow);
 
     RECT const rc = pConsoleWindow->GetWindowRect();
@@ -210,7 +210,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
 
 HWND WindowUiaProviderBase::GetWindowHandle() const
 {
-    IConsoleWindow* const pConsoleWindow = _baseWindow;
+    IUiaWindow* const pConsoleWindow = _baseWindow;
     THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
 
     return pConsoleWindow->GetWindowHandle();

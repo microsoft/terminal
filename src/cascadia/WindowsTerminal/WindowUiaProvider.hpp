@@ -21,12 +21,13 @@ Author(s):
 #pragma once
 
 #include "../types/WindowUiaProviderBase.hpp"
+#include "../types/IUiaWindow.h"
 
 class WindowUiaProvider final :
     public Microsoft::Console::Types::WindowUiaProviderBase
 {
 public:
-    static WindowUiaProvider* Create(Microsoft::Console::Types::IConsoleWindow* baseWindow);
+    static WindowUiaProvider* Create(Microsoft::Console::Types::IUiaWindow* baseWindow);
 
     [[nodiscard]] HRESULT Signal(_In_ EVENTID id) override;
     [[nodiscard]] HRESULT SetTextAreaFocus() override;
@@ -47,6 +48,6 @@ protected:
     const OLECHAR* ProviderDescriptionPropertyName = L"Microsoft Windows Terminal Window";
 
 private:
-    WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
+    WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow);
     ~WindowUiaProvider();
 };

@@ -32,6 +32,7 @@
     <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProvider.h" />
     <ClInclude Include="..\UiaTextRange.hpp" />

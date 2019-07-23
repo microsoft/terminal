@@ -7,7 +7,7 @@
 
 #include "../host/renderData.hpp"
 
-WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow) :
+WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow) :
     //_pScreenInfoProvider{ nullptr },
     WindowUiaProviderBase(baseWindow)
 {
@@ -21,7 +21,7 @@ WindowUiaProvider::~WindowUiaProvider()
     }*/
 }
 
-WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IConsoleWindow* baseWindow)
+WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
     Microsoft::Console::Types::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;

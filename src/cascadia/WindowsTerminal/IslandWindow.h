@@ -3,14 +3,14 @@
 
 #include "pch.h"
 #include "BaseWindow.h"
-#include "../types/IConsoleWindow.hpp"
+#include "../types/IUiaWindow.h"
 #include "WindowUiaProvider.hpp"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 
 class IslandWindow :
     public BaseWindow<IslandWindow>,
-    public IConsoleWindow
+    public IUiaWindow
 {
 public:
     IslandWindow() noexcept;
@@ -33,50 +33,29 @@ public:
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
-#pragma region IConsoleWindow
 
-    BOOL EnableBothScrollBars() override
+#pragma region IUiaWindow
+    void ChangeViewport(const SMALL_RECT NewWindow)
     {
-        return false;
+        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // Relevant comment from zadjii-msft:
+        /*
+        In my head for designing this, I'd then have IslandWindow::ChangeViewport
+        call a callback that AppHost sets, where AppHost will then call into the
+        TerminalApp to have TerminalApp handle the ChangeViewport call.
+        (See IslandWindow::SetCreateCallback as an example of a similar
+        pattern we're using today.) That way, if someone else were trying
+        to resuse this, they could have their own AppHost (or TerminalApp
+        equivalent) handle the ChangeViewport call their own way.
+        */
+        return;
     };
-    int UpdateScrollBar(_In_ bool isVertical,
-                        _In_ bool isAltBuffer,
-                        _In_ UINT pageSize,
-                        _In_ int maxSize,
-                        _In_ int viewportPosition) override { return -1; };
-
-    bool IsInFullscreen() const override { return false; };
-    void SetIsFullscreen(const bool fFullscreenEnabled) override{};
-    void ChangeViewport(const SMALL_RECT NewWindow) override{};
-
-    void CaptureMouse() override{};
-    BOOL ReleaseMouse() override { return false; };
 
     HWND GetWindowHandle() const noexcept override
     {
         return BaseWindow::GetHandle();
     };
 
-    void SetOwner() override{};
-
-    BOOL GetCursorPosition(_Out_ LPPOINT lpPoint) override { return false; };
-    BOOL GetClientRectangle(_Out_ LPRECT lpRect) override { return false; };
-    int MapPoints(_Inout_updates_(cPoints) LPPOINT lpPoints, _In_ UINT cPoints) override { return -1; };
-    BOOL ConvertScreenToClient(_Inout_ LPPOINT lpPoint) override { return false; };
-
-    BOOL SendNotifyBeep() const override { return false; };
-
-    BOOL PostUpdateScrollBars() const override { return false; };
-
-    BOOL PostUpdateWindowSize() const override { return false; };
-
-    void UpdateWindowSize(const COORD coordSizeInChars) override{};
-    void UpdateWindowText() override{};
-
-    void HorizontalScroll(const WORD wScrollCommand,
-                          const WORD wAbsoluteChange) override{};
-    void VerticalScroll(const WORD wScrollCommand,
-                        const WORD wAbsoluteChange) override{};
     [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) override { return E_NOTIMPL; };
     [[nodiscard]] HRESULT UiaSetTextAreaFocus() override { return E_NOTIMPL; };
 
