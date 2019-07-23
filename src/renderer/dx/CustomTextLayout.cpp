@@ -133,7 +133,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
-        //
+        // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
         RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
 
         // Ensure that a font face is attached to every run
