@@ -100,6 +100,7 @@
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -146,6 +147,7 @@
 
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
 
