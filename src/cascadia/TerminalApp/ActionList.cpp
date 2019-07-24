@@ -109,7 +109,28 @@ namespace winrt::TerminalApp::implementation
 
     bool ActionList::_FilterMatchesName(winrt::hstring searchText, winrt::hstring name)
     {
-        return searchText == name;
+        std::wstring lowercaseSearchText{ searchText.c_str() };
+        std::wstring lowercaseName{ name.c_str() };
+        std::transform(lowercaseSearchText.begin(), lowercaseSearchText.end(), lowercaseSearchText.begin(), std::towlower);
+        std::transform(lowercaseName.begin(), lowercaseName.end(), lowercaseName.begin(), std::towlower);
+
+        const wchar_t* namePtr = lowercaseName.c_str();
+        const wchar_t* endOfName = lowercaseName.c_str() + lowercaseName.size();
+        for (const auto& wch : lowercaseSearchText)
+        {
+            while (wch != *namePtr)
+            {
+                // increment the character to look at in the name string
+                namePtr++;
+                if (namePtr >= endOfName)
+                {
+                    // If we are at the end of the name string, we haven't found all the search chars
+                    return false;
+                }
+            }
+        }
+        return true;
+        // return searchText == name;
     }
 
     void ActionList::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
