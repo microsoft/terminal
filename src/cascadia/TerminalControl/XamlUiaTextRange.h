@@ -1,0 +1,56 @@
+#pragma once
+
+#include "TermControlAP.h"
+#include <UIAutomationCore.h>
+#include <winrt/Windows.UI.Xaml.h>
+#include "../types/UiaTextRange.hpp"
+
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+{
+    class XamlUiaTextRange :
+        public winrt::implements<XamlUiaTextRange, Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>
+    {
+    public:
+        XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider) :
+            _uiaProvider{ },
+            _parentProvider{ parentProvider }
+        {
+            _uiaProvider.attach(uiaProvider);
+        };
+
+        // ITextRangeProvider
+        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider Clone() const;
+        bool Compare(Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pRange) const;
+        int32_t CompareEndpoints(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                 Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pTargetRange,
+                                 Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint);
+        void ExpandToEnclosingUnit(Windows::UI::Xaml::Automation::Text::TextUnit unit) const;
+        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider FindAttribute(int32_t textAttributeId,
+                                                                                  winrt::Windows::Foundation::IInspectable val,
+                                                                                  bool searchBackward);
+        Windows::UI::Xaml::Automation::Provider::ITextRangeProvider FindText(winrt::hstring text,
+                                                                             bool searchBackward,
+                                                                             bool ignoreCase);
+        winrt::Windows::Foundation::IInspectable GetAttributeValue(int32_t textAttributeId) const;
+        void GetBoundingRectangles(winrt::com_array<double>& returnValue) const;
+        Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple GetEnclosingElement();
+        winrt::hstring GetText(int32_t maxLength) const;
+        int32_t Move(Windows::UI::Xaml::Automation::Text::TextUnit unit,
+                     int32_t count);
+        int32_t MoveEndpointByUnit(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                   Windows::UI::Xaml::Automation::Text::TextUnit unit,
+                                   int32_t count) const;
+        void MoveEndpointByRange(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
+                                 Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pTargetRange,
+                                 Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint) const;
+        void Select() const;
+        void AddToSelection() const;
+        void RemoveFromSelection() const;
+        void ScrollIntoView(bool alignToTop) const;
+        winrt::com_array<Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple> GetChildren() const;
+
+    private:
+        winrt::com_ptr<::ITextRangeProvider> _uiaProvider;
+        Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple _parentProvider;
+    };
+}

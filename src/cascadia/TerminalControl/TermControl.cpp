@@ -11,6 +11,7 @@
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
+#include "TermControlAP.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -30,7 +31,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
-        _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
@@ -48,11 +48,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_Create()
     {
-        // Create a dummy UserControl to use as the "root" of our control we'll
-        //      build manually.
-        Controls::UserControl myControl;
-        _controlRoot = myControl;
-
         Controls::Grid container;
 
         Controls::ColumnDefinition contentColumn{};
@@ -104,20 +99,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _bgImageLayer = bgImageLayer;
 
         _swapChainPanel = swapChainPanel;
-        _controlRoot.Content(_root);
+        this->Content(_root);
 
         _ApplyUISettings();
 
         // These are important:
         // 1. When we get tapped, focus us
-        _controlRoot.Tapped([this](auto&, auto& e) {
-            _controlRoot.Focus(FocusState::Pointer);
+        this->Tapped([this](auto&, auto& e) {
+            this->Focus(FocusState::Pointer);
             e.Handled(true);
         });
         // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
-        _controlRoot.IsTabStop(true);
+        this->IsTabStop(true);
         // 3. Actually not sure about this one. Maybe it isn't necessary either.
-        _controlRoot.AllowFocusOnInteraction(true);
+        this->AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
@@ -326,14 +321,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Close();
     }
 
+    Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
+    {
+        return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAP>(*this);
+    }
+
+    ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
+    {
+        return _terminal.get();
+    }
+
     UIElement TermControl::GetRoot()
     {
         return _root;
-    }
-
-    Controls::UserControl TermControl::GetControl()
-    {
-        return _controlRoot;
     }
 
     void TermControl::SwapChainChanged()
@@ -487,9 +487,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        // These two handlers _must_ be on _controlRoot, not _root.
-        _controlRoot.PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
-        _controlRoot.CharacterReceived({ this, &TermControl::_CharacterHandler });
+        // These two handlers _must_ be on this, not _root.
+        this->PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
+        this->CharacterReceived({ this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -519,14 +519,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
 
-        _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
-        _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
+        _gotFocusRevoker = this->GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
+        _lostFocusRevoker = this->LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
         //      becomes a no-op.
-        _controlRoot.Focus(FocusState::Programmatic);
+        this->Focus(FocusState::Programmatic);
 
         _connection.Start();
         _initializedTerminal = true;

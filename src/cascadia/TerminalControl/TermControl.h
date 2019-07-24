@@ -9,8 +9,14 @@
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
+#include "../../renderer/inc/IRenderData.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
+
+namespace Microsoft::Console::Render
+{
+    class IRenderData;
+}
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -36,7 +42,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         Windows::UI::Xaml::UIElement GetRoot();
-        Windows::UI::Xaml::Controls::UserControl GetControl();
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
@@ -55,6 +60,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SwapChainChanged();
         ~TermControl();
 
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
+
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
         // clang-format off
@@ -71,7 +79,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
-        Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;

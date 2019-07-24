@@ -19,7 +19,7 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_control.GetControl());
+    _root.Children().Append(_control);
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
@@ -325,7 +325,7 @@ bool Pane::_HasFocusedChild() const noexcept
     // We're intentionally making this one giant expression, so the compiler
     // will skip the following lookups if one of the lookups before it returns
     // true
-    return (_control && _control.GetControl().FocusState() != FocusState::Unfocused) ||
+    return (_control && _control.FocusState() != FocusState::Unfocused) ||
            (_firstChild && _firstChild->_HasFocusedChild()) ||
            (_secondChild && _secondChild->_HasFocusedChild());
 }
@@ -344,7 +344,7 @@ void Pane::UpdateFocus()
     if (_IsLeaf())
     {
         const auto controlFocused = _control &&
-                                    _control.GetControl().FocusState() != FocusState::Unfocused;
+                                    _control.FocusState() != FocusState::Unfocused;
 
         _lastFocused = controlFocused;
     }
@@ -367,7 +367,7 @@ void Pane::_FocusFirstChild()
 {
     if (_IsLeaf())
     {
-        _control.GetControl().Focus(FocusState::Programmatic);
+        _control.Focus(FocusState::Programmatic);
     }
     else
     {
@@ -463,11 +463,11 @@ void Pane::_CloseChild(const bool closeFirst)
         _separatorRoot = { nullptr };
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_control.GetControl());
+        _root.Children().Append(_control);
 
         if (_lastFocused)
         {
-            _control.GetControl().Focus(FocusState::Programmatic);
+            _control.Focus(FocusState::Programmatic);
         }
 
         _splitState = SplitState::None;

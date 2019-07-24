@@ -37,6 +37,11 @@ namespace Microsoft::Console::Types
     {
     public:
         ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                              _In_ WindowUiaProviderBase* const pUiaParent,
+                              _In_ std::function<RECT()> GetBoundingRect);
+
+        // TODO CARLOS: pUiaParent should not be allowed to be null
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                               _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
@@ -77,7 +82,7 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
-        HWND GetWindowHandle() const;
+        std::optional<HWND> GetWindowHandle() const;
         void ChangeViewport(const SMALL_RECT NewWindow);
 
     private:
@@ -85,7 +90,10 @@ namespace Microsoft::Console::Types
         ULONG _cRefs;
 
         // weak reference to uia parent
-        WindowUiaProviderBase* const _pUiaParent;
+        std::optional<WindowUiaProviderBase*> const _pUiaParent;
+
+        // TODO CARLOS: temp workaround for nullable pUiaParent
+        std::optional<HWND> _storedHwnd;
 
         // weak reference to IRenderData
         Microsoft::Console::Render::IRenderData* _pData;
@@ -108,6 +116,9 @@ namespace Microsoft::Console::Types
         const Viewport _getViewport() const;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
+
+        // these functions are reserved for Windows Terminal
+        std::optional<std::function<RECT(void)>> _getBoundingRect;
     };
 
     namespace ScreenInfoUiaProviderTracing

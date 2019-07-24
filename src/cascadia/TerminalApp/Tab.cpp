@@ -124,7 +124,7 @@ void Tab::_Focus()
     auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     if (lastFocusedControl)
     {
-        lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
+        lastFocusedControl.Focus(FocusState::Programmatic);
     }
 }
 
@@ -181,7 +181,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 void Tab::Scroll(const int delta)
 {
     auto control = GetFocusedTerminalControl();
-    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
+    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
     });

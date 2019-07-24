@@ -32,8 +32,21 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
 }
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                                             _In_ WindowUiaProviderBase* const pUiaParent,
+                                             _In_ std::function<RECT(void)> GetBoundingRect) :
+    _pUiaParent(pUiaParent), //THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _signalFiringMapping{},
+    _cRefs(1),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
+    _getBoundingRect(GetBoundingRect)
+{
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+}
+
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent) :
-    _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _pUiaParent(pUiaParent), //THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     _signalFiringMapping{},
     _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
@@ -253,6 +266,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
+    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    {
+        return E_NOTIMPL;
+    }
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     /*ApiMsgNavigate apiMsg;
     apiMsg.Direction = direction;
@@ -263,7 +282,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
     {
         try
         {
-            _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
+            _pUiaParent.value()->QueryInterface(IID_PPV_ARGS(ppProvider));
         }
         catch (...)
         {
@@ -299,7 +318,16 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    RECT rc = _pUiaParent->GetWindowRect();
+    RECT rc;
+    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    {
+        rc = _getBoundingRect.value()();
+    }
+    else
+    {
+        rc = _pUiaParent.value()->GetWindowRect();
+    }
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -328,10 +356,16 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    {
+        return E_NOTIMPL;
+    }
+
     //Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {
-        _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
+        _pUiaParent.value()->QueryInterface(IID_PPV_ARGS(ppProvider));
     }
     catch (...)
     {
@@ -653,12 +687,21 @@ void ScreenInfoUiaProvider::_UnlockConsole() noexcept
     _pData->UnlockConsole();
 }
 
-HWND ScreenInfoUiaProvider::GetWindowHandle() const
-{
-    return _pUiaParent->GetWindowHandle();
+std::optional<HWND> ScreenInfoUiaProvider::GetWindowHandle() const
+{ // TODO CARLOS: _pUiaParent should not be allowed to be null
+    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    {
+        return std::nullopt;
+    }
+    return _pUiaParent.value()->GetWindowHandle();
 }
 
 void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
 {
-    _pUiaParent->ChangeViewport(NewWindow);
+    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    {
+        return;
+    }
+    _pUiaParent.value()->ChangeViewport(NewWindow);
 }

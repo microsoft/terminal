@@ -306,8 +306,15 @@ UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
     else
     {
         // change point coords to pixels relative to window
-        HWND hwnd = _getWindowHandle();
-        ScreenToClient(hwnd, &clientPoint);
+        std::optional<HWND> hwnd = _getWindowHandle();
+        if (hwnd.has_value())
+        {
+            // TODO CARLOS: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
+        }
+        else
+        {
+            ScreenToClient(hwnd.value(), &clientPoint);
+        }
 
         const COORD currentFontSize = _getScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
@@ -1494,9 +1501,17 @@ void UiaTextRange::_addScreenInfoRowBoundaries(Microsoft::Console::Render::IRend
 
     // convert the coords to be relative to the screen instead of
     // the client window
-    HWND hwnd = _getWindowHandle();
-    ClientToScreen(hwnd, &topLeft);
-    ClientToScreen(hwnd, &bottomRight);
+    std::optional<HWND> hwnd = _getWindowHandle();
+
+    if (hwnd.has_value() || hwnd == std::nullopt || hwnd == nullptr)
+    {
+        // TODO CARLOS: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
+    }
+    else
+    {
+        ClientToScreen(hwnd.value(), &topLeft);
+        ClientToScreen(hwnd.value(), &bottomRight);
+    }
 
     const LONG width = bottomRight.x - topLeft.x;
     const LONG height = bottomRight.y - topLeft.y;
@@ -2263,7 +2278,7 @@ RECT UiaTextRange::_getTerminalRect() const
     };
 }
 
-HWND UiaTextRange::_getWindowHandle() const
+std::optional<HWND> UiaTextRange::_getWindowHandle() const
 {
     const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
     return provider->GetWindowHandle();

@@ -888,7 +888,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
