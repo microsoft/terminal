@@ -278,18 +278,16 @@ void CascadiaSettings::_CreateDefaultProfiles()
 void CascadiaSettings::_CreateDefaultKeybindings()
 {
     AppKeyBindings keyBindings = _globals.GetKeybindings();
-    // Set up spme basic default keybindings
-    // TODO:MSFT:20700157 read our settings from some source, and configure
-    //      keychord,action pairings from that file
+    // Set up some basic default keybindings
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                              KeyChord{ KeyModifiers::Ctrl,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('T') });
     keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('D') });
 
-    keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                              KeyChord{ KeyModifiers::Ctrl,
+    keyBindings.SetKeyBinding(ShortcutAction::ClosePane,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('W') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CopyText,
@@ -355,31 +353,31 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('1') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('2') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('3') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('4') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('5') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('6') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('7') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('8') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('9') });
 }
 

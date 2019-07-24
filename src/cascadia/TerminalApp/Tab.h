@@ -31,6 +31,8 @@ public:
     winrt::hstring GetFocusedTitle() const;
     void SetTabText(const winrt::hstring& text);
 
+    void ClosePane();
+
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
