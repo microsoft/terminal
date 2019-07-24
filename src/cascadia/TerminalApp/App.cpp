@@ -1435,13 +1435,10 @@ namespace winrt::TerminalApp::implementation
             connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
         }
         else
+#endif
         {
             connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
-#else
-        connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
-#endif
-
         return connection;
     }
 

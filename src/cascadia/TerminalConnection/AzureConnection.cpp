@@ -202,8 +202,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             const auto str = winrt::to_string(data);
             msg.set_utf8_message(str);
 
-            auto msgSentTask = _cloudShellSocket.send(msg);
-            msgSentTask.wait();
+            _cloudShellSocket.send(msg);
         }
         default:
             return;
@@ -264,6 +263,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    // Method description:
+    // - this method bridges the thread to the Azure connection instance
+    // Arguments:
+    // - lpParameter: the Azure connection parameter
+    // Return value:
+    // - the exit code of the thread
     DWORD WINAPI AzureConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
         AzureConnection* const pInstance = (AzureConnection*)lpParameter;
@@ -352,6 +357,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 case State::NoConnect:
                 {
                     _outputHandlers(winrt::to_hstring(internetOrServerIssue));
+                    _disconnectHandlers();
                     return E_FAIL;
                 }
                 }

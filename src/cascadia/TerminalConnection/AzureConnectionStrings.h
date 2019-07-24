@@ -2,7 +2,7 @@
 
 // Messages to the user
 const auto resource = L"Terminal";
-const auto codeExpiry = L" This code will expire in 15 minutes.\r\n";
+const auto codeExpiry = L"\r\nThis code will expire in 15 minutes.\r\n";
 const auto enterTenant = L"Please enter the desired tenant number\r\n";
 const auto newLogin = L"or enter n to login with a different account\r\n";
 const auto removeStored = L"or enter r to remove the above saved connection settings.\r\n";
@@ -21,6 +21,6 @@ const auto noTokens = L"No tokens to remove. \r\n";
 const auto tokensRemoved = L"Tokens removed!\r\n";
 const auto exitStr = L"Exit.\r\n";
 const auto authString = L"Authenticated.\r\n";
-const auto internetOrServerIssue = L"Could not connect to Azure. You may not have internet or the server might be down.";
+const auto internetOrServerIssue = L"Could not connect to Azure. You may not have internet or the server might be down.\r\n";
 
 const auto ithTenant = L"Tenant %d: %s (%s)\r\n";
