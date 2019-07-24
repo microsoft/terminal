@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "App.h"
-#include <wil/stl.h>
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "App.g.cpp"
@@ -1259,7 +1258,7 @@ namespace winrt::TerminalApp::implementation
         if (profile.HasIcon())
         {
             std::wstring path{ profile.GetIconPath() };
-            std::wstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
             winrt::hstring iconPath{ envExpandedPath };
             winrt::Windows::Foundation::Uri iconUri{ iconPath };
             Controls::BitmapIconSource iconSource;

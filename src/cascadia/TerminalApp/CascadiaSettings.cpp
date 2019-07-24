@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <wil/stl.h>
 #include <argb.h>
 #include <conattrs.hpp>
 #include <io.h>
@@ -497,9 +496,10 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
 // Return Value:
 // - true iff powershell core (pwsh.exe) is present in the given path
-bool CascadiaSettings::_isPowerShellCoreInstalledInPath(_In_ PCWSTR programFileEnv, std::filesystem::path& cmdline)
+bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
-    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnv) };
+    std::wstring programFileEnvNulTerm{ programFileEnv };
+    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
     psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
