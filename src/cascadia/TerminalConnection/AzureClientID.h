@@ -1,5 +1,8 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 
 #include <cpprest/details/web_utilities.h>
 
-utility::string_t AzureClientID = U("0");
+const utility::string_t AzureClientID = U("0");
