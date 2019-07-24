@@ -84,7 +84,7 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\x5d',
     L'\x5e',
     L'\u0020', // L'\x5f',   -> Blank
-    L'\u25C6', // L'\x60',   -> Diamond
+    L'\u2666', // L'\x60',   -> Diamond (more commonly U+25C6, but U+2666 renders better for us)
     L'\u2592', // L'\x61',   -> Checkerboard
     L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
     L'\u240c', // L'\x63',   -> FF, SYMBOL FOR FORM FEED
