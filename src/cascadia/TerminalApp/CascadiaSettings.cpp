@@ -239,6 +239,8 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
+    // The Azure connection has a boost dependency, and boost does not support ARM64
+    // so we don't create a default profile for the Azure cloud shell if we're in ARM64
 #ifndef _M_ARM64
     auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
     azureCloudShellProfile.SetCommandline(L"Azure");
