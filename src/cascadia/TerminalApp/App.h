@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 #include "App.g.h"
 #include "App.base.h"
+#include "ScopedResourceLoader.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -27,10 +28,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 
-        // Gets the current dragglable area in the non client region of the top level window
-        Windows::UI::Xaml::Controls::Border GetDragBar() noexcept;
-
-        void Create(uint64_t hParentWnd);
+        void Create();
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
@@ -43,6 +41,8 @@ namespace winrt::TerminalApp::implementation
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 
     private:
         // If you add controls here, but forget to null them either here or in
@@ -53,10 +53,9 @@ namespace winrt::TerminalApp::implementation
         // (which is a root when the tabs are in the titlebar.)
         Windows::UI::Xaml::Controls::Control _root{ nullptr };
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
-        Windows::UI::Xaml::Controls::Grid _tabRow{ nullptr };
+        TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
-        winrt::TerminalApp::MinMaxCloseControl _minMaxCloseControl{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
@@ -67,11 +66,12 @@ namespace winrt::TerminalApp::implementation
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
 
+        ScopedResourceLoader _resourceLoader;
+
         wil::unique_folder_change_reader_nothrow _reader;
 
         std::atomic<bool> _settingsReloadQueued{ false };
 
-        void _Create(uint64_t parentHWnd);
         void _CreateNewTabFlyout();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
@@ -105,6 +105,7 @@ namespace winrt::TerminalApp::implementation
         void _OpenNewTab(std::optional<int> profileIndex);
         void _DuplicateTabViewItem();
         void _CloseFocusedTab();
+        void _CloseFocusedPane();
         void _SelectNextTab(const bool bMoveRight);
         void _SelectTab(const int tabIndex);
 
@@ -122,6 +123,7 @@ namespace winrt::TerminalApp::implementation
         // MSFT:20641986: Add keybindings for New Window
         void _ScrollPage(int delta);
         void _ResizePane(const Direction& direction);
+        void _MoveFocus(const Direction& direction);
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);

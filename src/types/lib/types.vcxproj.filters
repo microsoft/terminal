@@ -112,6 +112,19 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+    <ClInclude Include="..\IConsoleWindow.hpp" />
+    <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
+    <ClInclude Include="..\inc\convert.hpp" />
+    <ClInclude Include="..\inc\GlyphWidth.hpp" />
+    <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
+    <ClInclude Include="..\inc\Viewport.hpp" />
+    <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\precomp.h" />
+    <ClInclude Include="..\ScreenInfoUiaProvider.h" />
+    <ClInclude Include="..\UiaTextRange.hpp" />
+    <ClInclude Include="..\utils.hpp" />
+    <ClInclude Include="..\WindowUiaProviderBase.hpp" />
+    <ClInclude Include="..\IUiaWindow.h" />
   </ItemGroup>
 </Project>
