@@ -499,7 +499,7 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
     std::wstring programFileEnvNulTerm{ programFileEnv };
-    const std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
+    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
     psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
