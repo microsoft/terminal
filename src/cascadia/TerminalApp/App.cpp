@@ -108,6 +108,7 @@ namespace winrt::TerminalApp::implementation
         }
         _commandPalette.SetActions(actionsCollection);
         _commandPalette.SetDispatch(_actionDispatch);
+        _commandPalette.Closed({ this, &App::_CommandPaletteClosed });
 
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
@@ -1454,6 +1455,15 @@ namespace winrt::TerminalApp::implementation
             auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
             menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
         }
+    }
+
+    void App::_CommandPaletteClosed(const IInspectable& /*sender*/,
+                                    const RoutedEventArgs& /*eventArgs*/)
+    {
+        // TODO return focus to the active control
+        // const int focusedTabIndex = _GetFocusedTabIndex();
+        // auto focusedTab = _tabs[focusedTabIndex];
+        // focusedTab->SetFocused(true);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

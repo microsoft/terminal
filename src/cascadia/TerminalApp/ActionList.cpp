@@ -27,14 +27,17 @@ namespace winrt::TerminalApp::implementation
     void ActionList::ToggleVisibility()
     {
         const bool isVisible = Visibility() == Visibility::Visible;
-        Visibility(isVisible ? Visibility::Collapsed : Visibility::Visible);
         if (!isVisible)
         {
-            // We just became visible
+            // Become visible
+            Visibility(Visibility::Visible);
             _SearchBox().Focus(FocusState::Programmatic);
+            _FilteredActionsView().SelectedIndex(0);
         }
-        _FilteredActionsView().SelectedIndex(0);
-        //_FilteredActionsView().Items().GetAt(0).
+        else
+        {
+            _Close();
+        }
     }
 
     void ActionList::_KeyDownHandler(Windows::Foundation::IInspectable const& sender,
@@ -65,12 +68,14 @@ namespace winrt::TerminalApp::implementation
                 {
                     auto command = data.Command();
                     _dispatch.DoAction(command);
+                    _Close();
                 }
             }
             e.Handled(true);
         }
         else if (key == VirtualKey::Escape)
         {
+            _Close();
         }
     }
 
@@ -130,11 +135,19 @@ namespace winrt::TerminalApp::implementation
             }
         }
         return true;
-        // return searchText == name;
     }
 
     void ActionList::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;
     }
+
+    void ActionList::_Close()
+    {
+        Visibility(Visibility::Collapsed);
+        _SearchBox().Text(L"");
+        _closeHandlers(*this, RoutedEventArgs{});
+    }
+
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(ActionList, Closed, _closeHandlers, TerminalApp::ActionList, winrt::Windows::UI::Xaml::RoutedEventArgs);
 }

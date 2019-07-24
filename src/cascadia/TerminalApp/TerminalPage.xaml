@@ -19,6 +19,11 @@ the MIT License. See LICENSE in the project root for license information. -->
         <local:TabRowControl x:Name="TabRow" Grid.Row="0" />
 
         <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
-        <local:ActionList Visibility="Collapsed" x:Name="_ActionList" Grid.Row="1" HorizontalAlignment="Center" VerticalAlignment="Top" />
+
+        <local:ActionList
+            x:Name="_ActionList"
+            Grid.Row="1"
+            Visibility="Collapsed"
+            VerticalAlignment="Top" />
     </Grid>
 </Page>

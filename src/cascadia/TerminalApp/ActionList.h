@@ -6,6 +6,7 @@
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
 #include "ActionList.g.h"
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -17,6 +18,8 @@ namespace winrt::TerminalApp::implementation
         void SetActions(Windows::Foundation::Collections::IVector<TerminalApp::Action> const& actions);
         void ToggleVisibility();
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
+
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(Closed, _closeHandlers, TerminalApp::ActionList, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         Windows::Foundation::Collections::IObservableVector<TerminalApp::Action> _filteredActions{ nullptr };
@@ -30,6 +33,7 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateFilteredActions();
         static bool _FilterMatchesName(winrt::hstring searchText, winrt::hstring name);
+        void _Close();
     };
 }
 

@@ -8,36 +8,58 @@ the MIT License. See LICENSE in the project root for license information. -->
     xmlns:mux="using:Microsoft.UI.Xaml.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    Background="{ThemeResource SystemChromeMediumLowColor}"
     mc:Ignorable="d">
 
+    <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="*" />
+        <ColumnDefinition Width="8*" />
+        <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
     <Grid.RowDefinitions>
-        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="9*"/>
         <RowDefinition Height="*"/>
     </Grid.RowDefinitions>
 
-    <TextBox
+    <Grid
+        Background="{ThemeResource SystemChromeMediumLowColor}"
+        Grid.Column="1"
         Grid.Row="0"
-        x:Name="_SearchBox"
-        Text="">
-
-    </TextBox>
-
-    <ListView
-        Grid.Row="1"
-        x:Name="_FilteredActionsView"
+        Padding="8"
+        MaxWidth="400"
+        MaxHeight="400"
         HorizontalAlignment="Stretch"
-        VerticalAlignment="Stretch"
-        SelectionMode="Single"
-        CanReorderItems="False"
-        AllowDrop="False"
-        ItemsSource="{x:Bind FilteredActions}">
+        VerticalAlignment="Stretch">
 
-        <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="local:Action">
-                <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
-            </DataTemplate>
-        </ItemsControl.ItemTemplate>
-    </ListView>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
+        <TextBox
+            Grid.Row="0"
+            x:Name="_SearchBox"
+            PlaceholderText="Type a command name"
+            Text="">
+
+        </TextBox>
+
+        <ListView
+            Grid.Row="1"
+            x:Name="_FilteredActionsView"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            SelectionMode="Single"
+            CanReorderItems="False"
+            AllowDrop="False"
+            ItemsSource="{x:Bind FilteredActions}">
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="local:Action">
+                    <TextBlock Text="{x:Bind Name, Mode=OneWay}"/>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ListView>
+
+    </Grid>
 </Grid>

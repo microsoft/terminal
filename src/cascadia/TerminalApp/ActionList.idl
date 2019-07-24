@@ -15,5 +15,7 @@ namespace TerminalApp
 
         void ToggleVisibility();
         void SetDispatch(ShortcutActionDispatch dispatch);
+
+        event Windows.Foundation.TypedEventHandler<ActionList, Windows.UI.Xaml.RoutedEventArgs> Closed;
     }
 }
