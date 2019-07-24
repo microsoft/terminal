@@ -34,8 +34,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         token;
     }
 
-    void EchoConnection::Start()
+    bool EchoConnection::Start()
     {
+        return true;
     }
 
     void EchoConnection::WriteInput(hstring const& data)
@@ -70,5 +71,26 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void EchoConnection::Close()
     {
         throw hresult_not_implemented();
+    }
+
+    hstring EchoConnection::GetConnectionFailatureMessage()
+    {
+        return hstring(L"[Echo connection failed]");
+    }
+
+    hstring EchoConnection::GetConnectionFailatureTabTitle()
+    {
+        return L"Exited";
+    }
+
+    hstring EchoConnection::GetDisconnectionMessage()
+    {
+        return L"Failature";
+    }
+
+    hstring EchoConnection::GetDisconnectionTabTitle(hstring previousTitle)
+    {
+        previousTitle;
+        return hstring(L"[Echo connection closed]");
     }
 }

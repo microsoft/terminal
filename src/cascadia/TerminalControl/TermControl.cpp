@@ -128,6 +128,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connection.TerminalDisconnected([=]() {
             _connectionClosedHandlers();
+
+            if (_initializedTerminal)
+            {
+                _terminal->Write(L"\r\n");
+                _terminal->Write(_connection.GetDisconnectionMessage());
+                _terminal->SetWindowTitle(_connection.GetDisconnectionTabTitle(_terminal->GetConsoleTitle()));
+
+                 _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                    if (_cursorTimer.has_value())
+                    {
+                        _cursorTimer.value().Stop();
+                    }
+
+                    _terminal->SetCursorVisible(false);
+                });
+            }
         });
     }
 
@@ -504,26 +520,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto pfnScrollPositionChanged = std::bind(&TermControl::_TerminalScrollPositionChanged, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         _terminal->SetScrollPositionChangedCallback(pfnScrollPositionChanged);
 
-        static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
-        _autoScrollTimer.Interval(AutoScrollUpdateInterval);
-        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
-
-        // Set up blinking cursor
-        int blinkTime = GetCaretBlinkTime();
-        if (blinkTime != INFINITE)
-        {
-            // Create a timer
-            _cursorTimer = std::make_optional(DispatcherTimer());
-            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-            _cursorTimer.value().Start();
-        }
-        else
-        {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
-        }
-
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
 
@@ -536,7 +532,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      becomes a no-op.
         _controlRoot.Focus(FocusState::Programmatic);
 
-        _connection.Start();
+        static constexpr auto AutoScrollUpdateInterval = std::chrono::microseconds(static_cast<int>(1.0 / 30.0 * 1000000));
+        _autoScrollTimer.Interval(AutoScrollUpdateInterval);
+        _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
+
+        // Set up blinking cursor
+        int blinkTime = GetCaretBlinkTime();
+        if (blinkTime != INFINITE) // Check if user hasn't disabled blinking
+        {
+            // Create a timer
+            _cursorTimer = std::make_optional(DispatcherTimer());
+            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+        }
+
+        bool connectionSuccessful = _connection.Start();
+        if (connectionSuccessful)
+        {
+            if (_cursorTimer.has_value())
+            {
+                _cursorTimer.value().Start();
+            }
+        }
+        else
+        {
+            _terminal->Write(_connection.GetConnectionFailatureMessage().c_str());
+            _terminal->SetWindowTitle(_connection.GetConnectionFailatureTabTitle());
+            _terminal->SetCursorVisible(false);
+        }
+
         _initializedTerminal = true;
     }
 

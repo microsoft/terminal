@@ -58,7 +58,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _disconnectHandlers.remove(token);
     }
 
-    void ConhostConnection::Start()
+    bool ConhostConnection::Start()
     {
         std::wstring cmdline{ _commandline.c_str() };
         std::optional<std::wstring> startingDirectory;
@@ -79,6 +79,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
+        HANDLE processInfoPipe;
         THROW_IF_FAILED(
             CreateConPty(cmdline,
                          startingDirectory,
@@ -87,6 +88,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          &_inPipe,
                          &_outPipe,
                          &_signalPipe,
+                         &processInfoPipe,
                          &_piConhost,
                          CREATE_SUSPENDED,
                          extraEnvVars));
@@ -121,8 +123,24 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Wind up the conhost! We only do this after we've got everything in place.
         THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
-
         _connected = true;
+
+        THROW_IF_WIN32_BOOL_FALSE(ConnectNamedPipe(processInfoPipe, nullptr));
+
+        DWORD msg[2];
+        THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &msg, sizeof(msg), nullptr, nullptr));
+
+        THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
+
+        _processStartupErrorCode = msg[0];
+        bool connectionSuccess = _processStartupErrorCode == ERROR_SUCCESS;
+        if (connectionSuccess)
+        {
+            DWORD processId = msg[1];
+            _processHandle.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId));
+        }
+
+        return connectionSuccess;
     }
 
     void ConhostConnection::WriteInput(hstring const& data)
@@ -179,6 +197,45 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    hstring ConhostConnection::GetConnectionFailatureMessage()
+    {
+        wil::unique_hlocal_ptr<WCHAR[]> errorMsgBuf;
+        size_t errorMsgSize = FormatMessageW(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+            0,
+            _processStartupErrorCode,
+            0,
+            (LPWSTR)&errorMsgBuf,
+            0,
+            NULL);
+        std::wstring_view errorMsg(errorMsgBuf.get(), errorMsgSize - 2); // Remove last "\r\n"
+
+        std::wostringstream ss;
+        ss << L"[Failed to start process]\r\n";
+        ss << L"  Error code \x1B[37m" << _processStartupErrorCode << L"\x1B[0m: \x1B[37m" << errorMsg << L"\x1B[0m\r\n";
+        ss << L"  Command line: \x1B[37m" << std::wstring{ _commandline } << L"\x1B[0m";
+        return hstring(ss.str());
+    }
+
+    hstring ConhostConnection::GetConnectionFailatureTabTitle()
+    {
+        return _commandline;
+    }
+
+    hstring ConhostConnection::GetDisconnectionMessage()
+    {
+        std::wostringstream ss;
+        ss << L"[Process exited with code \x1B[37m" << _processExitCode << L"\x1B[0m]";
+        return hstring(ss.str());
+    }
+
+    hstring ConhostConnection::GetDisconnectionTabTitle(hstring previousTitle)
+    {
+        std::wostringstream ss;
+        ss << L"[" << _processExitCode << L"] " << std::wstring{ previousTitle };
+        return hstring(ss.str());
+    }
+
     DWORD WINAPI ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
     {
         ConhostConnection* const pInstance = (ConhostConnection*)lpParameter;
@@ -200,6 +257,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     // This is okay, break out to kill the thread
                     return 0;
+                }
+
+                if (_processHandle)
+                {
+                    // Wait for application process to terminate.
+                    WaitForSingleObject(_processHandle.get(), INFINITE);
+                    THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &_processExitCode));
+                    _processHandle.reset();
                 }
 
                 _disconnectHandlers();

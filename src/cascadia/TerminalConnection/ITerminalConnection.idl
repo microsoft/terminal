@@ -11,10 +11,15 @@ namespace Microsoft.Terminal.TerminalConnection
         event TerminalOutputEventArgs TerminalOutput;
         event TerminalDisconnectedEventArgs TerminalDisconnected;
 
-        void Start();
+        Boolean Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
+
+        String GetConnectionFailatureMessage();
+        String GetConnectionFailatureTabTitle();
+        String GetDisconnectionMessage();
+        String GetDisconnectionTabTitle(String previousTitle);
     };
 
 }

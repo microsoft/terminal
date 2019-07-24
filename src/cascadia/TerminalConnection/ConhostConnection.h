@@ -15,10 +15,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void TerminalOutput(winrt::event_token const& token) noexcept;
         winrt::event_token TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler);
         void TerminalDisconnected(winrt::event_token const& token) noexcept;
-        void Start();
+        bool Start();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
+
+        hstring GetConnectionFailatureMessage();
+        hstring GetConnectionFailatureTabTitle();
+        hstring GetDisconnectionMessage();
+        hstring GetDisconnectionTabTitle(hstring previousTitle);
 
         winrt::guid Guid() const noexcept;
 
@@ -33,6 +38,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         guid _guid{}; // A unique session identifier for connected client
 
         bool _connected{};
+        DWORD _processStartupErrorCode{ 0 };
+        DWORD _processExitCode{ 0 };
+        wil::unique_handle _processHandle;
         std::atomic<bool> _closing{ false };
 
         wil::unique_hfile _inPipe; // The pipe for writing input to

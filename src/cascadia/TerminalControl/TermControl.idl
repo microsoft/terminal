@@ -13,9 +13,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface]
-    runtimeclass TermControl
-    {
+    [default_interface] runtimeclass TermControl {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 

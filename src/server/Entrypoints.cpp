@@ -8,6 +8,7 @@
 #include "IoThread.h"
 
 #include "winbasep.h"
+#include "..\host\ConsoleArguments.hpp"
 
 [[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle,
                                                                const ConsoleArguments* const args)
@@ -163,16 +164,48 @@
 
         // Call create process
         wil::unique_process_information ProcessInformation;
-        RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(NULL,
-                                                  CmdLineMutable.get(),
-                                                  NULL,
-                                                  NULL,
-                                                  TRUE,
-                                                  EXTENDED_STARTUPINFO_PRESENT,
-                                                  NULL,
-                                                  NULL,
-                                                  &StartupInformation.StartupInfo,
-                                                  ProcessInformation.addressof()));
+        BOOL createProcessSuccess = CreateProcessW(NULL,
+                                                   CmdLineMutable.get(),
+                                                   NULL,
+                                                   NULL,
+                                                   TRUE,
+                                                   EXTENDED_STARTUPINFO_PRESENT,
+                                                   NULL,
+                                                   NULL,
+                                                   &StartupInformation.StartupInfo,
+                                                   ProcessInformation.addressof());
+
+        DWORD createProcessError = 0;
+        if (!createProcessSuccess)
+        {
+            createProcessError = GetLastError();
+        }
+
+        HANDLE processInfoPipe = CreateFile(
+            L"\\\\.\\pipe\\terminalProcessInfo",
+            GENERIC_WRITE,
+            0, // no sharing
+            nullptr, // default security attributes
+            OPEN_EXISTING, // opens existing pipe
+            0, // default attributes
+            nullptr); // no template file
+
+        if (processInfoPipe != INVALID_HANDLE_VALUE)
+        {
+            DWORD msg[]{
+                createProcessError,
+                ProcessInformation.dwProcessId
+            };
+
+            RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe, &msg, sizeof(msg), nullptr, nullptr));
+
+            CloseHandle(processInfoPipe);
+        }
+
+        if (!createProcessSuccess)
+        {
+            return createProcessError;
+        }
     }
 
     // Exit the thread so the CRT won't clean us up and kill. The IO thread owns the lifetime now.
