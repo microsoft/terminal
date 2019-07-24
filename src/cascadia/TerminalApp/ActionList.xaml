@@ -25,8 +25,12 @@ the MIT License. See LICENSE in the project root for license information. -->
 
     <ListView
         Grid.Row="1"
+        x:Name="_FilteredActionsView"
         HorizontalAlignment="Stretch"
         VerticalAlignment="Stretch"
+        SelectionMode="Single"
+        CanReorderItems="False"
+        AllowDrop="False"
         ItemsSource="{x:Bind FilteredActions}">
 
         <ItemsControl.ItemTemplate>

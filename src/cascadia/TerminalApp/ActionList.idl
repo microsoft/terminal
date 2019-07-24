@@ -12,5 +12,8 @@ namespace TerminalApp
         Windows.Foundation.Collections.IObservableVector<Action> FilteredActions { get; };
 
         void SetActions(Windows.Foundation.Collections.IVector<Action> actions);
+
+        void ToggleVisibility();
+        void SetDispatch(ShortcutActionDispatch dispatch);
     }
 }

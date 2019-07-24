@@ -107,6 +107,7 @@ namespace winrt::TerminalApp::implementation
             actionsCollection.Append(action);
         }
         _commandPalette.SetActions(actionsCollection);
+        _commandPalette.SetDispatch(_actionDispatch);
 
         // Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
@@ -1119,8 +1120,7 @@ namespace winrt::TerminalApp::implementation
 
     void App::_ToggleCommandPalette()
     {
-        const bool isVisible = _commandPalette.Visibility() == Visibility::Visible;
-        _commandPalette.Visibility(isVisible ? Visibility::Collapsed : Visibility::Visible);
+        _commandPalette.ToggleVisibility();
     }
 
     // Method Description:
