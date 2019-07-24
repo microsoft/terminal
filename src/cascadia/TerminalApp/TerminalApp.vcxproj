@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <PropertyGroup>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
@@ -21,7 +19,6 @@
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
   </ItemGroup>
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
@@ -60,31 +57,25 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
-
     <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
     our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" >
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-
   </ItemGroup>
-
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
     <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
   </PropertyGroup>
-
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -102,9 +93,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!--
     This is a terrible, terrible rule. There exists a bug in Visual Studio 2019 16.2 and 16.3 previews
     where ResolveAssemblyReferences will try and fail to parse a .lib when it produces a .winmd.
@@ -124,7 +113,6 @@
       </_ResolvedProjectReferencePaths>
     </ItemGroup>
   </Target>
-
   <Target Name="_RestoreTerminalAppLibImplementationFromReference" AfterTargets="ResolveAssemblyReferences">
     <ItemGroup>
       <_ResolvedProjectReferencePaths Remove="@(_TerminalAppLibProjectReference)" />
@@ -132,5 +120,4 @@
     </ItemGroup>
   </Target>
   <!-- End "terrible, terrible rule" -->
-
 </Project>

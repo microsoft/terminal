@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass SettingsPage : Windows.UI.Xaml.Controls.Page
+    {
+        SettingsPage();
+    }
+}

@@ -1,0 +1,61 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="..\App.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../Pane.cpp" />
+    <ClCompile Include="../ColorScheme.cpp" />
+    <ClCompile Include="../GlobalAppSettings.cpp" />
+    <ClCompile Include="../Profile.cpp" />
+    <ClCompile Include="../CascadiaSettings.cpp" />
+    <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
+    <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp" />
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../App.base.h" />
+    <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../Pane.h" />
+    <ClInclude Include="../ColorScheme.h" />
+    <ClInclude Include="../GlobalAppSettings.h" />
+    <ClInclude Include="../Profile.h" />
+    <ClInclude Include="../CascadiaSettings.h" />
+    <ClInclude Include="../AppKeyBindingsSerialization.h" />
+    <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../Utils.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="../AppKeyBindings.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="../AppKeyBindings.idl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="../packages.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="../MinMaxCloseControl.xaml" />
+    <Page Include="../TerminalPage.xaml" />
+    <Page Include="../TitlebarControl.xaml" />
+    <Page Include="../TabRowControl.xaml" />
+    <Page Include="../SettingsPage.xaml" />
+    <Page Include="GlobalSettingsContent.xaml" />
+    <Page Include="ProfilesSettingsContent.xaml" />
+    <Page Include="ColorSchemesSettingsContent.xaml" />
+    <Page Include="KeybindingsSettingsContent.xaml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="SettingsContent">
+      <UniqueIdentifier>{40098f39-a747-43da-a6b6-95e290c7c268}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

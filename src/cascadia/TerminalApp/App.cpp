@@ -7,6 +7,7 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
+#include "SettingsPage.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -81,6 +82,8 @@ namespace winrt::TerminalApp::implementation
         _tabRow = terminalPage->TabRow();
         _tabView = _tabRow.TabView();
         _newTabButton = _tabRow.NewTabButton();
+
+        auto settingsPage = winrt::make_self<SettingsPage>();
 
         if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {

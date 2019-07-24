@@ -1,0 +1,9 @@
+namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass GlobalSettingsContent : Windows.UI.Xaml.Controls.Page
+    {
+        GlobalSettingsContent();
+        Int32 MyProperty;
+    }
+}

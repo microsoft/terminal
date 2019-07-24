@@ -1,0 +1,9 @@
+namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass KeybindingsSettingsContent : Windows.UI.Xaml.Controls.Page
+    {
+        KeybindingsSettingsContent();
+        Int32 MyProperty;
+    }
+}

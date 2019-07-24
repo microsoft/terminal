@@ -1,0 +1,9 @@
+namespace TerminalApp
+{
+    [default_interface]
+    runtimeclass ProfilesSettingsContent : Windows.UI.Xaml.Controls.Page
+    {
+        ProfilesSettingsContent();
+        Int32 MyProperty;
+    }
+}

@@ -1,0 +1,25 @@
+﻿<Page
+    x:Class="TerminalApp.KeybindingsSettingsContent"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:TerminalApp"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock Text="Keybinding Settings"
+                   Style="{StaticResource HeaderTextBlockStyle}"
+                   Grid.Row="0"/>
+        <StackPanel Grid.Row="1">
+            <TextBox Header="Command" />
+            <TextBox Header="Keys" />
+        </StackPanel>
+    </Grid>
+    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Button x:Name="Button" Click="ClickHandler">Click Me</Button>
+    </StackPanel>-->
+</Page>
