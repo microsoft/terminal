@@ -5,7 +5,7 @@ last updated: 2019-07-24
 issue id: #1256
 ---
 
-# Tab Tearoff/Merge IPC
+# Tab Tearoff/Merge & Default App IPC
 
 ## Abstract
 
@@ -108,6 +108,19 @@ The downside here is that launching command-line applications from shortcuts, th
 We could just send the server connection from the `conhost.exe` in System32 into the one inside the package and let it deal with it. We can connect to the broker and pass along the server handle and let `wt.exe` create a `conhost.exe` in PTY mode with that specific server handle.
 
 The upsides/downsides here are exactly opposite of those above, so I won't restate.
+
+##### Making default app work on current and downlevel OS
+There's a few areas to study here.
+
+1. Replacing conhost.exe in system32 at install time
+- The OS (via the code for `ConsoleInitialize` inside `kernelbase.dll`) will launch `C:\windows\system32\conhost.exe` to start a default application session with the server handle. We can technically replace this binary in `system32` with an `OpenConsole.exe` named `conhost.exe` to make newer code run on older OS (presuming that we have the CRTs installed, build against the in-OS-CRT, and otherwise have conditional feature detection properly performed for all APIs/references not accessible downlevel). This is how we test/develop locally inside Windows without a full nightly build, so we know it works to some degree. Replacing a binary in `system32` is a bit of a problem, though, because the OS actively works to defend against this through ACLs (Windows File Protection which detected and restored changes here is gone, I believe). Additionally, it works for us because we're using internal builds and signing our binaries with test certificates for which our machines have the root certificate installed. Not going to cut it outside. We probably also can't sign it officially with the app signing mechanism and have it work because I'm not sure the root certificates for app signing will be trusted the same way as the certificates for OS signing. Also, we can't build outside of Windows against the in-box CRT. So we'd have to have the MSVCRT redist, which is also gross.
+
+2. Updating kernelbase.dll to look up the launch preference and/or to launch a console host via a protocol handler
+- To make this work anywhere but the most recent OS build, we'd have to service downlevel. Given `kernelbase.dll` is fundamental to literally everything, there's virtually no chance that we would be allowed to service it backwards in time for the sake of adding a feature. It's too risky by any stretch of the imagination. It's even risky to change `kernelbase.dll` for an upcoming release edition given how fundamental it is. End of thought experiment.
+
+3. Updating conhost.exe to look up the launch preference and/or to launch another console host via a protocol handler
+- This would allow the `C:\windows\system32\conhost.exe` to effectively delegate the session to another `conhost.exe` that is hopefully newer than the inbox one. Given that the driver protocol in the box doesn't change and hasn't changed and we don't intend to change it, the forward/backward compatibility story is great here. Additionally, if for whatever reason the delegated `conhost.exe` fails to launch, we can just fall back and launch the old one like we would have prior to the change. It is significantly more likely, but still challenging, to argue for servicing `conhost.exe` back several versions in Windows to make this light up better for all folks. It might be especially more possible if it is a very targeted code snippet that can drop in to all the old versions of the `conhost.exe` code. We would still have the argument about spending resources developing for OS versions that are supposed to be dropped in favor of latest, but it's still a lesser argument than upending all of `kernelbase.dll`.
+- A protocol handler is also well understood and relatively well handled/tested in Windows. Old apps can handle protocols. New apps can handle protocols. Protocol handlers can take arguments. We don't have to lean on any other team to get them to help change the way the rest of the OS  works. 
 
 #### Communicating the launch
 For the parameters passing, I see a few options:
