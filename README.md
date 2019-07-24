@@ -1,7 +1,7 @@
 # Welcome\! 
 #### This repository contains the source code for:
 
-  * Windows Terminal
+  * [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
   * The Windows console host (`conhost.exe`)
   * Components shared between the two projects
   * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
@@ -9,6 +9,13 @@
   
 #### Other related repositories include:
   * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
+
+
+### Microsoft Store
+
+Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated. Or, feel free to side-load [releases](https://github.com/microsoft/terminal/releases) from GitHub, but note they won't auto-update.
+
+<a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
 ### Build Status
 
