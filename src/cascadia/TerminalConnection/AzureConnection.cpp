@@ -337,6 +337,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             // Websocket has been closed
                             if (!_closing.load())
                             {
+                                _state = State::NoConnect;
                                 _disconnectHandlers();
                                 return S_FALSE;
                             }
@@ -747,7 +748,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         refreshRequest.set_request_uri(_tenantID + L"/oauth2/token");
         const auto body = L"client_id=" + AzureClientID + L"&resource=" + _wantedResource + L"&grant_type=refresh_token" + L"&refresh_token=" + _refreshToken;
         refreshRequest.set_body(body, L"application/x-www-form-urlencoded");
-        refreshRequest.headers().add(L"User-Agent", resource);
+        refreshRequest.headers().add(L"User-Agent", userAgent);
 
         // Send the request and return the response as a json value
         return _RequestHelper(refreshClient, refreshRequest);
@@ -808,7 +809,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         http_request terminalRequest(L"POST");
         terminalRequest.set_request_uri(L"terminals?cols=" + std::to_wstring(_initialCols) + L"&rows=" + std::to_wstring(_initialRows) + L"&version=2019-01-01&shell=" + shellType);
         _HeaderHelper(terminalRequest);
-        terminalRequest.set_body(json::value(L""));
 
         // Send the request and get the response as a json value
         const auto terminalResponse = _RequestHelper(terminalClient, terminalRequest);
@@ -827,7 +827,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         theRequest.headers().add(L"Accept", L"application/json");
         theRequest.headers().add(L"Content-Type", L"application/json");
         theRequest.headers().add(L"Authorization", L"Bearer " + _accessToken);
-        theRequest.headers().add(L"User-Agent", resource);
+        theRequest.headers().add(L"User-Agent", userAgent);
     }
 
     // Method description:

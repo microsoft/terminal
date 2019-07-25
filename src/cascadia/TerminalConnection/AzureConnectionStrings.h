@@ -5,6 +5,7 @@
 
 // Messages to the user
 const auto resource = L"Terminal";
+const auto userAgent = L"Terminal/0.0";
 const auto codeExpiry = L"\r\nThis code will expire in 15 minutes.\r\n";
 const auto enterTenant = L"Please enter the desired tenant number\r\n";
 const auto newLogin = L"or enter n to login with a different account\r\n";
