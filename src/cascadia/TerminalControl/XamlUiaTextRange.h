@@ -32,10 +32,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     public:
         XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider) :
-            _uiaProvider{ },
+            _uiaProvider{ uiaProvider },
             _parentProvider{ parentProvider }
         {
-            _uiaProvider.attach(uiaProvider);
         };
 
         // ITextRangeProvider
@@ -70,7 +69,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple> GetChildren() const;
 
     private:
-        winrt::com_ptr<::ITextRangeProvider> _uiaProvider;
+        wil::com_ptr<::ITextRangeProvider> _uiaProvider;
         Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple _parentProvider;
     };
 }

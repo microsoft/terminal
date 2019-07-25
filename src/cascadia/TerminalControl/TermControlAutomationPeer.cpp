@@ -51,7 +51,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             SAFEARRAY* pReturnVal;
             THROW_IF_FAILED(_uiaProvider.GetSelection(&pReturnVal));
 
-            ::UiaTextRange* pVals;
+            ::UiaTextRange** pVals;
             THROW_IF_FAILED(SafeArrayAccessData(pReturnVal, (void**)&pVals));
 
             long lBound, uBound;
@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto parentProvider = this->ProviderFromPeer(*this);
             for (int i = 0; i < count; i++)
             {
-                ::UiaTextRange* provider = &pVals[i];
+                ::UiaTextRange* provider = pVals[i];
                 auto xutr = winrt::make_self<XamlUiaTextRange>(provider, parentProvider);
                 vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
             }
@@ -87,7 +87,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             SAFEARRAY* pReturnVal;
             THROW_IF_FAILED(_uiaProvider.GetVisibleRanges(&pReturnVal));
 
-            ::UiaTextRange* pVals;
+            ::UiaTextRange** pVals;
             THROW_IF_FAILED(SafeArrayAccessData(pReturnVal, (void**)&pVals));
 
             long lBound, uBound;
@@ -101,7 +101,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             auto parentProvider = this->ProviderFromPeer(*this);
             for (int i = 0; i < count; i++)
             {
-                ::UiaTextRange* provider = &pVals[i];
+                ::UiaTextRange* provider = pVals[i];
                 auto xutr = winrt::make_self<XamlUiaTextRange>(provider, parentProvider);
                 vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
             }
