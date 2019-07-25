@@ -161,6 +161,12 @@ void Utils::InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table)
     SwapANSIColorOrderForConhost(table);
 }
 
+// Function Description:
+// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
+// Arguments:
+// - table: a color table with at least 16 entries
+// Return Value:
+// - <none>, throws if the table has less that 16 entries
 void Utils::SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
