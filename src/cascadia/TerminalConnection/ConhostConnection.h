@@ -38,10 +38,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         guid _guid{}; // A unique session identifier for connected client
 
         bool _connected{};
+        std::atomic<bool> _closing{ false };
+
+        // These fields are about process created by passed commandline
         DWORD _processStartupErrorCode{ 0 };
         DWORD _processExitCode{ 0 };
         wil::unique_handle _processHandle;
-        std::atomic<bool> _closing{ false };
 
         wil::unique_hfile _inPipe; // The pipe for writing input to
         wil::unique_hfile _outPipe; // The pipe for reading output from

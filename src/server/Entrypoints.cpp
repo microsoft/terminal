@@ -8,7 +8,6 @@
 #include "IoThread.h"
 
 #include "winbasep.h"
-#include "..\host\ConsoleArguments.hpp"
 
 [[nodiscard]] HRESULT Entrypoints::StartConsoleForServerHandle(const HANDLE ServerHandle,
                                                                const ConsoleArguments* const args)
@@ -181,15 +180,16 @@
             createProcessError = GetLastError();
         }
 
+        // Pass info about created process through temporary pipe, so terminal can react upon that.
         const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(GetCurrentProcessId());
         wil::unique_handle processInfoPipe{ CreateFile(
-            processInfoPipeName.c_str(),
-            GENERIC_WRITE,
-            0, // no sharing
-            nullptr, // default security attributes
-            OPEN_EXISTING, // opens existing pipe
-            0, // default attributes
-            nullptr) }; // no template file
+            processInfoPipeName.c_str(), // lpFileName
+            GENERIC_WRITE, // dwDesiredAccess
+            0, // dwShareMode - don't share
+            nullptr, // lpSecurityAttributes
+            OPEN_EXISTING, // dwCreationDisposition
+            0, // dwFlagsAndAttributes
+            nullptr) }; // hTemplateFile
 
         if (processInfoPipe.get() != INVALID_HANDLE_VALUE)
         {

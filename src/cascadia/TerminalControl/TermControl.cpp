@@ -127,7 +127,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
         _connection.TerminalDisconnected([=]() {
-            _connectionClosedHandlers();
 
             if (_initializedTerminal)
             {
@@ -136,6 +135,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 _terminal->SetWindowTitle(_connection.GetDisconnectionTabTitle(_terminal->GetConsoleTitle()));
 
                  _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                    // When disconnected, stop blinking cursor.
                     if (_cursorTimer.has_value())
                     {
                         _cursorTimer.value().Stop();
@@ -145,6 +145,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     _terminal->SetCursorVisible(false);
                 });
             }
+
+            _connectionClosedHandlers();
         });
     }
 

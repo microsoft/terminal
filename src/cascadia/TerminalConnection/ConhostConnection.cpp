@@ -79,7 +79,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
+        // We'll create a temporary pipe which allows conhost to pass information
+        // about process it created via passed commandline.
+        // In ConPTY connection we will create the process so this pipe won't be needed.
         HANDLE processInfoPipe;
+
         THROW_IF_FAILED(
             CreateConPty(cmdline,
                          startingDirectory,
@@ -128,9 +132,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_IF_WIN32_BOOL_FALSE(ConnectNamedPipe(processInfoPipe, nullptr));
 
         THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processStartupErrorCode, sizeof(_processStartupErrorCode), nullptr, nullptr));
-        bool connectionSuccess = _processStartupErrorCode == ERROR_SUCCESS;
-        if (connectionSuccess)
+        bool processCreated = _processStartupErrorCode == ERROR_SUCCESS;
+        if (processCreated)
         {
+            // If process was created, we'll be given it's pid.
             DWORD processId;
             THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &processId, sizeof(processId), nullptr, nullptr));
             _processHandle.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId));
@@ -138,7 +143,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
 
-        return connectionSuccess;
+        return processCreated;
     }
 
     void ConhostConnection::WriteInput(hstring const& data)
@@ -259,7 +264,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
                 if (_processHandle)
                 {
-                    // Wait for application process to terminate.
+                    // Wait for application process to terminate to get it's exit code
                     WaitForSingleObject(_processHandle.get(), INFINITE);
                     THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &_processExitCode));
                     _processHandle.reset();

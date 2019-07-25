@@ -11,6 +11,7 @@ namespace Microsoft.Terminal.TerminalConnection
         event TerminalOutputEventArgs TerminalOutput;
         event TerminalDisconnectedEventArgs TerminalDisconnected;
 
+		// Return value: true if connection opened successfully, false otherwise
         Boolean Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);

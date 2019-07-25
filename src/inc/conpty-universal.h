@@ -329,16 +329,17 @@ bool SignalResizeWindow(const HANDLE hSignal,
         piPty // lpProcessInformation
     );
 
+    // Append conhost's pid to pipe's name, so he opens the correct pipe that is designated for him.
     const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(piPty->dwProcessId);
     *hProcessInfo = CreateNamedPipe(
-        processInfoPipeName.c_str(),
-        PIPE_ACCESS_INBOUND,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
-        PIPE_UNLIMITED_INSTANCES,
-        0,
-        8,
-        INFINITE,
-        &sa);
+        processInfoPipeName.c_str(), // lpName
+        PIPE_ACCESS_INBOUND, // dwOpenMode
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, // dwPipeMode
+        1, // dwMaxInstances
+        0, // nOutBufferSize
+        4, // nInBufferSize
+        INFINITE, // nDefaultTimeout
+        &sa); // lpSecurityAttributes
 
     RETURN_LAST_ERROR_IF(*hProcessInfo == INVALID_HANDLE_VALUE);
 
