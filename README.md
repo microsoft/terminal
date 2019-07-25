@@ -1,14 +1,21 @@
 # Welcome\! 
 #### This repository contains the source code for:
 
-  * Windows Terminal
+  * [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
   * The Windows console host (`conhost.exe`)
   * Components shared between the two projects
   * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
   * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
   
 #### Other related repositories include:
-  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs/issues)
+  * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
+
+
+### Microsoft Store
+
+Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated. Or, feel free to side-load [releases](https://github.com/microsoft/terminal/releases) from GitHub, but note they won't auto-update.
+
+<a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
 ### Build Status
 
@@ -55,16 +62,14 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## Where can I download Windows Terminal?
 
-### There are no binaries to download quite yet. 
+### The Windows Terminal preview can be downloaded from the Microsoft Store.
 
-The Windows Terminal is in the _very early_ alpha stage, and not ready for the general public quite yet. If you want to jump in early, you can try building it yourself from source. 
-
-Otherwise, you'll need to wait until Mid-June for an official preview build to drop.
+[https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
-Make sure you are building for your computer's architecture. If your box has a 64-bit Windows change your Solution Platform to x64.  
-To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`
+Make sure you are building for your computer's architecture. If your box has a 64-bit Windows, change your Solution Platform to x64.  
+To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
 
 ## I built and ran the new Terminal, but it looks just like the old console! What gives?
 
@@ -79,22 +84,9 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 
 # Getting Started
 
-## Prerequisites
-
-* You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal
-* You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed
-* You must have at least [VS 2017](https://visualstudio.microsoft.com/downloads/) installed.
-* You must install the following Workloads via the VS Installer. If you're running VS 2019, opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).
-  - Desktop Development with C++
-  - Universal Windows Platform Development
-    - Also install the following Individual Component:
-      - C++ (v141) Universal Windows Platform Tools
-
-* You must also [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run the Terminal app.
-
 ## Debugging
 
-* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only"
+* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
 
 ## Contributing
 
@@ -127,6 +119,20 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
 
 # Developer Guidance
+
+## Build Prerequisites
+
+* You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal.
+* You must have the [1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) (build 10.0.18362.0) installed.
+* You must have at least [VS 2019](https://visualstudio.microsoft.com/downloads/) installed.
+* You must install the following Workloads via the VS Installer. Opening the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/).
+  - Desktop Development with C++
+  - Universal Windows Platform Development
+  - **The following Individual Components**
+     - C++ (v142) Universal Windows Platform Tools
+
+* You must also [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run the Terminal app.
+
 
 ## Building the Code
 

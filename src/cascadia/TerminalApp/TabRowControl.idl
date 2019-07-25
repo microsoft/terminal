@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.Grid
+    {
+        TabRowControl();
+        Windows.UI.Xaml.Controls.SplitButton NewTabButton { get; };
+        Microsoft.UI.Xaml.Controls.TabView TabView { get; };
+    }
+}

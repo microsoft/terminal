@@ -5,6 +5,8 @@
 
 #include "../../renderer/inc/RenderEngineBase.hpp"
 
+#include <functional>
+
 #include <dxgi.h>
 #include <dxgi1_2.h>
 
@@ -144,9 +146,9 @@ namespace Microsoft::Console::Render
 
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteFactory2> _dwriteFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
+        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
 
@@ -154,9 +156,7 @@ namespace Microsoft::Console::Render
         bool _haveDeviceResources;
         ::Microsoft::WRL::ComPtr<ID3D11Device> _d3dDevice;
         ::Microsoft::WRL::ComPtr<ID3D11DeviceContext> _d3dDeviceContext;
-        ::Microsoft::WRL::ComPtr<IDXGIAdapter1> _dxgiAdapter1;
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
-        ::Microsoft::WRL::ComPtr<IDXGIOutput> _dxgiOutput;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
         ::Microsoft::WRL::ComPtr<ID2D1RenderTarget> _d2dRenderTarget;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
@@ -178,7 +178,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _FindFontFace(const std::wstring& familyName,
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(const std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT weight,
                                                                                DWRITE_FONT_STRETCH stretch,
                                                                                DWRITE_FONT_STYLE style) const;
@@ -186,9 +186,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                                FontInfo& actual,
                                                const int dpi,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
         [[nodiscard]] COORD _GetFontSize() const noexcept;
 

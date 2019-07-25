@@ -10,6 +10,7 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
+#include <VersionHelpers.h>
 
 #pragma hdrstop
 
@@ -130,8 +131,6 @@ DxEngine::~DxEngine()
 
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
 
-    RETURN_IF_FAILED(_dxgiFactory2->EnumAdapters1(0, &_dxgiAdapter1));
-
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
                               // clang-format off
         // This causes problems for folks who do not have the whole DirectX SDK installed
@@ -154,18 +153,33 @@ DxEngine::~DxEngine()
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    RETURN_IF_FAILED(D3D11CreateDevice(_dxgiAdapter1.Get(),
-                                       D3D_DRIVER_TYPE_UNKNOWN,
-                                       NULL,
-                                       DeviceFlags,
-                                       FeatureLevels,
-                                       ARRAYSIZE(FeatureLevels),
-                                       D3D11_SDK_VERSION,
-                                       &_d3dDevice,
-                                       NULL,
-                                       &_d3dDeviceContext));
+    // Trying hardware first for maximum performance, then trying WARP (software) renderer second
+    // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
+    // for Windows 7 in a VM.
+    const auto hardwareResult = D3D11CreateDevice(NULL,
+                                                  D3D_DRIVER_TYPE_HARDWARE,
+                                                  NULL,
+                                                  DeviceFlags,
+                                                  FeatureLevels,
+                                                  ARRAYSIZE(FeatureLevels),
+                                                  D3D11_SDK_VERSION,
+                                                  &_d3dDevice,
+                                                  NULL,
+                                                  &_d3dDeviceContext);
 
-    RETURN_IF_FAILED(_dxgiAdapter1->EnumOutputs(0, &_dxgiOutput));
+    if (FAILED(hardwareResult))
+    {
+        RETURN_IF_FAILED(D3D11CreateDevice(NULL,
+                                           D3D_DRIVER_TYPE_WARP,
+                                           NULL,
+                                           DeviceFlags,
+                                           FeatureLevels,
+                                           ARRAYSIZE(FeatureLevels),
+                                           D3D11_SDK_VERSION,
+                                           &_d3dDevice,
+                                           NULL,
+                                           &_d3dDeviceContext));
+    }
 
     _displaySizePixels = _GetClientSize();
 
@@ -193,13 +207,23 @@ DxEngine::~DxEngine()
 
             // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
             SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                                     _hwndTarget,
+                                                                                     &SwapChainDesc,
+                                                                                     nullptr,
+                                                                                     nullptr,
+                                                                                     &_dxgiSwapChain);
+            if (FAILED(createSwapChainResult))
+            {
+                SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                       _hwndTarget,
+                                                                       &SwapChainDesc,
+                                                                       nullptr,
+                                                                       nullptr,
+                                                                       &_dxgiSwapChain));
+            }
 
-            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                   _hwndTarget,
-                                                                   &SwapChainDesc,
-                                                                   nullptr,
-                                                                   nullptr,
-                                                                   &_dxgiSwapChain));
             break;
         }
         case SwapChainMode::ForComposition:
@@ -309,7 +333,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _dxgiSurface.Reset();
     _dxgiSwapChain.Reset();
-    _dxgiOutput.Reset();
 
     if (nullptr != _d3dDeviceContext.Get())
     {
@@ -321,7 +344,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _d3dDevice.Reset();
 
-    _dxgiAdapter1.Reset();
     _dxgiFactory2.Reset();
 }
 
@@ -679,10 +701,24 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         else if (_displaySizePixels.cy != clientSize.cy ||
                  _displaySizePixels.cx != clientSize.cx)
         {
+            // OK, we're going to play a dangerous game here for the sake of optimizing resize
+            // First, set up a complete clear of all device resources if something goes terribly wrong.
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&] {
+                _ReleaseDeviceResources();
+            });
+
+            // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
             _d2dRenderTarget.Reset();
-            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+            // Change the buffer size and recreate the render target (and surface)
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
             RETURN_IF_FAILED(_PrepareRenderTarget());
+
+            // OK we made it past the parts that can cause errors. We can release our failure handler.
+            resetDeviceResourcesOnFailure.release();
+
+            // And persist the new size.
             _displaySizePixels = clientSize;
         }
 
@@ -861,7 +897,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
@@ -1223,9 +1259,9 @@ float DxEngine::GetScaling() const noexcept
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
 {
-    Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
@@ -1327,12 +1363,12 @@ float DxEngine::GetScaling() const noexcept
 // - style - Normal, italic, etc.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_FindFontFace(const std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT weight,
                                                                                DWRITE_FONT_STRETCH stretch,
                                                                                DWRITE_FONT_STYLE style) const
 {
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
@@ -1369,9 +1405,9 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                                  FontInfo& actual,
                                                  const int dpi,
-                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
 {
     try
     {
@@ -1483,7 +1519,7 @@ float DxEngine::GetScaling() const noexcept
 
         fontFace = face;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(&lineSpacing));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 

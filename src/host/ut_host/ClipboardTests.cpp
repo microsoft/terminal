@@ -19,7 +19,6 @@
 #include "..\..\interactivity\inc\VtApiRedirection.hpp"
 #endif
 
-#include "UnicodeLiteral.hpp"
 #include "../../inc/consoletaeftemplates.hpp"
 
 using namespace WEX::Common;

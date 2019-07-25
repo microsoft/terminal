@@ -12,6 +12,7 @@
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
+    <ClCompile Include="..\UTF8OutPipeReader.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
     <ClCompile Include="..\WindowBufferSizeEvent.cpp" />
     <ClCompile Include="..\precomp.cpp">
@@ -24,6 +25,7 @@
     <ClInclude Include="..\inc\convert.hpp" />
     <ClInclude Include="..\inc\GlyphWidth.hpp" />
     <ClInclude Include="..\inc\IInputEvent.hpp" />
+    <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
     <ClInclude Include="..\precomp.h" />

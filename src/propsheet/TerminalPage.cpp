@@ -4,6 +4,7 @@
 #include "precomp.h"
 #include "TerminalPage.h"
 #include "ColorControl.h"
+#include <functional>
 
 // From conattrs.h
 const COLORREF INVALID_COLOR = 0xffffffff;

@@ -21,6 +21,79 @@ const std::wstring_view ConsoleArguments::INHERIT_CURSOR_ARG = L"--inheritcursor
 const std::wstring_view ConsoleArguments::FEATURE_ARG = L"--feature";
 const std::wstring_view ConsoleArguments::FEATURE_PTY_ARG = L"pty";
 
+std::wstring EscapeArgument(std::wstring_view ac)
+{
+    if (ac.empty())
+    {
+        return L"\"\"";
+    }
+    bool hasSpace = false;
+    auto n = ac.size();
+    for (auto c : ac)
+    {
+        switch (c)
+        {
+        case L'"':
+        case L'\\':
+            n++;
+            break;
+        case ' ':
+        case '\t':
+            hasSpace = true;
+            break;
+        default:
+            break;
+        }
+    }
+    if (hasSpace)
+    {
+        n += 2;
+    }
+    if (n == ac.size())
+    {
+        return std::wstring{ ac };
+    }
+    std::wstring buf;
+    if (hasSpace)
+    {
+        buf.push_back(L'"');
+    }
+    size_t slashes = 0;
+    for (auto c : ac)
+    {
+        switch (c)
+        {
+        case L'\\':
+            slashes++;
+            buf.push_back(L'\\');
+            break;
+        case L'"':
+        {
+            for (; slashes > 0; slashes--)
+            {
+                buf.push_back(L'\\');
+            }
+            buf.push_back(L'\\');
+            buf.push_back(c);
+        }
+        break;
+        default:
+            slashes = 0;
+            buf.push_back(c);
+            break;
+        }
+    }
+    if (hasSpace)
+    {
+        for (; slashes > 0; slashes--)
+        {
+            buf.push_back(L'\\');
+        }
+        buf.push_back(L'"');
+    }
+    return buf;
+}
+
 ConsoleArguments::ConsoleArguments(const std::wstring& commandline,
                                    const HANDLE hStdIn,
                                    const HANDLE hStdOut) :
@@ -272,7 +345,7 @@ void ConsoleArguments::s_ConsumeArg(_Inout_ std::vector<std::wstring>& args, _In
     size_t j = 0;
     for (j = index; j < args.size(); j++)
     {
-        _clientCommandline += args[j];
+        _clientCommandline += EscapeArgument(args[j]); // escape commandline
         if (j + 1 < args.size())
         {
             _clientCommandline += L" ";
