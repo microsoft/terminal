@@ -240,7 +240,6 @@ bool SignalResizeWindow(const HANDLE hSignal,
     HANDLE outPipeConhostSide;
     HANDLE inPipeConhostSide;
     HANDLE signalPipeConhostSide;
-    //HANDLE shellProcessInfoPipeConhostSide;
 
     SECURITY_ATTRIBUTES sa;
     sa = { 0 };
@@ -251,24 +250,10 @@ bool SignalResizeWindow(const HANDLE hSignal,
     CreatePipe(&inPipeConhostSide, hInput, &sa, 0);
     CreatePipe(hOutput, &outPipeConhostSide, &sa, 0);
     CreatePipe(&signalPipeConhostSide, hSignal, &sa, 0);
-    //CreatePipe(hProcessInfo, &shellProcessInfoPipeConhostSide, &sa, 0);
-
-    *hProcessInfo = CreateNamedPipe(
-        L"\\\\.\\pipe\\terminalProcessInfo",
-        PIPE_ACCESS_INBOUND,
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
-        PIPE_UNLIMITED_INSTANCES,
-        0,
-        8,
-        INFINITE,
-        &sa);
-
-    RETURN_LAST_ERROR_IF(*hProcessInfo == INVALID_HANDLE_VALUE);
 
     SetHandleInformation(inPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
     SetHandleInformation(outPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
     SetHandleInformation(signalPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
-    //SetHandleInformation(shellProcessInfoPipeConhostSide, HANDLE_FLAG_INHERIT, 1);
 
     std::wstring conhostCmdline = L"conhost.exe";
     conhostCmdline += L" --headless";
@@ -280,7 +265,6 @@ bool SignalResizeWindow(const HANDLE hSignal,
     }
 
     ss << L" --signal 0x" << std::hex << HandleToUlong(signalPipeConhostSide);
-    //ss << L" --processInfo 0x" << std::hex << HandleToUlong(shellProcessInfoPipeConhostSide);
     conhostCmdline += ss.str();
     conhostCmdline += L" -- ";
     conhostCmdline += cmdline;
@@ -345,10 +329,22 @@ bool SignalResizeWindow(const HANDLE hSignal,
         piPty // lpProcessInformation
     );
 
+    const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(piPty->dwProcessId);
+    *hProcessInfo = CreateNamedPipe(
+        processInfoPipeName.c_str(),
+        PIPE_ACCESS_INBOUND,
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE,
+        PIPE_UNLIMITED_INSTANCES,
+        0,
+        8,
+        INFINITE,
+        &sa);
+
+    RETURN_LAST_ERROR_IF(*hProcessInfo == INVALID_HANDLE_VALUE);
+
     CloseHandle(inPipeConhostSide);
     CloseHandle(outPipeConhostSide);
     CloseHandle(signalPipeConhostSide);
-    //CloseHandle(shellProcessInfoPipeConhostSide);
 
     return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }

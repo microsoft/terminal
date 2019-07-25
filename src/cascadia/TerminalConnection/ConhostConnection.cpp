@@ -127,18 +127,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_WIN32_BOOL_FALSE(ConnectNamedPipe(processInfoPipe, nullptr));
 
-        DWORD msg[2];
-        THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &msg, sizeof(msg), nullptr, nullptr));
-
-        THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
-
-        _processStartupErrorCode = msg[0];
+        THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processStartupErrorCode, sizeof(_processStartupErrorCode), nullptr, nullptr));
         bool connectionSuccess = _processStartupErrorCode == ERROR_SUCCESS;
         if (connectionSuccess)
         {
-            DWORD processId = msg[1];
+            DWORD processId;
+            THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &processId, sizeof(processId), nullptr, nullptr));
             _processHandle.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId));
         }
+
+        THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
 
         return connectionSuccess;
     }

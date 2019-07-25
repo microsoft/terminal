@@ -175,31 +175,30 @@
                                                    &StartupInformation.StartupInfo,
                                                    ProcessInformation.addressof());
 
-        DWORD createProcessError = 0;
+        DWORD createProcessError = ERROR_SUCCESS;
         if (!createProcessSuccess)
         {
             createProcessError = GetLastError();
         }
 
-        HANDLE processInfoPipe = CreateFile(
-            L"\\\\.\\pipe\\terminalProcessInfo",
+        const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(GetCurrentProcessId());
+        wil::unique_handle processInfoPipe{ CreateFile(
+            processInfoPipeName.c_str(),
             GENERIC_WRITE,
             0, // no sharing
             nullptr, // default security attributes
             OPEN_EXISTING, // opens existing pipe
             0, // default attributes
-            nullptr); // no template file
+            nullptr) }; // no template file
 
-        if (processInfoPipe != INVALID_HANDLE_VALUE)
+        if (processInfoPipe.get() != INVALID_HANDLE_VALUE)
         {
-            DWORD msg[]{
-                createProcessError,
-                ProcessInformation.dwProcessId
-            };
+            RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe.get(), &createProcessError, sizeof(createProcessError), nullptr, nullptr));
 
-            RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe, &msg, sizeof(msg), nullptr, nullptr));
-
-            CloseHandle(processInfoPipe);
+            if (createProcessSuccess)
+            {
+                RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe.get(), &ProcessInformation.dwProcessId, sizeof(ProcessInformation.dwProcessId), nullptr, nullptr));
+            }
         }
 
         if (!createProcessSuccess)

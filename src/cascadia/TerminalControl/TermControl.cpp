@@ -139,6 +139,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     if (_cursorTimer.has_value())
                     {
                         _cursorTimer.value().Stop();
+                        _cursorTimer = std::nullopt;
                     }
 
                     _terminal->SetCursorVisible(false);
