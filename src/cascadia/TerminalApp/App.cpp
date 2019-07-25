@@ -1253,8 +1253,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile.HasIcon())
         {
-            auto path = profile.GetIconPath();
-            winrt::hstring iconPath{ path };
+            std::wstring path{ profile.GetIconPath() };
+            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            winrt::hstring iconPath{ envExpandedPath };
             winrt::Windows::Foundation::Uri iconUri{ iconPath };
             Controls::BitmapIconSource iconSource;
             // Make sure to set this to false, so we keep the RGB data of the
@@ -1386,12 +1387,40 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a string representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
+    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return buffer;
+    }
+
+    // Method Description:
     // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
     void App::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
+#ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
         if (keyChord.Vkey() != VK_OEM_COMMA)
         {
@@ -1411,10 +1440,15 @@ namespace winrt::TerminalApp::implementation
             menuItem.KeyboardAccelerators().Append(menuShortcut);
         }
         else // we've got a comma, so need to just use the alternate method
+#endif
         {
             // extract the modifier and key to a nice format
-            auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
-            menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
+            auto overrideString = _FormatOverrideShortcutText(keyChord.Modifiers());
+            auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
+            if (mappedCh != 0)
+            {
+                menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
+            }
         }
     }
 

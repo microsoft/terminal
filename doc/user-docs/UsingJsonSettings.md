@@ -110,7 +110,7 @@ The schema name can then be referenced in one or more profiles.
 ```json
     "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
     "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "Fill",
+    "backgroundImageStretchMode":  "fill",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.

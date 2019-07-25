@@ -192,16 +192,7 @@ DxEngine::~DxEngine()
         SwapChainDesc.BufferCount = 2;
         SwapChainDesc.SampleDesc.Count = 1;
         SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
-
-        // DXGI_SCALING_NONE is only valid on Windows 8+
-        if (IsWindows8OrGreater())
-        {
-            SwapChainDesc.Scaling = DXGI_SCALING_NONE;
-        }
-        else
-        {
-            SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
-        }
+        SwapChainDesc.Scaling = DXGI_SCALING_NONE;
 
         switch (_chainMode)
         {
@@ -216,13 +207,23 @@ DxEngine::~DxEngine()
 
             // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
             SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                                     _hwndTarget,
+                                                                                     &SwapChainDesc,
+                                                                                     nullptr,
+                                                                                     nullptr,
+                                                                                     &_dxgiSwapChain);
+            if (FAILED(createSwapChainResult))
+            {
+                SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                       _hwndTarget,
+                                                                       &SwapChainDesc,
+                                                                       nullptr,
+                                                                       nullptr,
+                                                                       &_dxgiSwapChain));
+            }
 
-            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                   _hwndTarget,
-                                                                   &SwapChainDesc,
-                                                                   nullptr,
-                                                                   nullptr,
-                                                                   &_dxgiSwapChain));
             break;
         }
         case SwapChainMode::ForComposition:

@@ -30,6 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
         _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
+        _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
+        _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
@@ -234,6 +236,26 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value)
     {
         _backgroundImageStretchMode = value;
+    }
+
+    winrt::Windows::UI::Xaml::HorizontalAlignment TerminalSettings::BackgroundImageHorizontalAlignment()
+    {
+        return _backgroundImageHorizontalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value)
+    {
+        _backgroundImageHorizontalAlignment = value;
+    }
+
+    winrt::Windows::UI::Xaml::VerticalAlignment TerminalSettings::BackgroundImageVerticalAlignment()
+    {
+        return _backgroundImageVerticalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value)
+    {
+        _backgroundImageVerticalAlignment = value;
     }
 
     Settings::IKeyBindings TerminalSettings::KeyBindings()
