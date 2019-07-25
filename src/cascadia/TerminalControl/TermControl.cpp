@@ -276,13 +276,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
                 _bgImageLayer.Source(image);
-                _bgImageLayer.HorizontalAlignment(HorizontalAlignment::Center);
-                _bgImageLayer.VerticalAlignment(VerticalAlignment::Center);
             }
 
-            // Apply stretch and opacity settings
+            // Apply stretch, opacity and alignment settings
             _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
             _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
+            _bgImageLayer.HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
+            _bgImageLayer.VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
         }
         else
         {
