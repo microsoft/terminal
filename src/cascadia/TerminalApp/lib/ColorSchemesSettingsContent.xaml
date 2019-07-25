@@ -6,7 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -53,23 +54,12 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Black"
-                        Tapped="Canvas_Tapped">-->
-                    <!--<FlyoutBase.AttachedFlyout>
-                        <Flyout>
-                            <TextBox Text="WOOOOOO"></TextBox>
-                        </Flyout>
-                    </FlyoutBase.AttachedFlyout>
-                </Canvas>-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal">
-                <TextBox Header="Black" Width="100" />
+                <TextBox Header="Black"
+                         Width="100" />
                 <Button Background="Black"
                         Height="37"
                         Width="37"
@@ -88,11 +78,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Black" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -117,11 +102,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Blue" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -146,11 +126,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Cyan" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -175,11 +150,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Green" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -204,11 +174,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Purple" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -233,11 +198,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Red" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -262,11 +222,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="WhiteSmoke" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -291,16 +246,10 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="Yellow" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
-                        Orientation="Horizontal">
-            </StackPanel>
+                        Orientation="Horizontal"></StackPanel>
         </StackPanel>
         <StackPanel Grid.Row="1"
                     Grid.Column="1">
@@ -328,11 +277,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="White" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -357,11 +301,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="DimGray" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -386,11 +325,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightBlue" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -415,11 +349,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightCyan" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -444,11 +373,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightGreen" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -473,11 +397,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="MediumPurple" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -502,11 +421,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="IndianRed" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -531,11 +445,6 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="White" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
@@ -560,18 +469,10 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <!--<Canvas Width="37"
-                        Height="37"
-                        Margin="10,22,0,0"
-                        HorizontalAlignment="Right"
-                        Background="LightYellow" />-->
             </StackPanel>
             <StackPanel Grid.Row="1"
                         Grid.Column="0"
                         Orientation="Horizontal"></StackPanel>
         </StackPanel>
     </Grid>
-    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="Button" Click="ClickHandler">Click Me</Button>
-    </StackPanel>-->
 </Page>

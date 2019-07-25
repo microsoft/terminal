@@ -37,10 +37,6 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
         }
-        //winrt::Windows::Foundation::IInspectable header;
-        //header = "Global Settings";
-        //SettingsNav().Header() = Header("Global Settings");
-        //SettingsNav().Header() = L"Global Settings";
         contentFrame().Navigate(xaml_typename<TerminalApp::GlobalSettingsContent>());
     }
 
@@ -62,22 +58,6 @@ namespace winrt::TerminalApp::implementation
             if (unbox_value<hstring>(item.Tag()) == globalsNav)
             {
                 contentFrame().Navigate(xaml_typename<TerminalApp::GlobalSettingsContent>());
-
-                /*case "Nav_Shop":
-                contentFrame.Navigate(typeof(ShopPage));
-                break;
-
-            case "Nav_ShopCart":
-                contentFrame.Navigate(typeof(CartPage));
-                break;
-
-            case "Nav_Message":
-                contentFrame.Navigate(typeof(MessagePage));
-                break;
-
-            case "Nav_Print":
-                contentFrame.Navigate(typeof(PrintPage));
-                break;*/
             }
             else if (unbox_value<hstring>(item.Tag()) == profilesNav)
             {

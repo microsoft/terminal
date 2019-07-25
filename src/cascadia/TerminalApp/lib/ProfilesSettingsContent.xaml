@@ -6,7 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -15,6 +16,16 @@
                    Style="{StaticResource HeaderTextBlockStyle}"
                    Grid.Row="0" />
         <StackPanel Grid.Row="1">
+            <DropDownButton x:Name="ProfilesContent"
+                            Loaded="LoadProfiles">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Text="Send" />
+                        <MenuFlyoutItem Text="Reply" />
+                        <MenuFlyoutItem Text="Reply All" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
             <TextBox Header="Acrylic opacity" />
             <CheckBox Content="Close on exit"
                       Checked="Control1_Checked"
@@ -28,7 +39,6 @@
             <TextBox Header="GUID" />
             <TextBox Header="History size" />
             <TextBox Header="Icon" />
-            <TextBox Header="Name" />
             <TextBox Header="Padding" />
             <CheckBox Content="Snap on input"
                       Checked="Control1_Checked"
@@ -41,7 +51,4 @@
             <TextBox Header="Background image opacity" />
         </StackPanel>
     </Grid>
-    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="Button" Click="ClickHandler">Click Me</Button>
-    </StackPanel>-->
 </Page>

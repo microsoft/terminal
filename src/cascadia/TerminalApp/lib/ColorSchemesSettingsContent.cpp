@@ -23,16 +23,6 @@ namespace winrt::TerminalApp::implementation
     {
         throw hresult_not_implemented();
     }
-
-    /*void ColorSchemesSettingsContent::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    {
-        Button().Content(box_value(L"Clicked"));
-    }*/
-
-    void ColorSchemesSettingsContent::Canvas_Tapped(IInspectable const&, RoutedEventArgs const&)
-    {
-        //FlyoutBase().ShowAttachedFlyout(Rect1);
-    }
 }
 
 void winrt::TerminalApp::implementation::ColorSchemesSettingsContent::TextBox_TextChanged(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Controls::TextChangedEventArgs const& e)

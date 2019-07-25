@@ -3,9 +3,12 @@
 #if __has_include("ProfilesSettingsContent.g.cpp")
 #include "ProfilesSettingsContent.g.cpp"
 #endif
+#include "Profile.h"
 
 using namespace winrt;
 using namespace Windows::UI::Xaml;
+using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::TerminalApp;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -24,35 +27,22 @@ namespace winrt::TerminalApp::implementation
         throw hresult_not_implemented();
     }
 
-    /*void ProfilesSettingsContent::ClickHandler(IInspectable const&, RoutedEventArgs const&)
+    void ProfilesSettingsContent::LoadProfiles(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs)
     {
-        Button().Content(box_value(L"Clicked"));
-    }*/
+        /*Controls::DropDownButton pc = sender.as<Controls::DropDownButton>();
+        auto profiles = _settings->GetProfiles();
+        auto profileName = profiles[0].GetName();
+        winrt::hstring hName{ profileName };*/
+    }
+
     void ProfilesSettingsContent::Control1_Checked(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs)
     {
         Controls::CheckBox cb = sender.as<Controls::CheckBox>();
 
-        //if (cb.Name == "cb1")
-        //{
-        //    /*text1.Text = "2 state CheckBox is checked.";*/
-        //}
-        //else
-        //{
-        //    /*text2.Text = "3 state CheckBox is checked.";*/
-        //}
     }
 
     void ProfilesSettingsContent::Control1_Unchecked(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs)
     {
         Controls::CheckBox cb = sender.as<Controls::CheckBox>();
-
-        //if (cb.Name == "cb1")
-        //{
-        //    /*text1.Text = "2 state CheckBox is checked.";*/
-        //}
-        //else
-        //{
-        //    /*text2.Text = "3 state CheckBox is checked.";*/
-        //}
     }
 }

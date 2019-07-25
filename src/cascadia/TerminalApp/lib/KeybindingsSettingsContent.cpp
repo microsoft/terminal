@@ -23,9 +23,4 @@ namespace winrt::TerminalApp::implementation
     {
         throw hresult_not_implemented();
     }
-
-    //void KeybindingsSettingsContent::ClickHandler(IInspectable const&, RoutedEventArgs const&)
-    //{
-    //    Button().Content(box_value(L"Clicked"));
-    //}
 }

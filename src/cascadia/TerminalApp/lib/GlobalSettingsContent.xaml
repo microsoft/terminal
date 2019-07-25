@@ -5,7 +5,8 @@
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       mc:Ignorable="d">
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          Margin="0,12,0,0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -15,38 +16,35 @@
                    Grid.Row="0" />
         <StackPanel Grid.Row="1">
             <CheckBox Content="Always show tabs"
-                  Checked="Control1_Checked"
-                  Unchecked="Control1_Unchecked" />
-        <DropDownButton Content="Default profile">
-            <DropDownButton.Flyout>
-                <MenuFlyout Placement="Bottom">
-                    <MenuFlyoutItem Text="Send" />
-                    <MenuFlyoutItem Text="Reply" />
-                    <MenuFlyoutItem Text="Reply All" />
-                </MenuFlyout>
-            </DropDownButton.Flyout>
-        </DropDownButton>
-        <TextBox Header="Initial columns" />
-        <TextBox Header="Initial rows" />
-        <DropDownButton Content="Requested theme">
-            <DropDownButton.Flyout>
-                <MenuFlyout Placement="Bottom">
-                    <MenuFlyoutItem Text="Send" />
-                    <MenuFlyoutItem Text="Reply" />
-                    <MenuFlyoutItem Text="Reply All" />
-                </MenuFlyout>
-            </DropDownButton.Flyout>
-        </DropDownButton>
-        <CheckBox Content="Show tabs in title bar"
-                  Checked="Control1_Checked"
-                  Unchecked="Control1_Unchecked" />
-        <CheckBox Content="Show terminal title in title bar"
-                  Checked="Control1_Checked"
-                  Unchecked="Control1_Unchecked" />
-        <TextBox Header="Word delimeters" />
+                      Checked="Control1_Checked"
+                      Unchecked="Control1_Unchecked" />
+            <DropDownButton Content="Default profile">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Text="Send" />
+                        <MenuFlyoutItem Text="Reply" />
+                        <MenuFlyoutItem Text="Reply All" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+            <TextBox Header="Initial columns" />
+            <TextBox Header="Initial rows" />
+            <DropDownButton Content="Requested theme">
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="Bottom">
+                        <MenuFlyoutItem Text="Send" />
+                        <MenuFlyoutItem Text="Reply" />
+                        <MenuFlyoutItem Text="Reply All" />
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+            <CheckBox Content="Show tabs in title bar"
+                      Checked="Control1_Checked"
+                      Unchecked="Control1_Unchecked" />
+            <CheckBox Content="Show terminal title in title bar"
+                      Checked="Control1_Checked"
+                      Unchecked="Control1_Unchecked" />
+            <TextBox Header="Word delimeters" />
         </StackPanel>
     </Grid>
-    <!--<StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:Name="Button" Click="ClickHandler">Click Me</Button>
-    </StackPanel>-->
 </Page>

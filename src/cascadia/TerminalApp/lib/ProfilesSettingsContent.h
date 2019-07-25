@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "ProfilesSettingsContent.g.h"
+#include "CascadiaSettings.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -10,8 +11,9 @@ namespace winrt::TerminalApp::implementation
 
         int32_t MyProperty();
         void MyProperty(int32_t value);
+        std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
-        //void ClickHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void LoadProfiles(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void Control1_Checked(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void Control1_Unchecked(const winrt::Windows::Foundation::IInspectable sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
     };
