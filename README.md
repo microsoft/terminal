@@ -20,7 +20,7 @@ Download the Microsoft Terminal free from the Microsoft Store and it'll be conti
 
 ### Chocolatey (Unofficial)
 
-Download and update Microsoft Terminal from [Chocolatey](https://chocolatey.org)
+Download and upgrade Microsoft Terminal from [Chocolatey](https://chocolatey.org).
 
 To install Windows Terminal, run the following command from the command line or from PowerShell:
 ```powershell
@@ -32,7 +32,7 @@ To upgrade Windows Terminal, run the following command from the command line or 
 choco upgrade microsoft-windows-terminal
 ```
 
-If you have any issues when installing the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
+If you have any issues when installing/upgrading the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ### Build Status
 
