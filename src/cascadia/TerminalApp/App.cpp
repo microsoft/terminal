@@ -213,9 +213,19 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
         winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
 
-        gettingStartedLink.NavigateUri(gettingStartedUri);
-        documentationLink.NavigateUri(documentationUri);
-        releaseNotesLink.NavigateUri(releaseNotesUri);
+        // GH#2078: If you use a NavigateUri property here, the dialog will
+        // crash the app immediately upon opening. While we _should_ find out
+        // why this is happening, using the Click event is a good enough work
+        // around to unblock us.
+        gettingStartedLink.Click([gettingStartedUri](auto&&, auto&&) {
+            winrt::Windows::System::Launcher::LaunchUriAsync({ gettingStartedUri });
+        });
+        documentationLink.Click([documentationUri](auto&&, auto&&) {
+            winrt::Windows::System::Launcher::LaunchUriAsync({ documentationUri });
+        });
+        releaseNotesLink.Click([releaseNotesUri](auto&&, auto&&) {
+            winrt::Windows::System::Launcher::LaunchUriAsync({ releaseNotesUri });
+        });
 
         gettingStartedLink.Inlines().Append(gettingStarted);
         documentationLink.Inlines().Append(documentation);
@@ -237,10 +247,6 @@ namespace winrt::TerminalApp::implementation
         about.Text(aboutText);
 
         const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        gettingStartedLink.Foreground(blueBrush);
-        documentationLink.Foreground(blueBrush);
-        releaseNotesLink.Foreground(blueBrush);
 
         Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
