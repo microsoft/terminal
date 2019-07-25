@@ -11,7 +11,7 @@
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
-#include "TermControlAP.h"
+#include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -327,17 +327,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAP>(*this);
+        return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
     }
 
     ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
     {
         return _terminal.get();
-    }
-
-    UIElement TermControl::GetRoot()
-    {
-        return _root;
     }
 
     void TermControl::SwapChainChanged()

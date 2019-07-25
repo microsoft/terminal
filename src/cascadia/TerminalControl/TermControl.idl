@@ -21,7 +21,6 @@ namespace Microsoft.Terminal.TerminalControl
 
         static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
 
-        Windows.UI.Xaml.UIElement GetRoot();
         void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
 
         event TitleChangedEventArgs TitleChanged;

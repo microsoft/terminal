@@ -1,6 +1,26 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- XamlUiaTextRange.h
+
+Abstract:
+- This module is a wrapper for the UiaTextRange
+  (a text range accessibility provider). It allows
+  for UiaTextRange to be used in Windows Terminal.
+- Wraps the UIAutomationCore ITextRangeProvider
+  (https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/nn-uiautomationcore-itextrangeprovider)
+  with a XAML ITextRangeProvider
+  (https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.automation.provider.itextrangeprovider)
+
+Author(s):
+- Carlos Zamora   (CaZamor)    2019
+--*/
+
 #pragma once
 
-#include "TermControlAP.h"
+#include "TermControlAutomationPeer.h"
 #include <UIAutomationCore.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include "../types/UiaTextRange.hpp"

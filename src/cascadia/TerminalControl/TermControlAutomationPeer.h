@@ -1,7 +1,31 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- TermControlAutomationPeer.h
+
+Abstract:
+- This module provides UI Automation access to the TermControl
+  to support both automation tests and accessibility (screen
+  reading) applications. This mainly interacts with ScreenInfoUiaProvider
+  to allow for shared code between ConHost and Windows Terminal
+  accessibility providers.
+- Based on the Custom Automation Peers guide on msdn
+  (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+- Wraps the UIAutomationCore ITextProvider
+  (https://docs.microsoft.com/en-us/windows/win32/api/uiautomationcore/nn-uiautomationcore-itextprovider)
+  with a XAML ITextProvider
+  (https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.automation.provider.itextprovider)
+
+Author(s):
+- Carlos Zamora   (CaZamor)    2019
+--*/
+
 #pragma once
 
 #include "TermControl.h"
-#include "TermControlAP.g.h"
+#include "TermControlAutomationPeer.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Windows.UI.Xaml.h>
 #include <winrt/Windows.UI.Xaml.Automation.Peers.h>
@@ -15,11 +39,11 @@ using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    struct TermControlAP :
-        public TermControlAPT<TermControlAP>
+    struct TermControlAutomationPeer :
+        public TermControlAutomationPeerT<TermControlAutomationPeer>
     {
     public:
-        TermControlAP(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner);
+        TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner);
 
         winrt::hstring GetClassNameCore() const;
         AutomationControlType GetAutomationControlTypeCore() const;

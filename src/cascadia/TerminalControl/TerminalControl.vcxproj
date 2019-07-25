@@ -20,8 +20,8 @@
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="TermControlAP.h">
-      <DependentUpon>TermControlAP.idl</DependentUpon>
+    <ClInclude Include="TermControlAutomationPeer.h">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
@@ -33,12 +33,14 @@
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="TermControlAP.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp">
+      <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
-    <Midl Include="TermControlAP.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -13,7 +13,7 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="TermControl.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
-    <ClCompile Include="TermControlAP.cpp" />
+    <ClCompile Include="TermControlAutomationPeer.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -24,7 +24,7 @@
   </ItemGroup>
   <ItemGroup>
     <Midl Include="TermControl.idl" />
-    <Midl Include="TermControlAP.idl" />
+    <Midl Include="TermControlAutomationPeer.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="TerminalControl.def" />

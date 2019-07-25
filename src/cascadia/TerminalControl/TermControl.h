@@ -9,14 +9,8 @@
 #include <winrt/Microsoft.Terminal.Settings.h>
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
-#include "../../renderer/inc/IRenderData.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../../cascadia/inc/cppwinrt_utils.h"
-
-namespace Microsoft::Console::Render
-{
-    class IRenderData;
-}
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -41,7 +35,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        Windows::UI::Xaml::UIElement GetRoot();
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();

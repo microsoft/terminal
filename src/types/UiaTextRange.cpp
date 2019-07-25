@@ -309,7 +309,7 @@ UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
         std::optional<HWND> hwnd = _getWindowHandle();
         if (hwnd.has_value())
         {
-            // TODO CARLOS: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
+            // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
         }
         else
         {
@@ -1505,7 +1505,7 @@ void UiaTextRange::_addScreenInfoRowBoundaries(Microsoft::Console::Render::IRend
 
     if (hwnd.has_value() || hwnd == std::nullopt || hwnd == nullptr)
     {
-        // TODO CARLOS: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
+        // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
     }
     else
     {

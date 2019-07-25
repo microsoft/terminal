@@ -3,35 +3,35 @@
 
 #include "pch.h"
 #include <UIAutomationCore.h>
-#include "TermControlAP.h"
+#include "TermControlAutomationPeer.h"
 #include "TermControl.h"
-#include "TermControlAP.g.cpp"
+#include "TermControlAutomationPeer.g.cpp"
 
 #include "XamlUiaTextRange.h"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    TermControlAP::TermControlAP(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner) :
-        TermControlAPT<TermControlAP>(owner),
-        _uiaProvider{ owner.GetRenderData(), nullptr, std::bind(&TermControlAP::GetBoundingRectWrapped, this) } {
+    TermControlAutomationPeer::TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner) :
+        TermControlAutomationPeerT<TermControlAutomationPeer>(owner),
+        _uiaProvider{ owner.GetRenderData(), nullptr, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this) } {
         };
 
-    winrt::hstring TermControlAP::GetClassNameCore() const
+    winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
     {
         return L"TerminalControl";
     }
 
-    AutomationControlType TermControlAP::GetAutomationControlTypeCore() const
+    AutomationControlType TermControlAutomationPeer::GetAutomationControlTypeCore() const
     {
         return AutomationControlType::Text;
     }
 
-    winrt::hstring TermControlAP::GetLocalizedControlTypeCore() const
+    winrt::hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
         return L"TerminalControl";
     }
 
-    winrt::Windows::Foundation::IInspectable TermControlAP::GetPatternCore(PatternInterface patternInterface) const
+    winrt::Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
     {
         switch (patternInterface)
         {
@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
 #pragma region ITextProvider
-    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAP::GetSelection()
+    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
         try
         {
@@ -80,7 +80,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return {};
     }
 
-    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAP::GetVisibleRanges()
+    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
         try
         {
@@ -116,7 +116,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return {};
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAP::RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement)
+    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement)
     {
         ::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAP::RangeFromPoint(Windows::Foundation::Point screenLocation)
+    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
         ::ITextRangeProvider* returnVal;
         _uiaProvider.RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal);
@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAP::DocumentRange()
+    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
         ::ITextRangeProvider* returnVal;
         _uiaProvider.get_DocumentRange(&returnVal);
@@ -148,7 +148,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::SupportedTextSelection TermControlAP::SupportedTextSelection()
+    Windows::UI::Xaml::Automation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
         ::SupportedTextSelection returnVal;
         _uiaProvider.get_SupportedTextSelection(&returnVal);
@@ -157,7 +157,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
 #pragma endregion
 
-    RECT TermControlAP::GetBoundingRectWrapped()
+    RECT TermControlAutomationPeer::GetBoundingRectWrapped()
     {
         auto rect = GetBoundingRectangle();
         return {

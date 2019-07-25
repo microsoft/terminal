@@ -9,45 +9,42 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     Windows::UI::Xaml::Automation::Provider::ITextRangeProvider XamlUiaTextRange::Clone() const
     {
-        // TODO CARLOS
-
-        return {};
-        /*::ITextRangeProvider* pReturn;
-        _uiaProvider->Clone(&pReturn);
-        auto xutr =  winrt::make_self<XamlUiaTextRange>(pReturn, _parentAutomationPeer);
-        return static_cast<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>(*xutr);*/
+        ::ITextRangeProvider* pReturn;
+        THROW_IF_FAILED(_uiaProvider->Clone(&pReturn));
+        auto xutr = winrt::make_self<XamlUiaTextRange>(pReturn, _parentProvider);
+        return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
     }
 
     bool XamlUiaTextRange::Compare(Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pRange) const
     {
         auto self = winrt::get_self<XamlUiaTextRange>(pRange);
 
-        BOOL ret;
-        THROW_IF_FAILED(_uiaProvider->Compare(self->_uiaProvider.get(), &ret));
-        return ret;
+        BOOL returnVal;
+        THROW_IF_FAILED(_uiaProvider->Compare(self->_uiaProvider.get(), &returnVal));
+        return returnVal;
     }
 
     int32_t XamlUiaTextRange::CompareEndpoints(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
                                                Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pTargetRange,
                                                Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint targetEndpoint)
     {
-        // TODO CARLOS: NOT YET IMPLEMENTED
         auto self = winrt::get_self<XamlUiaTextRange>(pTargetRange);
 
-        int32_t ret;
-        THROW_IF_FAILED(_uiaProvider->Compare(self->_uiaProvider.get(), &ret));
-        return ret;
+        int32_t returnVal;
+        THROW_IF_FAILED(_uiaProvider->Compare(self->_uiaProvider.get(), &returnVal));
+        return returnVal;
     }
 
     void XamlUiaTextRange::ExpandToEnclosingUnit(Windows::UI::Xaml::Automation::Text::TextUnit unit) const
     {
-        _uiaProvider->ExpandToEnclosingUnit(static_cast<::TextUnit>(unit));
+        THROW_IF_FAILED(_uiaProvider->ExpandToEnclosingUnit(static_cast<::TextUnit>(unit)));
     }
 
     Windows::UI::Xaml::Automation::Provider::ITextRangeProvider XamlUiaTextRange::FindAttribute(int32_t textAttributeId,
                                                                                                 winrt::Windows::Foundation::IInspectable val,
                                                                                                 bool searchBackward)
     {
+        // we don't support this currently
         return nullptr;
     }
 
@@ -55,12 +52,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                                                            bool searchBackward,
                                                                                            bool ignoreCase)
     {
+        // TODO GitHub #605: Search functionality
+        // we need to wrap this around the UiaTextRange FindText() function
+        // but right now it returns E_NOTIMPL, so let's just return nullptr for now.
         return nullptr;
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
     {
-        // COPIED THE FUNCTIONALITY FROM Types::UiaTextRange.cpp
+        // Copied functionality from Types::UiaTextRange.cpp
         if (textAttributeId == UIA_IsReadOnlyAttributeId)
         {
             return winrt::box_value(false);
@@ -78,9 +78,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             SAFEARRAY* pReturnVal;
             THROW_IF_FAILED(_uiaProvider->GetBoundingRectangles(&pReturnVal));
-
-            //const auto dimensions = SafeArrayGetDim(pReturnVal);
-            //THROW_HR_IF(E_UNEXPECTED, dimensions != 1);
 
             double* pVals;
             THROW_IF_FAILED(SafeArrayAccessData(pReturnVal, (void**)&pVals));
@@ -153,7 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void XamlUiaTextRange::Select() const
     {
-        _uiaProvider->Select();
+        THROW_IF_FAILED(_uiaProvider->Select());
     }
 
     void XamlUiaTextRange::AddToSelection() const
@@ -168,7 +165,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void XamlUiaTextRange::ScrollIntoView(bool alignToTop) const
     {
-        //_uiaProvider->ScrollIntoView(alignToTop);
+        THROW_IF_FAILED(_uiaProvider->ScrollIntoView(alignToTop));
     }
 
     winrt::com_array<Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple> XamlUiaTextRange::GetChildren() const

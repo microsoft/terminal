@@ -58,7 +58,11 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\UTF8OutPipeReader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\WindowUiaProvider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -98,6 +102,8 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WindowUiaProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\IConsoleWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -110,21 +116,50 @@
     <ClInclude Include="..\WindowUiaProviderBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\IConsoleWindow.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\CodepointWidthDetector.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\convert.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\GlyphWidth.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\IInputEvent.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\UTF8OutPipeReader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\Viewport.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\inc\Utf16Parser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\precomp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScreenInfoUiaProvider.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\UiaTextRange.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\utils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowUiaProviderBase.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IUiaWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\IConsoleWindow.hpp" />
-    <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
-    <ClInclude Include="..\inc\convert.hpp" />
-    <ClInclude Include="..\inc\GlyphWidth.hpp" />
-    <ClInclude Include="..\inc\IInputEvent.hpp" />
-    <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
-    <ClInclude Include="..\inc\Viewport.hpp" />
-    <ClInclude Include="..\inc\Utf16Parser.hpp" />
-    <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\ScreenInfoUiaProvider.h" />
-    <ClInclude Include="..\UiaTextRange.hpp" />
-    <ClInclude Include="..\utils.hpp" />
-    <ClInclude Include="..\WindowUiaProviderBase.hpp" />
-    <ClInclude Include="..\IUiaWindow.h" />
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>
