@@ -195,7 +195,6 @@ namespace winrt::TerminalApp::implementation
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
-        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
