@@ -1038,9 +1038,10 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - rows - the text and color data we will format & encapsulate
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
+// - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string htmlTitle)
 {
     try
     {
@@ -1049,8 +1050,8 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         // First we have to add some standard
         // HTML boiler plate required for CF_HTML
         // as part of the HTML Clipboard format
-        constexpr std::string_view HtmlHeader =
-            "<!DOCTYPE><HTML><HEAD><TITLE>Windows Terminal</TITLE></HEAD><BODY>";
+        const std::string HtmlHeader =
+            "<!DOCTYPE><HTML><HEAD><TITLE>" + htmlTitle + "</TITLE></HEAD><BODY>";
         htmlBuilder << HtmlHeader;
 
         htmlBuilder << "<!--StartFragment -->";
@@ -1091,7 +1092,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         }
 
         // copy text and info color from buffer
-        bool hasWroteAnyText = false;
+        bool hasWrittenAnyText = false;
         std::optional<COLORREF> fgColor = std::nullopt;
         std::optional<COLORREF> bkColor = std::nullopt;
         for (UINT row = 0; row < rows.text.size(); row++)
@@ -1139,7 +1140,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 {
                     writeAccumulatedChars(false);
 
-                    if (hasWroteAnyText)
+                    if (hasWrittenAnyText)
                     {
                         htmlBuilder << "</SPAN>";
                     }
@@ -1154,7 +1155,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                     htmlBuilder << "\">";
                 }
 
-                hasWroteAnyText = true;
+                hasWrittenAnyText = true;
 
                 if (isLastCharInRow)
                 {
@@ -1164,7 +1165,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             }
         }
 
-        if (hasWroteAnyText)
+        if (hasWrittenAnyText)
         {
             // last opened span wasn't closed in loop above, so close it now
             htmlBuilder << "</SPAN>";

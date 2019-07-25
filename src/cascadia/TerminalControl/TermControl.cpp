@@ -1194,8 +1194,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // convert text to HTML format
-        const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName());
-
+        const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName(), "Windows Terminal");
+        
         _terminal->ClearSelection();
 
         // send data up for clipboard
