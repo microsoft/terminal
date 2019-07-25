@@ -74,16 +74,16 @@ namespace Microsoft.Terminal.Wpf
         {
             if (hwnd == this.hwnd)
             {
-                switch ((PInvoke.User32.WindowMessage)msg)
+                switch ((NativeMethods.WindowMessage)msg)
                 {
-                    case PInvoke.User32.WindowMessage.WM_MOUSEACTIVATE:
+                    case NativeMethods.WindowMessage.WM_MOUSEACTIVATE:
                         this.Focus();
                         NativeMethods.SetFocus(this.hwnd);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_LBUTTONDOWN:
+                    case NativeMethods.WindowMessage.WM_LBUTTONDOWN:
                         this.LeftClickHandler((int)lParam);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_RBUTTONDOWN:
+                    case NativeMethods.WindowMessage.WM_RBUTTONDOWN:
                         if (NativeMethods.IsSelectionActive(this.terminal))
                         {
                             Clipboard.SetText(NativeMethods.GetSelection(this.terminal));
@@ -93,18 +93,18 @@ namespace Microsoft.Terminal.Wpf
                             NativeMethods.SendTerminalOutput(this.terminal, Clipboard.GetText());
                         }
                         break;
-                    case PInvoke.User32.WindowMessage.WM_MOUSEMOVE:
+                    case NativeMethods.WindowMessage.WM_MOUSEMOVE:
                         this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_KEYDOWN:
+                    case NativeMethods.WindowMessage.WM_KEYDOWN:
                         NativeMethods.ClearSelection(this.terminal);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_CHAR:
+                    case NativeMethods.WindowMessage.WM_CHAR:
                         this.HandleChar((char)wParam);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_WINDOWPOSCHANGED:
+                    case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
-                        if (((PInvoke.User32.SetWindowPosFlags)windowpos.flags).HasFlag(PInvoke.User32.SetWindowPosFlags.SWP_NOSIZE))
+                        if (((NativeMethods.SetWindowPosFlags)windowpos.flags).HasFlag(NativeMethods.SetWindowPosFlags.SWP_NOSIZE))
                         {
                             break;
                         }
@@ -112,7 +112,7 @@ namespace Microsoft.Terminal.Wpf
                         NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out int columns, out int rows);
                         this.connection?.Resize((uint)rows, (uint)columns);
                         break;
-                    case PInvoke.User32.WindowMessage.WM_MOUSEWHEEL:
+                    case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
                         var delta = (((int)wParam) >> 16);
                         this.UserScrolled?.Invoke(this, delta);
                         break;
@@ -124,10 +124,10 @@ namespace Microsoft.Terminal.Wpf
 
         private void LeftClickHandler(int lParam)
         {
-            var altPressed = NativeMethods.GetKeyState((int)PInvoke.User32.VirtualKey.VK_MENU) < 0;
+            var altPressed = NativeMethods.GetKeyState((int)NativeMethods.VirtualKey.VK_MENU) < 0;
             var x = (short)(((int)lParam << 16) >> 16);
             var y = (short)((int)lParam >> 16);
-            PInvoke.COORD cursorPosition = new PInvoke.COORD()
+            NativeMethods.COORD cursorPosition = new NativeMethods.COORD()
             {
                 X = x,
                 Y = y,
@@ -142,7 +142,7 @@ namespace Microsoft.Terminal.Wpf
             {
                 var x = (short)(((int)lParam << 16) >> 16);
                 var y = (short)((int)lParam >> 16);
-                PInvoke.COORD cursorPosition = new PInvoke.COORD()
+                NativeMethods.COORD cursorPosition = new NativeMethods.COORD()
                 {
                     X = x,
                     Y = y,
