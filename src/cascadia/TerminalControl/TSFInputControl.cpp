@@ -154,12 +154,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto request = args.Request();
 
         // Get window in screen coordinates, this is the entire window including tabs
-        auto windowBounds = Window::Current().CoreWindow().Bounds();
+        const auto windowBounds = Window::Current().CoreWindow().Bounds();
 
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _currentCursorPositionHandlers(*this, *cursorArgs);
-        COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) }; //_terminal->GetCursorPosition();
+        const COORD cursorPos = { gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<SHORT>(cursorArgs->CurrentPosition().Y) }; //_terminal->GetCursorPosition();
 
         // Get Font Info as we use this is the pixel size for characters in the display
         auto fontArgs = winrt::make_self<FontInfoEventArgs>();
@@ -182,7 +182,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         THROW_IF_FAILED(ShortAdd(screenCursorPos.Y, TABS_OFFSET, &screenCursorPos.Y));
 
         // Get scale factor for view
-        double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
+        const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
 
         // TODO set real layout bounds
         Rect selectionRect = Rect(screenCursorPos.X, screenCursorPos.Y, 0, fontHeight);
@@ -234,7 +234,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // only need to do work if the current buffer has text
         if (!_inputBuffer.empty())
         {
-            auto hstr = to_hstring(_inputBuffer.c_str());
+            const auto hstr = to_hstring(_inputBuffer.c_str());
 
             // call event handler with data handled by parent
             _compositionCompletedHandlers(hstr);
@@ -284,11 +284,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TSFInputControl::_textRequestedHandler(CoreTextEditContext sender, CoreTextTextRequestedEventArgs const& args)
     {
         // the range the TSF wants to know about
-        auto range = args.Request().Range();
+        const auto range = args.Request().Range();
 
         try
         {
-            auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
+            const auto textRequested = _inputBuffer.substr(range.StartCaretPosition, static_cast<size_t>(range.EndCaretPosition) - static_cast<size_t>(range.StartCaretPosition));
 
             args.Request().Text(winrt::to_hstring(textRequested.c_str()));
         }
@@ -336,8 +336,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TSFInputControl::_textUpdatingHandler(CoreTextEditContext sender, CoreTextTextUpdatingEventArgs const& args)
     {
-        auto text = args.Text();
-        auto range = args.Range();
+        const auto text = args.Text();
+        const auto range = args.Range();
 
         try
         {
