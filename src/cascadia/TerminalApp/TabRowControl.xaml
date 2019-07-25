@@ -19,8 +19,8 @@ the MIT License. See LICENSE in the project root for license information. -->
                 Background="{ThemeResource SystemChromeLowColor}"
                 VerticalAlignment="Stretch"
                 HorizontalAlignment="Left">
-                <Viewbox MaxHeight="15"
-                         MaxWidth="15">
+                <Viewbox MaxHeight="13"
+                         MaxWidth="13">
                     <SymbolIcon Symbol="Add" />
                 </Viewbox>
             </SplitButton>
