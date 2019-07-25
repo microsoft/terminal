@@ -20,6 +20,8 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "Profile.h"
 
+static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
 namespace TerminalApp
 {
     class CascadiaSettings;

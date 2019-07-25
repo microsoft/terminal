@@ -916,12 +916,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto connection = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                settings.StartingDirectory(),
-                                                                30,
-                                                                80,
-                                                                winrt::guid());
+        // Create a connection based on the values in our settings object.
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -1333,12 +1329,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
-                                                                       controlSettings.StartingDirectory(),
-                                                                       30,
-                                                                       80,
-                                                                       winrt::guid());
+        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1465,6 +1456,32 @@ namespace winrt::TerminalApp::implementation
                 menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
             }
         }
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+        // The Azure connection has a boost dependency, and boost does not support ARM64
+        // so we make sure that we do not try to compile the Azure connection code if we are in ARM64 (we would get build errors otherwise)
+#ifndef _M_ARM64
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType)
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+        }
+        else
+#endif
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+        }
+        return connection;
     }
 
     // -------------------------------- WinRT Events ---------------------------------
