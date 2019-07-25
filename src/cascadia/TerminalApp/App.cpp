@@ -110,6 +110,8 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
+
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
     }
 
     App::~App()
@@ -152,6 +154,11 @@ namespace winrt::TerminalApp::implementation
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
         dialog.XamlRoot(_root.XamlRoot());
+
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
 
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
@@ -740,7 +747,6 @@ namespace winrt::TerminalApp::implementation
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
-        _root.RequestedTheme(newTheme);
         // Propagate the event to the host layer, so it can update its own UI
         _requestedThemeChangedHandlers(*this, newTheme);
     }
