@@ -10,12 +10,29 @@
 #### Other related repositories include:
   * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 
+## Installation
 
 ### Microsoft Store
 
 Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated. Or, feel free to side-load [releases](https://github.com/microsoft/terminal/releases) from GitHub, but note they won't auto-update.
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
+
+### Chocolatey (Unofficial)
+
+Download and update Microsoft Terminal from [Chocolatey](https://chocolatey.org)
+
+To install Windows Terminal, run the following command from the command line or from PowerShell:
+```powershell
+choco install microsoft-windows-terminal
+```
+
+To upgrade Windows Terminal, run the following command from the command line or from PowerShell:
+```powershell
+choco upgrade microsoft-windows-terminal
+```
+
+If you have any issues when installing the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ### Build Status
 
