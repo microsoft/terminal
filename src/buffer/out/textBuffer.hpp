@@ -147,7 +147,7 @@ public:
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
                                const PCWCHAR fontFaceName,
-                               const std::string htmlTitle);
+                               const std::string& htmlTitle);
 
 private:
     std::deque<ROW> _storage;

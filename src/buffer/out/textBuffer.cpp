@@ -1041,7 +1041,7 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string& htmlTitle)
 {
     try
     {
@@ -1070,9 +1070,10 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             htmlBuilder << Utils::ColorToHexString(globalBgColor);
             htmlBuilder << ";";
 
-            htmlBuilder << "font-family:'";
+            htmlBuilder << "font-family:";
             if (fontFaceName[0] != '\0')
             {
+                htmlBuilder << "'";
                 htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
                 htmlBuilder << "',";
             }
@@ -1203,6 +1204,6 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
-        return "";
+        return {};
     }
 }
