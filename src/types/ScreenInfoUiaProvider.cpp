@@ -34,7 +34,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent,
                                              _In_ std::function<RECT(void)> GetBoundingRect) :
-    _pUiaParent(pUiaParent), //THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _pUiaParent(pUiaParent),
     _signalFiringMapping{},
     _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
@@ -46,7 +46,7 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IR
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent) :
-    _pUiaParent(pUiaParent), //THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _pUiaParent(pUiaParent),
     _signalFiringMapping{},
     _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
