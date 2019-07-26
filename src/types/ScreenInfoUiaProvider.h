@@ -40,7 +40,7 @@ namespace Microsoft::Console::Types
                               _In_ WindowUiaProviderBase* const pUiaParent,
                               _In_ std::function<RECT()> GetBoundingRect);
 
-        // TODO CARLOS: pUiaParent should not be allowed to be null
+        // TODO GitHub 2120: pUiaParent should not be allowed to be null
         ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                               _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
@@ -92,7 +92,7 @@ namespace Microsoft::Console::Types
         // weak reference to uia parent
         std::optional<WindowUiaProviderBase*> const _pUiaParent;
 
-        // TODO CARLOS: temp workaround for nullable pUiaParent
+        // TODO GitHub 2120: temp workaround for nullable pUiaParent
         std::optional<HWND> _storedHwnd;
 
         // weak reference to IRenderData

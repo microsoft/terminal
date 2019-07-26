@@ -266,7 +266,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
-    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
     {
         return E_NOTIMPL;
@@ -319,7 +319,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
     RECT rc;
-    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
     {
         rc = _getBoundingRect.value()();
@@ -356,7 +356,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
-    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
     {
         return E_NOTIMPL;
@@ -688,7 +688,7 @@ void ScreenInfoUiaProvider::_UnlockConsole() noexcept
 }
 
 std::optional<HWND> ScreenInfoUiaProvider::GetWindowHandle() const
-{ // TODO CARLOS: _pUiaParent should not be allowed to be null
+{ // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
     {
         return std::nullopt;
@@ -698,7 +698,7 @@ std::optional<HWND> ScreenInfoUiaProvider::GetWindowHandle() const
 
 void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
 {
-    // TODO CARLOS: _pUiaParent should not be allowed to be null
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
     {
         return;

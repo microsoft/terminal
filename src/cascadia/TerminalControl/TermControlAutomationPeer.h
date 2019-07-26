@@ -60,8 +60,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         RECT GetBoundingRectWrapped();
 
-        int32_t MyProperty() { return 0; }
-
     private:
         TermControl* _owner;
         ScreenInfoUiaProvider _uiaProvider;
