@@ -210,7 +210,7 @@
                     PROCESS_QUERY_INFORMATION,
                     false,
                     0);
-                
+
                 RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe.get(), &appProcess, sizeof(appProcess), nullptr, nullptr));
             }
         }
