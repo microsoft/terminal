@@ -75,22 +75,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     hstring EchoConnection::GetConnectionFailatureMessage()
     {
-        return hstring(L"[Echo connection failed]");
+        return L"[Echo connection failed]";
     }
 
     hstring EchoConnection::GetConnectionFailatureTabTitle()
     {
-        return L"Exited";
+        return L"Failature";
     }
 
     hstring EchoConnection::GetDisconnectionMessage()
     {
-        return L"Failature";
+        return L"[Echo connection closed]";
     }
 
     hstring EchoConnection::GetDisconnectionTabTitle(hstring previousTitle)
     {
         previousTitle;
-        return hstring(L"[Echo connection closed]");
+        return L"Exited";
     }
 }

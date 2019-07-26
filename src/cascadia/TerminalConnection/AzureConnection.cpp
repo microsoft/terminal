@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Method description:
     // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
-    void AzureConnection::Start()
+    bool AzureConnection::Start()
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
@@ -92,6 +92,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _connected = true;
+        return _connected;
     }
 
     // Method description:
@@ -261,6 +262,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             WaitForSingleObject(_hOutputThread.get(), INFINITE);
             _hOutputThread.reset();
         }
+    }
+
+    hstring AzureConnection::GetConnectionFailatureMessage()
+    {
+        return L"[Azure connection failed]";
+    }
+
+    hstring AzureConnection::GetConnectionFailatureTabTitle()
+    {
+        return L"Failature";
+    }
+
+    hstring AzureConnection::GetDisconnectionMessage()
+    {
+        return L"[Azure connection closed]";
+    }
+
+    hstring AzureConnection::GetDisconnectionTabTitle(hstring previousTitle)
+    {
+        previousTitle;
+        return L"Exited";
     }
 
     // Method description:
