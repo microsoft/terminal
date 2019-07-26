@@ -26,6 +26,7 @@ static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
 
+static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontFaceKey{ "fontFace" };
 static constexpr std::string_view FontSizeKey{ "fontSize" };
@@ -89,6 +90,7 @@ Profile::Profile(const winrt::guid& guid) :
     _cursorShape{ CursorStyle::Bar },
     _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
 
+    _connectionType{},
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
     _fontFace{ DEFAULT_FONT_FACE },
@@ -280,6 +282,10 @@ Json::Value Profile::ToJson() const
     root[JsonKey(CloseOnExitKey)] = _closeOnExit;
     root[JsonKey(PaddingKey)] = winrt::to_string(_padding);
 
+    if (_connectionType)
+    {
+        root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
+    }
     if (_scrollbarState)
     {
         const auto scrollbarState = winrt::to_string(_scrollbarState.value());
@@ -344,6 +350,10 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
+    else
+    {
+        result._guid = Utils::CreateGuid();
+    }
 
     // Core Settings
     if (auto foreground{ json[JsonKey(ForegroundKey)] })
@@ -406,6 +416,10 @@ Profile Profile::FromJson(const Json::Value& json)
     }
 
     // Control Settings
+    if (auto connectionType{ json[JsonKey(ConnectionTypeKey)] })
+    {
+        result._connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
+    }
     if (auto commandline{ json[JsonKey(CommandlineKey)] })
     {
         result._commandline = GetWstringFromJson(commandline);
@@ -511,9 +525,19 @@ void Profile::SetDefaultBackground(COLORREF defaultBackground) noexcept
     _defaultBackground = defaultBackground;
 }
 
+void Profile::SetCloseOnExit(bool defaultClose) noexcept
+{
+    _closeOnExit = defaultClose;
+}
+
+void Profile::SetConnectionType(GUID connectionType) noexcept
+{
+    _connectionType = connectionType;
+}
+
 bool Profile::HasIcon() const noexcept
 {
-    return _icon.has_value();
+    return _icon.has_value() && !_icon.value().empty();
 }
 
 // Method Description
@@ -574,6 +598,18 @@ std::wstring_view Profile::GetTabTitle() const noexcept
     return HasTabTitle() ?
                std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
                std::wstring_view{ L"", 0 };
+}
+
+bool Profile::HasConnectionType() const noexcept
+{
+    return _connectionType.has_value();
+}
+
+GUID Profile::GetConnectionType() const noexcept
+{
+    return HasConnectionType() ?
+               _connectionType.value() :
+               _GUID{};
 }
 
 bool Profile::GetCloseOnExit() const noexcept

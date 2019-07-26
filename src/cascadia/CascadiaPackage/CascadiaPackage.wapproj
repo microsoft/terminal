@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
@@ -257,6 +257,8 @@
     <Content Include="ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-200.png" />
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-100.png" />
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
+    <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-100.png" />
+    <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png" />
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
@@ -277,7 +279,8 @@
         <!-- Override the filename for OpenConsole.exe (only) -->
         <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
-        <SourceProject></SourceProject>
+        <SourceProject>
+        </SourceProject>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>
