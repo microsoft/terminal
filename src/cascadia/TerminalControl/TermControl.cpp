@@ -125,25 +125,51 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
-        // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.TerminalDisconnected([=]() {
-            if (_initializedTerminal)
+        _connection.TerminalConnected([=](bool connectionSucceeded) {
+            if (connectionSucceeded)
             {
-                _terminal->Write(L"\r\n");
-                _terminal->Write(_connection.GetDisconnectionMessage());
-                _terminal->SetWindowTitle(_connection.GetDisconnectionTabTitle(_terminal->GetConsoleTitle()));
-
                 _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                    // When disconnected, stop blinking cursor.
-                    if (_cursorTimer.has_value())
+                    // Set up blinking cursor
+                    int blinkTime = GetCaretBlinkTime();
+                    if (blinkTime != INFINITE)
                     {
-                        _cursorTimer.value().Stop();
+                        // Create a timer
+                        _cursorTimer = std::make_optional(DispatcherTimer());
+                        _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+                        _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+                        _cursorTimer.value().Start();
+                    }
+                    else
+                    {
+                        // The user has disabled cursor blinking
                         _cursorTimer = std::nullopt;
                     }
-
-                    _terminal->SetCursorVisible(false);
                 });
             }
+            else
+            {
+                _terminal->Write(_connection.GetConnectionFailatureMessage().c_str());
+                _terminal->SetWindowTitle(_connection.GetConnectionFailatureTabTitle());
+                _terminal->SetCursorVisible(false);
+            }
+        });
+
+        // Subscribe to the connection's disconnected event and call our connection closed handlers.
+        _connection.TerminalDisconnected([=]() {
+            _terminal->Write(L"\r\n");
+            _terminal->Write(_connection.GetDisconnectionMessage());
+            _terminal->SetWindowTitle(_connection.GetDisconnectionTabTitle(_terminal->GetConsoleTitle()));
+
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                // When disconnected, stop blinking cursor.
+                if (_cursorTimer.has_value())
+                {
+                    _cursorTimer.value().Stop();
+                    _cursorTimer = std::nullopt;
+                }
+
+                _terminal->SetCursorVisible(false);
+            });
 
             _connectionClosedHandlers();
         });
@@ -538,31 +564,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        bool connectionSuccessful = _connection.Start();
-        if (connectionSuccessful)
-        {
-            // Set up blinking cursor
-            int blinkTime = GetCaretBlinkTime();
-            if (blinkTime != INFINITE)
-            {
-                // Create a timer
-                _cursorTimer = std::make_optional(DispatcherTimer());
-                _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-                _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-                _cursorTimer.value().Start();
-            }
-            else
-            {
-                // The user has disabled cursor blinking
-                _cursorTimer = std::nullopt;
-            }
-        }
-        else
-        {
-            _terminal->Write(_connection.GetConnectionFailatureMessage().c_str());
-            _terminal->SetWindowTitle(_connection.GetConnectionFailatureTabTitle());
-            _terminal->SetCursorVisible(false);
-        }
+        _connection.Start();
 
         _initializedTerminal = true;
     }

@@ -7,36 +7,20 @@
 
 #include "EchoConnection.g.cpp"
 
+// FIXME: idk how to include this form cppwinrt_utils.h
+#define DEFINE_EVENT(className, name, eventHandler, args)                                         \
+    winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
+    void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     EchoConnection::EchoConnection()
     {
     }
 
-    winrt::event_token EchoConnection::TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler)
+    void EchoConnection::Start()
     {
-        return _outputHandlers.add(handler);
-    }
-
-    void EchoConnection::TerminalOutput(winrt::event_token const& token) noexcept
-    {
-        _outputHandlers.remove(token);
-    }
-
-    winrt::event_token EchoConnection::TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        handler;
-        throw hresult_not_implemented();
-    }
-
-    void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        token;
-    }
-
-    bool EchoConnection::Start()
-    {
-        return true;
+        _connectHandlers(true);
     }
 
     void EchoConnection::WriteInput(hstring const& data)
@@ -93,4 +77,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         previousTitle;
         return L"Exited";
     }
+
+    DEFINE_EVENT(EchoConnection, TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
+    DEFINE_EVENT(EchoConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+    DEFINE_EVENT(EchoConnection, TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
 }

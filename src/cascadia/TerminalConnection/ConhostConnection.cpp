@@ -14,6 +14,11 @@
 
 using namespace ::Microsoft::Console;
 
+// FIXME: idk how to include this form cppwinrt_utils.h
+#define DEFINE_EVENT(className, name, eventHandler, args)                                         \
+    winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
+    void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
@@ -38,27 +43,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _guid;
     }
 
-    winrt::event_token ConhostConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
-    {
-        return _outputHandlers.add(handler);
-    }
-
-    void ConhostConnection::TerminalOutput(winrt::event_token const& token) noexcept
-    {
-        _outputHandlers.remove(token);
-    }
-
-    winrt::event_token ConhostConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    void ConhostConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
-    }
-
-    bool ConhostConnection::Start()
+    void ConhostConnection::Start()
     {
         std::wstring cmdline{ _commandline.c_str() };
         std::optional<std::wstring> startingDirectory;
@@ -116,7 +101,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // Wind up the conhost!
         THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
-        _connected = true;
 
         THROW_IF_WIN32_BOOL_FALSE(ConnectNamedPipe(processInfoPipe, nullptr));
 
@@ -148,7 +132,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
 
-        return processCreated;
+        _connected = processCreated;
+        _connectHandlers(processCreated);
     }
 
     void ConhostConnection::WriteInput(hstring const& data)
@@ -296,4 +281,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         return 0;
     }
+
+    DEFINE_EVENT(ConhostConnection, TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
+    DEFINE_EVENT(ConhostConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+    DEFINE_EVENT(ConhostConnection, TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
 }

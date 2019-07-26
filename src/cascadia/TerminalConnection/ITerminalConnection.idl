@@ -4,15 +4,16 @@
 namespace Microsoft.Terminal.TerminalConnection
 {
     delegate void TerminalOutputEventArgs(String output);
+    delegate void TerminalConnectedEventArgs(Boolean connectionSucceeded);
     delegate void TerminalDisconnectedEventArgs();
 
     interface ITerminalConnection
     {
         event TerminalOutputEventArgs TerminalOutput;
+        event TerminalConnectedEventArgs TerminalConnected;
         event TerminalDisconnectedEventArgs TerminalDisconnected;
 
-		// Return value: true if connection opened successfully, false otherwise
-        Boolean Start();
+        void Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();

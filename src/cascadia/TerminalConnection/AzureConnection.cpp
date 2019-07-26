@@ -55,6 +55,28 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     // Method description:
     // - ascribes to the ITerminalConnection interface
+    // - registers a terminal-connected event handler
+    // Arguments:
+    // - the handler
+    // Return value:
+    // - the event token for the handler
+    winrt::event_token AzureConnection::TerminalConnected(TerminalConnection::TerminalConnectedEventArgs const& handler)
+    {
+        return _connectHandlers.add(handler);
+    }
+
+    // Method description:
+    // - ascribes to the ITerminalConnection interface
+    // - revokes a terminal-connected event handler
+    // Arguments:
+    // - the event token for the handler
+    void AzureConnection::TerminalConnected(winrt::event_token const& token) noexcept
+    {
+        _connectHandlers.remove(token);
+    }
+
+    // Method description:
+    // - ascribes to the ITerminalConnection interface
     // - registers a terminal-disconnected event handler
     // Arguments:
     // - the handler
@@ -78,7 +100,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Method description:
     // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
-    bool AzureConnection::Start()
+    void AzureConnection::Start()
     {
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
@@ -92,7 +114,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _connected = true;
-        return _connected;
     }
 
     // Method description:
@@ -304,6 +325,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - return status
     DWORD AzureConnection::_OutputThread()
     {
+        _connectHandlers(true);
+
         while (true)
         {
             try
