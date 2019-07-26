@@ -19,14 +19,6 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
-// Note: Generate GUID using TlgGuid.exe tool
-TRACELOGGING_DEFINE_PROVIDER(
-    g_hTerminalAppProvider,
-    "Microsoft.Windows.Terminal.App",
-    // {24a1622f-7da7-5c77-3303-d850bd1ab2ed}
-    (0x24a1622f, 0x7da7, 0x5c77, 0x33, 0x03, 0xd8, 0x50, 0xbd, 0x1a, 0xb2, 0xed),
-    TraceLoggingOptionMicrosoftTelemetry());
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
@@ -67,7 +59,6 @@ namespace winrt::TerminalApp::implementation
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
-        TraceLoggingRegister(g_hTerminalAppProvider);
 
         /* !!! TODO
            This is not the correct way to host a XAML page. This exists today because we valued
@@ -112,14 +103,6 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
 
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
-    }
-
-    App::~App()
-    {
-        if (g_hTerminalAppProvider)
-        {
-            TraceLoggingUnregister(g_hTerminalAppProvider);
-        }
     }
 
     // Method Description:
@@ -828,6 +811,8 @@ namespace winrt::TerminalApp::implementation
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -1471,8 +1456,13 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection connection{ nullptr };
         // The Azure connection has a boost dependency, and boost does not support ARM64
         // so we make sure that we do not try to compile the Azure connection code if we are in ARM64 (we would get build errors otherwise)
+        GUID connectionType{ 0 };
+        if (profile->HasConnectionType())
+        {
+            connectionType = profile->GetConnectionType();
+        }
 #ifndef _M_ARM64
-        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType)
+        if (connectionType == AzureConnectionType)
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
         }
@@ -1481,6 +1471,15 @@ namespace winrt::TerminalApp::implementation
         {
             connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "ConnectionCreated",
+            TraceLoggingDescription("Event emitted upon the creation of a connection"),
+            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         return connection;
     }
 

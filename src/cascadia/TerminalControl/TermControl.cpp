@@ -188,6 +188,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto thickness = _ParseThicknessFromPadding(_settings.Padding());
         _swapChainPanel.Margin(thickness);
 
+        if (thickness.Bottom != 0 || thickness.Top != 0 || thickness.Left != 0 || thickness.Right != 0)
+        {
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "NonzeroPaddingApplied",
+                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
+                              TraceLoggingWideString(_settings.Padding().c_str(), "Padding", "The user-specified padding value"),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        }
+
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
         const short fontHeight = gsl::narrow<short>(_settings.FontSize());
