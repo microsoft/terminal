@@ -219,19 +219,9 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
         winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
 
-        // GH#2078: If you use a NavigateUri property here, the dialog will
-        // crash the app immediately upon opening. While we _should_ find out
-        // why this is happening, using the Click event is a good enough work
-        // around to unblock us.
-        gettingStartedLink.Click([gettingStartedUri](auto&&, auto&&) {
-            winrt::Windows::System::Launcher::LaunchUriAsync({ gettingStartedUri });
-        });
-        documentationLink.Click([documentationUri](auto&&, auto&&) {
-            winrt::Windows::System::Launcher::LaunchUriAsync({ documentationUri });
-        });
-        releaseNotesLink.Click([releaseNotesUri](auto&&, auto&&) {
-            winrt::Windows::System::Launcher::LaunchUriAsync({ releaseNotesUri });
-        });
+        gettingStartedLink.NavigateUri(gettingStartedUri);
+        documentationLink.NavigateUri(documentationUri);
+        releaseNotesLink.NavigateUri(releaseNotesUri);
 
         gettingStartedLink.Inlines().Append(gettingStarted);
         documentationLink.Inlines().Append(documentation);
@@ -726,21 +716,25 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-        const auto tabTitle = matchingProfile->GetTabTitle();
-
-        // Checks if tab title has been set in the profile settings and
-        // updates accordingly.
-
-        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
         {
-            _titleChangeHandlers(newActualTitle);
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+            const auto tabTitle = matchingProfile->GetTabTitle();
+
+            // Checks if tab title has been set in the profile settings and
+            // updates accordingly.
+
+            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(newActualTitle);
+            }
         }
     }
 
