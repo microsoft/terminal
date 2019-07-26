@@ -114,31 +114,36 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_WIN32_BOOL_FALSE(AssignProcessToJobObject(_hJob.get(), _piConhost.hProcess));
 
-        // Create our own output handling thread
-        // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          StaticOutputThreadProc,
-                                          this,
-                                          0,
-                                          nullptr));
-
-        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
-
-        // Wind up the conhost! We only do this after we've got everything in place.
+        // Wind up the conhost!
         THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
         _connected = true;
 
         THROW_IF_WIN32_BOOL_FALSE(ConnectNamedPipe(processInfoPipe, nullptr));
 
+        // First we're given error from creation of commandline
+        // process or ERROR_SUCCESS if there was not error.
         THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processStartupErrorCode, sizeof(_processStartupErrorCode), nullptr, nullptr));
         bool processCreated = _processStartupErrorCode == ERROR_SUCCESS;
+
         if (processCreated)
         {
-            // If process was created, we'll be given it's pid.
-            DWORD processId;
-            THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &processId, sizeof(processId), nullptr, nullptr));
-            _processHandle.reset(OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processId));
+            // If process was created, send our pid
+            DWORD currPid = GetCurrentProcessId();
+            THROW_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe, &currPid, sizeof(currPid), nullptr, nullptr));
+
+            // Then we'll recive duplicated handle to commandline process
+            THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processHandle, sizeof(_processHandle.get()), nullptr, nullptr));
+
+            // Create our own output handling thread
+            // Each connection needs to make sure to drain the output from its backing host.
+            _hOutputThread.reset(CreateThread(nullptr,
+                                              0,
+                                              StaticOutputThreadProc,
+                                              this,
+                                              0,
+                                              nullptr));
+
+            THROW_LAST_ERROR_IF_NULL(_hOutputThread);
         }
 
         THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
@@ -187,10 +192,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _inPipe.reset();
             _outPipe.reset();
 
-            // Tear down our output thread -- now that the output pipe was closed on the
-            // far side, we can run down our local reader.
-            WaitForSingleObject(_hOutputThread.get(), INFINITE);
-            _hOutputThread.reset();
+            if (_hOutputThread)
+            {
+                // Tear down our output thread -- now that the output pipe was closed on the
+                // far side, we can run down our local reader.
+                WaitForSingleObject(_hOutputThread.get(), INFINITE);
+                _hOutputThread.reset();
+            }
 
             // Wait for conhost to terminate.
             WaitForSingleObject(_piConhost.hProcess, INFINITE);

@@ -538,27 +538,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        // Set up blinking cursor
-        int blinkTime = GetCaretBlinkTime();
-        if (blinkTime != INFINITE)
-        {
-            // Create a timer
-            _cursorTimer = std::make_optional(DispatcherTimer());
-            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-        }
-        else
-        {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
-        }
-
         bool connectionSuccessful = _connection.Start();
         if (connectionSuccessful)
         {
-            if (_cursorTimer.has_value())
+            // Set up blinking cursor
+            int blinkTime = GetCaretBlinkTime();
+            if (blinkTime != INFINITE)
             {
+                // Create a timer
+                _cursorTimer = std::make_optional(DispatcherTimer());
+                _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+                _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
                 _cursorTimer.value().Start();
+            }
+            else
+            {
+                // The user has disabled cursor blinking
+                _cursorTimer = std::nullopt;
             }
         }
         else

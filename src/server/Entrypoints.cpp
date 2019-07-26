@@ -184,7 +184,7 @@
         const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(GetCurrentProcessId());
         wil::unique_handle processInfoPipe{ CreateFile(
             processInfoPipeName.c_str(), // lpFileName
-            GENERIC_WRITE, // dwDesiredAccess
+            GENERIC_WRITE | GENERIC_READ, // dwDesiredAccess
             0, // dwShareMode - don't share
             nullptr, // lpSecurityAttributes
             OPEN_EXISTING, // dwCreationDisposition
@@ -197,7 +197,21 @@
 
             if (createProcessSuccess)
             {
-                RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe.get(), &ProcessInformation.dwProcessId, sizeof(ProcessInformation.dwProcessId), nullptr, nullptr));
+                DWORD terminalPid;
+                RETURN_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe.get(), &terminalPid, sizeof(terminalPid), nullptr, nullptr));
+
+                wil::unique_handle terminalProc{ OpenProcess(PROCESS_DUP_HANDLE, false, terminalPid) };
+                HANDLE appProcess;
+                DuplicateHandle(
+                    GetCurrentProcess(),
+                    ProcessInformation.hProcess,
+                    terminalProc.get(),
+                    &appProcess,
+                    PROCESS_QUERY_INFORMATION,
+                    false,
+                    0);
+                
+                RETURN_IF_WIN32_BOOL_FALSE(WriteFile(processInfoPipe.get(), &appProcess, sizeof(appProcess), nullptr, nullptr));
             }
         }
 

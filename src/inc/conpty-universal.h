@@ -333,10 +333,10 @@ bool SignalResizeWindow(const HANDLE hSignal,
     const std::wstring processInfoPipeName = L"\\\\.\\pipe\\WindowsTerminalProcessInfo" + std::to_wstring(piPty->dwProcessId);
     *hProcessInfo = CreateNamedPipe(
         processInfoPipeName.c_str(), // lpName
-        PIPE_ACCESS_INBOUND, // dwOpenMode
+        PIPE_ACCESS_DUPLEX, // dwOpenMode
         PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE, // dwPipeMode
         1, // dwMaxInstances
-        0, // nOutBufferSize
+        4, // nOutBufferSize
         4, // nInBufferSize
         INFINITE, // nDefaultTimeout
         &sa); // lpSecurityAttributes
