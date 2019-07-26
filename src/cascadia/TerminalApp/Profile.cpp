@@ -350,6 +350,10 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
+    else
+    {
+        result._guid = Utils::CreateGuid();
+    }
 
     // Core Settings
     if (auto foreground{ json[JsonKey(ForegroundKey)] })
