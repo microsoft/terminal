@@ -1792,7 +1792,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _multiClickCounter = 1;
             return 1; //return single click
         }
-        
+
         _multiClickCounter++;
         return _multiClickCounter;
     }
