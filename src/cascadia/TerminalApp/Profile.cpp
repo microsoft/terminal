@@ -296,7 +296,7 @@ Json::Value Profile::ToJson() const
 
     if (_connectionType)
     {
-        root[JsonKey(ConvertPasteLineEndingsKey)] = winrt::to_string(Utils::GuidToString(_convertPasteLineEndings.value());
+        root[JsonKey(ConnectionTypeKey)] = winrt::to_string(Utils::GuidToString(_connectionType.value()));
     }
 
     if (_connectionType)
