@@ -1059,8 +1059,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         // apply global style in div element
         {
             htmlBuilder << "<DIV STYLE=\"";
-            htmlBuilder << "display:inline-block";
-            htmlBuilder << "width:400px;";
+            htmlBuilder << "display:inline-block;";
             htmlBuilder << "white-space:pre;";
 
             // fixme: this is only walkaround for filling background after last char of row.
