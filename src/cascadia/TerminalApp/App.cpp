@@ -865,7 +865,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
-    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab)
+    void App::_RegisterTerminalEvents(TermControl term, std::shared_ptr<Tab> hostingTab, ITerminalConnection connection)
     {
         // Add an event handler when the terminal's selection wants to be copied.
         // When the text buffer data is retrieved, we'll copy the data into the Clipboard
@@ -877,7 +877,7 @@ namespace winrt::TerminalApp::implementation
         // Don't capture a strong ref to the tab. If the tab is removed as this
         // is called, we don't really care anymore about handling the event.
         std::weak_ptr<Tab> weakTabPtr = hostingTab;
-        term.TitleChanged([this, weakTabPtr](auto newTitle) {
+        term.TitleChanged([this, weakTabPtr](auto /*newTitle*/) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -905,6 +905,8 @@ namespace winrt::TerminalApp::implementation
             // Possibly update the icon of the tab.
             _UpdateTabIcon(tab);
         });
+
+        connection;
     }
 
     // Method Description:
@@ -927,7 +929,7 @@ namespace winrt::TerminalApp::implementation
         const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTab);
+        _RegisterTerminalEvents(term, newTab, connection);
 
         auto tabViewItem = newTab->GetTabViewItem();
         _tabView.Items().Append(tabViewItem);
@@ -1337,7 +1339,7 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
 
         // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab);
+        _RegisterTerminalEvents(newControl, focusedTab, controlConnection);
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
                                                            focusedTab->AddVerticalSplit(realGuid, newControl);

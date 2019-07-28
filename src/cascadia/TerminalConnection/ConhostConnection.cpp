@@ -19,6 +19,42 @@ using namespace ::Microsoft::Console;
     winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
     void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
 
+//FIXME: #include "../../types/inc/convert.hpp" doesn't work :(
+[[nodiscard]] static std::string ConvertToA(const UINT codepage, const std::wstring_view source)
+{
+    // If there's nothing to convert, bail early.
+    if (source.empty())
+    {
+        return {};
+    }
+
+    int iSource; // convert to int because Wc2Mb requires it.
+    THROW_IF_FAILED(SizeTToInt(source.size(), &iSource));
+
+    // Ask how much space we will need.
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
+    int const iTarget = WideCharToMultiByte(codepage, 0, source.data(), iSource, nullptr, 0, nullptr, nullptr);
+    THROW_LAST_ERROR_IF(0 == iTarget);
+
+    size_t cchNeeded;
+    THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
+
+    // Allocate ourselves space in a smart pointer
+    std::unique_ptr<char[]> psOut = std::make_unique<char[]>(cchNeeded);
+    THROW_IF_NULL_ALLOC(psOut.get());
+
+    // Attempt conversion for real.
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
+
+    // Return as a string
+    return std::string(psOut.get(), cchNeeded);
+}
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
@@ -106,10 +142,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // First we're given error from creation of commandline
         // process or ERROR_SUCCESS if there was not error.
-        THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processStartupErrorCode, sizeof(_processStartupErrorCode), nullptr, nullptr));
-        bool processCreated = _processStartupErrorCode == ERROR_SUCCESS;
+        DWORD processStartupErrorCode;
+        THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &processStartupErrorCode, sizeof(processStartupErrorCode), nullptr, nullptr));
+        _processStartupErrorCode = processStartupErrorCode;
 
-        if (processCreated)
+        _open = processStartupErrorCode == ERROR_SUCCESS;
+        if (_open)
         {
             // If process was created, send our pid
             DWORD currPid = GetCurrentProcessId();
@@ -132,13 +170,38 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
 
-        _connected = processCreated;
-        _connectHandlers(processCreated);
+        if (_open)
+        {
+            _stateChangedHandlers(TerminalConnection::VisualConnectionState::Connected, true);
+        }
+        else
+        {
+            _disconnectHandlers(_processExitCode == 0, false);
+            _stateChangedHandlers(TerminalConnection::VisualConnectionState::ConnectionFailed, false);
+
+            wil::unique_hlocal_ptr<WCHAR[]> errorMsgBuf;
+            size_t errorMsgSize = FormatMessageW(
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                0,
+                processStartupErrorCode,
+                0,
+                (LPWSTR)&errorMsgBuf,
+                0,
+                NULL);
+            std::wstring_view errorMsg(errorMsgBuf.get(), errorMsgSize - 2); // Remove last "\r\n"
+
+            std::ostringstream ss;
+            ss << "[Failed to start process]\r\n";
+            ss << "  Error code \x1B[37m" << processStartupErrorCode << "\x1B[0m: \x1B[37m" << ConvertToA(CP_UTF8, errorMsg) << "\x1B[0m\r\n";
+            ss << "  Command line: \x1B[37m" << winrt::to_string(_commandline) << "\x1B[0m";
+
+            _outputHandlers(winrt::to_hstring(ss.str()));
+        }
     }
 
     void ConhostConnection::WriteInput(hstring const& data)
     {
-        if (!_connected || _closing.load())
+        if (!_open || _closing.load())
         {
             return;
         }
@@ -151,7 +214,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_connected)
+        if (!_open)
         {
             _initialRows = rows;
             _initialCols = columns;
@@ -164,7 +227,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Close()
     {
-        if (!_connected)
+        if (!_open)
         {
             return;
         }
@@ -193,43 +256,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    hstring ConhostConnection::GetConnectionFailatureMessage()
+    hstring ConhostConnection::GetTabTitle(hstring previousTitle)
     {
-        wil::unique_hlocal_ptr<WCHAR[]> errorMsgBuf;
-        size_t errorMsgSize = FormatMessageW(
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            0,
-            _processStartupErrorCode,
-            0,
-            (LPWSTR)&errorMsgBuf,
-            0,
-            NULL);
-        std::wstring_view errorMsg(errorMsgBuf.get(), errorMsgSize - 2); // Remove last "\r\n"
-
-        std::wostringstream ss;
-        ss << L"[Failed to start process]\r\n";
-        ss << L"  Error code \x1B[37m" << _processStartupErrorCode << L"\x1B[0m: \x1B[37m" << errorMsg << L"\x1B[0m\r\n";
-        ss << L"  Command line: \x1B[37m" << std::wstring{ _commandline } << L"\x1B[0m";
-        return hstring(ss.str());
-    }
-
-    hstring ConhostConnection::GetConnectionFailatureTabTitle()
-    {
-        return _commandline;
-    }
-
-    hstring ConhostConnection::GetDisconnectionMessage()
-    {
-        std::wostringstream ss;
-        ss << L"[Process exited with code \x1B[37m" << _processExitCode << L"\x1B[0m]";
-        return hstring(ss.str());
-    }
-
-    hstring ConhostConnection::GetDisconnectionTabTitle(hstring previousTitle)
-    {
-        std::wostringstream ss;
-        ss << L"[" << _processExitCode << L"] " << std::wstring{ previousTitle };
-        return hstring(ss.str());
+        if (_processStartupErrorCode.has_value() && _processStartupErrorCode.value() != ERROR_SUCCESS)
+        {
+            return _commandline;
+        }
+        else if (_processExitCode.has_value())
+        {
+            std::wostringstream ss;
+            ss << L"[" << _processExitCode.value() << L"] " << std::wstring{ previousTitle };
+            return hstring(ss.str());
+        }
+        else
+        {
+            return previousTitle;
+        }
     }
 
     DWORD WINAPI ConhostConnection::StaticOutputThreadProc(LPVOID lpParameter)
@@ -259,11 +301,29 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 {
                     // Wait for application process to terminate to get it's exit code
                     WaitForSingleObject(_processHandle.get(), INFINITE);
-                    THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &_processExitCode));
+                    DWORD exitCode;
+                    THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &exitCode));
+                    _processExitCode = exitCode;
                     _processHandle.reset();
+
+                    bool gracefulDisconnection = exitCode == 0;
+                    _stateChangedHandlers(gracefulDisconnection ?
+                                              TerminalConnection::VisualConnectionState::DisconnectedGracefully :
+                                              TerminalConnection::VisualConnectionState::DisconnectedNotGracefully,
+                                          false);
+
+                    std::ostringstream ss;
+                    ss << "[Process exited with code \x1B[37m" << exitCode << "\x1B[0m]";
+                    _outputHandlers(winrt::to_hstring(ss.str()));
+
+                    _disconnectHandlers(gracefulDisconnection, false);
+                }
+                else
+                {
+                    // if _processHandle is not set, this thread shouldn't start at all
+                    _disconnectHandlers(false, false);
                 }
 
-                _disconnectHandlers();
                 return (DWORD)-1;
             }
 
@@ -282,7 +342,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return 0;
     }
 
-    DEFINE_EVENT(ConhostConnection, TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
-    DEFINE_EVENT(ConhostConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
     DEFINE_EVENT(ConhostConnection, TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
+    DEFINE_EVENT(ConhostConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+    DEFINE_EVENT(ConhostConnection, StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
 }

@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
+        bool _allowUserInput;
         bool _focused;
         std::atomic<bool> _closing;
 

@@ -31,15 +31,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        hstring GetConnectionFailatureMessage();
-        hstring GetConnectionFailatureTabTitle();
-        hstring GetDisconnectionMessage();
-        hstring GetDisconnectionTabTitle(hstring previousTitle);
+        hstring GetTabTitle(hstring previousTitle);
 
         DECLARE_EVENT(TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
-        DECLARE_EVENT(TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
         DECLARE_EVENT(TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
-
+        DECLARE_EVENT(StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
     private:
         uint32_t _initialRows{};
         uint32_t _initialCols{};
@@ -66,7 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::optional<bool> _store;
         std::optional<bool> _removeOrNew;
 
-        bool _connected{};
+        bool _open{};
         std::atomic<bool> _closing{ false };
 
         wil::unique_handle _hOutputThread;

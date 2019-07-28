@@ -23,6 +23,12 @@ using namespace web::websockets::client;
 using namespace concurrency::streams;
 using namespace winrt::Windows::Security::Credentials;
 
+// FIXME: idk how to include this form cppwinrt_utils.h
+#define DEFINE_EVENT(className, name, eventHandler, args)                                         \
+    winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
+    void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
@@ -30,73 +36,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialCols{ initialCols }
     {
     }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - registers an output event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalOutput(Microsoft::Terminal::TerminalConnection::TerminalOutputEventArgs const& handler)
-    {
-        return _outputHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes an output event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalOutput(winrt::event_token const& token) noexcept
-    {
-        _outputHandlers.remove(token);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - registers a terminal-connected event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalConnected(TerminalConnection::TerminalConnectedEventArgs const& handler)
-    {
-        return _connectHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes a terminal-connected event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalConnected(winrt::event_token const& token) noexcept
-    {
-        _connectHandlers.remove(token);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - registers a terminal-disconnected event handler
-    // Arguments:
-    // - the handler
-    // Return value:
-    // - the event token for the handler
-    winrt::event_token AzureConnection::TerminalDisconnected(Microsoft::Terminal::TerminalConnection::TerminalDisconnectedEventArgs const& handler)
-    {
-        return _disconnectHandlers.add(handler);
-    }
-
-    // Method description:
-    // - ascribes to the ITerminalConnection interface
-    // - revokes a terminal-disconnected event handler
-    // Arguments:
-    // - the event token for the handler
-    void AzureConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
-    {
-        _disconnectHandlers.remove(token);
-    }
-
     // Method description:
     // - ascribes to the ITerminalConnection interface
     // - creates the output thread (where we will do the authentication and actually connect to Azure)
@@ -113,7 +52,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
-        _connected = true;
+        _open = true;
     }
 
     // Method description:
@@ -123,7 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // the user's input
     void AzureConnection::WriteInput(hstring const& data)
     {
-        if (!_connected || _closing.load())
+        if (!_open || _closing.load())
         {
             return;
         }
@@ -238,7 +177,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - the new rows/cols values
     void AzureConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_connected || !(_state == State::TermConnected))
+        if (!_open || !(_state == State::TermConnected))
         {
             _initialRows = rows;
             _initialCols = columns;
@@ -264,7 +203,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - closes the websocket connection and the output thread
     void AzureConnection::Close()
     {
-        if (!_connected)
+        if (!_open)
         {
             return;
         }
@@ -285,25 +224,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    hstring AzureConnection::GetConnectionFailatureMessage()
+    hstring AzureConnection::GetTabTitle(hstring previousTitle)
     {
-        return L"[Azure connection failed]";
-    }
-
-    hstring AzureConnection::GetConnectionFailatureTabTitle()
-    {
-        return L"Failature";
-    }
-
-    hstring AzureConnection::GetDisconnectionMessage()
-    {
-        return L"[Azure connection closed]";
-    }
-
-    hstring AzureConnection::GetDisconnectionTabTitle(hstring previousTitle)
-    {
-        previousTitle;
-        return L"Exited";
+        return previousTitle;
     }
 
     // Method description:
@@ -325,7 +248,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - return status
     DWORD AzureConnection::_OutputThread()
     {
-        _connectHandlers(true);
+        // todo: more fine-grinded status handling
+        _stateChangedHandlers(TerminalConnection::VisualConnectionState::Connected, true);
 
         while (true)
         {
@@ -383,7 +307,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                             if (!_closing.load())
                             {
                                 _state = State::NoConnect;
-                                _disconnectHandlers();
+                                _disconnectHandlers(false, false);
                                 return S_FALSE;
                             }
                             break;
@@ -403,7 +327,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 case State::NoConnect:
                 {
                     _outputHandlers(winrt::to_hstring(internetOrServerIssue));
-                    _disconnectHandlers();
+                    _disconnectHandlers(true, false);
                     return E_FAIL;
                 }
                 }
@@ -931,4 +855,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         swprintf_s(buffer.data(), buffer.size(), ithTenant, i, name, ID);
         return buffer;
     }
+
+    DEFINE_EVENT(AzureConnection, TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
+    DEFINE_EVENT(AzureConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+    DEFINE_EVENT(AzureConnection, StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
 }

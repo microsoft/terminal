@@ -25,16 +25,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        hstring GetConnectionFailatureMessage();
-        hstring GetConnectionFailatureTabTitle();
-        hstring GetDisconnectionMessage();
-        hstring GetDisconnectionTabTitle(hstring previousTitle);
+        hstring GetTabTitle(hstring previousTitle);
 
         winrt::guid Guid() const noexcept;
 
         DECLARE_EVENT(TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
-        DECLARE_EVENT(TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
         DECLARE_EVENT(TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+        DECLARE_EVENT(StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
 
     private:
         uint32_t _initialRows{};
@@ -43,12 +40,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory;
         guid _guid{}; // A unique session identifier for connected client
 
-        bool _connected{};
+        bool _open{};
         std::atomic<bool> _closing{ false };
 
         // These fields are about process created by passed commandline
-        DWORD _processStartupErrorCode{ 0 };
-        DWORD _processExitCode{ 0 };
+        std::optional<DWORD> _processStartupErrorCode{};
+        std::optional<DWORD> _processExitCode{};
         wil::unique_handle _processHandle;
 
         wil::unique_hfile _inPipe; // The pipe for writing input to

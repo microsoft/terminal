@@ -3,25 +3,31 @@
 
 namespace Microsoft.Terminal.TerminalConnection
 {
+    enum VisualConnectionState{
+		NotConnected,
+        Connecting,
+        ConnectionFailed,
+        Connected,
+        Disconnecting,
+        DisconnectedGracefully,
+        DisconnectedNotGracefully
+    };
+
     delegate void TerminalOutputEventArgs(String output);
-    delegate void TerminalConnectedEventArgs(Boolean connectionSucceeded);
-    delegate void TerminalDisconnectedEventArgs();
+    delegate void TerminalDisconnectedEventArgs(Boolean graceful, Boolean canReconnect);
+    delegate void StateChangedEventArgs(VisualConnectionState visualConnectionState, Boolean allowUserInput);
 
     interface ITerminalConnection
     {
         event TerminalOutputEventArgs TerminalOutput;
-        event TerminalConnectedEventArgs TerminalConnected;
         event TerminalDisconnectedEventArgs TerminalDisconnected;
+        event StateChangedEventArgs StateChanged;
 
         void Start();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
 
-        String GetConnectionFailatureMessage();
-        String GetConnectionFailatureTabTitle();
-        String GetDisconnectionMessage();
-        String GetDisconnectionTabTitle(String previousTitle);
+        String GetTabTitle(String previousTitle);
     };
-
 }
