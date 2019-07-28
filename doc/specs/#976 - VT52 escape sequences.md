@@ -1,7 +1,7 @@
 ---
 author: James Holderness @j4james
 created on: 2019-07-17
-last updated: 2019-07-27
+last updated: 2019-07-28
 issue id: 976
 ---
 
@@ -196,6 +196,18 @@ z               |₆              |U+2086         |Subscript 6
 \|              |₈              |U+2088         |Subscript 8
 }               |₉              |U+2089         |Subscript 9
 \~              |¶              |U+00B6         |Paragraph
+
+### Testing
+
+A simple unit test will need to be added to the `AdapterTest` class, to confirm that calls to toggle between the ANSI and VT52 modes in the `AdaptDispatch` class are correctly forwarded to the corresponding `PrivateXXX` handler in the `ConGetSet` interface.
+
+The majority of the testing would be handled in the `StateMachineExternalTest` class though. These tests would confirm that the various VT52 sequences trigger the expected methods in the `ITermDispatch` interface when VT52 Mode is enabled, and also that they don't do anything when in ANSI mode.
+
+There shouldn't really be any need for additional tests in the `ScreenBufferTests` class, since we're relying on existing VT100 functionality which should already be tested there.
+ 
+For fuzzing support, we'll need to add the DECANM option to the `GeneratePrivateModeParamToken` method in the `VTCommandFuzzer` class, and also probably add two additional token generator methods - one specifically for the _Direct Cursor Address_ command, which requires parameters, and another to handle the remaining parameterless commands.
+
+In terms of manual testing, it can be useful to run the _Test of VT52 mode_ option in Vttest, and confirm that everything looks correct there. It's also worth going through some of the options in the The _Test of keyboard_ section, since those tests aren't only intended for the later VT models - they do cover the VT52 keyboard as well.
 
 ## UI/UX Design
 
