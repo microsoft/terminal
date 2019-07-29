@@ -178,6 +178,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(const std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT weight,
+                                                                                              DWRITE_FONT_STRETCH stretch,
+                                                                                              DWRITE_FONT_STYLE style) const;
+
         [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(const std::wstring& familyName,
                                                                                DWRITE_FONT_WEIGHT weight,
                                                                                DWRITE_FONT_STRETCH stretch,

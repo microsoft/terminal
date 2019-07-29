@@ -15,6 +15,7 @@
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
+static std::wstring FALLBACK_FONT_FACE = L"Consolas";
 
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
@@ -132,18 +133,18 @@ DxEngine::~DxEngine()
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
 
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-                              // clang-format off
-        // This causes problems for folks who do not have the whole DirectX SDK installed
-        // when they try to run the rest of the project in debug mode.
-        // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
-        // only when they need it and shutting it off otherwise.
-        // Find out more about the debug layer here:
-        // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
-        // You can find out how to install it here:
-        // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
-                              // clang-format on
-                              // D3D11_CREATE_DEVICE_DEBUG |
-                              D3D11_CREATE_DEVICE_SINGLETHREADED;
+        // clang-format off
+// This causes problems for folks who do not have the whole DirectX SDK installed
+// when they try to run the rest of the project in debug mode.
+// As such, I'm leaving this flag here for people doing DX-specific work to toggle it
+// only when they need it and shutting it off otherwise.
+// Find out more about the debug layer here:
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
+// You can find out how to install it here:
+// https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
+                      // clang-format on
+                      // D3D11_CREATE_DEVICE_DEBUG |
+        D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
@@ -705,7 +706,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
             // First, set up a complete clear of all device resources if something goes terribly wrong.
             auto resetDeviceResourcesOnFailure = wil::scope_exit([&] {
                 _ReleaseDeviceResources();
-            });
+                                                                 });
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
@@ -1355,6 +1356,38 @@ float DxEngine::GetScaling() const noexcept
 }
 
 // Routine Description:
+// - Attempts to locate the font given, but then begins falling back if we cannot find it.
+// - We'll try to fall back to Consolas with the 
+// Arguments:
+// - familyName - The font name we should be looking for
+// - weight - The weight (bold, light, etc.)
+// - stretch - The stretch of the font is the spacing between each letter
+// - style - Normal, italic, etc.
+// Return Value:
+// - Smart pointer holding interface reference for queryable font data.
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_ResolveFontFaceWithFallback(const std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT weight,
+                                                                                              DWRITE_FONT_STRETCH stretch,
+                                                                                              DWRITE_FONT_STYLE style) const
+{
+
+
+    auto face = _FindFontFace(familyName, weight, stretch, style);
+
+    if (!face)
+    {
+        face = _FindFontFace(FALLBACK_FONT_FACE, weight, stretch, style);
+    }
+
+    if (!face)
+    {
+        face = _FindFontFace(FALLBACK_FONT_FACE, DWRITE_FONT_WEIGHT_NORMAL, DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL);
+    }
+
+    return face;
+}
+
+// Routine Description:
 // - Locates a suitable font face from the given information
 // Arguments:
 // - familyName - The font name we should be looking for
@@ -1416,8 +1449,7 @@ float DxEngine::GetScaling() const noexcept
         const DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
         const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
 
-        const auto face = _FindFontFace(fontName, weight, stretch, style);
-        THROW_IF_NULL_ALLOC_MSG(face, "Failed to find the requested font");
+        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style);
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
