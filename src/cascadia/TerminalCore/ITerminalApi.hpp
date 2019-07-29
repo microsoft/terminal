@@ -24,7 +24,10 @@ namespace Microsoft::Terminal::Core
         virtual bool SetCursorPosition(short x, short y) = 0;
         virtual COORD GetCursorPosition() = 0;
 
+        virtual bool DeleteCharacter(const unsigned int uiCount) = 0;
         virtual bool EraseCharacters(const unsigned int numChars) = 0;
+        virtual bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) = 0;
+        virtual bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) = 0;
 
         virtual bool SetWindowTitle(std::wstring_view title) = 0;
 

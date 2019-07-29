@@ -126,6 +126,32 @@ COORD Terminal::GetCursorPosition()
     return newPos;
 }
 
+bool Terminal::DeleteCharacter(const unsigned int uiCount)
+{
+    SHORT dist;
+    if (!SUCCEEDED(UIntToShort(uiCount, &dist)))
+    {
+        return false;
+    }
+    const auto cursorPos = _buffer->GetCursor().GetPosition();
+
+    // We are going to call EraseInLine, so first we copy what we don't want to delete
+    COORD keepFromPos{ cursorPos.X + dist, cursorPos.Y };
+    auto keepText = _buffer->GetTextLineDataAt(keepFromPos);
+    std::wstring copied;
+    while (keepText)
+    {
+        copied.append(*keepText);
+        ++keepText;
+    }
+    EraseInLine(DispatchTypes::EraseType::ToEnd);
+
+    // Now we rewrite what we deleted
+    auto rewriteIter = OutputCellIterator(copied, _buffer->GetCurrentAttributes());
+    _buffer->Write(rewriteIter, cursorPos);
+    return true;
+}
+
 bool Terminal::EraseCharacters(const unsigned int numChars)
 {
     const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
@@ -134,6 +160,104 @@ bool Terminal::EraseCharacters(const unsigned int numChars)
     const short fillLimit = std::min(static_cast<short>(numChars), distanceToRight);
     auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), fillLimit);
     _buffer->Write(eraseIter, absoluteCursorPos);
+    return true;
+}
+
+bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType)
+{
+    const auto cursorPos = _buffer->GetCursor().GetPosition();
+    const auto viewport = _GetMutableViewport();
+    COORD startPos = { 0 };
+    startPos.Y = cursorPos.Y;
+    DWORD nlength = 0;
+
+    // Determine startPos.X and nlength by the eraseType
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::FromBeginning:
+    {
+        nlength = cursorPos.X - viewport.Left() + 1;
+        break;
+    }
+    case DispatchTypes::EraseType::ToEnd:
+        startPos.X = cursorPos.X;
+        nlength = viewport.RightInclusive() - startPos.X;
+        break;
+    case DispatchTypes::EraseType::All:
+        startPos.X = viewport.Left();
+        nlength = viewport.RightInclusive() - startPos.X;
+        break;
+    }
+
+    auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), nlength);
+    _buffer->Write(eraseIter, startPos);
+    return true;
+}
+
+bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
+{
+    // Store the relative cursor position so we can restore it later after we move the viewport
+    const auto cursorPos = _buffer->GetCursor().GetPosition();
+    auto relativeCursor = cursorPos;
+    _mutableViewport.ConvertToOrigin(&relativeCursor);
+
+    // Initialize the new location of the viewport
+    // the top and bottom parameters are determined by the eraseType
+    SMALL_RECT newWin;
+    newWin.Left = _mutableViewport.Left();
+    newWin.Right = _mutableViewport.RightExclusive();
+
+    if (eraseType == DispatchTypes::EraseType::All)
+    {
+        // In this case, we simply move the viewport down, effectively pushing whatever text was on the screen into the scrollback
+        const auto coordLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
+        if (coordLastChar.X == 0 && coordLastChar.Y == 0)
+        {
+            // Nothing to clear, just return
+            return true;
+        }
+
+        short sNewTop = coordLastChar.Y + 1;
+
+        // Increment the circular buffer only if the new location of the viewport would be 'below' the buffer
+        short delta = (sNewTop + _mutableViewport.Height()) - (_buffer->GetSize().Height());
+        for (auto i = 0; i < delta; i++)
+        {
+            _buffer->IncrementCircularBuffer();
+            sNewTop--;
+        }
+
+        newWin.Top = sNewTop;
+        newWin.Bottom = sNewTop + _mutableViewport.Height();
+    }
+    else if (eraseType == DispatchTypes::EraseType::Scrollback)
+    {
+        // We only want to erase the scrollback, and leave everything else on the screen as it is
+        // so we grab the text in the viewport and rotate it up to the top of the buffer
+        COORD scrollFromPos{ 0, 0 };
+        _mutableViewport.ConvertFromOrigin(&scrollFromPos);
+        _buffer->ScrollRows(scrollFromPos.Y, _mutableViewport.Height(), -scrollFromPos.Y);
+
+        // Since we only did a rotation, the text that was in the scrollback is now _below_ where we are going to move the viewport
+        // and we have to make sure we erase that text 
+        auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive());
+        auto eraseStart = _mutableViewport.Height();
+        auto eraseEnd = _buffer->GetLastNonSpaceCharacter(_mutableViewport).Y;
+        for (SHORT i = eraseStart; i <= eraseEnd; i++)
+        {
+            COORD erasePos{ 0, i };
+            _buffer->Write(eraseIter, erasePos);
+        }
+
+        newWin.Top = 0;
+        newWin.Bottom = _mutableViewport.Height();
+    }
+
+    // Move the viewport, adjust the scoll bar if needed, and restore the old cursor position
+    _mutableViewport = Viewport::FromExclusive(newWin);
+    Terminal::_NotifyScrollEvent();
+    SetCursorPosition(relativeCursor.X, relativeCursor.Y);
+
     return true;
 }
 

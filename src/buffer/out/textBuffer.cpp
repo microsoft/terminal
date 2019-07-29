@@ -564,16 +564,28 @@ bool TextBuffer::IncrementCircularBuffer()
 // - Coordinate position in screen coordinates (offset coordinates, not array index coordinates).
 COORD TextBuffer::GetLastNonSpaceCharacter() const
 {
-    COORD coordEndOfText;
-    // Always search the whole buffer, by starting at the bottom.
-    coordEndOfText.Y = GetSize().BottomInclusive();
+    return GetLastNonSpaceCharacter(GetSize());
+}
+
+//Routine Description:
+// - Retrieves the position of the last non-space character in the given viewport
+//Arguments:
+// - The viewport
+//Return value:
+// - Coordinate position (relative to the text buffer)
+COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const
+{
+    COORD coordEndOfText = { 0 };
+    // Search the given viewport by starting at the bottom.
+    coordEndOfText.Y = viewport.BottomInclusive();
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
     coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
-    bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0); // this row is empty, and we're not at the top
+    const auto viewportTop = viewport.Top();
+    bool fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop); // this row is empty, and we're not at the top
     while (fDoBackUp)
     {
         coordEndOfText.Y--;
@@ -581,7 +593,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter() const
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
         coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
-        fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > 0);
+        fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
     // don't allow negative results
