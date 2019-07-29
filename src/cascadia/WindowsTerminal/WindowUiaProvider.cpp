@@ -1,31 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-#include "precomp.h"
+#include "pch.h"
 
-#include "windowUiaProvider.hpp"
+#include "WindowUiaProvider.hpp"
 #include "../types/ScreenInfoUiaProvider.h"
 
 #include "../host/renderData.hpp"
-#include "../inc/ServiceLocator.hpp"
 
-using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Interactivity::Win32;
-
-WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
-    _pScreenInfoProvider{ nullptr },
+WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow) :
     WindowUiaProviderBase(baseWindow)
 {
 }
 
 WindowUiaProvider::~WindowUiaProvider()
 {
-    if (_pScreenInfoProvider)
-    {
-        _pScreenInfoProvider->Release();
-    }
 }
 
-WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
+WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
     Microsoft::Console::Types::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
@@ -33,12 +24,14 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
     {
         pWindowProvider = new WindowUiaProvider(baseWindow);
 
-        Globals& g = ServiceLocator::LocateGlobals();
+        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        /*Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         Microsoft::Console::Render::IRenderData* renderData = &gci.renderData;
 
         pScreenInfoProvider = new Microsoft::Console::Types::ScreenInfoUiaProvider(renderData, pWindowProvider);
         pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
+        */
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
@@ -67,7 +60,9 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
 {
     try
     {
-        return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        //return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        return E_NOTIMPL;
     }
     CATCH_RETURN();
 }
@@ -81,14 +76,16 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
     if (id == UIA_Text_TextSelectionChangedEventId ||
         id == UIA_Text_TextChangedEventId)
     {
-        if (_pScreenInfoProvider)
+        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        /*if (_pScreenInfoProvider)
         {
             hr = _pScreenInfoProvider->Signal(id);
         }
         else
         {
             hr = E_POINTER;
-        }
+        }*/
+        hr = E_POINTER;
         return hr;
     }
 
@@ -119,14 +116,15 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     *ppProvider = nullptr;
     HRESULT hr = S_OK;
 
-    if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
+    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    /*if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
         *ppProvider = _pScreenInfoProvider;
         (*ppProvider)->AddRef();
 
         // signal that the focus changed
         LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
-    }
+    }*/
 
     // For the other directions (parent, next, previous) the default of nullptr is correct
     return hr;
@@ -147,8 +145,9 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = _pScreenInfoProvider;
-    (*ppProvider)->AddRef();
+    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    /**ppProvider = _pScreenInfoProvider;
+    (*ppProvider)->AddRef();*/
 
     return S_OK;
 }
@@ -156,7 +155,9 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
-    return _pScreenInfoProvider->QueryInterface(IID_PPV_ARGS(ppProvider));
+    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    //return _pScreenInfoProvider->QueryInterface(IID_PPV_ARGS(ppProvider));
+    return S_OK;
 }
 
 #pragma endregion
