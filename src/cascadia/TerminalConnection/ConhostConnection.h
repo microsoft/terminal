@@ -25,7 +25,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        hstring GetTabTitle(hstring previousTitle);
+        bool AllowsUserInput();
+        VisualConnectionState VisualConnectionState();
+        hstring GetTabTitle(hstring terminalTitle);
 
         winrt::guid Guid() const noexcept;
 
@@ -40,8 +42,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory;
         guid _guid{}; // A unique session identifier for connected client
 
-        bool _open{};
+        bool _open{ false };
         std::atomic<bool> _closing{ false };
+        bool _allowsUserInput{ false };
+        TerminalConnection::VisualConnectionState _visualConnectionState{ VisualConnectionState::NotConnected };
 
         // These fields are about process created by passed commandline
         std::optional<DWORD> _processStartupErrorCode{};

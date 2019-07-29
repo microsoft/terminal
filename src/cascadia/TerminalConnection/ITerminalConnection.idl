@@ -3,8 +3,9 @@
 
 namespace Microsoft.Terminal.TerminalConnection
 {
-    enum VisualConnectionState{
-		NotConnected,
+    enum VisualConnectionState
+    {
+        NotConnected,
         Connecting,
         ConnectionFailed,
         Connected,
@@ -15,7 +16,7 @@ namespace Microsoft.Terminal.TerminalConnection
 
     delegate void TerminalOutputEventArgs(String output);
     delegate void TerminalDisconnectedEventArgs(Boolean graceful, Boolean canReconnect);
-    delegate void StateChangedEventArgs(VisualConnectionState visualConnectionState, Boolean allowUserInput);
+    delegate void StateChangedEventArgs();
 
     interface ITerminalConnection
     {
@@ -28,6 +29,8 @@ namespace Microsoft.Terminal.TerminalConnection
         void Resize(UInt32 rows, UInt32 columns);
         void Close();
 
-        String GetTabTitle(String previousTitle);
+        Boolean AllowsUserInput { get; };
+        VisualConnectionState VisualConnectionState { get; };
+        String GetTabTitle(String terminalTitle);
     };
 }

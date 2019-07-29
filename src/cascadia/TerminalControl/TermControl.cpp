@@ -33,7 +33,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        _allowUserInput{ false },
+        //_allowUserInput{ false },
         _closing{ false },
         _lastScrollOffset{ std::nullopt },
         _autoScrollVelocity{ 0 },
@@ -126,12 +126,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
-        _connection.StateChanged([=](TerminalConnection::VisualConnectionState visualConnectionState, bool allowUserInput) {
+        _connection.StateChanged([=]() {
             _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                _allowUserInput = allowUserInput; 
-                if (_cursorTimer) 
+                bool allowUserInput = _connection.AllowsUserInput();
+
+                if (_cursorTimer)
                 {
-                    if (_allowUserInput)
+                    if (allowUserInput)
                     {
                         if (!_cursorTimer.value().IsEnabled())
                             _cursorTimer.value().Start();
@@ -143,9 +144,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                     }
                 }
 
-                _terminal->SetCursorVisible(_allowUserInput);
-
-                _TerminalTitleChanged(_terminal->GetConsoleTitleW());
+                _terminal->SetCursorVisible(allowUserInput);
+                _TerminalTitleChanged();
             });
         });
 
@@ -519,7 +519,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot.PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
         _controlRoot.CharacterReceived({ this, &TermControl::_CharacterHandler });
 
-        auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
+        auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
 
         auto pfnBackgroundColorChanged = std::bind(&TermControl::_BackgroundColorChanged, this, std::placeholders::_1);
@@ -1135,7 +1135,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
         _focused = true;
 
-        if (_allowUserInput && _cursorTimer.has_value())
+        if (_connection.AllowsUserInput() && _cursorTimer.has_value())
         {
             _cursorTimer.value().Start();
         }
@@ -1292,9 +1292,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
     }
 
-    void TermControl::_TerminalTitleChanged(const std::wstring_view& wstr)
+    void TermControl::_TerminalTitleChanged()
     {
-        _titleChangedHandlers(_connection.GetTabTitle(winrt::hstring{ wstr }));
+        _titleChangedHandlers(_connection.GetTabTitle(_terminal->GetConsoleTitleW()));
     }
 
     // Method Description:
@@ -1351,6 +1351,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return L"";
 
         return _connection.GetTabTitle(winrt::hstring{ _terminal->GetConsoleTitle() });
+    }
+
+    TerminalConnection::VisualConnectionState TermControl::VisualConnectionState() const
+    {
+        return _connection.VisualConnectionState();
     }
 
     // Method Description:

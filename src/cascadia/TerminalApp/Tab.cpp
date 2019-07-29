@@ -8,6 +8,7 @@ using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
 static const int TabViewFontSize = 12;
 
@@ -153,6 +154,12 @@ winrt::hstring Tab::GetFocusedTitle() const
 {
     const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     return lastFocusedControl ? lastFocusedControl.Title() : L"";
+}
+
+VisualConnectionState Tab::GetFocusedVisualConnectionState() const
+{
+    const auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
+    return lastFocusedControl ? lastFocusedControl.VisualConnectionState() : VisualConnectionState::NotConnected;
 }
 
 // Method Description:

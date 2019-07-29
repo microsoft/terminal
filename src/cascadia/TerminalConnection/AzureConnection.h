@@ -31,7 +31,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        hstring GetTabTitle(hstring previousTitle);
+        bool AllowsUserInput();
+        VisualConnectionState VisualConnectionState();
+        hstring GetTabTitle(hstring terminalTitle);
 
         DECLARE_EVENT(TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
         DECLARE_EVENT(TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
@@ -64,6 +66,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         bool _open{};
         std::atomic<bool> _closing{ false };
+        bool _allowsUserInput{ false };
+        TerminalConnection::VisualConnectionState _visualConnectionState{ VisualConnectionState::NotConnected };
 
         wil::unique_handle _hOutputThread;
 

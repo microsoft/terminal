@@ -172,12 +172,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         if (_open)
         {
-            _stateChangedHandlers(TerminalConnection::VisualConnectionState::Connected, true);
+            _allowsUserInput = true;
+            _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
+            _stateChangedHandlers();
         }
         else
         {
+            _allowsUserInput = false;
+            _visualConnectionState = TerminalConnection::VisualConnectionState::ConnectionFailed;
+            _stateChangedHandlers();
+
             _disconnectHandlers(_processExitCode == 0, false);
-            _stateChangedHandlers(TerminalConnection::VisualConnectionState::ConnectionFailed, false);
 
             wil::unique_hlocal_ptr<WCHAR[]> errorMsgBuf;
             size_t errorMsgSize = FormatMessageW(
@@ -256,7 +261,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    hstring ConhostConnection::GetTabTitle(hstring previousTitle)
+    bool ConhostConnection::AllowsUserInput()
+    {
+        return _allowsUserInput;
+    }
+
+    VisualConnectionState ConhostConnection::VisualConnectionState()
+    {
+        return _visualConnectionState;
+    }
+
+    hstring ConhostConnection::GetTabTitle(hstring terminalTitle)
     {
         if (_processStartupErrorCode.has_value() && _processStartupErrorCode.value() != ERROR_SUCCESS)
         {
@@ -265,12 +280,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         else if (_processExitCode.has_value())
         {
             std::wostringstream ss;
-            ss << L"[" << _processExitCode.value() << L"] " << std::wstring{ previousTitle };
+            ss << L"[" << _processExitCode.value() << L"] " << std::wstring{ terminalTitle };
             return hstring(ss.str());
         }
         else
         {
-            return previousTitle;
+            return terminalTitle;
         }
     }
 
@@ -307,10 +322,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     _processHandle.reset();
 
                     bool gracefulDisconnection = exitCode == 0;
-                    _stateChangedHandlers(gracefulDisconnection ?
+
+                    _allowsUserInput = false;
+                    _visualConnectionState = gracefulDisconnection ?
                                               TerminalConnection::VisualConnectionState::DisconnectedGracefully :
-                                              TerminalConnection::VisualConnectionState::DisconnectedNotGracefully,
-                                          false);
+                                              TerminalConnection::VisualConnectionState::DisconnectedNotGracefully;
+                    _stateChangedHandlers();
 
                     std::ostringstream ss;
                     ss << "[Process exited with code \x1B[37m" << exitCode << "\x1B[0m]";

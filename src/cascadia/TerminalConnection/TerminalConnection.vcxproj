@@ -29,9 +29,6 @@
     <ClInclude Include="ConhostConnection.h">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="EchoConnection.h">
-      <DependentUpon>EchoConnection.idl</DependentUpon>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AzureConnection.cpp" Condition="'$(Platform)'!='ARM64'" />
@@ -41,15 +38,11 @@
     <ClCompile Include="ConhostConnection.cpp">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="EchoConnection.cpp">
-      <DependentUpon>EchoConnection.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
-    <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" Condition="'$(Platform)'!='ARM64'" />
   </ItemGroup>
   <ItemGroup>

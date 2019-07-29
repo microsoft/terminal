@@ -3,6 +3,7 @@
 
 #pragma once
 #include <winrt/Microsoft.UI.Xaml.Controls.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "Pane.h"
 
 class Tab
@@ -29,6 +30,7 @@ public:
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::TerminalSettings& settings, const GUID& profile);
     winrt::hstring GetFocusedTitle() const;
+    winrt::Microsoft::Terminal::TerminalConnection::VisualConnectionState GetFocusedVisualConnectionState() const;
     void SetTabText(const winrt::hstring& text);
 
     void ClosePane();

@@ -40,6 +40,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
+        TerminalConnection::VisualConnectionState VisualConnectionState() const;
         void CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
@@ -84,7 +85,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
-        bool _allowUserInput;
+        //bool _allowUserInput;
         bool _focused;
         std::atomic<bool> _closing;
 
@@ -147,7 +148,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
         void _DoResize(const double newWidth, const double newHeight);
-        void _TerminalTitleChanged(const std::wstring_view& wstr);
+        void _TerminalTitleChanged();
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
         void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);

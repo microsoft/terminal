@@ -224,9 +224,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
-    hstring AzureConnection::GetTabTitle(hstring previousTitle)
+    bool AzureConnection::AllowsUserInput()
     {
-        return previousTitle;
+        return _allowsUserInput;
+    }
+
+    VisualConnectionState AzureConnection::VisualConnectionState()
+    {
+        return _visualConnectionState;
+    }
+
+    hstring AzureConnection::GetTabTitle(hstring terminalTitle)
+    {
+        return terminalTitle;
     }
 
     // Method description:
@@ -249,7 +259,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     DWORD AzureConnection::_OutputThread()
     {
         // todo: more fine-grinded status handling
-        _stateChangedHandlers(TerminalConnection::VisualConnectionState::Connected, true);
+        _allowsUserInput = true;
+        _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
+        _stateChangedHandlers();
 
         while (true)
         {
