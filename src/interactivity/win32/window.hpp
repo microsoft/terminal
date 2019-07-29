@@ -30,7 +30,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
         ~Window();
 
-        RECT GetWindowRect() const;
+        RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
         SCREEN_INFORMATION& GetScreenInfo();
         const SCREEN_INFORMATION& GetScreenInfo() const;

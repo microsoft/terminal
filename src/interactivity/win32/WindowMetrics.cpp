@@ -96,7 +96,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Ou
 
     // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
     // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
-    Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow == nullptr || (TRUE != EqualRect(&rc, &rcZero)))
     {
         // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.

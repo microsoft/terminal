@@ -232,7 +232,7 @@ void WindowUiaProviderBase::ChangeViewport(const SMALL_RECT NewWindow)
     _baseWindow->ChangeViewport(NewWindow);
 }
 
-RECT WindowUiaProviderBase::GetWindowRect() const
+RECT WindowUiaProviderBase::GetWindowRect() const noexcept
 {
     return _baseWindow->GetWindowRect();
 }

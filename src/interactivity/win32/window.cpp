@@ -979,7 +979,7 @@ void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
     prectWindow->bottom = prectWindow->top + RECT_HEIGHT(&rectProposed);
 }
 
-RECT Window::GetWindowRect() const
+RECT Window::GetWindowRect() const noexcept
 {
     RECT rc = { 0 };
     ::GetWindowRect(GetWindowHandle(), &rc);

@@ -156,12 +156,12 @@ public:
         RECT rc = { 0 };
         ::GetWindowRect(_window.get(), &rc);
         return rc;
-    };
+    }
 
     HWND GetHandle() const noexcept
     {
         return _window.get();
-    };
+    }
 
     float GetCurrentDpiScale() const noexcept
     {
@@ -213,7 +213,7 @@ public:
     {
         _title = newTitle;
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
-    };
+    }
 
 protected:
     using base_type = BaseWindow<T>;

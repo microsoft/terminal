@@ -84,7 +84,7 @@ public:
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    /*
+    #if 0
     static void s_TraceUia(const Microsoft::Console::Interactivity::Win32::UiaTextRange* const range,
                            const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::ApiCall apiCall,
                            const Microsoft::Console::Interactivity::Win32::UiaTextRangeTracing::IApiMsg* const apiMsg);
@@ -96,7 +96,7 @@ public:
     static void s_TraceUia(const Microsoft::Console::Types::WindowUiaProvider* const pProvider,
                            const Microsoft::Console::Types::WindowUiaProviderTracing::ApiCall apiCall,
                            const Microsoft::Console::Types::WindowUiaProviderTracing::IApiMsg* const apiMsg);
-    */
+    #endif
 
 private:
     static ULONG s_ulDebugFlag;

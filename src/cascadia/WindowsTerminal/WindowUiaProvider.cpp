@@ -67,6 +67,7 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
     {
         // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         //return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        return E_NOTIMPL;
     }
     CATCH_RETURN();
 }
