@@ -90,7 +90,7 @@ namespace Microsoft::Console::Types
         ULONG _cRefs;
 
         // weak reference to uia parent
-        std::optional<WindowUiaProviderBase*> const _pUiaParent;
+        WindowUiaProviderBase* const _pUiaParent;
 
         // TODO GitHub 2120: temp workaround for nullable pUiaParent
         std::optional<HWND> _storedHwnd;
@@ -118,7 +118,7 @@ namespace Microsoft::Console::Types
         void _UnlockConsole() noexcept;
 
         // these functions are reserved for Windows Terminal
-        std::optional<std::function<RECT(void)>> _getBoundingRect;
+        std::function<RECT(void)> _getBoundingRect;
     };
 
     namespace ScreenInfoUiaProviderTracing

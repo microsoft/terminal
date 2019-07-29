@@ -17,7 +17,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
     {
-        return L"TerminalControl";
+        return L"TermControl";
     }
 
     AutomationControlType TermControlAutomationPeer::GetAutomationControlTypeCore() const
@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     winrt::hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
+        // TODO GitHub #2142: Localize string
         return L"TerminalControl";
     }
 

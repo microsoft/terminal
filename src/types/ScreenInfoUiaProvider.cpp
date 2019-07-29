@@ -267,10 +267,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
-    {
-        return E_NOTIMPL;
-    }
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     /*ApiMsgNavigate apiMsg;
@@ -282,7 +279,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
     {
         try
         {
-            _pUiaParent.value()->QueryInterface(IID_PPV_ARGS(ppProvider));
+            _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
         }
         catch (...)
         {
@@ -320,13 +317,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
     RECT rc;
     // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    if (_pUiaParent == nullptr)
     {
-        rc = _getBoundingRect.value()();
+        rc = _getBoundingRect();
     }
     else
     {
-        rc = _pUiaParent.value()->GetWindowRect();
+        rc = _pUiaParent->GetWindowRect();
     }
 
     pRect->left = rc.left;
@@ -357,15 +354,12 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
     // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
-    {
-        return E_NOTIMPL;
-    }
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
 
     //Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {
-        _pUiaParent.value()->QueryInterface(IID_PPV_ARGS(ppProvider));
+        _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
     }
     catch (...)
     {
@@ -689,19 +683,19 @@ void ScreenInfoUiaProvider::_UnlockConsole() noexcept
 
 std::optional<HWND> ScreenInfoUiaProvider::GetWindowHandle() const
 { // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    if (_pUiaParent == nullptr)
     {
         return std::nullopt;
     }
-    return _pUiaParent.value()->GetWindowHandle();
+    return _pUiaParent->GetWindowHandle();
 }
 
 void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
 {
     // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    if (!_pUiaParent.has_value() || _pUiaParent.value() == NULL)
+    if (_pUiaParent == nullptr)
     {
         return;
     }
-    _pUiaParent.value()->ChangeViewport(NewWindow);
+    _pUiaParent->ChangeViewport(NewWindow);
 }
