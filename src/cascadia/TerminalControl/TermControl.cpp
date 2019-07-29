@@ -33,7 +33,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
-        //_allowUserInput{ false },
         _closing{ false },
         _lastScrollOffset{ std::nullopt },
         _autoScrollVelocity{ 0 },
@@ -126,32 +125,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
-        _connection.StateChanged([=]() {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
-                bool allowUserInput = _connection.AllowsUserInput();
-
-                if (_cursorTimer)
-                {
-                    if (allowUserInput)
-                    {
-                        if (!_cursorTimer.value().IsEnabled())
-                            _cursorTimer.value().Start();
-                    }
-                    else
-                    {
-                        if (_cursorTimer.value().IsEnabled())
-                            _cursorTimer.value().Stop();
-                    }
-                }
-
-                _terminal->SetCursorVisible(allowUserInput);
-                _TerminalTitleChanged();
-            });
-        });
+        _connection.StateChanged({ this, &TermControl::_ConnectionStateChanged });
 
         // Subscribe to the connection's disconnected event and call our connection closed handlers.
-        _connection.TerminalDisconnected([=](bool graceful, bool canReconnect) {
-            _connectionClosedHandlers();
+        _connection.TerminalDisconnected([=](bool /*graceful*/, bool /*canReconnect*/) {
+            if (!_closing.load())
+            {
+                _connectionClosedHandlers();
+            }
         });
     }
 
@@ -444,9 +425,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _renderEngine = std::move(dxEngine);
 
         auto onRecieveOutputFn = [this](const hstring str) {
-            _terminal->Write(str.c_str());
+            if (!_closing.load())
+            {
+                _terminal->Write(str.c_str());
+            }
         };
-        _connectionOutputEventToken = _connection.TerminalOutput(onRecieveOutputFn);
+        _connection.TerminalOutput(onRecieveOutputFn);
 
         auto inputFn = std::bind(&TermControl::_SendInputToConnection, this, std::placeholders::_1);
         _terminal->SetWriteInputCallback(inputFn);
@@ -1345,6 +1329,35 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _scrollPositionChangedHandlers(viewTop, viewHeight, bufferSize);
     }
 
+    void TermControl::_ConnectionStateChanged()
+    {
+        if (_closing.load())
+        {
+            return;
+        }
+
+        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [=]() {
+            bool allowUserInput = _connection.AllowsUserInput();
+
+            if (_cursorTimer)
+            {
+                if (allowUserInput)
+                {
+                    if (!_cursorTimer.value().IsEnabled())
+                        _cursorTimer.value().Start();
+                }
+                else
+                {
+                    if (_cursorTimer.value().IsEnabled())
+                        _cursorTimer.value().Stop();
+                }
+            }
+
+            _terminal->SetCursorVisible(allowUserInput);
+            _TerminalTitleChanged();
+        });
+    }
+
     hstring TermControl::Title()
     {
         if (!_initializedTerminal)
@@ -1391,9 +1404,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         if (!_closing.exchange(true))
         {
-            // Stop accepting new output before we disconnect everything.
-            _connection.TerminalOutput(_connectionOutputEventToken);
-
             // Clear out the cursor timer, so it doesn't trigger again on us once we're destructed.
             if (auto localCursorTimer{ std::exchange(_cursorTimer, std::nullopt) })
             {

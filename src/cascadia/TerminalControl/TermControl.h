@@ -77,7 +77,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
         Windows::UI::Xaml::Controls::Primitives::ScrollBar _scrollBar;
-        event_token _connectionOutputEventToken;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal;
 
@@ -85,7 +84,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
         Settings::IControlSettings _settings;
-        //bool _allowUserInput;
         bool _focused;
         std::atomic<bool> _closing;
 
@@ -141,7 +139,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ScrollbarChangeHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::Primitives::RangeBaseValueChangedEventArgs const& e);
         void _GotFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
-
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
         void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
@@ -150,6 +147,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _DoResize(const double newWidth, const double newHeight);
         void _TerminalTitleChanged();
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
+        void _ConnectionStateChanged();
 
         void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
         void _MouseZoomHandler(const double delta);

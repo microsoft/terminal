@@ -42,6 +42,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _startingDirectory;
         guid _guid{}; // A unique session identifier for connected client
 
+        // Protects fields accessed simultaneously by main thread and _OutputThread.
+        // Note the connection is considered publicly not thread-safe.
+        std::mutex _outputThreadMutex;
+
         bool _open{ false };
         std::atomic<bool> _closing{ false };
         bool _allowsUserInput{ false };

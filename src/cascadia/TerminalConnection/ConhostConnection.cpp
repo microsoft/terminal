@@ -155,6 +155,15 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             // Then we'll recive duplicated handle to commandline process
             THROW_IF_WIN32_BOOL_FALSE(ReadFile(processInfoPipe, &_processHandle, sizeof(_processHandle.get()), nullptr, nullptr));
+        }
+
+        THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
+
+        if (_open)
+        {
+            _allowsUserInput = true;
+            _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
+            _stateChangedHandlers();
 
             // Create our own output handling thread
             // Each connection needs to make sure to drain the output from its backing host.
@@ -167,22 +176,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             THROW_LAST_ERROR_IF_NULL(_hOutputThread);
         }
-
-        THROW_IF_WIN32_BOOL_FALSE(DisconnectNamedPipe(processInfoPipe));
-
-        if (_open)
-        {
-            _allowsUserInput = true;
-            _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
-            _stateChangedHandlers();
-        }
         else
         {
             _allowsUserInput = false;
             _visualConnectionState = TerminalConnection::VisualConnectionState::ConnectionFailed;
             _stateChangedHandlers();
 
-            _disconnectHandlers(_processExitCode == 0, false);
+            _disconnectHandlers(false, false);
 
             wil::unique_hlocal_ptr<WCHAR[]> errorMsgBuf;
             size_t errorMsgSize = FormatMessageW(
@@ -232,12 +232,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConhostConnection::Close()
     {
-        if (!_open)
-        {
-            return;
-        }
-
-        if (!_closing.exchange(true))
+        if (_open && !_closing.exchange(true))
         {
             // It is imperative that the signal pipe be closed first; this triggers the
             // pseudoconsole host's teardown. See PtySignalInputThread.cpp.
@@ -258,21 +253,27 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             _hJob.reset(); // This is a formality.
             _piConhost.reset();
+
+            _open = false;
         }
     }
 
     bool ConhostConnection::AllowsUserInput()
     {
+        std::lock_guard lock(_outputThreadMutex);
         return _allowsUserInput;
     }
 
     VisualConnectionState ConhostConnection::VisualConnectionState()
     {
+        std::lock_guard lock(_outputThreadMutex);
         return _visualConnectionState;
     }
 
     hstring ConhostConnection::GetTabTitle(hstring terminalTitle)
     {
+        std::lock_guard lock(_outputThreadMutex);
+
         if (_processStartupErrorCode.has_value() && _processStartupErrorCode.value() != ERROR_SUCCESS)
         {
             return _commandline;
@@ -312,34 +313,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                     return 0;
                 }
 
-                if (_processHandle)
+                // Wait for application process to terminate to get it's exit code
+                WaitForSingleObject(_processHandle.get(), INFINITE);
+
+                DWORD exitCode;
+                THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &exitCode));
+                _processHandle.reset();
+
+                bool gracefulDisconnection = exitCode == 0;
+
                 {
-                    // Wait for application process to terminate to get it's exit code
-                    WaitForSingleObject(_processHandle.get(), INFINITE);
-                    DWORD exitCode;
-                    THROW_IF_WIN32_BOOL_FALSE(GetExitCodeProcess(_processHandle.get(), &exitCode));
+                    std::lock_guard lock(_outputThreadMutex);
+
                     _processExitCode = exitCode;
-                    _processHandle.reset();
-
-                    bool gracefulDisconnection = exitCode == 0;
-
                     _allowsUserInput = false;
                     _visualConnectionState = gracefulDisconnection ?
-                                              TerminalConnection::VisualConnectionState::DisconnectedGracefully :
-                                              TerminalConnection::VisualConnectionState::DisconnectedNotGracefully;
-                    _stateChangedHandlers();
-
-                    std::ostringstream ss;
-                    ss << "[Process exited with code \x1B[37m" << exitCode << "\x1B[0m]";
-                    _outputHandlers(winrt::to_hstring(ss.str()));
-
-                    _disconnectHandlers(gracefulDisconnection, false);
+                                                 TerminalConnection::VisualConnectionState::DisconnectedGracefully :
+                                                 TerminalConnection::VisualConnectionState::DisconnectedNotGracefully;
                 }
-                else
-                {
-                    // if _processHandle is not set, this thread shouldn't start at all
-                    _disconnectHandlers(false, false);
-                }
+
+                _stateChangedHandlers();
+
+                std::ostringstream ss;
+                ss << "[Process exited with code \x1B[37m" << exitCode << "\x1B[0m]";
+                _outputHandlers(winrt::to_hstring(ss.str()));
+
+                _disconnectHandlers(gracefulDisconnection, false);
 
                 return (DWORD)-1;
             }

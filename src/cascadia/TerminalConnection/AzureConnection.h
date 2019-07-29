@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DECLARE_EVENT(TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
         DECLARE_EVENT(TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
         DECLARE_EVENT(StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
+
     private:
         uint32_t _initialRows{};
         uint32_t _initialCols{};

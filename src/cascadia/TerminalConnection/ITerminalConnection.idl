@@ -18,6 +18,12 @@ namespace Microsoft.Terminal.TerminalConnection
     delegate void TerminalDisconnectedEventArgs(Boolean graceful, Boolean canReconnect);
     delegate void StateChangedEventArgs();
 
+	// Info regarding thread-safety:
+	// - This interface is not thread safe (it's members should be used from
+	//     the same thread it was created, or with synchronization).
+	// - You can only access it's events (add or remove) before calling Start()
+	// - Event's may fire from different threads, soy you can't safely access
+	//     it's members directly from these callbacks.
     interface ITerminalConnection
     {
         event TerminalOutputEventArgs TerminalOutput;

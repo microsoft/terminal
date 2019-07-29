@@ -28,7 +28,6 @@ using namespace winrt::Windows::Security::Credentials;
     winrt::event_token className::name(args const& handler) { return eventHandler.add(handler); } \
     void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
 
-
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
@@ -203,12 +202,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - closes the websocket connection and the output thread
     void AzureConnection::Close()
     {
-        if (!_open)
-        {
-            return;
-        }
-
-        if (!_closing.exchange(true))
+        if (_open && !_closing.exchange(true))
         {
             _canProceed.notify_all();
             if (_state == State::TermConnected)
@@ -226,11 +220,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     bool AzureConnection::AllowsUserInput()
     {
+        std::lock_guard lock(_commonMutex);
         return _allowsUserInput;
     }
 
     VisualConnectionState AzureConnection::VisualConnectionState()
     {
+        std::lock_guard lock(_commonMutex);
         return _visualConnectionState;
     }
 
@@ -258,9 +254,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - return status
     DWORD AzureConnection::_OutputThread()
     {
-        // todo: more fine-grinded status handling
-        _allowsUserInput = true;
-        _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
+        {
+            // todo: that's just temporary status handling
+            std::lock_guard lock(_commonMutex);
+            _allowsUserInput = true;
+            _visualConnectionState = TerminalConnection::VisualConnectionState::Connected;
+        }
         _stateChangedHandlers();
 
         while (true)
