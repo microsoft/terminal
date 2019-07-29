@@ -193,7 +193,6 @@ namespace winrt::TerminalApp::implementation
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
-        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
@@ -235,10 +234,6 @@ namespace winrt::TerminalApp::implementation
         about.Text(aboutText);
 
         const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        gettingStartedLink.Foreground(blueBrush);
-        documentationLink.Foreground(blueBrush);
-        releaseNotesLink.Foreground(blueBrush);
 
         Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -712,21 +707,25 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-        const auto tabTitle = matchingProfile->GetTabTitle();
-
-        // Checks if tab title has been set in the profile settings and
-        // updates accordingly.
-
-        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
         {
-            _titleChangeHandlers(newActualTitle);
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+            const auto tabTitle = matchingProfile->GetTabTitle();
+
+            // Checks if tab title has been set in the profile settings and
+            // updates accordingly.
+
+            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(newActualTitle);
+            }
         }
     }
 
