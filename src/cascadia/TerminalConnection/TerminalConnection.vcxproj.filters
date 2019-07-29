@@ -27,6 +27,7 @@
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
+    <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>

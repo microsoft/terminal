@@ -25,15 +25,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
-        hstring GetConnectionFailatureMessage();
-        hstring GetConnectionFailatureTabTitle();
-        hstring GetDisconnectionMessage();
-        hstring GetDisconnectionTabTitle(hstring previousTitle);
+        bool AllowsUserInput();
+        VisualConnectionState VisualConnectionState();
+        hstring GetTabTitle(hstring terminalTitle);
 
         DECLARE_EVENT(TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
-        DECLARE_EVENT(TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
         DECLARE_EVENT(TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
-
+        DECLARE_EVENT(StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
     private:
     };
 }

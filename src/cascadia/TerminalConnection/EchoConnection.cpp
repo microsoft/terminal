@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void EchoConnection::Start()
     {
-        _connectHandlers(true);
+        _stateChangedHandlers();
     }
 
     void EchoConnection::WriteInput(hstring const& data)
@@ -57,28 +57,22 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         throw hresult_not_implemented();
     }
 
-    hstring EchoConnection::GetConnectionFailatureMessage()
+    bool EchoConnection::AllowsUserInput()
     {
-        return L"[Echo connection failed]";
+        return true;
     }
 
-    hstring EchoConnection::GetConnectionFailatureTabTitle()
+    VisualConnectionState EchoConnection::VisualConnectionState()
     {
-        return L"Failature";
+        return VisualConnectionState::Connected;
     }
 
-    hstring EchoConnection::GetDisconnectionMessage()
+    hstring EchoConnection::GetTabTitle(hstring terminalTitle)
     {
-        return L"[Echo connection closed]";
+        return terminalTitle;
     }
 
-    hstring EchoConnection::GetDisconnectionTabTitle(hstring previousTitle)
-    {
-        previousTitle;
-        return L"Exited";
-    }
-
-    DEFINE_EVENT(EchoConnection, TerminalConnected, _connectHandlers, TerminalConnection::TerminalConnectedEventArgs);
-    DEFINE_EVENT(EchoConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
     DEFINE_EVENT(EchoConnection, TerminalOutput, _outputHandlers, TerminalConnection::TerminalOutputEventArgs);
+    DEFINE_EVENT(EchoConnection, TerminalDisconnected, _disconnectHandlers, TerminalConnection::TerminalDisconnectedEventArgs);
+    DEFINE_EVENT(EchoConnection, StateChanged, _stateChangedHandlers, TerminalConnection::StateChangedEventArgs);
 }
