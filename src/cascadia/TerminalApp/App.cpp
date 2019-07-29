@@ -103,6 +103,14 @@ namespace winrt::TerminalApp::implementation
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
 
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "AppCreated",
+            TraceLoggingDescription("Event emitted when the application is started"),
+            TraceLoggingBool(_settings->GlobalSettings().GetShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
