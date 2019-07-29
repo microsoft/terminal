@@ -239,7 +239,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         _buffer->ScrollRows(scrollFromPos.Y, _mutableViewport.Height(), -scrollFromPos.Y);
 
         // Since we only did a rotation, the text that was in the scrollback is now _below_ where we are going to move the viewport
-        // and we have to make sure we erase that text 
+        // and we have to make sure we erase that text
         auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive());
         auto eraseStart = _mutableViewport.Height();
         auto eraseEnd = _buffer->GetLastNonSpaceCharacter(_mutableViewport).Y;

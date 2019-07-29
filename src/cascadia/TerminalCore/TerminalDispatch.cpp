@@ -126,7 +126,6 @@ bool TerminalDispatch::DeleteCharacter(const unsigned int uiCount)
     return _terminalApi.DeleteCharacter(uiCount);
 }
 
-
 // Method Description:
 // - Moves the viewport and erases text from the buffer depending on the eraseType
 // Arguments:
