@@ -227,7 +227,7 @@ namespace Microsoft::Console::Types
         IRawElementProviderSimple* const _pProvider;
 
         RECT _getTerminalRect() const;
-        std::optional<HWND> _getWindowHandle() const;
+        HWND _getWindowHandle() const;
 
     private:
         // degenerate range

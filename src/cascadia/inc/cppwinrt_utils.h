@@ -56,3 +56,33 @@ private:                                                                        
 #define DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(className, name, eventHandler, sender, args)                                                        \
     winrt::event_token className::name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return eventHandler.add(handler); } \
     void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
+
+// This is a helper method for deserializing a SAFEARRAY of
+// COM objects and converting it to a vector that
+// owns the extracted COM objects
+        template<typename T>
+        std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
+        {
+            T** pVals;
+            THROW_IF_FAILED(SafeArrayAccessData(safeArray, (void**)&pVals));
+
+            long lBound, uBound;
+            THROW_IF_FAILED(SafeArrayGetLBound(safeArray, 1, &lBound));
+            THROW_IF_FAILED(SafeArrayGetUBound(safeArray, 1, &uBound));
+
+            long count = uBound - lBound + 1;
+
+            std::vector<wil::com_ptr<T>> result;
+            result.reserve(count);
+
+            for (int i = 0; i < count; i++)
+            {
+                T* item = pVals[i];
+
+                wil::com_ptr<T> vec_elem;
+                vec_elem.attach(item);
+                result.emplace_back(vec_elem);
+            }
+
+            return result;
+        }

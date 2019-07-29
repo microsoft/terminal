@@ -681,11 +681,12 @@ void ScreenInfoUiaProvider::_UnlockConsole() noexcept
     _pData->UnlockConsole();
 }
 
-std::optional<HWND> ScreenInfoUiaProvider::GetWindowHandle() const
-{ // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+HWND ScreenInfoUiaProvider::GetWindowHandle() const
+{
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
     if (_pUiaParent == nullptr)
     {
-        return std::nullopt;
+        return nullptr;
     }
     return _pUiaParent->GetWindowHandle();
 }

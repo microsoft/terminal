@@ -46,74 +46,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 #pragma region ITextProvider
     winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
-        try
-        {
-            SAFEARRAY* pReturnVal;
-            THROW_IF_FAILED(_uiaProvider.GetSelection(&pReturnVal));
-
-            ::UiaTextRange** pVals;
-            THROW_IF_FAILED(SafeArrayAccessData(pReturnVal, (void**)&pVals));
-
-            long lBound, uBound;
-            THROW_IF_FAILED(SafeArrayGetLBound(pReturnVal, 1, &lBound));
-            THROW_IF_FAILED(SafeArrayGetUBound(pReturnVal, 1, &uBound));
-
-            long count = uBound - lBound + 1;
-
-            std::vector<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> vec;
-            vec.reserve(count);
-            auto parentProvider = this->ProviderFromPeer(*this);
-            for (int i = 0; i < count; i++)
-            {
-                ::UiaTextRange* provider = pVals[i];
-                auto xutr = winrt::make_self<XamlUiaTextRange>(provider, parentProvider);
-                vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
-            }
-
-            winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> result{ vec };
-
-            return result;
-        }
-        catch (...)
-        {
-        }
-        return {};
+        SAFEARRAY* pReturnVal;
+        THROW_IF_FAILED(_uiaProvider.GetSelection(&pReturnVal));
+        return SafeArrayToComArray(pReturnVal);
     }
 
     winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
-        try
-        {
-            SAFEARRAY* pReturnVal;
-            THROW_IF_FAILED(_uiaProvider.GetVisibleRanges(&pReturnVal));
-
-            ::UiaTextRange** pVals;
-            THROW_IF_FAILED(SafeArrayAccessData(pReturnVal, (void**)&pVals));
-
-            long lBound, uBound;
-            THROW_IF_FAILED(SafeArrayGetLBound(pReturnVal, 1, &lBound));
-            THROW_IF_FAILED(SafeArrayGetUBound(pReturnVal, 1, &uBound));
-
-            long count = uBound - lBound + 1;
-
-            std::vector<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> vec;
-            vec.reserve(count);
-            auto parentProvider = this->ProviderFromPeer(*this);
-            for (int i = 0; i < count; i++)
-            {
-                ::UiaTextRange* provider = pVals[i];
-                auto xutr = winrt::make_self<XamlUiaTextRange>(provider, parentProvider);
-                vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
-            }
-
-            winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> result{ vec };
-
-            return result;
-        }
-        catch (...)
-        {
-        }
-        return {};
+        SAFEARRAY* pReturnVal;
+        THROW_IF_FAILED(_uiaProvider.GetVisibleRanges(&pReturnVal));
+        return SafeArrayToComArray(pReturnVal);
     }
 
     Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement)
@@ -166,5 +108,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             gsl::narrow<LONG>(rect.X + rect.Width),
             gsl::narrow<LONG>(rect.Y + rect.Height)
         };
+    }
+
+    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::SafeArrayToComArray(SAFEARRAY* textRanges)
+    {
+        auto owningVector = SafeArrayToOwningVector<::UiaTextRange>(textRanges);
+        int count = owningVector.size();
+
+        std::vector<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> vec;
+        vec.reserve(count);
+        auto parentProvider = this->ProviderFromPeer(*this);
+        for (int i = 0; i < count; i++)
+        {
+            auto provider = owningVector[i];
+            auto xutr = winrt::make_self<XamlUiaTextRange>(provider.get(), parentProvider);
+            vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
+        }
+
+        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> result{ vec };
+
+        return result;
     }
 }

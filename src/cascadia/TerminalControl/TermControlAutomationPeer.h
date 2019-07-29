@@ -63,5 +63,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     private:
         TermControl* _owner;
         ScreenInfoUiaProvider _uiaProvider;
+
+        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> SafeArrayToComArray(SAFEARRAY* textRanges);
     };
 }

@@ -82,7 +82,7 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
-        std::optional<HWND> GetWindowHandle() const;
+        HWND GetWindowHandle() const;
         void ChangeViewport(const SMALL_RECT NewWindow);
 
     private:
@@ -91,9 +91,6 @@ namespace Microsoft::Console::Types
 
         // weak reference to uia parent
         WindowUiaProviderBase* const _pUiaParent;
-
-        // TODO GitHub 2120: temp workaround for nullable pUiaParent
-        std::optional<HWND> _storedHwnd;
 
         // weak reference to IRenderData
         Microsoft::Console::Render::IRenderData* _pData;
