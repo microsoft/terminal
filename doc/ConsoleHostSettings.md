@@ -38,6 +38,7 @@ Settings in the Windows Console Host can be a bit tricky to understand. This is 
 |`VirtualTerminalLevel`*    |REG_DWORD              |The level of VT support provided by the Windows Console Host |
 
 *: Only applies to the improved version of the Windows Console Host
+
 **: WxH stands for Width by Height, it's the fact that things like a Window size
 store the Width and Height values in the high and low word in the registry's
 double word values.
