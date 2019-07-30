@@ -78,8 +78,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         UIA::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
-        _uiaProvider.RangeFromChild(/* IRawElementProviderSimple */ nullptr,
-                                    &returnVal);
+        THROW_IF_FAILED(_uiaProvider.RangeFromChild(/* IRawElementProviderSimple */ nullptr,
+                                                    &returnVal));
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
@@ -89,7 +89,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
         UIA::ITextRangeProvider* returnVal;
-        _uiaProvider.RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal);
+        THROW_IF_FAILED(_uiaProvider.RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
@@ -99,7 +99,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
         UIA::ITextRangeProvider* returnVal;
-        _uiaProvider.get_DocumentRange(&returnVal);
+        THROW_IF_FAILED(_uiaProvider.get_DocumentRange(&returnVal));
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
@@ -109,7 +109,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     Windows::UI::Xaml::Automation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
         UIA::SupportedTextSelection returnVal;
-        _uiaProvider.get_SupportedTextSelection(&returnVal);
+        THROW_IF_FAILED(_uiaProvider.get_SupportedTextSelection(&returnVal));
         return static_cast<XamlAutomation::SupportedTextSelection>(returnVal);
     }
 

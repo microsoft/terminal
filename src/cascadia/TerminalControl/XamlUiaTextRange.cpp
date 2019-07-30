@@ -48,7 +48,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         auto self = winrt::get_self<XamlUiaTextRange>(pTargetRange);
 
         int32_t returnVal;
-        THROW_IF_FAILED(_uiaProvider->Compare(self->_uiaProvider.get(), &returnVal));
+        THROW_IF_FAILED(_uiaProvider->CompareEndpoints(static_cast<UIA::TextPatternRangeEndpoint>(endpoint),
+                                                       self->_uiaProvider.get(),
+                                                       static_cast<UIA::TextPatternRangeEndpoint>(targetEndpoint),
+                                                       &returnVal));
         return returnVal;
     }
 
@@ -63,7 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // TODO GitHub #2161: potential accessibility improvement
         // we don't support this currently
-        return nullptr;
+        throw winrt::hresult_not_implemented();
     }
 
     XamlAutomation::ITextRangeProvider XamlUiaTextRange::FindText(winrt::hstring text,
@@ -73,7 +76,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO GitHub #605: Search functionality
         // we need to wrap this around the UiaTextRange FindText() function
         // but right now it returns E_NOTIMPL, so let's just return nullptr for now.
-        return nullptr;
+        throw winrt::hresult_not_implemented();
     }
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
@@ -130,7 +133,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     winrt::hstring XamlUiaTextRange::GetText(int32_t maxLength) const
     {
         BSTR returnVal;
-        _uiaProvider->GetText(maxLength, &returnVal);
+        THROW_IF_FAILED(_uiaProvider->GetText(maxLength, &returnVal));
         return winrt::to_hstring(returnVal);
     }
 
@@ -138,9 +141,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                    int32_t count)
     {
         int returnVal;
-        _uiaProvider->Move(static_cast<UIA::TextUnit>(unit),
-                           count,
-                           &returnVal);
+        THROW_IF_FAILED(_uiaProvider->Move(static_cast<UIA::TextUnit>(unit),
+                                           count,
+                                           &returnVal));
         return returnVal;
     }
 
@@ -149,10 +152,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                  int32_t count) const
     {
         int returnVal;
-        _uiaProvider->MoveEndpointByUnit(static_cast<UIA::TextPatternRangeEndpoint>(endpoint),
-                                         static_cast<UIA::TextUnit>(unit),
-                                         count,
-                                         &returnVal);
+        THROW_IF_FAILED(_uiaProvider->MoveEndpointByUnit(static_cast<UIA::TextPatternRangeEndpoint>(endpoint),
+                                                         static_cast<UIA::TextUnit>(unit),
+                                                         count,
+                                                         &returnVal));
         return returnVal;
     }
 
@@ -161,9 +164,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                                                XamlAutomation::TextPatternRangeEndpoint targetEndpoint) const
     {
         auto self = winrt::get_self<XamlUiaTextRange>(pTargetRange);
-        _uiaProvider->MoveEndpointByRange(static_cast<UIA::TextPatternRangeEndpoint>(endpoint),
-                                          /*pTargetRange*/ self->_uiaProvider.get(),
-                                          static_cast<UIA::TextPatternRangeEndpoint>(targetEndpoint));
+        THROW_IF_FAILED(_uiaProvider->MoveEndpointByRange(static_cast<UIA::TextPatternRangeEndpoint>(endpoint),
+                                                          /*pTargetRange*/ self->_uiaProvider.get(),
+                                                          static_cast<UIA::TextPatternRangeEndpoint>(targetEndpoint)));
     }
 
     void XamlUiaTextRange::Select() const
@@ -174,11 +177,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void XamlUiaTextRange::AddToSelection() const
     {
         // we don't support this
+        throw winrt::hresult_not_implemented();
     }
 
     void XamlUiaTextRange::RemoveFromSelection() const
     {
         // we don't support this
+        throw winrt::hresult_not_implemented();
     }
 
     void XamlUiaTextRange::ScrollIntoView(bool alignToTop) const
