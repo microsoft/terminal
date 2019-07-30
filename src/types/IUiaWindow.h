@@ -26,6 +26,6 @@ namespace Microsoft::Console::Types
         virtual HWND GetWindowHandle() const = 0;
         [[nodiscard]] virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
-        virtual RECT GetWindowRect() const = 0;
+        virtual RECT GetWindowRect() const noexcept = 0;
     };
 }

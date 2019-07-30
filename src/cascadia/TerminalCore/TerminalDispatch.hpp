@@ -29,6 +29,7 @@ public:
 
     bool SetDefaultForeground(const DWORD dwColor) override;
     bool SetDefaultBackground(const DWORD dwColor) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType /* eraseType*/) override; // ED
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

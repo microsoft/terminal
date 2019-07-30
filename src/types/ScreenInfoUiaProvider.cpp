@@ -673,11 +673,13 @@ const Viewport ScreenInfoUiaProvider::_getViewport() const
 
 void ScreenInfoUiaProvider::_LockConsole() noexcept
 {
+    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
     _pData->LockConsole();
 }
 
 void ScreenInfoUiaProvider::_UnlockConsole() noexcept
 {
+    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
     _pData->UnlockConsole();
 }
 

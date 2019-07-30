@@ -8,17 +8,12 @@
 #include "../host/renderData.hpp"
 
 WindowUiaProvider::WindowUiaProvider(Microsoft::Console::Types::IUiaWindow* baseWindow) :
-    //_pScreenInfoProvider{ nullptr },
     WindowUiaProviderBase(baseWindow)
 {
 }
 
 WindowUiaProvider::~WindowUiaProvider()
 {
-    /*if (_pScreenInfoProvider)
-    {
-        _pScreenInfoProvider->Release();
-    }*/
 }
 
 WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
@@ -67,6 +62,7 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
     {
         // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         //return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
+        return E_NOTIMPL;
     }
     CATCH_RETURN();
 }

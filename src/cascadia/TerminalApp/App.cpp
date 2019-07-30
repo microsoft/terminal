@@ -110,6 +110,8 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
+
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
     }
 
     App::~App()
@@ -153,6 +155,11 @@ namespace winrt::TerminalApp::implementation
         // xaml tree somehow.
         dialog.XamlRoot(_root.XamlRoot());
 
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
@@ -195,7 +202,6 @@ namespace winrt::TerminalApp::implementation
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
-        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
@@ -237,10 +243,6 @@ namespace winrt::TerminalApp::implementation
         about.Text(aboutText);
 
         const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        gettingStartedLink.Foreground(blueBrush);
-        documentationLink.Foreground(blueBrush);
-        releaseNotesLink.Foreground(blueBrush);
 
         Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -714,21 +716,25 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-        const auto tabTitle = matchingProfile->GetTabTitle();
-
-        // Checks if tab title has been set in the profile settings and
-        // updates accordingly.
-
-        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
         {
-            _titleChangeHandlers(newActualTitle);
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+            const auto tabTitle = matchingProfile->GetTabTitle();
+
+            // Checks if tab title has been set in the profile settings and
+            // updates accordingly.
+
+            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(newActualTitle);
+            }
         }
     }
 
@@ -740,7 +746,6 @@ namespace winrt::TerminalApp::implementation
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
-        _root.RequestedTheme(newTheme);
         // Propagate the event to the host layer, so it can update its own UI
         _requestedThemeChangedHandlers(*this, newTheme);
     }
@@ -910,12 +915,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto connection = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                settings.StartingDirectory(),
-                                                                30,
-                                                                80,
-                                                                winrt::guid());
+        // Create a connection based on the values in our settings object.
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -1257,8 +1258,9 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile.HasIcon())
         {
-            auto path = profile.GetIconPath();
-            winrt::hstring iconPath{ path };
+            std::wstring path{ profile.GetIconPath() };
+            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            winrt::hstring iconPath{ envExpandedPath };
             winrt::Windows::Foundation::Uri iconUri{ iconPath };
             Controls::BitmapIconSource iconSource;
             // Make sure to set this to false, so we keep the RGB data of the
@@ -1326,12 +1328,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
-                                                                       controlSettings.StartingDirectory(),
-                                                                       30,
-                                                                       80,
-                                                                       winrt::guid());
+        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1458,6 +1455,32 @@ namespace winrt::TerminalApp::implementation
                 menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
             }
         }
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+        // The Azure connection has a boost dependency, and boost does not support ARM64
+        // so we make sure that we do not try to compile the Azure connection code if we are in ARM64 (we would get build errors otherwise)
+#ifndef _M_ARM64
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType)
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+        }
+        else
+#endif
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+        }
+        return connection;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

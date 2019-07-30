@@ -64,6 +64,7 @@ namespace Microsoft::Console::Render
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
 
+        // TODO GitHub #1992: Move some of these functions to IAccessibilityData (or IUiaData)
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
         virtual bool IsAreaSelected() const = 0;
         virtual void ClearSelection() = 0;

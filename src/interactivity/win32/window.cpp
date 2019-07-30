@@ -979,7 +979,7 @@ void Microsoft::Console::Interactivity::Win32::Window::s_CalculateWindowRect(con
     prectWindow->bottom = prectWindow->top + RECT_HEIGHT(&rectProposed);
 }
 
-RECT Microsoft::Console::Interactivity::Win32::Window::GetWindowRect() const
+RECT Window::GetWindowRect() const noexcept
 {
     RECT rc = { 0 };
     ::GetWindowRect(GetWindowHandle(), &rc);

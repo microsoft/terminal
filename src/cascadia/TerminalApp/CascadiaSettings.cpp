@@ -239,6 +239,19 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
+    // The Azure connection has a boost dependency, and boost does not support ARM64
+    // so we don't create a default profile for the Azure cloud shell if we're in ARM64
+#ifndef _M_ARM64
+    auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
+    azureCloudShellProfile.SetCommandline(L"Azure");
+    azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+    azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
+    azureCloudShellProfile.SetAcrylicOpacity(0.85);
+    azureCloudShellProfile.SetUseAcrylic(true);
+    azureCloudShellProfile.SetCloseOnExit(false);
+    azureCloudShellProfile.SetConnectionType(AzureConnectionType);
+#endif
+
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
@@ -261,6 +274,9 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+#ifndef _M_ARM64
+    _profiles.emplace_back(azureCloudShellProfile);
+#endif
     try
     {
         _AppendWslProfiles(_profiles);
@@ -498,7 +514,8 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - true iff powershell core (pwsh.exe) is present in the given path
 bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
-    std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
+    std::wstring programFileEnvNulTerm{ programFileEnv };
+    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
     psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
@@ -595,6 +612,7 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
+            WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
             std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
             iconPath.append(DEFAULT_LINUX_ICON_GUID);
             iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
@@ -602,27 +620,6 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             profileStorage.emplace_back(WSLDistro);
         }
     }
-}
-
-// Function Description:
-// - Get a environment variable string.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// Return Value:
-// - a string of the expending environment-variable string.
-std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view source)
-{
-    std::wstring result{};
-    DWORD requiredSize = 0;
-    do
-    {
-        result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
-    } while (requiredSize != result.size());
-
-    // Trim the terminating null character
-    result.resize(requiredSize - 1);
-    return result;
 }
 
 // Method Description:

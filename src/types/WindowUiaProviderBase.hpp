@@ -69,7 +69,7 @@ namespace Microsoft::Console::Types
 
         WindowUiaProviderBase(IUiaWindow* baseWindow);
 
-        RECT GetWindowRect() const;
+        RECT GetWindowRect() const noexcept;
         HWND GetWindowHandle() const;
         void ChangeViewport(const SMALL_RECT NewWindow);
 
