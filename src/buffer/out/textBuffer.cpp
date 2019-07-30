@@ -558,6 +558,7 @@ bool TextBuffer::IncrementCircularBuffer()
 
 //Routine Description:
 // - Retrieves the position of the last non-space character on the final line of the text buffer.
+// - By default, we search the entire buffer to find the last non-space character
 //Arguments:
 // - <none>
 //Return Value:
@@ -569,6 +570,8 @@ COORD TextBuffer::GetLastNonSpaceCharacter() const
 
 //Routine Description:
 // - Retrieves the position of the last non-space character in the given viewport
+// - This is basically an optimized version of GetLastNonSpaceCharacter(), and can be called when
+// - we know the last character is within the given viewport (so we don't need to check the entire buffer)
 //Arguments:
 // - The viewport
 //Return value:

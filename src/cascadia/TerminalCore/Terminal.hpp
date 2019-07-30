@@ -67,6 +67,7 @@ public:
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
     bool DeleteCharacter(const unsigned int uiCount) override;
+    bool InsertCharacter(const unsigned int uiCount) override;
     bool EraseCharacters(const unsigned int numChars) override;
     bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;

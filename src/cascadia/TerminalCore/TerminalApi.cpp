@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -145,7 +146,7 @@ bool Terminal::DeleteCharacter(const unsigned int uiCount)
     }
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto copyToPos = cursorPos;
-    COORD copyFromPos{ cursorPos.X + dist, cursorPos.Y };
+    const COORD copyFromPos{ cursorPos.X + dist, cursorPos.Y };
     auto sourceWidth = _mutableViewport.RightExclusive() - copyFromPos.X;
     SHORT width;
     if (!SUCCEEDED(UIntToShort(sourceWidth, &width)))
@@ -154,7 +155,56 @@ bool Terminal::DeleteCharacter(const unsigned int uiCount)
     }
 
     // Get a rectangle of the source
-    auto source = Viewport::FromDimensions(copyFromPos, width, (SHORT)1);
+    auto source = Viewport::FromDimensions(copyFromPos, width, 1);
+
+    // Get a rectangle of the target
+    const auto target = Viewport::FromDimensions(copyToPos, source.Dimensions());
+    const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
+
+    auto sourcePos = source.GetWalkOrigin(walkDirection);
+    auto targetPos = target.GetWalkOrigin(walkDirection);
+
+    // Iterate over the source cell data and copy it over to the target
+    do
+    {
+        const auto data = OutputCell(*(_buffer->GetCellDataAt(sourcePos)));
+        _buffer->Write(OutputCellIterator({ &data, 1 }), targetPos);
+    } while (source.WalkInBounds(sourcePos, walkDirection) && target.WalkInBounds(targetPos, walkDirection));
+
+    return true;
+}
+
+// Method Description:
+// - Inserts uiCount spaces starting from the cursor's current position, moving over the existing text
+// - for example, if the buffer looks like this ('|' is the cursor): [abc|def]
+// - calling InsertCharacter(1) will change it to: [abc| def],
+// - i.e. the 'def' gets shifted over 1 space and **retain their previous text attributes**
+// Arguments:
+// - uiCount, the number of spaces to insert
+// Return value:
+// - true if succeeded, false otherwise
+bool Terminal::InsertCharacter(const unsigned int uiCount)
+{
+    // NOTE: the code below is _extremely_ similar to DeleteCharacter
+    // We will want to use this same logic and implement a helper function instead
+    // that does the 'move a region from here to there' operation
+    SHORT dist;
+    if (!SUCCEEDED(UIntToShort(uiCount, &dist)))
+    {
+        return false;
+    }
+    const auto cursorPos = _buffer->GetCursor().GetPosition();
+    const auto copyFromPos = cursorPos;
+    const COORD copyToPos{ cursorPos.X + dist, cursorPos.Y };
+    auto sourceWidth = _mutableViewport.RightExclusive() - copyFromPos.X;
+    SHORT width;
+    if (!SUCCEEDED(UIntToShort(sourceWidth, &width)))
+    {
+        return false;
+    }
+
+    // Get a rectangle of the source
+    auto source = Viewport::FromDimensions(copyFromPos, width, 1);
     const auto sourceOrigin = source.Origin();
 
     // Get a rectangle of the target
@@ -167,11 +217,11 @@ bool Terminal::DeleteCharacter(const unsigned int uiCount)
     // Iterate over the source cell data and copy it over to the target
     do
     {
-        const auto data = OutputCell(_buffer->GetCellDataAt(sourcePos).operator*());
+        const auto data = OutputCell(*(_buffer->GetCellDataAt(sourcePos)));
         _buffer->Write(OutputCellIterator({ &data, 1 }), targetPos);
-
-        source.WalkInBounds(sourcePos, walkDirection);
-    } while (target.WalkInBounds(targetPos, walkDirection));
+    } while (source.WalkInBounds(sourcePos, walkDirection) && target.WalkInBounds(targetPos, walkDirection));
+    auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), dist);
+    _buffer->Write(eraseIter, cursorPos);
 
     return true;
 }
@@ -182,7 +232,7 @@ bool Terminal::EraseCharacters(const unsigned int numChars)
     const auto viewport = _GetMutableViewport();
     const short distanceToRight = viewport.RightExclusive() - absoluteCursorPos.X;
     const short fillLimit = std::min(static_cast<short>(numChars), distanceToRight);
-    auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), fillLimit);
+    auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), fillLimit);
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
@@ -224,7 +274,7 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
         return false;
     }
 
-    auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), nlength);
+    auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), nlength);
     _buffer->Write(eraseIter, startPos);
     return true;
 }
@@ -264,7 +314,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         short sNewTop = coordLastChar.Y + 1;
 
         // Increment the circular buffer only if the new location of the viewport would be 'below' the buffer
-        short delta = (sNewTop + _mutableViewport.Height()) - (_buffer->GetSize().Height());
+        const short delta = (sNewTop + _mutableViewport.Height()) - (_buffer->GetSize().Height());
         for (auto i = 0; i < delta; i++)
         {
             _buffer->IncrementCircularBuffer();
@@ -284,7 +334,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
         // Since we only did a rotation, the text that was in the scrollback is now _below_ where we are going to move the viewport
         // and we have to make sure we erase that text
-        auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive());
+        auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive());
         auto eraseStart = _mutableViewport.Height();
         auto eraseEnd = _buffer->GetLastNonSpaceCharacter(_mutableViewport).Y;
         for (SHORT i = eraseStart; i <= eraseEnd; i++)

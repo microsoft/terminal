@@ -47,6 +47,13 @@ bool TerminalDispatch::CursorForward(const unsigned int uiDistance)
     return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
 }
 
+bool TerminalDispatch::CursorBackward(const unsigned int uiDistance)
+{
+    const auto cursorPos = _terminalApi.GetCursorPosition();
+    const COORD newCursorPos{ cursorPos.X - gsl::narrow<short>(uiDistance), cursorPos.Y };
+    return _terminalApi.SetCursorPosition(newCursorPos.X, newCursorPos.Y);
+}
+
 bool TerminalDispatch::CursorUp(const unsigned int uiDistance)
 {
     const auto cursorPos = _terminalApi.GetCursorPosition();
@@ -124,6 +131,17 @@ bool TerminalDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 bool TerminalDispatch::DeleteCharacter(const unsigned int uiCount)
 {
     return _terminalApi.DeleteCharacter(uiCount);
+}
+
+// Method Description:
+// - Adds uiCount number of spaces starting from where the cursor is currently
+// Arguments:
+// - uiCount, the number of spaces to add
+// Return Value:
+// True if handled successfully, false otherwise
+bool TerminalDispatch::InsertCharacter(const unsigned int uiCount)
+{
+    return _terminalApi.InsertCharacter(uiCount);
 }
 
 // Method Description:
