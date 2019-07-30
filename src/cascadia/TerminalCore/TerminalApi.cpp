@@ -188,6 +188,7 @@ bool Terminal::InsertCharacter(const unsigned int uiCount)
     // NOTE: the code below is _extremely_ similar to DeleteCharacter
     // We will want to use this same logic and implement a helper function instead
     // that does the 'move a region from here to there' operation
+    // TODO: Github issue #2163
     SHORT dist;
     if (!SUCCEEDED(UIntToShort(uiCount, &dist)))
     {
@@ -334,9 +335,9 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
         // Since we only did a rotation, the text that was in the scrollback is now _below_ where we are going to move the viewport
         // and we have to make sure we erase that text
-        auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive());
         auto eraseStart = _mutableViewport.Height();
         auto eraseEnd = _buffer->GetLastNonSpaceCharacter(_mutableViewport).Y;
+        auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive() * (eraseEnd - eraseStart + 1));
         for (SHORT i = eraseStart; i <= eraseEnd; i++)
         {
             COORD erasePos{ 0, i };
