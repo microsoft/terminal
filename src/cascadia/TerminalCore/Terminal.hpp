@@ -66,7 +66,11 @@ public:
     bool ReverseText(bool reversed) override;
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
+    bool DeleteCharacter(const unsigned int uiCount) override;
+    bool InsertCharacter(const unsigned int uiCount) override;
     bool EraseCharacters(const unsigned int numChars) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool SetWindowTitle(std::wstring_view title) override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
