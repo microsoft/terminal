@@ -107,10 +107,6 @@ void PtySignalInputThread::ConnectConsole() noexcept
             }
             else
             {
-                ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->BeginResize();
-                auto endResize = wil::scope_exit([&] {
-                    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->EndResize();
-                });
                 if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
                 {
                     DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
