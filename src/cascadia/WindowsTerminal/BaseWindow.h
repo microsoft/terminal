@@ -156,7 +156,7 @@ public:
         RECT rc = { 0 };
         ::GetWindowRect(_window.get(), &rc);
         return rc;
-    };
+    }
 
     HWND GetHandle() const noexcept
     {

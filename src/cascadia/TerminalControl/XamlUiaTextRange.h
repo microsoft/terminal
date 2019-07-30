@@ -22,7 +22,6 @@ Author(s):
 
 #include "TermControlAutomationPeer.h"
 #include <UIAutomationCore.h>
-#include <winrt/Windows.UI.Xaml.h>
 #include "../types/UiaTextRange.hpp"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
@@ -37,7 +36,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _uiaProvider.attach(uiaProvider);
         }
 
-        // ITextRangeProvider
+#pragma region ITextRangeProvider
         Windows::UI::Xaml::Automation::Provider::ITextRangeProvider Clone() const;
         bool Compare(Windows::UI::Xaml::Automation::Provider::ITextRangeProvider pRange) const;
         int32_t CompareEndpoints(Windows::UI::Xaml::Automation::Text::TextPatternRangeEndpoint endpoint,
@@ -67,6 +66,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void RemoveFromSelection() const;
         void ScrollIntoView(bool alignToTop) const;
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple> GetChildren() const;
+#pragma endregion ITextRangeProvider
 
     private:
         wil::com_ptr<::ITextRangeProvider> _uiaProvider;

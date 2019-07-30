@@ -66,6 +66,8 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     T** pVals;
     THROW_IF_FAILED(SafeArrayAccessData(safeArray, (void**)&pVals));
 
+    THROW_HR_IF(E_UNEXPECTED, SafeArrayGetDim(safeArray) != 1);
+
     long lBound, uBound;
     THROW_IF_FAILED(SafeArrayGetLBound(safeArray, 1, &lBound));
     THROW_IF_FAILED(SafeArrayGetUBound(safeArray, 1, &uBound));
@@ -76,7 +78,7 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
     // any of the elements in the SAFEARRAY because we
     // cannot identify how many elements there are.
 
-    std::vector<wil::com_ptr<T>> result{ static_cast<std::size_t>(count) };
+    std::vector<wil::com_ptr<T>> result{ gsl::narrow<std::size_t>(count) };
     for (int i = 0; i < count; i++)
     {
         result[i].attach(pVals[i]);

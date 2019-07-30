@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 #include "precomp.h"
 
-//#include "window.hpp"
 #include "windowUiaProvider.hpp"
 #include "../types/ScreenInfoUiaProvider.h"
 

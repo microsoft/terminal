@@ -9,10 +9,26 @@
 
 #include "XamlUiaTextRange.h"
 
+using namespace Microsoft::Console::Types;
+using namespace winrt::Windows::UI::Xaml::Automation::Peers;
+
+namespace UIA
+{
+    using ::ITextRangeProvider;
+    using ::SupportedTextSelection;
+}
+
+namespace XamlAutomation
+{
+    using winrt::Windows::UI::Xaml::Automation::SupportedTextSelection;
+    using winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple;
+    using winrt::Windows::UI::Xaml::Automation::Provider::ITextRangeProvider;
+}
+
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner) :
-        TermControlAutomationPeerT<TermControlAutomationPeer>(owner),
+        TermControlAutomationPeerT<TermControlAutomationPeer>(owner), // pass owner to FrameworkElementAutomationPeer
         _uiaProvider{ owner.GetRenderData(), nullptr, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this) } {};
 
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
@@ -44,57 +60,57 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
 #pragma region ITextProvider
-    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
+    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetSelection()
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider.GetSelection(&pReturnVal));
         return SafeArrayToComArray(pReturnVal);
     }
 
-    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
+    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider.GetVisibleRanges(&pReturnVal));
         return SafeArrayToComArray(pReturnVal);
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple childElement)
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
     {
-        ::ITextRangeProvider* returnVal;
+        UIA::ITextRangeProvider* returnVal;
         // ScreenInfoUiaProvider doesn't actually use parameter, so just pass in nullptr
         _uiaProvider.RangeFromChild(/* IRawElementProviderSimple */ nullptr,
                                     &returnVal);
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
+        return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromPoint(Windows::Foundation::Point screenLocation)
     {
-        ::ITextRangeProvider* returnVal;
+        UIA::ITextRangeProvider* returnVal;
         _uiaProvider.RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal);
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
+        return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
-    Windows::UI::Xaml::Automation::Provider::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
+    XamlAutomation::ITextRangeProvider TermControlAutomationPeer::DocumentRange()
     {
-        ::ITextRangeProvider* returnVal;
+        UIA::ITextRangeProvider* returnVal;
         _uiaProvider.get_DocumentRange(&returnVal);
 
         auto parentProvider = this->ProviderFromPeer(*this);
         auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
-        return xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>();
+        return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
 
     Windows::UI::Xaml::Automation::SupportedTextSelection TermControlAutomationPeer::SupportedTextSelection()
     {
-        ::SupportedTextSelection returnVal;
+        UIA::SupportedTextSelection returnVal;
         _uiaProvider.get_SupportedTextSelection(&returnVal);
-        return static_cast<Windows::UI::Xaml::Automation::SupportedTextSelection>(returnVal);
+        return static_cast<XamlAutomation::SupportedTextSelection>(returnVal);
     }
 
 #pragma endregion
@@ -110,22 +126,28 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         };
     }
 
-    winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> TermControlAutomationPeer::SafeArrayToComArray(SAFEARRAY* textRanges)
+    // Method Description:
+    // - extracts the UiaTextRanges from the SAFEARRAY and converts them to Xaml ITextRangeProviders
+    // Arguments:
+    // - SAFEARRAY of UIA::UiaTextRange (ITextRangeProviders)
+    // Return Value:
+    // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
+    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::SafeArrayToComArray(SAFEARRAY* textRanges)
     {
-        auto owningVector = SafeArrayToOwningVector<::UiaTextRange>(textRanges);
-        int count = owningVector.size();
+        // transfer ownership of UiaTextRanges to this new vector
+        auto providers = SafeArrayToOwningVector<::Microsoft::Console::Types::UiaTextRange>(textRanges);
+        int count = providers.size();
 
-        std::vector<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> vec;
+        std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
         auto parentProvider = this->ProviderFromPeer(*this);
         for (int i = 0; i < count; i++)
         {
-            auto provider = owningVector[i];
-            auto xutr = winrt::make_self<XamlUiaTextRange>(provider.get(), parentProvider);
-            vec.emplace_back(xutr.as<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>());
+            auto xutr = winrt::make_self<XamlUiaTextRange>(providers[i].detach(), parentProvider);
+            vec.emplace_back(xutr.as<XamlAutomation::ITextRangeProvider>());
         }
 
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> result{ vec };
+        winrt::com_array<XamlAutomation::ITextRangeProvider> result{ vec };
 
         return result;
     }
