@@ -64,14 +64,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider.GetSelection(&pReturnVal));
-        return SafeArrayToComArray(pReturnVal);
+        return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
     winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::GetVisibleRanges()
     {
         SAFEARRAY* pReturnVal;
         THROW_IF_FAILED(_uiaProvider.GetVisibleRanges(&pReturnVal));
-        return SafeArrayToComArray(pReturnVal);
+        return WrapArrayOfTextRangeProviders(pReturnVal);
     }
 
     XamlAutomation::ITextRangeProvider TermControlAutomationPeer::RangeFromChild(XamlAutomation::IRawElementProviderSimple childElement)
@@ -132,7 +132,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - SAFEARRAY of UIA::UiaTextRange (ITextRangeProviders)
     // Return Value:
     // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
-    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::SafeArrayToComArray(SAFEARRAY* textRanges)
+    winrt::com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
     {
         // transfer ownership of UiaTextRanges to this new vector
         auto providers = SafeArrayToOwningVector<::Microsoft::Console::Types::UiaTextRange>(textRanges);
