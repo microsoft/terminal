@@ -1670,6 +1670,19 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     NTSTATUS status = STATUS_SUCCESS;
 
+    // If we're in conpty mode, suppress any immediate painting we might do
+    // during the resize.
+    if (gci.IsInVtIoMode())
+    {
+        gci.GetVtIo()->BeginResize();
+    }
+    auto endResize = wil::scope_exit([&] {
+        if (gci.IsInVtIoMode())
+        {
+            gci.GetVtIo()->EndResize();
+        }
+    });
+
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
 
