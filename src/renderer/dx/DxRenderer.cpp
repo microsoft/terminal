@@ -134,7 +134,7 @@ DxEngine::~DxEngine()
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
 
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
-        // clang-format off
+                              // clang-format off
 // This causes problems for folks who do not have the whole DirectX SDK installed
 // when they try to run the rest of the project in debug mode.
 // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
@@ -143,9 +143,9 @@ DxEngine::~DxEngine()
 // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
 // You can find out how to install it here:
 // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
-                      // clang-format on
-                      // D3D11_CREATE_DEVICE_DEBUG |
-        D3D11_CREATE_DEVICE_SINGLETHREADED;
+                              // clang-format on
+                              // D3D11_CREATE_DEVICE_DEBUG |
+                              D3D11_CREATE_DEVICE_SINGLETHREADED;
 
     D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
@@ -707,7 +707,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
             // First, set up a complete clear of all device resources if something goes terribly wrong.
             auto resetDeviceResourcesOnFailure = wil::scope_exit([&] {
                 _ReleaseDeviceResources();
-                                                                 });
+            });
 
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
@@ -1358,7 +1358,7 @@ float DxEngine::GetScaling() const noexcept
 
 // Routine Description:
 // - Attempts to locate the font given, but then begins falling back if we cannot find it.
-// - We'll try to fall back to Consolas with the 
+// - We'll try to fall back to Consolas with the
 // Arguments:
 // - familyName - The font name we should be looking for
 // - weight - The weight (bold, light, etc.)
@@ -1474,7 +1474,6 @@ float DxEngine::GetScaling() const noexcept
     // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
     Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
     THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
-
 
     // First we have to find the right family name for the locale. We're going to bias toward what the caller
     // requested, but fallback if we need to and reply with the locale we ended up choosing.
