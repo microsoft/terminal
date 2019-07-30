@@ -87,6 +87,7 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="../init.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
@@ -114,6 +115,7 @@
     <ClCompile Include="../ActionSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -172,6 +174,7 @@
 
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
 

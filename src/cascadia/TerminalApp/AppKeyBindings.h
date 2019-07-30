@@ -38,7 +38,6 @@ namespace winrt::TerminalApp::implementation
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
-        static winrt::hstring FormatOverrideShortcutText(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
     private:
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;

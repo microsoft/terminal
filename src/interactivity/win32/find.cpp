@@ -86,7 +86,7 @@ INT_PTR CALLBACK FindDialogProc(HWND hWnd, UINT Message, WPARAM wParam, LPARAM l
 void DoFind()
 {
     Globals& g = ServiceLocator::LocateGlobals();
-    IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* const pWindow = ServiceLocator::LocateConsoleWindow();
 
     UnlockConsole();
     if (pWindow != nullptr)

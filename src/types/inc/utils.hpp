@@ -25,6 +25,8 @@ namespace Microsoft::Console::Utils
     COLORREF ColorFromHexString(const std::string wstr);
 
     void InitializeCampbellColorTable(gsl::span<COLORREF>& table);
+    void InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table);
+    void SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table);
     void Initialize256ColorTable(gsl::span<COLORREF>& table);
     void SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha);
 

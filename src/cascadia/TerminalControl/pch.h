@@ -30,3 +30,7 @@
 #include <winrt/Windows.ui.xaml.input.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
+
+#include <TraceLoggingProvider.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
+#include <telemetry/ProjectTelemetry.h>

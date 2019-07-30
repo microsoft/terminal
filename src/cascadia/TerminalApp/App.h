@@ -7,6 +7,7 @@
 #include "CascadiaSettings.h"
 #include "App.g.h"
 #include "App.base.h"
+#include "ScopedResourceLoader.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -33,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         bool GetShowTabsInTitlebar();
 
-        ~App();
+        ~App() = default;
 
         hstring GetTitle();
 
@@ -65,6 +66,8 @@ namespace winrt::TerminalApp::implementation
 
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
+
+        ScopedResourceLoader _resourceLoader;
 
         wil::unique_folder_change_reader_nothrow _reader;
 
@@ -102,6 +105,7 @@ namespace winrt::TerminalApp::implementation
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
 
         void _OpenNewTab(std::optional<int> profileIndex);
         void _DuplicateTabViewItem();

@@ -210,7 +210,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 
 // Method Description:
 // - clear selection data and disable rendering it
-void Terminal::ClearSelection() noexcept
+void Terminal::ClearSelection()
 {
     _selectionActive = false;
     _selectionAnchor = { 0, 0 };

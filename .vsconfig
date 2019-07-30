@@ -25,10 +25,10 @@
     "Microsoft.VisualStudio.Component.VC.Redist.14.Latest",
     "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
     "Microsoft.VisualStudio.Component.VC.Tools.ARM64",
-    "Microsoft.VisualStudio.Component.VC.v141.x86.x64",
-    "Microsoft.VisualStudio.Component.VC.v141.ARM64",
+    "Microsoft.VisualStudio.Component.VC.v142.x86.x64",
+    "Microsoft.VisualStudio.Component.VC.v142.ARM64",
     "Microsoft.VisualStudio.ComponentGroup.UWP.VC",
-    "Microsoft.VisualStudio.ComponentGroup.UWP.VC.v141",
+    "Microsoft.VisualStudio.ComponentGroup.UWP.VC.v142",
     "Microsoft.VisualStudio.Component.UWP.VC.ARM64"
   ]
 }

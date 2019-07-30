@@ -4,6 +4,7 @@
 #include "precomp.h"
 
 #include "../TerminalApp/ColorScheme.h"
+#include "../TerminalApp/Profile.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -20,6 +21,8 @@ namespace TerminalAppUnitTests
 
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
+        TEST_METHOD(ProfileGeneratesGuid);
+        TEST_METHOD(GeneratedGuidRoundtrips);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -97,4 +100,82 @@ namespace TerminalAppUnitTests
             VERIFY_ARE_EQUAL(expected, actual);
         }
     }
+
+    void JsonTests::ProfileGeneratesGuid()
+    {
+        // Parse some profiles without guids. We should generate new guids for
+        // them. The null guid _is_ a valid guid, so we won't re-generate that
+        // guid. null is _not_ a valid guid, so we'll regenerate that.
+
+        const std::string profileWithoutGuid{ R"({
+                                              "name" : "profile0"
+                                              })" };
+        const std::string secondProfileWithoutGuid{ R"({
+                                              "name" : "profile1"
+                                              })" };
+        const std::string profileWithNullForGuid{ R"({
+                                              "name" : "profile2",
+                                              "guid" : null
+                                              })" };
+        const std::string profileWithNullGuid{ R"({
+                                              "name" : "profile3",
+                                              "guid" : "{00000000-0000-0000-0000-000000000000}"
+                                              })" };
+        const std::string profileWithGuid{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
+                                              })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+        const auto profile1Json = VerifyParseSucceeded(secondProfileWithoutGuid);
+        const auto profile2Json = VerifyParseSucceeded(profileWithNullForGuid);
+        const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
+        const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
+
+        const auto profile0 = Profile::FromJson(profile0Json);
+        const auto profile1 = Profile::FromJson(profile1Json);
+        const auto profile2 = Profile::FromJson(profile2Json);
+        const auto profile3 = Profile::FromJson(profile3Json);
+        const auto profile4 = Profile::FromJson(profile4Json);
+        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const GUID nullGuid{ 0 };
+
+        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+
+        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
+
+        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), cmdGuid);
+
+        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), profile1.GetGuid());
+        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), profile1.GetGuid());
+    }
+
+    void JsonTests::GeneratedGuidRoundtrips()
+    {
+        // Parse a profile without a guid.
+        // We should automatically generate a GUID for that profile.
+        // When that profile is serialized and deserialized again, the GUID we
+        // generated for it should persist.
+        const std::string profileWithoutGuid{ R"({
+                                              "name" : "profile0"
+                                              })" };
+        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+
+        const auto profile0 = Profile::FromJson(profile0Json);
+        const GUID nullGuid{ 0 };
+
+        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
+
+        const auto serializedProfile = profile0.ToJson();
+
+        const auto profile1 = Profile::FromJson(serializedProfile);
+
+        VERIFY_ARE_EQUAL(profile1.GetGuid(), profile0.GetGuid());
+    }
+
 }

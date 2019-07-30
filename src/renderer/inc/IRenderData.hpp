@@ -20,6 +20,7 @@ Author(s):
 
 class TextBuffer;
 class Cursor;
+struct ITextRangeProvider;
 
 namespace Microsoft::Console::Render
 {
@@ -63,7 +64,24 @@ namespace Microsoft::Console::Render
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
 
+        // TODO GitHub #1992: Move some of these functions to IAccessibilityData (or IUiaData)
         virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
+        virtual bool IsAreaSelected() const = 0;
+        virtual void ClearSelection() = 0;
+        virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;
+
+        // TODO GitHub #605: Search functionality
+        // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
+        // We should actually abstract this out better once Windows Terminal has Search
+        virtual HRESULT SearchForText(_In_ BSTR text,
+                                      _In_ BOOL searchBackward,
+                                      _In_ BOOL ignoreCase,
+                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
+                                      unsigned int _start,
+                                      unsigned int _end,
+                                      std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
+                                      std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
+                                      std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) = 0;
 
         virtual const std::wstring GetConsoleTitle() const noexcept = 0;
 

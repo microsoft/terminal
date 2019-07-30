@@ -25,6 +25,7 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="init.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>

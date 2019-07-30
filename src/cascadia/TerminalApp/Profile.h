@@ -38,6 +38,8 @@ public:
     std::wstring_view GetName() const noexcept;
     bool HasTabTitle() const noexcept;
     std::wstring_view GetTabTitle() const noexcept;
+    bool HasConnectionType() const noexcept;
+    GUID GetConnectionType() const noexcept;
 
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
@@ -49,6 +51,8 @@ public:
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
     void SetDefaultBackground(COLORREF defaultBackground) noexcept;
+    void SetCloseOnExit(bool defaultClose) noexcept;
+    void SetConnectionType(GUID connectionType) noexcept;
 
     bool HasIcon() const noexcept;
     std::wstring_view GetIconPath() const noexcept;
@@ -62,11 +66,14 @@ private:
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
     static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
+    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
+    static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     GUID _guid;
     std::wstring _name;
+    std::optional<GUID> _connectionType;
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
@@ -91,6 +98,7 @@ private:
     std::optional<std::wstring> _backgroundImage;
     std::optional<double> _backgroundImageOpacity;
     std::optional<winrt::Windows::UI::Xaml::Media::Stretch> _backgroundImageStretchMode;
+    std::optional<std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>> _backgroundImageAlignment;
 
     std::optional<std::wstring> _scrollbarState;
     bool _closeOnExit;

@@ -9,34 +9,35 @@ Abstract:
 - This module provides UI Automation access to the screen buffer to
   support both automation tests and accessibility (screen reading)
   applications.
+- ConHost and Windows Terminal must use IRenderData to have access to the proper information
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
 Author(s):
-- Michael Niksa (MiNiksa)     2017
+- Michael Niksa   (MiNiksa)   2017
 - Austin Diviness (AustDi)    2017
+- Carlos Zamora   (CaZamor)   2019
 --*/
 
 #pragma once
 
 #include "precomp.h"
+#include "../buffer/out/textBuffer.hpp"
+#include "../renderer/inc/IRenderData.hpp"
 
-// Forward declare, prevent circular ref.
-class SCREEN_INFORMATION;
-
-namespace Microsoft::Console::Interactivity::Win32
+namespace Microsoft::Console::Types
 {
-    class Window;
+    class WindowUiaProviderBase;
+    class Viewport;
 
-    class WindowUiaProvider;
-
-    class ScreenInfoUiaProvider final :
+    class ScreenInfoUiaProvider :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent);
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                              _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
@@ -76,12 +77,18 @@ namespace Microsoft::Console::Interactivity::Win32
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
+        HWND GetWindowHandle() const;
+        void ChangeViewport(const SMALL_RECT NewWindow);
+
     private:
         // Ref counter for COM object
         ULONG _cRefs;
 
         // weak reference to uia parent
-        WindowUiaProvider* const _pUiaParent;
+        WindowUiaProviderBase* const _pUiaParent;
+
+        // weak reference to IRenderData
+        Microsoft::Console::Render::IRenderData* _pData;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
@@ -97,8 +104,10 @@ namespace Microsoft::Console::Interactivity::Win32
         std::map<EVENTID, bool> _signalFiringMapping;
 
         const COORD _getScreenBufferCoords() const;
-        static SCREEN_INFORMATION& _getScreenInfo();
-        static IConsoleWindow* const _getIConsoleWindow();
+        const TextBuffer& _getTextBuffer() const;
+        const Viewport _getViewport() const;
+        void _LockConsole() noexcept;
+        void _UnlockConsole() noexcept;
     };
 
     namespace ScreenInfoUiaProviderTracing
