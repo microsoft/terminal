@@ -114,6 +114,8 @@ bool InteractDispatch::WindowManipulation(const DispatchTypes::WindowManipulatio
         }
         break;
     case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+        // TODO:GH#1765 We should introduce a better `ResizeConpty` function to
+        // the ConGetSet interface, that specifically handles a conpty resize.
         if (cParams == 2)
         {
             fSuccess = DispatchCommon::s_ResizeWindow(*_pConApi, rgusParams[1], rgusParams[0]);
