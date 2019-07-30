@@ -60,29 +60,27 @@ private:                                                                        
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that
 // owns the extracted COM objects
-        template<typename T>
-        std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
-        {
-            T** pVals;
-            THROW_IF_FAILED(SafeArrayAccessData(safeArray, (void**)&pVals));
+template<typename T>
+std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
+{
+    T** pVals;
+    THROW_IF_FAILED(SafeArrayAccessData(safeArray, (void**)&pVals));
 
-            long lBound, uBound;
-            THROW_IF_FAILED(SafeArrayGetLBound(safeArray, 1, &lBound));
-            THROW_IF_FAILED(SafeArrayGetUBound(safeArray, 1, &uBound));
+    long lBound, uBound;
+    THROW_IF_FAILED(SafeArrayGetLBound(safeArray, 1, &lBound));
+    THROW_IF_FAILED(SafeArrayGetUBound(safeArray, 1, &uBound));
 
-            long count = uBound - lBound + 1;
+    long count = uBound - lBound + 1;
 
-            std::vector<wil::com_ptr<T>> result;
-            result.reserve(count);
+    // If any of the above fail, we cannot destruct/release
+    // any of the elements in the SAFEARRAY because we
+    // cannot identify how many elements there are.
 
-            for (int i = 0; i < count; i++)
-            {
-                T* item = pVals[i];
+    std::vector<wil::com_ptr<T>> result{ static_cast<std::size_t>(count) };
+    for (int i = 0; i < count; i++)
+    {
+        result[i].attach(pVals[i]);
+    }
 
-                wil::com_ptr<T> vec_elem;
-                vec_elem.attach(item);
-                result.emplace_back(vec_elem);
-            }
-
-            return result;
-        }
+    return result;
+}
