@@ -32,8 +32,21 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
 }
 
 ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                                             _In_ WindowUiaProviderBase* const pUiaParent,
+                                             _In_ std::function<RECT(void)> GetBoundingRect) :
+    _pUiaParent(pUiaParent),
+    _signalFiringMapping{},
+    _cRefs(1),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
+    _getBoundingRect(GetBoundingRect)
+{
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+}
+
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent) :
-    _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+    _pUiaParent(pUiaParent),
     _signalFiringMapping{},
     _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
@@ -253,6 +266,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     /*ApiMsgNavigate apiMsg;
     apiMsg.Direction = direction;
@@ -299,7 +315,16 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    RECT rc = _pUiaParent->GetWindowRect();
+    RECT rc;
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        rc = _getBoundingRect();
+    }
+    else
+    {
+        rc = _pUiaParent->GetWindowRect();
+    }
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -328,6 +353,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+
     //Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {
@@ -657,10 +685,20 @@ void ScreenInfoUiaProvider::_UnlockConsole() noexcept
 
 HWND ScreenInfoUiaProvider::GetWindowHandle() const
 {
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        return nullptr;
+    }
     return _pUiaParent->GetWindowHandle();
 }
 
 void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
 {
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        return;
+    }
     _pUiaParent->ChangeViewport(NewWindow);
 }
