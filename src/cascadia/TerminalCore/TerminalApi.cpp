@@ -126,6 +126,16 @@ COORD Terminal::GetCursorPosition()
     return newPos;
 }
 
+// Method Description:
+// - deletes uiCount characters starting from the cursor's current position
+// - it moves over the remaining text to 'replace' the deleted text
+// - for example, if the buffer looks like this ('|' is the cursor): [abc|def]
+// - calling DeleteCharacter(1) will change it to: [abc|ef],
+// - i.e. the 'd' gets deleted and the 'ef' gets shifted over 1 space and **retain their previous text attributes**
+// Arguments:
+// - uiCount, the number of characters to delete
+// Return value:
+// - true if succeeded, false otherwise
 bool Terminal::DeleteCharacter(const unsigned int uiCount)
 {
     SHORT dist;
@@ -134,21 +144,35 @@ bool Terminal::DeleteCharacter(const unsigned int uiCount)
         return false;
     }
     const auto cursorPos = _buffer->GetCursor().GetPosition();
-
-    // We are going to call EraseInLine, so first we copy what we don't want to delete
-    COORD keepFromPos{ cursorPos.X + dist, cursorPos.Y };
-    auto keepText = _buffer->GetTextLineDataAt(keepFromPos);
-    std::wstring copied;
-    while (keepText)
+    const auto copyToPos = cursorPos;
+    COORD copyFromPos{ cursorPos.X + dist, cursorPos.Y };
+    auto sourceWidth = _mutableViewport.RightExclusive() - copyFromPos.X;
+    SHORT width;
+    if (!SUCCEEDED(UIntToShort(sourceWidth, &width)))
     {
-        copied.append(*keepText);
-        ++keepText;
+        return false;
     }
-    EraseInLine(DispatchTypes::EraseType::ToEnd);
 
-    // Now we rewrite what we deleted
-    auto rewriteIter = OutputCellIterator(copied, _buffer->GetCurrentAttributes());
-    _buffer->Write(rewriteIter, cursorPos);
+    // Get a rectangle of the source
+    auto source = Viewport::FromDimensions(copyFromPos, width, (SHORT)1);
+    const auto sourceOrigin = source.Origin();
+
+    // Get a rectangle of the target
+    const auto target = Viewport::FromDimensions(copyToPos, source.Dimensions());
+    const auto walkDirection = Viewport::DetermineWalkDirection(source, target);
+
+    auto sourcePos = source.GetWalkOrigin(walkDirection);
+    auto targetPos = target.GetWalkOrigin(walkDirection);
+
+    // Iterate over the source cell data and copy it over to the target
+    do
+    {
+        const auto data = OutputCell(_buffer->GetCellDataAt(sourcePos).operator*());
+        _buffer->Write(OutputCellIterator({ &data, 1 }), targetPos);
+
+        source.WalkInBounds(sourcePos, walkDirection);
+    } while (target.WalkInBounds(targetPos, walkDirection));
+
     return true;
 }
 
@@ -163,22 +187,31 @@ bool Terminal::EraseCharacters(const unsigned int numChars)
     return true;
 }
 
+// Method description:
+// - erases a line of text, either from
+// 1. beginning to the cursor's position
+// 2. cursor's position to end
+// 3. beginning to end
+// - depending on the erase type
+// Arguments:
+// - the erase type
+// Return value:
+// - true if succeeded, false otherwise
 bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType)
 {
     const auto cursorPos = _buffer->GetCursor().GetPosition();
     const auto viewport = _GetMutableViewport();
     COORD startPos = { 0 };
     startPos.Y = cursorPos.Y;
+    // nlength determines the number of spaces we need to write
     DWORD nlength = 0;
 
     // Determine startPos.X and nlength by the eraseType
     switch (eraseType)
     {
     case DispatchTypes::EraseType::FromBeginning:
-    {
         nlength = cursorPos.X - viewport.Left() + 1;
         break;
-    }
     case DispatchTypes::EraseType::ToEnd:
         startPos.X = cursorPos.X;
         nlength = viewport.RightInclusive() - startPos.X;
@@ -187,6 +220,8 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
         startPos.X = viewport.Left();
         nlength = viewport.RightInclusive() - startPos.X;
         break;
+    case DispatchTypes::EraseType::Scrollback:
+        return false;
     }
 
     auto eraseIter = OutputCellIterator(L' ', _buffer->GetCurrentAttributes(), nlength);
@@ -194,6 +229,14 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
     return true;
 }
 
+// Method description:
+// - erases text in the buffer in two ways depending on erase type
+// 1. 'erases' all text visible to the user (i.e. the text in the viewport)
+// 2. erases all the text in the scrollback
+// Arguments:
+// - the erase type
+// Return Value:
+// - true if succeeded, false otherwise
 bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 {
     // Store the relative cursor position so we can restore it later after we move the viewport
@@ -210,6 +253,7 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
     if (eraseType == DispatchTypes::EraseType::All)
     {
         // In this case, we simply move the viewport down, effectively pushing whatever text was on the screen into the scrollback
+        // and thus 'erasing' the text visible to the user
         const auto coordLastChar = _buffer->GetLastNonSpaceCharacter(_mutableViewport);
         if (coordLastChar.X == 0 && coordLastChar.Y == 0)
         {
@@ -249,8 +293,15 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
             _buffer->Write(eraseIter, erasePos);
         }
 
+        // Reset the scroll offset now because there's nothing for the user to 'scroll' to
+        _scrollOffset = 0;
+
         newWin.Top = 0;
         newWin.Bottom = _mutableViewport.Height();
+    }
+    else
+    {
+        return false;
     }
 
     // Move the viewport, adjust the scoll bar if needed, and restore the old cursor position
