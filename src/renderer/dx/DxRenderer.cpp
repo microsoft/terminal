@@ -1358,7 +1358,9 @@ float DxEngine::GetScaling() const noexcept
 
 // Routine Description:
 // - Attempts to locate the font given, but then begins falling back if we cannot find it.
-// - We'll try to fall back to Consolas with the
+// - We'll try to fall back to Consolas with the given weight/stretch/style first,
+//   then try Consolas again with normal weight/stretch/style,
+//   and if nothing works, then we'll throw an error.
 // Arguments:
 // - familyName - The font name we should be looking for
 // - weight - The weight (bold, light, etc.)

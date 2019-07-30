@@ -25,7 +25,7 @@ Properties listed below are specific to each unique profile.
 | `commandline` | _Required_ | String | `powershell.exe` | Executable used in the profile. |
 | `cursorColor` | _Required_ | String | `#FFFFFF` | Sets the cursor color for the profile. Uses hex color format: `"#rrggbb"`. |
 | `cursorShape` | _Required_ | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | _Required_ | String | `Consolas` | Name of the font face used in the profile. |
+| `fontFace` | _Required_ | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | _Required_ | Integer | `10` | Sets the font size. |
 | `guid` | _Required_ | String | | Unique identifier of the profile. Written in registry format: `"{00000000-0000-0000-0000-000000000000}"`. |
 | `historySize` | _Required_ | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
