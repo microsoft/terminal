@@ -13,6 +13,9 @@ class ConsoleArguments;
 
 namespace Microsoft::Console::VirtualTerminal
 {
+    // fwdecl so we can use it as the return type for BeginResize
+    class VtIoResizeLock;
+
     class VtIo : public Microsoft::Console::ITerminalOwner
     {
     public:
@@ -36,8 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseInput() override;
         void CloseOutput() override;
 
-        void BeginResize();
-        void EndResize();
+        VtIoResizeLock BeginResize();
 
     private:
         // After CreateIoHandlers is called, these will be invalid.
@@ -60,9 +62,34 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
 
         void _ShutdownIfNeeded();
+        void _EndResize();
+
+        friend class VtIoResizeLock;
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;
 #endif
+    };
+
+    // VtIoResizeLock is a helper object to act as a RAII wrapper for
+    // VtIo::BeginResize. When the VtIoResizeLock goes out of scope, it'll call
+    // VtIo::_EndResize to end the resize operation.
+    class VtIoResizeLock
+    {
+    public:
+        VtIoResizeLock() = default;
+        ~VtIoResizeLock()
+        {
+            if (_vtIo)
+            {
+                _vtIo->_EndResize();
+            }
+        };
+
+    private:
+        VtIo* _vtIo{ nullptr };
+        VtIoResizeLock(VtIo* vtio) :
+            _vtIo{ vtio } {};
+        friend class VtIo;
     };
 }

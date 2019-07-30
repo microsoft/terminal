@@ -407,13 +407,14 @@ void VtIo::_ShutdownIfNeeded()
 // Arguments:
 // - <none>
 // Return Value:
-// - <none>
-void VtIo::BeginResize()
+// - A VtIoresizeLock object that will end the resize when the object is dtor'd
+VtIoResizeLock VtIo::BeginResize()
 {
     if (_pVtRenderEngine)
     {
         _pVtRenderEngine->BeginResizeRequest();
     }
+    return VtIoResizeLock{ this };
 }
 
 // Method Description:
@@ -424,7 +425,7 @@ void VtIo::BeginResize()
 // - <none>
 // Return Value:
 // - <none>
-void VtIo::EndResize()
+void VtIo::_EndResize()
 {
     if (_pVtRenderEngine)
     {

@@ -1672,16 +1672,11 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // If we're in conpty mode, suppress any immediate painting we might do
     // during the resize.
+    VtIoResizeLock endResize;
     if (gci.IsInVtIoMode())
     {
-        gci.GetVtIo()->BeginResize();
+        endResize = gci.GetVtIo()->BeginResize();
     }
-    auto endResize = wil::scope_exit([&] {
-        if (gci.IsInVtIoMode())
-        {
-            gci.GetVtIo()->EndResize();
-        }
-    });
 
     // cancel any active selection before resizing or it will not necessarily line up with the new buffer positions
     Selection::Instance().ClearSelection();
