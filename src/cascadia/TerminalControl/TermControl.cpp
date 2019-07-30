@@ -185,8 +185,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        _swapChainPanel.Margin(thickness);
+        auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
+        auto existingMargin = _swapChainPanel.Margin();
+        _swapChainPanel.Margin(newMargin);
+
+        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
+        {
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "NonzeroPaddingApplied",
+                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
+                              TraceLoggingStruct(4, "Padding"),
+                              TraceLoggingFloat64(newMargin.Left, "Left"),
+                              TraceLoggingFloat64(newMargin.Top, "Top"),
+                              TraceLoggingFloat64(newMargin.Right, "Right"),
+                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        }
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();

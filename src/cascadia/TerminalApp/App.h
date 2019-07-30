@@ -34,7 +34,7 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         bool GetShowTabsInTitlebar();
 
-        ~App();
+        ~App() = default;
 
         hstring GetTitle();
 
