@@ -69,6 +69,10 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void BackgroundImageOpacity(double value);
         winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode();
         void BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value);
+        winrt::Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment();
+        void BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value);
+        winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment();
+        void BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value);
 
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
@@ -107,6 +111,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _backgroundImage;
         double _backgroundImageOpacity;
         winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
+        winrt::Windows::UI::Xaml::HorizontalAlignment _backgroundImageHorizontalAlignment;
+        winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
         hstring _commandline;
         hstring _startingDir;
         hstring _envVars;

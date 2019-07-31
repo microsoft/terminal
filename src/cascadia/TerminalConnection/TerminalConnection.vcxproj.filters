@@ -14,22 +14,26 @@
     <ClCompile Include="EchoConnection.cpp" />
     <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="AzureConnection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="EchoConnection.h" />
     <ClInclude Include="ConhostConnection.h" />
+    <ClInclude Include="AzureConnection.h" />
+    <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="AzureConnectionStrings.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
+    <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="TerminalConnection.def" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="readme.txt" />
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

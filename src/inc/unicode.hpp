@@ -32,6 +32,7 @@ const wchar_t UNICODE_DEL = 0x7f;
 // NOTE: This isn't actually a backspace. It's a graphical block. But
 // I believe it's emitted by one of our ANSI/OEM --> Unicode conversions.
 // We should dig further into this in the future.
+const wchar_t UNICODE_BEL = 0x7;
 const wchar_t UNICODE_BACKSPACE2 = 0x25d8;
 const wchar_t UNICODE_CARRIAGERETURN = 0x0d;
 const wchar_t UNICODE_LINEFEED = 0x0a;

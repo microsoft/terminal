@@ -15,12 +15,14 @@ Author(s):
 
 #pragma once
 
+#include "IUiaWindow.h"
+
 // copied typedef from uiautomationcore.h
 typedef int EVENTID;
 
-namespace Microsoft::Console::Interactivity
+namespace Microsoft::Console::Types
 {
-    class IConsoleWindow
+    class IConsoleWindow : public IUiaWindow
     {
     public:
         virtual ~IConsoleWindow() = 0;
@@ -36,12 +38,8 @@ namespace Microsoft::Console::Interactivity
 
         virtual void SetIsFullscreen(const bool fFullscreenEnabled) = 0;
 
-        virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
-
         virtual void CaptureMouse() = 0;
         virtual BOOL ReleaseMouse() = 0;
-
-        virtual HWND GetWindowHandle() const = 0;
 
         // Pass null.
         virtual void SetOwner() = 0;
@@ -64,9 +62,6 @@ namespace Microsoft::Console::Interactivity
                                       const WORD wAbsoluteChange) = 0;
         virtual void VerticalScroll(const WORD wScrollCommand,
                                     const WORD wAbsoluteChange) = 0;
-        [[nodiscard]] virtual HRESULT SignalUia(_In_ EVENTID id) = 0;
-        [[nodiscard]] virtual HRESULT UiaSetTextAreaFocus() = 0;
-        virtual RECT GetWindowRect() const = 0;
     };
 
     inline IConsoleWindow::~IConsoleWindow() {}

@@ -11,6 +11,7 @@
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
+#include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -30,7 +31,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
-        _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
@@ -52,11 +52,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_Create()
     {
-        // Create a dummy UserControl to use as the "root" of our control we'll
-        //      build manually.
-        Controls::UserControl myControl;
-        _controlRoot = myControl;
-
         Controls::Grid container;
 
         Controls::ColumnDefinition contentColumn{};
@@ -108,20 +103,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _bgImageLayer = bgImageLayer;
 
         _swapChainPanel = swapChainPanel;
-        _controlRoot.Content(_root);
+        this->Content(_root);
 
         _ApplyUISettings();
 
         // These are important:
         // 1. When we get tapped, focus us
-        _controlRoot.Tapped([this](auto&, auto& e) {
-            _controlRoot.Focus(FocusState::Pointer);
+        this->Tapped([this](auto&, auto& e) {
+            this->Focus(FocusState::Pointer);
             e.Handled(true);
         });
         // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
-        _controlRoot.IsTabStop(true);
+        this->IsTabStop(true);
         // 3. Actually not sure about this one. Maybe it isn't necessary either.
-        _controlRoot.AllowFocusOnInteraction(true);
+        this->AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
@@ -185,8 +180,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        _swapChainPanel.Margin(thickness);
+        auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
+        auto existingMargin = _swapChainPanel.Margin();
+        _swapChainPanel.Margin(newMargin);
+
+        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
+        {
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "NonzeroPaddingApplied",
+                              TraceLoggingDescription("An event emitted when a control has padding applied to it"),
+                              TraceLoggingStruct(4, "Padding"),
+                              TraceLoggingFloat64(newMargin.Left, "Left"),
+                              TraceLoggingFloat64(newMargin.Top, "Top"),
+                              TraceLoggingFloat64(newMargin.Right, "Right"),
+                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
+                              TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                              TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        }
 
         // Initialize our font information.
         const auto* fontFace = _settings.FontFace().c_str();
@@ -276,13 +286,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 // internet.
                 Media::Imaging::BitmapImage image(imageUri);
                 _bgImageLayer.Source(image);
-                _bgImageLayer.HorizontalAlignment(HorizontalAlignment::Center);
-                _bgImageLayer.VerticalAlignment(VerticalAlignment::Center);
             }
 
-            // Apply stretch and opacity settings
+            // Apply stretch, opacity and alignment settings
             _bgImageLayer.Stretch(_settings.BackgroundImageStretchMode());
             _bgImageLayer.Opacity(_settings.BackgroundImageOpacity());
+            _bgImageLayer.HorizontalAlignment(_settings.BackgroundImageHorizontalAlignment());
+            _bgImageLayer.VerticalAlignment(_settings.BackgroundImageVerticalAlignment());
         }
         else
         {
@@ -330,14 +340,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Close();
     }
 
-    UIElement TermControl::GetRoot()
+    Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        return _root;
+        // create a custom automation peer with this code pattern:
+        // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+        return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
     }
 
-    Controls::UserControl TermControl::GetControl()
+    ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
     {
-        return _controlRoot;
+        return _terminal.get();
     }
 
     void TermControl::SwapChainChanged()
@@ -491,9 +503,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        // These two handlers _must_ be on _controlRoot, not _root.
-        _controlRoot.PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
-        _controlRoot.CharacterReceived({ this, &TermControl::_CharacterHandler });
+        // These two handlers _must_ be on this, not _root.
+        this->PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
+        this->CharacterReceived({ this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -527,14 +539,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
 
-        _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
-        _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
+        _gotFocusRevoker = this->GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
+        _lostFocusRevoker = this->LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
         //      becomes a no-op.
-        _controlRoot.Focus(FocusState::Programmatic);
+        this->Focus(FocusState::Programmatic);
 
         _connection.Start();
         _initializedTerminal = true;

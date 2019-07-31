@@ -11,6 +11,7 @@
 
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Types;
 
 ULONG Scrolling::s_ucWheelScrollLines = 0;
 ULONG Scrolling::s_ucWheelScrollChars = 0;
