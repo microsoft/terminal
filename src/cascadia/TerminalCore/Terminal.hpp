@@ -133,6 +133,8 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    const bool IsSingleCellSelection() const noexcept;
+    const bool IsSingleCellCopyAllowed() const noexcept;
     const bool IsSelectionActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
@@ -160,14 +162,17 @@ private:
 
     bool _snapOnInput;
 
-    // Text Selection
+#pragma region Text Selection
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
+    bool _allowSingleCharSelection;
+    bool _copyOnSelect;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
+#pragma endregion
 
     std::shared_mutex _readWriteLock;
 

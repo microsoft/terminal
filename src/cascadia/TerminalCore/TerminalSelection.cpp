@@ -14,7 +14,14 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
-    if (!_selectionActive)
+    // copyOnSelect: don't render selection on single cell
+    // (unless specifically allowed by highlighting more than one cell then reducing it)
+    if (_copyOnSelect && !_allowSingleCharSelection && IsSingleCellSelection())
+    {
+        return selectionArea;
+    }
+
+    if (!IsSelectionActive())
     {
         return selectionArea;
     }
@@ -122,6 +129,24 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 }
 
 // Method Description:
+// - Checks if selection is on a single cell
+// Return Value:
+// - bool representing if selection is only a single cell. Used for copyOnSelect
+const bool Terminal::IsSingleCellSelection() const noexcept
+{
+    return (_selectionAnchor == _endSelectionPosition);
+}
+
+// Method Description:
+// - Checks if selection on a single cell is allowed for rendering purposes
+// Return Value:
+// - bool representing if selection is only a single cell. Used for copyOnSelect
+const bool Terminal::IsSingleCellCopyAllowed() const noexcept
+{
+    return _allowSingleCharSelection;
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
@@ -180,6 +205,10 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
+    if (_copyOnSelect)
+    {
+        _allowSingleCharSelection = false;
+    }
     SetEndSelectionPosition(position);
 }
 
@@ -197,6 +226,11 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+
+    if (_copyOnSelect && !IsSingleCellSelection())
+    {
+        _allowSingleCharSelection = true;
+    }
 }
 
 // Method Description:
@@ -213,6 +247,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
+    _allowSingleCharSelection = false;
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
     _selectionAnchor_YOffset = 0;
