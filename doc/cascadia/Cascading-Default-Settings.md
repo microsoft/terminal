@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-05-31
-last updated: 2019-06-13
+last updated: 2019-07-31
 issue id: 754
 ---
 
@@ -83,13 +83,22 @@ The settings are now composed from two files: a "Default" settings file, and a
 
 When we load the settings, we'll perform the following steps, each mentioned in
 greater detail below:
-1. Load from disk the `defaults.json` (the default settings)
-1. Load from disk the `profiles.json` (the user settings)
-1. Perform a preliminary scan of the user settings, and create all the profiles
-   in order they appear in the user settings file.
+1. Load from disk the `defaults.json` (the default settings) -> DefaultsJson
+1. Load from disk the `profiles.json` (the user settings) -> UserJson
+<!-- 1. Perform a preliminary scan of the user settings, and create all the profiles
+   in order they appear in the user settings file. Fill in their `guid` and
+   `source` properties (if they exist). -->
 1. Layer all settings from the defaults on the existing profiles, and create the
    default color schemes, as well as the default global settings.
-1. Generate any dynamically generated profiles, if necessary.
+   - To layer: if a profile exists already in the list of profiles with a
+     matching `guid` and `source`, apply the settings _to that Profile object_.
+     Otherwise, if there is no match, append it to the end of the list of
+     profiles.
+1. Generate any dynamically generated profiles, if necessary. Layer them on top
+   of existing profiles. If any profiles were appended in this manner, indicate
+   that we'll need to save the updated settings.
+1. [Not covered in this spec] Apply the UserJson.globals.defaults settings to
+   every profile, including default, generated and user profiles.
 1. Layer all user settings upon the existing settings models.
 1. Validate the settings.
 1. If necessary, write the modified settings back to `profiles.json`.
@@ -243,9 +252,11 @@ also always make sure that the GUID of the dynamic profile is included in the
 user settings file, as a point for the user to add customizations to the dynamic
 profile to.
 
-We'll need to keep the state of these dynamically generateed profiles around in
+We'll need to keep the state of these dynamically generated profiles around in
 memory during runtime to be able to ensure the only state we're serializing is
 that which is different from the initially generated dynamic profile.
+
+When the generator is first run, and determines that a new profile has been added
 
 <!-- If a dynamic profile generator has determined that a profile should no longer be
 used, we don't want to totally remove the profile from the file - perhaps
@@ -265,7 +276,7 @@ enable scenarios like this, **each dynamic profile generator must provide a way
 to disable it**. For the above listed cases, the two settings might be something
 like `autoloadWslProfiles` and `autoloadAzureConnections`. These will be set to
 true in the default settings, but the user can override them to false if they so
-chose.
+choose.
 
 #### What if a dynamic profile is in the user setttings, but wasn't generated?
 
@@ -542,7 +553,7 @@ doesn't exist, and hide it from the user. -->
     profiles, but it would need to generate unique strings. We could then allow
     the user to disable profile generators solely by namespace guid, so they
     could disable the generator from a certain extension easily, without the
-    extension needing to implement its own `autload<MyExtendsion>Profiles`
+    extension needing to implement its own `autoload<MyExtendsion>Profiles`
     setting.
 * **Multiple settings files** - This could enable us to place color schemes into
   a seperate file (like `colorschemes.json`) and put keybindings into their own
