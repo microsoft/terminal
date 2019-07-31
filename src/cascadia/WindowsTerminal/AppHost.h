@@ -25,4 +25,8 @@ private:
     winrt::TerminalApp::App _app;
 
     void _HandleCreateWindow(const HWND hwnd, const RECT proposedRect);
+    void _UpdateTitleBarContent(const winrt::TerminalApp::App& sender,
+                                const winrt::Windows::UI::Xaml::UIElement& arg);
+    void _UpdateTheme(const winrt::TerminalApp::App&,
+                      const winrt::Windows::UI::Xaml::ElementTheme& arg);
 };

@@ -1,0 +1,17 @@
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass MinMaxCloseControl : Windows.UI.Xaml.Controls.StackPanel
+    {
+        MinMaxCloseControl();
+
+        void Maximize();
+        void RestoreDown();
+
+        event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
+        event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;
+        event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> CloseClick;
+    }
+}

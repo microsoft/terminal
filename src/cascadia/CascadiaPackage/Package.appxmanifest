@@ -21,7 +21,7 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name="Windows.Universal" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
   </Dependencies>
 
   <Resources>
@@ -41,7 +41,14 @@
         <uap:DefaultTile
           Wide310x150Logo="Images\Wide310x150Logo.png" 
           Square71x71Logo="Images\SmallTile.png"
-          Square310x310Logo="Images\LargeTile.png"/>
+          Square310x310Logo="Images\LargeTile.png"
+          ShortName="ms-resource:AppShortName">
+          <uap:ShowNameOnTiles>
+            <uap:ShowOn Tile="square150x150Logo"/>
+            <uap:ShowOn Tile="wide310x150Logo"/>
+            <uap:ShowOn Tile="square310x310Logo"/>
+          </uap:ShowNameOnTiles>
+        </uap:DefaultTile>
         <uap:SplashScreen Image="Images\SplashScreen.png"/>
       </uap:VisualElements>
 

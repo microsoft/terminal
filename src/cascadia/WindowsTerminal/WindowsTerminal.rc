@@ -17,6 +17,7 @@
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -24,18 +25,18 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE
+1 TEXTINCLUDE 
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE
+2 TEXTINCLUDE 
 BEGIN
     "#include ""winres.h""\r\n"
     "\0"
 END
 
-3 TEXTINCLUDE
+3 TEXTINCLUDE 
 BEGIN
     "\r\n"
     "\0"
@@ -46,9 +47,34 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_APPICON             ICON                    "..\\..\\..\\res\\terminal.ico"
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // String Table
 //
 
+STRINGTABLE
+BEGIN
+    IDS_ERROR_DIALOG_TITLE  "Error"
+    IDS_ERROR_ARCHITECTURE_FORMAT 
+                            "Windows Terminal is designed to run on your system's native architecture (%s).\nYou are currently using the %s version.\n\nPlease use the version of Windows Terminal that matches your system's native architecture."
+    IDS_X86_ARCHITECTURE    "i386"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_AMD64_ARCHITECTURE  "AMD64"
+    IDS_ARM64_ARCHITECTURE  "ARM64"
+    IDS_ARM_ARCHITECTURE    "ARM"
+    IDS_UNKNOWN_ARCHITECTURE "Unknown"
+END
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
@@ -64,3 +90,4 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
+

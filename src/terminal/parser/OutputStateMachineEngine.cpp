@@ -1318,6 +1318,18 @@ bool OutputStateMachineEngine::DispatchControlCharsFromEscape() const
 }
 
 // Routine Description:
+// - Returns false if the engine wants to be able to collect intermediate
+//   characters in the Escape state. We do want to buffer characters as
+//   intermediates. We need them for things like Designate G0 Character Set
+// Return Value:
+// - True iff we should dispatch in the Escape state when we encounter a
+//   Intermediate character.
+bool OutputStateMachineEngine::DispatchIntermediatesFromEscape() const
+{
+    return false;
+}
+
+// Routine Description:
 // - Converts a hex character to its equivalent integer value.
 // Arguments:
 // - wch - Character to convert.

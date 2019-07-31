@@ -4,10 +4,11 @@
 namespace TerminalApp
 {
     delegate void LastTabClosedEventArgs();
-    [default_interface]
-    runtimeclass App : Microsoft.UI.Xaml.Markup.XamlApplication
+    [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
     {
         App();
+
+        void Initialize();
 
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -19,20 +20,15 @@ namespace TerminalApp
         void LoadSettings();
 
         Windows.UI.Xaml.UIElement GetRoot();
-        Windows.UI.Xaml.UIElement GetTabs();
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();
 
         event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
         event LastTabClosedEventArgs LastTabClosed;
+        event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.UIElement> SetTitleBarContent;
+        event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
 
         String GetTitle();
-
-        // IXamlMetadataProvider, Xaml.Application:
-        // Application's composing initializer will register the composing class
-        // as the toplevel "active" Xaml application. This Application (through IXamlMetadataProvider)
-        // will be queried for all unknown types during all Xaml and XBF (Xaml Binary Format) parse
-        // operations.
     }
 }

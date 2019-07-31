@@ -20,6 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorColor{ DEFAULT_CURSOR_COLOR },
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
+        _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
         _useAcrylic{ false },
         _closeOnExit{ true },
         _tintOpacity{ 0.5 },
@@ -29,6 +30,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _backgroundImage{},
         _backgroundImageOpacity{ 1.0 },
         _backgroundImageStretchMode{ winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill },
+        _backgroundImageHorizontalAlignment{ winrt::Windows::UI::Xaml::HorizontalAlignment::Center },
+        _backgroundImageVerticalAlignment{ winrt::Windows::UI::Xaml::VerticalAlignment::Center },
         _keyBindings{ nullptr },
         _scrollbarState{ ScrollbarState::Visible }
     {
@@ -135,6 +138,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorHeight = value;
     }
 
+    hstring TerminalSettings::WordDelimiters()
+    {
+        return _wordDelimiters;
+    }
+
+    void TerminalSettings::WordDelimiters(hstring const& value)
+    {
+        _wordDelimiters = value;
+    }
+
     bool TerminalSettings::UseAcrylic()
     {
         return _useAcrylic;
@@ -223,6 +236,26 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value)
     {
         _backgroundImageStretchMode = value;
+    }
+
+    winrt::Windows::UI::Xaml::HorizontalAlignment TerminalSettings::BackgroundImageHorizontalAlignment()
+    {
+        return _backgroundImageHorizontalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value)
+    {
+        _backgroundImageHorizontalAlignment = value;
+    }
+
+    winrt::Windows::UI::Xaml::VerticalAlignment TerminalSettings::BackgroundImageVerticalAlignment()
+    {
+        return _backgroundImageVerticalAlignment;
+    }
+
+    void TerminalSettings::BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value)
+    {
+        _backgroundImageVerticalAlignment = value;
     }
 
     Settings::IKeyBindings TerminalSettings::KeyBindings()

@@ -2,6 +2,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="UTF8OutPipeReaderTests.cpp" />
     <ClCompile Include="UtilsTests.cpp" />
     <ClCompile Include="UuidTests.cpp" />
     <ClCompile Include="..\precomp.cpp">

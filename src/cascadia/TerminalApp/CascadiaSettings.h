@@ -20,6 +20,8 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "Profile.h"
 
+static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
 namespace TerminalApp
 {
     class CascadiaSettings;
@@ -45,7 +47,7 @@ public:
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
 
-    static winrt::hstring GetSettingsPath();
+    static std::wstring GetSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
@@ -60,15 +62,11 @@ private:
     void _CreateDefaultProfiles();
 
     static bool _IsPackaged();
-    static void _SaveAsPackagedApp(const std::string& content);
-    static void _SaveAsUnpackagedApp(const std::string& content);
-    static std::wstring _GetFullPathToUnpackagedSettingsFile();
-    static winrt::hstring _GetPackagedSettingsPath();
-    static std::optional<std::string> _LoadAsPackagedApp();
-    static std::optional<std::string> _LoadAsUnpackagedApp();
+    static void _WriteSettings(const std::string_view content);
+    static std::optional<std::string> _ReadSettings();
+
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
-    static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
     static Profile _CreateDefaultProfile(const std::wstring_view name);
 };

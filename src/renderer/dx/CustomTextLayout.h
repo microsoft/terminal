@@ -19,10 +19,10 @@ namespace Microsoft::Console::Render
     public:
         // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-        CustomTextLayout(IDWriteFactory2* const factory,
+        CustomTextLayout(IDWriteFactory1* const factory,
                          IDWriteTextAnalyzer1* const analyzer,
-                         IDWriteTextFormat2* const format,
-                         IDWriteFontFace5* const font,
+                         IDWriteTextFormat* const format,
+                         IDWriteFontFace1* const font,
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width);
 
@@ -90,7 +90,7 @@ namespace Microsoft::Console::Render
             UINT8 bidiLevel;
             bool isNumberSubstituted;
             bool isSideways;
-            ::Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+            ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
 
             inline bool ContainsTextPosition(UINT32 desiredTextPosition) const
@@ -135,16 +135,16 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
     private:
-        const ::Microsoft::WRL::ComPtr<IDWriteFactory2> _factory;
+        const ::Microsoft::WRL::ComPtr<IDWriteFactory1> _factory;
 
         // DirectWrite analyzer
         const ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _analyzer;
 
         // DirectWrite text format
-        const ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _format;
+        const ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _format;
 
         // DirectWrite font face
-        const ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _font;
+        const ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _font;
 
         // The text we're analyzing and processing into a layout
         std::wstring _text;

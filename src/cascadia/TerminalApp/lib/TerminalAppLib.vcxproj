@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <!-- ========================= CppWinRT Metadata ======================== -->
+  <PropertyGroup>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <SubSystem>Console</SubSystem>
+    <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
+    <!--
+      This is an override that, puzzlingly, _forces XBF (XAML binary) embedding_.
+      We have to do this to overcome a layout issue in the WAP packaging project.
+      When we do this, the XBF ends up in resources.pri.
+    -->
+    <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
+  </PropertyGroup>
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+
+  <!-- ========================= XAML files ======================== -->
+  <ItemGroup>
+    <!-- HERE BE DRAGONS:
+      For any types that use XAML information, if their .idl and .h aren't
+      marked DependentUpon the corresponding .xaml file, XamlTypeInfo.g.h won't
+      pick it up correctly. -->
+    <ApplicationDefinition Include="..\App.xaml">
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+  </ItemGroup>
+  <!-- When we add other user controls, they should go in here as so: -->
+  <ItemGroup>
+    <Page Include="../MinMaxCloseControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="../TerminalPage.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="../TitlebarControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="../TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
+  <!-- ========================= Headers ======================== -->
+  <ItemGroup>
+    <ClInclude Include="../App.base.h" />
+    <ClInclude Include="../MinMaxCloseControl.h">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TerminalPage.h">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../TitlebarControl.h">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TabRowControl.h">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../Tab.h" />
+    <ClInclude Include="../Pane.h" />
+    <ClInclude Include="../ColorScheme.h" />
+    <ClInclude Include="../GlobalAppSettings.h" />
+    <ClInclude Include="../Profile.h" />
+    <ClInclude Include="../CascadiaSettings.h" />
+    <ClInclude Include="../AppKeyBindingsSerialization.h" />
+    <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../Utils.h" />
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../App.h" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClInclude>
+  </ItemGroup>
+
+  <!-- ========================= Cpp Files ======================== -->
+  <ItemGroup>
+    <ClCompile Include="../init.cpp" />
+    <ClCompile Include="../MinMaxCloseControl.cpp">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../TerminalPage.cpp">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../TitlebarControl.cpp">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../TabRowControl.cpp">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../Tab.cpp" />
+    <ClCompile Include="../Pane.cpp" />
+    <ClCompile Include="../ColorScheme.cpp" />
+    <ClCompile Include="../GlobalAppSettings.cpp" />
+    <ClCompile Include="../Profile.cpp" />
+    <ClCompile Include="../CascadiaSettings.cpp" />
+    <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
+    <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
+    <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../ScopedResourceLoader.cpp" />
+    <ClCompile Include="pch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="../AppKeyBindings.cpp" >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../App.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
+
+    <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
+    you want to use jsoncpp -->
+    <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+
+    <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+  </ItemGroup>
+  <!-- ========================= idl Files ======================== -->
+  <ItemGroup>
+    <!-- If you add idl files here, make sure to include their implementation's
+    header in TerminalApp.vcxproj (as well as in this file) -->
+    <Midl Include="../App.idl" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../MinMaxCloseControl.idl">
+      <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TerminalPage.idl">
+      <DependentUpon>../TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TitlebarControl.idl">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TabRowControl.idl">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+  </ItemGroup>
+
+  <!-- ========================= Misc Files ======================== -->
+  <ItemGroup>
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
+    <None Include="../packages.config" />
+  </ItemGroup>
+
+  <!-- ========================= Project References ======================== -->
+  <ItemGroup>
+    <!--
+      the packaging project won't recurse through our dependencies, you have to
+      make sure that if you add a cppwinrt dependency to any of these projects,
+      you also update all the consumers
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
+
+    <!-- For whatever reason, we can't include the TerminalControl and
+    TerminalSettings projects' winmds via project references. So we'll have to
+    manually include the winmds as References below -->
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- A small helper for paths to the compiled cppwinrt projects -->
+    <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
+    <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- This is a hack to get the ARM64 CI build working. See
+    https://github.com/Microsoft/msbuild/issues/3746 - it looks like MsBuild
+    just has a bug in it.-->
+    <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>Warning</ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Manually add references to each of our dependent winmds. Mark them as
+    private=false and CopyLocalSatelliteAssemblies=false, so that we don't
+    propogate them upwards (which can make referencing this project result in
+    duplicate type definitions)-->
+
+    <Reference Include="Microsoft.Terminal.Settings">
+      <HintPath>$(_BinRoot)TerminalSettings\Microsoft.Terminal.Settings.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
+    <Reference Include="Microsoft.Terminal.TerminalConnection">
+      <HintPath>$(_BinRoot)TerminalConnection\Microsoft.Terminal.TerminalConnection.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
+    <Reference Include="Microsoft.Terminal.TerminalControl">
+      <HintPath>$(_BinRoot)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+
+  </ItemGroup>
+
+  <!-- ====================== Compiler & Linker Flags ===================== -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalIncludeDirectories>..;$(OpenConsoleDir)\dep\jsoncpp\json;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
+      <!-- Manually disable unreachable code warning, because jconcpp has a ton of that. -->
+      <DisableSpecificWarnings>4702;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- ========================= Globals ======================== -->
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TerminalApp</RootNamespace>
+    <ProjectName>TerminalAppLib</ProjectName>
+    <TargetName>TerminalAppLib</TargetName>
+    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      DON'T REDIRECT OUR OUTPUT.
+      Setting this will tell cppwinrt.build.post.props to copy our output from
+      the default OutDir up one level, so the wapproj will be able to find it.
+     -->
+    <NoOutputRedirection>true</NoOutputRedirection>
+  </PropertyGroup>
+
+  <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
+  <!-- Manually include MUX here, instead of importing its targets file. We need
+  to reference its winmd, but very specifically with the
+  CopyLocalSatelliteAssemblies and Private properties set to false, as to not
+  have projects including us double-including MUX's .winmd. The following blob
+  is taken straight from the MUX build targets, with the afformentioned
+  changes.-->
+  <PropertyGroup>
+    <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
+    <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
+    <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\</_MUXRoot>
+    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\</_MUXAppRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Microsoft.UI.XAML -->
+    <Reference Include="$(_MUXRoot)lib\uap10.0\Microsoft.UI.Xaml.winmd">
+      <Implementation>Microsoft.UI.Xaml.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>true</Private>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
+    <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
+
+    <!-- Microsoft.UI.XAML.Application -->
+    <Reference Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.winmd">
+      <Implementation>Microsoft.Toolkit.Win32.UI.XamlHost.dll</Implementation>
+      <IsWinMDFile>true</IsWinMDFile>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+      <Private>false</Private>
+    </Reference>
+    <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
+    <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
+  </ItemGroup>
+  <!-- End MUX import -->
+
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+  </Target>
+
+
+  <!--
+    By default, the PRI file will contain resource paths beginning with the
+    project name. Since we enabled XBF embedding, this *also* includes App.xbf.
+    Well, App.xbf is hardcoded by the framework to be found at the resource ROOT.
+    To make that happen, we have to disable the prepending of the project name
+    to the App xaml files.
+  -->
+  <PropertyGroup>
+    <_GenerateProjectPriFileDependsOn>OpenConsolePlaceAppXbfAtRootOfResourceTree;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
+  </PropertyGroup>
+  <Target Name="OpenConsolePlaceAppXbfAtRootOfResourceTree" DependsOnTargets="GetPackagingOutputs">
+    <ItemGroup>
+      <_RelocatedAppXamlData Include="@(PackagingOutputs)" Condition="'%(Filename)' == 'App' and ('%(Extension)' == '.xaml' or '%(Extension)' == '.xbf')" />
+      <PackagingOutputs Remove="@(_RelocatedAppXamlData)" />
+      <PackagingOutputs Include="@(_RelocatedAppXamlData)">
+        <TargetPath>%(Filename)%(Extension)</TargetPath>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+</Project>

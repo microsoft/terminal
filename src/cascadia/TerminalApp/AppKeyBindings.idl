@@ -3,11 +3,21 @@
 
 namespace TerminalApp
 {
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
     enum ShortcutAction
     {
         CopyText = 0,
+        CopyTextWithoutNewlines,
         PasteText,
         NewTab,
+        DuplicateTab,
         NewTabProfile0,
         NewTabProfile1,
         NewTabProfile2,
@@ -20,6 +30,7 @@ namespace TerminalApp
         NewWindow,
         CloseWindow,
         CloseTab,
+        ClosePane,
         NextTab,
         PrevTab,
         SplitVertical,
@@ -39,16 +50,26 @@ namespace TerminalApp
         ScrollDown,
         ScrollUpPage,
         ScrollDownPage,
+        ResizePaneLeft,
+        ResizePaneRight,
+        ResizePaneUp,
+        ResizePaneDown,
+        MoveFocusLeft,
+        MoveFocusRight,
+        MoveFocusUp,
+        MoveFocusDown,
         OpenSettings
     };
 
-    delegate void CopyTextEventArgs();
+    delegate void CopyTextEventArgs(Boolean trimWhitespace);
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
+    delegate void DuplicateTabEventArgs();
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();
+    delegate void ClosePaneEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
     delegate void SplitVerticalEventArgs();
@@ -61,9 +82,10 @@ namespace TerminalApp
     delegate void ScrollUpPageEventArgs();
     delegate void ScrollDownPageEventArgs();
     delegate void OpenSettingsEventArgs();
+    delegate void ResizePaneEventArgs(Direction direction);
+    delegate void MoveFocusEventArgs(Direction direction);
 
-    [default_interface]
-    runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
         AppKeyBindings();
 
@@ -73,10 +95,12 @@ namespace TerminalApp
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
+        event DuplicateTabEventArgs DuplicateTab;
         event NewTabWithProfileEventArgs NewTabWithProfile;
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
         event CloseTabEventArgs CloseTab;
+        event ClosePaneEventArgs ClosePane;
         event SwitchToTabEventArgs SwitchToTab;
         event NextTabEventArgs NextTab;
         event PrevTabEventArgs PrevTab;
@@ -89,5 +113,7 @@ namespace TerminalApp
         event ScrollUpPageEventArgs ScrollUpPage;
         event ScrollDownPageEventArgs ScrollDownPage;
         event OpenSettingsEventArgs OpenSettings;
+        event ResizePaneEventArgs ResizePane;
+        event MoveFocusEventArgs MoveFocus;
     }
 }

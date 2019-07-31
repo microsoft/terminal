@@ -7,6 +7,7 @@
 
 #include <wrl.h>
 #include <wrl/client.h>
+#include <VersionHelpers.h>
 
 using namespace Microsoft::Console::Render;
 
@@ -239,8 +240,8 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     D2D1_POINT_2F baselineOrigin = origin;
     baselineOrigin.y += drawingContext->spacing.baseline;
 
-    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
-    RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
+    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
+    RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
     // Draw the background
     D2D1_RECT_F rect;
@@ -254,13 +255,17 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
         rect.right += glyphRun->glyphAdvances[i];
     }
 
-    d2dContext4->FillRectangle(rect, drawingContext->backgroundBrush);
+    d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
     // Now go onto drawing the text.
 
     // First check if we want a color font and try to extract color emoji first.
-    if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT))
+    // Color emoji are only available on Windows 10+
+    if (WI_IsFlagSet(drawingContext->options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT) && IsWindows10OrGreater())
     {
+        ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
+        RETURN_IF_FAILED(d2dContext.As(&d2dContext4));
+
         ::Microsoft::WRL::ComPtr<IDWriteFactory4> dwriteFactory4;
         RETURN_IF_FAILED(drawingContext->dwriteFactory->QueryInterface(dwriteFactory4.GetAddressOf()));
 
@@ -409,11 +414,11 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                              _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
                                                              ID2D1Brush* brush)
 {
-    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext4> d2dContext4;
-    RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext4.GetAddressOf()));
+    ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
+    RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
     // Using the context is the easiest/default way of drawing.
-    d2dContext4->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
+    d2dContext->DrawGlyphRun(baselineOrigin, glyphRun, glyphRunDescription, brush, measuringMode);
 
     // However, we could probably add options here and switch out to one of these other drawing methods (making it
     // conditional based on the IUnknown* clientDrawingEffect or on some other switches and try these out instead:
