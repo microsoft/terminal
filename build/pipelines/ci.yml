@@ -19,11 +19,9 @@ pr:
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 jobs:
-# This is disabled because the build agents were running out of disk space. 
-# We're pursuing that in the background, but the spice must flow in the meantime.
-#  - template: ./templates/build-console-audit-job.yml
-#    parameters:
-#      platform: x64
+  - template: ./templates/build-console-audit-job.yml
+    parameters:
+      platform: x64
 
   - template: ./templates/build-console-ci.yml
     parameters:
