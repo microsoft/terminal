@@ -42,8 +42,6 @@ goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
 
-echo Performing nuget restore...
-nuget.exe restore %OPENCON%\OpenConsole.sln
 
 
 set _APPX_ARGS=
@@ -51,9 +49,6 @@ set _APPX_ARGS=
 if "%_EXCLUSIVE%" == "1" (
     set "PROJECT_NAME="
     call :get_project
-
-    echo Building only %PROJECT_NAME%
-
 ) else if (%_LAST_BUILD_CONF%) == (Debug) (
 
     rem /p:AppxBundle=Never prevents us from building the appxbundle from the
@@ -68,6 +63,13 @@ if "%_EXCLUSIVE%" == "1" (
 ) else (
     echo Building Appx...
 )
+
+if "%_EXCLUSIVE%" == "1" (
+    if "%PROJECT_NAME%" == "" ( goto :eof ) else echo Building only %PROJECT_NAME%
+)
+
+echo Performing nuget restore...
+nuget.exe restore %OPENCON%\OpenConsole.sln
 
 set _BUILD_CMDLINE="%MSBUILD%" %OPENCON%\OpenConsole.sln /t:%_MSBUILD_TARGET% /m /p:Configuration=%_LAST_BUILD_CONF% /p:Platform=%ARCH% %_APPX_ARGS%
 
