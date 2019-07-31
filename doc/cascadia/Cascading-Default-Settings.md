@@ -85,21 +85,30 @@ When we load the settings, we'll perform the following steps, each mentioned in
 greater detail below:
 1. Load from disk the `defaults.json` (the default settings) -> DefaultsJson
 1. Load from disk the `profiles.json` (the user settings) -> UserJson
-<!-- 1. Perform a preliminary scan of the user settings, and create all the profiles
-   in order they appear in the user settings file. Fill in their `guid` and
-   `source` properties (if they exist). -->
-1. Layer all settings from the defaults on the existing profiles, and create the
-   default color schemes, as well as the default global settings.
-   - To layer: if a profile exists already in the list of profiles with a
-     matching `guid` and `source`, apply the settings _to that Profile object_.
-     Otherwise, if there is no match, append it to the end of the list of
-     profiles.
-1. Generate any dynamically generated profiles, if necessary. Layer them on top
-   of existing profiles. If any profiles were appended in this manner, indicate
-   that we'll need to save the updated settings.
-1. [Not covered in this spec] Apply the UserJson.globals.defaults settings to
-   every profile, including default, generated and user profiles.
-1. Layer all user settings upon the existing settings models.
+1. Parse DefaultsJson to create all the default profiles, schemes, keybindings.
+1. [Not covered in this spec] Check the UserJson to find the list of dynamic
+   profile sources that should run.
+1. Run all the _enabled_ dynamic profile generators. Those profiles will be
+   added to the set of profiles.
+   - During this step, check if any of the profiles added here don't exist in
+     UserJson. If they _don't_, the generator created a profile that didn't
+     exist before. Return a value indicating the user settings should be
+     re-saved (with the new profiles added).
+1. [Not covered in this spec] Layer the UserJson.globals.defaults settings to
+   every profile in the set, both the defaults, and generated profiles.
+1. Apply the user settings from UserJson. Layer the profiles on top of the
+   existing profiles if possible (if both `guid` and `source` match). If a
+   profile from the user settings does not already exist, make sure to apply the
+   UserJson.globals.defaults settings first. Also layer Color schemes and
+   keybindings.
+  - If a profile with a `source` does not exist, don't create a new Profile
+    object for it. That generator didn't run, so we'll effectively hide the
+    profile.
+1. Re-order the list of profiles, to match the ordering in the UserJson. If a
+   profile doesn't exist in UserJson, it should follow all the profiles in the
+   UserJson. If a profile listed in UserJson doesn't exist, we can skip it
+   safely in this step (the profile will be a dynamic profile that didn't get
+   populated.)
 1. Validate the settings.
 1. If necessary, write the modified settings back to `profiles.json`.
 
@@ -128,11 +137,13 @@ set of setings in it.
 
 ### Layering settings
 
-When we load the settings, we'll do it in two stages. First, we'll deserialize the
-default settings that we've hardcoded. Then, we'll intelligently layer the
-user's setting upon those we've already loaded. Some objects, like the default
-profiles, we'll need to make sure to load from the user settings into the
-existing objects we created from the default settings.
+When we load the settings, we'll do it in three stages. First, we'll deserialize
+the default settings that we've hardcoded. We'll then generate any profiles that
+might come from dynamic profile sources. Then, we'll intelligently layer the
+user's setting upon those we've already loaded. If a user wants to make changes
+to some objects, like the default profiles, we'll need to make sure to load from
+the user settings into the existing objects we created from the default
+settings.
 
 * We'll need to make sure that any profile in the user settings that has a GUID
   matching a default profile loads the user settings into the object created
@@ -143,6 +154,11 @@ existing objects we created from the default settings.
   instead.
 * For any color schemes who's name matches the name of a default color scheme,
   we'll need to apply the user settings to the existing color scheme.
+* For profiles that were created from a dynamic profile source, they'll have
+  both a `guid` and `source` guid that must _both_ match. If a user profile with
+  a `source` set does not find a matching profile at load time, the profile will
+  be ignored. See more details in the [Dynamic Profiles](#dynamic-profiles)
+  section.
 
 ### Hiding Default Profiles
 
@@ -202,6 +218,13 @@ we'll compare the value of the setting with the value of the _default
 constructed_ `Profile` object. This will help ensure that each profile in the
 user's settings file maintains the minimal amount of info necessary.
 
+When we're adding profiles due to their generation in a dynamic profile
+generator, we'll need to serialize them, then insert them back into the
+originally parsed json object to be serialized. We don't want the automatic
+creation of a new profile to automatically trigger re-writing the entire user
+settings file, but we do want newly created dynamic profiles to have an entry
+the user can easily edit.
+
 ### Dynamic Profiles
 
 Sometimes, we may want to auto-generate a profile on the user's behalf. Consider
@@ -232,6 +255,11 @@ generator runs, it can check if that profile source already has a profile
 associated with it, and do nothing (as to not create many duplicate "Ubuntu"
 profiles, for example).
 
+Additionally, each dynamic profile generator **must have a unique source guid**
+to associate with the profile. When a dynamic profile is generated, the source's
+guid will be added to the profile, to make sure the profile is correlated with
+the source it came from.
+
 When a dynamic profile generator runs, it will determine what new profiles need
 to be added to the user settings, and it can append those to the list of
 profiles. The generator will return some sort of result indicating that it wants
@@ -248,15 +276,20 @@ When we're serializing the settings, instead of comparing a dynamic profile to
 the default-constructed `Profile`, we'll compare it to the state of the
 `Profile` after the dynamic profile generator created it. It'd then only
 serialize settings that are different from the auto-generated version. It will
-also always make sure that the GUID of the dynamic profile is included in the
+also always make sure that the `guid` of the dynamic profile is included in the
 user settings file, as a point for the user to add customizations to the dynamic
-profile to.
+profile to. Additionally, we'll also make sure the `source` is always serialized
+as well, to keep the profile correlated with the generator that created it.
 
 We'll need to keep the state of these dynamically generated profiles around in
 memory during runtime to be able to ensure the only state we're serializing is
 that which is different from the initially generated dynamic profile.
 
-When the generator is first run, and determines that a new profile has been added
+When the generator is run, and determines that a new profile has been added,
+we'll need to make sure to add the profile to the user's settings file. This
+will create an easy point for users to customize the dynamic profiles. When
+added to the user settings, all that will be added is the `name`, `guid`, and
+`source`.
 
 <!-- If a dynamic profile generator has determined that a profile should no longer be
 used, we don't want to totally remove the profile from the file - perhaps
@@ -272,27 +305,10 @@ Additionally, a user might not want a dynamic profile generator to always run.
 They might want to keep their Azure connections visible in the list of profiles,
 even if its no longer a valid target. Or they might want to not automatically
 connect to Azure to find new instances every time they launch the terminal. To
-enable scenarios like this, **each dynamic profile generator must provide a way
-to disable it**. For the above listed cases, the two settings might be something
-like `autoloadWslProfiles` and `autoloadAzureConnections`. These will be set to
-true in the default settings, but the user can override them to false if they so
-choose.
-
-#### What if a dynamic profile is in the user setttings, but wasn't generated?
-
-After a dynamic profile is generated, we'll leave behind an entry with it's GUID
-in the profiles list in the user settings. However, if the user's settings roam
-to another machine where that dynamic profile is no longer generated, what
-should we do with this profile? On the second machine, it'll be a profile with
-various settings customizations, but some of the important information that's
-been dynamically generated, like the commandline or the name, won't exist. It
-won't have a valid commandline, and the target that it _should_ be pointing at
-doesn't exist.
-
-We'll need an additional validation step to find all profiles like this, and
-remove them from the list of profiles. The default-constructed profile doesn't
-have a commandline, and for any profiles that were originally dynamically
-generated like this, they won't either.
+enable scenarios like this, we'll add an additional setting,
+`disabledProfileSources`. This is an array of guids. If any guids are in that
+list, then those dynamic profile generators _won't_ be run, supressing those
+profiles from appearing in the profiles list.
 
 #### What if a dynamic profile is removed, but it's the default?
 
@@ -550,11 +566,9 @@ doesn't exist, and hide it from the user. -->
     force it to use a "namespace GUID". We'd then have the generator ask us to
     generate a profile GUID for some static string, given it's namespace GUID.
     The generator then wouldn't need to always generate unique GUIDs for its
-    profiles, but it would need to generate unique strings. We could then allow
+    profiles, but it would need to generate unique strings. We already allow
     the user to disable profile generators solely by namespace guid, so they
-    could disable the generator from a certain extension easily, without the
-    extension needing to implement its own `autoload<MyExtendsion>Profiles`
-    setting.
+    could disable the generator from a certain extension easily.
 * **Multiple settings files** - This could enable us to place color schemes into
   a seperate file (like `colorschemes.json`) and put keybindings into their own
   file as well, and reduce the number of settings in the user's `profiles.json`.
