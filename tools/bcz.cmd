@@ -20,6 +20,7 @@ if (%_LAST_BUILD_CONF%)==() (
 
 set _MSBUILD_TARGET=Clean,Build
 set _EXCLUSIVE=
+set _APPX_ARGS=
 
 :ARGS_LOOP
 if (%1) == () goto :POST_ARGS_LOOP
@@ -39,12 +40,8 @@ if (%1) == (exclusive) (
 )
 shift
 goto :ARGS_LOOP
-
 :POST_ARGS_LOOP
 
-
-
-set _APPX_ARGS=
 
 if "%_EXCLUSIVE%" == "1" (
     set "PROJECT_NAME="
@@ -93,7 +90,7 @@ rem function here with `enabledelayedexpansion` set.
 :get_project
 setlocal enabledelayedexpansion
 
-rem TODO Find a way to only rebuild the metaproj if the sln changed
+rem TODO:GH#2172 Find a way to only rebuild the metaproj if the sln changed
 rem First generate the metaproj file
 set MSBuildEmitSolution=1
 "%msbuild%" %OPENCON%\OpenConsole.sln /t:ValidateSolutionConfiguration /m > NUL
