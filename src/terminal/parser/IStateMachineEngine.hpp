@@ -52,6 +52,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool FlushAtEndOfString() const = 0;
         virtual bool DispatchControlCharsFromEscape() const = 0;
+        virtual bool DispatchIntermediatesFromEscape() const = 0;
     };
 
     inline IStateMachineEngine::~IStateMachineEngine() {}

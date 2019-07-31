@@ -203,7 +203,7 @@ static bool s_IsOnDesktop()
 
     if (fRecomputeOwner)
     {
-        IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
+        Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
         if (pWindow != nullptr)
         {
             pWindow->SetOwner();

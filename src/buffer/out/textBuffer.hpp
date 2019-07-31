@@ -105,6 +105,7 @@ public:
     bool IncrementCircularBuffer();
 
     COORD GetLastNonSpaceCharacter() const;
+    COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
 
     Cursor& GetCursor();
     const Cursor& GetCursor() const;

@@ -39,12 +39,20 @@ steps:
   displayName: 'Build solution **\OpenConsole.sln'
   inputs:
     solution: '**\OpenConsole.sln'
-    vsVersion: 15.0
+    vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
     msbuildArgs: ${{ parameters.additionalBuildArguments }}
     clean: true
     maximumCpuCount: true
+
+- task: PowerShell@2
+  displayName: 'Check MSIX for common regressions'
+  inputs:
+    targetType: inline
+    script: |
+      $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
+      .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
 
 - task: VSTest@2
   displayName: 'Run Unit Tests'

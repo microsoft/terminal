@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "AppHost.h"
 #include "../types/inc/Viewport.hpp"
-#include "../types/inc/Utils.hpp"
+#include "../types/inc/utils.hpp"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -13,15 +13,6 @@ using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
-
-// The tabs are 34.8px tall. This is their default height - we're not
-// controlling the styling of the tabs at all currently. If we change the size
-// of those, we'll need to change the size here, too. We can't get this size
-// from the tab control until the control is added to a XAML element, and we
-// can't create any XAML elements until we have a window, and we need to know
-// this size before we can create a window, so unfortunately we're stuck
-// hardcoding this.
-const int NON_CLIENT_CONTENT_HEIGHT = static_cast<int>(std::round(34.8));
 
 AppHost::AppHost() noexcept :
     _app{},
@@ -32,9 +23,6 @@ AppHost::AppHost() noexcept :
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>();
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-
-        pNcWindow->SetNonClientHeight(NON_CLIENT_CONTENT_HEIGHT);
     }
     else
     {
@@ -53,6 +41,10 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
+    // destruction order is important for proper teardown here
+    _window = nullptr;
+    _app.Close();
+    _app = nullptr;
 }
 
 // Method Description:
@@ -69,6 +61,16 @@ AppHost::~AppHost()
 void AppHost::Initialize()
 {
     _window->Initialize();
+
+    if (_useNonClientArea)
+    {
+        // Register our callbar for when the app's non-client content changes.
+        // This has to be done _before_ App::Create, as the app might set the
+        // content in Create.
+        _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
+    }
+    _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
+
     _app.Create();
 
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
@@ -76,12 +78,10 @@ void AppHost::Initialize()
 
     AppTitleChanged(_app.GetTitle());
 
-    _window->SetRootContent(_app.GetRoot());
-    if (_useNonClientArea)
-    {
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-        pNcWindow->SetNonClientContent(_app.GetTabs());
-    }
+    // Set up the content of the application. If the app has a custom titlebar,
+    // set that content as well.
+    _window->SetContent(_app.GetRoot());
+    _window->OnAppInitialized();
 }
 
 // Method Description:
@@ -194,4 +194,33 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+}
+
+// Method Description:
+// - Called when the app wants to set its titlebar content. We'll take the
+//   UIElement and set the Content property of our Titlebar that element.
+// Arguments:
+// - sender: unused
+// - arg: the UIElement to use as the new Titlebar content.
+// Return Value:
+// - <none>
+void AppHost::_UpdateTitleBarContent(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::UIElement& arg)
+{
+    if (_useNonClientArea)
+    {
+        (static_cast<NonClientIslandWindow*>(_window.get()))->SetTitlebarContent(arg);
+    }
+}
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll forward this to the
+//   IslandWindow, so it can update the root UI element of the entire XAML tree.
+// Arguments:
+// - sender: unused
+// - arg: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void AppHost::_UpdateTheme(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::ElementTheme& arg)
+{
+    _window->UpdateTheme(arg);
 }

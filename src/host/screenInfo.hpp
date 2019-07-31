@@ -39,7 +39,6 @@ Revision History:
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
@@ -48,6 +47,7 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
+#include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
@@ -201,6 +201,7 @@ public:
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
     bool AreMarginsSet() const noexcept;
+    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
     Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
     [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();

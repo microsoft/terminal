@@ -7,6 +7,7 @@
 
 #include <wrl.h>
 #include <wrl/client.h>
+#include <VersionHelpers.h>
 
 using namespace Microsoft::Console::Render;
 
@@ -19,10 +20,10 @@ using namespace Microsoft::Console::Render;
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
-CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
+CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                    IDWriteTextAnalyzer1* const analyzer,
-                                   IDWriteTextFormat2* const format,
-                                   IDWriteFontFace5* const font,
+                                   IDWriteTextFormat* const format,
+                                   IDWriteFontFace1* const font,
                                    std::basic_string_view<Cluster> const clusters,
                                    size_t const width) :
     _factory{ factory },
@@ -132,7 +133,6 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
         RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
-
         // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
         RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
 
@@ -498,6 +498,20 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
             glyphRunDescription.stringLength = run.textLength;
             glyphRunDescription.textPosition = run.textStart;
 
+            // Calculate the origin for the next run based on the amount of space
+            // that would be consumed. We are doing this calculation now, not after,
+            // because if the text is RTL then we need to advance immediately, before the
+            // write call since DirectX expects the origin to the RIGHT of the text for RTL.
+            const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+                                                     _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                                     mutableOrigin.x);
+
+            // Check for RTL, if it is, apply space adjustment.
+            if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+            {
+                mutableOrigin.x = postOriginX;
+            }
+
             // Try to draw it
             RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
                                                     mutableOrigin.x,
@@ -507,10 +521,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
                                                     &glyphRunDescription,
                                                     nullptr));
 
-            // Shift origin to the right for the next run based on the amount of space consumed.
-            mutableOrigin.x = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
-                                              _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                              mutableOrigin.x);
+            // Either way, we should be at this point by the end of writing this sequence,
+            // whether it was LTR or RTL.
+            mutableOrigin.x = postOriginX;
         }
     }
     CATCH_RETURN();
@@ -772,7 +785,11 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
     {
         // Get the font fallback first
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        RETURN_IF_FAILED(_format.As(&format1));
+        if (FAILED(_format.As(&format1)))
+        {
+            // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
+            return S_FALSE;
+        }
         RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> fallback;
