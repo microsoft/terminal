@@ -64,10 +64,18 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         }
 
         // expand selection for Double/Triple Click
-        if (multiClickSelectionMode == selectionExpansionMode::Word && _selectionAnchor != _endSelectionPosition)
+        if (multiClickSelectionMode == selectionExpansionMode::Word)
         {
-            selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
-            selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
+            if (_selectionAnchor == _endSelectionPosition
+                && _isWordDelimiter(_buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars()))
+            {
+                // only highlight the cell if you double click a delimiter
+            }
+            else
+            {
+                selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
+                selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
+            }
         }
         else if (multiClickSelectionMode == selectionExpansionMode::Line)
         {
@@ -343,10 +351,10 @@ const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 // - the corresponding location on the buffer
 const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
-    // don't change the value if at/outside the boundary
-    if (viewportPos.X <= 0 || viewportPos.X >= _buffer->GetSize().RightInclusive())
+    // Invalid position if outside of boundaries
+    if (viewportPos.X < 0 || viewportPos.X > _buffer->GetSize().RightInclusive())
     {
-        return viewportPos;
+        THROW_HR(E_INVALIDARG);
     }
 
     COORD positionWithOffsets = viewportPos;
