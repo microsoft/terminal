@@ -101,9 +101,10 @@ greater detail below:
    profile from the user settings does not already exist, make sure to apply the
    UserJson.globals.defaults settings first. Also layer Color schemes and
    keybindings.
-  - If a profile with a `source` does not exist, don't create a new Profile
-    object for it. That generator didn't run, so we'll effectively hide the
-    profile.
+  - If a profile has a `source` key, but there is not an existing profile with a
+    matching `guid` and `source`, don't create a new Profile object for it.
+    Either that generator didn't run, or the generator wanted to delete that
+    profile, so we'll effectively hide the profile.
 1. Re-order the list of profiles, to match the ordering in the UserJson. If a
    profile doesn't exist in UserJson, it should follow all the profiles in the
    UserJson. If a profile listed in UserJson doesn't exist, we can skip it
@@ -268,9 +269,13 @@ that profile if found, or it'll create a new profile to apply the settings to.
 
 After a dynamic profile generator runs, we will determine what new profiles need
 to be added to the user settings, so we can append those to the list of
-profiles. We'll store some sort of result indicating that we want a save
-operation to occur. After the rest of the deserializing is done, the app will
-then save the `profiles.json` file, including these new profiles.
+profiles. The deserializer will look at the list of generated profiles and check
+if each and every one already has a entry in the user settings. The generator
+will just blind hand back a list of profiles, and the deserializer will figure
+out if any of them need to be added to the user settings. We'll store some sort
+of result indicating that we want a save operation to occur. After the rest of
+the deserializing is done, the app will then save the `profiles.json` file,
+including these new profiles.
 
 When we're serializing the settings, instead of comparing a dynamic profile to
 the default-constructed `Profile`, we'll compare it to the state of the
@@ -572,6 +577,16 @@ generators _must_ be enabled to use the dynamic profiles.
   that as the point of comparison to check if a setting's value has changed.
   There may be more unknowns with this proposal, so I leave it for a future
   feature spec.
+* **Re-ordering profiles** - Under "Solution Design", we provide an algorithm
+  for decoding the settings. One of the steps mentioned is parsing the user
+  settings to determine the ordering of the profiles. It's possible in the
+  future we may want to give the user more control over this ordering. Maybe
+  we'll want to allow the user to manually index the profiles. Or, as discussed
+  in issues like #1571, we may want to allow the user to further customize the
+  new tab dropdown, beyond just the order of profiles. The re-ordering step
+  would be a great place to add code to support this re-ordering, with whatever
+  algorithm we eventually land on. Determining such an algorithm is outside the
+  scope of this spec, however.
 
 ## Resources
 N/A
