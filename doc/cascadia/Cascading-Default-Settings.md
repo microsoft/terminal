@@ -260,17 +260,17 @@ to associate with the profile. When a dynamic profile is generated, the source's
 guid will be added to the profile, to make sure the profile is correlated with
 the source it came from.
 
-When a dynamic profile generator runs, it will determine what new profiles need
-to be added to the user settings, and it can append those to the list of
-profiles. The generator will return some sort of result indicating that it wants
-a save operation to occur. The app will then save the `profiles.json` file,
-including these new profiles.
-
 We'll generate these dynamic profiles immediately after applying the defaults.
 When a generator runs, it'll be able to create unique profile GUIDs for each
 source it wants to generate a profile for. It'll attempt find any profiles that
 exist in the list of profiles with a matching GUID, and apply the settings to
 that profile if found, or it'll create a new profile to apply the settings to.
+
+After a dynamic profile generator runs, we will determine what new profiles need
+to be added to the user settings, so we can append those to the list of
+profiles. We'll store some sort of result indicating that we want a save
+operation to occur. After the rest of the deserializing is done, the app will
+then save the `profiles.json` file, including these new profiles.
 
 When we're serializing the settings, instead of comparing a dynamic profile to
 the default-constructed `Profile`, we'll compare it to the state of the
@@ -290,16 +290,6 @@ we'll need to make sure to add the profile to the user's settings file. This
 will create an easy point for users to customize the dynamic profiles. When
 added to the user settings, all that will be added is the `name`, `guid`, and
 `source`.
-
-<!-- If a dynamic profile generator has determined that a profile should no longer be
-used, we don't want to totally remove the profile from the file - perhaps
-there's some data the user would like from those settings. Instead, we'll simply
-mark that profile as `"hidden": true`. That way, the profile will remain in
-their settings, but will not appear in the list of profiles. -->
-
-<!-- Should a dynamic profile generator try to create a profile that's already
-`hidden`, it'll make sure to set `hidden` back to false, making the original
-visible again. -->
 
 Additionally, a user might not want a dynamic profile generator to always run.
 They might want to keep their Azure connections visible in the list of profiles,
@@ -534,19 +524,6 @@ profile to the user, even if they've done that setup before.
 So the trade-off with this design is that non-existent dynamic profiles will
 never roam to machines where they don't exist and aren't valid, but the
 generators _must_ be enabled to use the dynamic profiles.
-
-<!-- The previous iteration of the design, alternatively, had different
-drawbacks. It would also be burdened by a long startup to generate certain
-profiles, but once the profiles were generated, they'd exist in the user
-settings. If the user wished, they could then disable the generator, so future
-launches would be speedy again, and the dynamiclly generated profile would still
-exist.
-
-However, it had the drawback that the dynamically generated profiles could roam
- to machines without the profile source available.
-
-Though I guess in that case, the generator would run, find that the profile
-doesn't exist, and hide it from the user. -->
 
 ## Future considerations
 * It's possible that a very similar layering loading mechanism could be used to
