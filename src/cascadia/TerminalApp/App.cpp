@@ -1462,6 +1462,12 @@ namespace winrt::TerminalApp::implementation
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
+        GUID connectionType{ 0 };
+        if (profile->HasConnectionType())
+        {
+            connectionType = profile->GetConnectionType();
+        }
+
         if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
