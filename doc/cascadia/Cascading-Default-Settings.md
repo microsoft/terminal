@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-05-31
-last updated: 2019-06-13
+last updated: 2019-07-31
 issue id: 754
 ---
 
@@ -64,6 +64,18 @@ the terminal re-generate the default settings.
 This is fairly annoying to the end-user, so ideally we'll find a way to be able
 to prevent this scenario.
 
+### Goal: Prevent Roaming Settings from Failing
+Another problem currently is that when settings roam to another machine, it's
+possible that the second machine doesn't have the same applications installed as
+the first, and some profiles might be totally invalid on the second machine.
+Take for example, profiles for WSL distros. If you have and Ubuntu profile on
+your first machine, and roam that profile to a second machine without Ubuntu
+installed, then the Ubuntu profile would be totally broken on the second
+machine.
+
+While we won't be able to non-destructively prevent all failures of this case,
+we should be able to catch it in certain scenarios.
+
 ## Solution Design
 
 The settings are now composed from two files: a "Default" settings file, and a
@@ -71,17 +83,33 @@ The settings are now composed from two files: a "Default" settings file, and a
 
 When we load the settings, we'll perform the following steps, each mentioned in
 greater detail below:
-1. Load the `defaults.json` (the default settings)
-1. Load the `profiles.json` (the user settings)
-1. Perform a preliminary scan of the user settings, and create all the profiles
-   in order they appear in the user settings file.
-1. Layer all settings from the defaults on the existing profiles, and create the
-   default color schemes, as well as the default global settings.
-1. Layer all user settings upon the existing settings models.
-1. Generate any dynamically generated profiles, if necessary. This step might
-   request the user settings are saved out.
-1. Validate the settings. This step might request the user settings are saved
-   out.
+1. Load from disk the `defaults.json` (the default settings) -> DefaultsJson
+1. Load from disk the `profiles.json` (the user settings) -> UserJson
+1. Parse DefaultsJson to create all the default profiles, schemes, keybindings.
+1. [Not covered in this spec] Check the UserJson to find the list of dynamic
+   profile sources that should run.
+1. Run all the _enabled_ dynamic profile generators. Those profiles will be
+   added to the set of profiles.
+   - During this step, check if any of the profiles added here don't exist in
+     UserJson. If they _don't_, the generator created a profile that didn't
+     exist before. Return a value indicating the user settings should be
+     re-saved (with the new profiles added).
+1. [Not covered in this spec] Layer the UserJson.globals.defaults settings to
+   every profile in the set, both the defaults, and generated profiles.
+1. Apply the user settings from UserJson. Layer the profiles on top of the
+   existing profiles if possible (if both `guid` and `source` match). If a
+   profile from the user settings does not already exist, make sure to apply the
+   UserJson.globals.defaults settings first. Also layer Color schemes and
+   keybindings.
+  - If a profile with a `source` does not exist, don't create a new Profile
+    object for it. That generator didn't run, so we'll effectively hide the
+    profile.
+1. Re-order the list of profiles, to match the ordering in the UserJson. If a
+   profile doesn't exist in UserJson, it should follow all the profiles in the
+   UserJson. If a profile listed in UserJson doesn't exist, we can skip it
+   safely in this step (the profile will be a dynamic profile that didn't get
+   populated.)
+1. Validate the settings.
 1. If necessary, write the modified settings back to `profiles.json`.
 
 ### Default Settings
@@ -109,11 +137,13 @@ set of setings in it.
 
 ### Layering settings
 
-When we load the settings, we'll do it in two stages. First, we'll deserialize the
-default settings that we've hardcoded. Then, we'll intelligently layer the
-user's setting upon those we've already loaded. Some objects, like the default
-profiles, we'll need to make sure to load from the user settings into the
-existing objects we created from the default settings.
+When we load the settings, we'll do it in three stages. First, we'll deserialize
+the default settings that we've hardcoded. We'll then generate any profiles that
+might come from dynamic profile sources. Then, we'll intelligently layer the
+user's setting upon those we've already loaded. If a user wants to make changes
+to some objects, like the default profiles, we'll need to make sure to load from
+the user settings into the existing objects we created from the default
+settings.
 
 * We'll need to make sure that any profile in the user settings that has a GUID
   matching a default profile loads the user settings into the object created
@@ -124,6 +154,11 @@ existing objects we created from the default settings.
   instead.
 * For any color schemes who's name matches the name of a default color scheme,
   we'll need to apply the user settings to the existing color scheme.
+* For profiles that were created from a dynamic profile source, they'll have
+  both a `guid` and `source` guid that must _both_ match. If a user profile with
+  a `source` set does not find a matching profile at load time, the profile will
+  be ignored. See more details in the [Dynamic Profiles](#dynamic-profiles)
+  section.
 
 ### Hiding Default Profiles
 
@@ -183,6 +218,13 @@ we'll compare the value of the setting with the value of the _default
 constructed_ `Profile` object. This will help ensure that each profile in the
 user's settings file maintains the minimal amount of info necessary.
 
+When we're adding profiles due to their generation in a dynamic profile
+generator, we'll need to serialize them, then insert them back into the
+originally parsed json object to be serialized. We don't want the automatic
+creation of a new profile to automatically trigger re-writing the entire user
+settings file, but we do want newly created dynamic profiles to have an entry
+the user can easily edit.
+
 ### Dynamic Profiles
 
 Sometimes, we may want to auto-generate a profile on the user's behalf. Consider
@@ -213,31 +255,50 @@ generator runs, it can check if that profile source already has a profile
 associated with it, and do nothing (as to not create many duplicate "Ubuntu"
 profiles, for example).
 
-When a dynamic profile generator runs, it will determine what new profiles need
-to be added to the user settings, and it can append those to the list of
-profiles. The generator will return some sort of result indicating that it wants
-a save operation to occur. The app will then save the `profiles.json` file,
-including these new profiles.
+Additionally, each dynamic profile generator **must have a unique source guid**
+to associate with the profile. When a dynamic profile is generated, the source's
+guid will be added to the profile, to make sure the profile is correlated with
+the source it came from.
 
-If a dynamic profile generator has determined that a profile should no longer be
-used, we don't want to totally remove the profile from the file - perhaps
-there's some data the user would like from those settings. Instead, we'll simply
-mark that profile as `"hidden": true`. That way, the profile will remain in
-their settings, but will not appear in the list of profiles.
+We'll generate these dynamic profiles immediately after applying the defaults.
+When a generator runs, it'll be able to create unique profile GUIDs for each
+source it wants to generate a profile for. It'll attempt find any profiles that
+exist in the list of profiles with a matching GUID, and apply the settings to
+that profile if found, or it'll create a new profile to apply the settings to.
 
-Should a dynamic profile generator try to create a profile that's already
-`hidden`, it'll make sure to set `hidden` back to false, making the original
-visible again.
+After a dynamic profile generator runs, we will determine what new profiles need
+to be added to the user settings, so we can append those to the list of
+profiles. We'll store some sort of result indicating that we want a save
+operation to occur. After the rest of the deserializing is done, the app will
+then save the `profiles.json` file, including these new profiles.
+
+When we're serializing the settings, instead of comparing a dynamic profile to
+the default-constructed `Profile`, we'll compare it to the state of the
+`Profile` after the dynamic profile generator created it. It'd then only
+serialize settings that are different from the auto-generated version. It will
+also always make sure that the `guid` of the dynamic profile is included in the
+user settings file, as a point for the user to add customizations to the dynamic
+profile to. Additionally, we'll also make sure the `source` is always serialized
+as well, to keep the profile correlated with the generator that created it.
+
+We'll need to keep the state of these dynamically generated profiles around in
+memory during runtime to be able to ensure the only state we're serializing is
+that which is different from the initially generated dynamic profile.
+
+When the generator is run, and determines that a new profile has been added,
+we'll need to make sure to add the profile to the user's settings file. This
+will create an easy point for users to customize the dynamic profiles. When
+added to the user settings, all that will be added is the `name`, `guid`, and
+`source`.
 
 Additionally, a user might not want a dynamic profile generator to always run.
 They might want to keep their Azure connections visible in the list of profiles,
 even if its no longer a valid target. Or they might want to not automatically
 connect to Azure to find new instances every time they launch the terminal. To
-enable scenarios like this, **each dynamic profile generator must provide a way
-to disable it**. For the above listed cases, the two settings might be something
-like `autoloadWslProfiles` and `autoloadAzureConnections`. These will be set to
-true in the default settings, but the user can override them to false if they so
-chose.
+enable scenarios like this, we'll add an additional setting,
+`disabledProfileSources`. This is an array of guids. If any guids are in that
+list, then those dynamic profile generators _won't_ be run, supressing those
+profiles from appearing in the profiles list.
 
 #### What if a dynamic profile is removed, but it's the default?
 
@@ -444,6 +505,26 @@ the `profiles.json` file. Fortunately though, users should be able to remove
 much of the boilerplate from their `profiles.json` files, and trim it down just
 to their modifications.
 
+### Dynamic Profile Generators Need to be Enabled
+With the current proposal, profiles that are generated by a dynamic profile
+generator _need_ that generator to be enabled for the profile to appear in the
+list of profiles. If the generator isn't enabled, then the important parts of
+the profile (name, commandline) will never be set, and the profile's settings
+from the user settings will be ignored at runtime.
+
+For generators where the generation of profiles might be a lengthy process, this
+could negatively impact startup time. Take for example, some hypothetical
+generator that needs to make web requests to generate dynamic profiles. Because
+we need the finalized settings to be able to launch the terminal, we'll be stuck
+loading until that generator is complete.
+
+However, if the user disables that generator entirely, we'll never display that
+profile to the user, even if they've done that setup before.
+
+So the trade-off with this design is that non-existent dynamic profiles will
+never roam to machines where they don't exist and aren't valid, but the
+generators _must_ be enabled to use the dynamic profiles.
+
 ## Future considerations
 * It's possible that a very similar layering loading mechanism could be used to
   layer per-machine settings with roaming settings. Currently, there's only one
@@ -458,6 +539,13 @@ to their modifications.
   behave correctly. It's possible that we could abstract our implementation into
   a WinRT interface that extensions could implement, and be triggered just like
   other dynamic profile generators.
+  - Additionally, we could expand the dynamic profile generator contract to
+    force it to use a "namespace GUID". We'd then have the generator ask us to
+    generate a profile GUID for some static string, given it's namespace GUID.
+    The generator then wouldn't need to always generate unique GUIDs for its
+    profiles, but it would need to generate unique strings. We already allow
+    the user to disable profile generators solely by namespace guid, so they
+    could disable the generator from a certain extension easily.
 * **Multiple settings files** - This could enable us to place color schemes into
   a seperate file (like `colorschemes.json`) and put keybindings into their own
   file as well, and reduce the number of settings in the user's `profiles.json`.
@@ -474,6 +562,10 @@ to their modifications.
   that as the point of comparison to check if a setting's value has changed.
   There may be more unknowns with this proposal, so I leave it for a future
   feature spec.
+  - How do these play with dynamically generated profiles? If the user sets a
+    `commandline` for their global default profile, then the dynamic profile
+    validation step, where we remove profiles without a `commandline`, won't
+    work any longer.
 
 ## Resources
 N/A
