@@ -33,14 +33,14 @@ hidden from the profiles list, based on some external source.
 
 Largely inspired by the settings model that both VS Code (and Sublime Text) use.
 
-### Goal: Minimize Writing to `profiles.json`
+### Goal: Minimize Re-Serializing `profiles.json`
 
-We want to write the user settings file, `profiles.json`, as little as possible.
-Each time we write the file, there's the possiblity that we've re-ordered the
-keys, as `jsoncpp` provides no ordering guarantee of the keys. This isn't great,
-as each write of the file will randomly re-order the file.
+We want to re-serialize the user settings file, `profiles.json`, as little as
+possible. Each time we serialize the file, there's the possiblity that we've
+re-ordered the keys, as `jsoncpp` provides no ordering guarantee of the keys.
+This isn't great, as each write of the file will randomly re-order the file.
 
-One of our overarching goals with this change should be to re-write the user
+One of our overarching goals with this change should be to re-serialize the user
 settings file as little as possible.
 
 ### Goal: Minimize Content in `profiles.json`
@@ -114,16 +114,18 @@ greater detail below:
 
 ### Default Settings
 
-We'll have a static version of the "Default" file hardcoded within the
-application. This `defaults.json` file will live within the application's
-package, which will prevent users from being able to edit it.
+We'll have a static version of the "Default" file **hardcoded within the
+application package**. This `defaults.json` file will live within the
+application's package, which will prevent users from being able to edit it.
 
 ```json
 // This is an auto-generated file. Place any modifications to your settings in "profiles.json"
 ```
 
-This disclaimer will help identify that the file shouldn't be modified.
-
+This disclaimer will help identify that the file shouldn't be modified. The file
+won't actually be generated, but because it's shipped with our app, it'll be
+overridden each time the app is updated. "Auto-generated" should be good enough
+to indicate to users that it should not be modified.
 
 Because the `defaults.json` file is hardcoded within our application, we can use
 its text directly, without loading the file from disk. This should help save
@@ -132,8 +134,7 @@ some startup time, as we'll only need to load the user settings from disk.
 When we make changes to the default settings, or we make changes to the settings
 schema, we should make sure that we update the hardcoded `defaults.json` with
 the new values. That way, the `defaults.json` file will always have the complete
-set of setings in it.
-
+set of settings in it.
 
 ### Layering settings
 
@@ -152,7 +153,7 @@ settings.
   for a keybinding. If there are any key chords in the user settings that match
   a default key chord, we should bind them to the action from the user settings
   instead.
-* For any color schemes who's name matches the name of a default color scheme,
+* For any color schemes whose name matches the name of a default color scheme,
   we'll need to apply the user settings to the existing color scheme.
 * For profiles that were created from a dynamic profile source, they'll have
   both a `guid` and `source` guid that must _both_ match. If a user profile with
@@ -168,7 +169,6 @@ the default profiles?
 We will add a `hidden` key to each profile, which defaults to false. When we
 want to mark a profile as hidden, we'd just set that value to `true`, instead of
 trying to look up the profile's guid.
-
 
 So, if someone wanted to hide the default cmd.exe profile, all they'd have to do
 is add `"hidden": true` to the cmd.exe entry in their user settings, like so:
@@ -297,15 +297,25 @@ even if its no longer a valid target. Or they might want to not automatically
 connect to Azure to find new instances every time they launch the terminal. To
 enable scenarios like this, we'll add an additional setting,
 `disabledProfileSources`. This is an array of guids. If any guids are in that
-list, then those dynamic profile generators _won't_ be run, supressing those
+list, then those dynamic profile generators _won't_ be run, suppressing those
 profiles from appearing in the profiles list.
+
+If a dynamic profile generator needs to "delete" a profile, this will also work
+naturally with the above rules. Lets examine the case where the user has
+uninstalled the Ubuntu distro. When the WSL generator runs, it won't create the
+Ubuntu profile. When we get to the Ubuntu profile in the user's settings, it'll
+have a `source`, but we won't already have a profile with that `guid` and
+`source`. So we'll just ignore it, because whatever source for that profile
+doesn't want it anymore. Effectively, this will act like it was "deleted",
+though the artifacts still remain untouched in the user's json.
 
 #### What if a dynamic profile is removed, but it's the default?
 
-We should probably add an extra validation step at the end of serializing to
-ensure that the default profile isn't a hidden profile. If the user's set
-default profile is a hidden profile, we'll just set the first non-hidden profile
-as the default profile.
+I'll direct our attention to [#1348] - Display a specific error for not finding
+the default profile. When we're done loading, and we determine that the default
+profile doesn't exist in the finalized list of profiles, we'll display a dialog
+to the user. This includes both hidden profiles and dynamic profiles that have
+been "deleted". We'll temporarily use the _first_ profile instead.
 
 ### Powershell Core & the Defaults
 
@@ -482,13 +492,20 @@ present
 
 ### Reliability
 I don't think this will introduce any new reliability concerns that weren't
-already present
+already present. We will likely improve our reliability, as dynamic profiles
+that no longer exist will not cause the terminal to crash on startup anymore.
 
 ### Performance, Power, and Efficiency
 
 By not writing the defaults to disk, we'll theoretically marginally improve the
 load and save times for the `profiles.json` file, by simply having a smaller
-file to load.
+file to load. However we'll also be doing more work to process the layering of
+defaults and user settings, which will likely slightly increase the load times.
+Overall, I expect the difference to be negligible due to these factors.
+
+One potential concern is long-running dynamic profile generators. Because
+they'll need to run on startup, they could negatively impact startup time. You
+can read more below, in "Dynamic Profile Generators Need to be Enabled".
 
 ### Accessibility
 N/A
@@ -539,13 +556,6 @@ generators _must_ be enabled to use the dynamic profiles.
   behave correctly. It's possible that we could abstract our implementation into
   a WinRT interface that extensions could implement, and be triggered just like
   other dynamic profile generators.
-  - Additionally, we could expand the dynamic profile generator contract to
-    force it to use a "namespace GUID". We'd then have the generator ask us to
-    generate a profile GUID for some static string, given it's namespace GUID.
-    The generator then wouldn't need to always generate unique GUIDs for its
-    profiles, but it would need to generate unique strings. We already allow
-    the user to disable profile generators solely by namespace guid, so they
-    could disable the generator from a certain extension easily.
 * **Multiple settings files** - This could enable us to place color schemes into
   a seperate file (like `colorschemes.json`) and put keybindings into their own
   file as well, and reduce the number of settings in the user's `profiles.json`.
@@ -562,10 +572,11 @@ generators _must_ be enabled to use the dynamic profiles.
   that as the point of comparison to check if a setting's value has changed.
   There may be more unknowns with this proposal, so I leave it for a future
   feature spec.
-  - How do these play with dynamically generated profiles? If the user sets a
-    `commandline` for their global default profile, then the dynamic profile
-    validation step, where we remove profiles without a `commandline`, won't
-    work any longer.
 
 ## Resources
 N/A
+
+
+<!-- Footnotes -->
+
+[#1348]: https://github.com/microsoft/terminal/issues/1348
