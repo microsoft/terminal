@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "AzureConnection-ARM64.h"
 #include "AzureConnection.g.cpp"

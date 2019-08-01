@@ -1,5 +1,9 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #pragma once
 #include "AzureConnection.g.h"
+#include "pch.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {

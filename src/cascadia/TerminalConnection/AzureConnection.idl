@@ -8,7 +8,8 @@ namespace Microsoft.Terminal.TerminalConnection
     [default_interface] runtimeclass AzureConnection : ITerminalConnection
     {
         static Boolean IsAzureConnectionAvailable();
-		AzureConnection(UInt32 rows, UInt32 columns);
+
+	 AzureConnection(UInt32 rows, UInt32 columns);
     };
 
 }
