@@ -66,8 +66,8 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         // expand selection for Double/Triple Click
         if (multiClickSelectionMode == selectionExpansionMode::Word)
         {
-            if (_selectionAnchor == _endSelectionPosition
-                && _isWordDelimiter(_buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars()))
+            const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
+            if (_selectionAnchor == _endSelectionPosition && _isWordDelimiter(cellChar))
             {
                 // only highlight the cell if you double click a delimiter
             }
