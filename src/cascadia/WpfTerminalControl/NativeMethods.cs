@@ -26,10 +26,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void UserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void StartSelection(IntPtr terminal, NativeMethods.COORD cursorPosition, bool altPressed);
+        public static extern uint StartSelection(IntPtr terminal, NativeMethods.COORD cursorPosition, bool altPressed);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void MoveSelection(IntPtr terminal, NativeMethods.COORD cursorPosition);
+        public static extern uint MoveSelection(IntPtr terminal, NativeMethods.COORD cursorPosition);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void ClearSelection(IntPtr terminal);

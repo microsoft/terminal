@@ -11,8 +11,8 @@ extern "C" {
     __declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
     __declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
     __declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
-    __declspec(dllexport) void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    __declspec(dllexport) void _stdcall MoveSelection(void* terminal, COORD cursorPosition);
+    __declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
+    __declspec(dllexport) HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
     __declspec(dllexport) void _stdcall ClearSelection(void* terminal);
     __declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
     __declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
@@ -33,14 +33,13 @@ extern "C" {
 struct HwndTerminal {
 public:
     HwndTerminal(HWND hwnd);
-    ~HwndTerminal();
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
     void RegisterScrollCallback(std::function<void (int, int, int)> callback);
 
 private:
-    HWND _hwnd;
+    wil::unique_hwnd _hwnd;
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
 
@@ -52,8 +51,8 @@ private:
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
     friend void _stdcall DpiChanged(void* terminal, int newDpi);
     friend void _stdcall UserScroll(void* terminal, int viewTop);
-    friend void _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    friend void _stdcall MoveSelection(void* terminal, COORD cursorPosition);
+    friend HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
+    friend HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
     friend void _stdcall ClearSelection(void* terminal);
     friend const wchar_t* _stdcall GetSelection(void* terminal);
     friend bool _stdcall IsSelectionActive(void* terminal);
