@@ -9,7 +9,7 @@ namespace Microsoft.Terminal.TerminalConnection
     {
         static Boolean IsAzureConnectionAvailable();
 
-	AzureConnection(UInt32 rows, UInt32 columns);
+        AzureConnection(UInt32 rows, UInt32 columns);
     };
 
 }
