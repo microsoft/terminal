@@ -78,8 +78,10 @@ void AppHost::Initialize()
 
     _app.Create();
 
-    _app.TitleChanged({ this, &AppHost::AppTitleChanged });
-    _app.LastTabClosed({ this, &AppHost::LastTabClosed });
+    // This is a work-around for winrt events not working in TerminalPage
+    auto terminalPage = _app.GetRoot().as<winrt::TerminalApp::TerminalPage>();
+    terminalPage.TitleChanged({ this, &AppHost::AppTitleChanged });
+    terminalPage.LastTabClosed({ this, &AppHost::LastTabClosed });
 
     AppTitleChanged(_app.GetTitle());
 

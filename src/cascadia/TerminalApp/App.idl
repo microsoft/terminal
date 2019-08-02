@@ -24,8 +24,6 @@ namespace TerminalApp
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();
 
-        event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
-        event LastTabClosedEventArgs LastTabClosed;
         event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
 

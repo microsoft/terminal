@@ -1,10 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "..\App.idl";
+
 namespace TerminalApp
 {
     [default_interface] runtimeclass TerminalPage : Windows.UI.Xaml.Controls.Page
     {
         TerminalPage();
+
+        event Microsoft.Terminal.TerminalControl.TitleChangedEventArgs TitleChanged;
+        event LastTabClosedEventArgs LastTabClosed;
     }
 }
