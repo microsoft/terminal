@@ -574,46 +574,46 @@ profile that has dynamically generated.
 
 We could:
 1. Treat the profile as an entirely separate profile
-  - There's lots of other code that assumes each profile has only a unique GUID,
-    so we'd have to change the GUID of this profile. This would mean writing out
-    the user settings, which we'd like to avoid.
-  - We'll still end up generating the entry for the dynamic profile in the
-    user's settings, so we'll need to write out the user settings anyways.
-  - This other profile will likely not have a commandline set, so it might not
-    work at all.
+   - There's lots of other code that assumes each profile has only a unique GUID,
+     so we'd have to change the GUID of this profile. This would mean writing out
+     the user settings, which we'd like to avoid.
+   - We'll still end up generating the entry for the dynamic profile in the
+     user's settings, so we'll need to write out the user settings anyways.
+   - This other profile will likely not have a commandline set, so it might not
+     work at all.
 1. Ignore the profile entirely.
-  - When the dynamic profile generator runs, we're not going to find another
-    entry in the user profiles with both a matching `guid` and a matching
-    `source`. So we'll end up creating _another_ entry in the user profiles for
-    the dynamic profile.
-  - How could the user know that the profile is being ignored? There's nothing
-    in the file itself that indicates obviously that this profile is now
-    invalid.
+   - When the dynamic profile generator runs, we're not going to find another
+     entry in the user profiles with both a matching `guid` and a matching
+     `source`. So we'll end up creating _another_ entry in the user profiles for
+     the dynamic profile.
+   - How could the user know that the profile is being ignored? There's nothing
+     in the file itself that indicates obviously that this profile is now
+     invalid.
 1. Treat the user settings as part of the dynamic profile
-  - In this scenario, the user profile continues to exist as part of the dynamic profile.
-  - When the dynamic profile generator runs, we're not going to find another
-    entry in the user profiles with both a matching `guid` and a matching
-    `source`. So we'll end up creating _another_ entry in the user profiles for
-    the dynamic profile.
-    - These two entries will each be layered upon the dynamically generated
-      profile, so the settings in the second profile entry will override
-      settings from the first.
-  - If the user disables the generator, or the profile source is removed, the
-    dynamic profile will cease to exist. However, the profile without the
-    `source` entry will remain, though likely will not work.
-  - How do we order these profiles for the user? When we're parsing the user
-    profiles list to build an ordering of profiles, do we use the first entry as
-    the index for that profile?
+   - In this scenario, the user profile continues to exist as part of the dynamic profile.
+   - When the dynamic profile generator runs, we're not going to find another
+     entry in the user profiles with both a matching `guid` and a matching
+     `source`. So we'll end up creating _another_ entry in the user profiles for
+     the dynamic profile.
+     - These two entries will each be layered upon the dynamically generated
+       profile, so the settings in the second profile entry will override
+       settings from the first.
+   - If the user disables the generator, or the profile source is removed, the
+     dynamic profile will cease to exist. However, the profile without the
+     `source` entry will remain, though likely will not work.
+   - How do we order these profiles for the user? When we're parsing the user
+     profiles list to build an ordering of profiles, do we use the first entry as
+     the index for that profile?
 1. (Variant of the above) Treat the profile as part of the dynamic profile, and
    re-insert the `source` key.
-  - This will re-connect the user profile to the dynamic one.
-  - We'll need to make sure to do this before determining the new dynamic
-    profiles to add to the user settings.
-  - Given all the scenarios are going to cause a user settings write anyways,
-    this isn't terrible.
-  - If the user _really_ wants to split the profile in their user settings from
-    the dynamic one, they're free to always generate a new guid _and_ delete the
-    `source` key.
+   - This will re-connect the user profile to the dynamic one.
+   - We'll need to make sure to do this before determining the new dynamic
+     profiles to add to the user settings.
+   - Given all the scenarios are going to cause a user settings write anyways,
+     this isn't terrible.
+   - If the user _really_ wants to split the profile in their user settings from
+     the dynamic one, they're free to always generate a new guid _and_ delete the
+     `source` key.
 
 Given the drawbacks associated with options 1-3, I propose we choose option 4 as
 our solution to this case.
