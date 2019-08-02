@@ -101,17 +101,17 @@ greater detail below:
    profile from the user settings does not already exist, make sure to apply the
    UserJson.globals.defaults settings first. Also layer Color schemes and
    keybindings.
-  - If a profile has a `source` key, but there is not an existing profile with a
-    matching `guid` and `source`, don't create a new Profile object for it.
-    Either that generator didn't run, or the generator wanted to delete that
-    profile, so we'll effectively hide the profile.
+   - If a profile has a `source` key, but there is not an existing profile with
+     a matching `guid` and `source`, don't create a new Profile object for it.
+     Either that generator didn't run, or the generator wanted to delete that
+     profile, so we'll effectively hide the profile.
 1. Re-order the list of profiles, to match the ordering in the UserJson. If a
    profile doesn't exist in UserJson, it should follow all the profiles in the
    UserJson. If a profile listed in UserJson doesn't exist, we can skip it
    safely in this step (the profile will be a dynamic profile that didn't get
    populated.)
 1. Validate the settings.
-1. If necessary, write the modified settings back to `profiles.json`.
+1. If requested in step 5, write the modified settings back to `profiles.json`.
 
 ### Default Settings
 
@@ -155,7 +155,10 @@ settings.
   a default key chord, we should bind them to the action from the user settings
   instead.
 * For any color schemes whose name matches the name of a default color scheme,
-  we'll need to apply the user settings to the existing color scheme.
+  we'll need to apply the user settings to the existing color scheme. For
+  example, a user could override the `red` entry of the "Campbell" scheme to be
+  `#ff9900` if they want. This would then apply to all profiles using the
+  "Campbell" scheme.
 * For profiles that were created from a dynamic profile source, they'll have
   both a `guid` and `source` guid that must _both_ match. If a user profile with
   a `source` set does not find a matching profile at load time, the profile will
@@ -321,6 +324,51 @@ the default profile. When we're done loading, and we determine that the default
 profile doesn't exist in the finalized list of profiles, we'll display a dialog
 to the user. This includes both hidden profiles and dynamic profiles that have
 been "deleted". We'll temporarily use the _first_ profile instead.
+
+#### Dynamic profile GUID generation
+
+In order to help facilitate the generation of stable, unique GUIDs for
+dynamically generated profiles, we'll enforce a few methods on each generator.
+The Generator should implement a method that returns its _unique_ namespace for
+profiles it generates:
+
+```c++
+class IDynamicProfileGenerator
+{
+    ...
+    virtual std::wstring GetNamespace() = 0;
+    ...
+}
+```
+
+For example, the WSL generator would return `Microsoft.Terminal.WSL`. The
+Powershell Core generator would return `Microsoft.Terminal.PowershellCore`.
+We'll use these names to be able to generate uuidv5 GUIDs that will be unique
+(so long as the names are unique).
+
+The generator should also be able to ask the app for two other pieces of
+functionality:
+* The generator should be able to ask the app for the generator's own namespace
+  GUID
+* The generator should be able to ask the app for a uuidv5 in the generator's
+  namespace, given a specific name key.
+
+These two functions will be exposed to the generator like so:
+
+```c++
+GUID GetNamespaceGuid(IDynamicProfileGenerator& generator);
+GUID GetGuidForName(IDynamicProfileGenerator& generator, std::wstring& name);
+```
+
+The generator does not _need_ to use `GetGuidForName` to generate guids for it's
+profiles. If the generator can determine another way to generate stable GUIDs
+for its profiles, it's free to use whatever method it wants. `GetGuidForName` is
+provided as a convenience.
+
+It's not the responsibility of the dynamic profile generator to fill in the
+`source` of the profiles it generates. The deserializer will make sure to go
+through and fill in the guid for the generated profiles given the generator's
+namespace GUID.
 
 ### Powershell Core & the Defaults
 
@@ -516,6 +564,60 @@ can read more below, in "Dynamic Profile Generators Need to be Enabled".
 N/A
 
 ## Potential Issues
+
+### Profiles with the same `guid` as a dynamic profile but not the same `source`
+
+What happens if the User settings has a profile with a `guid` that matches a
+dynamic or default profile, but the user profile doesn't have a matching source?
+This could happen trivially easily if the user deletes the `source` key from a
+profile that has dynamically generated.
+
+We could:
+1. Treat the profile as an entirely separate profile
+  - There's lots of other code that assumes each profile has only a unique GUID,
+    so we'd have to change the GUID of this profile. This would mean writing out
+    the user settings, which we'd like to avoid.
+  - We'll still end up generating the entry for the dynamic profile in the
+    user's settings, so we'll need to write out the user settings anyways.
+  - This other profile will likely not have a commandline set, so it might not
+    work at all.
+1. Ignore the profile entirely.
+  - When the dynamic profile generator runs, we're not going to find another
+    entry in the user profiles with both a matching `guid` and a matching
+    `source`. So we'll end up creating _another_ entry in the user profiles for
+    the dynamic profile.
+  - How could the user know that the profile is being ignored? There's nothing
+    in the file itself that indicates obviously that this profile is now
+    invalid.
+1. Treat the user settings as part of the dynamic profile
+  - In this scenario, the user profile continues to exist as part of the dynamic profile.
+  - When the dynamic profile generator runs, we're not going to find another
+    entry in the user profiles with both a matching `guid` and a matching
+    `source`. So we'll end up creating _another_ entry in the user profiles for
+    the dynamic profile.
+    - These two entries will each be layered upon the dynamically generated
+      profile, so the settings in the second profile entry will override
+      settings from the first.
+  - If the user disables the generator, or the profile source is removed, the
+    dynamic profile will cease to exist. However, the profile without the
+    `source` entry will remain, though likely will not work.
+  - How do we order these profiles for the user? When we're parsing the user
+    profiles list to build an ordering of profiles, do we use the first entry as
+    the index for that profile?
+1. (Variant of the above) Treat the profile as part of the dynamic profile, and
+   re-insert the `source` key.
+  - This will re-connect the user profile to the dynamic one.
+  - We'll need to make sure to do this before determining the new dynamic
+    profiles to add to the user settings.
+  - Given all the scenarios are going to cause a user settings write anyways,
+    this isn't terrible.
+  - If the user _really_ wants to split the profile in their user settings from
+    the dynamic one, they're free to always generate a new guid _and_ delete the
+    `source` key.
+
+Given the drawbacks associated with options 1-3, I propose we choose option 4 as
+our solution to this case.
+
 ### Migrating Existing Settings
 
 I believe that existing `profiles.json` files will smoothly update to this
@@ -526,6 +628,36 @@ we won't touch keys that have the same values as defaults that are currently in
 the `profiles.json` file. Fortunately though, users should be able to remove
 much of the boilerplate from their `profiles.json` files, and trim it down just
 to their modifications.
+
+#### Migrating Powershell Core
+
+Right now, default-generated powershell core profiles exist with a stable guid
+we've generated for them. However, when we move Powershell Core to being a
+dynamicically generated profile, we'll have to ensure that we don't create a
+duplicated "dynamic" entry for that profile. If we want to convert the existing
+powershell core profiles into a dynamic profile, we'll need to make sure to add
+a `source` key to the profile. Everything else in the profile can remain the
+same. Once the `source` is added, we'll know to treat it as a dynamic profile,
+and it'll respond dynamically.
+
+<!-- We could special case our deserializer to handler this scenario. While parsing
+the user settings for profiles, if it comes across a profile with the powershell
+core GUID and no `source` , it could manually insert a `source` to that profile.
+This would have the unintended side-effect of _always_ migrating that profile to
+be a dynamic profile.
+ -->
+
+This is actually something that will automatically be covered by the scenario
+mentioned above in "Profiles with the same `guid` as a dynamic profile but not
+the same `source`". When we encounter the existing Powershell Core profiles that
+don't have a `source`, we'll automatically think they're the dynamically
+generated ones, and auto-migrate them.
+
+#### Migrating Existing WSL Profiles
+
+Similar to the above, so long as we ensure the WSL dynamic profile generator
+generates the _same_ GUIDs as it does currently, all the existing WSL profiles
+will automatically be migrated to dynamic profiles.
 
 ### Dynamic Profile Generators Need to be Enabled
 With the current proposal, profiles that are generated by a dynamic profile
