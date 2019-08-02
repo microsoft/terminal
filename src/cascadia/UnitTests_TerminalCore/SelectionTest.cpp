@@ -9,14 +9,12 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
+#include "../cascadia/UnitTests_TerminalCore/MockTermSettings.h"
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
-using namespace WEX::Logging;
-using namespace WEX::TestExecution;
-
 using namespace Microsoft::Terminal::Core;
-using namespace Microsoft::Console::Render;
+using namespace winrt::Microsoft::Terminal::Settings;
 
 namespace TerminalCoreUnitTests
 {
@@ -290,6 +288,200 @@ namespace TerminalCoreUnitTests
 
                 rowValue++;
             }
+        }
+
+        TEST_METHOD(DoubleClick_GeneralCase)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (4,10)
+            const std::wstring_view text = L"doubleClickMe";
+            term.SetCursorPosition(4, 10);
+            term.Write(text);
+
+            // Simulate double click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.DoubleClickSelection(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
+        }
+
+        TEST_METHOD(DoubleClick_Delimiter)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.DoubleClickSelection(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 5, 10 }));
+        }
+
+        TEST_METHOD(DoubleClickDrag_Right)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (4,10)
+            const std::wstring_view text = L"doubleClickMe dragThroughHere";
+            term.SetCursorPosition(4, 10);
+            term.Write(text);
+
+            // Simulate double click at (x,y) = (5,10)
+            term.DoubleClickSelection({ 5, 10 });
+
+            // Simulate move to (x,y) = (21,10)
+            //
+            // buffer: doubleClickMe dragThroughHere
+            //         ^                ^
+            //       start            finish
+            term.SetEndSelectionPosition({ 21, 10 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 32, 10 }));
+        }
+
+        TEST_METHOD(DoubleClickDrag_Left)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (21,10)
+            const std::wstring_view text = L"doubleClickMe dragThroughHere";
+            term.SetCursorPosition(4, 10);
+            term.Write(text);
+
+            // Simulate double click at (x,y) = (21,10)
+            term.DoubleClickSelection({ 21, 10 });
+
+            // Simulate move to (x,y) = (5,10)
+            //
+            // buffer: doubleClickMe dragThroughHere
+            //         ^                ^
+            //       finish            start
+            term.SetEndSelectionPosition({ 5, 10 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 32, 10 }));
+        }
+
+        TEST_METHOD(TripleClick_GeneralCase)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.TripleClickSelection(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+        }
+
+        TEST_METHOD(TripleClickDrag_Horizontal)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.TripleClickSelection(clickPos);
+
+            // Simulate move to (x,y) = (7,10)
+            term.SetEndSelectionPosition({ 7, 10 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+        }
+
+        TEST_METHOD(TripleClickDrag_Vertical)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // Simulate click at (x,y) = (5,10)
+            auto clickPos = COORD{ 5, 10 };
+            term.TripleClickSelection(clickPos);
+
+            // Simulate move to (x,y) = (5,11)
+            term.SetEndSelectionPosition({ 5, 11 });
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(2));
+
+            // verify first selection rect
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+
+            // verify second selection rect
+            selection = term.GetViewport().ConvertToOrigin(selectionRects.at(1)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 11, 99, 11 }));
         }
     };
 }

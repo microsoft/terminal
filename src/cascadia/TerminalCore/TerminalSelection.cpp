@@ -179,6 +179,7 @@ void Terminal::DoubleClickSelection(const COORD position)
     THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_endSelectionPosition.Y));
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
+    _selectionActive = true;
     multiClickSelectionMode = selectionExpansionMode::Word;
 }
 
