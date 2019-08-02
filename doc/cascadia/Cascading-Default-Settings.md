@@ -264,11 +264,11 @@ to associate with the profile. When a dynamic profile is generated, the source's
 guid will be added to the profile, to make sure the profile is correlated with
 the source it came from.
 
-We'll generate these dynamic profiles immediately after applying the defaults.
-When a generator runs, it'll be able to create unique profile GUIDs for each
-source it wants to generate a profile for. It'll attempt find any profiles that
-exist in the list of profiles with a matching GUID, and apply the settings to
-that profile if found, or it'll create a new profile to apply the settings to.
+We'll generate these dynamic profiles immediately after parsing the default
+profiles and settings. When a generator runs, it'll be able to create unique
+profile GUIDs for each source it wants to generate a profile for. It'll hand
+back a list of Profile objects, with settings set up how the generator likes,
+with GUIDs set.
 
 After a dynamic profile generator runs, we will determine what new profiles need
 to be added to the user settings, so we can append those to the list of
@@ -438,8 +438,7 @@ it's first generated, taking all the above points into consideration.
         {
             "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
             "name" : "Powershell Core",
-            "commandline" : "pwsh.exe",
-            "icon" : "ms-appx:///ProfileIcons/{574e775e-4f2a-5b96-ac1e-a2962a402336}.png",
+            "source": "{2bde4a90-d05f-401c-9492-e40884ead1d8}",
         }
     ],
 
@@ -457,7 +456,7 @@ Note the following:
 * cmd.exe and powershell.exe are both in the file, as to give users an easy
   point to extend the settings for those default profiles.
 * Powershell Core is included in the file, and the default profile has been set
-  to its GUID.
+  to its GUID. The `source` has been set, indicating that it came from a dynamic profile source.
 * There are a few helpful comments scattered throughout the file to help point
   the user in the right direction.
 
@@ -508,6 +507,15 @@ like so:
 
 The "Settings" button would then only open the file the user needs to edit, and
 provide them instructions on how to open the defaults file.
+
+There could alternatively be a hidden option for the "Open Settings" button,
+where holding <kbd>Alt</kbd> while clicking on the button would open the
+`defaults.json` instead.
+
+We could additionally add a `ShortcutAction` (to be bound to a keyybinding) that
+would `openDefaultSettings`, and we could bind that to
+<kbd>ctrl</kbd>+<kbd>alt</kbd>+<kbd>\`</kbd>, similar to `openSettings` on
+<kbd>ctrl</kbd>+<kbd>\`</kbd>.
 
 ### How does this work with the settings UI?
 
@@ -692,6 +700,10 @@ generators _must_ be enabled to use the dynamic profiles.
   that as the point of comparison to check if a setting's value has changed.
   There may be more unknowns with this proposal, so I leave it for a future
   feature spec.
+  - We'll also want to make sure that when we're serializing default/dynamic
+    profiles, we take into account the state from the global defaults, and we
+    don't duplicate that inormation into the entries for those types of profiles
+    in the user profiles.
 * **Re-ordering profiles** - Under "Solution Design", we provide an algorithm
   for decoding the settings. One of the steps mentioned is parsing the user
   settings to determine the ordering of the profiles. It's possible in the
