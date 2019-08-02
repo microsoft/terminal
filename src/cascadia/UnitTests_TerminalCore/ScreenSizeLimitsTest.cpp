@@ -9,13 +9,11 @@
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
-
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
 
 namespace TerminalCoreUnitTests
 {
-
 #define WCS(x) WCSHELPER(x)
 #define WCSHELPER(x) L#x
 
