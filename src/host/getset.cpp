@@ -1356,24 +1356,21 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
         if (screenInfo.IsCursorInMargins(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
-            const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
             // Rectangle to cut out of the existing buffer
             SMALL_RECT srScroll;
             srScroll.Left = 0;
-            srScroll.Right = bufferSize.X;
+            srScroll.Right = SHORT_MAX;
             srScroll.Top = viewport.Top;
-            srScroll.Bottom = viewport.Bottom - 1;
+            srScroll.Bottom = viewport.Bottom;
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            SMALL_RECT srClip = viewport;
-
             Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
                                                                                                               srScroll,
                                                                                                               coordDestination,
-                                                                                                              srClip,
+                                                                                                              srScroll,
                                                                                                               UNICODE_SPACE,
                                                                                                               screenInfo.GetAttributes().GetLegacyAttributes()));
         }
@@ -2033,13 +2030,12 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
     if (screenInfo.IsCursorInMargins(cursorPosition))
     {
-        const auto screenEdges = screenInfo.GetBufferSize().ToInclusive();
         // Rectangle to cut out of the existing buffer
         SMALL_RECT srScroll;
         srScroll.Left = 0;
-        srScroll.Right = screenEdges.Right - screenEdges.Left;
+        srScroll.Right = SHORT_MAX;
         srScroll.Top = cursorPosition.Y;
-        srScroll.Bottom = screenEdges.Bottom;
+        srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;
@@ -2051,9 +2047,6 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         {
             coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
         }
-
-        SMALL_RECT srClip = screenEdges;
-        srClip.Top = cursorPosition.Y;
 
         // Here we previously called to ScrollConsoleScreenBufferWImpl to
         // perform the scrolling operation. However, that function only accepts
@@ -2068,7 +2061,7 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
             ScrollRegion(screenInfo,
                          srScroll,
-                         srClip,
+                         srScroll,
                          coordDestination,
                          UNICODE_SPACE,
                          screenInfo.GetAttributes());
