@@ -34,16 +34,16 @@ class UTF8OutPipeReaderTests
         //  represent the bytes of the base + combining characters. The digits 1 to 4 represent the four
         //  bytes of the 'Hwair' letter. The vertical bar represents the buffer boundary. The horizontal
         //  bars represent the expected boundaries of populated UTF-8 chunks.
-        // Test  1: [more points] . . P a b c 1 2 3 4-Q|R S T U V W X Y Z . .-.
-        // Test  2: [more points] . . P Q a b c-1 2 3 4|R S T U V W X Y Z . .-.
-        // Test  3: [more points] . . P Q R a b c-1 2 3|4 S T U V W X Y Z . .-.
-        // Test  4: [more points] . . P Q R S a b c-1 2|3 4 T U V W X Y Z . .-.
-        // Test  5: [more points] . . P Q R S T a b c-1|2 3 4 U V W X Y Z . .-.
-        // Test  6: [more points] . . P Q R S T U a b c+1 2 3 4 V W X Y Z . .-.
-        // Test  7: [more points] . . P Q R S T U V-a b|c 1 2 3 4 W X Y Z . .-.
-        // Test  8: [more points] . . P Q R S T U V W-a|b c 1 2 3 4 X Y Z . .-.
-        // Test  9: [more points] . . P Q R S T U V W-X|a b c 1 2 3 4 Y Z . .-.
-        // Test 10: [more points] . . P Q R S T U V W-X|Y a b c 1 2 3 4 Z . .-.
+        // Test  1: [more points] . . P a b c 1 2 3 4-Q|R S T U V W X Y Z . . .
+        // Test  2: [more points] . . P Q a b c-1 2 3 4|R S T U V W X Y Z . . .
+        // Test  3: [more points] . . P Q R a b c-1 2 3|4 S T U V W X Y Z . . .
+        // Test  4: [more points] . . P Q R S a b c-1 2|3 4 T U V W X Y Z . . .
+        // Test  5: [more points] . . P Q R S T a b c-1|2 3 4 U V W X Y Z . . .
+        // Test  6: [more points] . . P Q R S T U a b c+1 2 3 4 V W X Y Z . . .
+        // Test  7: [more points] . . P Q R S T U V-a b|c 1 2 3 4 W X Y Z . . .
+        // Test  8: [more points] . . P Q R S T U V W-a|b c 1 2 3 4 X Y Z . . .
+        // Test  9: [more points] . . P Q R S T U V W-X|a b c 1 2 3 4 Y Z . . .
+        // Test 10: [more points] . . P Q R S T U V W-X|Y a b c 1 2 3 4 Z . . .
         //
         // At the beginning of a test the whole string is converted into a std::wstring containing the
         //  UTF-16 target for reference.
