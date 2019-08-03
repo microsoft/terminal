@@ -17,4 +17,32 @@ namespace Microsoft.Terminal.TerminalConnection
         void Close();
     };
 
+    runtimeclass TerminalConnectionStartupInfo
+    {
+        TerminalConnectionStartupInfo();
+        TerminalConnectionStartupInfo(Guid guid);
+
+        Guid Guid { get; };
+        String CmdLine;
+        String StartingDirectory;
+        UInt32 InitialRows;
+        UInt32 InitialColumns;
+    };
+
+    interface ITerminalConnectionFactory
+    {
+        String Name { get; };
+        String CmdLine { get; };
+        Guid ConnectionType { get; };
+        Windows.Foundation.Uri IconUri { get; };
+
+        ITerminalConnection Create(TerminalConnectionStartupInfo startupInfo);
+    };
+
+    interface ITerminalConnectionProvider
+    {
+        ITerminalConnectionFactory GetFactory(Guid id);
+
+        ITerminalConnectionFactory[] GetFactories();
+    };
 }

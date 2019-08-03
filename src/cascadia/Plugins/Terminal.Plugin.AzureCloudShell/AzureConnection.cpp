@@ -8,9 +8,9 @@
 #include <sstream>
 #include <stdlib.h>
 
-#include "AzureConnection.g.cpp"
+#include <winrt/Windows.Security.Credentials.h>
 
-#include "../../types/inc/Utils.hpp"
+#include "../../../types/inc/Utils.hpp"
 
 using namespace ::Microsoft::Console;
 
@@ -23,7 +23,7 @@ using namespace web::websockets::client;
 using namespace concurrency::streams;
 using namespace winrt::Windows::Security::Credentials;
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection
 {
     // This file only builds for non-ARM64 so we don't need to check that here
     // This function exists because the clientID only gets added by the release pipelines

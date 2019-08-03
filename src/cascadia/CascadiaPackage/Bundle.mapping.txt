@@ -1,0 +1,2 @@
+﻿[OptionalProjects]
+"..\Plugins\Terminal.Plugin.AzureCloudShell.App\Terminal.Plugin.AzureCloudShell.App.vcxproj"

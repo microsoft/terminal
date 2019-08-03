@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <Import Project="..\..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <!-- ========================= CppWinRT Metadata ======================== -->
   <PropertyGroup>
     <ConfigurationType>StaticLibrary</ConfigurationType>
@@ -15,8 +13,9 @@
     -->
     <DisableEmbeddedXbf>false</DisableEmbeddedXbf>
   </PropertyGroup>
-  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
 
+  <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
+  
   <!-- ========================= XAML files ======================== -->
   <ItemGroup>
     <!-- HERE BE DRAGONS:
@@ -42,7 +41,7 @@
       <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
-
+  
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="../App.base.h" />
@@ -70,11 +69,12 @@
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
-    <ClInclude Include="../App.h" >
+    <ClInclude Include="../App.h">
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AppConnectionProvider.h" />
   </ItemGroup>
-
+  
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="../init.cpp" />
@@ -105,26 +105,25 @@
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="../AppKeyBindings.cpp" >
+    <ClCompile Include="../AppKeyBindings.cpp">
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="../App.cpp" >
+    <ClCompile Include="../App.cpp">
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
-
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
-
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="AppConnectionProvider.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <!-- If you add idl files here, make sure to include their implementation's
     header in TerminalApp.vcxproj (as well as in this file) -->
-    <Midl Include="../App.idl" >
+    <Midl Include="../App.idl">
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
@@ -145,13 +144,13 @@
       <SubType>Code</SubType>
     </Midl>
   </ItemGroup>
-
+  
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
     <PRIResource Include="../Resources/en-US/Resources.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
-
+  
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -205,9 +204,8 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-
   </ItemGroup>
-
+  
   <!-- ====================== Compiler & Linker Flags ===================== -->
   <ItemDefinitionGroup>
     <ClCompile>
@@ -220,7 +218,7 @@
       <AdditionalDependencies>WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
-
+  
   <!-- ========================= Globals ======================== -->
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-9A12-429C-B551-8562EC954746}</ProjectGuid>
@@ -230,7 +228,6 @@
     <TargetName>TerminalAppLib</TargetName>
     <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
-
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -242,7 +239,7 @@
 
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
+  
   <!-- Manually include MUX here, instead of importing its targets file. We need
   to reference its winmd, but very specifically with the
   CopyLocalSatelliteAssemblies and Private properties set to false, as to not
@@ -265,7 +262,7 @@
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
-
+    
     <!-- Microsoft.UI.XAML.Application -->
     <Reference Include="$(_MUXAppRoot)lib\uap10.0\Microsoft.Toolkit.Win32.UI.XamlHost.winmd">
       <Implementation>Microsoft.Toolkit.Win32.UI.XamlHost.dll</Implementation>
@@ -277,7 +274,7 @@
     <ReferenceCopyLocalPaths Include="$(_MUXAppRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.Toolkit.Win32.UI.XamlHost.*" />
   </ItemGroup>
   <!-- End MUX import -->
-
+  
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>

@@ -8,6 +8,7 @@
 #include "App.g.h"
 #include "App.base.h"
 #include "ScopedResourceLoader.h"
+#include "AppConnectionProvider.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
@@ -60,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider _connectionProvider;
 
         HRESULT _settingsLoadedResult;
 

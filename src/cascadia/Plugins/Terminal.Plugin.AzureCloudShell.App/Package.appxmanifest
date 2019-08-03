@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
+  IgnorableNamespaces="uap uap3 mp">
+
+	<Identity
+	  Name="AzureCloudShellDev"
+	  Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"
+	  Version="0.0.1.0" />
+	<mp:PhoneIdentity PhoneProductId="1c79e5a5-47d4-4519-80bf-9a3aa95fa30c" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+
+	<Properties>
+		<DisplayName>Terminal.Plugin.AzureCloudShell.App</DisplayName>
+		<PublisherDisplayName>A Lone Developer</PublisherDisplayName>
+		<Logo>Assets\StoreLogo.png</Logo>
+	</Properties>
+
+	<Dependencies>
+		<TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.18362.0" MaxVersionTested="10.0.18362.0" />
+		<uap3:MainPackageDependency Name="WindowsTerminalDev" />
+	</Dependencies>
+
+	<Resources>
+		<Resource Language="x-generate"/>
+	</Resources>
+
+	<Applications>
+		<Application Id="AzureCloudShell"
+		  Executable="$targetnametoken$.exe"
+		  EntryPoint="Terminal_Plugin_AzureCloudShell_App.App">
+			<uap:VisualElements
+			  AppListEntry="none"
+			  DisplayName="Terminal.Plugin.AzureCloudShell.App"
+			  Square150x150Logo="Assets\Square150x150Logo.png"
+			  Square44x44Logo="Assets\Square44x44Logo.png"
+			  Description="Terminal.Plugin.AzureCloudShell.App"
+			  BackgroundColor="transparent">
+				<uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png"/>
+				<uap:SplashScreen Image="Assets\SplashScreen.png" />
+			</uap:VisualElements>
+		</Application>
+	</Applications>
+
+</Package>

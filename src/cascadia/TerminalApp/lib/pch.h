@@ -7,6 +7,7 @@
 
 #pragma once
 
+#define WINRT_WINDOWS_ABI
 #define WIN32_LEAN_AND_MEAN
 
 #include <LibraryIncludes.h>

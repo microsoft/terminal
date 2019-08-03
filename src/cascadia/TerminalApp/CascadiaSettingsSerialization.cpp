@@ -11,6 +11,7 @@
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::TerminalApp;
 using namespace ::Microsoft::Console;
 
@@ -35,7 +36,7 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 //   to make sure the schema is updated.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(ITerminalConnectionProvider connectionProvider, const bool saveOnLoad)
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<std::string> fileData = _ReadSettings();
@@ -63,7 +64,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
             //      copy-pasteable way.
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
-        resultPtr = FromJson(root);
+        resultPtr = FromJson(connectionProvider, root);
 
         if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
         {
@@ -84,7 +85,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     }
     else
     {
-        resultPtr = std::make_unique<CascadiaSettings>();
+        resultPtr = std::make_unique<CascadiaSettings>(connectionProvider);
         resultPtr->CreateDefaults();
 
         // The settings file does not exist. Let's commit one.
@@ -149,9 +150,9 @@ Json::Value CascadiaSettings::ToJson() const
 // - json: an object which should be a serialization of a CascadiaSettings object.
 // Return Value:
 // - a new CascadiaSettings instance created from the values in `json`
-std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(ITerminalConnectionProvider connectionProvider, const Json::Value& json)
 {
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>(connectionProvider);
 
     if (auto globals{ json[GlobalsKey.data()] })
     {

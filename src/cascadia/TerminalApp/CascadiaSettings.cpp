@@ -25,9 +25,10 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///Prof
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
-CascadiaSettings::CascadiaSettings() :
+CascadiaSettings::CascadiaSettings(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider connectionProvider) :
     _globals{},
-    _profiles{}
+    _profiles{},
+    _connectionProvider(connectionProvider)
 {
 }
 
@@ -263,17 +264,22 @@ void CascadiaSettings::_CreateDefaultProfiles()
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
 
-    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+    for (auto provider : _connectionProvider.GetFactories())
     {
-        auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
-        azureCloudShellProfile.SetCommandline(L"Azure");
-        azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        azureCloudShellProfile.SetColorScheme({ L"Vintage" });
-        azureCloudShellProfile.SetAcrylicOpacity(0.6);
-        azureCloudShellProfile.SetUseAcrylic(true);
-        azureCloudShellProfile.SetCloseOnExit(false);
-        azureCloudShellProfile.SetConnectionType(AzureConnectionType);
-        _profiles.emplace_back(azureCloudShellProfile);
+        auto connection{ _CreateDefaultProfile(provider.Name()) };
+        auto hCmdLine = provider.CmdLine();
+        std::wstring cmdline(hCmdLine.cbegin(), hCmdLine.cend());
+        connection.SetCommandline(cmdline);
+        connection.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        connection.SetColorScheme({ L"Solarized Dark" });
+        connection.SetAcrylicOpacity(0.85);
+        connection.SetUseAcrylic(true);
+        connection.SetCloseOnExit(false);
+        connection.SetConnectionType(provider.ConnectionType());
+
+        _profiles.emplace_back(connection);
+
+        _globals.SetDefaultProfile(connection.GetGuid());
     }
 
     try

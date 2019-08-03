@@ -26,7 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::event_token EchoConnection::TerminalDisconnected(TerminalConnection::TerminalDisconnectedEventArgs const& handler)
     {
         handler;
-        throw hresult_not_implemented();
+        return winrt::event_token();
     }
 
     void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
@@ -63,12 +63,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         rows;
         columns;
-
-        throw hresult_not_implemented();
     }
 
     void EchoConnection::Close()
     {
-        throw hresult_not_implemented();
     }
 }

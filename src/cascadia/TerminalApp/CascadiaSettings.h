@@ -17,10 +17,10 @@ Author(s):
 --*/
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "GlobalAppSettings.h"
 #include "Profile.h"
-
-static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+#include "AppConnectionProvider.h"
 
 namespace TerminalApp
 {
@@ -30,10 +30,10 @@ namespace TerminalApp
 class TerminalApp::CascadiaSettings final
 {
 public:
-    CascadiaSettings();
+    CascadiaSettings(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider connectionProvider);
     ~CascadiaSettings();
 
-    static std::unique_ptr<CascadiaSettings> LoadAll(const bool saveOnLoad = true);
+    static std::unique_ptr<CascadiaSettings> LoadAll(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider connectionProvider, const bool saveOnLoad = true);
     void SaveAll() const;
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
@@ -45,7 +45,7 @@ public:
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
     Json::Value ToJson() const;
-    static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
+    static std::unique_ptr<CascadiaSettings> FromJson(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider connectionProvider, const Json::Value& json);
 
     static std::wstring GetSettingsPath();
 
@@ -56,6 +56,7 @@ public:
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
+    winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnectionProvider _connectionProvider;
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();

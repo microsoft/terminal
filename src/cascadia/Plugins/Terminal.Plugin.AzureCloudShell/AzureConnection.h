@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "AzureConnection.g.h"
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include <cpprest/http_client.h>
 #include <cpprest/http_listener.h>
@@ -11,9 +11,9 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
+namespace winrt::Microsoft::Terminal::TerminalConnection
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection>
+    struct AzureConnection : winrt::implements<AzureConnection, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection>
     {
         static bool IsAzureConnectionAvailable();
         AzureConnection(const uint32_t rows, const uint32_t cols);
@@ -96,12 +96,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _StrFormatHelper(const wchar_t* const format, int i, const wchar_t* name, const wchar_t* ID);
 
         web::websockets::client::websocket_client _cloudShellSocket;
-    };
-}
-
-namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
-{
-    struct AzureConnection : AzureConnectionT<AzureConnection, implementation::AzureConnection>
-    {
     };
 }

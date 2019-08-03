@@ -18,6 +18,7 @@
      -->
     <AppxOSMinVersionReplaceManifestVersion>false</AppxOSMinVersionReplaceManifestVersion>
     <AppxOSMaxVersionTestedReplaceManifestVersion>false</AppxOSMaxVersionTestedReplaceManifestVersion>
+    <AppxBundle>Always</AppxBundle>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectGuid>CA5CAD1A-224A-4171-B13A-F16E576FDD12</ProjectGuid>
@@ -26,7 +27,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="!Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>false</AppxPackageSigningEnabled>
-    <AppxBundle>Never</AppxBundle>
   </PropertyGroup>
   <PropertyGroup Condition="Exists('CascadiaPackage_TemporaryKey.pfx')">
     <AppxPackageSigningEnabled>true</AppxPackageSigningEnabled>
@@ -37,6 +37,9 @@
     <None Include="CascadiaPackage_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Bundle.mapping.txt">
+      <SubType>Designer</SubType>
+    </Content>
     <AppxManifest Include="Package.appxmanifest" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
       <SubType>Designer</SubType>
     </AppxManifest>

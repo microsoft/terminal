@@ -29,6 +29,7 @@ namespace winrt::TerminalApp::implementation
 {
     App::App() :
         _settings{},
+        _connectionProvider(GetTerminalConnectionProvider()),
         _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
@@ -508,7 +509,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
+            auto newSettings = CascadiaSettings::LoadAll(_connectionProvider, saveOnLoad);
             _settings = std::move(newSettings);
             hr = S_OK;
         }
@@ -546,7 +547,7 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _settings = std::make_unique<CascadiaSettings>();
+            _settings = std::make_unique<CascadiaSettings>(_connectionProvider);
             _settings->CreateDefaults();
         }
 
@@ -1466,11 +1467,24 @@ namespace winrt::TerminalApp::implementation
         if (profile->HasConnectionType())
         {
             connectionType = profile->GetConnectionType();
-        }
+            auto factory = _connectionProvider.GetFactory(connectionType);
 
-        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
-        {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+            if (factory != nullptr)
+            {
+                TerminalConnectionStartupInfo startupInfo;
+
+                startupInfo.CmdLine(settings.Commandline());
+                startupInfo.StartingDirectory(settings.StartingDirectory());
+                startupInfo.InitialRows(settings.InitialRows());
+                startupInfo.InitialColumns(settings.InitialCols());
+
+                connection = factory.Create(startupInfo);
+            }
+            else
+            {
+                // TODO: Determine what action should be done if a requested connection type is not available
+                connection = EchoConnection();
+            }
         }
         else
         {
