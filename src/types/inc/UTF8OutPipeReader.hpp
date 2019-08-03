@@ -6,11 +6,15 @@ Module Name:
 - UTF8OutPipeReader.hpp
 
 Abstract:
-- This reads a UTF-8 stream and gives back a buffer that contains complete code points only
-- Partial UTF-8 code points at the end of the buffer read are cached and prepended to the next chunk read
+- This class provides methods to read a UTF-8 stream and gives back a buffer that contains only
+  complete code points and complete composite characters.
+- Partial UTF-8 code points at the end of the buffer read are cached as well as the last
+  non-combining character of an entirely filled buffer. They are prepended to the next chunk read.
+- In case of populated UTF-16, composite characters are converted to their canonical precomposed
+  equivalents.
 
 Author(s):
-- Steffen Illhardt (german-one) 12-July-2019
+- Steffen Illhardt (german-one) 2019
 --*/
 
 #pragma once
@@ -27,10 +31,13 @@ Author(s):
 class UTF8OutPipeReader final
 {
 public:
-    UTF8OutPipeReader(HANDLE outPipe);
-    [[nodiscard]] HRESULT Read(_Out_ std::string_view& strView);
+    UTF8OutPipeReader(HANDLE outPipe); // Constructor that takes the read handle of the pipe
+    [[nodiscard]] HRESULT Read(_Out_ std::string_view& utf8StrView); // Overload to get UTF-8 chunks
+    [[nodiscard]] HRESULT Read(_Out_ std::wstring_view& utf16StrView); // Overload to get UTF-16 chunks
 
 private:
+    [[nodiscard]] HRESULT _UTF8ToUtf16Precomposed(_In_ const std::string_view utf8StrView, _Out_ std::wstring_view& utf16StrView);
+
     enum _Utf8BitMasks : BYTE
     {
         IsAsciiByte = 0b0'0000000, // Any byte representing an ASCII character has the MSB set to 0
@@ -61,8 +68,52 @@ private:
         _Utf8BitMasks::IsLeadByteThreeByteSequence,
     };
 
+    // structure of boundaries of Combining Marks
+    const static struct tagCombiningMarks
+    {
+        const static struct tagDiacriticalBasic // U+0300 - U+036F Combining Diacritical Marks
+        {
+            constexpr const static BYTE first[]{ 0xCC, 0x80 };
+            constexpr const static BYTE last[]{ 0xCD, 0xAF };
+        } diacriticalBasic;
+
+        const static struct tagDiacriticalExtended // U+1AB0 - U+1AFF Combining Diacritical Marks Extended
+        {
+            constexpr const static BYTE first[]{ 0xE1, 0xAA, 0xB0 };
+            constexpr const static BYTE last[]{ 0xE1, 0xAB, 0xBF };
+        } diacriticalExtended;
+
+        const static struct tagDiacriticalSupplement // U+1DC0 - U+1DFF Combining Diacritical Marks Supplement
+        {
+            constexpr const static BYTE first[]{ 0xE1, 0xB7, 0x80 };
+            constexpr const static BYTE last[]{ 0xE1, 0xB7, 0xBF };
+        } diacriticalSupplement;
+
+        const static struct tagDiacriticalForSymbols // U+20D0 - U+20FF Combining Diacritical Marks for Symbols
+        {
+            constexpr const static BYTE first[]{ 0xE2, 0x83, 0x90 };
+            constexpr const static BYTE last[]{ 0xE2, 0x83, 0xBF };
+        } diacriticalForSymbols;
+
+        const static struct tagHalfMarks // U+FE20 - U+FE2F Combining Half Marks
+        {
+            constexpr const static BYTE first[]{ 0xEF, 0xB8, 0xA0 };
+            constexpr const static BYTE last[]{ 0xEF, 0xB8, 0xAF };
+        } halfMarks;
+    } _combiningMarks;
+
     HANDLE _outPipe; // non-owning reference to a pipe.
     BYTE _buffer[4096]{ 0 }; // buffer for the chunk read
     BYTE _utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
-    DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
+    DWORD _dwPartialsLen{}; // number of cached partial code units
+    BYTE _utf8NonCombining[4]{ 0 }; // buffer for code units of the last code point
+    DWORD _dwNonCombiningLen{}; // number of cached code units of the last code point
+    std::unique_ptr<wchar_t[]> _convertedBuffer{}; // holds the buffer for converted UTF-16 text
+    size_t _convertedCapacity{}; // current capacity of _convertedBuffer
+    std::unique_ptr<wchar_t[]> _precomposedBuffer{}; // holds the buffer for precomposed UTF-16 text
+    size_t _precomposedCapacity{}; // current capacity of _precomposedBuffer
+
+#ifdef UNIT_TESTING
+    friend class UTF8OutPipeReaderTests; // Make _UTF8ToUtf16Precomposed() accessible for the unit test
+#endif
 };

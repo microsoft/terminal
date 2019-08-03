@@ -168,7 +168,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     DWORD ConhostConnection::_OutputThread()
     {
         UTF8OutPipeReader pipeReader{ _outPipe.get() };
-        std::string_view strView{};
+        std::wstring_view strView{};
 
         // process the data of the output pipe in a loop
         while (true)
@@ -192,7 +192,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
 
             // Convert buffer to hstring
-            auto hstr{ winrt::to_hstring(strView) };
+            winrt::hstring hstr{ strView };
 
             // Pass the output to our registered event handlers
             _outputHandlers(hstr);
