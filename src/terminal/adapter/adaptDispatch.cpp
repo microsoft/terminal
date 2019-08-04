@@ -506,7 +506,7 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     SHORT sDistance;
     RETURN_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
 
-    // get current cursor, viewport
+    // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
@@ -515,11 +515,10 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
-    const auto viewport = Viewport::FromExclusive(csbiex.srWindow);
     // Rectangle to cut out of the existing buffer
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = viewport.RightExclusive();
+    srScroll.Right = SHORT_MAX;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -541,85 +540,16 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     }
     else
     {
-        // for delete, we need to add to the scroll region to move it off toward the right.
-        fSuccess = SUCCEEDED(ShortAdd(srScroll.Left, sDistance, &srScroll.Left));
+        // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
+        fSuccess = SUCCEEDED(ShortSub(coordDestination.X, sDistance, &coordDestination.X));
     }
 
     if (fSuccess)
     {
-        if (srScroll.Left >= viewport.RightExclusive() ||
-            coordDestination.X >= viewport.RightExclusive())
-        {
-            DWORD const nLength = viewport.RightExclusive() - cursor.X;
-            size_t written = 0;
-
-            // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-            fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                              nLength,
-                                                              cursor,
-                                                              written);
-
-            if (fSuccess)
-            {
-                written = 0;
-                fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                 nLength,
-                                                                 cursor,
-                                                                 written);
-            }
-        }
-        else
-        {
-            // clip inside the viewport.
-            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
-                                                             &csbiex.srWindow,
-                                                             coordDestination,
-                                                             &ciFill);
-
-            if (fSuccess && !fIsInsert)
-            {
-                // See MSFT:19888564
-                // We've now shifted a number of the characters to the left.
-                // If the number of chars we've shifted doesn't fill the
-                //      entire region we deleted, then artifacts of the
-                //      previous contents of the row can get left behind.
-                //
-                // Example: (this is tested by DeleteCharsNearEndOfLineSimpleFirstCase)
-                // start with the following buffer contents, and the cursor on the "D"
-                // [ABCDEFG ]
-                //     ^
-                // When you DCH(3) here, we are trying to delete the D, E and F.
-                // We do that by shifting the contents of the line after the deleted
-                // characters to the left. HOWEVER, there are only 2 chars left to move.
-                // So (before the fix) the buffer end up like this:
-                // [ABCG F  ]
-                //     ^
-                // The G and " " have moved, but the F did not get overwritten.
-                //
-                // Fill the remaining space after the characters we
-                //      shifted with spaces (empty cells).
-                const short scrolledChars = viewport.RightExclusive() - srScroll.Left;
-                const short shiftedRightPos = cursor.X + scrolledChars;
-                if (shiftedRightPos < srScroll.Left)
-                {
-                    size_t written = 0;
-                    const short spacesToFill = viewport.RightInclusive() - (shiftedRightPos);
-                    const COORD fillPos{ shiftedRightPos, cursor.Y };
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                                      spacesToFill,
-                                                                      fillPos,
-                                                                      written);
-                    if (fSuccess)
-                    {
-                        written = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                         spacesToFill,
-                                                                         fillPos,
-                                                                         written);
-                    }
-                }
-            }
-        }
+        fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
+                                                         &srScroll,
+                                                         coordDestination,
+                                                         &ciFill);
     }
 
     return fSuccess;
