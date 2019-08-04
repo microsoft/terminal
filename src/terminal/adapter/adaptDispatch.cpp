@@ -1025,7 +1025,11 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
 
         if (fSuccess)
         {
-            SMALL_RECT srScreen = csbiex.srWindow;
+            SMALL_RECT srScreen;
+            srScreen.Left = 0;
+            srScreen.Right = SHORT_MAX;
+            srScreen.Top = csbiex.srWindow.Top;
+            srScreen.Bottom = csbiex.srWindow.Bottom - 1;
 
             // Paste coordinate for cut text above
             COORD coordDestination;
