@@ -30,7 +30,7 @@
   <PropertyGroup>
     <CAExcludePath>$(SolutionDir)\dep\;$(CAExcludePath)</CAExcludePath>
   </PropertyGroup>
-  <Target Name="CleanUpPrecompForSmallCIAgents" AfterTargets="AfterBuild">
+  <Target Name="CleanUpPrecompForSmallCIAgents" AfterTargets="AfterBuild" Condition="'$(AGENT_ID)' != ''">
     <ItemGroup>
       <FilesToClean Include="$(IntDir)\**\*.pch" />
       <FilesToClean Include="$(IntDir)\**\precomp.obj" />
