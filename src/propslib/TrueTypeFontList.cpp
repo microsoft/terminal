@@ -153,13 +153,9 @@ LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
             if (wcscmp(pwszFace, pTTFontList->FaceName1) == 0 ||
                 wcscmp(pwszFace, pTTFontList->FaceName2) == 0)
             {
-                if (fCodePage)
-                    if (pTTFontList->CodePage == CodePage)
-                        return pTTFontList;
-                    else
+                if (fCodePage && pTTFontList->CodePage != CodePage)
                         return nullptr;
-                else
-                    return pTTFontList;
+                return pTTFontList;
             }
 
             pTemp = pTemp->Next;
