@@ -64,6 +64,12 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - If an issue is filed matching a pattern that happens all the time (common duplicate phrase, obvious multiple-issues-in-one pattern)...
 - Then close the issue automatically informing the opener that they can resolve the problem and reopen the issue. (See Bug/Feature templates for example situations.)
 
+#### Help ask for Feedback Hub
+- If an issue is tagged `Needs-Feedback-Hub`
+- Then reply to the issue with a bit of text on asking the author to send us data with Feedback Hub and give us the link.
+- And remove the `Needs-Feedback-Hub` tag
+- And add the `Needs-Author-Feedback` tag
+
 ### PR Management
 
 #### Codeflow Link *(Disabled)*
@@ -97,6 +103,15 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 
 #### Add committed fix tag for completed PRs
 - When a PR is finished and there's no outstanding work left on a linked issue, add the `Resolution-Fix-Committed` label
+
+#### Remove Needs-Second from completed PRs
+- If a PR is closed and it has the `Needs-Second` tag, the bot will remove the tag.
+
+### Release Management
+
+When a release is created, if the PR ID number is linked inside the release description, the bot will walk through the related PR and all of its related issues and leave a message.
+- PR message: "🎉{release name} {release version} has been released which incorporates this pull request.🎉
+- Issue message: 🎉This issue was addressed in #{pull request ID}, which has now been successfully released as {release name} {release version}.🎉"
 
 ## Admin Panel
 [Here](https://fabric-cp.azurewebsites.net/bot/)
