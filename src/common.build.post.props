@@ -36,5 +36,6 @@
       <FilesToClean Include="$(IntDir)\**\precomp.obj" />
     </ItemGroup>
     <Delete Files="@(FilesToClean)"/>
+    <Message Text="PCH and Precomp objects have been deleted for $(ProjectName)." />
   </Target>
 </Project>
