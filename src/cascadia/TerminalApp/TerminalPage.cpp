@@ -36,7 +36,6 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
-        _settings{ nullptr },
         _tabs{},
         _dialogLock{}
     {
@@ -1172,9 +1171,9 @@ namespace winrt::TerminalApp::implementation
         _ShowAboutDialog();
     }
 
-    TerminalApp::TabRowControl* TerminalPage::GetTabRow()
+    TerminalApp::TabRowControl TerminalPage::GetTabRow()
     {
-        return &_tabRow;
+        return _tabRow;
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -56,7 +56,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _settingsLoadExceptionText{};
 
         bool _loadedInitialSettings;
-        std::shared_mutex _dialogLock;
 
         ScopedResourceLoader _resourceLoader;
 
