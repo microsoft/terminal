@@ -47,6 +47,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CursorHeight(uint32_t value);
         hstring WordDelimiters();
         void WordDelimiters(hstring const& value);
+        bool CopyOnSelect();
+        void CopyOnSelect(bool value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();
@@ -73,9 +75,6 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value);
         winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment();
         void BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value);
-
-        bool CopyOnSelect();
-        void CopyOnSelect(bool value);
 
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);

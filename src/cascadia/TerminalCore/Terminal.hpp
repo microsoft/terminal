@@ -136,6 +136,7 @@ public:
     const bool IsSingleCellSelection() const noexcept;
     const bool IsSingleCellCopyAllowed() const noexcept;
     const bool IsSelectionActive() const noexcept;
+    const bool IsCopyOnSelectActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);

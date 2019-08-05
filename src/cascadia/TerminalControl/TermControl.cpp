@@ -733,7 +733,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             {
                 // copy selection, if one exists
                 // copyOnSelect causes right-click to always paste
-                if (_terminal->IsSelectionActive() && !_settings.CopyOnSelect())
+                if (_terminal->IsSelectionActive() && !_terminal->IsCopyOnSelectActive())
                 {
                     CopySelectionToClipboard(!shiftEnabled);
                 }
@@ -852,7 +852,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
             // copyOnSelect if there's an active selection...
-            if (_settings.CopyOnSelect() && _terminal->IsSelectionActive())
+            if (_terminal->IsCopyOnSelectActive() && _terminal->IsSelectionActive())
             {
                 // copy if not single cell selection...
                 // or if single cell copy allowed (drag off of single cell then back onto it)
@@ -1374,7 +1374,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // extract text from buffer
         const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
 
-        if (!_settings.CopyOnSelect())
+        if (!_terminal->IsCopyOnSelectActive())
         {
             _terminal->ClearSelection();
         }

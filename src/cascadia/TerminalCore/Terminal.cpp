@@ -137,7 +137,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _wordDelimiters = settings.WordDelimiters();
 
-    _copyOnSelect = settings.as<winrt::Microsoft::Terminal::Settings::IControlSettings>().CopyOnSelect();
+    _copyOnSelect = settings.CopyOnSelect();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer

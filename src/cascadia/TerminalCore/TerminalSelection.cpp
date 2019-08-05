@@ -156,6 +156,15 @@ const bool Terminal::IsSelectionActive() const noexcept
 }
 
 // Method Description:
+// - Checks if the CopyOnSelect setting is active
+// Return Value:
+// - true if feature is active, false otherwise.
+const bool Terminal::IsCopyOnSelectActive() const noexcept
+{
+    return _copyOnSelect;
+}
+
+// Method Description:
 // - Select the sequence between delimiters defined in Settings
 // Arguments:
 // - position: the (x,y) coordinate on the visible viewport
