@@ -125,7 +125,7 @@ There's a few areas to study here.
 #### Communicating the launch
 For the parameters passing, I see a few options:
 1. `conhost.exe` can look up the package registration for `wt.exe` and call an entrypoint with arguments. This could be adapted to instead look up which package is registered as the default one instead of `wt.exe` for third party hosts. We would have to build provisions into the OS to select this, or use some sort of publically documented registry key mechanism. Somewhat gross.
-1. `conhost.exe` can call the execution alias with parameters. I doubt this will work because I doubt the reparse-point-based execution aliases can handle passing any sort of parameter information. We could probably make a request to the App Execution team to support this, but then it would require users upgrading their OS for it to work. Yuck.
+1. `conhost.exe` can call the execution alias with parameters. WSL distro launchers use this.
 1. We can define a protocol handler for these sorts of connections and let `wt.exe` register for it. Protocol handlers are already well supported and understood both by classic applications and by packaged/modern applications on Windows. They must have provisions to communicate at least some semblance of argument data as well. This is the route I'd probably prefer. `ms-term://incoming/<session-id>` or something like that. The receiving `wt.exe` can contact the manager process (or set one up if it is the first) and negotiate receiving the session that was specified into a new tab.
 
 ## UI/UX Design
@@ -149,7 +149,7 @@ To simplify this for a first iteration, we could just make it so the transfer do
 - If released onto anything that isn't a `wt.exe` instance, we create a new `wt.exe` instance and send in the connection as the default startup parameter.
 
 #### Component UI
-It is also theoretically possible that if we could find a Component UI style solution (where the tab/panes live in their own process and just remote the UI/input into the shell) that it would be easy and even trivial to change out which shell/frame host is holding that element at any given time.
+It is also theoretically possible that if we could find a Component UI style solution (where the tab/panes live in their own process and just remote the UI/input into the shell) that it would be easy and even trivial to change out which shell/frame host is holding that element at any given time. 
 
 ### For Default Application
 The UX would make it look exactly like the user had started `wt.exe` from a shortcut or launch tile, but would launch the first tab differently than the defaults.
@@ -286,7 +286,7 @@ The `conhost.exe` was started in response to a `pwsh.exe` being started with no 
      |- pwsh.exe
 ```
 
-The `conhost.exe` at the top was launched in response to `pwsh.exe` being started with no host. It identified 
+The `conhost.exe` at the top was launched in response to `pwsh.exe` being started with no host. It identified that `wt.exe` was running and instead shuttled the incoming connection into that `wt.exe`. `wt.exe` stood up the `conhost.exe` in PTY mode beneath itself and the client `pwsh.exe` call below that. The PTY mode `conhost.exe` uses its reparenting commands on startup to make the tree look like the above. The orphaned (originally started) `conhost.exe` waits until the connection exits before exiting itself in case someone was waiting on it.
 
 ### Performance, Power, and Efficiency
 
