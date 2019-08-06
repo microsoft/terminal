@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
     }
 
-    ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
+    ::Microsoft::Console::Types::IUiaData* TermControl::GetUiaData() const
     {
         return _terminal.get();
     }

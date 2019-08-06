@@ -11,6 +11,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
@@ -30,7 +31,8 @@ namespace Microsoft::Terminal::Core
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
-    public Microsoft::Console::Render::IRenderData
+    public Microsoft::Console::Render::IRenderData,
+    public Microsoft::Console::Types::IUiaData
 {
 public:
     Terminal();
@@ -86,11 +88,17 @@ public:
     int GetScrollOffset() override;
 #pragma endregion
 
-#pragma region IRenderData
-    // These methods are defined in TerminalRenderData.cpp
+#pragma region IBaseData (base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
+#pragma endregion
+
+#pragma region IRenderData
+    // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
     const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
@@ -104,6 +112,9 @@ public:
     bool IsCursorDoubleWidth() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
+#pragma endregion
+
+#pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
     bool IsAreaSelected() const override;
     void ClearSelection() override;
@@ -118,13 +129,11 @@ public:
                           _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
                           unsigned int _start,
                           unsigned int _end,
-                          std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
-                          std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
+                          std::function<unsigned int(IUiaData*, const COORD)> _coordToEndpoint,
+                          std::function<COORD(IUiaData*, const unsigned int)> _endpointToCoord,
                           std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) override;
 
     const std::wstring GetConsoleTitle() const noexcept override;
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;

@@ -31,7 +31,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
     return psa;
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IUiaData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent,
                                              _In_ std::function<RECT(void)> GetBoundingRect) :
     _pUiaParent(pUiaParent),
@@ -44,7 +44,7 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IR
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IUiaData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent) :
     _pUiaParent(pUiaParent),
     _signalFiringMapping{},
