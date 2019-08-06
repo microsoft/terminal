@@ -12,7 +12,7 @@
 
 ## Installation
 
-_(Note: in order to run the Windows Terminal, you'll beed to be running at least Windows build 18362 or higher.)_
+_(Note: in order to run the Windows Terminal, you'll need to be running at least Windows build 18362 or higher.)_
 
 ### Microsoft Store
 
