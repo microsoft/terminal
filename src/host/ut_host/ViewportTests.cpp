@@ -1044,18 +1044,8 @@ class ViewportTests
         const auto original = Viewport::FromInclusive(srOriginal);
         const auto remove = original;
 
-        std::vector<Viewport> expected;
-        expected.emplace_back(Viewport::FromDimensions(original.Origin(), { 0, 0 }));
-
         const auto actual = Viewport::Subtract(original, remove);
 
-        VERIFY_ARE_EQUAL(expected.size(), actual.size(), L"Same number of viewports in expected and actual");
-        Log::Comment(L"Now validate that each viewport has the expected area.");
-        for (size_t i = 0; i < expected.size(); i++)
-        {
-            const auto& exp = expected.at(i);
-            const auto& act = actual.at(i);
-            VERIFY_ARE_EQUAL(exp, act);
-        }
+        VERIFY_ARE_EQUAL(0, actual.size(), L"There should be no viewports returned");
     }
 };
