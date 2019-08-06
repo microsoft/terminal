@@ -12,7 +12,7 @@ were used in the application, and components that used XAML UI elements.
 
 ## Prerequisites
 
-Make sure you're using at least the 2.0.190730.2 version of the CppWinRT nuget
+Make sure you're using at least the 2.0.190605.7 version of the CppWinRT nuget
 package. Prior to this version, there are some bugs with C++/WinRT's detection
 of static lib dependencies. You might be able to get your build working with
 Visual Studio on earlier versions, but not straight from MsBuild.
@@ -130,7 +130,7 @@ dir to your `AdditionalLibraryDirectories`, and adding the lib to your
 ```
 
 We are NOT adding a reference to the static lib project's .winmd here. As of the
-2.0.190730.2 CppWinRT nuget package, this is enough for MsBuild and Visual
+2.0.190605.7 CppWinRT nuget package, this is enough for MsBuild and Visual
 Studio to be able to determine that the static lib's  `.winmd` should be included
 in this package.
 
