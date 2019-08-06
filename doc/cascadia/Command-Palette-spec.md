@@ -74,7 +74,7 @@ parts of dispatching `ShortcutAction` callbacks into another class,
 `ShortcutActionDispatch`, with a single `PerformAction(ShortcutAction)` method
 (and events for each action). `AppKeybindings` will be initialized with a
 reference to the `ShortcutActionDispatch` object, so that it can call
-`PerformAction` on it. Aditionally, by having a singular
+`PerformAction` on it. Additionally, by having a singular
 `ShortcutActionDispatch` instance, we won't need to re-hook up the
 ShortcutAction keybindings each time we re-load the settings.
 
@@ -197,7 +197,7 @@ control into the command palette, which leads to some hard to debug crashes.
 
 ## Future considerations
 
-* Once [#1142] is also complete, We'll also add a `executeCommand` action. It
+* Once [#1142] is also complete, we'll also add a `executeCommand` action. It
   will take a single parameter `command`, which will be the name of a command
   from the list of commands. This will enable a user to bind a command to a
   keybinding. This could allow the user to bind a specific pairing of `action`
