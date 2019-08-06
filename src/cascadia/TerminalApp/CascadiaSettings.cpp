@@ -643,3 +643,48 @@ Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
 
     return newProfile;
 }
+
+const std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetLoadWarnings()
+{
+    return _warnings;
+}
+
+void CascadiaSettings::_ValidateSettings()
+{
+    _warnings.clear();
+
+    const bool hasProfiles = _profiles.size() != 0;
+    if (!hasProfiles)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+
+        // Throw an exception. This is an invalid state, and we want the app to
+        // be able to gracefully use the default settings.
+
+        // TODO: Throw something more specific?
+        throw winrt::hresult_invalid_argument();
+    }
+
+    const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
+    const bool nullDefaultProfile = defaultProfileGuid == GUID{};
+    bool foundDefaultProfile = false;
+    for (const auto& profile : _profiles)
+    {
+        if (profile.GetGuid() == defaultProfileGuid)
+        {
+            foundDefaultProfile = true;
+            break;
+        }
+    }
+
+    const bool defaultProfileNotInProfiles = !foundDefaultProfile;
+
+    if (nullDefaultProfile || defaultProfileNotInProfiles)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+        // Use the first profile as the new default
+
+        // TODO: Do this _temporarily_. We don't want to have this be a permanent change.
+        GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+    }
+}

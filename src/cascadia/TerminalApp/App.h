@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
                                     const winrt::hstring& closeButtonText);
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
+        void _ShowLoadWarningsDialog();
 
         [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();

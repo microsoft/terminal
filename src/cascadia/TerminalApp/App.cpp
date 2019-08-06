@@ -25,6 +25,13 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+// clang-format off
+static const std::unordered_map<::TerminalApp::SettingsLoadWarnings, std::wstring_view> settingsLoadWarningsLabels {
+    { SettingsLoadWarnings::MissingDefaultProfile   , L"MissingDefaultProfileText"},
+    { SettingsLoadWarnings::NoProfiles              , L"NoProfilesText"},
+};
+// clang-format on
+
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
@@ -176,6 +183,32 @@ namespace winrt::TerminalApp::implementation
         _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
     }
 
+    void App::_ShowLoadWarningsDialog()
+    {
+        // TODO
+        auto title = _resourceLoader.GetLocalizedString(L"SettingsValidateErrorTitle");
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        const auto& warnings = _settings->GetLoadWarnings();
+
+        for (const auto& warning : warnings)
+        {
+            const auto labelFound = settingsLoadWarningsLabels.find(warning);
+            if (labelFound != settingsLoadWarningsLabels.end())
+            {
+                winrt::Windows::UI::Xaml::Documents::Run warningRun;
+                const auto warningLabel = _resourceLoader.GetLocalizedString(labelFound->second);
+                warningRun.Text(warningLabel);
+                // TODO: Wrap this line, it's too long for the dialog
+                warningsTextBlock.Inlines().Append(warningRun);
+            }
+        }
+
+        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
+    }
+
     // Method Description:
     // - Show a dialog with "About" information. Displays the app's Display
     //   Name, version, getting started link, documentation link, and release
@@ -261,6 +294,10 @@ namespace winrt::TerminalApp::implementation
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
             _ShowOkDialog(titleKey, textKey);
+        }
+        else if (_settingsLoadedResult == S_FALSE)
+        {
+            _ShowLoadWarningsDialog();
         }
     }
 
@@ -511,7 +548,8 @@ namespace winrt::TerminalApp::implementation
         {
             auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
             _settings = std::move(newSettings);
-            hr = S_OK;
+            const auto& warnings = _settings->GetLoadWarnings();
+            hr = warnings.size() == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
@@ -550,6 +588,10 @@ namespace winrt::TerminalApp::implementation
             _settings = std::make_unique<CascadiaSettings>();
             _settings->CreateDefaults();
         }
+        // else if (_settingsLoadedResult == S_FALSE)
+        // {
+        //     _DisplayLoadingWarnings
+        // }
 
         _HookupKeyBindings(_settings->GetKeybindings());
 
@@ -634,6 +676,12 @@ namespace winrt::TerminalApp::implementation
             });
 
             return;
+        }
+        else if (_settingsLoadedResult == S_FALSE)
+        {
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                _ShowLoadWarningsDialog();
+            });
         }
 
         // Here, we successfully reloaded the settings, and created a new

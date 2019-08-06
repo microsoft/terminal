@@ -41,7 +41,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     std::optional<std::string> fileData = _ReadSettings();
 
     const bool foundFile = fileData.has_value();
-    if (foundFile)
+    // Make sure the file isn't totally empty. If it is, we'll treat the file
+    // like it doesn't exist at all.
+    const bool fileHasData = foundFile && fileData.value().size() > 0;
+    if (foundFile && fileHasData)
     {
         const auto actualData = fileData.value();
 
@@ -65,10 +68,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         }
         resultPtr = FromJson(root);
 
-        if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
-        {
-            throw winrt::hresult_invalid_argument();
-        }
+        // If this throws, the app will catch it and use the default settings (temporarily)
+        resultPtr->_ValidateSettings();
+
+        // if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
+        // {
+        //     throw winrt::hresult_invalid_argument();
+        // }
 
         if (saveOnLoad)
         {

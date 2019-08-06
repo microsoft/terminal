@@ -25,6 +25,11 @@ static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83
 namespace TerminalApp
 {
     class CascadiaSettings;
+    enum class SettingsLoadWarnings : uint32_t
+    {
+        MissingDefaultProfile = 0,
+        NoProfiles = 1
+    };
 };
 
 class TerminalApp::CascadiaSettings final
@@ -53,9 +58,12 @@ public:
 
     void CreateDefaults();
 
+    const std::vector<TerminalApp::SettingsLoadWarnings>& GetLoadWarnings();
+
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
+    std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();
@@ -64,6 +72,8 @@ private:
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadSettings();
+
+    void _ValidateSettings();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
