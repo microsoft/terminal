@@ -126,3 +126,44 @@ More information about UWP URI schemes [here](https://docs.microsoft.com/en-us/w
     1. URL such as
 `http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg` 
     2. Local file location such as `C:\Users\Public\Pictures\openlogo.jpg`
+
+### Adding Copy and Paste Keybindings 
+
+As of [#1093](https://github.com/microsoft/terminal/pull/1093) (first available in Windows Terminal v0.3), the Windows Terminal now
+supports copy and paste keyboard shortcuts. However, if you installed and ran
+the terminal before that, you won't automatically get the new keybindings added
+to your settings. If you'd like to add shortcuts for copy and paste, you can do so by inserting the following objects into your `globals.keybindings` array:
+
+```json
+{ "command": "copy", "keys": ["ctrl+shift+c"] },
+{ "command": "paste", "keys": ["ctrl+shift+v"] }
+```
+
+This will add copy and paste on <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>c</kbd>
+and <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>v</kbd> respectively.
+
+You can set the keybindings to whatever you'd like. If you prefer
+<kbd>ctrl</kbd>+<kbd>c</kbd> to copy, then set the `keys` to `"ctrl+c"`.
+
+You can even set multiple keybindings for a single action if you'd like. For example:
+
+```json
+
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "ctrl+shift+v"
+                ]
+            },
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "shift+insert"
+                ]
+            }
+```
+
+will bind both <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>v</kbd> and
+<kbd>shift</kbd>+<kbd>Insert</kbd> to `paste`.
