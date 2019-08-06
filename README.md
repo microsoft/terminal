@@ -12,6 +12,8 @@
 
 ## Installation
 
+_(Note: in order to run the Windows Terminal, you'll beed to be running at least Windows build 18362 or higher.)_
+
 ### Microsoft Store
 
 Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated. Or, feel free to side-load [releases](https://github.com/microsoft/terminal/releases) from GitHub, but note they won't auto-update.
