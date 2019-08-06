@@ -1461,20 +1461,18 @@ namespace winrt::TerminalApp::implementation
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };
-        // The Azure connection has a boost dependency, and boost does not support ARM64
-        // so we make sure that we do not try to compile the Azure connection code if we are in ARM64 (we would get build errors otherwise)
+
         GUID connectionType{ 0 };
         if (profile->HasConnectionType())
         {
             connectionType = profile->GetConnectionType();
         }
-#ifndef _M_ARM64
-        if (connectionType == AzureConnectionType)
+
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
         }
         else
-#endif
         {
             connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }

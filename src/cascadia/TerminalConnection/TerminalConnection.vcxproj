@@ -24,6 +24,7 @@
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="AzureConnection.h" Condition="'$(Platform)'!='ARM64'" />
+    <ClInclude Include="AzureConnection-ARM64.h" Condition="'$(Platform)'=='ARM64'" />
     <ClInclude Include="AzureConnectionStrings.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConhostConnection.h">
@@ -35,6 +36,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AzureConnection.cpp" Condition="'$(Platform)'!='ARM64'" />
+    <ClCompile Include="AzureConnection-ARM64.cpp" Condition="'$(Platform)'=='ARM64'" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -50,7 +52,7 @@
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
-    <Midl Include="AzureConnection.idl" Condition="'$(Platform)'!='ARM64'" />
+    <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
