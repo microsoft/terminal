@@ -9,6 +9,7 @@
 #include "Tab.h"
 #include "CascadiaSettings.h"
 #include "Profile.h"
+#include "ScopedResourceLoader.h"
 
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
@@ -22,8 +23,6 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalPage();
-
-        ~TerminalPage();
 
         void SetSettings(::TerminalApp::CascadiaSettings* settings);
 
@@ -52,6 +51,8 @@ namespace winrt::TerminalApp::implementation
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         std::shared_mutex _dialogLock;
+
+        ScopedResourceLoader _resourceLoader;
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
