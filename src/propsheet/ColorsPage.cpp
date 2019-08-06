@@ -94,7 +94,6 @@ static int iColor;
         break;
     default:
         return SimpleColorControlProc(hColor, wMsg, wParam, lParam);
-        break;
     }
     return TRUE;
 }
