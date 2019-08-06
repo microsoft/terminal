@@ -6,10 +6,12 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
+#include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 
 #pragma hdrstop
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 // Routine Description:
@@ -1033,238 +1035,173 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - Generates a CF_HTML compliant structure based on the passed in text and color data
 // Arguments:
 // - rows - the text and color data we will format & encapsulate
-// - iFontHeightPoints - the unscaled font height
+// - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
+// - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int iFontHeightPoints, const PCWCHAR fontFaceName)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string& htmlTitle)
 {
-    std::string szClipboard; // we will build the data going back in this string buffer
-
     try
     {
-        std::string const szHtmlClipFormat =
-            "Version:0.9\r\n"
-            "StartHTML:%010d\r\n"
-            "EndHTML:%010d\r\n"
-            "StartFragment:%010d\r\n"
-            "EndFragment:%010d\r\n"
-            "StartSelection:%010d\r\n"
-            "EndSelection:%010d\r\n";
+        std::ostringstream htmlBuilder;
 
-        // measure clip header
-        size_t const cbHeader = 157; // when formats are expanded, there will be 157 bytes in the header.
-
-        std::string const szHtmlHeader =
-            "<!DOCTYPE><HTML><HEAD><TITLE>Windows Console Host</TITLE></HEAD><BODY>";
-        size_t const cbHtmlHeader = szHtmlHeader.size();
-
-        std::string const szHtmlFragStart = "<!--StartFragment -->";
-        std::string const szHtmlFragEnd = "<!--EndFragment -->";
-        std::string const szHtmlFooter = "</BODY></HTML>";
-        size_t const cbHtmlFooter = szHtmlFooter.size();
-
-        std::string const szDivOuterBackgroundPattern = R"X(<DIV STYLE="background-color:#%02x%02x%02x;white-space:pre;">)X";
-
-        size_t const cbDivOuter = 55;
-        std::string szDivOuter;
-        szDivOuter.reserve(cbDivOuter);
-
-        std::string const szSpanFontSizePattern = R"X(<SPAN STYLE="font-size: %dpt">)X";
-
-        size_t const cbSpanFontSize = 28 + (iFontHeightPoints / 10) + 1;
-
-        std::string szSpanFontSize;
-        szSpanFontSize.resize(cbSpanFontSize + 1); // reserve space for null after string for sprintf
-        sprintf_s(szSpanFontSize.data(), cbSpanFontSize + 1, szSpanFontSizePattern.data(), iFontHeightPoints);
-        szSpanFontSize.resize(cbSpanFontSize); //chop off null at end
-
-        std::string const szSpanStartPattern = R"X(<SPAN STYLE="color:#%02x%02x%02x;background-color:#%02x%02x%02x">)X";
-
-        size_t const cbSpanStart = 53; // when format is expanded, there will be 53 bytes per color pattern.
-        std::string szSpanStart;
-        szSpanStart.resize(cbSpanStart + 1); // +1 for null terminator
-
-        std::string const szSpanStartFontPattern = R"X(<SPAN STYLE="font-family: '%s', monospace">)X";
-        size_t const cbSpanStartFontPattern = 41;
-
-        std::string const szSpanStartFontConstant = R"X(<SPAN STYLE="font-family: monospace">)X";
-        size_t const cbSpanStartFontConstant = 37;
-
-        std::string szSpanStartFont;
-        size_t cbSpanStartFont;
-        bool fDeleteSpanStartFont = false;
-
-        std::wstring const wszFontFaceName = fontFaceName;
-        size_t const cchFontFaceName = wszFontFaceName.size();
-        if (cchFontFaceName > 0)
-        {
-            // measure and create buffer to convert face name to UTF8
-            int const cbNeeded = WideCharToMultiByte(CP_UTF8, 0, wszFontFaceName.data(), static_cast<int>(cchFontFaceName), nullptr, 0, nullptr, nullptr);
-            std::string szBuffer;
-            szBuffer.resize(cbNeeded);
-
-            // do conversion
-            WideCharToMultiByte(CP_UTF8, 0, wszFontFaceName.data(), static_cast<int>(cchFontFaceName), szBuffer.data(), cbNeeded, nullptr, nullptr);
-
-            // format converted font name into pattern
-            std::string const szFinalFontPattern = R"X(<SPAN STYLE="font-family: ')X" + szBuffer + R"X(', monospace\">)X";
-            size_t const cbBytesNeeded = szFinalFontPattern.length();
-
-            fDeleteSpanStartFont = true;
-            szSpanStartFont = szFinalFontPattern;
-            cbSpanStartFont = cbBytesNeeded;
-        }
-        else
-        {
-            szSpanStartFont = szSpanStartFontConstant;
-            cbSpanStartFont = cbSpanStartFontConstant;
-        }
-
-        std::string const szSpanEnd = "</SPAN>";
-        std::string const szDivEnd = "</DIV>";
-
-        // Start building the HTML formated string to return
-        // First we have to add the required header and then
-        // some standard HTML boiler plate required for CF_HTML
+        // First we have to add some standard
+        // HTML boiler plate required for CF_HTML
         // as part of the HTML Clipboard format
-        szClipboard.append(cbHeader, 'H'); // reserve space for a header we fill in later
-        szClipboard.append(szHtmlHeader);
-        szClipboard.append(szHtmlFragStart);
+        const std::string htmlHeader =
+            "<!DOCTYPE><HTML><HEAD><TITLE>" + htmlTitle + "</TITLE></HEAD><BODY>";
+        htmlBuilder << htmlHeader;
 
-        COLORREF iBgColor = rows.BkAttr.at(0).at(0);
+        htmlBuilder << "<!--StartFragment -->";
 
-        szDivOuter.resize(cbDivOuter + 1);
-        sprintf_s(szDivOuter.data(), cbDivOuter + 1, szDivOuterBackgroundPattern.data(), GetRValue(iBgColor), GetGValue(iBgColor), GetBValue(iBgColor));
-        szDivOuter.resize(cbDivOuter);
-        szClipboard.append(szDivOuter);
-
-        // copy font face start
-        szClipboard.append(szSpanStartFont);
-
-        // copy font size start
-        szClipboard.append(szSpanFontSize);
-
-        bool bColorFound = false;
-
-        // copy all text into the final clipboard data handle. There should be no nulls between rows of
-        // characters, but there should be a \0 at the end.
-        COLORREF const Blackness = RGB(0x00, 0x00, 0x00);
-        for (UINT iRow = 0; iRow < rows.text.size(); iRow++)
+        // apply global style in div element
         {
-            size_t cbStartOffset = 0;
-            size_t cchCharsToPrint = 0;
+            htmlBuilder << "<DIV STYLE=\"";
+            htmlBuilder << "display:inline-block;";
+            htmlBuilder << "white-space:pre;";
 
-            COLORREF fgColor = Blackness;
-            COLORREF bkColor = Blackness;
+            // fixme: this is only walkaround for filling background after last char of row.
+            // It is based on first char of first row, not the actual char at correct position.
+            htmlBuilder << "background-color:";
+            const COLORREF globalBgColor = rows.BkAttr.at(0).at(0);
+            htmlBuilder << Utils::ColorToHexString(globalBgColor);
+            htmlBuilder << ";";
 
-            for (UINT iCol = 0; iCol < rows.text.at(iRow).length(); iCol++)
+            htmlBuilder << "font-family:";
+            if (fontFaceName[0] != '\0')
             {
-                bool fColorDelta = false;
+                htmlBuilder << "'";
+                htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
+                htmlBuilder << "',";
+            }
+            // even with different font, add monospace as fallback
+            htmlBuilder << "monospace;";
 
-                if (!bColorFound)
-                {
-                    fgColor = rows.FgAttr.at(iRow).at(iCol);
-                    bkColor = rows.BkAttr.at(iRow).at(iCol);
-                    bColorFound = true;
-                    fColorDelta = true;
-                }
-                else if ((rows.FgAttr.at(iRow).at(iCol) != fgColor) || (rows.BkAttr.at(iRow).at(iCol) != bkColor))
-                {
-                    fgColor = rows.FgAttr.at(iRow).at(iCol);
-                    bkColor = rows.BkAttr.at(iRow).at(iCol);
-                    fColorDelta = true;
-                }
+            htmlBuilder << "font-size:";
+            htmlBuilder << fontHeightPoints;
+            htmlBuilder << "pt;";
 
-                if (fColorDelta)
-                {
-                    if (cchCharsToPrint > 0)
-                    {
-                        // write accumulated characters to stream ....
-                        std::string TempBuff;
-                        int const cbTempCharsNeeded = WideCharToMultiByte(CP_UTF8, 0, rows.text[iRow].data() + cbStartOffset, static_cast<int>(cchCharsToPrint), nullptr, 0, nullptr, nullptr);
-                        TempBuff.resize(cbTempCharsNeeded);
-                        WideCharToMultiByte(CP_UTF8, 0, rows.text[iRow].data() + cbStartOffset, static_cast<int>(cchCharsToPrint), TempBuff.data(), cbTempCharsNeeded, nullptr, nullptr);
-                        szClipboard.append(TempBuff);
-                        cbStartOffset += cchCharsToPrint;
-                        cchCharsToPrint = 0;
+            // note: MS Word doesn't support padding (in this way at least)
+            htmlBuilder << "padding:";
+            htmlBuilder << 4; // todo: customizable padding
+            htmlBuilder << "px;";
 
-                        // close previous span
-                        szClipboard += szSpanEnd;
-                    }
+            htmlBuilder << "\">";
+        }
 
-                    // start new span
+        // copy text and info color from buffer
+        bool hasWrittenAnyText = false;
+        std::optional<COLORREF> fgColor = std::nullopt;
+        std::optional<COLORREF> bkColor = std::nullopt;
+        for (UINT row = 0; row < rows.text.size(); row++)
+        {
+            size_t startOffset = 0;
 
-                    // format with color then copy formatted string
-                    szSpanStart.resize(cbSpanStart + 1); // add room for null
-                    sprintf_s(szSpanStart.data(), cbSpanStart + 1, szSpanStartPattern.data(), GetRValue(fgColor), GetGValue(fgColor), GetBValue(fgColor), GetRValue(bkColor), GetGValue(bkColor), GetBValue(bkColor));
-                    szSpanStart.resize(cbSpanStart); // chop null from sprintf
-                    szClipboard.append(szSpanStart);
-                }
-
-                // accumulate 1 character
-                cchCharsToPrint++;
+            if (row != 0)
+            {
+                htmlBuilder << "<BR>";
             }
 
-            PCWCHAR pwchAccumulateStart = rows.text.at(iRow).data() + cbStartOffset;
+            for (UINT col = 0; col < rows.text[row].length(); col++)
+            {
+                // do not include \r nor \n as they don't have attributes
+                // and are not HTML friendly. For line break use '<BR>' instead.
+                bool isLastCharInRow =
+                    col == rows.text[row].length() - 1 ||
+                    rows.text[row][col + 1] == '\r' ||
+                    rows.text[row][col + 1] == '\n';
 
-            // write accumulated characters to stream
-            std::string CharsConverted;
-            int cbCharsConverted = WideCharToMultiByte(CP_UTF8, 0, pwchAccumulateStart, static_cast<int>(cchCharsToPrint), nullptr, 0, nullptr, nullptr);
-            CharsConverted.resize(cbCharsConverted);
-            WideCharToMultiByte(CP_UTF8, 0, pwchAccumulateStart, static_cast<int>(cchCharsToPrint), CharsConverted.data(), cbCharsConverted, nullptr, nullptr);
-            szClipboard.append(CharsConverted);
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr[row][col] != fgColor.value())
+                {
+                    fgColor = rows.FgAttr[row][col];
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr[row][col] != bkColor.value())
+                {
+                    bkColor = rows.BkAttr[row][col];
+                    colorChanged = true;
+                }
+
+                const auto writeAccumulatedChars = [&](bool includeCurrent) {
+                    if (col > startOffset)
+                    {
+                        // note: this should be escaped (for '<', '>', and '&'),
+                        // however MS Word doesn't appear to support HTML entities
+                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text[row].data() + startOffset, col - startOffset + includeCurrent));
+                        startOffset = col;
+                    }
+                };
+
+                if (colorChanged)
+                {
+                    writeAccumulatedChars(false);
+
+                    if (hasWrittenAnyText)
+                    {
+                        htmlBuilder << "</SPAN>";
+                    }
+
+                    htmlBuilder << "<SPAN STYLE=\"";
+                    htmlBuilder << "color:";
+                    htmlBuilder << Utils::ColorToHexString(fgColor.value());
+                    htmlBuilder << ";";
+                    htmlBuilder << "background-color:";
+                    htmlBuilder << Utils::ColorToHexString(bkColor.value());
+                    htmlBuilder << ";";
+                    htmlBuilder << "\">";
+                }
+
+                hasWrittenAnyText = true;
+
+                if (isLastCharInRow)
+                {
+                    writeAccumulatedChars(true);
+                    break;
+                }
+            }
         }
 
-        if (bColorFound)
+        if (hasWrittenAnyText)
         {
-            // copy end span
-            szClipboard.append(szSpanEnd);
+            // last opened span wasn't closed in loop above, so close it now
+            htmlBuilder << "</SPAN>";
         }
 
-        // after we have copied all text we must wrap up
-        // with a standard set of HTML boilerplate required
-        // by CF_HTML
+        htmlBuilder << "</DIV>";
 
-        // copy end font size span
-        szClipboard.append(szSpanEnd);
+        htmlBuilder << "<!--EndFragment -->";
 
-        // copy end font face span
-        szClipboard.append(szSpanEnd);
+        constexpr std::string_view HtmlFooter = "</BODY></HTML>";
+        htmlBuilder << HtmlFooter;
 
-        // copy end background color span
-        szClipboard.append(szDivEnd);
+        // once filled with values, there will be exactly 157 bytes in the clipboard header
+        constexpr size_t ClipboardHeaderSize = 157;
 
-        // copy HTML end fragment
-        szClipboard.append(szHtmlFragEnd);
+        // these values are byte offsets from start of clipboard
+        const size_t htmlStartPos = ClipboardHeaderSize;
+        const size_t htmlEndPos = ClipboardHeaderSize + htmlBuilder.tellp();
+        const size_t fragStartPos = ClipboardHeaderSize + htmlHeader.length();
+        const size_t fragEndPos = htmlEndPos - HtmlFooter.length();
 
-        // copy HTML footer
-        szClipboard.append(szHtmlFooter);
+        // header required by HTML 0.9 format
+        std::ostringstream clipHeaderBuilder;
+        clipHeaderBuilder << "Version:0.9\r\n";
+        clipHeaderBuilder << std::setfill('0');
+        clipHeaderBuilder << "StartHTML:" << std::setw(10) << htmlStartPos << "\r\n";
+        clipHeaderBuilder << "EndHTML:" << std::setw(10) << htmlEndPos << "\r\n";
+        clipHeaderBuilder << "StartFragment:" << std::setw(10) << fragStartPos << "\r\n";
+        clipHeaderBuilder << "EndFragment:" << std::setw(10) << fragEndPos << "\r\n";
+        clipHeaderBuilder << "StartSelection:" << std::setw(10) << fragStartPos << "\r\n";
+        clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
 
-        // null terminate the clipboard data
-        szClipboard += '\0';
-
-        // we are done generating formating & building HTML for the selection
-        // prepare the header text with the byte counts now that we know them
-        size_t const cbHtmlStart = cbHeader; // bytecount to start of HTML context
-        size_t const cbHtmlEnd = szClipboard.size() - 1; // don't count the null at the end
-        size_t const cbFragStart = cbHeader + cbHtmlHeader; // bytecount to start of selection fragment
-        size_t const cbFragEnd = cbHtmlEnd - cbHtmlFooter;
-
-        // push the values into the required HTML 0.9 header format
-        std::string szHtmlClipHeaderFinal;
-        szHtmlClipHeaderFinal.resize(cbHeader + 1); // add room for a null
-        sprintf_s(szHtmlClipHeaderFinal.data(), cbHeader + 1, szHtmlClipFormat.data(), cbHtmlStart, cbHtmlEnd, cbFragStart, cbFragEnd, cbFragStart, cbFragEnd);
-        szHtmlClipHeaderFinal.resize(cbHeader); // chop off the null
-
-        // overwrite the reserved space with the actual header & offsets we calculated
-        szClipboard.replace(0, cbHeader, szHtmlClipHeaderFinal.data());
+        return clipHeaderBuilder.str() + htmlBuilder.str();
     }
     catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
-        szClipboard.clear(); // dont return a partial html fragment...
+        return {};
     }
-
-    return szClipboard;
 }

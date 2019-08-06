@@ -145,8 +145,9 @@ public:
                                            std::function<COLORREF(TextAttribute&)> GetBackgroundColor) const;
 
     static std::string GenHTML(const TextAndColor& rows,
-                               const int iFontHeightPoints,
-                               const PCWCHAR fontFaceName);
+                               const int fontHeightPoints,
+                               const PCWCHAR fontFaceName,
+                               const std::string& htmlTitle);
 
 private:
     std::deque<ROW> _storage;
