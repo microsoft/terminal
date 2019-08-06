@@ -112,18 +112,25 @@
 
  -->
 
-<!-- This is important: actually add the _LocalTestsGenerateCombinedManifests target to the list of targets to run. -->
+<!-- This is important: actually add the _LocalTestsGenerateCombinedManifests
+target to the list of targets to run. -->
+
   <PropertyGroup>
     <BeforeLinkTargets Condition="'$(WindowsTargetPlatformVersion)' &gt;= '10.0.18362.0'">
       $(BeforeLinkTargets);
       _LocalTestsGenerateCombinedManifests;
+      _LocalTestsBuildAppxManifest;
     </BeforeLinkTargets>
   </PropertyGroup>
 
-  <!-- TODO: this is obviously bad.
-    There's probably a way to do this all in one go using the @(_ConsoleWinmdManifest) values or something.
-    We might be able to make the Target even smarter and use it to copy all our dependent dlls too
-   -->
+  <!-- TODO: this is obviously bad. There's probably a way to do this all in one
+    go using the @(_ConsoleWinmdManifest) values or something. We might be able
+    to make the Target even smarter and use it to copy all our dependent dlls
+    too -->
+
+   <!-- TODO: Make this require the input of the manifests from the previous
+   step, and output our combined output, so msbuild knows to clean them. -->
+
   <Target Name="_LocalTestsGenerateCombinedManifests"
           DependsOnTargets="_ConsoleGenerateAdditionalWinmdManifests">
 
@@ -133,10 +140,17 @@
   </Target>
 
 
-<!-- TODO: Create a powershell script to take the manifest and turn it into a proper appxmanifest for us. Or somehow generate that, so we don't need to copy-pata.
+  <Target Name="_LocalTestsBuildAppxManifest"
+          DependsOnTargets="_LocalTestsGenerateCombinedManifests">
 
-We don't need to worry too bad about that, since the appx doesn't deply anyways so FUCK IT
- -->
+    <!-- Use a powershell script to take the manifest and turn it into a proper
+      appxmanifest for us. -->
+
+    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 $(OutDir)$(TargetName).manifest $(TargetName).AppxManifest.prototype.xml $(OutDir)$(TargetName).AppxManifest.xml" />
+
+  </Target>
+
+
 
 
   <ItemDefinitionGroup>
