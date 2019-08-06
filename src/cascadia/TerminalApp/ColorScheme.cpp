@@ -66,7 +66,8 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     terminalSettings.DefaultForeground(_defaultForeground);
     terminalSettings.DefaultBackground(_defaultBackground);
 
-    for (int i = 0; i < _table.size(); i++)
+    auto const tableCount = gsl::narrow_cast<int>(_table.size());
+    for (int i = 0; i < tableCount; i++)
     {
         terminalSettings.SetColorTableEntry(i, _table[i]);
     }
