@@ -10,7 +10,6 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <!-- <ClCompile Include="JsonTests.cpp" /> -->
     <ClCompile Include="SettingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
     <ClCompile Include="precomp.cpp">
@@ -28,7 +27,8 @@
     <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
 
-    <!-- If you don't reference these guys the_ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's  -->
+    <!-- If you don't reference these projects here, the
+    _ConsoleGenerateAdditionalWinmdManifests step won't gather the winmd's -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
@@ -64,9 +64,6 @@
     <GenerateManifest>true</GenerateManifest>
     <EmbedManifest>true</EmbedManifest>
   </PropertyGroup>
-  <ItemGroup>
-    <!-- <Manifest Include="TerminalApp.LocalTests.manifest" /> -->
-  </ItemGroup>
 
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(OpenConsoleDir)src\common.build.dll.props" />
@@ -96,25 +93,11 @@
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
 
-
+  <!-- This project will generate individual sxs manifests for each of our winrt libraries -->
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
 
-
-
-<!--
-  <ItemDefinitionGroup>
-    <PreBuildEvent>
-      <Command>
-        (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.manifest&quot; &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.LocalTests.manifest*&quot; )
-      </Command>
-    </PreBuildEvent>
-  </ItemDefinitionGroup>
-
- -->
-
-<!-- This is important: actually add the _LocalTestsGenerateCombinedManifests
-target to the list of targets to run. -->
-
+  <!-- This is important: actually add the _LocalTestsGenerateCombinedManifests
+    target to the list of targets to run. -->
   <PropertyGroup>
     <BeforeLinkTargets Condition="'$(WindowsTargetPlatformVersion)' &gt;= '10.0.18362.0'">
       $(BeforeLinkTargets);
@@ -123,42 +106,36 @@ target to the list of targets to run. -->
     </BeforeLinkTargets>
   </PropertyGroup>
 
-  <!-- TODO: this is obviously bad. There's probably a way to do this all in one
-    go using the @(_ConsoleWinmdManifest) values or something. We might be able
-    to make the Target even smarter and use it to copy all our dependent dlls
-    too -->
-
-   <!-- TODO: Make this require the input of the manifests from the previous
-   step, and output our combined output, so msbuild knows to clean them. -->
-
+  <!-- Step 1: Combine all our SxS manifests into a single SxS manifest. TAEF
+  needs us to specify a single activation context at runtime, so we need a
+  single file with all our types in it.-->
   <Target Name="_LocalTestsGenerateCombinedManifests"
+          Inputs="@(_ConsoleWinmdManifest)"
+          Outputs="$(OutDir)$(TargetName).manifest"
           DependsOnTargets="_ConsoleGenerateAdditionalWinmdManifests">
 
-    <Exec Command="mt.exe -manifest $(IntDir)Microsoft.Toolkit.Win32.UI.XamlHost.manifest -manifest $(IntDir)Microsoft.UI.Xaml.manifest -manifest $(IntDir)Microsoft.Terminal.Settings.manifest -manifest $(IntDir)Microsoft.Terminal.TerminalControl.manifest -manifest $(IntDir)Microsoft.Terminal.TerminalConnection.manifest -manifest $(IntDir)TerminalApp.manifest -out:$(OutDir)TerminalApp.LocalTests.manifest" />
-
-
+    <Exec Command="mt.exe -manifest @(_ConsoleWinmdManifest, ' -manifest ') -out:$(OutDir)$(TargetName).manifest" />
   </Target>
 
-
+  <!-- Step 2: Take our combined SxS manifest, and use it to build an
+  Appxmanifest.xml. We'll use the Appxmanifest.prototype.xml in this project's
+  directory as a base, and the script will tak all our activatableClasses and
+  turn them into appxmanifest-compatible Extensions -->
   <Target Name="_LocalTestsBuildAppxManifest"
+          Inputs="$(OutDir)$(TargetName).manifest"
+          Outputs="$(OutDir)$(TargetName).AppxManifest.xml"
           DependsOnTargets="_LocalTestsGenerateCombinedManifests">
-
-    <!-- Use a powershell script to take the manifest and turn it into a proper
-      appxmanifest for us. -->
 
     <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 $(OutDir)$(TargetName).manifest $(TargetName).AppxManifest.prototype.xml $(OutDir)$(TargetName).AppxManifest.xml" />
 
   </Target>
 
-
-
-
+  <!-- Manually copy all our dependent DLLs into our OutDir. For SxS activation
+  to work, they all need to be in the same directory as our test dll. -->
   <ItemDefinitionGroup>
     <PostBuildEvent>
       <Command>
         echo OutDir=$(OutDir)
-        @rem (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
-        @rem (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\LocalTests_TerminalApp\TerminalApp.LocalTests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.LocalTests.AppxManifest.xml*&quot; )
 
         (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll &quot;$(OutDir)\TerminalConnection.dll*&quot; )
         (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll &quot;$(OutDir)\TerminalSettings.dll*&quot; )

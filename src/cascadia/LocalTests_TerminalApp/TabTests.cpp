@@ -11,12 +11,10 @@ using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-namespace TerminalAppUnitTests
+namespace TerminalAppLocalTests
 {
     // Unfortunately, these tests _WILL NOT_ work in our CI, until we have a lab
-    // machine available that can run Windows version 18362. Until then, these
-    // tests will be commented out. GH#1012 should move our CI to that version.
-    // When that happens, these tests can be re-added.
+    // machine available that can run Windows version 18362.
 
     class TabTests
     {
