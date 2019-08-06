@@ -88,7 +88,7 @@ public:
     int GetScrollOffset() override;
 #pragma endregion
 
-#pragma region IBaseData (base to IRenderData and IUiaData)
+#pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
