@@ -49,6 +49,7 @@
 #include <wil/Result.h>
 #include <wil/resource.h>
 #include <wil/wistd_memory.h>
+#include <wil/stl.h>
 #include <wil/com.h>
 #include <wil/filesystem.h>
 

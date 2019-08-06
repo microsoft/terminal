@@ -66,7 +66,11 @@ public:
     bool ReverseText(bool reversed) override;
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
+    bool DeleteCharacter(const unsigned int uiCount) override;
+    bool InsertCharacter(const unsigned int uiCount) override;
     bool EraseCharacters(const unsigned int numChars) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool SetWindowTitle(std::wstring_view title) override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
@@ -76,7 +80,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const DWORD modifiers) override;
+    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;

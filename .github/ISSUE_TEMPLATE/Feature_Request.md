@@ -20,7 +20,7 @@ I ACKNOWLEDGE THE FOLLOWING BEFORE PROCEEDING:
 All good? Then proceed!
 -->
 
-# Summary of the new feature/enhancement
+# Description of the new feature/enhancement
 
 <!-- 
 A clear and concise description of what the problem is that the new feature would solve.

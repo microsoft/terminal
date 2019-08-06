@@ -102,11 +102,19 @@ using namespace Microsoft::Console::Render;
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
-    *pForcePaint = true;
+    // If we're in the middle of a resize request, don't try to immediately start a frame.
+    if (_inResizeRequest)
+    {
+        *pForcePaint = false;
+    }
+    else
+    {
+        *pForcePaint = true;
 
-    // Keep track of the fact that we circled, we'll need to do some work on
-    //      end paint to specifically handle this.
-    _circled = true;
+        // Keep track of the fact that we circled, we'll need to do some work on
+        //      end paint to specifically handle this.
+        _circled = true;
+    }
 
     return S_OK;
 }

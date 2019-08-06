@@ -75,7 +75,7 @@ The profile GUID is used to reference the default profile in the global settings
 
 The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch)
 
-##  color Schemes
+##  Color Schemes
 
 Each scheme defines the color values to be used for various terminal escape sequences.
 Each schema is identified by the name field. Examples include
@@ -110,7 +110,7 @@ The schema name can then be referenced in one or more profiles.
 ```json
     "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
     "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "Fill",
+    "backgroundImageStretchMode":  "fill",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.

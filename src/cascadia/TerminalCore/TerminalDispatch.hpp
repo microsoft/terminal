@@ -20,6 +20,8 @@ public:
                                 const unsigned int uiColumn) override; // CUP
 
     bool CursorForward(const unsigned int uiDistance) override;
+    bool CursorBackward(const unsigned int uiDistance) override;
+    bool CursorUp(const unsigned int uiDistance) override;
 
     bool EraseCharacters(const unsigned int uiNumChars) override;
     bool SetWindowTitle(std::wstring_view title) override;
@@ -29,6 +31,10 @@ public:
 
     bool SetDefaultForeground(const DWORD dwColor) override;
     bool SetDefaultBackground(const DWORD dwColor) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override; // ED
+    bool DeleteCharacter(const unsigned int uiCount) override;
+    bool InsertCharacter(const unsigned int uiCount) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
 
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;

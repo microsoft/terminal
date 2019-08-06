@@ -1,4 +1,6 @@
-﻿//
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+//
 // MinMaxCloseControl.xaml.cpp
 // Implementation of the MinMaxCloseControl class
 //
@@ -8,68 +10,46 @@
 #include "MinMaxCloseControl.h"
 
 #include "MinMaxCloseControl.g.cpp"
+using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
     MinMaxCloseControl::MinMaxCloseControl()
     {
-        const winrt::Windows::Foundation::Uri resourceLocator{ L"ms-appx:///MinMaxCloseControl.xaml" };
-        winrt::Windows::UI::Xaml::Application::LoadComponent(*this, resourceLocator, winrt::Windows::UI::Xaml::Controls::Primitives::ComponentResourceLocation::Nested);
+        InitializeComponent();
     }
 
-    uint64_t MinMaxCloseControl::ParentWindowHandle() const
+    void MinMaxCloseControl::Maximize()
     {
-        return reinterpret_cast<uint64_t>(_window);
+        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateMaximized", false);
     }
 
-    void MinMaxCloseControl::ParentWindowHandle(uint64_t handle)
+    void MinMaxCloseControl::RestoreDown()
     {
-        _window = reinterpret_cast<HWND>(handle);
+        VisualStateManager::GoToState(MaximizeButton(), L"WindowStateNormal", false);
     }
 
-    void MinMaxCloseControl::_OnMaximize(byte flag)
+    // These event handlers simply forward each buttons click events up to the
+    // events we've exposed.
+    void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                            RoutedEventArgs const& e)
     {
-        if (_window)
-        {
-            POINT point1 = {};
-            ::GetCursorPos(&point1);
-            const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
-            WINDOWPLACEMENT placement = { sizeof(placement) };
-            ::GetWindowPlacement(_window, &placement);
-            if (placement.showCmd == SW_SHOWNORMAL)
-            {
-                winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateMaximized", false);
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_MAXIMIZE | flag, lParam);
-            }
-            else if (placement.showCmd == SW_SHOWMAXIMIZED)
-            {
-                winrt::Windows::UI::Xaml::VisualStateManager::GoToState(this->Maximize(), L"WindowStateNormal", false);
-                ::PostMessage(_window, WM_SYSCOMMAND, SC_RESTORE | flag, lParam);
-            }
-        }
+        _minimizeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::Maximize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
+    void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                            RoutedEventArgs const& e)
     {
-        _OnMaximize(HTMAXBUTTON);
+        _maximizeClickHandlers(*this, e);
+    }
+    void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
+                                         RoutedEventArgs const& e)
+    {
+        _closeClickHandlers(*this, e);
     }
 
-    void MinMaxCloseControl::DragBar_DoubleTapped(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::Input::DoubleTappedRoutedEventArgs const& e)
-    {
-        _OnMaximize(HTCAPTION);
-    }
-
-    void MinMaxCloseControl::Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
-    {
-        if (_window)
-        {
-            ::PostMessage(_window, WM_SYSCOMMAND, SC_MINIMIZE | HTMINBUTTON, 0);
-        }
-    }
-
-    void MinMaxCloseControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
-    {
-        ::PostQuitMessage(0);
-    }
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
 
 }

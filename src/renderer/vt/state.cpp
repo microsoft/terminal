@@ -54,6 +54,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
+    _inResizeRequest{ false },
     _trace{}
 {
 #ifndef UNIT_TESTING
@@ -416,4 +417,32 @@ HRESULT VtEngine::RequestCursor() noexcept
     RETURN_IF_FAILED(_RequestCursor());
     RETURN_IF_FAILED(_Flush());
     return S_OK;
+}
+
+// Method Description:
+// - Tell the vt renderer to begin a resize operation. During a resize
+//   operation, the vt renderer should _not_ request to be repainted during a
+//   text buffer circling event. Any callers of this method should make sure to
+//   call EndResize to make sure the renderer returns to normal behavior.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::BeginResizeRequest()
+{
+    _inResizeRequest = true;
+}
+
+// Method Description:
+// - Tell the vt renderer to end a resize operation.
+//   See BeginResize for more details.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::EndResizeRequest()
+{
+    _inResizeRequest = false;
 }

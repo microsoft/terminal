@@ -197,11 +197,11 @@ void Terminal::Write(std::wstring_view stringView)
 //   real character out of the event.
 // Arguments:
 // - vkey: The vkey of the key pressed.
-// - modifiers: The current ControlKeyState flags.
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
+bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
@@ -210,8 +210,6 @@ bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
         _NotifyScrollEvent();
     }
 
-    KeyEvent keyEv{ true, 0, vkey, 0, UNICODE_NULL, modifiers };
-
     // AltGr key combinations don't always contain any meaningful,
     // pretranslated unicode character during WM_KEYDOWN.
     // E.g. on a German keyboard AltGr+Q should result in a "@" character,
@@ -219,14 +217,10 @@ bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
     // By returning false though, we can abort handling this WM_KEYDOWN
     // event and let the WM_CHAR handler kick in, which will be
     // provided with an appropriate unicode character.
-    if (keyEv.IsAltGrPressed())
+    if (states.IsAltGrPressed())
     {
         return false;
     }
-
-    const auto ctrlPressed = keyEv.IsCtrlPressed();
-    const auto altPressed = keyEv.IsAltPressed();
-    const auto shiftPressed = keyEv.IsShiftPressed();
 
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
@@ -234,35 +228,47 @@ bool Terminal::SendKeyEvent(const WORD vkey, const DWORD modifiers)
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximimize, size, move, close
     wchar_t ch = UNICODE_NULL;
-    if (altPressed && vkey != VK_SPACE)
+    if (states.IsAltPressed() && vkey != VK_SPACE)
     {
         ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
         // MapVirtualKey will give us the capitalized version of the char.
         // However, if shift isn't pressed, we want to send the lowercase version.
         // (See GH#637)
-        if (!shiftPressed)
+        if (!states.IsShiftPressed())
         {
             ch = towlower(ch);
         }
     }
 
-    // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
-    // correctly, the keyEvents's char needs to be set to Backspace.
-    // 0x48 is the VKEY for 'H', which isn't named
-    if (ctrlPressed && vkey == 0x48)
+    if (states.IsCtrlPressed())
     {
-        ch = UNICODE_BACKSPACE;
-    }
-    // Manually handle Ctrl+Space here. The terminalInput translator requires
-    // the char to be set to Space for space handling to work correctly.
-    if (ctrlPressed && vkey == VK_SPACE)
-    {
-        ch = UNICODE_SPACE;
+        switch (vkey)
+        {
+        case 0x48:
+            // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
+            // correctly, the keyEvents's char needs to be set to Backspace.
+            // 0x48 is the VKEY for 'H', which isn't named
+            ch = UNICODE_BACKSPACE;
+            break;
+        case VK_SPACE:
+            // Manually handle Ctrl+Space here. The terminalInput translator requires
+            // the char to be set to Space for space handling to work correctly.
+            ch = UNICODE_SPACE;
+            break;
+        }
     }
 
-    keyEv.SetCharData(ch);
+    // Manually handle Escape here. If we let it fall through, it'll come
+    // back up through the character handler. It's registered as a translation
+    // in TerminalInput, so we'll let TerminalInput control it.
+    if (vkey == VK_ESCAPE)
+    {
+        ch = UNICODE_ESC;
+    }
 
     const bool manuallyHandled = ch != UNICODE_NULL;
+
+    KeyEvent keyEv{ true, 0, vkey, 0, ch, states.Value() };
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;
@@ -356,6 +362,11 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             {
                 proposedCursorPosition.X--;
             }
+        }
+        else if (wch == UNICODE_BEL)
+        {
+            // TODO: GitHub #1883
+            // For now its empty just so we don't try to write the BEL character
         }
         else
         {
