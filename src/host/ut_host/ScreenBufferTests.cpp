@@ -168,6 +168,8 @@ class ScreenBufferTests
     TEST_METHOD(ReverseLineFeedInMargins);
 
     TEST_METHOD(SetOriginMode);
+
+    TEST_METHOD(HardResetBuffer);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -3515,4 +3517,64 @@ void ScreenBufferTests::SetOriginMode()
 
     // Reset DECOM so we don't affect future tests
     stateMachine.ProcessString(L"\x1B[?6l");
+}
+
+void ScreenBufferTests::HardResetBuffer()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& viewport = si.GetViewport();
+    const auto& cursor = si.GetTextBuffer().GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    auto isBufferClear = [&]() {
+        auto offset = 0;
+        for (auto iter = si.GetCellDataAt({}); iter; ++iter, ++offset)
+        {
+            if (iter->Chars() != L" " || iter->TextAttr() != TextAttribute{})
+            {
+                Log::Comment(NoThrowString().Format(
+                    L"Buffer not clear at offset %d", offset));
+                return false;
+            }
+        }
+        return true;
+    };
+
+    const auto resetToInitialState = L"\033c";
+
+    Log::Comment(L"Start with a clear buffer, viewport and cursor at 0,0");
+    si.SetAttributes(TextAttribute());
+    si.ClearTextData();
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, { 0, 0 }, true));
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ 0, 0 }, true));
+    VERIFY_IS_TRUE(isBufferClear());
+
+    Log::Comment(L"Write a single line of text to the buffer");
+    stateMachine.ProcessString(L"Hello World!\n");
+    VERIFY_IS_FALSE(isBufferClear());
+    VERIFY_ARE_EQUAL(COORD({ 0, 1 }), cursor.GetPosition());
+
+    Log::Comment(L"After a reset, buffer should be clear, with cursor at 0,0");
+    stateMachine.ProcessString(resetToInitialState);
+    VERIFY_IS_TRUE(isBufferClear());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+
+    Log::Comment(L"Set the background color to red");
+    stateMachine.ProcessString(L"\x1b[41m");
+    Log::Comment(L"Write multiple pages of text to the buffer");
+    for (auto i = 0; i < viewport.Height() * 2; i++)
+    {
+        stateMachine.ProcessString(L"Hello World!\n");
+    }
+    VERIFY_IS_FALSE(isBufferClear());
+    VERIFY_IS_GREATER_THAN(viewport.Top(), viewport.Height());
+    VERIFY_IS_GREATER_THAN(cursor.GetPosition().Y, viewport.Height());
+
+    Log::Comment(L"After a reset, buffer should be clear, with viewport and cursor at 0,0");
+    stateMachine.ProcessString(resetToInitialState);
+    VERIFY_IS_TRUE(isBufferClear());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), viewport.Origin());
+    VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
 }
