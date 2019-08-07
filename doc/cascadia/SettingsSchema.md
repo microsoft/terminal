@@ -83,6 +83,8 @@ Properties listed below are specific to each custom key binding.
 
 Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
 
+- copy
+- copyTextWithoutNewlines
 - paste
 - newTab
 - duplicateTab
@@ -128,3 +130,4 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusRight
 - moveFocusUp
 - moveFocusDown
+
