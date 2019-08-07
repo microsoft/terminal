@@ -1601,17 +1601,17 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
+    // Sets the SGR state to normal.
+    bool fSuccess = SoftReset();
+
     // Clears the screen - Needs to be done in two operations.
-    bool fSuccess = _EraseScrollback();
     if (fSuccess)
     {
         fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
     }
-
-    // Sets the SGR state to normal.
     if (fSuccess)
     {
-        fSuccess = SoftReset();
+        fSuccess = _EraseScrollback();
     }
 
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
