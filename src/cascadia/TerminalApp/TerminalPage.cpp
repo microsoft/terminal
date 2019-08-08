@@ -62,6 +62,20 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
+
+        /*if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (this->Root().Children().IndexOf(_tabRow, index))
+            {
+                this->Root().Children().RemoveAt(index);
+            }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
+        }*/
     }
 
     // Method Description:
@@ -169,14 +183,56 @@ namespace winrt::TerminalApp::implementation
         _CreateNewTabFromSettings(profileGuid, settings);
 
         const int tabCount = static_cast<int>(_tabs.size());
-
         TraceLoggingWrite(
             g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+
+        GUID connectionType{ 0 };
+
+        if (profile->HasConnectionType())
+        {
+            connectionType = profile->GetConnectionType();
+        }
+
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+        }
+
+        else
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "ConnectionCreated",
+            TraceLoggingDescription("Event emitted upon the creation of a connection"),
+            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return connection;
     }
 
     // Method Description:
@@ -188,12 +244,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto connection = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                settings.StartingDirectory(),
-                                                                30,
-                                                                80,
-                                                                winrt::guid());
+        // Create a connection based on the values in our settings object.
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -396,21 +448,25 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-        const auto tabTitle = matchingProfile->GetTabTitle();
-
-        // Checks if tab title has been set in the profile settings and
-        // updates accordingly.
-
-        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
         {
-            _titleChangeHandlers(newActualTitle);
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+            const auto tabTitle = matchingProfile->GetTabTitle();
+
+            // Checks if tab title has been set in the profile settings and
+            // updates accordingly.
+
+            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(newActualTitle);
+            }
         }
     }
 
@@ -469,7 +525,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile.HasIcon())
         {
-            auto path = profile.GetIconPath();
+            std::wstring path{ profile.GetIconPath() };
+            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
             winrt::hstring iconPath{ path };
             winrt::Windows::Foundation::Uri iconUri{ iconPath };
             Controls::BitmapIconSource iconSource;
@@ -645,12 +702,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        // Create a Conhost connection based on the values in our settings object.
-        auto controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(),
-                                                                       controlSettings.StartingDirectory(),
-                                                                       30,
-                                                                       80,
-                                                                       winrt::guid());
+        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -699,7 +751,7 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the desired tab.
     void TerminalPage::_SelectTab(const int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
         }
@@ -767,6 +819,7 @@ namespace winrt::TerminalApp::implementation
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
     void TerminalPage::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
+#ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
         if (keyChord.Vkey() != VK_OEM_COMMA)
         {
@@ -786,6 +839,7 @@ namespace winrt::TerminalApp::implementation
             menuItem.KeyboardAccelerators().Append(menuShortcut);
         }
         else // we've got a comma, so need to just use the alternate method
+#endif
         {
             // extract the modifier and key to a nice format
             auto overrideString = _FormatOverrideShortcutText(keyChord.Modifiers());
@@ -830,6 +884,11 @@ namespace winrt::TerminalApp::implementation
         // xaml tree somehow.
         dialog.XamlRoot(this->XamlRoot());
 
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
@@ -872,7 +931,6 @@ namespace winrt::TerminalApp::implementation
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
-        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
@@ -914,10 +972,6 @@ namespace winrt::TerminalApp::implementation
         about.Text(aboutText);
 
         const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        gettingStartedLink.Foreground(blueBrush);
-        documentationLink.Foreground(blueBrush);
-        releaseNotesLink.Foreground(blueBrush);
 
         Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -1043,9 +1097,10 @@ namespace winrt::TerminalApp::implementation
 
         if (tabIndexFromControl == focusedTabIndex)
         {
-            if (focusedTabIndex >= _tabs.size())
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
             {
-                focusedTabIndex = static_cast<int>(_tabs.size()) - 1;
+                focusedTabIndex = tabCount - 1;
             }
 
             if (focusedTabIndex < 0)

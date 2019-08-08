@@ -56,6 +56,7 @@ namespace winrt::TerminalApp::implementation
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
+        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
         void _CreateNewTabFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings);
         void _OpenNewTab(std::optional<int> profileIndex);
         void _CreateNewTabFlyout();

@@ -166,6 +166,16 @@ namespace winrt::TerminalApp::implementation
             // Inform the host that our titlebar content has changed.
             _setTitleBarContentHandlers(*this, tabRow);
         }
+
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "AppCreated",
+            TraceLoggingDescription("Event emitted when the application is started"),
+            TraceLoggingBool(_settings->GlobalSettings().GetShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     UIElement App::GetRoot() noexcept
