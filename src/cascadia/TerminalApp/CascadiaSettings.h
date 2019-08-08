@@ -47,7 +47,7 @@ public:
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
 
-    static std::wstring GetSettingsPath();
+    static std::wstring GetSettingsPath(const bool useRoamingPath = false);
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
