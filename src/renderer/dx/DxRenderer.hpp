@@ -178,10 +178,22 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(const std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT weight,
-                                                                               DWRITE_FONT_STRETCH stretch,
-                                                                               DWRITE_FONT_STYLE style) const;
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT& weight,
+                                                                                              DWRITE_FONT_STRETCH& stretch,
+                                                                                              DWRITE_FONT_STYLE& style,
+                                                                                              std::wstring& localeName) const;
+
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
+                                                                               DWRITE_FONT_WEIGHT& weight,
+                                                                               DWRITE_FONT_STRETCH& stretch,
+                                                                               DWRITE_FONT_STYLE& style,
+                                                                               std::wstring& localeName) const;
+
+        [[nodiscard]] std::wstring _GetLocaleName() const;
+
+        [[nodiscard]] std::wstring _GetFontFamilyName(IDWriteFontFamily* const fontFamily,
+                                                      std::wstring& localeName) const;
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                                FontInfo& actual,

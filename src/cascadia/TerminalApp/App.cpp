@@ -327,7 +327,8 @@ namespace winrt::TerminalApp::implementation
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
-        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size()); // the number of profiles should not change in the loop for this to work
+        for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
@@ -818,7 +819,7 @@ namespace winrt::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex >= profiles.size())
+            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
             {
                 return;
             }
@@ -905,7 +906,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -1106,7 +1107,7 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the desired tab.
     void App::_SelectTab(const int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
         }
@@ -1253,12 +1254,12 @@ namespace winrt::TerminalApp::implementation
 
         if (tabIndexFromControl == focusedTabIndex)
         {
-            if (focusedTabIndex >= _tabs.size())
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
             {
-                focusedTabIndex = static_cast<int>(_tabs.size()) - 1;
+                focusedTabIndex = tabCount - 1;
             }
-
-            if (focusedTabIndex < 0)
+            else if (focusedTabIndex < 0)
             {
                 focusedTabIndex = 0;
             }
@@ -1499,20 +1500,18 @@ namespace winrt::TerminalApp::implementation
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };
-        // The Azure connection has a boost dependency, and boost does not support ARM64
-        // so we make sure that we do not try to compile the Azure connection code if we are in ARM64 (we would get build errors otherwise)
+
         GUID connectionType{ 0 };
         if (profile->HasConnectionType())
         {
             connectionType = profile->GetConnectionType();
         }
-#ifndef _M_ARM64
-        if (connectionType == AzureConnectionType)
+
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
         }
         else
-#endif
         {
             connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
         }

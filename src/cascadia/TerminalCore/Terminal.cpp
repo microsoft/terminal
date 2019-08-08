@@ -210,18 +210,6 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
         _NotifyScrollEvent();
     }
 
-    // AltGr key combinations don't always contain any meaningful,
-    // pretranslated unicode character during WM_KEYDOWN.
-    // E.g. on a German keyboard AltGr+Q should result in a "@" character,
-    // but actually results in "Q" with Alt and Ctrl modifier states.
-    // By returning false though, we can abort handling this WM_KEYDOWN
-    // event and let the WM_CHAR handler kick in, which will be
-    // provided with an appropriate unicode character.
-    if (states.IsAltGrPressed())
-    {
-        return false;
-    }
-
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.

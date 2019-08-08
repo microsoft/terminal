@@ -37,6 +37,11 @@ namespace Microsoft::Console::Types
     {
     public:
         ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                              _In_ WindowUiaProviderBase* const pUiaParent,
+                              _In_ std::function<RECT()> GetBoundingRect);
+
+        // TODO GitHub 2120: pUiaParent should not be allowed to be null
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
                               _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
@@ -108,6 +113,9 @@ namespace Microsoft::Console::Types
         const Viewport _getViewport() const;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
+
+        // these functions are reserved for Windows Terminal
+        std::function<RECT(void)> _getBoundingRect;
     };
 
     namespace ScreenInfoUiaProviderTracing

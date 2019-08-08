@@ -314,16 +314,16 @@ void Window::_UpdateSystemMetrics() const
 
             if (useDx)
             {
-                status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
                 if (NT_SUCCESS(status))
                 {
-                    status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
             }
             else
             {
-                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
 
             if (NT_SUCCESS(status))

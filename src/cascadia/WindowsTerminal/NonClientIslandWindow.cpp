@@ -623,6 +623,12 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             break;
         }
     }
+    case WM_DPICHANGED:
+    {
+        auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
+        OnSize(RECT_WIDTH(lprcNewScale), RECT_HEIGHT(lprcNewScale));
+        break;
+    }
     }
 
     return IslandWindow::MessageHandler(message, wParam, lParam);

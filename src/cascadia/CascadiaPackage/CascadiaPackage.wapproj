@@ -5,7 +5,7 @@
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
-    <VersionMinor>2</VersionMinor>
+    <VersionMinor>3</VersionMinor>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>

@@ -36,6 +36,9 @@ namespace Microsoft::Console::VirtualTerminal
         void CloseInput() override;
         void CloseOutput() override;
 
+        void BeginResize();
+        void EndResize();
+
     private:
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
