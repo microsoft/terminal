@@ -17,6 +17,7 @@ namespace TerminalApp
         CopyTextWithoutNewlines,
         PasteText,
         NewTab,
+		Dropdown,
         DuplicateTab,
         NewTabProfile0,
         NewTabProfile1,
@@ -64,6 +65,7 @@ namespace TerminalApp
     delegate void CopyTextEventArgs(Boolean trimWhitespace);
     delegate void PasteTextEventArgs();
     delegate void NewTabEventArgs();
+    delegate void DropdownEventArgs();
     delegate void DuplicateTabEventArgs();
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
     delegate void NewWindowEventArgs();
@@ -95,6 +97,7 @@ namespace TerminalApp
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
+        event DropdownEventArgs Dropdown;
         event DuplicateTabEventArgs DuplicateTab;
         event NewTabWithProfileEventArgs NewTabWithProfile;
         event NewWindowEventArgs NewWindow;

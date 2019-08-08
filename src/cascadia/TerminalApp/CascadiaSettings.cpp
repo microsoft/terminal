@@ -296,9 +296,14 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('T') });
-    keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
+
+    keyBindings.SetKeyBinding(ShortcutAction::Dropdown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
-                                        static_cast<int>('D') });
+                                        static_cast<int>(' ') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
+                                  KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                            static_cast<int>('D') });
 
     keyBindings.SetKeyBinding(ShortcutAction::ClosePane,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,

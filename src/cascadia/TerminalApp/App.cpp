@@ -405,6 +405,13 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout(newTabFlyout);
     }
 
+    void App::_OpenDropdown()
+    {
+        Controls::Primitives::FlyoutShowOptions options{};
+        options.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        _newTabButton.Flyout().ShowAt(_newTabButton, options);
+    }
+
     // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
@@ -475,6 +482,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.Dropdown([this]() { _OpenDropdown(); });
         bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.ClosePane([this]() { _CloseFocusedPane(); });

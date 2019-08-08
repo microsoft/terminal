@@ -58,6 +58,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::NewTab:
             _NewTabHandlers();
             return true;
+        case ShortcutAction::Dropdown:
+            _DropdownHandlers();
+            return true;
         case ShortcutAction::DuplicateTab:
             _DuplicateTabHandlers();
             return true;
@@ -220,6 +223,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, Dropdown,          _DropdownHandlers,          TerminalApp::DropdownEventArgs);
     DEFINE_EVENT(AppKeyBindings, DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
     DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
