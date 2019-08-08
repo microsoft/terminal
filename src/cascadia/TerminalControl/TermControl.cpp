@@ -1277,7 +1277,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
         }
     }
-}
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
@@ -1448,7 +1447,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
-            
+
             if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
             {
                 localAutoScrollTimer.Stop();
