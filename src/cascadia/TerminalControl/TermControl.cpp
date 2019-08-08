@@ -1318,25 +1318,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             return;
         }
 
-    // Tell the dx engine that our window is now the new size.
-    THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
+        // Tell the dx engine that our window is now the new size.
+        THROW_IF_FAILED(_renderEngine->SetWindowSize(size));
 
-    // Invalidate everything
-    _renderer->TriggerRedrawAll();
+        // Invalidate everything
+        _renderer->TriggerRedrawAll();
 
-    // Convert our new dimensions to characters
-    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-    const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
-    // If this function succeeds with S_FALSE, then the terminal didn't
-    //      actually change size. No need to notify the connection of this
-    //      no-op.
-    // TODO: MSFT:20642295 Resizing the buffer will corrupt it
-    // I believe we'll need support for CSI 2J, and additionally I think
-    //      we're resetting the viewport to the top
-    const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
-    if (SUCCEEDED(hr) && hr != S_FALSE)
+        // If this function succeeds with S_FALSE, then the terminal didn't
+        //      actually change size. No need to notify the connection of this
+        //      no-op.
+        // TODO: MSFT:20642295 Resizing the buffer will corrupt it
+        // I believe we'll need support for CSI 2J, and additionally I think
+        //      we're resetting the viewport to the top
+        const HRESULT hr = _terminal->UserResize({ vp.Width(), vp.Height() });
+        if (SUCCEEDED(hr) && hr != S_FALSE)
         {
             _connection.Resize(vp.Height(), vp.Width());
         }
