@@ -65,7 +65,6 @@ private:
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadSettings();
 
-    static std::wstring _GetRoamingSettingsPath();
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
