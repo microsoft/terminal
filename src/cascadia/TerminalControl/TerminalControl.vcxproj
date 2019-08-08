@@ -17,12 +17,14 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="ScreenInfoUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="UiaTextRange.hpp" />
     <ClInclude Include="XamlUiaTextRange.h" />
   </ItemGroup>
   <ItemGroup>
@@ -30,6 +32,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="ScreenInfoUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>
@@ -37,6 +40,7 @@
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="UiaTextRange.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>

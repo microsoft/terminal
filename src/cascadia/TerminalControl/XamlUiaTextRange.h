@@ -22,7 +22,7 @@ Author(s):
 
 #include "TermControlAutomationPeer.h"
 #include <UIAutomationCore.h>
-#include "../types/UiaTextRange.hpp"
+#include "UiaTextRange.hpp"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {

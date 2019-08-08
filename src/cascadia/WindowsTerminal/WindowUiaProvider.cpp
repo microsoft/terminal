@@ -3,7 +3,7 @@
 #include "pch.h"
 
 #include "WindowUiaProvider.hpp"
-#include "../types/ScreenInfoUiaProvider.h"
+#include "../TerminalControl/ScreenInfoUiaProvider.hpp"
 
 #include "../host/renderData.hpp"
 
@@ -19,7 +19,7 @@ WindowUiaProvider::~WindowUiaProvider()
 WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
-    Microsoft::Console::Types::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
+    Microsoft::Terminal::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
         pWindowProvider = new WindowUiaProvider(baseWindow);
