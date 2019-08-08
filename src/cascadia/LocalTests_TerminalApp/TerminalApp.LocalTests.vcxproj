@@ -103,6 +103,7 @@
       $(BeforeLinkTargets);
       _LocalTestsGenerateCombinedManifests;
       _LocalTestsBuildAppxManifest;
+      _LocalTestsCopyDependencies;
     </BeforeLinkTargets>
   </PropertyGroup>
 
@@ -126,25 +127,50 @@
           Outputs="$(OutDir)$(TargetName).AppxManifest.xml"
           DependsOnTargets="_LocalTestsGenerateCombinedManifests">
 
-    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 $(OutDir)$(TargetName).manifest $(TargetName).AppxManifest.prototype.xml $(OutDir)$(TargetName).AppxManifest.xml" />
+    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 -SxSManifest $(OutDir)$(TargetName).manifest -AppxManifestPrototype $(TargetName).AppxManifest.prototype.xml -OutPath $(OutDir)$(TargetName).AppxManifest.xml" />
 
   </Target>
 
-  <!-- Manually copy all our dependent DLLs into our OutDir. For SxS activation
-  to work, they all need to be in the same directory as our test dll. -->
-  <ItemDefinitionGroup>
-    <PostBuildEvent>
-      <Command>
-        echo OutDir=$(OutDir)
+  <!-- Step 3: Manually copy all our dependent DLLs into our OutDir. For SxS
+  activation to work, they all need to be in the same directory as our test dll.
+  This is using code that's heavliy cribbed from WindowsTerminal.vcxproj, which
+  is already cribbed from the GetPackagingOutputs in
+  Microsoft.*.AppxPackage.targets. We're filtering this list down to the dlls,
+  pris and xbfs, because this list _can_ contain directories, which will make
+  the Copy task explode. -->
 
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalControl\TerminalControl.dll &quot;$(OutDir)\TerminalControl.dll*&quot; )
+  <PropertyGroup>
+    <_ContinueOnError Condition="'$(BuildingProject)' == 'true'">true</_ContinueOnError>
+    <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
+  </PropertyGroup>
 
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.dll &quot;$(OutDir)\Microsoft.UI.Xaml.dll*&quot; )
-        (xcopy /Y $(_MUXBinRoot)Microsoft.UI.Xaml.pri &quot;$(OutDir)\Microsoft.UI.Xaml.pri*&quot; )
-      </Command>
-    </PostBuildEvent>
-  </ItemDefinitionGroup>
+  <!-- First gather the files... -->
+  <Target Name="MyGetPackagingOutputs" Returns="@(MyPackagingOutputs)">
+    <MSBuild
+      Projects="@(ProjectReferenceWithConfiguration)"
+      Targets="GetPackagingOutputs"
+      BuildInParallel="$(BuildInParallel)"
+      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
+      Condition="'@(ProjectReferenceWithConfiguration)' != ''
+                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
+                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
+      ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
+    </MSBuild>
+
+    <ItemGroup>
+      <MyPackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" Condition="'%(Extension)'=='.dll' Or '%(Extension)'=='.pri' Or '%(Extension)'=='.xbf'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Then copy the files to our outdir -->
+  <Target Name="_LocalTestsCopyDependencies"
+          DependsOnTargets="MyGetPackagingOutputs">
+
+    <Copy SourceFiles="@(MyPackagingOutputs)"
+          SkipUnchangedFiles="true"
+          DestinationFolder="$(OutDir)"
+    />
+  </Target>
 
 </Project>
