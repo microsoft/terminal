@@ -62,20 +62,6 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
-
-        /*if (_settings->GlobalSettings().GetShowTabsInTitlebar())
-        {
-            // Remove the TabView from the page. We'll hang on to it, we need to
-            // put it in the titlebar.
-            uint32_t index = 0;
-            if (this->Root().Children().IndexOf(_tabRow, index))
-            {
-                this->Root().Children().RemoveAt(index);
-            }
-
-            // Inform the host that our titlebar content has changed.
-            _setTitleBarContentHandlers(*this, _tabRow);
-        }*/
     }
 
     // Method Description:
