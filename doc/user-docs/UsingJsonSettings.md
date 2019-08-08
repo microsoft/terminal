@@ -167,3 +167,6 @@ You can even set multiple keybindings for a single action if you'd like. For exa
 
 will bind both <kbd>ctrl</kbd>+<kbd>shift</kbd>+<kbd>v</kbd> and
 <kbd>shift</kbd>+<kbd>Insert</kbd> to `paste`.
+
+Note: If you set your copy keybinding to `"ctrl+c"`, you won't be able to send an interrupt to the commandline application using Ctrl+C. This is a bug, and being tracked by [#2258](https://github.com/microsoft/terminal/issues/2285). 
+Additionally, if you set `paste` to `"ctrl+v"`, commandline applications won't be able to read a ctrl+v from the input. For these reasons, we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`
