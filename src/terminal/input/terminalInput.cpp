@@ -15,12 +15,14 @@
 #endif
 
 #include "..\..\inc\unicode.hpp"
+#include "..\..\types\inc\Utf16Parser.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 
 DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
 
-TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn)
+TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
+    _leadingSurrogate{}
 {
     _pfnWriteEvents = pfn;
 }
@@ -464,6 +466,44 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     }
 
     return fKeyHandled;
+}
+
+bool TerminalInput::HandleChar(const char16_t ch)
+{
+    if (ch == UNICODE_BACKSPACE || ch == UNICODE_DEL)
+    {
+        return false;
+    }
+    else if (Utf16Parser::IsLeadingSurrogate(ch))
+    {
+        if (_leadingSurrogate.has_value())
+        {
+            // we already were storing a leading surrogate but we got another one. Go ahead and send the
+            // saved surrogate piece and save the new one
+            wchar_t buffer[32];
+            swprintf_s(buffer, L"%I32u", _leadingSurrogate.value());
+            _SendInputSequence(buffer);
+        }
+        // save the leading portion of a surrogate pair so that they can be sent at the same time
+        _leadingSurrogate.emplace(ch);
+    }
+    else if (_leadingSurrogate.has_value())
+    {
+        std::wstring wstr;
+        wstr.reserve(2);
+        wstr.push_back(_leadingSurrogate.value());
+        wstr.push_back(ch);
+        _leadingSurrogate.reset();
+
+        _SendInputSequence(wstr.c_str());
+    }
+    else
+    {
+        wchar_t buffer[2] = { ch, 0 };
+        _SendInputSequence(buffer);
+    }
+
+    return true;
 }
 
 // Routine Description:
