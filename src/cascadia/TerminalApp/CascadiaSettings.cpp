@@ -240,19 +240,6 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
-    // The Azure connection has a boost dependency, and boost does not support ARM64
-    // so we don't create a default profile for the Azure cloud shell if we're in ARM64
-#ifndef _M_ARM64
-    auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
-    azureCloudShellProfile.SetCommandline(L"Azure");
-    azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-    azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
-    azureCloudShellProfile.SetAcrylicOpacity(0.85);
-    azureCloudShellProfile.SetUseAcrylic(true);
-    azureCloudShellProfile.SetCloseOnExit(false);
-    azureCloudShellProfile.SetConnectionType(AzureConnectionType);
-#endif
-
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
