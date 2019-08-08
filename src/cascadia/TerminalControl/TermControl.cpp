@@ -1448,6 +1448,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 localCursorTimer->Stop();
                 // cursorTimer timer, now stopped, is destroyed.
             }
+            
             if (auto localAutoScrollTimer{ std::exchange(_autoScrollTimer, nullptr) })
             {
                 localAutoScrollTimer.Stop();
