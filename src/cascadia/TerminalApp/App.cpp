@@ -313,7 +313,8 @@ namespace winrt::TerminalApp::implementation
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
-        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size()); // the number of profiles should not change in the loop for this to work
+        for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
@@ -794,7 +795,7 @@ namespace winrt::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex >= profiles.size())
+            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
             {
                 return;
             }
@@ -1082,7 +1083,7 @@ namespace winrt::TerminalApp::implementation
     // - Sets focus to the desired tab.
     void App::_SelectTab(const int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
         }
@@ -1224,12 +1225,12 @@ namespace winrt::TerminalApp::implementation
 
         if (tabIndexFromControl == focusedTabIndex)
         {
-            if (focusedTabIndex >= _tabs.size())
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
             {
-                focusedTabIndex = static_cast<int>(_tabs.size()) - 1;
+                focusedTabIndex = tabCount - 1;
             }
-
-            if (focusedTabIndex < 0)
+            else if (focusedTabIndex < 0)
             {
                 focusedTabIndex = 0;
             }

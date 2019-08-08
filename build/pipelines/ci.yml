@@ -13,6 +13,11 @@ pr:
   branches:
     include:
       - master
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
