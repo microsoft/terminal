@@ -26,6 +26,8 @@ This bug tracker is monitored by Windows Terminal development team and other tec
 **Important: When reporting BSODs or security issues, DO NOT attach memory dumps, logs, or traces to Github issues**.
 Instead, send dumps/traces to secure@microsoft.com, referencing this GitHub issue.
 
+If this is an application crash, please also provide a Feedback Hub submission link so we can find your diagnostic data on the backend. Use the category "Apps > Windows Terminal (Preview)" and choose "Share My Feedback" after submission to get the link.
+
 Please use this form and describe your issue, concisely but precisely, with as much detail as possible.
 
 -->

@@ -79,35 +79,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
-        THROW_IF_FAILED(
-            CreateConPty(cmdline,
-                         startingDirectory,
-                         static_cast<short>(_initialCols),
-                         static_cast<short>(_initialRows),
-                         &_inPipe,
-                         &_outPipe,
-                         &_signalPipe,
-                         &_piConhost,
-                         CREATE_SUSPENDED,
-                         extraEnvVars));
-
-        _hJob.reset(CreateJobObjectW(nullptr, nullptr));
-        THROW_LAST_ERROR_IF_NULL(_hJob);
-
-        // We want the conhost and all associated descendant processes
-        // to be terminated when the tab is closed. GUI applications
-        // spawned from the shell tend to end up in their own jobs.
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedInformation{};
-        jobExtendedInformation.BasicLimitInformation.LimitFlags =
-            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
-        THROW_IF_WIN32_BOOL_FALSE(SetInformationJobObject(_hJob.get(),
-                                                          JobObjectExtendedLimitInformation,
-                                                          &jobExtendedInformation,
-                                                          sizeof(jobExtendedInformation)));
-
-        THROW_IF_WIN32_BOOL_FALSE(AssignProcessToJobObject(_hJob.get(), _piConhost.hProcess));
-
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
         _hOutputThread.reset(CreateThread(nullptr,
@@ -119,8 +90,17 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
-        // Wind up the conhost! We only do this after we've got everything in place.
-        THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
+        THROW_IF_FAILED(
+            CreateConPty(cmdline,
+                         startingDirectory,
+                         static_cast<short>(_initialCols),
+                         static_cast<short>(_initialRows),
+                         &_inPipe,
+                         &_outPipe,
+                         &_signalPipe,
+                         &_piConhost,
+                         0,
+                         extraEnvVars));
 
         _connected = true;
     }
