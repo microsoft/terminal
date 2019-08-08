@@ -265,12 +265,12 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
     wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
                                          GENERIC_READ,
                                          FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                         NULL,
+                                         nullptr,
                                          OPEN_EXISTING,
                                          FILE_ATTRIBUTE_NORMAL,
-                                         NULL) };
+                                         nullptr) };
 
-    if (hFile.get() == INVALID_HANDLE_VALUE)
+    if (!hFile)
     {
         // GH#1770 - Now that we're _not_ roaming our settings, do a quick check
         // to see if there's a file in the Roaming App data folder. If there is
@@ -283,38 +283,36 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
         wil::unique_hfile hRoamingFile{ CreateFileW(pathToRoamingSettingsFile.c_str(),
                                                     GENERIC_READ,
                                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                    NULL,
+                                                    nullptr,
                                                     OPEN_EXISTING,
                                                     FILE_ATTRIBUTE_NORMAL,
-                                                    NULL) };
+                                                    nullptr) };
 
-        if (hRoamingFile.get() != INVALID_HANDLE_VALUE)
+        if (hRoamingFile)
         {
             // Close the file handle, move it, and re-open the file in its new location.
-            hRoamingFile.reset(INVALID_HANDLE_VALUE);
+            hRoamingFile.reset();
 
-            const bool fSuccess = MoveFile(pathToRoamingSettingsFile.c_str(),
-                                           pathToSettingsFile.c_str());
-            if (!fSuccess)
-            {
-                THROW_LAST_ERROR();
-            }
+            // Note: We're unsure if this is unsafe. Theoretically it's possible
+            // that two instances of the app will try and move the settings file
+            // simultaneously. We don't know what might happen in that scenario,
+            // but we're also not sure how to safely lock the file to prevent
+            // that from ocurring.
+            THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
+                                          pathToSettingsFile.c_str()));
 
             hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
                                     GENERIC_READ,
                                     FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    NULL,
+                                    nullptr,
                                     OPEN_EXISTING,
                                     FILE_ATTRIBUTE_NORMAL,
-                                    NULL));
+                                    nullptr));
 
-            if (hFile.get() == INVALID_HANDLE_VALUE)
-            {
-                // This was unexpected - We just moved the file, we should be
-                // able to open it. Throw the error so we can get some
-                // information here.
-                THROW_LAST_ERROR();
-            }
+            // hFile shouldn't be INVALID. That's unexpected - We just moved the
+            // file, we should be able to open it. Throw the error so we can get
+            // some information here.
+            THROW_LAST_ERROR_IF(!hFile);
         }
         else
         {
