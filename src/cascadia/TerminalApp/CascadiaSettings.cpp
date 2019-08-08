@@ -246,7 +246,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
 

@@ -150,7 +150,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    for (int i = 0; i < _colorTable.size(); i++)
+    auto const colorTableCount = gsl::narrow_cast<int>(_colorTable.size());
+    for (int i = 0; i < colorTableCount; i++)
     {
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
     }
@@ -489,12 +490,12 @@ Profile Profile::FromJson(const Json::Value& json)
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
 {
-    _fontFace = fontFace;
+    _fontFace = std::move(fontFace);
 }
 
 void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
 {
-    _schemeName = schemeName;
+    _schemeName = std::move(schemeName);
 }
 
 void Profile::SetAcrylicOpacity(double opacity) noexcept
@@ -504,17 +505,17 @@ void Profile::SetAcrylicOpacity(double opacity) noexcept
 
 void Profile::SetCommandline(std::wstring cmdline) noexcept
 {
-    _commandline = cmdline;
+    _commandline = std::move(cmdline);
 }
 
 void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
 {
-    _startingDirectory = startingDirectory;
+    _startingDirectory = std::move(startingDirectory);
 }
 
 void Profile::SetName(std::wstring name) noexcept
 {
-    _name = name;
+    _name = std::move(name);
 }
 
 void Profile::SetUseAcrylic(bool useAcrylic) noexcept
@@ -553,15 +554,16 @@ bool Profile::HasIcon() const noexcept
 // - tabTitle: the tab title
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
-    _tabTitle = tabTitle;
+    _tabTitle = std::move(tabTitle);
 }
 
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
 // - path: the path
-void Profile::SetIconPath(std::wstring_view path) noexcept
+void Profile::SetIconPath(std::wstring_view path)
 {
+    static_assert(!noexcept(_icon.emplace(path)));
     _icon.emplace(path);
 }
 

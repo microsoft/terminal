@@ -181,6 +181,11 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
+#ifdef _X86_
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+#else
             Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
@@ -206,10 +211,16 @@ namespace TerminalCoreUnitTests
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
+#endif
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
         {
+#ifdef _X86_
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+#else
             Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
@@ -235,10 +246,16 @@ namespace TerminalCoreUnitTests
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
+#endif
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
+#ifdef _X86_
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(WEX::Logging::TestResults::Skipped);
+            return;
+#else
             Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 100, 100 }, 0, emptyRT);
@@ -290,6 +307,7 @@ namespace TerminalCoreUnitTests
 
                 rowValue++;
             }
+#endif
         }
     };
 }
