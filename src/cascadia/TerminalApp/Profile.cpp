@@ -498,6 +498,11 @@ void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
     _schemeName = std::move(schemeName);
 }
 
+void Profile::SetTabTitle(std::optional<std::wstring> tabTitle) noexcept
+{
+    _tabTitle = std::move(tabTitle);
+}
+
 void Profile::SetAcrylicOpacity(double opacity) noexcept
 {
     _acrylicTransparency = opacity;
