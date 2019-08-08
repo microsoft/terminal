@@ -262,8 +262,15 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 std::optional<std::string> CascadiaSettings::_ReadSettings()
 {
     const auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
-    auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         NULL,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         NULL) };
+
+    if (hFile.get() == INVALID_HANDLE_VALUE)
     {
         // GH#1770 - Now that we're _not_ roaming our settings, do a quick check
         // to see if there's a file in the Roaming App data folder. If there is
@@ -273,19 +280,35 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
         // local appdata folder.
 
         const auto pathToRoamingSettingsFile{ CascadiaSettings::GetSettingsPath(true) };
-        const auto hRoamingFile = CreateFileW(pathToRoamingSettingsFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-        if (hRoamingFile != INVALID_HANDLE_VALUE)
+        wil::unique_hfile hRoamingFile{ CreateFileW(pathToRoamingSettingsFile.c_str(),
+                                                    GENERIC_READ,
+                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                    NULL,
+                                                    OPEN_EXISTING,
+                                                    FILE_ATTRIBUTE_NORMAL,
+                                                    NULL) };
+
+        if (hRoamingFile.get() != INVALID_HANDLE_VALUE)
         {
             // Close the file handle, move it, and re-open the file in its new location.
-            CloseHandle(hRoamingFile);
-            const bool fSuccess = MoveFile(pathToRoamingSettingsFile.c_str(), pathToSettingsFile.c_str());
+            hRoamingFile.reset(INVALID_HANDLE_VALUE);
+
+            const bool fSuccess = MoveFile(pathToRoamingSettingsFile.c_str(),
+                                           pathToSettingsFile.c_str());
             if (!fSuccess)
             {
                 THROW_LAST_ERROR();
             }
 
-            hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-            if (hFile == INVALID_HANDLE_VALUE)
+            hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
+                                    GENERIC_READ,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    NULL,
+                                    OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    NULL));
+
+            if (hFile.get() == INVALID_HANDLE_VALUE)
             {
                 // This was unexpected - We just moved the file, we should be
                 // able to open it. Throw the error so we can get some
@@ -304,14 +327,13 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
     }
 
     // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile, nullptr);
+    const auto fileSize = GetFileSize(hFile.get(), nullptr);
     THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
 
     auto utf8buffer = std::make_unique<char[]>(fileSize);
 
     DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
-    CloseHandle(hFile);
+    THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.get(), fileSize, &bytesRead, nullptr));
 
     // convert buffer to UTF-8 string
     std::string utf8string(utf8buffer.get(), fileSize);
