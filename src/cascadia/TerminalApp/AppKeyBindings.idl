@@ -97,7 +97,7 @@ namespace TerminalApp
         event CopyTextEventArgs CopyText;
         event PasteTextEventArgs PasteText;
         event NewTabEventArgs NewTab;
-        event DropdownEventArgs Dropdown;
+		event DropdownEventArgs Dropdown;
         event DuplicateTabEventArgs DuplicateTab;
         event NewTabWithProfileEventArgs NewTabWithProfile;
         event NewWindowEventArgs NewWindow;
