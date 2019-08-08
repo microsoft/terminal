@@ -30,6 +30,7 @@ namespace TerminalApp
         NewWindow,
         CloseWindow,
         CloseTab,
+        ClosePane,
         NextTab,
         PrevTab,
         SplitVertical,
@@ -68,6 +69,7 @@ namespace TerminalApp
     delegate void NewWindowEventArgs();
     delegate void CloseWindowEventArgs();
     delegate void CloseTabEventArgs();
+    delegate void ClosePaneEventArgs();
     delegate void NextTabEventArgs();
     delegate void PrevTabEventArgs();
     delegate void SplitVerticalEventArgs();
@@ -98,6 +100,7 @@ namespace TerminalApp
         event NewWindowEventArgs NewWindow;
         event CloseWindowEventArgs CloseWindow;
         event CloseTabEventArgs CloseTab;
+        event ClosePaneEventArgs ClosePane;
         event SwitchToTabEventArgs SwitchToTab;
         event NextTabEventArgs NextTab;
         event PrevTabEventArgs PrevTab;

@@ -124,7 +124,7 @@ void Tab::_Focus()
     auto lastFocusedControl = _rootPane->GetFocusedTerminalControl();
     if (lastFocusedControl)
     {
-        lastFocusedControl.GetControl().Focus(FocusState::Programmatic);
+        lastFocusedControl.Focus(FocusState::Programmatic);
     }
 }
 
@@ -181,7 +181,7 @@ void Tab::SetTabText(const winrt::hstring& text)
 void Tab::Scroll(const int delta)
 {
     auto control = GetFocusedTerminalControl();
-    control.GetControl().Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
+    control.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [control, delta]() {
         const auto currentOffset = control.GetScrollOffset();
         control.KeyboardScrollViewport(currentOffset + delta);
     });
@@ -247,6 +247,20 @@ void Tab::ResizePane(const winrt::TerminalApp::Direction& direction)
 void Tab::NavigateFocus(const winrt::TerminalApp::Direction& direction)
 {
     _rootPane->NavigateFocus(direction);
+}
+
+// Method Description:
+// - Closes the currently focused pane in this tab. If it's the last pane in
+//   this tab, our Closed event will be fired (at a later time) for anyone
+//   registered as a handler of our close event.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Tab::ClosePane()
+{
+    auto focused = _rootPane->GetFocusedPane();
+    focused->Close();
 }
 
 DEFINE_EVENT(Tab, Closed, _closedHandlers, ConnectionClosedEventArgs);

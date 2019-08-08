@@ -8,6 +8,7 @@
 #include "..\inc\ServiceLocator.hpp"
 #include "ConsoleControl.hpp"
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)

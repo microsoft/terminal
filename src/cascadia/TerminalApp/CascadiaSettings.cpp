@@ -9,6 +9,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "winrt/Microsoft.Terminal.TerminalConnection.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -245,7 +246,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
 
@@ -261,6 +262,20 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
+
+    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+    {
+        auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
+        azureCloudShellProfile.SetCommandline(L"Azure");
+        azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        azureCloudShellProfile.SetColorScheme({ L"Vintage" });
+        azureCloudShellProfile.SetAcrylicOpacity(0.6);
+        azureCloudShellProfile.SetUseAcrylic(true);
+        azureCloudShellProfile.SetCloseOnExit(false);
+        azureCloudShellProfile.SetConnectionType(AzureConnectionType);
+        _profiles.emplace_back(azureCloudShellProfile);
+    }
+
     try
     {
         _AppendWslProfiles(_profiles);
@@ -277,18 +292,16 @@ void CascadiaSettings::_CreateDefaultProfiles()
 void CascadiaSettings::_CreateDefaultKeybindings()
 {
     AppKeyBindings keyBindings = _globals.GetKeybindings();
-    // Set up spme basic default keybindings
-    // TODO:MSFT:20700157 read our settings from some source, and configure
-    //      keychord,action pairings from that file
+    // Set up some basic default keybindings
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
-                              KeyChord{ KeyModifiers::Ctrl,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('T') });
     keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('D') });
 
-    keyBindings.SetKeyBinding(ShortcutAction::CloseTab,
-                              KeyChord{ KeyModifiers::Ctrl,
+    keyBindings.SetKeyBinding(ShortcutAction::ClosePane,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('W') });
 
     keyBindings.SetKeyBinding(ShortcutAction::CopyText,
@@ -354,31 +367,31 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         VK_PRIOR });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab0,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('1') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab1,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('2') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab2,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('3') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab3,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('4') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab4,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('5') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab5,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('6') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab6,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('7') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab7,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('8') });
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
-                              KeyChord{ KeyModifiers::Alt,
+                              KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('9') });
 }
 
@@ -500,7 +513,8 @@ bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline
 // - true iff powershell core (pwsh.exe) is present in the given path
 bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
 {
-    std::filesystem::path psCorePath = ExpandEnvironmentVariableString(programFileEnv.data());
+    std::wstring programFileEnvNulTerm{ programFileEnv };
+    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
     psCorePath /= L"PowerShell";
     if (std::filesystem::exists(psCorePath))
     {
@@ -597,6 +611,7 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             auto WSLDistro{ _CreateDefaultProfile(distName) };
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
+            WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
             std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
             iconPath.append(DEFAULT_LINUX_ICON_GUID);
             iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
@@ -604,27 +619,6 @@ void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& pro
             profileStorage.emplace_back(WSLDistro);
         }
     }
-}
-
-// Function Description:
-// - Get a environment variable string.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// Return Value:
-// - a string of the expending environment-variable string.
-std::wstring CascadiaSettings::ExpandEnvironmentVariableString(std::wstring_view source)
-{
-    std::wstring result{};
-    DWORD requiredSize = 0;
-    do
-    {
-        result.resize(requiredSize);
-        requiredSize = ::ExpandEnvironmentStringsW(source.data(), result.data(), gsl::narrow<DWORD>(result.size()));
-    } while (requiredSize != result.size());
-
-    // Trim the terminating null character
-    result.resize(requiredSize - 1);
-    return result;
 }
 
 // Method Description:

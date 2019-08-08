@@ -35,6 +35,12 @@
     <Page Include="../TerminalPage.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="../TitlebarControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="../TabRowControl.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
 
   <!-- ========================= Headers ======================== -->
@@ -46,6 +52,12 @@
     <ClInclude Include="../TerminalPage.h">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="../TitlebarControl.h">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../TabRowControl.h">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="../Tab.h" />
     <ClInclude Include="../Pane.h" />
@@ -65,12 +77,19 @@
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="../init.cpp" />
     <ClCompile Include="../MinMaxCloseControl.cpp">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="../TerminalPage.cpp">
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="../TitlebarControl.cpp">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../TabRowControl.cpp">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="../Tab.cpp" />
     <ClCompile Include="../Pane.cpp" />
@@ -82,6 +101,7 @@
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -116,10 +136,19 @@
       <DependentUpon>../TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="../TitlebarControl.idl">
+      <DependentUpon>../TitlebarControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="../TabRowControl.idl">
+      <DependentUpon>../TabRowControl.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
   </ItemGroup>
 
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
+    <PRIResource Include="../Resources/en-US/Resources.resw" />
     <None Include="../packages.config" />
   </ItemGroup>
 
@@ -224,7 +253,7 @@
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
     <_MUXRoot>$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\</_MUXRoot>
-    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\</_MUXAppRoot>
+    <_MUXAppRoot>$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\</_MUXAppRoot>
   </PropertyGroup>
   <ItemGroup>
     <!-- Microsoft.UI.XAML -->
@@ -232,7 +261,7 @@
       <Implementation>Microsoft.UI.Xaml.dll</Implementation>
       <IsWinMDFile>true</IsWinMDFile>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
-      <Private>false</Private>
+      <Private>true</Private>
     </Reference>
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.dll" />
     <ReferenceCopyLocalPaths Include="$(_MUXRoot)runtimes\win10-$(Native-Platform)\native\Microsoft.UI.Xaml.pri" />
@@ -254,7 +283,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview6.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 
 

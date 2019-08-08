@@ -187,7 +187,7 @@ function Invoke-OpenConsoleTests()
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $RunTePath = "$env:OpenConsoleRoot\tools\runte.cmd"
-    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.30.180808002\build\binaries\$Platform\te.exe"
+    $TaefExePath = "$env:OpenConsoleRoot\packages\Taef.Redist.Wlk.10.38.190610001-uapadmin\build\Binaries\$Platform\te.exe"
     $BinDir = "$env:OpenConsoleRoot\bin\$OpenConsolePlatform\$Configuration"
     [xml]$TestConfig = Get-Content "$env:OpenConsoleRoot\tools\tests.xml"
 

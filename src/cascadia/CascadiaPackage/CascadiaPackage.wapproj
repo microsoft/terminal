@@ -1,11 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
-    <VersionMinor>2</VersionMinor>
+    <VersionMinor>3</VersionMinor>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
@@ -257,27 +257,11 @@
     <Content Include="ProfileIcons\{61c54bbd-c2c6-5271-96e7-009a87ff44bf}.scale-200.png" />
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-100.png" />
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
+    <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-100.png" />
+    <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png" />
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
-  <!--
-    Microsoft.UI.Xaml contains some <Content> resource files that need to be included in our package.
-    For some reason, they're not rolled up through dependent projects; if they were, their paths would
-    be wrong.
-
-    WAP Packaging projects don't actually support nuget package references, so we added one manually.
-
-    This does mean that version changes to Microsoft.UI.Xaml must be manually reflected
-    here.
-  -->
-  <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets'))" />
-  </Target>
-  <!-- End workaround -->
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
@@ -295,7 +279,8 @@
         <!-- Override the filename for OpenConsole.exe (only) -->
         <TargetPath Condition="'%(Filename)' == 'OpenConsole' and '%(Extension)' == '.exe'">conhost.exe</TargetPath>
         <!-- Blank the SourceProject here to vend all files into the root of the package. -->
-        <SourceProject></SourceProject>
+        <SourceProject>
+        </SourceProject>
       </_FilteredNonWapProjProjectOutput>
     </ItemGroup>
   </Target>

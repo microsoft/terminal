@@ -102,6 +102,9 @@ namespace winrt::TerminalApp::implementation
         case ShortcutAction::CloseTab:
             _CloseTabHandlers();
             return true;
+        case ShortcutAction::ClosePane:
+            _ClosePaneHandlers();
+            return true;
 
         case ShortcutAction::ScrollUp:
             _ScrollUpHandlers();
@@ -212,33 +215,6 @@ namespace winrt::TerminalApp::implementation
         return keyModifiers;
     }
 
-    // Method Description:
-    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM_COMMA issue.
-    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
-    //      in the same order that XAML would put them as well.
-    // Return Value:
-    // - a WinRT hstring representation of the key modifiers for the shortcut
-    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
-    winrt::hstring AppKeyBindings::FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
-    {
-        std::wstring buffer{ L"" };
-
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
-        {
-            buffer += L"Ctrl+";
-        }
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
-        {
-            buffer += L"Shift+";
-        }
-        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
-        {
-            buffer += L"Alt+";
-        }
-
-        return winrt::hstring{ buffer };
-    }
-
     // -------------------------------- Events ---------------------------------
     // clang-format off
     DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
@@ -249,6 +225,7 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
     DEFINE_EVENT(AppKeyBindings, CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
+    DEFINE_EVENT(AppKeyBindings, ClosePane,         _ClosePaneHandlers,         TerminalApp::ClosePaneEventArgs);
     DEFINE_EVENT(AppKeyBindings, SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
     DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);

@@ -10,6 +10,7 @@
 #include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Types;
 
 std::unique_ptr<Selection> Selection::_instance;
 
