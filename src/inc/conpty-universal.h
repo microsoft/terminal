@@ -206,6 +206,9 @@ bool SignalResizeWindow(const HANDLE hSignal,
 // - hSignal: A handle to the pipe for writing signal messages to the pty.
 // - piPty: The PROCESS_INFORMATION of the pty process. NOTE: This is *not* the
 //      PROCESS_INFORMATION of the process that's created as a result the cmdline.
+// - startupInfo : A STARTUPINFO struct to use as additional information to pass
+//   into the created conhost process. Conhost may pass some of the properties
+//   in this struct to its child process, notably, the lpTitle.
 // - extraEnvVars : A map of pairs of (Name, Value) representing additional
 //      environment variable strings and values to be set in the client process
 //      environment.  May override any already present in parent process.
@@ -221,6 +224,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
                                                                HANDLE* const hSignal,
                                                                PROCESS_INFORMATION* const piPty,
                                                                DWORD dwCreationFlags = 0,
+                                                               const STARTUPINFO startupInfo = { 0 },
                                                                const EnvironmentVariableMapW& extraEnvVars = {}) noexcept
 {
     // Create some anon pipes so we can pass handles down and into the console.
@@ -268,7 +272,7 @@ bool SignalResizeWindow(const HANDLE hSignal,
     conhostCmdline += L" -- ";
     conhostCmdline += cmdline;
 
-    STARTUPINFO si = { 0 };
+    STARTUPINFO si = startupInfo;
     si.cb = sizeof(STARTUPINFOW);
     si.hStdInput = inPipeConhostSide;
     si.hStdOutput = outPipeConhostSide;

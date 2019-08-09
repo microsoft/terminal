@@ -1475,7 +1475,12 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(

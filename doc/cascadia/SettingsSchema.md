@@ -33,6 +33,7 @@ Properties listed below are specific to each unique profile.
 | `padding` | _Required_ | String | `0, 0, 0, 0` | Sets the padding around the text within the window. Can have three different formats: `"#"` sets the same padding for all sides, `"#, #"` sets the same padding for left-right and top-bottom, and `"#, #, #, #"` sets the padding individually for left, top, right, and bottom. |
 | `snapOnInput` | _Required_ | Boolean | `true` | When set to `true`, the window will scroll to the command input line when typing. When set to `false`, the window will not scroll when you start typing. |
 | `startingDirectory` | _Required_ | String | `%USERPROFILE%` | The directory the shell starts in when it is loaded. |
+| `startingTitle` | Optional | String | | The title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application. |
 | `useAcrylic` | _Required_ | Boolean | `false` | When set to `true`, the window will have an acrylic background. When set to `false`, the window will have a plain, untextured background. |
 | `background` | Optional | String | | Sets the background color of the profile. Overrides `background` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `backgroundImage` | Optional | String | | Sets the file location of the Image to draw over the window background. |

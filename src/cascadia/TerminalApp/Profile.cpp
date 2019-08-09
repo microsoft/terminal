@@ -36,6 +36,7 @@ static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
 static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
+static constexpr std::string_view StartingTitleKey{ "startingTitle" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
@@ -93,6 +94,7 @@ Profile::Profile(const winrt::guid& guid) :
     _connectionType{},
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
+    _startingTitle{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
@@ -176,6 +178,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     {
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
+    }
+
+    if (_startingTitle)
+    {
+        terminalSettings.StartingTitle(_startingTitle.value());
     }
 
     if (_schemeName)
@@ -307,6 +314,11 @@ Json::Value Profile::ToJson() const
     if (_startingDirectory)
     {
         root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
+    }
+
+    if (_startingTitle)
+    {
+        root[JsonKey(StartingTitleKey)] = winrt::to_string(_startingTitle.value());
     }
 
     if (_backgroundImage)
@@ -464,6 +476,10 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._startingDirectory = GetWstringFromJson(startingDirectory);
     }
+    if (auto startingTitle{ json[JsonKey(StartingTitleKey)] })
+    {
+        result._startingTitle = GetWstringFromJson(startingTitle);
+    }
     if (auto icon{ json[JsonKey(IconKey)] })
     {
         result._icon = GetWstringFromJson(icon);
@@ -511,6 +527,11 @@ void Profile::SetCommandline(std::wstring cmdline) noexcept
 void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
 {
     _startingDirectory = std::move(startingDirectory);
+}
+
+void Profile::SetStartingTitle(std::wstring startingTitle) noexcept
+{
+    _startingTitle = std::move(startingTitle);
 }
 
 void Profile::SetName(std::wstring name) noexcept

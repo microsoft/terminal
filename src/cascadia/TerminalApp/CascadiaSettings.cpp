@@ -232,6 +232,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     cmdProfile.SetColorScheme({ L"Campbell" });
     cmdProfile.SetAcrylicOpacity(0.75);
     cmdProfile.SetUseAcrylic(true);
+    cmdProfile.SetStartingTitle(L"Command Prompt");
 
     auto powershellProfile{ _CreateDefaultProfile(L"Windows PowerShell") };
     powershellProfile.SetCommandline(L"powershell.exe");
@@ -239,6 +240,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetColorScheme({ L"Campbell" });
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
+    powershellProfile.SetStartingTitle(L"Windows PowerShell");
 
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
@@ -249,6 +251,7 @@ void CascadiaSettings::_CreateDefaultProfiles()
         pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
+        pwshProfile.SetStartingTitle(L"PowerShell Core");
 
         // If powershell core is installed, we'll use that as the default.
         // Otherwise, we'll use normal Windows Powershell as the default.

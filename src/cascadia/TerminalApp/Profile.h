@@ -47,6 +47,7 @@ public:
     void SetAcrylicOpacity(double opacity) noexcept;
     void SetCommandline(std::wstring cmdline) noexcept;
     void SetStartingDirectory(std::wstring startingDirectory) noexcept;
+    void SetStartingTitle(std::wstring startingTitle) noexcept;
     void SetName(std::wstring name) noexcept;
     void SetUseAcrylic(bool useAcrylic) noexcept;
     void SetDefaultForeground(COLORREF defaultForeground) noexcept;
@@ -91,6 +92,7 @@ private:
     std::wstring _commandline;
     std::wstring _fontFace;
     std::optional<std::wstring> _startingDirectory;
+    std::optional<std::wstring> _startingTitle;
     int32_t _fontSize;
     double _acrylicTransparency;
     bool _useAcrylic;
