@@ -297,7 +297,7 @@ void CascadiaSettings::_CreateDefaultKeybindings()
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('T') });
 
-    keyBindings.SetKeyBinding(ShortcutAction::Dropdown,
+    keyBindings.SetKeyBinding(ShortcutAction::OpenNewTabDropdown,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>(' ') });
 

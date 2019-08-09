@@ -17,7 +17,7 @@ static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" };
 static constexpr std::string_view PasteTextKey{ "paste" };
 static constexpr std::string_view NewTabKey{ "newTab" };
-static constexpr std::string_view DropdownKey{ "dropdown" };
+static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
 static constexpr std::string_view DuplicateTabKey{ "duplicateTab" };
 static constexpr std::string_view NewTabWithProfile0Key{ "newTabProfile0" };
 static constexpr std::string_view NewTabWithProfile1Key{ "newTabProfile1" };
@@ -75,7 +75,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { CopyTextWithoutNewlinesKey, ShortcutAction::CopyTextWithoutNewlines },
     { PasteTextKey, ShortcutAction::PasteText },
     { NewTabKey, ShortcutAction::NewTab },
-    { DropdownKey, ShortcutAction::Dropdown },
+    { OpenNewTabDropdownKey, ShortcutAction::OpenNewTabDropdown },
     { DuplicateTabKey, ShortcutAction::DuplicateTab },
     { NewTabWithProfile0Key, ShortcutAction::NewTabProfile0 },
     { NewTabWithProfile1Key, ShortcutAction::NewTabProfile1 },

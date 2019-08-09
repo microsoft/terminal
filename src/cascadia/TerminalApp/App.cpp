@@ -405,7 +405,12 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Flyout(newTabFlyout);
     }
 
-    void App::_OpenDropdown()
+    // Function Description:
+    // Called when the openNewTabDropdown keybinding is used.
+    // Adds the flyout show option to left-align the dropdown with the split button.
+    // Shows the dropdown flyout.
+
+    void App::_OpenNewTabDropdown()
     {
         Controls::Primitives::FlyoutShowOptions options{};
         options.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
@@ -482,7 +487,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.Dropdown([this]() { _OpenDropdown(); });
+        bindings.OpenNewTabDropdown([this]() { _OpenNewTabDropdown(); });
         bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.ClosePane([this]() { _CloseFocusedPane(); });
