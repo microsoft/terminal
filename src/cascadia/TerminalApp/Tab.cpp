@@ -142,6 +142,39 @@ void Tab::UpdateFocus()
     _rootPane->UpdateFocus();
 }
 
+void Tab::UpdateIcon(const winrt::hstring iconPath)
+{
+    // Don't reload our icon if it hasn't changed.
+    if (iconPath == _lastIconPath)
+    {
+        return;
+    }
+
+    _lastIconPath = iconPath;
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        Controls::IconSourceElement elem{};
+
+        if (!_lastIconPath.empty())
+        {
+            try
+            {
+                winrt::Windows::Foundation::Uri iconUri{ _lastIconPath };
+                Controls::BitmapIconSource iconSource;
+                // Make sure to set this to false, so we keep the RGB data of the
+                // image. Otherwise, the icon will be white for all the
+                // non-transparent pixels in the image.
+                iconSource.ShowAsMonochrome(false);
+                iconSource.UriSource(iconUri);
+                elem.IconSource(iconSource);
+            }
+            CATCH_LOG();
+        }
+
+        _tabViewItem.Icon(elem);
+    });
+}
+
 // Method Description:
 // - Gets the title string of the last focused terminal control in our tree.
 //   Returns the empty string if there is no such control.

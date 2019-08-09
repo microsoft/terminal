@@ -686,16 +686,18 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-            auto tabViewItem = tab->GetTabViewItem();
-            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                // _GetIconFromProfile has to run on the main thread
-                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                if (matchingProfile)
-                {
-                    tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
-                }
-            });
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            if (matchingProfile)
+            {
+                std::wstring path{ matchingProfile->GetIconPath() };
+                const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+                winrt::hstring iconPath{ envExpandedPath };
+                tab->UpdateIcon(iconPath);
+            }
+            else
+            {
+                tab->UpdateIcon({});
+            }
         }
     }
 
@@ -928,7 +930,10 @@ namespace winrt::TerminalApp::implementation
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
         {
-            tabViewItem.Icon(_GetIconFromProfile(*profile));
+            std::wstring path{ profile->GetIconPath() };
+            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            winrt::hstring iconPath{ envExpandedPath };
+            newTab->UpdateIcon(iconPath);
         }
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
@@ -1252,19 +1257,24 @@ namespace winrt::TerminalApp::implementation
     {
         if (profile.HasIcon())
         {
-            std::wstring path{ profile.GetIconPath() };
-            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-            winrt::hstring iconPath{ envExpandedPath };
-            winrt::Windows::Foundation::Uri iconUri{ iconPath };
-            Controls::BitmapIconSource iconSource;
-            // Make sure to set this to false, so we keep the RGB data of the
-            // image. Otherwise, the icon will be white for all the
-            // non-transparent pixels in the image.
-            iconSource.ShowAsMonochrome(false);
-            iconSource.UriSource(iconUri);
-            Controls::IconSourceElement elem;
-            elem.IconSource(iconSource);
-            return elem;
+            try
+            {
+                std::wstring path{ profile.GetIconPath() };
+                const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+                winrt::hstring iconPath{ envExpandedPath };
+                winrt::Windows::Foundation::Uri iconUri{ iconPath };
+                Controls::BitmapIconSource iconSource;
+                // Make sure to set this to false, so we keep the RGB data of the
+                // image. Otherwise, the icon will be white for all the
+                // non-transparent pixels in the image.
+                iconSource.ShowAsMonochrome(false);
+                iconSource.UriSource(iconUri);
+                Controls::IconSourceElement elem;
+                elem.IconSource(iconSource);
+                return elem;
+            }
+            CATCH_LOG();
+            return { nullptr };
         }
         else
         {
