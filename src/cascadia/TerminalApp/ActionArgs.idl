@@ -1,0 +1,117 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    interface IActionArgs
+    {
+        Boolean Handled;
+    };
+
+    enum Direction
+    {
+        Left = 0,
+        Right,
+        Up,
+        Down
+    };
+
+    [default_interface] runtimeclass CopyTextEventArgs : IActionArgs
+    {
+        CopyTextEventArgs();
+        Boolean TrimWhitespace;
+    };
+    [default_interface] runtimeclass PasteTextEventArgs : IActionArgs
+    {
+        PasteTextEventArgs();
+    };
+    [default_interface] runtimeclass NewTabEventArgs : IActionArgs
+    {
+        NewTabEventArgs();
+    };
+    [default_interface] runtimeclass DuplicateTabEventArgs : IActionArgs
+    {
+        DuplicateTabEventArgs();
+    };
+    [default_interface] runtimeclass NewTabWithProfileEventArgs : IActionArgs
+    {
+        NewTabWithProfileEventArgs();
+        Int32 ProfileIndex;
+    };
+    [default_interface] runtimeclass NewWindowEventArgs : IActionArgs
+    {
+        NewWindowEventArgs();
+    };
+    [default_interface] runtimeclass CloseWindowEventArgs : IActionArgs
+    {
+        CloseWindowEventArgs();
+    };
+    [default_interface] runtimeclass CloseTabEventArgs : IActionArgs
+    {
+        CloseTabEventArgs();
+    };
+    [default_interface] runtimeclass ClosePaneEventArgs : IActionArgs
+    {
+        ClosePaneEventArgs();
+    };
+    [default_interface] runtimeclass NextTabEventArgs : IActionArgs
+    {
+        NextTabEventArgs();
+    };
+    [default_interface] runtimeclass PrevTabEventArgs : IActionArgs
+    {
+        PrevTabEventArgs();
+    };
+    [default_interface] runtimeclass SplitVerticalEventArgs : IActionArgs
+    {
+        SplitVerticalEventArgs();
+    };
+    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionArgs
+    {
+        SplitHorizontalEventArgs();
+    };
+    [default_interface] runtimeclass SwitchToTabEventArgs : IActionArgs
+    {
+        SwitchToTabEventArgs();
+        Int32 TabIndex;
+    };
+    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionArgs
+    {
+        IncreaseFontSizeEventArgs();
+    };
+    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionArgs
+    {
+        DecreaseFontSizeEventArgs();
+    };
+    [default_interface] runtimeclass ScrollUpEventArgs : IActionArgs
+    {
+        ScrollUpEventArgs();
+    };
+    [default_interface] runtimeclass ScrollDownEventArgs : IActionArgs
+    {
+        ScrollDownEventArgs();
+    };
+    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionArgs
+    {
+        ScrollUpPageEventArgs();
+    };
+    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionArgs
+    {
+        ScrollDownPageEventArgs();
+    };
+    [default_interface] runtimeclass OpenSettingsEventArgs : IActionArgs
+    {
+        OpenSettingsEventArgs();
+    };
+    [default_interface] runtimeclass ResizePaneEventArgs : IActionArgs
+    {
+        ResizePaneEventArgs();
+        Direction Direction;
+    };
+    [default_interface] runtimeclass MoveFocusEventArgs : IActionArgs
+    {
+        MoveFocusEventArgs();
+        Direction Direction;
+    };
+
+}

@@ -474,25 +474,25 @@ namespace winrt::TerminalApp::implementation
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.ClosePane([this]() { _CloseFocusedPane(); });
-        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _Scroll(-1); });
-        bindings.ScrollDown([this]() { _Scroll(1); });
-        bindings.NextTab([this]() { _SelectNextTab(true); });
-        bindings.PrevTab([this]() { _SelectNextTab(false); });
-        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
-        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        bindings.PasteText([this]() { _PasteText(); });
+        bindings.NewTab([this](auto& sender, auto& args) { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this](auto& sender, auto& args) { _DuplicateTabViewItem(); });
+        bindings.CloseTab([this](auto& sender, auto& args) { _CloseFocusedTab(); });
+        bindings.ClosePane([this](auto& sender, auto& args) { _CloseFocusedPane(); });
+        bindings.NewTabWithProfile([this](auto& sender, auto& args) { _OpenNewTab({ args.ProfileIndex() }); });
+        bindings.ScrollUp([this](auto& sender, auto& args) { _Scroll(-1); });
+        bindings.ScrollDown([this](auto& sender, auto& args) { _Scroll(1); });
+        bindings.NextTab([this](auto& sender, auto& args) { _SelectNextTab(true); });
+        bindings.PrevTab([this](auto& sender, auto& args) { _SelectNextTab(false); });
+        bindings.SplitVertical([this](auto& sender, auto& args) { _SplitVertical(std::nullopt); });
+        bindings.SplitHorizontal([this](auto& sender, auto& args) { _SplitHorizontal(std::nullopt); });
+        bindings.ScrollUpPage([this](auto& sender, auto& args) { _ScrollPage(-1); });
+        bindings.ScrollDownPage([this](auto& sender, auto& args) { _ScrollPage(1); });
+        bindings.SwitchToTab([this](auto& sender, auto& args) { _SelectTab({ args.TabIndex() }); });
+        bindings.OpenSettings([this](auto& sender, auto& args) { _OpenSettings(); });
+        bindings.ResizePane([this](auto& sender, auto& args) { _ResizePane(args.Direction()); });
+        bindings.MoveFocus([this](auto& sender, auto& args) { _MoveFocus(args.Direction()); });
+        bindings.CopyText([this](auto& sender, auto& args) { _CopyText(args.TrimWhitespace()); });
+        bindings.PasteText([this](auto& sender, auto& args) { _PasteText(); });
     }
 
     // Method Description:

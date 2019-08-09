@@ -4,6 +4,7 @@
 #pragma once
 
 #include "AppKeyBindings.g.h"
+#include "ActionArgs.h"
 #include "..\inc\cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
@@ -39,29 +40,55 @@ namespace winrt::TerminalApp::implementation
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
         // clang-format off
-        DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
-        DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
-        DECLARE_EVENT(NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
-        DECLARE_EVENT(DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
-        DECLARE_EVENT(NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
-        DECLARE_EVENT(NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
-        DECLARE_EVENT(CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
-        DECLARE_EVENT(CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
-        DECLARE_EVENT(ClosePane,         _ClosePaneHandlers,         TerminalApp::ClosePaneEventArgs);
-        DECLARE_EVENT(SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
-        DECLARE_EVENT(NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
-        DECLARE_EVENT(PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
-        DECLARE_EVENT(SplitVertical,     _SplitVerticalHandlers,     TerminalApp::SplitVerticalEventArgs);
-        DECLARE_EVENT(SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
-        DECLARE_EVENT(IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
-        DECLARE_EVENT(DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
-        DECLARE_EVENT(ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
-        DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
-        DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
-        DECLARE_EVENT(ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
-        DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
-        DECLARE_EVENT(ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
-        DECLARE_EVENT(MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
+        // DECLARE_EVENT(CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
+        // DECLARE_EVENT(PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
+        // DECLARE_EVENT(NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
+        // DECLARE_EVENT(DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
+        // DECLARE_EVENT(NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
+        // DECLARE_EVENT(NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
+        // DECLARE_EVENT(CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
+        // DECLARE_EVENT(CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
+        // DECLARE_EVENT(ClosePane,         _ClosePaneHandlers,         TerminalApp::ClosePaneEventArgs);
+        // DECLARE_EVENT(SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
+        // DECLARE_EVENT(NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
+        // DECLARE_EVENT(PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
+        // DECLARE_EVENT(SplitVertical,     _SplitVerticalHandlers,     TerminalApp::SplitVerticalEventArgs);
+        // DECLARE_EVENT(SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
+        // DECLARE_EVENT(IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
+        // DECLARE_EVENT(DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
+        // DECLARE_EVENT(ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
+        // DECLARE_EVENT(ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
+        // DECLARE_EVENT(ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
+        // DECLARE_EVENT(ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
+        // DECLARE_EVENT(OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
+        // DECLARE_EVENT(ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
+        // DECLARE_EVENT(MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
+
+
+        TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::CopyTextEventArgs);
+        TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::PasteTextEventArgs);
+        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::NewTabEventArgs);
+        TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::DuplicateTabEventArgs);
+        TYPED_EVENT(NewTabWithProfile, TerminalApp::AppKeyBindings, TerminalApp::NewTabWithProfileEventArgs);
+        TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::NewWindowEventArgs);
+        TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::CloseWindowEventArgs);
+        TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::CloseTabEventArgs);
+        TYPED_EVENT(ClosePane,         TerminalApp::AppKeyBindings, TerminalApp::ClosePaneEventArgs);
+        TYPED_EVENT(SwitchToTab,       TerminalApp::AppKeyBindings, TerminalApp::SwitchToTabEventArgs);
+        TYPED_EVENT(NextTab,           TerminalApp::AppKeyBindings, TerminalApp::NextTabEventArgs);
+        TYPED_EVENT(PrevTab,           TerminalApp::AppKeyBindings, TerminalApp::PrevTabEventArgs);
+        TYPED_EVENT(SplitVertical,     TerminalApp::AppKeyBindings, TerminalApp::SplitVerticalEventArgs);
+        TYPED_EVENT(SplitHorizontal,   TerminalApp::AppKeyBindings, TerminalApp::SplitHorizontalEventArgs);
+        TYPED_EVENT(IncreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::IncreaseFontSizeEventArgs);
+        TYPED_EVENT(DecreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::DecreaseFontSizeEventArgs);
+        TYPED_EVENT(ScrollUp,          TerminalApp::AppKeyBindings, TerminalApp::ScrollUpEventArgs);
+        TYPED_EVENT(ScrollDown,        TerminalApp::AppKeyBindings, TerminalApp::ScrollDownEventArgs);
+        TYPED_EVENT(ScrollUpPage,      TerminalApp::AppKeyBindings, TerminalApp::ScrollUpPageEventArgs);
+        TYPED_EVENT(ScrollDownPage,    TerminalApp::AppKeyBindings, TerminalApp::ScrollDownPageEventArgs);
+        TYPED_EVENT(OpenSettings,      TerminalApp::AppKeyBindings, TerminalApp::OpenSettingsEventArgs);
+        TYPED_EVENT(ResizePane,        TerminalApp::AppKeyBindings, TerminalApp::ResizePaneEventArgs);
+        TYPED_EVENT(MoveFocus,         TerminalApp::AppKeyBindings, TerminalApp::MoveFocusEventArgs);
+
         // clang-format on
 
     private:

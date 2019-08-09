@@ -1,16 +1,9 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "../ActionArgs.idl";
 
 namespace TerminalApp
 {
-    enum Direction
-    {
-        Left = 0,
-        Right,
-        Up,
-        Down
-    };
-
     enum ShortcutAction
     {
         CopyText = 0,
@@ -61,29 +54,29 @@ namespace TerminalApp
         OpenSettings
     };
 
-    delegate void CopyTextEventArgs(Boolean trimWhitespace);
-    delegate void PasteTextEventArgs();
-    delegate void NewTabEventArgs();
-    delegate void DuplicateTabEventArgs();
-    delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
-    delegate void NewWindowEventArgs();
-    delegate void CloseWindowEventArgs();
-    delegate void CloseTabEventArgs();
-    delegate void ClosePaneEventArgs();
-    delegate void NextTabEventArgs();
-    delegate void PrevTabEventArgs();
-    delegate void SplitVerticalEventArgs();
-    delegate void SplitHorizontalEventArgs();
-    delegate void SwitchToTabEventArgs(Int32 profileIndex);
-    delegate void IncreaseFontSizeEventArgs();
-    delegate void DecreaseFontSizeEventArgs();
-    delegate void ScrollUpEventArgs();
-    delegate void ScrollDownEventArgs();
-    delegate void ScrollUpPageEventArgs();
-    delegate void ScrollDownPageEventArgs();
-    delegate void OpenSettingsEventArgs();
-    delegate void ResizePaneEventArgs(Direction direction);
-    delegate void MoveFocusEventArgs(Direction direction);
+    // delegate void CopyTextEventArgs(Boolean trimWhitespace);
+    // delegate void PasteTextEventArgs();
+    // delegate void NewTabEventArgs();
+    // delegate void DuplicateTabEventArgs();
+    // delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
+    // delegate void NewWindowEventArgs();
+    // delegate void CloseWindowEventArgs();
+    // delegate void CloseTabEventArgs();
+    // delegate void ClosePaneEventArgs();
+    // delegate void NextTabEventArgs();
+    // delegate void PrevTabEventArgs();
+    // delegate void SplitVerticalEventArgs();
+    // delegate void SplitHorizontalEventArgs();
+    // delegate void SwitchToTabEventArgs(Int32 profileIndex);
+    // delegate void IncreaseFontSizeEventArgs();
+    // delegate void DecreaseFontSizeEventArgs();
+    // delegate void ScrollUpEventArgs();
+    // delegate void ScrollDownEventArgs();
+    // delegate void ScrollUpPageEventArgs();
+    // delegate void ScrollDownPageEventArgs();
+    // delegate void OpenSettingsEventArgs();
+    // delegate void ResizePaneEventArgs(Direction direction);
+    // delegate void MoveFocusEventArgs(Direction direction);
 
     [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     {
@@ -92,28 +85,52 @@ namespace TerminalApp
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
         Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
 
-        event CopyTextEventArgs CopyText;
-        event PasteTextEventArgs PasteText;
-        event NewTabEventArgs NewTab;
-        event DuplicateTabEventArgs DuplicateTab;
-        event NewTabWithProfileEventArgs NewTabWithProfile;
-        event NewWindowEventArgs NewWindow;
-        event CloseWindowEventArgs CloseWindow;
-        event CloseTabEventArgs CloseTab;
-        event ClosePaneEventArgs ClosePane;
-        event SwitchToTabEventArgs SwitchToTab;
-        event NextTabEventArgs NextTab;
-        event PrevTabEventArgs PrevTab;
-        event SplitVerticalEventArgs SplitVertical;
-        event SplitHorizontalEventArgs SplitHorizontal;
-        event IncreaseFontSizeEventArgs IncreaseFontSize;
-        event DecreaseFontSizeEventArgs DecreaseFontSize;
-        event ScrollUpEventArgs ScrollUp;
-        event ScrollDownEventArgs ScrollDown;
-        event ScrollUpPageEventArgs ScrollUpPage;
-        event ScrollDownPageEventArgs ScrollDownPage;
-        event OpenSettingsEventArgs OpenSettings;
-        event ResizePaneEventArgs ResizePane;
-        event MoveFocusEventArgs MoveFocus;
+        // event CopyTextEventArgs CopyText;
+        // event PasteTextEventArgs PasteText;
+        // event NewTabEventArgs NewTab;
+        // event DuplicateTabEventArgs DuplicateTab;
+        // event NewTabWithProfileEventArgs NewTabWithProfile;
+        // event NewWindowEventArgs NewWindow;
+        // event CloseWindowEventArgs CloseWindow;
+        // event CloseTabEventArgs CloseTab;
+        // event ClosePaneEventArgs ClosePane;
+        // event SwitchToTabEventArgs SwitchToTab;
+        // event NextTabEventArgs NextTab;
+        // event PrevTabEventArgs PrevTab;
+        // event SplitVerticalEventArgs SplitVertical;
+        // event SplitHorizontalEventArgs SplitHorizontal;
+        // event IncreaseFontSizeEventArgs IncreaseFontSize;
+        // event DecreaseFontSizeEventArgs DecreaseFontSize;
+        // event ScrollUpEventArgs ScrollUp;
+        // event ScrollDownEventArgs ScrollDown;
+        // event ScrollUpPageEventArgs ScrollUpPage;
+        // event ScrollDownPageEventArgs ScrollDownPage;
+        // event OpenSettingsEventArgs OpenSettings;
+        // event ResizePaneEventArgs ResizePane;
+        // event MoveFocusEventArgs MoveFocus;
+
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, CopyTextEventArgs> CopyText;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, PasteTextEventArgs> PasteText;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewTabEventArgs> NewTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, DuplicateTabEventArgs> DuplicateTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewTabWithProfileEventArgs> NewTabWithProfile;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewWindowEventArgs> NewWindow;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, CloseWindowEventArgs> CloseWindow;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, CloseTabEventArgs> CloseTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ClosePaneEventArgs> ClosePane;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, SwitchToTabEventArgs> SwitchToTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, NextTabEventArgs> NextTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, PrevTabEventArgs> PrevTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, SplitVerticalEventArgs> SplitVertical;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, SplitHorizontalEventArgs> SplitHorizontal;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, IncreaseFontSizeEventArgs> IncreaseFontSize;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, DecreaseFontSizeEventArgs> DecreaseFontSize;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ScrollUpEventArgs> ScrollUp;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ScrollDownEventArgs> ScrollDown;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ScrollUpPageEventArgs> ScrollUpPage;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ScrollDownPageEventArgs> ScrollDownPage;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, OpenSettingsEventArgs> OpenSettings;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ResizePaneEventArgs> ResizePane;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, MoveFocusEventArgs> MoveFocus;
     }
 }
