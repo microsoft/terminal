@@ -1046,6 +1046,6 @@ class ViewportTests
 
         const auto actual = Viewport::Subtract(original, remove);
 
-        VERIFY_ARE_EQUAL(0, actual.size(), L"There should be no viewports returned");
+        VERIFY_ARE_EQUAL(0u, actual.size(), L"There should be no viewports returned");
     }
 };
