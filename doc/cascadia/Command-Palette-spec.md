@@ -49,6 +49,7 @@ to necessarily be related to the action that it fires. For example, a command
 with `newTab` as the action could have `"Open New Tab"` as the name.
 
 The command will be parsed into a new class, `Command`:
+
 ```c++
 class Command
 {
@@ -57,6 +58,7 @@ class Command
     winrt::hstring IconPath();
 }
 ```
+
 We'll add another structure in GlobalAppSettings to hold all these actions. It
 will just be a `std::vector<Command>` in `GlobalAppSettings`.
 
@@ -155,6 +157,9 @@ name, to show how their input correlates to the results on screen.
 
 As the entire command palette will be a native XAML element, it'll automatically
 be hooked up to the UIA tree, allowing for screen readers to naturally find it.
+ * When the palette is opened, it will automatically recieve focus.
+ * The terminal panes will not be able to be interacted with while the palette
+   is open, which will help keep the UIA tree simple while the palette is open.
 
 ### Security
 
@@ -245,6 +250,9 @@ control into the command palette, which leads to some hard to debug crashes.
     want to render to, in another list of options. This way, I don't need to
     have three options for "Render Markdown to github", "Render Markdown to
     gitlab", all in the top-level list.
+  - We probably also want to allow a nested command set to be evaluated at
+    runtime somehow. Like if we had a "Open New Tab..." command that then had a
+    nested menu with the list of profiles.
 * We may want to add a button to the New Tab Button's dropdown to "Show Command
   Palette". I'm hesitant to keep adding new buttons to that UI, but the command
   palette is otherwise not highly discoverable.
