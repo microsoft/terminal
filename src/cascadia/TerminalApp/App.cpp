@@ -474,7 +474,7 @@ namespace winrt::TerminalApp::implementation
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        bindings.NewTab([this](auto& sender, auto& args) { _OpenNewTab(std::nullopt); });
+        bindings.NewTab([this](auto& sender, auto& args) { _OpenNewTab(std::nullopt); args.Handled(true); });
         bindings.DuplicateTab([this](auto& sender, auto& args) { _DuplicateTabViewItem(); });
         bindings.CloseTab([this](auto& sender, auto& args) { _CloseFocusedTab(); });
         bindings.ClosePane([this](auto& sender, auto& args) { _CloseFocusedPane(); });

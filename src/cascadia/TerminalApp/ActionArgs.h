@@ -31,7 +31,7 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::TerminalApp::implementation
 {
     struct CopyTextEventArgs : public CopyTextEventArgsT<CopyTextEventArgs>
     {
