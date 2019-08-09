@@ -30,7 +30,7 @@ Largely inspired by the keybindings in VsCode and Sublime Text.
 We'll need to introduce args to some actions that we already have defined. These
 are the actions I'm thinking about when writing this spec:
 
-```c#
+```csharp
     // These events already exist like this:
     delegate void NewTabWithProfileEventArgs(Int32 profileIndex);
     delegate void SwitchToTabEventArgs(Int32 profileIndex);
@@ -94,7 +94,7 @@ be changed from their current types to `TypedEventHandler`s. These
 `TypedEventHandler`s second param will always be an instance of
 `IKeyBindingArgs`. So for example:
 
-```C#
+```csharp
 
 delegate void CopyTextEventArgs();
 delegate void NewTabEventArgs();
@@ -111,8 +111,11 @@ runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
 
 Becomes:
 
-```C#
-interface IKeyBindingArgs {}
+```csharp
+interface IKeyBindingArgs {
+    Boolean Handled;
+}
+
 runtimeclass CopyTextEventArgs : IKeyBindingArgs
 {
     Boolean CopyWhitespace;
@@ -136,7 +139,7 @@ Currently, it's a `std::unordered_map<KeyChord, ShortcutAction, ...>`, which
 uses the `KeyChord` to lookup the `ShortcutAction`. We'll need to introduce a
 new type `ActionAndArgs`:
 
-```C#
+```csharp
 runtimeclass ActionAndArgs
 {
     ShortcutAction action;
@@ -167,9 +170,11 @@ the event handlers with the `IKeyBindingArgs` we've stored in the map with the
 Then, in `App`, we'll handle each of these events. We set up lambdas as event
 handlers for each event in `App::_HookupKeyBindings`. In each of those
 functions, We'll inspect the `IKeyBindingArgs` parameter, and use args from its
-implementation to call callbacks in the `App` class.
+implementation to call callbacks in the `App` class. We will update `App` to
+have methods defined with the actual keybinding function signatures.
 
 Instead of:
+
 ```c++
     void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
@@ -184,27 +189,31 @@ The code will look like:
     void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
     {
         // ...
-        bindings.NewTabWithProfile([this](const auto& sender, const auto& args) { _OpenNewTab({ args.ProfileIndex() }); });
-    }
-```
-
-We could even go so far as to update `App` to have methods defined with the
-actual keybinding function signatures, so instead we'd just have:
-
-
-```c++
-    void App::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
-    {
-        // ...
         bindings.NewTabWithProfile({ this, &App::_OpenNewTab });
     }
-
+    // ...
     void App::_OpenNewTab(const TerminalApp::AppKeyBindings& sender, const NewTabEventArgs& args)
     {
         auto profileIndex = args.ProfileIndex();
+        args.Handled(true);
         // ...
     }
 ```
+
+### Handling Keybinding Events
+
+Commmon to all implementations of `IKeyBindingArgs` is the `Handled` property.
+This will let the app indicate if it was able to actually process a keybinding
+event or not. While in the large majority of cases, the events will all be
+marked handled, there are some scenarios where the Terminal will need to know if
+the event could not be performed. For example, in the case of the `copy` event,
+the Terminal is only capable of copying text if there's actually a selection
+active. If there isn't a selection active, the `App` should make sure to mark
+the event as not handled (`args.Handled(false)`).
+
+When an even is _not_ handled, we'll make sure to return `false` from
+`AppKeyBindings::TryKeyChord`, so that the terminal has another chance to
+actually use that keypress.
 
 ### Serializing KeyBinding Arguments
 
@@ -237,11 +246,26 @@ N/A
 
 ### Security
 
-N/A
+This should not introduce any _new_ security concerns. We're relying on the
+security of jsoncpp for parsing json. Adding new keys to the settings file
+will rely on jsoncpp's ability to securely parse those json values.
 
 ### Reliability
 
-N/A
+We'll need to make sure that invalid keybindings are ignored. Currently, we
+already gracefully ignore keybindings that have invalid `keys` or invalid
+`commands`. We'll need to add additional validation on invalid sets of `args`.
+When we're parsing the args from a Json blob, we'll make sure to only ever look
+for keys we're expecting, and ignore everything else.
+
+If a keybinding requires certain args, but those args are not provided, we'll
+need to make sure those args each have reasonable default values to use. If for
+any reason a reasonable default can't be used for a keybinding argument, then
+we'll need to make sure to display an error dialog to the user for that
+scenario.
+
+When we're re-serializing settings, we'll only know about the keybinding arg
+keys that were successfully parsed. Other keys will be lost on re-serialization.
 
 ### Compatibility
 
