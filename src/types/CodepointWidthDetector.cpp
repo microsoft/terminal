@@ -21,6 +21,7 @@ namespace
 
     static constexpr std::array<UnicodeRange, 285> s_wideAndAmbiguousTable{
         // generated from http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
+        // anything not present here is presumed to be Narrow.
         UnicodeRange{ 0xa1, 0xa1, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa4, 0xa4, CodepointWidth::Ambiguous },
         UnicodeRange{ 0xa7, 0xa8, CodepointWidth::Ambiguous },
