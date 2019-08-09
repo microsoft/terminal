@@ -9,6 +9,9 @@ Abstract:
 
 */
 
+#include <functional>
+#include <string_view>
+
 bool IsGlyphFullWidth(const std::wstring_view glyph);
 bool IsGlyphFullWidth(const wchar_t wch);
 void SetGlyphWidthFallback(std::function<bool(std::wstring_view)> pfnFallback);

@@ -50,9 +50,6 @@
     <ClInclude Include="..\..\inc\IConsoleInputThread.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IConsoleWindow.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\IHighDpiApi.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -74,5 +71,8 @@
     <ClInclude Include="..\..\inc\VtApiRedirection.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

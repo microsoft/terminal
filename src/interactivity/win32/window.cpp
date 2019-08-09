@@ -11,7 +11,6 @@
 #include "windowdpiapi.hpp"
 #include "windowmetrics.hpp"
 #include "windowtheme.hpp"
-#include "windowUiaProvider.hpp"
 
 #include "..\..\host\globals.h"
 #include "..\..\host\dbcs.h"
@@ -32,6 +31,7 @@
 
 #include "..\inc\ServiceLocator.hpp"
 #include "..\..\types\inc\Viewport.hpp"
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 // The following default masks are used in creating windows
 // Make sure that these flags match when switching to fullscreen and back
@@ -314,16 +314,16 @@ void Window::_UpdateSystemMetrics() const
 
             if (useDx)
             {
-                status = NTSTATUS_FROM_HRESULT(pDxEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
                 if (NT_SUCCESS(status))
                 {
-                    status = NTSTATUS_FROM_HRESULT(pDxEngine->Enable());
+                    status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
             }
             else
             {
-                status = NTSTATUS_FROM_HRESULT(pGdiEngine->SetHwnd(hWnd));
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pGdiEngine->SetHwnd(hWnd))));
             }
 
             if (NT_SUCCESS(status))
@@ -979,7 +979,7 @@ void Window::s_CalculateWindowRect(const COORD coordWindowInChars,
     prectWindow->bottom = prectWindow->top + RECT_HEIGHT(&rectProposed);
 }
 
-RECT Window::GetWindowRect() const
+RECT Window::GetWindowRect() const noexcept
 {
     RECT rc = { 0 };
     ::GetWindowRect(GetWindowHandle(), &rc);
@@ -1287,7 +1287,7 @@ IRawElementProviderSimple* Window::_GetUiaProvider()
     {
         try
         {
-            _pUiaProvider = WindowUiaProvider::Create();
+            _pUiaProvider = WindowUiaProvider::Create(this);
         }
         catch (...)
         {

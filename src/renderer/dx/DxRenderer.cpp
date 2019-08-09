@@ -10,10 +10,13 @@
 #include "../../types/inc/Viewport.hpp"
 #include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
+#include <VersionHelpers.h>
 
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
+static std::wstring FALLBACK_FONT_FACE = L"Consolas";
+static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
@@ -130,18 +133,16 @@ DxEngine::~DxEngine()
 
     RETURN_IF_FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&_dxgiFactory2)));
 
-    RETURN_IF_FAILED(_dxgiFactory2->EnumAdapters1(0, &_dxgiAdapter1));
-
     const DWORD DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT |
                               // clang-format off
-        // This causes problems for folks who do not have the whole DirectX SDK installed
-        // when they try to run the rest of the project in debug mode.
-        // As such, I'm leaving this flag here for people doing DX-specific work to toggle it
-        // only when they need it and shutting it off otherwise.
-        // Find out more about the debug layer here:
-        // https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
-        // You can find out how to install it here:
-        // https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
+// This causes problems for folks who do not have the whole DirectX SDK installed
+// when they try to run the rest of the project in debug mode.
+// As such, I'm leaving this flag here for people doing DX-specific work to toggle it
+// only when they need it and shutting it off otherwise.
+// Find out more about the debug layer here:
+// https://docs.microsoft.com/en-us/windows/desktop/direct3d11/overviews-direct3d-11-devices-layers
+// You can find out how to install it here:
+// https://docs.microsoft.com/en-us/windows/uwp/gaming/use-the-directx-runtime-and-visual-studio-graphics-diagnostic-features
                               // clang-format on
                               // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
@@ -154,18 +155,33 @@ DxEngine::~DxEngine()
         D3D_FEATURE_LEVEL_9_1,
     };
 
-    RETURN_IF_FAILED(D3D11CreateDevice(_dxgiAdapter1.Get(),
-                                       D3D_DRIVER_TYPE_UNKNOWN,
-                                       NULL,
-                                       DeviceFlags,
-                                       FeatureLevels,
-                                       ARRAYSIZE(FeatureLevels),
-                                       D3D11_SDK_VERSION,
-                                       &_d3dDevice,
-                                       NULL,
-                                       &_d3dDeviceContext));
+    // Trying hardware first for maximum performance, then trying WARP (software) renderer second
+    // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
+    // for Windows 7 in a VM.
+    const auto hardwareResult = D3D11CreateDevice(NULL,
+                                                  D3D_DRIVER_TYPE_HARDWARE,
+                                                  NULL,
+                                                  DeviceFlags,
+                                                  FeatureLevels,
+                                                  ARRAYSIZE(FeatureLevels),
+                                                  D3D11_SDK_VERSION,
+                                                  &_d3dDevice,
+                                                  NULL,
+                                                  &_d3dDeviceContext);
 
-    RETURN_IF_FAILED(_dxgiAdapter1->EnumOutputs(0, &_dxgiOutput));
+    if (FAILED(hardwareResult))
+    {
+        RETURN_IF_FAILED(D3D11CreateDevice(NULL,
+                                           D3D_DRIVER_TYPE_WARP,
+                                           NULL,
+                                           DeviceFlags,
+                                           FeatureLevels,
+                                           ARRAYSIZE(FeatureLevels),
+                                           D3D11_SDK_VERSION,
+                                           &_d3dDevice,
+                                           NULL,
+                                           &_d3dDeviceContext));
+    }
 
     _displaySizePixels = _GetClientSize();
 
@@ -193,13 +209,23 @@ DxEngine::~DxEngine()
 
             // We can't do alpha for HWNDs. Set to ignore. It will fail otherwise.
             SwapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+            const auto createSwapChainResult = _dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                                     _hwndTarget,
+                                                                                     &SwapChainDesc,
+                                                                                     nullptr,
+                                                                                     nullptr,
+                                                                                     &_dxgiSwapChain);
+            if (FAILED(createSwapChainResult))
+            {
+                SwapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+                RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
+                                                                       _hwndTarget,
+                                                                       &SwapChainDesc,
+                                                                       nullptr,
+                                                                       nullptr,
+                                                                       &_dxgiSwapChain));
+            }
 
-            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForHwnd(_d3dDevice.Get(),
-                                                                   _hwndTarget,
-                                                                   &SwapChainDesc,
-                                                                   nullptr,
-                                                                   nullptr,
-                                                                   &_dxgiSwapChain));
             break;
         }
         case SwapChainMode::ForComposition:
@@ -309,7 +335,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _dxgiSurface.Reset();
     _dxgiSwapChain.Reset();
-    _dxgiOutput.Reset();
 
     if (nullptr != _d3dDeviceContext.Get())
     {
@@ -321,7 +346,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 
     _d3dDevice.Reset();
 
-    _dxgiAdapter1.Reset();
     _dxgiFactory2.Reset();
 }
 
@@ -679,10 +703,24 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         else if (_displaySizePixels.cy != clientSize.cy ||
                  _displaySizePixels.cx != clientSize.cx)
         {
+            // OK, we're going to play a dangerous game here for the sake of optimizing resize
+            // First, set up a complete clear of all device resources if something goes terribly wrong.
+            auto resetDeviceResourcesOnFailure = wil::scope_exit([&] {
+                _ReleaseDeviceResources();
+            });
+
+            // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
             _d2dRenderTarget.Reset();
-            _dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+
+            // Change the buffer size and recreate the render target (and surface)
+            RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.cx, clientSize.cy, DXGI_FORMAT_B8G8R8A8_UNORM, 0));
             RETURN_IF_FAILED(_PrepareRenderTarget());
+
+            // OK we made it past the parts that can cause errors. We can release our failure handler.
+            resetDeviceResourcesOnFailure.release();
+
+            // And persist the new size.
             _displaySizePixels = clientSize;
         }
 
@@ -861,7 +899,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
-        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing));
+        RETURN_IF_FAILED(_dwriteTextFormat->GetLineSpacing(&spacing.method, &spacing.height, &spacing.baseline));
 
         // Assemble the drawing context information
         DrawingContext context(_d2dRenderTarget.Get(),
@@ -1223,9 +1261,9 @@ float DxEngine::GetScaling() const noexcept
                                                 FontInfo& pfiFontInfo,
                                                 int const iDpi) noexcept
 {
-    Microsoft::WRL::ComPtr<IDWriteTextFormat2> format;
+    Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> analyzer;
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> face;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> face;
 
     return _GetProposedFont(pfiFontInfoDesired,
                             pfiFontInfo,
@@ -1319,6 +1357,46 @@ float DxEngine::GetScaling() const noexcept
 }
 
 // Routine Description:
+// - Attempts to locate the font given, but then begins falling back if we cannot find it.
+// - We'll try to fall back to Consolas with the given weight/stretch/style first,
+//   then try Consolas again with normal weight/stretch/style,
+//   and if nothing works, then we'll throw an error.
+// Arguments:
+// - familyName - The font name we should be looking for
+// - weight - The weight (bold, light, etc.)
+// - stretch - The stretch of the font is the spacing between each letter
+// - style - Normal, italic, etc.
+// Return Value:
+// - Smart pointer holding interface reference for queryable font data.
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_ResolveFontFaceWithFallback(std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT& weight,
+                                                                                              DWRITE_FONT_STRETCH& stretch,
+                                                                                              DWRITE_FONT_STYLE& style,
+                                                                                              std::wstring& localeName) const
+{
+    auto face = _FindFontFace(familyName, weight, stretch, style, localeName);
+
+    if (!face)
+    {
+        familyName = FALLBACK_FONT_FACE;
+        face = _FindFontFace(familyName, weight, stretch, style, localeName);
+    }
+
+    if (!face)
+    {
+        familyName = FALLBACK_FONT_FACE;
+        weight = DWRITE_FONT_WEIGHT_NORMAL;
+        stretch = DWRITE_FONT_STRETCH_NORMAL;
+        style = DWRITE_FONT_STYLE_NORMAL;
+        face = _FindFontFace(familyName, weight, stretch, style, localeName);
+    }
+
+    THROW_IF_NULL_ALLOC(face);
+
+    return face;
+}
+
+// Routine Description:
 // - Locates a suitable font face from the given information
 // Arguments:
 // - familyName - The font name we should be looking for
@@ -1327,19 +1405,20 @@ float DxEngine::GetScaling() const noexcept
 // - style - Normal, italic, etc.
 // Return Value:
 // - Smart pointer holding interface reference for queryable font data.
-[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace5> DxEngine::_FindFontFace(const std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT weight,
-                                                                               DWRITE_FONT_STRETCH stretch,
-                                                                               DWRITE_FONT_STYLE style) const
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxEngine::_FindFontFace(std::wstring& familyName,
+                                                                               DWRITE_FONT_WEIGHT& weight,
+                                                                               DWRITE_FONT_STRETCH& stretch,
+                                                                               DWRITE_FONT_STYLE& style,
+                                                                               std::wstring& localeName) const
 {
-    Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace;
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
 
     Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(_dwriteFactory->GetSystemFontCollection(&fontCollection, false));
 
     UINT32 familyIndex;
     BOOL familyExists;
-    THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.c_str(), &familyIndex, &familyExists));
+    THROW_IF_FAILED(fontCollection->FindFamilyName(familyName.data(), &familyIndex, &familyExists));
 
     if (familyExists)
     {
@@ -1353,9 +1432,105 @@ float DxEngine::GetScaling() const noexcept
         THROW_IF_FAILED(font->CreateFontFace(&fontFace0));
 
         THROW_IF_FAILED(fontFace0.As(&fontFace));
+
+        // Dig the family name out at the end to return it.
+        familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
     }
 
     return fontFace;
+}
+
+// Routine Description:
+// - Helper to retrieve the user's locale preference or fallback to the default.
+// Arguments:
+// - <none>
+// Return Value:
+// - A locale that can be used on construction of assorted DX objects that want to know one.
+[[nodiscard]] std::wstring DxEngine::_GetLocaleName() const
+{
+    std::array<wchar_t, LOCALE_NAME_MAX_LENGTH> localeName;
+
+    const auto returnCode = GetUserDefaultLocaleName(localeName.data(), gsl::narrow<int>(localeName.size()));
+    if (returnCode)
+    {
+        return { localeName.data() };
+    }
+    else
+    {
+        return { FALLBACK_LOCALE.data(), FALLBACK_LOCALE.size() };
+    }
+}
+
+// Routine Description:
+// - Retrieves the font family name out of the given object in the given locale.
+// - If we can't find a valid name for the given locale, we'll fallback and report it back.
+// Arguments:
+// - fontFamily - DirectWrite font family object
+// - localeName - The locale in which the name should be retrieved.
+//              - If fallback occurred, this is updated to what we retrieved instead.
+// Return Value:
+// - Localized string name of the font family
+[[nodiscard]] std::wstring DxEngine::_GetFontFamilyName(IDWriteFontFamily* const fontFamily,
+                                                        std::wstring& localeName) const
+{
+    // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
+    Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
+    THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
+
+    // First we have to find the right family name for the locale. We're going to bias toward what the caller
+    // requested, but fallback if we need to and reply with the locale we ended up choosing.
+    UINT32 index = 0;
+    BOOL exists = false;
+
+    // This returns S_OK whether or not it finds a locale name. Check exists field instead.
+    // If it returns an error, it's a real problem, not an absence of this locale name.
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
+    THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
+
+    // If we tried and it still doesn't exist, try with the fallback locale.
+    if (!exists)
+    {
+        localeName = FALLBACK_LOCALE;
+        THROW_IF_FAILED(familyNames->FindLocaleName(localeName.data(), &index, &exists));
+    }
+
+    // If it still doesn't exist, we're going to try index 0.
+    if (!exists)
+    {
+        index = 0;
+
+        // Get the locale name out so at least the caller knows what locale this name goes with.
+        UINT32 length = 0;
+        THROW_IF_FAILED(familyNames->GetLocaleNameLength(index, &length));
+
+        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalenamelength
+        // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getlocalename
+        // GetLocaleNameLength does not include space for null terminator, but GetLocaleName needs it so add one.
+        length++;
+
+        localeName.resize(length);
+
+        THROW_IF_FAILED(familyNames->GetLocaleName(index, localeName.data(), length));
+    }
+
+    // OK, now that we've decided which family name and the locale that it's in... let's go get it.
+    UINT32 length = 0;
+    THROW_IF_FAILED(familyNames->GetStringLength(index, &length));
+
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstringlength
+    // https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-getstring
+    // Once again, GetStringLength is without the null, but GetString needs the null. So add one.
+    length++;
+
+    // Make our output buffer and resize it so it is allocated.
+    std::wstring retVal;
+    retVal.resize(length);
+
+    // FINALLY, go fetch the string name.
+    THROW_IF_FAILED(familyNames->GetString(index, retVal.data(), length));
+
+    // and return it.
+    return retVal;
 }
 
 // Routine Description:
@@ -1369,19 +1544,19 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] HRESULT DxEngine::_GetProposedFont(const FontInfoDesired& desired,
                                                  FontInfo& actual,
                                                  const int dpi,
-                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                                 Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                  Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                                 Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept
+                                                 Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept
 {
     try
     {
-        const std::wstring fontName(desired.GetFaceName());
-        const DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_NORMAL;
-        const DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
-        const DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
+        std::wstring fontName(desired.GetFaceName());
+        DWRITE_FONT_WEIGHT weight = DWRITE_FONT_WEIGHT_NORMAL;
+        DWRITE_FONT_STYLE style = DWRITE_FONT_STYLE_NORMAL;
+        DWRITE_FONT_STRETCH stretch = DWRITE_FONT_STRETCH_NORMAL;
+        std::wstring localeName = _GetLocaleName();
 
-        const auto face = _FindFontFace(fontName, weight, stretch, style);
-        THROW_IF_NULL_ALLOC_MSG(face, "Failed to find the requested font");
+        const auto face = _ResolveFontFaceWithFallback(fontName, weight, stretch, style, localeName);
 
         DWRITE_FONT_METRICS1 fontMetrics;
         face->GetMetrics(&fontMetrics);
@@ -1472,7 +1647,7 @@ float DxEngine::GetScaling() const noexcept
                                                          style,
                                                          stretch,
                                                          fontSize,
-                                                         L"",
+                                                         localeName.data(),
                                                          &format));
 
         THROW_IF_FAILED(format.As(&textFormat));
@@ -1483,7 +1658,7 @@ float DxEngine::GetScaling() const noexcept
 
         fontFace = face;
 
-        THROW_IF_FAILED(textFormat->SetLineSpacing(&lineSpacing));
+        THROW_IF_FAILED(textFormat->SetLineSpacing(lineSpacing.method, lineSpacing.height, lineSpacing.baseline));
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
@@ -1492,10 +1667,6 @@ float DxEngine::GetScaling() const noexcept
         COORD coordSize = { 0 };
         coordSize.X = gsl::narrow<SHORT>(widthExact);
         coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
-
-        const auto familyNameLength = textFormat->GetFontFamilyNameLength() + 1; // 1 for space for null
-        const auto familyNameBuffer = std::make_unique<wchar_t[]>(familyNameLength);
-        THROW_IF_FAILED(textFormat->GetFontFamilyName(familyNameBuffer.get(), familyNameLength));
 
         const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
 
@@ -1506,7 +1677,7 @@ float DxEngine::GetScaling() const noexcept
 
         COORD scaled = coordSize;
 
-        actual.SetFromEngine(familyNameBuffer.get(),
+        actual.SetFromEngine(fontName.data(),
                              desired.GetFamily(),
                              weightDword,
                              false,
