@@ -752,7 +752,6 @@ void Pane::_CreateSplitContent()
 
         _separatorRoot.Background(brush);
 
-        
         _separatorRoot.ManipulationStarted([this](auto&&, auto& args) {
             auto pos = args.Position();
             pos;
@@ -767,6 +766,21 @@ void Pane::_CreateSplitContent()
             auto offset = transform.TransformPoint({ 0, 0 });
             auto delta = args.Delta();
             auto deltaTrans = delta.Translation;
+
+            // Turn the delta into a percentage
+            const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                                   gsl::narrow_cast<float>(_root.ActualHeight()) };
+            const bool changeWidth = _splitState == SplitState::Vertical;
+            auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
+            actualDimension -= PaneSeparatorSize;
+
+            auto deltaPercent = deltaTrans.X / actualDimension;
+            _firstPercent = _firstPercent.value() + deltaPercent;
+            _secondPercent = 1.0f - _firstPercent.value();
+
+            // Resize our columns to match the new percentages.
+            ResizeContent(actualSize);
+
             // auto trans = transform.try_as<Media::TranslateTransform>();
             // auto transform = winrt::Windows::UI::Xaml::TransformToVisual(_root);
             // auto rel = inverse.TransformPoint(posCopy);
