@@ -45,7 +45,7 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 ## Starting a new PowerShell tab with admin privilege
 
-There is no current plan to support this feature for security reaons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
+There is no current plan to support this feature for security reasons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
 
 ## Using cut and paste in the Terminal window
 
