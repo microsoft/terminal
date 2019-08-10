@@ -96,6 +96,8 @@ private:
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
 
+    winrt::Windows::Foundation::Point cumulative{ 0, 0 };
+
     // Function Description:
     // - Returns true if the given direction can be used with the given split
     //   type.

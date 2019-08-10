@@ -11,7 +11,7 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
-static const int PaneSeparatorSize = 4;
+static const int PaneSeparatorSize = 16;
 static const float Half = 0.50f;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
@@ -741,6 +741,52 @@ void Pane::_CreateSplitContent()
     {
         // Create the pane separator
         _separatorRoot = Controls::Grid{};
+        // Controls::UserControl control{};
+        // _separatorRoot.Children().Append(control);
+
+        // _separatorRoot.ManipulationMode(winrt::Windows::UI::Xaml::Input::ManipulationModes::TranslateX
+        //                                 | winrt::Windows::UI::Xaml::Input::ManipulationModes::TranslateY);
+        _separatorRoot.ManipulationMode(winrt::Windows::UI::Xaml::Input::ManipulationModes::All);
+        auto brush = Media::SolidColorBrush{};
+        brush.Color(winrt::Windows::UI::Colors::Transparent());
+
+        _separatorRoot.Background(brush);
+
+        
+        _separatorRoot.ManipulationStarted([this](auto&&, auto& args) {
+            auto pos = args.Position();
+            pos;
+            cumulative = Point{ 0, 0 };
+        });
+        _separatorRoot.ManipulationDelta([this](auto&&, auto& args) {
+            auto pos = args.Position();
+            pos;
+            auto posCopy = pos;
+            auto transform = _root.TransformToVisual(nullptr);
+            auto inverse = transform.Inverse();
+            auto offset = transform.TransformPoint({ 0, 0 });
+            auto delta = args.Delta();
+            auto deltaTrans = delta.Translation;
+            // auto trans = transform.try_as<Media::TranslateTransform>();
+            // auto transform = winrt::Windows::UI::Xaml::TransformToVisual(_root);
+            // auto rel = inverse.TransformPoint(posCopy);
+            // auto rootOrigin = _root.Position();
+            // auto relativePos = { pos.X - rootOrigin.X,
+            //                      pos.Y - rootOrigin.Y
+            // };
+            auto rel = { pos.X - offset.X, pos.Y - offset.Y };
+            cumulative.X += deltaTrans.X;
+            cumulative.Y += deltaTrans.Y;
+            auto theThing = cumulative;
+            auto a = 0;
+            a++;
+            a;
+        });
+        _separatorRoot.ManipulationCompleted([](auto&&, auto& args) {
+            auto pos = args.Position();
+            pos;
+        });
+
         _separatorRoot.Width(PaneSeparatorSize);
         // NaN is the special value XAML uses for "Auto" sizing.
         _separatorRoot.Height(NAN);
