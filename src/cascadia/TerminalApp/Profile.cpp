@@ -170,7 +170,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     {
         terminalSettings.ConvertPasteLineEndings(_convertPasteLineEndings.value());
     }
-    
     terminalSettings.TintOpacity(_acrylicTransparency);
 
     terminalSettings.FontFace(_fontFace);
