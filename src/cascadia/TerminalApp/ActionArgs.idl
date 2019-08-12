@@ -30,19 +30,11 @@ namespace TerminalApp
     [default_interface] runtimeclass NewTabEventArgs : IActionEventArgs{};
     [default_interface] runtimeclass DuplicateTabEventArgs : IActionEventArgs{};
 
-    // [default_interface] interface INewTabWithProfileArgs : IActionArgs
-    // {
-    //     Int32 ProfileIndex;
-    // };
-    // [default_interface] runtimeclass NewTabWithProfileArgs : INewTabWithProfileArgs{};
     unsealed runtimeclass NewTabWithProfileArgs : IActionArgs
     {
         Int32 ProfileIndex;
     };
-    // [default_interface] runtimeclass NewTabWithProfileEventArgs : INewTabWithProfileArgs, IActionEventArgs{
-    [default_interface] runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionEventArgs{
-        // NewTabWithProfileEventArgs(NewTabWithProfileArgs args);
-    };
+    [default_interface] runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionEventArgs{};
 
     [default_interface] runtimeclass NewWindowEventArgs : IActionEventArgs{};
     [default_interface] runtimeclass CloseWindowEventArgs : IActionEventArgs{};

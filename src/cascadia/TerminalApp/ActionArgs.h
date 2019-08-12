@@ -36,13 +36,20 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
-// Notes on defining EventArgs:
-// For EventArgs that require actual args (ex: NewTabWithProfileEventArgs)
-// - The first ctor is the projected ctor, the one that's required by cppwinrt.
-//   It requires the projection-namespaced IActionArgs type.
-// - the second is internal to the TerminalApp implementation. It uses the
-//   implementation type of the IActionArgs. This lets us construct the args
-//   without getting the activation factory.
+// Notes on defining ActionArgs and ActionEventArgs:
+// * All properties specific to an action should be defined as in the ActionArgs
+//   class.
+// * ActionEventArgs should extend from the ActionArgs class, and add an
+//   aditional `Handled` property. For EventArgs that require actual args (ex:
+//   NewTabWithProfileEventArgs)
+// * For ActionEventArgs:
+//   - the ctor is internal to the TerminalApp implementation. It uses the
+//     implementation type of the IActionArgs. This lets us construct the args
+//     without getting the activation factory.
+//   - You need to manually set each member of the EventArgs using the Args
+//     that's passed in. DO NOT declare the properties a second time in the
+//     event! Because the EventArgs class uses the Args class as a base class,
+//     the EventArgs already has methods for each property defined.
 
 namespace winrt::TerminalApp::implementation
 {
@@ -53,11 +60,11 @@ namespace winrt::TerminalApp::implementation
     };
     struct CopyTextEventArgs : public CopyTextEventArgsT<CopyTextEventArgs, TerminalApp::implementation::CopyTextArgs>
     {
-        CopyTextEventArgs(const CopyTextArgs& args) :
-            _TrimWhitespace{ args.TrimWhitespace() } {};
-
+        CopyTextEventArgs(const CopyTextArgs& args)
+        {
+            TrimWhitespace(args.TrimWhitespace());
+        };
         GETSET_PROPERTY(bool, Handled, false);
-        GETSET_PROPERTY(bool, TrimWhitespace, false);
     };
 
     struct PasteTextEventArgs : public PasteTextEventArgsT<PasteTextEventArgs>
@@ -86,22 +93,11 @@ namespace winrt::TerminalApp::implementation
 
     struct NewTabWithProfileEventArgs : public NewTabWithProfileEventArgsT<NewTabWithProfileEventArgs, TerminalApp::implementation::NewTabWithProfileArgs>
     {
-        // NewTabWithProfileEventArgs(const TerminalApp::NewTabWithProfileArgs& args) :
-        //     _ProfileIndex{ args.ProfileIndex() } {};
-
-        NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args)//  :
-            //NewTabWithProfileArgs(args.ProfileIndex())
-            // _ProfileIndex{ args.ProfileIndex() }
+        NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args)
         {
             ProfileIndex(args.ProfileIndex());
-            TerminalApp::NewTabWithProfileArgs self{ *this };
-            self.ProfileIndex(args.ProfileIndex());
-            // this->try_as<NewTabEventArgs>().Pro
         };
-
         GETSET_PROPERTY(bool, Handled, false);
-
-        // GETSET_PROPERTY(int32_t, ProfileIndex, 0);
     };
 
     struct NewWindowEventArgs : public NewWindowEventArgsT<NewWindowEventArgs>
@@ -159,10 +155,11 @@ namespace winrt::TerminalApp::implementation
     };
     struct SwitchToTabEventArgs : public SwitchToTabEventArgsT<SwitchToTabEventArgs, TerminalApp::implementation::SwitchToTabArgs>
     {
-        SwitchToTabEventArgs(const SwitchToTabArgs& args) :
-            _TabIndex{ args.TabIndex() } {};
+        SwitchToTabEventArgs(const SwitchToTabArgs& args)
+        {
+            TabIndex(args.TabIndex());
+        };
         GETSET_PROPERTY(bool, Handled, false);
-        GETSET_PROPERTY(int32_t, TabIndex, 0);
     };
 
     struct IncreaseFontSizeEventArgs : public IncreaseFontSizeEventArgsT<IncreaseFontSizeEventArgs>
@@ -214,11 +211,11 @@ namespace winrt::TerminalApp::implementation
     };
     struct ResizePaneEventArgs : public ResizePaneEventArgsT<ResizePaneEventArgs, TerminalApp::implementation::ResizePaneArgs>
     {
-        ResizePaneEventArgs(const ResizePaneArgs& args) :
-            _Direction{ args.Direction() } {};
-
+        ResizePaneEventArgs(const ResizePaneArgs& args)
+        {
+            Direction(args.Direction());
+        };
         GETSET_PROPERTY(bool, Handled, false);
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
     struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
@@ -228,37 +225,15 @@ namespace winrt::TerminalApp::implementation
     };
     struct MoveFocusEventArgs : public MoveFocusEventArgsT<MoveFocusEventArgs, TerminalApp::implementation::MoveFocusArgs>
     {
-        MoveFocusEventArgs(const MoveFocusArgs& args) :
-            _Direction{ args.Direction() } {};
-
+        MoveFocusEventArgs(const MoveFocusArgs& args)
+        {
+            Direction(args.Direction());
+        };
         GETSET_PROPERTY(bool, Handled, false);
-        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    // BASIC_FACTORY(PasteTextEventArgs);
-    // BASIC_FACTORY(NewTabEventArgs);
-    // BASIC_FACTORY(DuplicateTabEventArgs);
-    // BASIC_FACTORY(NewTabWithProfileEventArgs);
-    // BASIC_FACTORY(NewWindowEventArgs);
-    // BASIC_FACTORY(CloseWindowEventArgs);
-    // BASIC_FACTORY(CloseTabEventArgs);
-    // BASIC_FACTORY(ClosePaneEventArgs);
-    // BASIC_FACTORY(SwitchToTabEventArgs);
-    // BASIC_FACTORY(NextTabEventArgs);
-    // BASIC_FACTORY(PrevTabEventArgs);
-    // BASIC_FACTORY(SplitVerticalEventArgs);
-    // BASIC_FACTORY(SplitHorizontalEventArgs);
-    // BASIC_FACTORY(IncreaseFontSizeEventArgs);
-    // BASIC_FACTORY(DecreaseFontSizeEventArgs);
-    // BASIC_FACTORY(ScrollUpEventArgs);
-    // BASIC_FACTORY(ScrollDownEventArgs);
-    // BASIC_FACTORY(ScrollUpPageEventArgs);
-    // BASIC_FACTORY(ScrollDownPageEventArgs);
-    // BASIC_FACTORY(OpenSettingsEventArgs);
-    // BASIC_FACTORY(ResizePaneEventArgs);
-    // BASIC_FACTORY(MoveFocusEventArgs);
 }

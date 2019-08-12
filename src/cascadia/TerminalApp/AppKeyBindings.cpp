@@ -106,9 +106,8 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(2);
-            auto eventArgs = make_self<NewTabWithProfileEventArgs>(args);
-            // auto eventArgs = NewTabWithProfileEventArgs(args);
-            _NewTabWithProfileHandlers(*this, *eventArgs);
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::NewTabProfile3:

@@ -480,10 +480,7 @@ namespace winrt::TerminalApp::implementation
         bindings.DuplicateTab([this](auto&&, const auto& args) {      _DuplicateTabViewItem();          args.Handled(true); });
         bindings.CloseTab([this](auto&&, const auto& args) {          _CloseFocusedTab();               args.Handled(true); });
         bindings.ClosePane([this](auto&&, const auto& args) {         _CloseFocusedPane();              args.Handled(true); });
-        bindings.NewTabWithProfile([this](auto&&, const auto& args) {
-            _OpenNewTab({ args.ProfileIndex() });
-            args.Handled(true);
-        });
+        bindings.NewTabWithProfile([this](auto&&, const auto& args) { _OpenNewTab({ args.ProfileIndex() }); args.Handled(true); });
         bindings.ScrollUp([this](auto&&, const auto& args) {          _Scroll(-1);                      args.Handled(true); });
         bindings.ScrollDown([this](auto&&, const auto& args) {        _Scroll(1);                       args.Handled(true); });
         bindings.NextTab([this](auto&&, const auto& args) {           _SelectNextTab(true);             args.Handled(true); });
