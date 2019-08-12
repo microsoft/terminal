@@ -9,6 +9,7 @@
 #include "PasteTextEventArgs.g.cpp"
 #include "NewTabEventArgs.g.cpp"
 #include "DuplicateTabEventArgs.g.cpp"
+#include "NewTabWithProfileArgs.g.cpp"
 #include "NewTabWithProfileEventArgs.g.cpp"
 #include "NewWindowEventArgs.g.cpp"
 #include "CloseWindowEventArgs.g.cpp"

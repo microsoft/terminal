@@ -87,66 +87,75 @@ namespace winrt::TerminalApp::implementation
 
         case ShortcutAction::NewTabProfile0:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = TerminalApp::NewTabWithProfileArgs();
             args.ProfileIndex(0);
+            auto eventArgs = TerminalApp::NewTabWithProfileEventArgs(args);
             _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile1:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(1);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile2:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(2);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile3:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(3);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile4:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(4);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile5:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(5);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile6:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(6);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile7:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = TerminalApp::NewTabWithProfileArgs();
             args.ProfileIndex(7);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = TerminalApp::NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile8:
         {
-            auto args = NewTabWithProfileEventArgs();
+            auto args = NewTabWithProfileArgs();
             args.ProfileIndex(8);
-            _NewTabWithProfileHandlers(*this, args);
-            return args.Handled();
+            auto eventArgs = NewTabWithProfileEventArgs(args);
+            _NewTabWithProfileHandlers(*this, eventArgs);
+            return eventArgs.Handled();
         }
 
         case ShortcutAction::NewWindow:
@@ -375,31 +384,4 @@ namespace winrt::TerminalApp::implementation
         return keyModifiers;
     }
 
-    // -------------------------------- Events ---------------------------------
-    // clang-format off
-    // DEFINE_EVENT(AppKeyBindings, CopyText,          _CopyTextHandlers,          TerminalApp::CopyTextEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, PasteText,         _PasteTextHandlers,         TerminalApp::PasteTextEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, NewTab,            _NewTabHandlers,            TerminalApp::NewTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, DuplicateTab,      _DuplicateTabHandlers,      TerminalApp::DuplicateTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, NewTabWithProfile, _NewTabWithProfileHandlers, TerminalApp::NewTabWithProfileEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, NewWindow,         _NewWindowHandlers,         TerminalApp::NewWindowEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, CloseWindow,       _CloseWindowHandlers,       TerminalApp::CloseWindowEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, CloseTab,          _CloseTabHandlers,          TerminalApp::CloseTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ClosePane,         _ClosePaneHandlers,         TerminalApp::ClosePaneEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, SwitchToTab,       _SwitchToTabHandlers,       TerminalApp::SwitchToTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, NextTab,           _NextTabHandlers,           TerminalApp::NextTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, PrevTab,           _PrevTabHandlers,           TerminalApp::PrevTabEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, SplitVertical,     _SplitVerticalHandlers,     TerminalApp::SplitVerticalEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, SplitHorizontal,   _SplitHorizontalHandlers,   TerminalApp::SplitHorizontalEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, IncreaseFontSize,  _IncreaseFontSizeHandlers,  TerminalApp::IncreaseFontSizeEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, DecreaseFontSize,  _DecreaseFontSizeHandlers,  TerminalApp::DecreaseFontSizeEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ScrollUp,          _ScrollUpHandlers,          TerminalApp::ScrollUpEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ScrollDown,        _ScrollDownHandlers,        TerminalApp::ScrollDownEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ScrollUpPage,      _ScrollUpPageHandlers,      TerminalApp::ScrollUpPageEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ScrollDownPage,    _ScrollDownPageHandlers,    TerminalApp::ScrollDownPageEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, OpenSettings,      _OpenSettingsHandlers,      TerminalApp::OpenSettingsEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, ResizePane,        _ResizePaneHandlers,        TerminalApp::ResizePaneEventArgs);
-    // DEFINE_EVENT(AppKeyBindings, MoveFocus,         _MoveFocusHandlers,         TerminalApp::MoveFocusEventArgs);
-
-    // clang-format on
 }

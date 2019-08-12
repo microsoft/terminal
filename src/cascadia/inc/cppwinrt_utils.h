@@ -76,11 +76,22 @@ private:                                                                        
 // getter/setter beyond just accessing/updating the value.
 #define GETSET_PROPERTY(type, name)                   \
 public:                                               \
-    type name() { return _##name; }                   \
+    type name() const { return _##name; }             \
     void name(const type& value) { _##name = value; } \
                                                       \
 private:                                              \
     type _##name;
+
+// Use this macro for quickly defining the factory_implementation part of a
+// class. CppWinrt requires these for the compiler, but more often than not,
+// they require no customization. See
+// https://docs.microsoft.com/en-us/uwp/cpp-ref-for-winrt/implements#marker-types
+// and https://docs.microsoft.com/en-us/uwp/cpp-ref-for-winrt/static-lifetime
+// for examples of when you might _not_ want to use this.
+#define BASIC_FACTORY(typeName)                                       \
+    struct typeName : typeName##T<typeName, implementation::typeName> \
+    {                                                                 \
+    };
 
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that

@@ -3,10 +3,14 @@
 
 namespace TerminalApp
 {
-    interface IActionArgs
+    interface IActionEventArgs
     {
         Boolean Handled;
     };
+
+    // An empty interface must specify an explicit [uuid] to ensure uniqueness.
+    // We also manually have to specify a "version" attribute to make the compiler happy.
+    [uuid("191C2BDE-1A60-4BAB-9765-D850F0EF2CAC")][version(1)] interface IActionArgs{};
 
     enum Direction
     {
@@ -16,99 +20,103 @@ namespace TerminalApp
         Down
     };
 
-    [default_interface] runtimeclass CopyTextEventArgs : IActionArgs
+    [default_interface] runtimeclass CopyTextEventArgs : IActionEventArgs
     {
         CopyTextEventArgs();
         Boolean TrimWhitespace;
     };
-    [default_interface] runtimeclass PasteTextEventArgs : IActionArgs
+    [default_interface] runtimeclass PasteTextEventArgs : IActionEventArgs
     {
         PasteTextEventArgs();
     };
-    [default_interface] runtimeclass NewTabEventArgs : IActionArgs
+    [default_interface] runtimeclass NewTabEventArgs : IActionEventArgs
     {
         NewTabEventArgs();
     };
-    [default_interface] runtimeclass DuplicateTabEventArgs : IActionArgs
+    [default_interface] runtimeclass DuplicateTabEventArgs : IActionEventArgs
     {
         DuplicateTabEventArgs();
     };
-    [default_interface] runtimeclass NewTabWithProfileEventArgs : IActionArgs
+    unsealed runtimeclass NewTabWithProfileArgs : IActionArgs
     {
-        NewTabWithProfileEventArgs();
+        NewTabWithProfileArgs();
         Int32 ProfileIndex;
+    }
+    [default_interface] runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionEventArgs
+    {
+        NewTabWithProfileEventArgs(NewTabWithProfileArgs args);
     };
-    [default_interface] runtimeclass NewWindowEventArgs : IActionArgs
+    [default_interface] runtimeclass NewWindowEventArgs : IActionEventArgs
     {
         NewWindowEventArgs();
     };
-    [default_interface] runtimeclass CloseWindowEventArgs : IActionArgs
+    [default_interface] runtimeclass CloseWindowEventArgs : IActionEventArgs
     {
         CloseWindowEventArgs();
     };
-    [default_interface] runtimeclass CloseTabEventArgs : IActionArgs
+    [default_interface] runtimeclass CloseTabEventArgs : IActionEventArgs
     {
         CloseTabEventArgs();
     };
-    [default_interface] runtimeclass ClosePaneEventArgs : IActionArgs
+    [default_interface] runtimeclass ClosePaneEventArgs : IActionEventArgs
     {
         ClosePaneEventArgs();
     };
-    [default_interface] runtimeclass NextTabEventArgs : IActionArgs
+    [default_interface] runtimeclass NextTabEventArgs : IActionEventArgs
     {
         NextTabEventArgs();
     };
-    [default_interface] runtimeclass PrevTabEventArgs : IActionArgs
+    [default_interface] runtimeclass PrevTabEventArgs : IActionEventArgs
     {
         PrevTabEventArgs();
     };
-    [default_interface] runtimeclass SplitVerticalEventArgs : IActionArgs
+    [default_interface] runtimeclass SplitVerticalEventArgs : IActionEventArgs
     {
         SplitVerticalEventArgs();
     };
-    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionArgs
+    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionEventArgs
     {
         SplitHorizontalEventArgs();
     };
-    [default_interface] runtimeclass SwitchToTabEventArgs : IActionArgs
+    [default_interface] runtimeclass SwitchToTabEventArgs : IActionEventArgs
     {
         SwitchToTabEventArgs();
         Int32 TabIndex;
     };
-    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionArgs
+    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionEventArgs
     {
         IncreaseFontSizeEventArgs();
     };
-    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionArgs
+    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionEventArgs
     {
         DecreaseFontSizeEventArgs();
     };
-    [default_interface] runtimeclass ScrollUpEventArgs : IActionArgs
+    [default_interface] runtimeclass ScrollUpEventArgs : IActionEventArgs
     {
         ScrollUpEventArgs();
     };
-    [default_interface] runtimeclass ScrollDownEventArgs : IActionArgs
+    [default_interface] runtimeclass ScrollDownEventArgs : IActionEventArgs
     {
         ScrollDownEventArgs();
     };
-    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionArgs
+    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionEventArgs
     {
         ScrollUpPageEventArgs();
     };
-    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionArgs
+    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionEventArgs
     {
         ScrollDownPageEventArgs();
     };
-    [default_interface] runtimeclass OpenSettingsEventArgs : IActionArgs
+    [default_interface] runtimeclass OpenSettingsEventArgs : IActionEventArgs
     {
         OpenSettingsEventArgs();
     };
-    [default_interface] runtimeclass ResizePaneEventArgs : IActionArgs
+    [default_interface] runtimeclass ResizePaneEventArgs : IActionEventArgs
     {
         ResizePaneEventArgs();
         Direction Direction;
     };
-    [default_interface] runtimeclass MoveFocusEventArgs : IActionArgs
+    [default_interface] runtimeclass MoveFocusEventArgs : IActionEventArgs
     {
         MoveFocusEventArgs();
         Direction Direction;
