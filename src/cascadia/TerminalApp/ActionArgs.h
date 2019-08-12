@@ -86,14 +86,22 @@ namespace winrt::TerminalApp::implementation
 
     struct NewTabWithProfileEventArgs : public NewTabWithProfileEventArgsT<NewTabWithProfileEventArgs, TerminalApp::implementation::NewTabWithProfileArgs>
     {
-        NewTabWithProfileEventArgs(const TerminalApp::NewTabWithProfileArgs& args) :
-            _ProfileIndex{ args.ProfileIndex() } {};
+        // NewTabWithProfileEventArgs(const TerminalApp::NewTabWithProfileArgs& args) :
+        //     _ProfileIndex{ args.ProfileIndex() } {};
 
-        NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args) :
-            _ProfileIndex{ args.ProfileIndex() } {};
+        NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args)//  :
+            //NewTabWithProfileArgs(args.ProfileIndex())
+            // _ProfileIndex{ args.ProfileIndex() }
+        {
+            ProfileIndex(args.ProfileIndex());
+            TerminalApp::NewTabWithProfileArgs self{ *this };
+            self.ProfileIndex(args.ProfileIndex());
+            // this->try_as<NewTabEventArgs>().Pro
+        };
 
         GETSET_PROPERTY(bool, Handled, false);
-        GETSET_PROPERTY(int32_t, ProfileIndex, 0);
+
+        // GETSET_PROPERTY(int32_t, ProfileIndex, 0);
     };
 
     struct NewWindowEventArgs : public NewWindowEventArgsT<NewWindowEventArgs>
@@ -234,7 +242,7 @@ namespace winrt::TerminalApp::factory_implementation
     // BASIC_FACTORY(PasteTextEventArgs);
     // BASIC_FACTORY(NewTabEventArgs);
     // BASIC_FACTORY(DuplicateTabEventArgs);
-    BASIC_FACTORY(NewTabWithProfileEventArgs);
+    // BASIC_FACTORY(NewTabWithProfileEventArgs);
     // BASIC_FACTORY(NewWindowEventArgs);
     // BASIC_FACTORY(CloseWindowEventArgs);
     // BASIC_FACTORY(CloseTabEventArgs);
