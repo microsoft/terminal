@@ -294,9 +294,16 @@ const wchar_t* _stdcall GetSelection(void* terminal)
         return nullptr;
     }
 
-    wcscpy_s(returnText, textChars, text);
-
-    ClearSelection(terminal);
+    try
+    {
+        wcscpy_s(returnText, textChars, text);
+        ClearSelection(terminal);
+    }
+    catch (...)
+    {
+        ::CoTaskMemFree(returnText);
+        return nullptr;
+    }
 
     return returnText;
 }
