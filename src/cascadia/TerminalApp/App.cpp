@@ -689,10 +689,7 @@ namespace winrt::TerminalApp::implementation
             const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
             if (matchingProfile)
             {
-                std::wstring path{ matchingProfile->GetIconPath() };
-                const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-                winrt::hstring iconPath{ envExpandedPath };
-                tab->UpdateIcon(iconPath);
+                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
             }
             else
             {
@@ -930,10 +927,7 @@ namespace winrt::TerminalApp::implementation
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
         {
-            std::wstring path{ profile->GetIconPath() };
-            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-            winrt::hstring iconPath{ envExpandedPath };
-            newTab->UpdateIcon(iconPath);
+            newTab->UpdateIcon(profile->GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
@@ -1259,9 +1253,7 @@ namespace winrt::TerminalApp::implementation
         {
             try
             {
-                std::wstring path{ profile.GetIconPath() };
-                const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-                winrt::hstring iconPath{ envExpandedPath };
+                winrt::hstring iconPath{ profile.GetExpandedIconPath() };
                 winrt::Windows::Foundation::Uri iconUri{ iconPath };
                 Controls::BitmapIconSource iconSource;
                 // Make sure to set this to false, so we keep the RGB data of the

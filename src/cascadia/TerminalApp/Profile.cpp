@@ -568,14 +568,19 @@ void Profile::SetIconPath(std::wstring_view path)
 }
 
 // Method Description:
-// - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
+// - Returns this profile's icon path, if one is set. Otherwise returns the
+//   empty string. This method will expand any environment variables in the
+//   path, if there are any.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetIconPath() const noexcept
+winrt::hstring Profile::GetExpandedIconPath() const
 {
-    return HasIcon() ?
-               std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
-               std::wstring_view{ L"", 0 };
+    if (!HasIcon())
+    {
+        return { L"" };
+    }
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_icon.value().data()) };
+    return envExpandedPath;
 }
 
 // Method Description:
