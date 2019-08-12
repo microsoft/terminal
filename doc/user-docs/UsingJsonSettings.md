@@ -70,6 +70,7 @@ Example settings include
     "startingDirectory" : "%USERPROFILE%/wslhome"
     ....
 ```
+Note: All values for "startingDirectory" must use backslashes instead of forwardslashes.
 
 The profile GUID is used to reference the default profile in the global settings.
 
