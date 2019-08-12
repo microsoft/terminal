@@ -9,7 +9,7 @@
 
 using namespace ::Microsoft::Terminal::Core;
 
-static LPCWSTR term_window_class= L"HwndTerminalClass";
+static LPCWSTR term_window_class = L"HwndTerminalClass";
 
 LRESULT CALLBACK HwndTerminalWndProc(
     HWND hwnd,
@@ -108,6 +108,27 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
+void HwndTerminal::RegisterWriteCallback(void _stdcall callback(wchar_t*))
+{
+    _terminal->SetWriteInputCallback([=](std::wstring& input) {
+        const wchar_t* text = input.c_str();
+        size_t textChars = wcslen(text) + 1;
+        size_t textBytes = textChars * sizeof(wchar_t);
+        wchar_t* callingText = NULL;
+
+        callingText = (wchar_t*)::CoTaskMemAlloc(textBytes);
+
+        if (callingText == nullptr)
+        {
+            callback(nullptr);
+        }
+
+        wcscpy_s(callingText, textChars, text);
+
+        callback(callingText);
+    });
+}
+
 void HwndTerminal::_UpdateFont(int newDpi)
 {
     auto lock = _terminal->LockForWriting();
@@ -164,6 +185,12 @@ void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterScrollCallback(callback);
+}
+
+void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*))
+{
+    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    publicTerminal->RegisterWriteCallback(callback);
 }
 
 void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data)
@@ -272,6 +299,46 @@ const wchar_t* _stdcall GetSelection(void* terminal)
     ClearSelection(terminal);
 
     return returnText;
+}
+
+void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
+{
+    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+
+    struct KeyModifier
+    {
+        int vkey;
+        ControlKeyStates flags;
+    };
+
+    constexpr std::array<KeyModifier, 5> modifiers{ {
+        { VK_RMENU, ControlKeyStates::RightAltPressed },
+        { VK_LMENU, ControlKeyStates::LeftAltPressed },
+        { VK_RCONTROL, ControlKeyStates::RightCtrlPressed },
+        { VK_LCONTROL, ControlKeyStates::LeftCtrlPressed },
+        { VK_SHIFT, ControlKeyStates::ShiftPressed },
+    } };
+
+    ControlKeyStates flags;
+
+    for (const auto& mod : modifiers)
+    {
+        const auto state = GetKeyState(mod.vkey);
+        const auto isDown = state < 0;
+
+        if (isDown)
+        {
+            flags |= mod.flags;
+        }
+    }
+
+    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, flags);
+}
+
+void _stdcall SendCharEvent(void* terminal, char16_t ch)
+{
+    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    publicTerminal->_terminal->SendCharEvent(ch);
 }
 
 void _stdcall DestroyTerminal(void* terminal)

@@ -17,6 +17,9 @@ extern "C" {
     __declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
     __declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
     __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
+    __declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
+    __declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
+    __declspec(dllexport) void _stdcall SendCharEvent(void* terminal, char16_t ch);
 
     enum CursorStyle
     {
@@ -37,6 +40,7 @@ public:
     void SendOutput(std::wstring_view data);
     HRESULT Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
     void RegisterScrollCallback(std::function<void (int, int, int)> callback);
+    void RegisterWriteCallback(void _stdcall callback(wchar_t*));
 
 private:
     wil::unique_hwnd _hwnd;
@@ -56,5 +60,7 @@ private:
     friend void _stdcall ClearSelection(void* terminal);
     friend const wchar_t* _stdcall GetSelection(void* terminal);
     friend bool _stdcall IsSelectionActive(void* terminal);
+    friend void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
+    friend void _stdcall SendCharEvent(void* terminal, char16_t ch);
     void _UpdateFont(int newDpi);
 };

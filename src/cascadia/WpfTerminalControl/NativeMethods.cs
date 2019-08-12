@@ -7,6 +7,8 @@ namespace Microsoft.Terminal.Wpf
     {
         public delegate void ScrollCallback(int viewTop, int viewHeight, int bufferSize);
 
+        public delegate void WriteCallback([In, MarshalAs(UnmanagedType.LPWStr)] string data);
+
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern uint CreateTerminal(IntPtr parent, out IntPtr hwnd, out IntPtr terminal);
 
@@ -21,6 +23,9 @@ namespace Microsoft.Terminal.Wpf
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void RegisterScrollCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]ScrollCallback callback);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void RegisterWriteCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]WriteCallback callback);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void UserScroll(IntPtr terminal, int viewTop);
@@ -44,6 +49,12 @@ namespace Microsoft.Terminal.Wpf
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void DestroyTerminal(IntPtr terminal);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void SendKeyEvent(IntPtr terminal, IntPtr wParam);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern void SendCharEvent(IntPtr terminal, char ch);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);

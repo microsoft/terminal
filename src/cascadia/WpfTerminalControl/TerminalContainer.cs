@@ -41,7 +41,8 @@ namespace Microsoft.Terminal.Wpf
         private IntPtr terminal;
         private char? highSurrogate;
 
-        private static NativeMethods.ScrollCallback callback;
+        private static NativeMethods.ScrollCallback scrollCallback;
+        private static NativeMethods.WriteCallback writeCallback;
 
         public event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
 
@@ -90,7 +91,7 @@ namespace Microsoft.Terminal.Wpf
                         }
                         else
                         {
-                            NativeMethods.SendTerminalOutput(this.terminal, Clipboard.GetText());
+                            this.connection.WriteInput(Clipboard.GetText());
                         }
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEMOVE:
@@ -98,9 +99,10 @@ namespace Microsoft.Terminal.Wpf
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
                         NativeMethods.ClearSelection(this.terminal);
+                        NativeMethods.SendKeyEvent(this.terminal, wParam);
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
-                        this.HandleChar((char)wParam);
+                        NativeMethods.SendCharEvent(this.terminal, (char)wParam);
                         break;
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
@@ -151,43 +153,6 @@ namespace Microsoft.Terminal.Wpf
             }
         }
 
-        private bool HandleChar(char character)
-        {
-            if (this.connection == null)
-            {
-                return false;
-            }
-
-            if (char.IsHighSurrogate(character))
-            {
-                if (this.highSurrogate.HasValue)
-                {
-                    // Invalid unicode sequence is being sent, write out the unicode replacement character '�' instead.
-                    this.connection.WriteInput("�");
-                }
-
-                this.highSurrogate = character;
-                return true;
-            }
-            else if (char.IsLowSurrogate(character) && this.highSurrogate.HasValue)
-            {
-                var possiblyValid = $"{this.highSurrogate.Value}{character}";
-                this.highSurrogate = null;
-                this.connection.WriteInput(possiblyValid);
-                return true;
-            }
-            else if (char.IsLowSurrogate(character) && this.highSurrogate == null)
-            {
-                this.connection.WriteInput("�");
-                return true;
-            }
-            else
-            {
-                this.connection.WriteInput(character.ToString());
-                return true;
-            }
-        }
-
         public ITerminalConnection Connection
         {
             private get
@@ -227,8 +192,11 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
-            callback = this.OnScroll;
-            NativeMethods.RegisterScrollCallback(this.terminal, callback);
+            scrollCallback = this.OnScroll;
+            writeCallback = this.OnWrite;
+
+            NativeMethods.RegisterScrollCallback(this.terminal, scrollCallback);
+            NativeMethods.RegisterWriteCallback(this.terminal, writeCallback);
 
             return new HandleRef(this, this.hwnd);
         }
@@ -242,6 +210,11 @@ namespace Microsoft.Terminal.Wpf
         private void OnScroll(int viewTop, int viewHeight, int bufferSize)
         {
             this.TerminalScrolled?.Invoke(this, (viewTop, viewHeight, bufferSize));
+        }
+
+        private void OnWrite(string data)
+        {
+            this.connection?.WriteInput(data);
         }
     }
 }

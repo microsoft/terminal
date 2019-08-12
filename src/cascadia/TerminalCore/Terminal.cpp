@@ -262,6 +262,11 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
     return translated && manuallyHandled;
 }
 
+bool Terminal::SendCharEvent(const char16_t ch)
+{
+    return _terminalInput->HandleChar(ch);
+}
+
 // Method Description:
 // - Aquire a read lock on the terminal.
 // Return Value:
