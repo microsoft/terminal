@@ -70,6 +70,7 @@ Example settings include
     "startingDirectory" : "%USERPROFILE%/wslhome"
     ....
 ```
+Note: To use back slashes in the directory you need to escape the `\` as `\\` so that JSON recognizes it. Alternatively you can use `/`.
 
 The profile GUID is used to reference the default profile in the global settings.
 
