@@ -5,6 +5,7 @@
 
 #include "ActionArgs.h"
 
+#include "CopyTextArgs.g.cpp"
 #include "CopyTextEventArgs.g.cpp"
 #include "PasteTextEventArgs.g.cpp"
 #include "NewTabEventArgs.g.cpp"

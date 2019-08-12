@@ -3,10 +3,9 @@
 
 #pragma once
 
-#include "CopyTextEventArgs.g.h"
-
 // HEY YOU: When adding ActionArgs types, make sure to add the corresponding
 //          *.g.cpp to ActionArgs.cpp!
+#include "CopyTextArgs.g.h"
 #include "CopyTextEventArgs.g.h"
 #include "PasteTextEventArgs.g.h"
 #include "NewTabEventArgs.g.h"
@@ -44,35 +43,42 @@
 
 namespace winrt::TerminalApp::implementation
 {
-    struct CopyTextEventArgs : public CopyTextEventArgsT<CopyTextEventArgs>
+    struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
-        CopyTextEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
-        GETSET_PROPERTY(bool, TrimWhitespace);
+        CopyTextArgs() = default;
+        GETSET_PROPERTY(bool, TrimWhitespace, false);
+    };
+    struct CopyTextEventArgs : public CopyTextEventArgsT<CopyTextEventArgs, TerminalApp::implementation::CopyTextArgs>
+    {
+        CopyTextEventArgs(const CopyTextArgs& args) :
+            _TrimWhitespace{ args.TrimWhitespace() } {};
+
+        GETSET_PROPERTY(bool, Handled, false);
+        GETSET_PROPERTY(bool, TrimWhitespace, false);
     };
 
     struct PasteTextEventArgs : public PasteTextEventArgsT<PasteTextEventArgs>
     {
         PasteTextEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct NewTabEventArgs : public NewTabEventArgsT<NewTabEventArgs>
     {
         NewTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct DuplicateTabEventArgs : public DuplicateTabEventArgsT<DuplicateTabEventArgs>
     {
         DuplicateTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct NewTabWithProfileArgs : public NewTabWithProfileArgsT<NewTabWithProfileArgs>
     {
         NewTabWithProfileArgs() = default;
-        GETSET_PROPERTY(int32_t, ProfileIndex);
+        GETSET_PROPERTY(int32_t, ProfileIndex, 0);
     };
 
     struct NewTabWithProfileEventArgs : public NewTabWithProfileEventArgsT<NewTabWithProfileEventArgs, TerminalApp::implementation::NewTabWithProfileArgs>
@@ -81,126 +87,128 @@ namespace winrt::TerminalApp::implementation
             _ProfileIndex{ args.ProfileIndex() } {};
         NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args) :
             _ProfileIndex{ args.ProfileIndex() } {};
-        GETSET_PROPERTY(bool, Handled);
-        GETSET_PROPERTY(int32_t, ProfileIndex);
+
+        GETSET_PROPERTY(bool, Handled, false);
+        GETSET_PROPERTY(int32_t, ProfileIndex, 0);
     };
 
     struct NewWindowEventArgs : public NewWindowEventArgsT<NewWindowEventArgs>
     {
         NewWindowEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct CloseWindowEventArgs : public CloseWindowEventArgsT<CloseWindowEventArgs>
     {
         CloseWindowEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct CloseTabEventArgs : public CloseTabEventArgsT<CloseTabEventArgs>
     {
         CloseTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ClosePaneEventArgs : public ClosePaneEventArgsT<ClosePaneEventArgs>
     {
         ClosePaneEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct NextTabEventArgs : public NextTabEventArgsT<NextTabEventArgs>
     {
         NextTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct PrevTabEventArgs : public PrevTabEventArgsT<PrevTabEventArgs>
     {
         PrevTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct SplitVerticalEventArgs : public SplitVerticalEventArgsT<SplitVerticalEventArgs>
     {
         SplitVerticalEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct SplitHorizontalEventArgs : public SplitHorizontalEventArgsT<SplitHorizontalEventArgs>
     {
         SplitHorizontalEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct SwitchToTabEventArgs : public SwitchToTabEventArgsT<SwitchToTabEventArgs>
     {
         SwitchToTabEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
-        GETSET_PROPERTY(int32_t, TabIndex);
+        GETSET_PROPERTY(bool, Handled, false);
+        GETSET_PROPERTY(int32_t, TabIndex, 0);
     };
 
     struct IncreaseFontSizeEventArgs : public IncreaseFontSizeEventArgsT<IncreaseFontSizeEventArgs>
     {
         IncreaseFontSizeEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct DecreaseFontSizeEventArgs : public DecreaseFontSizeEventArgsT<DecreaseFontSizeEventArgs>
     {
         DecreaseFontSizeEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ScrollUpEventArgs : public ScrollUpEventArgsT<ScrollUpEventArgs>
     {
         ScrollUpEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ScrollDownEventArgs : public ScrollDownEventArgsT<ScrollDownEventArgs>
     {
         ScrollDownEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ScrollUpPageEventArgs : public ScrollUpPageEventArgsT<ScrollUpPageEventArgs>
     {
         ScrollUpPageEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ScrollDownPageEventArgs : public ScrollDownPageEventArgsT<ScrollDownPageEventArgs>
     {
         ScrollDownPageEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct OpenSettingsEventArgs : public OpenSettingsEventArgsT<OpenSettingsEventArgs>
     {
         OpenSettingsEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
+        GETSET_PROPERTY(bool, Handled, false);
     };
 
     struct ResizePaneEventArgs : public ResizePaneEventArgsT<ResizePaneEventArgs>
     {
         ResizePaneEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
-        GETSET_PROPERTY(TerminalApp::Direction, Direction);
+        GETSET_PROPERTY(bool, Handled, false);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
     struct MoveFocusEventArgs : public MoveFocusEventArgsT<MoveFocusEventArgs>
     {
         MoveFocusEventArgs() = default;
-        GETSET_PROPERTY(bool, Handled);
-        GETSET_PROPERTY(TerminalApp::Direction, Direction);
+        GETSET_PROPERTY(bool, Handled, false);
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    BASIC_FACTORY(CopyTextEventArgs);
+    // BASIC_FACTORY(CopyTextArgs);
+    // BASIC_FACTORY(CopyTextEventArgs);
     BASIC_FACTORY(PasteTextEventArgs);
     BASIC_FACTORY(NewTabEventArgs);
     BASIC_FACTORY(DuplicateTabEventArgs);

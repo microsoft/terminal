@@ -71,16 +71,27 @@ public:                                                                         
 private:                                                                                                                                    \
     winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
 
+// // Use this macro to quick implement both the getter and setter for a property.
+// // This should only be used for simple types where there's no logic in the
+// // getter/setter beyond just accessing/updating the value.
+// #define GETSET_PROPERTY(type, name)                   \
+// public:                                               \
+//     type name() const { return _##name; }             \
+//     void name(const type& value) { _##name = value; } \
+//                                                       \
+// private:                                              \
+//     type _##name;
+
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
-#define GETSET_PROPERTY(type, name)                   \
+#define GETSET_PROPERTY(type, name, defaultValue)     \
 public:                                               \
     type name() const { return _##name; }             \
     void name(const type& value) { _##name = value; } \
                                                       \
 private:                                              \
-    type _##name;
+    type _##name{ defaultValue };
 
 // Use this macro for quickly defining the factory_implementation part of a
 // class. CppWinrt requires these for the compiler, but more often than not,

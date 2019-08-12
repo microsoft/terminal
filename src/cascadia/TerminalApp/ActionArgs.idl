@@ -20,11 +20,12 @@ namespace TerminalApp
         Down
     };
 
-    [default_interface] runtimeclass CopyTextEventArgs : IActionEventArgs
+    unsealed runtimeclass CopyTextArgs : IActionArgs
     {
-        CopyTextEventArgs();
         Boolean TrimWhitespace;
     };
+    [default_interface] runtimeclass CopyTextEventArgs : CopyTextArgs, IActionEventArgs{};
+
     [default_interface] runtimeclass PasteTextEventArgs : IActionEventArgs
     {
         PasteTextEventArgs();
