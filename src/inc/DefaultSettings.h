@@ -32,7 +32,7 @@ constexpr int DEFAULT_FONT_SIZE = 11;
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
 
-const std::wstring DEFAULT_PADDING{ L"5, 5, 5, 5" };
+const std::wstring DEFAULT_PADDING{ L"8, 8, 8, 8" };
 const std::wstring DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
 
 constexpr COLORREF DEFAULT_CURSOR_COLOR = COLOR_WHITE;
