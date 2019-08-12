@@ -20,6 +20,7 @@
 #include "PrevTabEventArgs.g.h"
 #include "SplitVerticalEventArgs.g.h"
 #include "SplitHorizontalEventArgs.g.h"
+#include "SwitchToTabArgs.g.h"
 #include "SwitchToTabEventArgs.g.h"
 #include "IncreaseFontSizeEventArgs.g.h"
 #include "DecreaseFontSizeEventArgs.g.h"
@@ -28,7 +29,9 @@
 #include "ScrollUpPageEventArgs.g.h"
 #include "ScrollDownPageEventArgs.g.h"
 #include "OpenSettingsEventArgs.g.h"
+#include "ResizePaneArgs.g.h"
 #include "ResizePaneEventArgs.g.h"
+#include "MoveFocusArgs.g.h"
 #include "MoveFocusEventArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -85,6 +88,7 @@ namespace winrt::TerminalApp::implementation
     {
         NewTabWithProfileEventArgs(const TerminalApp::NewTabWithProfileArgs& args) :
             _ProfileIndex{ args.ProfileIndex() } {};
+
         NewTabWithProfileEventArgs(const NewTabWithProfileArgs& args) :
             _ProfileIndex{ args.ProfileIndex() } {};
 
@@ -140,9 +144,15 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, Handled, false);
     };
 
-    struct SwitchToTabEventArgs : public SwitchToTabEventArgsT<SwitchToTabEventArgs>
+    struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
     {
-        SwitchToTabEventArgs() = default;
+        SwitchToTabArgs() = default;
+        GETSET_PROPERTY(int32_t, TabIndex, 0);
+    };
+    struct SwitchToTabEventArgs : public SwitchToTabEventArgsT<SwitchToTabEventArgs, TerminalApp::implementation::SwitchToTabArgs>
+    {
+        SwitchToTabEventArgs(const SwitchToTabArgs& args) :
+            _TabIndex{ args.TabIndex() } {};
         GETSET_PROPERTY(bool, Handled, false);
         GETSET_PROPERTY(int32_t, TabIndex, 0);
     };
@@ -189,16 +199,30 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(bool, Handled, false);
     };
 
-    struct ResizePaneEventArgs : public ResizePaneEventArgsT<ResizePaneEventArgs>
+    struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
-        ResizePaneEventArgs() = default;
+        ResizePaneArgs() = default;
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+    };
+    struct ResizePaneEventArgs : public ResizePaneEventArgsT<ResizePaneEventArgs, TerminalApp::implementation::ResizePaneArgs>
+    {
+        ResizePaneEventArgs(const ResizePaneArgs& args) :
+            _Direction{ args.Direction() } {};
+
         GETSET_PROPERTY(bool, Handled, false);
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
-    struct MoveFocusEventArgs : public MoveFocusEventArgsT<MoveFocusEventArgs>
+    struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
     {
-        MoveFocusEventArgs() = default;
+        MoveFocusArgs() = default;
+        GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
+    };
+    struct MoveFocusEventArgs : public MoveFocusEventArgsT<MoveFocusEventArgs, TerminalApp::implementation::MoveFocusArgs>
+    {
+        MoveFocusEventArgs(const MoveFocusArgs& args) :
+            _Direction{ args.Direction() } {};
+
         GETSET_PROPERTY(bool, Handled, false);
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
@@ -207,29 +231,26 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    // BASIC_FACTORY(CopyTextArgs);
-    // BASIC_FACTORY(CopyTextEventArgs);
-    BASIC_FACTORY(PasteTextEventArgs);
-    BASIC_FACTORY(NewTabEventArgs);
-    BASIC_FACTORY(DuplicateTabEventArgs);
-    BASIC_FACTORY(NewTabWithProfileArgs);
+    // BASIC_FACTORY(PasteTextEventArgs);
+    // BASIC_FACTORY(NewTabEventArgs);
+    // BASIC_FACTORY(DuplicateTabEventArgs);
     BASIC_FACTORY(NewTabWithProfileEventArgs);
-    BASIC_FACTORY(NewWindowEventArgs);
-    BASIC_FACTORY(CloseWindowEventArgs);
-    BASIC_FACTORY(CloseTabEventArgs);
-    BASIC_FACTORY(ClosePaneEventArgs);
-    BASIC_FACTORY(SwitchToTabEventArgs);
-    BASIC_FACTORY(NextTabEventArgs);
-    BASIC_FACTORY(PrevTabEventArgs);
-    BASIC_FACTORY(SplitVerticalEventArgs);
-    BASIC_FACTORY(SplitHorizontalEventArgs);
-    BASIC_FACTORY(IncreaseFontSizeEventArgs);
-    BASIC_FACTORY(DecreaseFontSizeEventArgs);
-    BASIC_FACTORY(ScrollUpEventArgs);
-    BASIC_FACTORY(ScrollDownEventArgs);
-    BASIC_FACTORY(ScrollUpPageEventArgs);
-    BASIC_FACTORY(ScrollDownPageEventArgs);
-    BASIC_FACTORY(OpenSettingsEventArgs);
-    BASIC_FACTORY(ResizePaneEventArgs);
-    BASIC_FACTORY(MoveFocusEventArgs);
+    // BASIC_FACTORY(NewWindowEventArgs);
+    // BASIC_FACTORY(CloseWindowEventArgs);
+    // BASIC_FACTORY(CloseTabEventArgs);
+    // BASIC_FACTORY(ClosePaneEventArgs);
+    // BASIC_FACTORY(SwitchToTabEventArgs);
+    // BASIC_FACTORY(NextTabEventArgs);
+    // BASIC_FACTORY(PrevTabEventArgs);
+    // BASIC_FACTORY(SplitVerticalEventArgs);
+    // BASIC_FACTORY(SplitHorizontalEventArgs);
+    // BASIC_FACTORY(IncreaseFontSizeEventArgs);
+    // BASIC_FACTORY(DecreaseFontSizeEventArgs);
+    // BASIC_FACTORY(ScrollUpEventArgs);
+    // BASIC_FACTORY(ScrollDownEventArgs);
+    // BASIC_FACTORY(ScrollUpPageEventArgs);
+    // BASIC_FACTORY(ScrollDownPageEventArgs);
+    // BASIC_FACTORY(OpenSettingsEventArgs);
+    // BASIC_FACTORY(ResizePaneEventArgs);
+    // BASIC_FACTORY(MoveFocusEventArgs);
 }

@@ -26,101 +26,52 @@ namespace TerminalApp
     };
     [default_interface] runtimeclass CopyTextEventArgs : CopyTextArgs, IActionEventArgs{};
 
-    [default_interface] runtimeclass PasteTextEventArgs : IActionEventArgs
-    {
-        PasteTextEventArgs();
-    };
-    [default_interface] runtimeclass NewTabEventArgs : IActionEventArgs
-    {
-        NewTabEventArgs();
-    };
-    [default_interface] runtimeclass DuplicateTabEventArgs : IActionEventArgs
-    {
-        DuplicateTabEventArgs();
-    };
+    [default_interface] runtimeclass PasteTextEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass NewTabEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass DuplicateTabEventArgs : IActionEventArgs{};
+
     unsealed runtimeclass NewTabWithProfileArgs : IActionArgs
     {
-        NewTabWithProfileArgs();
         Int32 ProfileIndex;
     }
     [default_interface] runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionEventArgs
     {
         NewTabWithProfileEventArgs(NewTabWithProfileArgs args);
     };
-    [default_interface] runtimeclass NewWindowEventArgs : IActionEventArgs
+
+    [default_interface] runtimeclass NewWindowEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass CloseWindowEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass CloseTabEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass ClosePaneEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass NextTabEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass PrevTabEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass SplitVerticalEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionEventArgs{};
+
+    unsealed runtimeclass SwitchToTabArgs : IActionArgs
     {
-        NewWindowEventArgs();
-    };
-    [default_interface] runtimeclass CloseWindowEventArgs : IActionEventArgs
-    {
-        CloseWindowEventArgs();
-    };
-    [default_interface] runtimeclass CloseTabEventArgs : IActionEventArgs
-    {
-        CloseTabEventArgs();
-    };
-    [default_interface] runtimeclass ClosePaneEventArgs : IActionEventArgs
-    {
-        ClosePaneEventArgs();
-    };
-    [default_interface] runtimeclass NextTabEventArgs : IActionEventArgs
-    {
-        NextTabEventArgs();
-    };
-    [default_interface] runtimeclass PrevTabEventArgs : IActionEventArgs
-    {
-        PrevTabEventArgs();
-    };
-    [default_interface] runtimeclass SplitVerticalEventArgs : IActionEventArgs
-    {
-        SplitVerticalEventArgs();
-    };
-    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionEventArgs
-    {
-        SplitHorizontalEventArgs();
-    };
-    [default_interface] runtimeclass SwitchToTabEventArgs : IActionEventArgs
-    {
-        SwitchToTabEventArgs();
         Int32 TabIndex;
     };
-    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionEventArgs
+    [default_interface] runtimeclass SwitchToTabEventArgs : SwitchToTabArgs, IActionEventArgs{};
+
+    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass ScrollUpEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass ScrollDownEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionEventArgs{};
+    [default_interface] runtimeclass OpenSettingsEventArgs : IActionEventArgs{};
+
+    unsealed runtimeclass ResizePaneArgs : IActionArgs
     {
-        IncreaseFontSizeEventArgs();
-    };
-    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionEventArgs
-    {
-        DecreaseFontSizeEventArgs();
-    };
-    [default_interface] runtimeclass ScrollUpEventArgs : IActionEventArgs
-    {
-        ScrollUpEventArgs();
-    };
-    [default_interface] runtimeclass ScrollDownEventArgs : IActionEventArgs
-    {
-        ScrollDownEventArgs();
-    };
-    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionEventArgs
-    {
-        ScrollUpPageEventArgs();
-    };
-    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionEventArgs
-    {
-        ScrollDownPageEventArgs();
-    };
-    [default_interface] runtimeclass OpenSettingsEventArgs : IActionEventArgs
-    {
-        OpenSettingsEventArgs();
-    };
-    [default_interface] runtimeclass ResizePaneEventArgs : IActionEventArgs
-    {
-        ResizePaneEventArgs();
         Direction Direction;
     };
-    [default_interface] runtimeclass MoveFocusEventArgs : IActionEventArgs
+    [default_interface] runtimeclass ResizePaneEventArgs : ResizePaneArgs, IActionEventArgs{};
+
+    unsealed runtimeclass MoveFocusArgs : IActionArgs
     {
-        MoveFocusEventArgs();
         Direction Direction;
     };
+    [default_interface] runtimeclass MoveFocusEventArgs : MoveFocusArgs, IActionEventArgs{};
 
 }

@@ -474,25 +474,31 @@ namespace winrt::TerminalApp::implementation
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        bindings.NewTab([this](auto& sender, auto& args) { _OpenNewTab(std::nullopt); args.Handled(true); });
-        bindings.DuplicateTab([this](auto& sender, auto& args) { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this](auto& sender, auto& args) { _CloseFocusedTab(); });
-        bindings.ClosePane([this](auto& sender, auto& args) { _CloseFocusedPane(); });
-        bindings.NewTabWithProfile([this](auto& sender, auto& args) { _OpenNewTab({ args.ProfileIndex() }); });
-        bindings.ScrollUp([this](auto& sender, auto& args) { _Scroll(-1); });
-        bindings.ScrollDown([this](auto& sender, auto& args) { _Scroll(1); });
-        bindings.NextTab([this](auto& sender, auto& args) { _SelectNextTab(true); });
-        bindings.PrevTab([this](auto& sender, auto& args) { _SelectNextTab(false); });
-        bindings.SplitVertical([this](auto& sender, auto& args) { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this](auto& sender, auto& args) { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this](auto& sender, auto& args) { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this](auto& sender, auto& args) { _ScrollPage(1); });
-        bindings.SwitchToTab([this](auto& sender, auto& args) { _SelectTab({ args.TabIndex() }); });
-        bindings.OpenSettings([this](auto& sender, auto& args) { _OpenSettings(); });
-        bindings.ResizePane([this](auto& sender, auto& args) { _ResizePane(args.Direction()); });
-        bindings.MoveFocus([this](auto& sender, auto& args) { _MoveFocus(args.Direction()); });
-        bindings.CopyText([this](auto& sender, auto& args) { _CopyText(args.TrimWhitespace()); });
-        bindings.PasteText([this](auto& sender, auto& args) { _PasteText(); });
+
+        // clang-format off
+        bindings.NewTab([this](auto&&, const auto& args) {            _OpenNewTab(std::nullopt);        args.Handled(true); });
+        bindings.DuplicateTab([this](auto&&, const auto& args) {      _DuplicateTabViewItem();          args.Handled(true); });
+        bindings.CloseTab([this](auto&&, const auto& args) {          _CloseFocusedTab();               args.Handled(true); });
+        bindings.ClosePane([this](auto&&, const auto& args) {         _CloseFocusedPane();              args.Handled(true); });
+        bindings.NewTabWithProfile([this](auto&&, const auto& args) {
+            _OpenNewTab({ args.ProfileIndex() });
+            args.Handled(true);
+        });
+        bindings.ScrollUp([this](auto&&, const auto& args) {          _Scroll(-1);                      args.Handled(true); });
+        bindings.ScrollDown([this](auto&&, const auto& args) {        _Scroll(1);                       args.Handled(true); });
+        bindings.NextTab([this](auto&&, const auto& args) {           _SelectNextTab(true);             args.Handled(true); });
+        bindings.PrevTab([this](auto&&, const auto& args) {           _SelectNextTab(false);            args.Handled(true); });
+        bindings.SplitVertical([this](auto&&, const auto& args) {     _SplitVertical(std::nullopt);     args.Handled(true); });
+        bindings.SplitHorizontal([this](auto&&, const auto& args) {   _SplitHorizontal(std::nullopt);   args.Handled(true); });
+        bindings.ScrollUpPage([this](auto&&, const auto& args) {      _ScrollPage(-1);                  args.Handled(true); });
+        bindings.ScrollDownPage([this](auto&&, const auto& args) {    _ScrollPage(1);                   args.Handled(true); });
+        bindings.SwitchToTab([this](auto&&, const auto& args) {       _SelectTab({ args.TabIndex() });  args.Handled(true); });
+        bindings.OpenSettings([this](auto&&, const auto& args) {      _OpenSettings();                  args.Handled(true); });
+        bindings.ResizePane([this](auto&&, const auto& args) {        _ResizePane(args.Direction());    args.Handled(true); });
+        bindings.MoveFocus([this](auto&&, const auto& args) {         _MoveFocus(args.Direction());     args.Handled(true); });
+        bindings.CopyText([this](auto&&, const auto& args) {          _CopyText(args.TrimWhitespace()); args.Handled(true); });
+        bindings.PasteText([this](auto&&, const auto& args) {         _PasteText();                     args.Handled(true); });
+        // clang-format on
     }
 
     // Method Description:
