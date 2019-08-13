@@ -11,8 +11,6 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="JsonTests.cpp" />
-    <ClCompile Include="SettingsTests.cpp" />
-    <ClCompile Include="TabTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
