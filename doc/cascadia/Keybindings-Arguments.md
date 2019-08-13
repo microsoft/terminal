@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-06-19
-last updated: 2019-06-19
+last updated: 2019-07-13
 issue id: 1142
 ---
 
@@ -89,10 +89,18 @@ implementation.
 
 ### Parsing KeyBinding Arguments
 
-We'll add a new `IKeyBindingArgs` interface. All current keybinding events will
-be changed from their current types to `TypedEventHandler`s. These
-`TypedEventHandler`s second param will always be an instance of
-`IKeyBindingArgs`. So for example:
+We'll add two new interfaces: `IActionArgs` and `IActionEventArgs`. Classes that
+implement `IActionArgs` will contain all the per-action args, like
+`CopyWhitespace` or `ProfileIndex`. `IActionArgs` by itself will be an empty
+interface, but all other arguments will derive from it. `IActionEventArgs` will
+have a single property `Handled`, which will be used for indicating if a
+particular event was processed or not. When parsing args, we'll build
+`IActionArgs` to contain all the parameters. When dispatching events, we'll
+build `IActionEventArgs` using the `IActionArgs` to set all the parameter values.
+
+All current keybinding events will be changed from their current types to
+`TypedEventHandler`s. These `TypedEventHandler`s second param will always be an
+instance of `IActionEventArgs`. So for example:
 
 ```csharp
 
@@ -112,19 +120,25 @@ runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
 Becomes:
 
 ```csharp
-interface IKeyBindingArgs {
+interface IActionEventArgs
+{
     Boolean Handled;
 }
+interface IActionArgs { /* Empty */ }
 
-runtimeclass CopyTextEventArgs : IKeyBindingArgs
+runtimeclass CopyTextArgs : IActionArgs
 {
     Boolean CopyWhitespace;
 }
-runtimeclass NewTabEventArgs : IKeyBindingArgs { }
-runtimeclass NewTabWithProfileEventArgs : IKeyBindingArgs
+runtimeclass CopyTextEventArgs : CopyTextArgs, IActionEventArgs { }
+
+runtimeclass NewTabEventArgs : IActionEventArgs { }
+
+runtimeclass NewTabWithProfileArgs : IActionArgs
 {
     Int32 ProfileIndex;
 }
+runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionArgs { }
 
 [default_interface]
 runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
@@ -134,6 +148,14 @@ runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
     event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewTabWithProfileEventArgs> NewTabWithProfile;
 ```
 
+In this above example, the `CopyTextArgs` class actually contains all the
+potential arguments to the Copy action. `CopyTextEventArgs` derives from that
+class, and additionally implements the `IActionArgs` interface, adding a
+`Handled` property. When we parse the arguments, we'll build a `CopyTextArgs`,
+and when we're dispatching the event, we'll build a `CopyTextEventArgs` and
+dispatch that object.
+
+
 We'll also change our existing map in the `AppKeyBindings` implementation.
 Currently, it's a `std::unordered_map<KeyChord, ShortcutAction, ...>`, which
 uses the `KeyChord` to lookup the `ShortcutAction`. We'll need to introduce a
@@ -142,8 +164,8 @@ new type `ActionAndArgs`:
 ```csharp
 runtimeclass ActionAndArgs
 {
-    ShortcutAction action;
-    IKeyBindingArgs args;
+    ShortcutAction Action;
+    IActionArgs Args;
 }
 ```
 
@@ -152,24 +174,34 @@ ActionAndArgs, ...>`.
 
 When we're parsing keybindings, we'll need to construct args for each of the
 events to go with each binding. When we find some key chord bound to a given
-Action, we'll construct the `IKeyBindingArgs` for that action. For many actions,
+Action, we'll construct the `IActionArgs` for that action. For many actions,
 these args will be an empty class. However, when we do find an action that needs
 additional parsing, `AppKeyBindingsSerialization` will do the extra work to
 parse the args for that action.
 
-Once the `IKeyBindingArgs` is built for the keybinding, we'll set it in
+We'll keep a collection of functions that can be used for quickly determining
+how to parse the args for an action if necessary. This map will be a
+`std::unordered_map<ShortcutAction, function<IActionArgs(Json::Value)>>`. For
+most actions which don't require args, the function in this map will be set to
+nullptr, and we'll know that the action doesn't need to parse any more args.
+However, for actions that _do_ require args, we'll set up a global function that
+can be used to parse a json blob into an `IActionArgs`.
+
+Once the `IActionArgs` is built for the keybinding, we'll set it in
 `AppKeyBindings` with a updated `AppKeyBindings::SetKeyBinding` call.
 `SetKeyBinding`'s signature will be updated to take a `ActionAndArgs` instead.
+Should an action not need arguments, the `Args` member can be left `null` in the
+`ActionAndArgs`.
 
 ### Executing KeyBinding Actions with Arguments
 
 When we're handling a keybinding in `AppKeyBindings::_DoAction`, we'll trigger
-the event handlers with the `IKeyBindingArgs` we've stored in the map with the
+the event handlers with the `IActionArgs` we've stored in the map with the
 `ShortcutAction`.
 
 Then, in `App`, we'll handle each of these events. We set up lambdas as event
 handlers for each event in `App::_HookupKeyBindings`. In each of those
-functions, We'll inspect the `IKeyBindingArgs` parameter, and use args from its
+functions, We'll inspect the `IActionArgs` parameter, and use args from its
 implementation to call callbacks in the `App` class. We will update `App` to
 have methods defined with the actual keybinding function signatures.
 
@@ -202,24 +234,26 @@ The code will look like:
 
 ### Handling Keybinding Events
 
-Commmon to all implementations of `IKeyBindingArgs` is the `Handled` property.
-This will let the app indicate if it was able to actually process a keybinding
-event or not. While in the large majority of cases, the events will all be
-marked handled, there are some scenarios where the Terminal will need to know if
-the event could not be performed. For example, in the case of the `copy` event,
-the Terminal is only capable of copying text if there's actually a selection
-active. If there isn't a selection active, the `App` should make sure to mark
-the event as not handled (`args.Handled(false)`).
+Commmon to all implementations of `IActionArgs` is the `Handled` property. This
+will let the app indicate if it was able to actually process a keybinding event
+or not. While in the large majority of cases, the events will all be marked
+handled, there are some scenarios where the Terminal will need to know if the
+event could not be performed. For example, in the case of the `copy` event, the
+Terminal is only capable of copying text if there's actually a selection active.
+If there isn't a selection active, the `App` should make sure to not mark the
+event as not handled (it will leave `args.Handled(false)`). The App should only
+mark an event handled if it has actually dispatched the event.
 
-When an even is _not_ handled, we'll make sure to return `false` from
-`AppKeyBindings::TryKeyChord`, so that the terminal has another chance to
-actually use that keypress.
+When an even is handled, we'll make sure to return `true` from
+`AppKeyBindings::TryKeyChord`, so that the terminal does not actually process
+that keypress. For events that were not handled by the application, the terminal
+will get another chance to dispatch the keypress.
 
 ### Serializing KeyBinding Arguments
 
 Similar to how we parse arguments from the json, we'll need to update the
 `AppKeyBindingsSerialization` code to be able to serialize the arguments from a
-particular `IKeyBindingArgs`.
+particular `IActionArgs`.
 
 ## UI/UX Design
 
@@ -233,10 +267,10 @@ this dropdown uses, we'll need a new way to find which key chord corresponds to
 opening a given profile.
 
 We'll need to be able to not only lookup a keybinding by `ShortcutAction`, but
-also by a `ShortcutAction` and `IKeyBindingArgs`. We'll need to update the
-`AppKeyBindings::GetKeyBinding` method to also accept a `IKeyBindingArgs`. We'll
-also probably want each `IKeyBindingArgs` implementation to define `operator==`,
-so that we can easily check if two different `IKeyBindingArgs` are the same in
+also by a `ShortcutAction` and `IActionArgs`. We'll need to update the
+`AppKeyBindings::GetKeyBinding` method to also accept a `IActionArgs`. We'll
+also probably want each `IActionArgs` implementation to define `operator==`,
+so that we can easily check if two different `IActionArgs` are the same in
 this method.
 
 ## Capabilities
@@ -275,7 +309,7 @@ they already don't have args, their serializations will remain exactly the same.
 
 However, for the following actions that we'll be removing in favor of actions
 with arguments, we'll need to leave legacy deserialization in place to be able
-to find these old actions, and automatically build the correct `IKeyBindingArgs`
+to find these old actions, and automatically build the correct `IActionArgs`
 for them:
 
 * `newTabProfile<n>`
@@ -302,13 +336,23 @@ N/A
 ## Future considerations
 
 * Should we support some sort of conversion from num keys to an automatic arg?
-  For example, by default, <kbd>Alt</kbd>+<kbd>&lt;N&gt;</kbd> to focuses the
+  For example, by default, <kbd>Alt+&lt;N&gt;</kbd> to focuses the
   Nth tab. Currently, those are 8 separate entries in the keybindings. Should we
   enable some way for them be combined into a single binding entry, where the
   binding automatically recieves the number pressed as an arg? I couldn't find
   any prior art of this, so it doesn't seem worth it to try and invent
   currently. This might be something that we want to loop back on, but for the
   time being, it remains out of scope of this PR.
+* When we inevitable support extensions, we'll need to allow extensions to also
+  be able to support their own custom keybindings and args. We'll probably want
+  to pass the settings to the extension to have the extension parse its own
+  settings. We'll want to be able to ask the extension for its own set of
+  `ActionAndArgs`<sup>[1]</sup> that it builds from the `keybindings`.  Once we
+  have that set of actions, we'll be able to store them locally, and dispatch
+  them quickly.
+  - [1] We probably won't be able to use the `ActionAndArgs` class directly,
+    since that class is specific to the actions we define. We'll need another
+    way for extenstions to be able to uniquely identify their own actions.
 
 ## Resources
 
