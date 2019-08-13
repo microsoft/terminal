@@ -1020,7 +1020,7 @@ const COORD UiaTextRangeBase::_getScreenBufferCoords(IUiaData* pData)
     return pData->GetTextBuffer().GetSize().Dimensions();
 }
 
-COORD UiaTextRangeBase::_getScreenFontSize() const
+const COORD UiaTextRangeBase::_getScreenFontSize() const
 {
     COORD coordRet = _pData->GetFontInfo().GetSize();
 

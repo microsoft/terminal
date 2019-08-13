@@ -186,12 +186,20 @@ void UiaTextRange::_ChangeViewport(const SMALL_RECT /*NewWindow*/)
     // TODO GitHub #2361: Update viewport when calling UiaTextRangeBase::ScrollIntoView()
 }
 
-void UiaTextRange::_TranslatePointToScreen(LPPOINT /*clientPoint*/) const
+void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
     // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
+    clientPoint->x;
+    clientPoint->y += 10;
 }
 
 void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const
 {
     // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
+}
+
+const COORD UiaTextRange::_getScreenFontSize() const
+{
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider.get());
+    return provider->GetFontSize();
 }

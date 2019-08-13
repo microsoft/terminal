@@ -3,14 +3,16 @@
 
 #include "pch.h"
 #include "TermControlUiaProvider.hpp"
+#include "TermControl.h"
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
 
-TermControlUiaProvider::TermControlUiaProvider(_In_ IUiaData* pData,
+TermControlUiaProvider::TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
                                                _In_ std::function<RECT(void)> GetBoundingRect) :
     _getBoundingRect(GetBoundingRect),
-    ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, pData))
+    _termControl(termControl),
+    ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, termControl.GetUiaData()))
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
@@ -76,6 +78,11 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     }
     RETURN_IF_NULL_ALLOC(*ppProvider);
     return S_OK;
+}
+
+const COORD TermControlUiaProvider::GetFontSize() const
+{
+    return _termControl.GetActualFont().GetSize();
 }
 
 std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)

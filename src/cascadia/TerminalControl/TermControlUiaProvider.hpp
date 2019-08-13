@@ -25,10 +25,15 @@ Author(s):
 
 namespace Microsoft::Terminal
 {
+    namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+    {
+        struct TermControl;
+    }
+
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        TermControlUiaProvider(_In_ Microsoft::Console::Types::IUiaData* pData,
+        TermControlUiaProvider(_In_ winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& termControl,
                                _In_ std::function<RECT()> GetBoundingRect);
 
         // IRawElementProviderFragment methods
@@ -36,6 +41,8 @@ namespace Microsoft::Terminal
                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
+
+        const COORD GetFontSize() const;
 
     protected:
         std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
@@ -59,5 +66,6 @@ namespace Microsoft::Terminal
 
     private:
         std::function<RECT(void)> _getBoundingRect;
+        winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& _termControl;
     };
 }

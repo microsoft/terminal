@@ -352,6 +352,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal.get();
     }
 
+    const FontInfo TermControl::GetActualFont() const
+    {
+        return _actualFont;
+    }
+
     void TermControl::SwapChainChanged()
     {
         if (!_initializedTerminal)
