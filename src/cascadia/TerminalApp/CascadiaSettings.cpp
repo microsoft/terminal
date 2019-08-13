@@ -644,30 +644,62 @@ Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
     return newProfile;
 }
 
+// Method Description:
+// - Gets our list of warnings we found during loading. These are things that we
+//   knew were bad when we called `_ValidateSettings` last.
+// Return Value:
+// - a reference to our list of warnings.
 const std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetLoadWarnings()
 {
     return _warnings;
 }
 
+// Method Description:
+// - Attempts to validate this settings structure. If there are critical errors
+//   found, they'll be thrown as a SettingsLoadError. Non-critical errors, such
+//   as not finding the default profile, will only result in an error. We'll add
+//   all these warnings to our list of warnings, and the application can chose
+//   to display these to the user.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_ValidateSettings()
 {
     _warnings.clear();
 
+    _ValidateProfilesExist();
+    _ValidateNoDuplicateProfiles();
+    _ValidateDefaultProfileExists();
+}
+
+// Method Description:
+// - Checks if the settings contain profiles at all. As we'll need to have some
+//   profiles at all, we'll throw an error if there aren't any profiles.
+void CascadiaSettings::_ValidateProfilesExist()
+{
     const bool hasProfiles = _profiles.size() != 0;
     if (!hasProfiles)
     {
-        // _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
-
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
 
         // We can't add the warning to the list of warnings here, because this
         // object is not going to be returned at any point.
 
-        // throw winrt::hresult_invalid_argument(L"NoProfilesText");
         throw ::TerminalApp::SettingsLoadErrors::NoProfiles;
     }
+}
 
+// Method Description:
+// - Checks if the "globals.defaultProfile" is set to one of the profiles we
+//   actually have. If the value is unset, or the value is set to something that
+//   doesn't exist in the list of profiles, we'll arbitrarily pick the first
+//   profile to use temporarily as the default.
+// - Appends a SettingsLoadWarnings::MissingDefaultProfile to our list of
+//   warnings if we failed to find the default.
+void CascadiaSettings::_ValidateDefaultProfileExists()
+{
     const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
     const bool nullDefaultProfile = defaultProfileGuid == GUID{};
     bool foundDefaultProfile = false;
@@ -687,7 +719,50 @@ void CascadiaSettings::_ValidateSettings()
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
         // Use the first profile as the new default
 
-        // TODO: Do this _temporarily_. We don't want to have this be a permanent change.
+        // _temporarily_ set the default profile to the first profile. Because
+        // we're adding a warning, this settings change won't be re-serialized.
         GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+    }
+}
+
+// Method Description:
+// - Checks to make sure there aren't any duplicate profiles in the list of
+//   profiles. If so, we'll remove the subsequent entries (temporarily), as they
+//   won't be accessible anyways.
+// - Appends a SettingsLoadWarnings::DuplicateProfile to our list of warnings if
+//   we find any such duplicate.
+void CascadiaSettings::_ValidateNoDuplicateProfiles()
+{
+    bool foundDupe = false;
+
+    for (int i = 0; i < _profiles.size() - 1; i++)
+    {
+        const auto searchGuid = _profiles.at(i).GetGuid();
+        std::vector<size_t> profilesMarkedForDeletion{};
+
+        // Walk the rest of the profiles in the list. If there's a duplicate
+        // GUID, we'll add that index to a list of indicies to delete at the end
+        // of the loop.
+        for (int j = i + 1; j < _profiles.size(); j++)
+        {
+            const auto otherGuid = _profiles.at(j).GetGuid();
+            if (searchGuid == otherGuid)
+            {
+                foundDupe = true;
+                profilesMarkedForDeletion.push_back(j);
+            }
+        }
+
+        // Remove all the duplicates we've marked
+        // Walk backwards, so we don't accidentally shift any of the elements
+        for (int reverse = profilesMarkedForDeletion.size() - 1; reverse >= 0; reverse--)
+        {
+            _profiles.erase(_profiles.begin() + profilesMarkedForDeletion.at(reverse));
+        }
+    }
+
+    if (foundDupe)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::DuplicateProfile);
     }
 }

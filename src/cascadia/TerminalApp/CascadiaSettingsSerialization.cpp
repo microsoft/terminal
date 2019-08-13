@@ -62,8 +62,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // `parse` will return false if it fails.
         if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
         {
-            // TODO:GH#990 display this exception text to the user, in a
-            //      copy-pasteable way.
+            // This will be caught by App::_TryLoadSettings, who will display
+            // the text to the user.
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
         resultPtr = FromJson(root);
@@ -71,9 +71,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // If this throws, the app will catch it and use the default settings (temporarily)
         resultPtr->_ValidateSettings();
 
-        // TODO: Don't saveOnLoad if _warnings > 0
+        const bool foundWarnings = resultPtr->_warnings.size() > 0;
 
-        if (saveOnLoad)
+        // Don't save on load if there were warnings - we tried to gracefully
+        // handle them.
+        if (saveOnLoad && !foundWarnings)
         {
             // Logically compare the json we've parsed from the file to what
             // we'd serialize at runtime. If the values are different, then

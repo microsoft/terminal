@@ -22,13 +22,26 @@ Author(s):
 
 static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
 
+// fwdecl unittest classes
+
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+}
+
 namespace TerminalApp
 {
     class CascadiaSettings;
+    // SettingsLoadWarnings are scenarios where the settings contained
+    // information we knew was invalid, but we could recover from.
     enum class SettingsLoadWarnings : uint32_t
     {
-        MissingDefaultProfile = 0
+        MissingDefaultProfile = 0,
+        DuplicateProfile = 1
     };
+
+    // SettingsLoadWarnings are scenarios where the settings had invalid state
+    // that we could not recover from.
     enum class SettingsLoadErrors : uint32_t
     {
         NoProfiles = 0
@@ -77,9 +90,14 @@ private:
     static std::optional<std::string> _ReadSettings();
 
     void _ValidateSettings();
+    void _ValidateProfilesExist();
+    void _ValidateDefaultProfileExists();
+    void _ValidateNoDuplicateProfiles();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
     static Profile _CreateDefaultProfile(const std::wstring_view name);
+
+    friend class TerminalAppLocalTests::SettingsTests;
 };

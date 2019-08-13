@@ -27,31 +27,63 @@ namespace winrt
 
 // clang-format off
 static const std::unordered_map<::TerminalApp::SettingsLoadWarnings, std::wstring_view> settingsLoadWarningsLabels {
-    { SettingsLoadWarnings::MissingDefaultProfile   , L"MissingDefaultProfileText"},
+    { SettingsLoadWarnings::MissingDefaultProfile , L"MissingDefaultProfileText"},
+    { SettingsLoadWarnings::DuplicateProfile      , L"DuplicateProfileText"},
 };
 static const std::unordered_map<::TerminalApp::SettingsLoadErrors, std::wstring_view> settingsLoadErrorsLabels {
     { SettingsLoadErrors::NoProfiles              , L"NoProfilesText"},
 };
 // clang-format on
 
+// Function Description:
+// - General-purpose helper for looking up a localized string for a
+//   warning/error. First will look for the given key in the provided map of
+//   keys->strings, where the values in the map are ResourceKeys. If it finds
+//   one, it will lookup the localized string from that ResourceKey.
+// - If it does not find a key, it'll return an empty string
+// Arguments:
+// - key: the value to use to look for a resource key in the given map
+// - map: A map of keys->Resource keys.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - the localized string for the given type, if it exists.
 template<typename T>
-static std::wstring_view _GetMessageKey(T key, std::unordered_map<T, std::wstring_view> map)
+static winrt::hstring _GetMessageText(T key, std::unordered_map<T, std::wstring_view> map, ScopedResourceLoader loader)
 {
     const auto keyFound = map.find(key);
     if (keyFound != map.end())
     {
-        return keyFound->second;
+        return loader.GetLocalizedString(keyFound->second);
     }
-    return nullptr;
+    return {};
 }
 
-static std::wstring_view _GetWarningText(::TerminalApp::SettingsLoadWarnings warning)
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadWarning. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadWarningsLabels.
+// Arguments:
+// - warning: the SettingsLoadWarnings value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given warning
+static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
 {
-    return _GetMessageKey(warning, settingsLoadWarningsLabels);
+    return _GetMessageText(warning, settingsLoadWarningsLabels, loader);
 }
-static std::wstring_view _GetErrorText(::TerminalApp::SettingsLoadErrors error)
+
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadError. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadErrorsLabels.
+// Arguments:
+// - error: the SettingsLoadErrors value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given error
+static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
 {
-    return _GetMessageKey(error, settingsLoadErrorsLabels);
+    return _GetMessageText(error, settingsLoadErrorsLabels, loader);
 }
 
 namespace winrt::TerminalApp::implementation
@@ -209,7 +241,7 @@ namespace winrt::TerminalApp::implementation
     // - Displays a dialog for errors found while loading or validating the
     //   settings. Uses the resources under the provided  title and content keys
     //   as the title and first content of the dialog, then also displays a
-    //   message for whatever exception was found while valitading the settings.
+    //   message for whatever exception was found while validating the settings.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
     // Arguments:
@@ -243,8 +275,7 @@ namespace winrt::TerminalApp::implementation
             else if (E_INVALIDARG == _settingsLoadedResult)
             {
                 winrt::Windows::UI::Xaml::Documents::Run exceptionRun;
-                const auto exceptionLabel = _resourceLoader.GetLocalizedString(_settingsLoadExceptionText);
-                exceptionRun.Text(exceptionLabel);
+                exceptionRun.Text(_settingsLoadExceptionText);
                 warningsTextBlock.Inlines().Append(exceptionRun);
             }
         }
@@ -267,12 +298,11 @@ namespace winrt::TerminalApp::implementation
         for (const auto& warning : warnings)
         {
             // Try looking up the warning message key for each warning.
-            const auto labelFound = settingsLoadWarningsLabels.find(warning);
-            if (labelFound != settingsLoadWarningsLabels.end())
+            const auto warningText = _GetWarningText(warning, _resourceLoader);
+            if (!warningText.empty())
             {
                 winrt::Windows::UI::Xaml::Documents::Run warningRun;
-                const auto warningLabel = _resourceLoader.GetLocalizedString(labelFound->second);
-                warningRun.Text(warningLabel);
+                warningRun.Text(warningText);
                 warningsTextBlock.Inlines().Append(warningRun);
             }
         }
@@ -421,7 +451,8 @@ namespace winrt::TerminalApp::implementation
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
-        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size()); // the number of profiles should not change in the loop for this to work
+        // the number of profiles should not change in the loop for this to work
+        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
         for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
@@ -431,7 +462,8 @@ namespace winrt::TerminalApp::implementation
             if (profileIndex < 9)
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
-                auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
+                const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
+                auto profileKeyChord = keyBindings.GetKeyBinding(action);
 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -631,7 +663,7 @@ namespace winrt::TerminalApp::implementation
         catch (const ::TerminalApp::SettingsLoadErrors error)
         {
             hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(error);
+            _settingsLoadExceptionText = _GetErrorText(error, _resourceLoader);
         }
         catch (...)
         {
@@ -1538,7 +1570,8 @@ namespace winrt::TerminalApp::implementation
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
-    void App::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+    void App::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem& menuItem,
+                                         const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
@@ -1579,7 +1612,8 @@ namespace winrt::TerminalApp::implementation
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid,
+                                                                               winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };
@@ -1590,13 +1624,19 @@ namespace winrt::TerminalApp::implementation
             connectionType = profile->GetConnectionType();
         }
 
-        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        if (profile->HasConnectionType() &&
+            profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
+                                                             settings.InitialCols());
         }
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(
@@ -1615,6 +1655,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, ElementTheme);
 }
