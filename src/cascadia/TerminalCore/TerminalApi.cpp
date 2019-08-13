@@ -337,11 +337,9 @@ bool Terminal::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         // and we have to make sure we erase that text
         auto eraseStart = _mutableViewport.Height();
         auto eraseEnd = _buffer->GetLastNonSpaceCharacter(_mutableViewport).Y;
-        auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), _mutableViewport.RightInclusive() * (eraseEnd - eraseStart + 1));
         for (SHORT i = eraseStart; i <= eraseEnd; i++)
         {
-            COORD erasePos{ 0, i };
-            _buffer->Write(eraseIter, erasePos);
+            _buffer->GetRowByOffset(i).Reset(_buffer->GetCurrentAttributes());
         }
 
         // Reset the scroll offset now because there's nothing for the user to 'scroll' to

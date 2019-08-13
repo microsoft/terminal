@@ -164,6 +164,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
+        void _HandleVoidKeyEvent();
+        bool _TrySendKeyEvent(WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

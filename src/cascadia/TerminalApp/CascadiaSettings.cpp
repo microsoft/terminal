@@ -9,6 +9,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "winrt/Microsoft.Terminal.TerminalConnection.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -239,26 +240,13 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
-    // The Azure connection has a boost dependency, and boost does not support ARM64
-    // so we don't create a default profile for the Azure cloud shell if we're in ARM64
-#ifndef _M_ARM64
-    auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
-    azureCloudShellProfile.SetCommandline(L"Azure");
-    azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-    azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
-    azureCloudShellProfile.SetAcrylicOpacity(0.85);
-    azureCloudShellProfile.SetUseAcrylic(true);
-    azureCloudShellProfile.SetCloseOnExit(false);
-    azureCloudShellProfile.SetConnectionType(AzureConnectionType);
-#endif
-
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
 
@@ -274,9 +262,20 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-#ifndef _M_ARM64
-    _profiles.emplace_back(azureCloudShellProfile);
-#endif
+
+    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+    {
+        auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
+        azureCloudShellProfile.SetCommandline(L"Azure");
+        azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        azureCloudShellProfile.SetColorScheme({ L"Vintage" });
+        azureCloudShellProfile.SetAcrylicOpacity(0.6);
+        azureCloudShellProfile.SetUseAcrylic(true);
+        azureCloudShellProfile.SetCloseOnExit(false);
+        azureCloudShellProfile.SetConnectionType(AzureConnectionType);
+        _profiles.emplace_back(azureCloudShellProfile);
+    }
+
     try
     {
         _AppendWslProfiles(_profiles);
