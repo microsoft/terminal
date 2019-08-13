@@ -656,13 +656,16 @@ void CascadiaSettings::_ValidateSettings()
     const bool hasProfiles = _profiles.size() != 0;
     if (!hasProfiles)
     {
-        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+        // _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
 
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
 
-        // TODO: Throw something more specific?
-        throw winrt::hresult_invalid_argument();
+        // We can't add the warning to the list of warnings here, because this
+        // object is not going to be returned at any point.
+
+        // throw winrt::hresult_invalid_argument(L"NoProfilesText");
+        throw ::TerminalApp::SettingsLoadErrors::NoProfiles;
     }
 
     const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();

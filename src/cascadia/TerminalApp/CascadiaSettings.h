@@ -27,8 +27,11 @@ namespace TerminalApp
     class CascadiaSettings;
     enum class SettingsLoadWarnings : uint32_t
     {
-        MissingDefaultProfile = 0,
-        NoProfiles = 1
+        MissingDefaultProfile = 0
+    };
+    enum class SettingsLoadErrors : uint32_t
+    {
+        NoProfiles = 0
     };
 };
 

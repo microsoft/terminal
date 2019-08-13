@@ -28,9 +28,31 @@ namespace winrt
 // clang-format off
 static const std::unordered_map<::TerminalApp::SettingsLoadWarnings, std::wstring_view> settingsLoadWarningsLabels {
     { SettingsLoadWarnings::MissingDefaultProfile   , L"MissingDefaultProfileText"},
-    { SettingsLoadWarnings::NoProfiles              , L"NoProfilesText"},
+};
+static const std::unordered_map<::TerminalApp::SettingsLoadErrors, std::wstring_view> settingsLoadErrorsLabels {
+    { SettingsLoadErrors::NoProfiles              , L"NoProfilesText"},
 };
 // clang-format on
+
+template<typename T>
+static std::wstring_view _GetMessageKey(T key, std::unordered_map<T, std::wstring_view> map)
+{
+    const auto keyFound = map.find(key);
+    if (keyFound != map.end())
+    {
+        return keyFound->second;
+    }
+    return nullptr;
+}
+
+static std::wstring_view _GetWarningText(::TerminalApp::SettingsLoadWarnings warning)
+{
+    return _GetMessageKey(warning, settingsLoadWarningsLabels);
+}
+static std::wstring_view _GetErrorText(::TerminalApp::SettingsLoadErrors error)
+{
+    return _GetMessageKey(error, settingsLoadErrorsLabels);
+}
 
 namespace winrt::TerminalApp::implementation
 {
@@ -183,25 +205,74 @@ namespace winrt::TerminalApp::implementation
         _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
     }
 
+    // Method Description:
+    // - Displays a dialog for errors found while loading or validating the
+    //   settings. Uses the resources under the provided  title and content keys
+    //   as the title and first content of the dialog, then also displays a
+    //   message for whatever exception was found while valitading the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    // Arguments:
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    void App::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
+                                    const winrt::hstring& contentKey)
+    {
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        winrt::Windows::UI::Xaml::Documents::Run errorRun;
+        const auto errorLabel = _resourceLoader.GetLocalizedString(contentKey);
+        errorRun.Text(errorLabel);
+        warningsTextBlock.Inlines().Append(errorRun);
+
+        if (FAILED(_settingsLoadedResult))
+        {
+            if (WEB_E_INVALID_JSON_STRING == _settingsLoadedResult)
+            {
+                winrt::Windows::UI::Xaml::Documents::Run exceptionRun;
+                exceptionRun.Text(_settingsLoadExceptionText);
+                warningsTextBlock.Inlines().Append(exceptionRun);
+            }
+            else if (E_INVALIDARG == _settingsLoadedResult)
+            {
+                winrt::Windows::UI::Xaml::Documents::Run exceptionRun;
+                const auto exceptionLabel = _resourceLoader.GetLocalizedString(_settingsLoadExceptionText);
+                exceptionRun.Text(exceptionLabel);
+                warningsTextBlock.Inlines().Append(exceptionRun);
+            }
+        }
+
+        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
+    }
+
     void App::_ShowLoadWarningsDialog()
     {
-        // TODO
         auto title = _resourceLoader.GetLocalizedString(L"SettingsValidateErrorTitle");
         auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
         warningsTextBlock.IsTextSelectionEnabled(true);
-        const auto& warnings = _settings->GetLoadWarnings();
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
+        const auto& warnings = _settings->GetLoadWarnings();
         for (const auto& warning : warnings)
         {
+            // Try looking up the warning message key for each warning.
             const auto labelFound = settingsLoadWarningsLabels.find(warning);
             if (labelFound != settingsLoadWarningsLabels.end())
             {
                 winrt::Windows::UI::Xaml::Documents::Run warningRun;
                 const auto warningLabel = _resourceLoader.GetLocalizedString(labelFound->second);
                 warningRun.Text(warningLabel);
-                // TODO: Wrap this line, it's too long for the dialog
                 warningsTextBlock.Inlines().Append(warningRun);
             }
         }
@@ -293,7 +364,7 @@ namespace winrt::TerminalApp::implementation
         {
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
-            _ShowOkDialog(titleKey, textKey);
+            _ShowLoadErrorsDialog(titleKey, textKey);
         }
         else if (_settingsLoadedResult == S_FALSE)
         {
@@ -554,7 +625,13 @@ namespace winrt::TerminalApp::implementation
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
+            _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
+        }
+        catch (const ::TerminalApp::SettingsLoadErrors error)
+        {
+            hr = E_INVALIDARG;
+            _settingsLoadExceptionText = _GetErrorText(error);
         }
         catch (...)
         {
@@ -588,10 +665,6 @@ namespace winrt::TerminalApp::implementation
             _settings = std::make_unique<CascadiaSettings>();
             _settings->CreateDefaults();
         }
-        // else if (_settingsLoadedResult == S_FALSE)
-        // {
-        //     _DisplayLoadingWarnings
-        // }
 
         _HookupKeyBindings(_settings->GetKeybindings());
 
@@ -672,7 +745,7 @@ namespace winrt::TerminalApp::implementation
             _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
                 const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
                 const winrt::hstring textKey = L"ReloadJsonParseErrorText";
-                _ShowOkDialog(titleKey, textKey);
+                _ShowLoadErrorsDialog(titleKey, textKey);
             });
 
             return;

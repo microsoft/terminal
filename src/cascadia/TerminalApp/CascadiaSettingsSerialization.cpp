@@ -71,10 +71,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // If this throws, the app will catch it and use the default settings (temporarily)
         resultPtr->_ValidateSettings();
 
-        // if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
-        // {
-        //     throw winrt::hresult_invalid_argument();
-        // }
+        // TODO: Don't saveOnLoad if _warnings > 0
 
         if (saveOnLoad)
         {
