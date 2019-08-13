@@ -35,7 +35,7 @@ Please use this form and describe your issue, concisely but precisely, with as m
 # Environment
 
 ```none
-Windows build number: [run "ver" at a command prompt]
+Windows build number: [run `[Environment]::OSVersion` for powershell, or `ver` for cmd]
 Windows Terminal version (if applicable):
 
 Any other software?

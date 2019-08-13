@@ -267,25 +267,77 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 //      from reading the file
 std::optional<std::string> CascadiaSettings::_ReadSettings()
 {
-    auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
-    const auto hFile = CreateFileW(pathToSettingsFile.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
+    const auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
+    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         nullptr,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         nullptr) };
+
+    if (!hFile)
     {
-        // If the file doesn't exist, that's fine. Just log the error and return
-        //      nullopt - we'll create the defaults.
-        LOG_LAST_ERROR();
-        return std::nullopt;
+        // GH#1770 - Now that we're _not_ roaming our settings, do a quick check
+        // to see if there's a file in the Roaming App data folder. If there is
+        // a file there, but not in the LocalAppData, it's likely the user is
+        // upgrading from a version of the terminal from before this change.
+        // We'll try moving the file from the Roaming app data folder to the
+        // local appdata folder.
+
+        const auto pathToRoamingSettingsFile{ CascadiaSettings::GetSettingsPath(true) };
+        wil::unique_hfile hRoamingFile{ CreateFileW(pathToRoamingSettingsFile.c_str(),
+                                                    GENERIC_READ,
+                                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                                    nullptr,
+                                                    OPEN_EXISTING,
+                                                    FILE_ATTRIBUTE_NORMAL,
+                                                    nullptr) };
+
+        if (hRoamingFile)
+        {
+            // Close the file handle, move it, and re-open the file in its new location.
+            hRoamingFile.reset();
+
+            // Note: We're unsure if this is unsafe. Theoretically it's possible
+            // that two instances of the app will try and move the settings file
+            // simultaneously. We don't know what might happen in that scenario,
+            // but we're also not sure how to safely lock the file to prevent
+            // that from ocurring.
+            THROW_LAST_ERROR_IF(!MoveFile(pathToRoamingSettingsFile.c_str(),
+                                          pathToSettingsFile.c_str()));
+
+            hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
+                                    GENERIC_READ,
+                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                    nullptr,
+                                    OPEN_EXISTING,
+                                    FILE_ATTRIBUTE_NORMAL,
+                                    nullptr));
+
+            // hFile shouldn't be INVALID. That's unexpected - We just moved the
+            // file, we should be able to open it. Throw the error so we can get
+            // some information here.
+            THROW_LAST_ERROR_IF(!hFile);
+        }
+        else
+        {
+            // If the roaming file didn't exist, and the local file doesn't exist,
+            //      that's fine. Just log the error and return nullopt - we'll
+            //      create the defaults.
+            LOG_LAST_ERROR();
+            return std::nullopt;
+        }
     }
 
     // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile, nullptr);
+    const auto fileSize = GetFileSize(hFile.get(), nullptr);
     THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
 
     auto utf8buffer = std::make_unique<char[]>(fileSize);
 
     DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
-    CloseHandle(hFile);
+    THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.get(), fileSize, &bytesRead, nullptr));
 
     // convert buffer to UTF-8 string
     std::string utf8string(utf8buffer.get(), fileSize);
@@ -295,25 +347,27 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
 
 // function Description:
 // - Returns the full path to the settings file, either within the application
-//   package, or in its unpackaged location.
+//   package, or in its unpackaged location. This path is under the "Local
+//   AppData" folder, so it _doesn't_ roam to other machines.
 // - If the application is unpackaged,
-//   the file will end up under e.g. C:\Users\admin\AppData\Roaming\Microsoft\Windows Terminal\profiles.json
+//   the file will end up under e.g. C:\Users\admin\AppData\Local\Microsoft\Windows Terminal\profiles.json
 // Arguments:
 // - <none>
 // Return Value:
 // - the full path to the settings file
-std::wstring CascadiaSettings::GetSettingsPath()
+std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
 {
-    wil::unique_cotaskmem_string roamingAppDataFolder;
+    wil::unique_cotaskmem_string localAppDataFolder;
     // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
     // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
     // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    if (FAILED(SHGetKnownFolderPath(FOLDERID_RoamingAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, 0, &roamingAppDataFolder)))
+    const auto knowFolderId = useRoamingPath ? FOLDERID_RoamingAppData : FOLDERID_LocalAppData;
+    if (FAILED(SHGetKnownFolderPath(knowFolderId, KF_FLAG_FORCE_APP_DATA_REDIRECTION, 0, &localAppDataFolder)))
     {
         THROW_LAST_ERROR();
     }
 
-    std::filesystem::path parentDirectoryForSettingsFile{ roamingAppDataFolder.get() };
+    std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
 
     if (!_IsPackaged())
     {
