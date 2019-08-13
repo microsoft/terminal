@@ -172,12 +172,13 @@ private:
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
-    enum selectionExpansionMode
+    enum SelectionExpansionMode
     {
         Cell,
         Word,
         Line
-    } multiClickSelectionMode;
+    };
+    SelectionExpansionMode multiClickSelectionMode;
 
     std::shared_mutex _readWriteLock;
 
