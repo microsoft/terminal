@@ -43,6 +43,7 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         const COORD getFontSize() const;
+        const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
         std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRangeUTRs(_In_ Microsoft::Console::Render::IRenderData* pData,

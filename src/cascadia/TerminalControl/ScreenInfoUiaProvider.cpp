@@ -87,6 +87,11 @@ const COORD ScreenInfoUiaProvider::getFontSize() const
     return _termControl.GetActualFont().GetSize();
 }
 
+const winrt::Windows::UI::Xaml::Thickness ScreenInfoUiaProvider::GetPadding() const
+{
+    return _termControl.GetPadding();
+}
+
 std::deque<UiaTextRangeBase*> ScreenInfoUiaProvider::GetSelectionRangeUTRs(_In_ IRenderData* pData,
                                                                            _In_ IRawElementProviderSimple* pProvider)
 {

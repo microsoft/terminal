@@ -186,11 +186,27 @@ void UiaTextRange::_ChangeViewport(const SMALL_RECT /*NewWindow*/)
     // TODO GitHub #2361: Update viewport when calling UiaTextRangeBase::ScrollIntoView()
 }
 
+// Method Description:
+// - Transform coordinates relative to the client to relative to the screen
+// Arguments:
+// - clientPoint: coordinates relative to the client where
+//                (0,0) is the top-left of the app window
+// Return Value:
+// - <none>
 void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
 {
-    // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
-    clientPoint->x;
-    clientPoint->y += 10;
+    auto provider = static_cast<TermControlUiaProvider*>(_pProvider.get());
+
+    // update based on TermControl location (important for Panes)
+    UiaRect boundingRect;
+    THROW_IF_FAILED(provider->get_BoundingRectangle(&boundingRect));
+    clientPoint->x += gsl::narrow<LONG>(boundingRect.left);
+    clientPoint->y += gsl::narrow<LONG>(boundingRect.top);
+
+    // update based on TermControl padding
+    auto padding = provider->GetPadding();
+    clientPoint->x += gsl::narrow<LONG>(padding.Left);
+    clientPoint->y += gsl::narrow<LONG>(padding.Right);
 }
 
 void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const
@@ -200,6 +216,9 @@ void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const
 
 const COORD UiaTextRange::_getScreenFontSize() const
 {
+    // Do NOT get the font info from IRenderData. It is a dummy font info.
+    // Instead, the font info is saved in the TermControl. So we have to
+    // ask our parent to get it for us.
     auto provider = static_cast<TermControlUiaProvider*>(_pProvider.get());
     return provider->GetFontSize();
 }

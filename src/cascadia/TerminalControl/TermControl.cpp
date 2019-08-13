@@ -357,6 +357,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _actualFont;
     }
 
+    const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
+    {
+        return _swapChainPanel.Margin();
+    }
+
     void TermControl::SwapChainChanged()
     {
         if (!_initializedTerminal)

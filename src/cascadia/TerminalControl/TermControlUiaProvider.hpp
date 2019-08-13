@@ -23,12 +23,10 @@ Author(s):
 #include "..\types\UiaTextRangeBase.hpp"
 #include "UiaTextRange.hpp"
 
-namespace Microsoft::Terminal
+namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
-    namespace winrt::Microsoft::Terminal::TerminalControl::implementation
-    {
-        struct TermControl;
-    }
+    struct TermControl;
+}
 
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
@@ -43,6 +41,7 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         const COORD GetFontSize() const;
+        const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:
         std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
