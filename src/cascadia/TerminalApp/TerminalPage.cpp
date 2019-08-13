@@ -29,15 +29,18 @@ namespace winrt::TerminalApp::implementation
 {
     TerminalPage::TerminalPage() :
         _tabs{},
-        _dialogLock{},
         _resourceLoader{ L"TerminalApp/Resources" }
     {
         InitializeComponent();
     }
 
-    void TerminalPage::SetSettings(::TerminalApp::CascadiaSettings* settings)
+    void TerminalPage::SetSettings(::TerminalApp::CascadiaSettings* settings, bool needRefreshUI)
     {
         _settings = settings;
+        if (needRefreshUI)
+        {
+            RefreshUIForSettingsReload();
+        }
     }
 
     void TerminalPage::Create()
@@ -49,6 +52,20 @@ namespace winrt::TerminalApp::implementation
         _tabRow = this->TabRow();
         _tabView = _tabRow.TabView();
         _newTabButton = _tabRow.NewTabButton();
+
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
+        {
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (this->Root().Children().IndexOf(_tabRow, index))
+            {
+                this->Root().Children().RemoveAt(index);
+            }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
+        }
 
         //Event Bindings (Early)
         _newTabButton.Click([this](auto&&, auto&&) {
@@ -65,208 +82,100 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Register our event handlers with the given keybindings object. This
-    //   should be done regardless of what the events are actually bound to -
-    //   this simply ensures the AppKeyBindings object will call us correctly
-    //   for each event.
+    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
+    //   the title and text from our Resources using the provided keys.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
     // Arguments:
-    // - bindings: A AppKeyBindings object to wire up with our event handlers
-    void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    void TerminalPage::ShowOkDialog(const winrt::hstring& titleKey,
+                                    const winrt::hstring& contentKey)
     {
-        // Hook up the KeyBinding object's events to our handlers.
-        // They should all be hooked up here, regardless of whether or not
-        // there's an actual keychord for them.
-        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.ClosePane([this]() { _CloseFocusedPane(); });
-        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _Scroll(-1); });
-        bindings.ScrollDown([this]() { _Scroll(1); });
-        bindings.NextTab([this]() { _SelectNextTab(true); });
-        bindings.PrevTab([this]() { _SelectNextTab(false); });
-        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
-        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        bindings.PasteText([this]() { _PasteText(); });
-    }
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto message = _resourceLoader.GetLocalizedString(contentKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
-    void TerminalPage::RefreshUIAfterSettingsReloaded()
-    {
-        // Re-wire the keybindings to their handlers, as we'll have created a
-        // new AppKeyBindings object.
-        _HookupKeyBindings(_settings->GetKeybindings());
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(message));
+        dialog.CloseButtonText(buttonText);
 
-        // Refresh UI elements
-        auto profiles = _settings->GetProfiles();
-        for (auto& profile : profiles)
-        {
-            const GUID profileGuid = profile.GetGuid();
-            TerminalSettings settings = _settings->MakeSettings(profileGuid);
-
-            for (auto& tab : _tabs)
-            {
-                // Attempt to reload the settings of any panes with this profile
-                tab->UpdateSettings(settings, profileGuid);
-            }
-        }
-
-        // Update the icon of the tab for the currently focused profile in that tab.
-        for (auto& tab : _tabs)
-        {
-            _UpdateTabIcon(tab);
-            _UpdateTitle(tab);
-        }
-
-        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-            // repopulate the new tab button's flyout with entries for each
-            // profile, which might have changed
-            _CreateNewTabFlyout();
-        });
+        _showDialogHandlers(*this, dialog);
     }
 
     // Method Description:
-    // - Open a new tab. This will create the TerminalControl hosting the
-    //      terminal, and add a new Tab to our list of tabs. The method can
-    //      optionally be provided a profile index, which will be used to create
-    //      a tab using the profile in that index.
-    //      If no index is provided, the default profile will be used.
-    // Arguments:
-    // - profileIndex: an optional index into the list of profiles to use to
-    //      initialize this tab up with.
-    void TerminalPage::_OpenNewTab(std::optional<int> profileIndex)
+    // - Show a dialog with "About" information. Displays the app's Display
+    //   Name, version, getting started link, documentation link, and release
+    //   Notes link.
+    void TerminalPage::_ShowAboutDialog()
     {
-        GUID profileGuid;
+        const auto title = _resourceLoader.GetLocalizedString(L"AboutTitleText");
+        const auto versionLabel = _resourceLoader.GetLocalizedString(L"VersionLabelText");
+        const auto gettingStartedLabel = _resourceLoader.GetLocalizedString(L"GettingStartedLabelText");
+        const auto documentationLabel = _resourceLoader.GetLocalizedString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = _resourceLoader.GetLocalizedString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = _resourceLoader.GetLocalizedString(L"GettingStartedUriValue");
+        const auto documentationUriValue = _resourceLoader.GetLocalizedString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = _resourceLoader.GetLocalizedString(L"ReleaseNotesUriValue");
+        const auto package = winrt::Windows::ApplicationModel::Package::Current();
+        const auto packageName = package.DisplayName();
+        const auto version = package.Id().Version();
+        winrt::Windows::UI::Xaml::Documents::Run about;
+        winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
+        winrt::Windows::UI::Xaml::Documents::Run documentation;
+        winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
+        winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
+        std::wstringstream aboutTextStream;
 
-        if (profileIndex)
-        {
-            const auto realIndex = profileIndex.value();
-            const auto profiles = _settings->GetProfiles();
+        gettingStarted.Text(gettingStartedLabel);
+        documentation.Text(documentationLabel);
+        releaseNotes.Text(releaseNotesLabel);
 
-            // If we don't have that many profiles, then do nothing.
-            if (realIndex >= profiles.size())
-            {
-                return;
-            }
+        winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
+        winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
+        winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
 
-            const auto& selectedProfile = profiles[realIndex];
-            profileGuid = selectedProfile.GetGuid();
-        }
-        else
-        {
-            // Getting Guid for default profile
-            const auto globalSettings = _settings->GlobalSettings();
-            profileGuid = globalSettings.GetDefaultProfile();
-        }
+        gettingStartedLink.NavigateUri(gettingStartedUri);
+        documentationLink.NavigateUri(documentationUri);
+        releaseNotesLink.NavigateUri(releaseNotesUri);
 
-        TerminalSettings settings = _settings->MakeSettings(profileGuid);
-        _CreateNewTabFromSettings(profileGuid, settings);
+        gettingStartedLink.Inlines().Append(gettingStarted);
+        documentationLink.Inlines().Append(documentation);
+        releaseNotesLink.Inlines().Append(releaseNotes);
 
-        const int tabCount = static_cast<int>(_tabs.size());
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",
-            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-    }
+        // Format our about text. It will look like the following:
+        // <Display Name>
+        // Version: <Major>.<Minor>.<Build>.<Revision>
+        // Getting Started
+        // Documentation
+        // Release Notes
 
-    // Method Description:
-    // - Creates a new connection based on the profile settings
-    // Arguments:
-    // - the profile GUID we want the settings from
-    // - the terminal settings
-    // Return value:
-    // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
-    {
-        const auto* const profile = _settings->FindProfile(profileGuid);
+        aboutTextStream << packageName.c_str() << L"\n";
 
-        TerminalConnection::ITerminalConnection connection{ nullptr };
+        aboutTextStream << versionLabel.c_str() << L" ";
+        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
 
-        GUID connectionType{ 0 };
+        winrt::hstring aboutText{ aboutTextStream.str() };
+        about.Text(aboutText);
 
-        if (profile->HasConnectionType())
-        {
-            connectionType = profile->GetConnectionType();
-        }
+        const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
-        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
-        {
-            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
-        }
+        Controls::TextBlock aboutTextBlock;
+        aboutTextBlock.Inlines().Append(about);
+        aboutTextBlock.Inlines().Append(gettingStartedLink);
+        aboutTextBlock.Inlines().Append(documentationLink);
+        aboutTextBlock.Inlines().Append(releaseNotesLink);
+        aboutTextBlock.IsTextSelectionEnabled(true);
 
-        else
-        {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
-        }
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(aboutTextBlock);
+        dialog.CloseButtonText(buttonText);
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "ConnectionCreated",
-            TraceLoggingDescription("Event emitted upon the creation of a connection"),
-            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-        return connection;
-    }
-
-    // Method Description:
-    // - Creates a new tab with the given settings. If the tab bar is not being
-    //      currently displayed, it will be shown.
-    // Arguments:
-    // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
-    {
-        // Initialize the new tab
-
-        // Create a connection based on the values in our settings object.
-        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
-
-        TermControl term{ settings, connection };
-
-        // Add the new tab to the list of our tabs.
-        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
-
-        // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(term, newTab);
-
-        auto tabViewItem = newTab->GetTabViewItem();
-        _tabView.Items().Append(tabViewItem);
-
-        // Set this profile's tab to the icon the user specified
-        if (profile != nullptr && profile->HasIcon())
-        {
-            tabViewItem.Icon(_GetIconFromProfile(*profile));
-        }
-
-        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
-
-        // When the tab is closed, remove it from our list of tabs.
-        newTab->Closed([tabViewItem, this]() {
-            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
-                _RemoveTabViewItem(tabViewItem);
-            });
-        });
-
-        // This is one way to set the tab's selected background color.
-        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
-
-        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
-        // Xaml control to the Xaml root.
-        _tabView.SelectedItem(tabViewItem);
+        _showDialogHandlers(*this, dialog);
     }
 
     // Method Description:
@@ -373,6 +282,335 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Open a new tab. This will create the TerminalControl hosting the
+    //      terminal, and add a new Tab to our list of tabs. The method can
+    //      optionally be provided a profile index, which will be used to create
+    //      a tab using the profile in that index.
+    //      If no index is provided, the default profile will be used.
+    // Arguments:
+    // - profileIndex: an optional index into the list of profiles to use to
+    //      initialize this tab up with.
+    void TerminalPage::_OpenNewTab(std::optional<int> profileIndex)
+    {
+        GUID profileGuid;
+
+        if (profileIndex)
+        {
+            const auto realIndex = profileIndex.value();
+            const auto profiles = _settings->GetProfiles();
+
+            // If we don't have that many profiles, then do nothing.
+            if (realIndex >= profiles.size())
+            {
+                return;
+            }
+
+            const auto& selectedProfile = profiles[realIndex];
+            profileGuid = selectedProfile.GetGuid();
+        }
+        else
+        {
+            // Getting Guid for default profile
+            const auto globalSettings = _settings->GlobalSettings();
+            profileGuid = globalSettings.GetDefaultProfile();
+        }
+
+        TerminalSettings settings = _settings->MakeSettings(profileGuid);
+        _CreateNewTabFromSettings(profileGuid, settings);
+
+        const int tabCount = static_cast<int>(_tabs.size());
+        TraceLoggingWrite(
+            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+            "TabInformation",
+            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+            TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+
+    // Method Description:
+    // - Creates a new tab with the given settings. If the tab bar is not being
+    //      currently displayed, it will be shown.
+    // Arguments:
+    // - settings: the TerminalSettings object to use to create the TerminalControl with.
+    void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
+    {
+        // Initialize the new tab
+
+        // Create a connection based on the values in our settings object.
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+
+        TermControl term{ settings, connection };
+
+        // Add the new tab to the list of our tabs.
+        auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
+
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
+        // Hookup our event handlers to the new terminal
+        _RegisterTerminalEvents(term, newTab);
+
+        auto tabViewItem = newTab->GetTabViewItem();
+        _tabView.Items().Append(tabViewItem);
+
+        // Set this profile's tab to the icon the user specified
+        if (profile != nullptr && profile->HasIcon())
+        {
+            tabViewItem.Icon(_GetIconFromProfile(*profile));
+        }
+
+        tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
+
+        // When the tab is closed, remove it from our list of tabs.
+        newTab->Closed([tabViewItem, this]() {
+            _tabView.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [tabViewItem, this]() {
+                _RemoveTabViewItem(tabViewItem);
+            });
+        });
+
+        // This is one way to set the tab's selected background color.
+        //   tabViewItem.Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), a Brush?);
+
+        // This kicks off TabView::SelectionChanged, in response to which we'll attach the terminal's
+        // Xaml control to the Xaml root.
+        _tabView.SelectedItem(tabViewItem);
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid, winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+
+        GUID connectionType{ 0 };
+
+        if (profile->HasConnectionType())
+        {
+            connectionType = profile->GetConnectionType();
+        }
+
+        if (profile->HasConnectionType() && profile->GetConnectionType() == AzureConnectionType && TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(), settings.InitialCols());
+        }
+
+        else
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "ConnectionCreated",
+            TraceLoggingDescription("Event emitted upon the creation of a connection"),
+            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return connection;
+    }
+
+    // Method Description:
+    // - Called when the settings button is clicked. Launches a background
+    //   thread to open the settings file in the default JSON editor.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SettingsButtonOnClick(const IInspectable&,
+                                              const RoutedEventArgs&)
+    {
+        LaunchSettings();
+    }
+
+    // Method Description:
+    // - Called when the feedback button is clicked. Launches github in your
+    //   default browser, navigated to the "issues" page of the Terminal repo.
+    void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
+                                              const RoutedEventArgs&)
+    {
+        const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
+
+        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
+    }
+
+    // Method Description:
+    // - Called when the about button is clicked. See _ShowAboutDialog for more info.
+    // Arguments:
+    // - <unused>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_AboutButtonOnClick(const IInspectable&,
+                                           const RoutedEventArgs&)
+    {
+        _ShowAboutDialog();
+    }
+
+    // Method Description:
+    // - Register our event handlers with the given keybindings object. This
+    //   should be done regardless of what the events are actually bound to -
+    //   this simply ensures the AppKeyBindings object will call us correctly
+    //   for each event.
+    // Arguments:
+    // - bindings: A AppKeyBindings object to wire up with our event handlers
+    void TerminalPage::_HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept
+    {
+        // Hook up the KeyBinding object's events to our handlers.
+        // They should all be hooked up here, regardless of whether or not
+        // there's an actual keychord for them.
+        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
+        bindings.CloseTab([this]() { _CloseFocusedTab(); });
+        bindings.ClosePane([this]() { _CloseFocusedPane(); });
+        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
+        bindings.ScrollUp([this]() { _Scroll(-1); });
+        bindings.ScrollDown([this]() { _Scroll(1); });
+        bindings.NextTab([this]() { _SelectNextTab(true); });
+        bindings.PrevTab([this]() { _SelectNextTab(false); });
+        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
+        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
+        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
+        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
+        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
+        bindings.OpenSettings([this]() { _OpenSettings(); });
+        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
+        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
+        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
+        bindings.PasteText([this]() { _PasteText(); });
+    }
+
+    // Method Description:
+    // - Get the title of the currently focused terminal control, and set it's
+    //   tab's text to that text. If this tab is the focused tab, then also
+    //   bubble this title to any listeners of our TitleChanged event.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
+    {
+        auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
+        {
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+            const auto tabTitle = matchingProfile->GetTabTitle();
+
+            // Checks if tab title has been set in the profile settings and
+            // updates accordingly.
+
+            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
+
+            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
+            {
+                _titleChangeHandlers(*this, newActualTitle);
+            }
+        }
+    }
+
+    // Method Description:
+    // - Get the icon of the currently focused terminal control, and set its
+    //   tab's icon to that icon.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void TerminalPage::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+    {
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
+        {
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+
+            auto tabViewItem = tab->GetTabViewItem();
+            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
+                // _GetIconFromProfile has to run on the main thread
+                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+                if (matchingProfile)
+                {
+                    tabViewItem.Icon(TerminalPage::_GetIconFromProfile(*matchingProfile));
+                }
+            });
+        }
+    }
+
+    // Method Description:
+    // - Handle changes in tab layout.
+    void TerminalPage::_UpdateTabView()
+    {
+        // Show tabs when there's more than 1, or the user has chosen to always
+        // show the tab bar.
+        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
+                               (_tabs.size() > 1) ||
+                               _settings->GlobalSettings().GetAlwaysShowTabs();
+
+        // collapse/show the tabs themselves
+        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
+
+        // collapse/show the row that the tabs are in.
+        // NaN is the special value XAML uses for "Auto" sizing.
+        _tabRow.Height(isVisible ? NAN : 0);
+    }
+
+    // Method Description:
+    // - Duplicates the current focused tab
+    void TerminalPage::_DuplicateTabViewItem()
+    {
+        const int& focusedTabIndex = _GetFocusedTabIndex();
+        const auto& _tab = _tabs.at(focusedTabIndex);
+
+        const auto& profileGuid = _tab->GetFocusedProfile();
+        const auto& settings = _settings->MakeSettings(profileGuid);
+
+        _CreateNewTabFromSettings(profileGuid.value(), settings);
+    }
+
+    // Method Description:
+    // - Removes the tab (both TerminalControl and XAML)
+    // Arguments:
+    // - tabViewItem: the TabViewItem in the TabView that is being removed.
+    void TerminalPage::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    {
+        // To close the window here, we need to close the hosting window.
+        if (_tabs.size() == 1)
+        {
+            _lastTabClosedHandlers(*this, nullptr);
+        }
+        uint32_t tabIndexFromControl = 0;
+        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+        auto focusedTabIndex = _GetFocusedTabIndex();
+
+        // Removing the tab from the collection will destroy its control and disconnect its connection.
+        _tabs.erase(_tabs.begin() + tabIndexFromControl);
+        _tabView.Items().RemoveAt(tabIndexFromControl);
+
+        if (tabIndexFromControl == focusedTabIndex)
+        {
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
+            {
+                focusedTabIndex = tabCount - 1;
+            }
+
+            if (focusedTabIndex < 0)
+            {
+                focusedTabIndex = 0;
+            }
+
+            _SelectTab(focusedTabIndex);
+        }
+    }
+
+    // Method Description:
     // - Connects event handlers to the TermControl for events that we want to
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
@@ -426,159 +664,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Get the title of the currently focused terminal control, and set it's
-    //   tab's text to that text. If this tab is the focused tab, then also
-    //   bubble this title to any listeners of our TitleChanged event.
-    // Arguments:
-    // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
-    {
-        auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        if (lastFocusedProfileOpt.has_value())
-        {
-            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-            const auto tabTitle = matchingProfile->GetTabTitle();
-
-            // Checks if tab title has been set in the profile settings and
-            // updates accordingly.
-
-            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(newActualTitle);
-            }
-        }
-    }
-
-    // Method Description:
-    // - Get the icon of the currently focused terminal control, and set its
-    //   tab's icon to that icon.
-    // Arguments:
-    // - tab: the Tab to update the title for.
-    void TerminalPage::_UpdateTabIcon(std::shared_ptr<Tab> tab)
-    {
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        if (lastFocusedProfileOpt.has_value())
-        {
-            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-            auto tabViewItem = tab->GetTabViewItem();
-            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                // _GetIconFromProfile has to run on the main thread
-                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                if (matchingProfile)
-                {
-                    tabViewItem.Icon(TerminalPage::_GetIconFromProfile(*matchingProfile));
-                }
-            });
-        }
-    }
-
-    // Method Description:
-    // - Handle changes in tab layout.
-    void TerminalPage::_UpdateTabView()
-    {
-        // Show tabs when there's more than 1, or the user has chosen to always
-        // show the tab bar.
-        const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                               (_tabs.size() > 1) ||
-                               _settings->GlobalSettings().GetAlwaysShowTabs();
-
-        // collapse/show the tabs themselves
-        _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
-
-        // collapse/show the row that the tabs are in.
-        // NaN is the special value XAML uses for "Auto" sizing.
-        _tabRow.Height(isVisible ? NAN : 0);
-    }
-
-    // Method Description:
-    // - Gets a colored IconElement for the profile in question. If the profile
-    //   has an `icon` set in the settings, this will return an icon with that
-    //   image in it. Otherwise it will return a nullptr-initialized
-    //   IconElement.
-    // Arguments:
-    // - profile: the profile to get the icon from
-    // Return Value:
-    // - an IconElement for the profile's icon, if it has one.
-    Controls::IconElement TerminalPage::_GetIconFromProfile(const Profile& profile)
-    {
-        if (profile.HasIcon())
-        {
-            std::wstring path{ profile.GetIconPath() };
-            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-            winrt::hstring iconPath{ path };
-            winrt::Windows::Foundation::Uri iconUri{ iconPath };
-            Controls::BitmapIconSource iconSource;
-            // Make sure to set this to false, so we keep the RGB data of the
-            // image. Otherwise, the icon will be white for all the
-            // non-transparent pixels in the image.
-            iconSource.ShowAsMonochrome(false);
-            iconSource.UriSource(iconUri);
-            Controls::IconSourceElement elem;
-            elem.IconSource(iconSource);
-            return elem;
-        }
-        else
-        {
-            return { nullptr };
-        }
-    }
-
-    // Method Description:
-    // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
-    hstring TerminalPage::GetTitle()
-    {
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
-        {
-            auto selectedIndex = _tabView.SelectedIndex();
-            if (selectedIndex >= 0)
-            {
-                try
-                {
-                    if (auto focusedControl{ _GetFocusedControl() })
-                    {
-                        return focusedControl.Title();
-                    }
-                }
-                CATCH_LOG();
-            }
-        }
-        return { L"Windows Terminal" };
-    }
-
-    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetFocusedControl()
-    {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
-        return focusedTab->GetFocusedTerminalControl();
-    }
-
-    // Method Description:
-    // - Duplicates the current focused tab
-    void TerminalPage::_DuplicateTabViewItem()
-    {
-        const int& focusedTabIndex = _GetFocusedTabIndex();
-        const auto& _tab = _tabs.at(focusedTabIndex);
-
-        const auto& profileGuid = _tab->GetFocusedProfile();
-        const auto& settings = _settings->MakeSettings(profileGuid);
-
-        _CreateNewTabFromSettings(profileGuid.value(), settings);
-    }
-
-    // Method Description:
     // - Sets focus to the tab to the right or left the currently selected tab.
     void TerminalPage::_SelectNextTab(const bool bMoveRight)
     {
@@ -589,6 +674,37 @@ namespace winrt::TerminalApp::implementation
         // leftward from 0 to tabCount - 1.
         _SetFocusedTabIndex(
             static_cast<int>((tabCount + focusedTabIndex + (bMoveRight ? 1 : -1)) % tabCount));
+    }
+
+    // Method Description:
+    // - Sets focus to the desired tab.
+    void TerminalPage::_SelectTab(const int tabIndex)
+    {
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
+        {
+            _SetFocusedTabIndex(tabIndex);
+        }
+    }
+
+    // Method Description:
+    // - Attempt to move focus between panes, as to focus the child on
+    //   the other side of the separator. See Pane::NavigateFocus for details.
+    // - Moves the focus of the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - <none>
+    void TerminalPage::_MoveFocus(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->NavigateFocus(direction);
+    }
+
+    winrt::Microsoft::Terminal::TerminalControl::TermControl TerminalPage::_GetFocusedControl()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        auto focusedTab = _tabs[focusedTabIndex];
+        return focusedTab->GetFocusedTerminalControl();
     }
 
     // Method Description:
@@ -620,17 +736,23 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Attempt to move focus between panes, as to focus the child on
-    //   the other side of the separator. See Pane::NavigateFocus for details.
-    // - Moves the focus of the currently focused tab.
-    // Arguments:
-    // - direction: The direction to move the focus in.
-    // Return Value:
-    // - <none>
-    void TerminalPage::_MoveFocus(const Direction& direction)
+    // - Close the currently focused tab. Focus will move to the left, if possible.
+    void TerminalPage::_CloseFocusedTab()
     {
-        const auto focusedTabIndex = _GetFocusedTabIndex();
-        _tabs[focusedTabIndex]->NavigateFocus(direction);
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        _RemoveTabViewItem(focusedTab->GetTabViewItem());
+    }
+
+    // Method Description:
+    // - Close the currently focused pane. If the pane is the last pane in the
+    //   tab, the tab will also be closed. This will happen when we handle the
+    //   tab's Closed event.
+    void TerminalPage::_CloseFocusedPane()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        focusedTab->ClosePane();
     }
 
     // Method Description:
@@ -734,39 +856,63 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets focus to the desired tab.
-    void TerminalPage::_SelectTab(const int tabIndex)
+    // - Gets a colored IconElement for the profile in question. If the profile
+    //   has an `icon` set in the settings, this will return an icon with that
+    //   image in it. Otherwise it will return a nullptr-initialized
+    //   IconElement.
+    // Arguments:
+    // - profile: the profile to get the icon from
+    // Return Value:
+    // - an IconElement for the profile's icon, if it has one.
+    Controls::IconElement TerminalPage::_GetIconFromProfile(const Profile& profile)
     {
-        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
+        if (profile.HasIcon())
         {
-            _SetFocusedTabIndex(tabIndex);
+            std::wstring path{ profile.GetIconPath() };
+            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
+            winrt::hstring iconPath{ path };
+            winrt::Windows::Foundation::Uri iconUri{ iconPath };
+            Controls::BitmapIconSource iconSource;
+            // Make sure to set this to false, so we keep the RGB data of the
+            // image. Otherwise, the icon will be white for all the
+            // non-transparent pixels in the image.
+            iconSource.ShowAsMonochrome(false);
+            iconSource.UriSource(iconUri);
+            Controls::IconSourceElement elem;
+            elem.IconSource(iconSource);
+            return elem;
+        }
+        else
+        {
+            return { nullptr };
         }
     }
 
-    void TerminalPage::_OpenSettings()
+    // Method Description:
+    // - Gets the title of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns "Windows Terminal"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the title of the focused control if there is one, else "Windows Terminal"
+    hstring TerminalPage::GetTitle()
     {
-        LaunchSettings();
-    }
-
-    // Function Description:
-    // - Called when the settings button is clicked. ShellExecutes the settings
-    //   file, as to open it in the default editor for .json files. Does this in
-    //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget TerminalPage::LaunchSettings()
-    {
-        // This will switch the execution of the function to a background (not
-        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
-        // (used for retrieving the path to the file) will crash on the UI
-        // thread, because the main thread is a STA.
-        co_await winrt::resume_background();
-
-        const auto settingsPath = CascadiaSettings::GetSettingsPath();
-
-        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
-        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar())
         {
-            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
+            auto selectedIndex = _tabView.SelectedIndex();
+            if (selectedIndex >= 0)
+            {
+                try
+                {
+                    if (auto focusedControl{ _GetFocusedControl() })
+                    {
+                        return focusedControl.Title();
+                    }
+                }
+                CATCH_LOG();
+            }
         }
+        return { L"Windows Terminal" };
     }
 
     // Method Description:
@@ -835,158 +981,6 @@ namespace winrt::TerminalApp::implementation
                 menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
             }
         }
-    }
-
-    // Method Description:
-    // - Show a ContentDialog with a single button to dismiss. Uses the
-    //   FrameworkElements provided as the title and content of this dialog, and
-    //   displays a single button to dismiss.
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens.
-    // Arguments:
-    // - titleElement: the element to use as the title of this ContentDialog
-    // - contentElement: the element to use as the content of this ContentDialog
-    // - closeButtonText: The string to use on the close button
-    fire_and_forget TerminalPage::_ShowDialog(const IInspectable& titleElement,
-                                              const IInspectable& contentElement,
-                                              const winrt::hstring& closeButtonText)
-    {
-        // DON'T release this lock in a wil::scope_exit. The scope_exit will get
-        // called when we await, which is not what we want.
-        std::unique_lock lock{ _dialogLock, std::try_to_lock };
-        if (!lock)
-        {
-            // Another dialog is visible.
-            return;
-        }
-
-        Controls::ContentDialog dialog;
-        dialog.Title(titleElement);
-        dialog.Content(contentElement);
-        dialog.CloseButtonText(closeButtonText);
-
-        // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
-        // Since we're hosting the dialog in a Xaml island, we need to connect it to the
-        // xaml tree somehow.
-        dialog.XamlRoot(this->XamlRoot());
-
-        // IMPORTANT: Set the requested theme of the dialog, because the
-        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
-        // won't inherit our RequestedTheme automagically.
-        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
-
-        // Display the dialog.
-        Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
-
-        // After the dialog is dismissed, the dialog lock (held by `lock`) will
-        // be released so another can be shown
-    }
-
-    // Method Description:
-    // - Show a ContentDialog with a single "Ok" button to dismiss. Looks up the
-    //   the title and text from our Resources using the provided keys.
-    // - Only one dialog can be visible at a time. If another dialog is visible
-    //   when this is called, nothing happens. See _ShowDialog for details
-    // Arguments:
-    // - titleKey: The key to use to lookup the title text from our resources.
-    // - contentKey: The key to use to lookup the content text from our resources.
-    void TerminalPage::ShowOkDialog(const winrt::hstring& titleKey,
-                                    const winrt::hstring& contentKey)
-    {
-        auto title = _resourceLoader.GetLocalizedString(titleKey);
-        auto message = _resourceLoader.GetLocalizedString(contentKey);
-        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
-    }
-
-    // Method Description:
-    // - Show a dialog with "About" information. Displays the app's Display
-    //   Name, version, getting started link, documentation link, and release
-    //   Notes link.
-    void TerminalPage::_ShowAboutDialog()
-    {
-        const auto title = _resourceLoader.GetLocalizedString(L"AboutTitleText");
-        const auto versionLabel = _resourceLoader.GetLocalizedString(L"VersionLabelText");
-        const auto gettingStartedLabel = _resourceLoader.GetLocalizedString(L"GettingStartedLabelText");
-        const auto documentationLabel = _resourceLoader.GetLocalizedString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = _resourceLoader.GetLocalizedString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = _resourceLoader.GetLocalizedString(L"GettingStartedUriValue");
-        const auto documentationUriValue = _resourceLoader.GetLocalizedString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = _resourceLoader.GetLocalizedString(L"ReleaseNotesUriValue");
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        const auto packageName = package.DisplayName();
-        const auto version = package.Id().Version();
-        winrt::Windows::UI::Xaml::Documents::Run about;
-        winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
-        winrt::Windows::UI::Xaml::Documents::Run documentation;
-        winrt::Windows::UI::Xaml::Documents::Run releaseNotes;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink gettingStartedLink;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink documentationLink;
-        winrt::Windows::UI::Xaml::Documents::Hyperlink releaseNotesLink;
-        std::wstringstream aboutTextStream;
-
-        gettingStarted.Text(gettingStartedLabel);
-        documentation.Text(documentationLabel);
-        releaseNotes.Text(releaseNotesLabel);
-
-        winrt::Windows::Foundation::Uri gettingStartedUri{ gettingStartedUriValue };
-        winrt::Windows::Foundation::Uri documentationUri{ documentationUriValue };
-        winrt::Windows::Foundation::Uri releaseNotesUri{ releaseNotesUriValue };
-
-        gettingStartedLink.NavigateUri(gettingStartedUri);
-        documentationLink.NavigateUri(documentationUri);
-        releaseNotesLink.NavigateUri(releaseNotesUri);
-
-        gettingStartedLink.Inlines().Append(gettingStarted);
-        documentationLink.Inlines().Append(documentation);
-        releaseNotesLink.Inlines().Append(releaseNotes);
-
-        // Format our about text. It will look like the following:
-        // <Display Name>
-        // Version: <Major>.<Minor>.<Build>.<Revision>
-        // Getting Started
-        // Documentation
-        // Release Notes
-
-        aboutTextStream << packageName.c_str() << L"\n";
-
-        aboutTextStream << versionLabel.c_str() << L" ";
-        aboutTextStream << version.Major << L"." << version.Minor << L"." << version.Build << L"." << version.Revision << L"\n";
-
-        winrt::hstring aboutText{ aboutTextStream.str() };
-        about.Text(aboutText);
-
-        const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
-
-        Controls::TextBlock aboutTextBlock;
-        aboutTextBlock.Inlines().Append(about);
-        aboutTextBlock.Inlines().Append(gettingStartedLink);
-        aboutTextBlock.Inlines().Append(documentationLink);
-        aboutTextBlock.Inlines().Append(releaseNotesLink);
-        aboutTextBlock.IsTextSelectionEnabled(true);
-
-        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText);
-    }
-
-    // Method Description:
-    // - Close the currently focused tab. Focus will move to the left, if possible.
-    void TerminalPage::_CloseFocusedTab()
-    {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-        _RemoveTabViewItem(focusedTab->GetTabViewItem());
-    }
-
-    // Method Description:
-    // - Close the currently focused pane. If the pane is the last pane in the
-    //   tab, the tab will also be closed. This will happen when we handle the
-    //   tab's Closed event.
-    void TerminalPage::_CloseFocusedPane()
-    {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-        focusedTab->ClosePane();
     }
 
     // Method Description:
@@ -1062,39 +1056,29 @@ namespace winrt::TerminalApp::implementation
         control.PasteTextFromClipboard();
     }
 
-    // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
-    // Arguments:
-    // - tabViewItem: the TabViewItem in the TabView that is being removed.
-    void TerminalPage::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    void TerminalPage::_OpenSettings()
     {
-        // To close the window here, we need to close the hosting window.
-        if (_tabs.size() == 1)
+        LaunchSettings();
+    }
+
+    // Function Description:
+    // - Called when the settings button is clicked. ShellExecutes the settings
+    //   file, as to open it in the default editor for .json files. Does this in
+    //   a background thread, as to not hang/crash the UI thread.
+    fire_and_forget TerminalPage::LaunchSettings()
+    {
+        // This will switch the execution of the function to a background (not
+        // UI) thread. This is IMPORTANT, because the Windows.Storage API's
+        // (used for retrieving the path to the file) will crash on the UI
+        // thread, because the main thread is a STA.
+        co_await winrt::resume_background();
+
+        const auto settingsPath = CascadiaSettings::GetSettingsPath();
+
+        HINSTANCE res = ShellExecute(nullptr, nullptr, settingsPath.c_str(), nullptr, nullptr, SW_SHOW);
+        if (static_cast<int>(reinterpret_cast<uintptr_t>(res)) <= 32)
         {
-            _lastTabClosedHandlers();
-        }
-        uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-        auto focusedTabIndex = _GetFocusedTabIndex();
-
-        // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndexFromControl);
-        _tabView.Items().RemoveAt(tabIndexFromControl);
-
-        if (tabIndexFromControl == focusedTabIndex)
-        {
-            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
-            if (focusedTabIndex >= tabCount)
-            {
-                focusedTabIndex = tabCount - 1;
-            }
-
-            if (focusedTabIndex < 0)
-            {
-                focusedTabIndex = 0;
-            }
-
-            _SelectTab(focusedTabIndex);
+            ShellExecute(nullptr, nullptr, L"notepad", settingsPath.c_str(), nullptr, SW_SHOW);
         }
     }
 
@@ -1150,7 +1134,7 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
-                _titleChangeHandlers(GetTitle());
+                _titleChangeHandlers(*this, GetTitle());
             }
             CATCH_LOG();
         }
@@ -1174,19 +1158,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the settings button is clicked. Launches a background
-    //   thread to open the settings file in the default JSON editor.
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_SettingsButtonOnClick(const IInspectable&,
-                                              const RoutedEventArgs&)
-    {
-        LaunchSettings();
-    }
-
-    // Method Description:
     // - Responds to the TabView control's Tab Closing event by removing
     //      the indicated tab from the set and focusing another one.
     //      The event is cancelled so App maintains control over the
@@ -1204,26 +1175,42 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Called when the feedback button is clicked. Launches github in your
-    //   default browser, navigated to the "issues" page of the Terminal repo.
-    void TerminalPage::_FeedbackButtonOnClick(const IInspectable&,
-                                              const RoutedEventArgs&)
+    // - Hook up keybindings, and refresh the UI of the terminal.
+    //   This includes update the settings of all the tabs according
+    //   to their profiles, update the title and icon of each tab, and
+    //   finally create the tab flyout
+    void TerminalPage::RefreshUIForSettingsReload()
     {
-        const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
+        // Re-wire the keybindings to their handlers, as we'll have created a
+        // new AppKeyBindings object.
+        _HookupKeyBindings(_settings->GetKeybindings());
 
-        winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
-    }
+        // Refresh UI elements
+        auto profiles = _settings->GetProfiles();
+        for (auto& profile : profiles)
+        {
+            const GUID profileGuid = profile.GetGuid();
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
 
-    // Method Description:
-    // - Called when the about button is clicked. See _ShowAboutDialog for more info.
-    // Arguments:
-    // - <unused>
-    // Return Value:
-    // - <none>
-    void TerminalPage::_AboutButtonOnClick(const IInspectable&,
-                                           const RoutedEventArgs&)
-    {
-        _ShowAboutDialog();
+            for (auto& tab : _tabs)
+            {
+                // Attempt to reload the settings of any panes with this profile
+                tab->UpdateSettings(settings, profileGuid);
+            }
+        }
+
+        // Update the icon of the tab for the currently focused profile in that tab.
+        for (auto& tab : _tabs)
+        {
+            _UpdateTabIcon(tab);
+            _UpdateTitle(tab);
+        }
+
+        this->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+            // repopulate the new tab button's flyout with entries for each
+            // profile, which might have changed
+            _CreateNewTabFlyout();
+        });
     }
 
     TerminalApp::TabRowControl TerminalPage::GetTabRow()
@@ -1234,6 +1221,8 @@ namespace winrt::TerminalApp::implementation
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
-    DEFINE_EVENT(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(TerminalPage, ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
 }

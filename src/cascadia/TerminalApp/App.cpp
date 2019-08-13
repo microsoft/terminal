@@ -6,8 +6,6 @@
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
 #include "App.g.cpp"
-#include "TerminalPage.h"
-#include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -116,6 +114,7 @@ namespace winrt::TerminalApp::implementation
 {
     App::App() :
         _settings{},
+        _dialogLock{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK }
     {
@@ -127,6 +126,11 @@ namespace winrt::TerminalApp::implementation
 
         // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
         Initialize();
+
+        // The TerminalPage has to be constructed during our construction, to
+        // make sure that there's a terminal page for callers of
+        // SetTitleBarContent
+        _root = winrt::make_self<TerminalPage>();
     }
 
     // Method Description:
@@ -144,28 +148,11 @@ namespace winrt::TerminalApp::implementation
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
 
-        auto terminalPage = winrt::make_self<TerminalPage>();
-        terminalPage->SetSettings(_settings.get());
-        _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
+        _root->ShowDialog({ this, &App::_ShowDialog });
 
-        _root.Loaded({ this, &App::_OnLoaded });
-        terminalPage->Create();
-
-        // This is a work around for winrt events not working in TerminalPage
-        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
-        {
-            // Remove the TabView from the page. We'll hang on to it, we need to
-            // put it in the titlebar.
-            uint32_t index = 0;
-            TerminalApp::TabRowControl tabRow = terminalPage->GetTabRow();
-            if (terminalPage->Root().Children().IndexOf(tabRow, index))
-            {
-                terminalPage->Root().Children().RemoveAt(index);
-            }
-
-            // Inform the host that our titlebar content has changed.
-            _setTitleBarContentHandlers(*this, tabRow);
-        }
+        _root->SetSettings(_settings.get(), false);
+        _root->Loaded({ this, &App::_OnLoaded });
+        _root->Create();
 
         _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
 
@@ -178,9 +165,41 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
-    UIElement App::GetRoot() noexcept
+    // Method Description:
+    // - Show a ContentDialog with a single button to dismiss. Uses the
+    //   FrameworkElements provided as the title and content of this dialog, and
+    //   displays a single button to dismiss.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens.
+    // Arguments:
+    // sender: unused
+    // dialog: the dialog object that is going to show up
+    fire_and_forget App::_ShowDialog(const winrt::Windows::Foundation::IInspectable& sender, winrt::Windows::UI::Xaml::Controls::ContentDialog dialog)
     {
-        return _root;
+        // DON'T release this lock in a wil::scope_exit. The scope_exit will get
+        // called when we await, which is not what we want.
+        std::unique_lock lock{ _dialogLock, std::try_to_lock };
+        if (!lock)
+        {
+            // Another dialog is visible.
+            return;
+        }
+
+        // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
+        // Since we're hosting the dialog in a Xaml island, we need to connect it to the
+        // xaml tree somehow.
+        dialog.XamlRoot(_root->XamlRoot());
+
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+
+        // Display the dialog.
+        Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
+
+        // After the dialog is dismissed, the dialog lock (held by `lock`) will
+        // be released so another can be shown
     }
 
     // Method Description:
@@ -198,8 +217,7 @@ namespace winrt::TerminalApp::implementation
         {
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
-            auto terminalPage = _root.as<TerminalPage>();
-            terminalPage->ShowOkDialog(titleKey, textKey);
+            _root->ShowOkDialog(titleKey, textKey);
         }
     }
 
@@ -375,14 +393,12 @@ namespace winrt::TerminalApp::implementation
         //  - display a loading error
         _settingsLoadedResult = _TryLoadSettings(false);
 
-        auto terminalPage = _root.as<TerminalPage>();
-
         if (FAILED(_settingsLoadedResult))
         {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, terminalPage]() {
+            _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
                 const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
                 const winrt::hstring textKey = L"ReloadJsonParseErrorText";
-                terminalPage->ShowOkDialog(titleKey, textKey);
+                _root->ShowOkDialog(titleKey, textKey);
             });
 
             return;
@@ -398,32 +414,12 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettings object.
 
         // Update the settings in TerminalPage
-        terminalPage->SetSettings(_settings.get());
+        _root->SetSettings(_settings.get(), true);
 
-        // Inform Page to update the UI
-        terminalPage->RefreshUIAfterSettingsReloaded();
-
-        _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Refresh the UI theme
             _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
         });
-    }
-
-    // Method Description:
-    // - Gets the title of the currently focused terminal control. If there
-    //   isn't a control selected for any reason, returns "Windows Terminal"
-    // Arguments:
-    // - <none>
-    // Return Value:
-    // - the title of the focused control if there is one, else "Windows Terminal"
-    hstring App::GetTitle()
-    {
-        if (_root)
-        {
-            auto terminalPage = _root.as<TerminalPage>();
-            return terminalPage->GetTitle();
-        }
-        return { L"Windows Terminal" };
     }
 
     // Method Description:
@@ -438,9 +434,67 @@ namespace winrt::TerminalApp::implementation
         _requestedThemeChangedHandlers(*this, newTheme);
     }
 
+    UIElement App::GetRoot() noexcept
+    {
+        return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
+    }
+
+    // Method Description:
+    // - Gets the title of the currently focused terminal control. If there
+    //   isn't a control selected for any reason, returns "Windows Terminal"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the title of the focused control if there is one, else "Windows Terminal"
+    hstring App::GetTitle()
+    {
+        if (_root)
+        {
+            return _root->GetTitle();
+        }
+        return { L"Windows Terminal" };
+    }
+
+    // Methods that proxy typed event handlers through TerminalPage
+    winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement> const& handler)
+    {
+        return _root->SetTitleBarContent(handler);
+    }
+    void App::SetTitleBarContent(winrt::event_token const& token) noexcept
+    {
+        return _root->SetTitleBarContent(token);
+    }
+
+    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
+    {
+        return _root->TitleChanged(handler);
+    }
+    void App::TitleChanged(winrt::event_token const& token) noexcept
+    {
+        return _root->TitleChanged(token);
+    }
+
+    winrt::event_token App::LastTabClosed(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs> const& handler)
+    {
+        return _root->LastTabClosed(handler);
+    }
+    void App::LastTabClosed(winrt::event_token const& token) noexcept
+    {
+        return _root->LastTabClosed(token);
+    }
+
+    winrt::event_token App::ShowDialog(
+        Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog> const& handler)
+    {
+        return _root->ShowDialog(handler);
+    }
+    void App::ShowDialog(winrt::event_token const& token) noexcept
+    {
+        return _root->ShowDialog(token);
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::UIElement);
     DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
 }
