@@ -74,7 +74,7 @@ public:
 
     void CreateDefaults();
 
-    const std::vector<TerminalApp::SettingsLoadWarnings>& GetLoadWarnings();
+    std::vector<TerminalApp::SettingsLoadWarnings>& GetLoadWarnings();
 
 private:
     GlobalAppSettings _globals;

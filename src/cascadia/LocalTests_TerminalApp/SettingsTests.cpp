@@ -301,7 +301,9 @@ namespace TerminalAppLocalTests
                 L"Testing a pair of profiles with the same guid"));
             const auto settingsObject = VerifyParseSucceeded(badProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
+
             settings->_ValidateNoDuplicateProfiles();
+
             VERIFY_ARE_EQUAL(1, settings->_warnings.size());
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
 

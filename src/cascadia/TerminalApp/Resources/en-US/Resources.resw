@@ -130,7 +130,7 @@
 </value>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
-    <value>Failed to load settings - no profiles were found in your settings.
+    <value>No profiles were found in your settings.
 </value>
   </data>
   <data name="ReloadJsonParseErrorText" xml:space="preserve">

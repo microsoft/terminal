@@ -649,7 +649,7 @@ Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-const std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetLoadWarnings()
+std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetLoadWarnings()
 {
     return _warnings;
 }
@@ -735,30 +735,34 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 {
     bool foundDupe = false;
 
-    for (int i = 0; i < _profiles.size() - 1; i++)
+    std::vector<size_t> indiciesToDelete{};
+
+    // Helper to establish an ordering on guids
+    struct GuidEquality
     {
-        const auto searchGuid = _profiles.at(i).GetGuid();
-        std::vector<size_t> profilesMarkedForDeletion{};
-
-        // Walk the rest of the profiles in the list. If there's a duplicate
-        // GUID, we'll add that index to a list of indicies to delete at the end
-        // of the loop.
-        for (int j = i + 1; j < _profiles.size(); j++)
+        bool operator()(const GUID& lhs, const GUID& rhs) const
         {
-            const auto otherGuid = _profiles.at(j).GetGuid();
-            if (searchGuid == otherGuid)
-            {
-                foundDupe = true;
-                profilesMarkedForDeletion.push_back(j);
-            }
+            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
         }
+    };
+    std::set<GUID, GuidEquality> uniqueGuids{};
 
-        // Remove all the duplicates we've marked
-        // Walk backwards, so we don't accidentally shift any of the elements
-        for (int reverse = profilesMarkedForDeletion.size() - 1; reverse >= 0; reverse--)
+    // Try collecting all the unique guids. If we ever encounter a guid that's
+    // already in the set, then we need to delete that profile.
+    for (int i = 0; i < _profiles.size(); i++)
+    {
+        if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
-            _profiles.erase(_profiles.begin() + profilesMarkedForDeletion.at(reverse));
+            foundDupe = true;
+            indiciesToDelete.push_back(i);
         }
+    }
+
+    // Remove all the duplicates we've marked
+    // Walk backwards, so we don't accidentally shift any of the elements
+    for (int reverse = indiciesToDelete.size() - 1; reverse >= 0; reverse--)
+    {
+        _profiles.erase(_profiles.begin() + indiciesToDelete.at(reverse));
     }
 
     if (foundDupe)

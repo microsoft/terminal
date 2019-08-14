@@ -31,7 +31,7 @@ static const std::unordered_map<::TerminalApp::SettingsLoadWarnings, std::wstrin
     { SettingsLoadWarnings::DuplicateProfile      , L"DuplicateProfileText"},
 };
 static const std::unordered_map<::TerminalApp::SettingsLoadErrors, std::wstring_view> settingsLoadErrorsLabels {
-    { SettingsLoadErrors::NoProfiles              , L"NoProfilesText"},
+    { SettingsLoadErrors::NoProfiles              , L"NoProfilesText"}
 };
 // clang-format on
 
@@ -84,6 +84,31 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
 {
     return _GetMessageText(error, settingsLoadErrorsLabels, loader);
+}
+
+// Function Description:
+// - Creates a Run of text to display an error message. The text is yellow or
+//   red for dark/light theme, respectively.
+// Arguments:
+// - text: The text of the error message.
+// - resources: The application's resource loader.
+// Return Value:
+// - The fully styled text run.
+static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceDictionary& resources)
+{
+    Documents::Run textRun;
+    textRun.Text(text);
+
+    // Color the text red (light theme) or yellow (dark theme) based on the system theme
+    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
+    if (resources.HasKey(key))
+    {
+        winrt::IInspectable g = resources.Lookup(key);
+        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        textRun.Foreground(brush);
+    }
+
+    return textRun;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -266,23 +291,21 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            if (WEB_E_INVALID_JSON_STRING == _settingsLoadedResult)
+            if (!_settingsLoadExceptionText.empty())
             {
-                winrt::Windows::UI::Xaml::Documents::Run exceptionRun;
-                exceptionRun.Text(_settingsLoadExceptionText);
-                warningsTextBlock.Inlines().Append(exceptionRun);
-            }
-            else if (E_INVALIDARG == _settingsLoadedResult)
-            {
-                winrt::Windows::UI::Xaml::Documents::Run exceptionRun;
-                exceptionRun.Text(_settingsLoadExceptionText);
-                warningsTextBlock.Inlines().Append(exceptionRun);
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, Resources()));
             }
         }
 
         _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
     }
 
+    // Method Description:
+    // - Displays a dialog for warnings found while loading or validating the
+    //   settings. Displays messages for whatever warnings were found while
+    //   validating the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
     void App::_ShowLoadWarningsDialog()
     {
         auto title = _resourceLoader.GetLocalizedString(L"SettingsValidateErrorTitle");
@@ -301,9 +324,7 @@ namespace winrt::TerminalApp::implementation
             const auto warningText = _GetWarningText(warning, _resourceLoader);
             if (!warningText.empty())
             {
-                winrt::Windows::UI::Xaml::Documents::Run warningRun;
-                warningRun.Text(warningText);
-                warningsTextBlock.Inlines().Append(warningRun);
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
             }
         }
 
