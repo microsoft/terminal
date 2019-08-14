@@ -26,12 +26,15 @@ namespace winrt
 }
 
 // clang-format off
-static const std::unordered_map<::TerminalApp::SettingsLoadWarnings, std::wstring_view> settingsLoadWarningsLabels {
-    { SettingsLoadWarnings::MissingDefaultProfile , L"MissingDefaultProfileText"},
-    { SettingsLoadWarnings::DuplicateProfile      , L"DuplicateProfileText"},
+// !!! IMPORTANT !!!
+// Make sure that these keys are in the same order as the
+// SettingsLoadWarnings/Erros enum is!
+static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
+   L"MissingDefaultProfileText",
+   L"DuplicateProfileText"
 };
-static const std::unordered_map<::TerminalApp::SettingsLoadErrors, std::wstring_view> settingsLoadErrorsLabels {
-    { SettingsLoadErrors::NoProfiles              , L"NoProfilesText"}
+static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
+    L"NoProfilesText"
 };
 // clang-format on
 
@@ -47,13 +50,12 @@ static const std::unordered_map<::TerminalApp::SettingsLoadErrors, std::wstring_
 // - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - the localized string for the given type, if it exists.
-template<typename T>
-static winrt::hstring _GetMessageText(T key, std::unordered_map<T, std::wstring_view> map, ScopedResourceLoader loader)
+template<std::size_t N>
+static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader loader)
 {
-    const auto keyFound = map.find(key);
-    if (keyFound != map.end())
+    if (index < keys.size())
     {
-        return loader.GetLocalizedString(keyFound->second);
+        return loader.GetLocalizedString(keys.at(index));
     }
     return {};
 }
@@ -69,7 +71,7 @@ static winrt::hstring _GetMessageText(T key, std::unordered_map<T, std::wstring_
 // - localized text for the given warning
 static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
 {
-    return _GetMessageText(warning, settingsLoadWarningsLabels, loader);
+    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
 }
 
 // Function Description:
@@ -83,7 +85,7 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 // - localized text for the given error
 static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
 {
-    return _GetMessageText(error, settingsLoadErrorsLabels, loader);
+    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
 }
 
 // Function Description:
@@ -681,10 +683,10 @@ namespace winrt::TerminalApp::implementation
             _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
         }
-        catch (const ::TerminalApp::SettingsLoadErrors error)
+        catch (const ::TerminalApp::TerminalException& ex)
         {
             hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(error, _resourceLoader);
+            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _resourceLoader);
         }
         catch (...)
         {

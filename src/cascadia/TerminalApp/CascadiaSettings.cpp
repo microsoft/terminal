@@ -687,7 +687,7 @@ void CascadiaSettings::_ValidateProfilesExist()
         // We can't add the warning to the list of warnings here, because this
         // object is not going to be returned at any point.
 
-        throw ::TerminalApp::SettingsLoadErrors::NoProfiles;
+        throw ::TerminalApp::TerminalException(::TerminalApp::SettingsLoadErrors::NoProfiles);
     }
 }
 

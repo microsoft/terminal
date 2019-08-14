@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- CascadiaSettings.hpp
+- CascadiaSettings.h
 
 Abstract:
 - This class acts as the container for all app settings. It's composed of two
@@ -18,12 +18,12 @@ Author(s):
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "GlobalAppSettings.h"
+#include "TerminalWarnings.h"
 #include "Profile.h"
 
 static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
 
 // fwdecl unittest classes
-
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
@@ -32,20 +32,6 @@ namespace TerminalAppLocalTests
 namespace TerminalApp
 {
     class CascadiaSettings;
-    // SettingsLoadWarnings are scenarios where the settings contained
-    // information we knew was invalid, but we could recover from.
-    enum class SettingsLoadWarnings : uint32_t
-    {
-        MissingDefaultProfile = 0,
-        DuplicateProfile = 1
-    };
-
-    // SettingsLoadWarnings are scenarios where the settings had invalid state
-    // that we could not recover from.
-    enum class SettingsLoadErrors : uint32_t
-    {
-        NoProfiles = 0
-    };
 };
 
 class TerminalApp::CascadiaSettings final
