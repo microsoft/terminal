@@ -55,7 +55,7 @@ public:
     void SetConnectionType(GUID connectionType) noexcept;
 
     bool HasIcon() const noexcept;
-    std::wstring_view GetIconPath() const noexcept;
+    winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;
