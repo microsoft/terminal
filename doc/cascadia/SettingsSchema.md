@@ -26,7 +26,7 @@ Properties listed below are specific to each unique profile.
 | `commandline` | _Required_ | String | `powershell.exe` | Executable used in the profile. |
 | `cursorColor` | _Required_ | String | `#FFFFFF` | Sets the cursor color for the profile. Uses hex color format: `"#rrggbb"`. |
 | `cursorShape` | _Required_ | String | `bar` | Sets the cursor shape for the profile. Possible values: `"vintage"` ( &#x2583; ), `"bar"` ( &#x2503; ), `"underscore"` ( &#x2581; ), `"filledBox"` ( &#x2588; ), `"emptyBox"` ( &#x25AF; ) |
-| `fontFace` | _Required_ | String | `Consolas` | Name of the font face used in the profile. |
+| `fontFace` | _Required_ | String | `Consolas` | Name of the font face used in the profile. We will try to fallback to Consolas if this can't be found or is invalid. |
 | `fontSize` | _Required_ | Integer | `10` | Sets the font size. |
 | `guid` | _Required_ | String | | Unique identifier of the profile. Written in registry format: `"{00000000-0000-0000-0000-000000000000}"`. |
 | `historySize` | _Required_ | Integer | `9001` | The number of lines above the ones displayed in the window you can scroll back to. |
@@ -79,3 +79,56 @@ Properties listed below are specific to each custom key binding.
 | -------- | ---- | ----------- | ----------- |
 | `command` | _Required_ | String | The command executed when the associated key bindings are pressed. |
 | `keys` | _Required_ | Array[String] | Defines the key combinations used to call the command. |
+
+### Implemented Keybindings
+
+Bindings listed below are per the implementation in `src/cascadia/TerminalApp/AppKeyBindingsSerialization.cpp`
+
+- copy
+- copyTextWithoutNewlines
+- paste
+- newTab
+- duplicateTab
+- newTabProfile0
+- newTabProfile1
+- newTabProfile2
+- newTabProfile3
+- newTabProfile4
+- newTabProfile5
+- newTabProfile6
+- newTabProfile7
+- newTabProfile8
+- newWindow
+- closeWindow
+- closeTab
+- closePane
+- switchToTab
+- nextTab
+- prevTab
+- increaseFontSize
+- decreaseFontSize
+- scrollUp
+- scrollDown
+- scrollUpPage
+- scrollDownPage
+- switchToTab0
+- switchToTab1
+- switchToTab2
+- switchToTab3
+- switchToTab4
+- switchToTab5
+- switchToTab6
+- switchToTab7
+- switchToTab8
+- openSettings
+- splitHorizontal
+- splitVertical
+- resizePaneLeft
+- resizePaneRight
+- resizePaneUp
+- resizePaneDown
+- moveFocusLeft
+- moveFocusRight
+- moveFocusUp
+- moveFocusDown
+

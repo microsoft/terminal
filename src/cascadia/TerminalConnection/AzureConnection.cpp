@@ -25,6 +25,15 @@ using namespace winrt::Windows::Security::Credentials;
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
+    // This file only builds for non-ARM64 so we don't need to check that here
+    // This function exists because the clientID only gets added by the release pipelines
+    // and is not available on local builds, so we want to be able to make sure we don't
+    // try to make an Azure connection if its a local build
+    bool AzureConnection::IsAzureConnectionAvailable()
+    {
+        return (AzureClientID != L"0");
+    }
+
     AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
         _initialRows{ initialRows },
         _initialCols{ initialCols }

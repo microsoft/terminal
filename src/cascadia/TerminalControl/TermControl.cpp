@@ -11,6 +11,7 @@
 #include "..\..\types\inc\GlyphWidth.hpp"
 
 #include "TermControl.g.cpp"
+#include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Terminal::Core;
@@ -30,7 +31,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _connection{ connection },
         _initializedTerminal{ false },
         _root{ nullptr },
-        _controlRoot{ nullptr },
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
@@ -52,11 +52,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     void TermControl::_Create()
     {
-        // Create a dummy UserControl to use as the "root" of our control we'll
-        //      build manually.
-        Controls::UserControl myControl;
-        _controlRoot = myControl;
-
         Controls::Grid container;
 
         Controls::ColumnDefinition contentColumn{};
@@ -108,20 +103,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _bgImageLayer = bgImageLayer;
 
         _swapChainPanel = swapChainPanel;
-        _controlRoot.Content(_root);
+        this->Content(_root);
 
         _ApplyUISettings();
 
         // These are important:
         // 1. When we get tapped, focus us
-        _controlRoot.Tapped([this](auto&, auto& e) {
-            _controlRoot.Focus(FocusState::Pointer);
+        this->Tapped([this](auto&, auto& e) {
+            this->Focus(FocusState::Pointer);
             e.Handled(true);
         });
         // 2. Make sure we can be focused (why this isn't `Focusable` I'll never know)
-        _controlRoot.IsTabStop(true);
+        this->IsTabStop(true);
         // 3. Actually not sure about this one. Maybe it isn't necessary either.
-        _controlRoot.AllowFocusOnInteraction(true);
+        this->AllowFocusOnInteraction(true);
 
         // DON'T CALL _InitializeTerminal here - wait until the swap chain is loaded to do that.
 
@@ -345,14 +340,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         Close();
     }
 
-    UIElement TermControl::GetRoot()
+    Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        return _root;
+        // create a custom automation peer with this code pattern:
+        // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
+        return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
     }
 
-    Controls::UserControl TermControl::GetControl()
+    ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
     {
-        return _controlRoot;
+        return _terminal.get();
     }
 
     void TermControl::SwapChainChanged()
@@ -506,9 +503,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         //      through CharacterRecieved.
         // I don't believe there's a difference between KeyDown and
         //      PreviewKeyDown for our purposes
-        // These two handlers _must_ be on _controlRoot, not _root.
-        _controlRoot.PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
-        _controlRoot.CharacterReceived({ this, &TermControl::_CharacterHandler });
+        // These two handlers _must_ be on this, not _root.
+        this->PreviewKeyDown({ this, &TermControl::_KeyDownHandler });
+        this->CharacterReceived({ this, &TermControl::_CharacterHandler });
 
         auto pfnTitleChanged = std::bind(&TermControl::_TerminalTitleChanged, this, std::placeholders::_1);
         _terminal->SetTitleChangedCallback(pfnTitleChanged);
@@ -542,14 +539,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
 
-        _gotFocusRevoker = _controlRoot.GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
-        _lostFocusRevoker = _controlRoot.LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
+        _gotFocusRevoker = this->GotFocus(winrt::auto_revoke, { this, &TermControl::_GotFocusHandler });
+        _lostFocusRevoker = this->LostFocus(winrt::auto_revoke, { this, &TermControl::_LostFocusHandler });
 
         // Focus the control here. If we do it up above (in _Create_), then the
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
         //      becomes a no-op.
-        _controlRoot.Focus(FocusState::Programmatic);
+        this->Focus(FocusState::Programmatic);
 
         _connection.Start();
         _initializedTerminal = true;
@@ -622,35 +619,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = static_cast<WORD>(e.OriginalKey());
 
+        // AltGr key combinations don't always contain any meaningful,
+        // pretranslated unicode character during WM_KEYDOWN.
+        // E.g. on a German keyboard AltGr+Q should result in a "@" character,
+        // but actually results in "Q" with Alt and Ctrl modifier states.
+        // By returning false though, we can abort handling this WM_KEYDOWN
+        // event and let the WM_CHAR handler kick in, which will be
+        // provided with an appropriate unicode character.
+        //
+        // GH#2235: Make sure to handle AltGr before trying keybindings,
+        // so Ctrl+Alt keybindings won't eat an AltGr keypress.
+        if (modifiers.IsAltGrPressed())
+        {
+            _HandleVoidKeyEvent();
+            e.Handled(false);
+            return;
+        }
+
+        const auto vkey = static_cast<WORD>(e.OriginalKey());
         bool handled = false;
+
         auto bindings = _settings.KeyBindings();
         if (bindings)
         {
-            KeyChord chord(
+            handled = bindings.TryKeyChord({
                 modifiers.IsCtrlPressed(),
                 modifiers.IsAltPressed(),
                 modifiers.IsShiftPressed(),
-                vkey);
-            handled = bindings.TryKeyChord(chord);
+                vkey,
+            });
         }
 
         if (!handled)
         {
-            _terminal->ClearSelection();
-            // If the terminal translated the key, mark the event as handled.
-            // This will prevent the system from trying to get the character out
-            // of it and sending us a CharacterRecieved event.
-            handled = _terminal->SendKeyEvent(vkey, modifiers);
-
-            if (_cursorTimer.has_value())
-            {
-                // Manually show the cursor when a key is pressed. Restarting
-                // the timer prevents flickering.
-                _terminal->SetCursorVisible(true);
-                _cursorTimer.value().Start();
-            }
+            handled = _TrySendKeyEvent(vkey, modifiers);
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
@@ -662,6 +665,45 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         e.Handled(handled);
+    }
+
+    // Method Description:
+    // - Some key events cannot be handled (e.g. AltGr combinations) and are
+    //   delegated to the character handler. Just like with _TrySendKeyEvent(),
+    //   the character handler counts on us though to:
+    // - Clears the current selection.
+    // - Makes the cursor briefly visible during typing.
+    void TermControl::_HandleVoidKeyEvent()
+    {
+        _TrySendKeyEvent(0, {});
+    }
+
+    // Method Description:
+    // - Send this particular key event to the terminal.
+    //   See Terminal::SendKeyEvent for more information.
+    // - Clears the current selection.
+    // - Makes the cursor briefly visible during typing.
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    bool TermControl::_TrySendKeyEvent(WORD vkey, const ControlKeyStates modifiers)
+    {
+        _terminal->ClearSelection();
+
+        // If the terminal translated the key, mark the event as handled.
+        // This will prevent the system from trying to get the character out
+        // of it and sending us a CharacterRecieved event.
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, modifiers) : true;
+
+        if (_cursorTimer.has_value())
+        {
+            // Manually show the cursor when a key is pressed. Restarting
+            // the timer prevents flickering.
+            _terminal->SetCursorVisible(true);
+            _cursorTimer.value().Start();
+        }
+
+        return handled;
     }
 
     // Method Description:

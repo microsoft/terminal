@@ -35,8 +35,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        Windows::UI::Xaml::UIElement GetRoot();
-        Windows::UI::Xaml::Controls::UserControl GetControl();
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
@@ -55,6 +53,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void SwapChainChanged();
         ~TermControl();
 
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
+
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
         // clang-format off
@@ -71,7 +72,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
-        Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
@@ -164,6 +164,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
+        void _HandleVoidKeyEvent();
+        bool _TrySendKeyEvent(WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);

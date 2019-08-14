@@ -307,7 +307,14 @@ UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
     {
         // change point coords to pixels relative to window
         HWND hwnd = _getWindowHandle();
-        ScreenToClient(hwnd, &clientPoint);
+        if (hwnd == nullptr)
+        {
+            // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
+        }
+        else
+        {
+            ScreenToClient(hwnd, &clientPoint);
+        }
 
         const COORD currentFontSize = _getScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
@@ -1495,8 +1502,16 @@ void UiaTextRange::_addScreenInfoRowBoundaries(Microsoft::Console::Render::IRend
     // convert the coords to be relative to the screen instead of
     // the client window
     HWND hwnd = _getWindowHandle();
-    ClientToScreen(hwnd, &topLeft);
-    ClientToScreen(hwnd, &bottomRight);
+
+    if (hwnd == nullptr)
+    {
+        // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
+    }
+    else
+    {
+        ClientToScreen(hwnd, &topLeft);
+        ClientToScreen(hwnd, &bottomRight);
+    }
 
     const LONG width = bottomRight.x - topLeft.x;
     const LONG height = bottomRight.y - topLeft.y;
