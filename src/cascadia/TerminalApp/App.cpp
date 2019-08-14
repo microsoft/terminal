@@ -1250,20 +1250,7 @@ namespace winrt::TerminalApp::implementation
     // - an IconElement for the profile's icon, if it has one.
     Controls::IconElement App::_GetIconFromProfile(const Profile& profile)
     {
-        if (profile.HasIcon())
-        {
-            try
-            {
-                winrt::hstring iconPath{ profile.GetExpandedIconPath() };
-                return GetColoredIcon(iconPath);
-            }
-            CATCH_LOG();
-            return { nullptr };
-        }
-        else
-        {
-            return { nullptr };
-        }
+        return profile.HasIcon() ? GetColoredIcon(profile.GetExpandedIconPath()) : Controls::IconElement{ nullptr };
     }
 
     winrt::Microsoft::Terminal::TerminalControl::TermControl App::_GetFocusedControl()

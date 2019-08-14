@@ -28,18 +28,21 @@ std::wstring GetWstringFromJson(const Json::Value& json)
 winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path)
 {
     winrt::Windows::UI::Xaml::Controls::IconSourceElement elem{};
-    try
+    if (!path.empty())
     {
-        winrt::Windows::Foundation::Uri iconUri{ path };
-        winrt::Windows::UI::Xaml::Controls::BitmapIconSource iconSource;
-        // Make sure to set this to false, so we keep the RGB data of the
-        // image. Otherwise, the icon will be white for all the
-        // non-transparent pixels in the image.
-        iconSource.ShowAsMonochrome(false);
-        iconSource.UriSource(iconUri);
-        elem.IconSource(iconSource);
+        try
+        {
+            winrt::Windows::Foundation::Uri iconUri{ path };
+            winrt::Windows::UI::Xaml::Controls::BitmapIconSource iconSource;
+            // Make sure to set this to false, so we keep the RGB data of the
+            // image. Otherwise, the icon will be white for all the
+            // non-transparent pixels in the image.
+            iconSource.ShowAsMonochrome(false);
+            iconSource.UriSource(iconUri);
+            elem.IconSource(iconSource);
+        }
+        CATCH_LOG();
     }
-    CATCH_LOG();
 
     return elem;
 }
