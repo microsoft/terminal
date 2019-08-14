@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-06-19
-last updated: 2019-07-13
+last updated: 2019-07-14
 issue id: 1142
 ---
 
@@ -23,7 +23,9 @@ and allow the user to specify arbitrary arguments to these functions.
 
 ## Inspiration
 
-Largely inspired by the keybindings in VsCode and Sublime Text.
+Largely inspired by the keybindings in VsCode and Sublime Text. Additionally,
+much of the content regarding keybinding events being "handled" was designed as
+a solution for [#2285].
 
 ## Solution Design
 
@@ -120,19 +122,18 @@ runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
 Becomes:
 
 ```csharp
-interface IActionEventArgs
+interface IActionArgs { /* Empty */ }
+
+runtimeclass ActionEventArgs
 {
     Boolean Handled;
+    ActionArgs Args;
 }
-interface IActionArgs { /* Empty */ }
 
 runtimeclass CopyTextArgs : IActionArgs
 {
     Boolean CopyWhitespace;
 }
-runtimeclass CopyTextEventArgs : CopyTextArgs, IActionEventArgs { }
-
-runtimeclass NewTabEventArgs : IActionEventArgs { }
 
 runtimeclass NewTabWithProfileArgs : IActionArgs
 {
@@ -143,17 +144,17 @@ runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionArgs { }
 [default_interface]
 runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
 {
-    event Windows.Foundation.TypedEventHandler<AppKeyBindings, CopyTextEventArgs> CopyText;
-    event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewTabEventArgs> NewTab;
-    event Windows.Foundation.TypedEventHandler<AppKeyBindings, NewTabWithProfileEventArgs> NewTabWithProfile;
+    event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;
+    event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTab;
+    event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTabWithProfile;
 ```
 
 In this above example, the `CopyTextArgs` class actually contains all the
-potential arguments to the Copy action. `CopyTextEventArgs` derives from that
-class, and additionally implements the `IActionArgs` interface, adding a
-`Handled` property. When we parse the arguments, we'll build a `CopyTextArgs`,
-and when we're dispatching the event, we'll build a `CopyTextEventArgs` and
-dispatch that object.
+potential arguments to the Copy action. `ActionEventArgs` is the class that
+holds any `ActionArgs`. When we parse the arguments, we'll build a
+`CopyTextArgs`, and when we're dispatching the event, we'll build a
+`ActionEventArgs` that holds a `CopyTextArgs` as its `Args` value, and dispatch
+the `ActionEventArgs` object.
 
 
 We'll also change our existing map in the `AppKeyBindings` implementation.
@@ -244,7 +245,7 @@ If there isn't a selection active, the `App` should make sure to not mark the
 event as not handled (it will leave `args.Handled(false)`). The App should only
 mark an event handled if it has actually dispatched the event.
 
-When an even is handled, we'll make sure to return `true` from
+When an event is handled, we'll make sure to return `true` from
 `AppKeyBindings::TryKeyChord`, so that the terminal does not actually process
 that keypress. For events that were not handled by the application, the terminal
 will get another chance to dispatch the keypress.
@@ -269,9 +270,9 @@ opening a given profile.
 We'll need to be able to not only lookup a keybinding by `ShortcutAction`, but
 also by a `ShortcutAction` and `IActionArgs`. We'll need to update the
 `AppKeyBindings::GetKeyBinding` method to also accept a `IActionArgs`. We'll
-also probably want each `IActionArgs` implementation to define `operator==`,
-so that we can easily check if two different `IActionArgs` are the same in
-this method.
+also probably want each `IActionArgs` implementation to define an
+`Equals(IActionArgs)` method, so that we can easily check if two different
+`IActionArgs` are the same in this method.
 
 ## Capabilities
 ### Accessibility
@@ -357,3 +358,5 @@ N/A
 ## Resources
 
 N/A
+
+[#2285]: https://github.com/microsoft/terminal/issues/2285
