@@ -164,7 +164,7 @@ private:
 
     bool _snapOnInput;
 
-    #pragma region Text Selection
+#pragma region Text Selection
     enum SelectionExpansionMode
     {
         Cell,
@@ -179,7 +179,7 @@ private:
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
-    #pragma endregion
+#pragma endregion
 
     std::shared_mutex _readWriteLock;
 
