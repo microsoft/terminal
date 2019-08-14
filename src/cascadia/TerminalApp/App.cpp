@@ -476,25 +476,56 @@ namespace winrt::TerminalApp::implementation
         //      there's an actual keychord for them.
 
         // clang-format off
-        bindings.NewTab([this](auto&&, const auto& args) {            _OpenNewTab(std::nullopt);        args.Handled(true); });
-        bindings.DuplicateTab([this](auto&&, const auto& args) {      _DuplicateTabViewItem();          args.Handled(true); });
-        bindings.CloseTab([this](auto&&, const auto& args) {          _CloseFocusedTab();               args.Handled(true); });
-        bindings.ClosePane([this](auto&&, const auto& args) {         _CloseFocusedPane();              args.Handled(true); });
-        bindings.NewTabWithProfile([this](auto&&, const auto& args) { _OpenNewTab({ args.ProfileIndex() }); args.Handled(true); });
-        bindings.ScrollUp([this](auto&&, const auto& args) {          _Scroll(-1);                      args.Handled(true); });
-        bindings.ScrollDown([this](auto&&, const auto& args) {        _Scroll(1);                       args.Handled(true); });
-        bindings.NextTab([this](auto&&, const auto& args) {           _SelectNextTab(true);             args.Handled(true); });
-        bindings.PrevTab([this](auto&&, const auto& args) {           _SelectNextTab(false);            args.Handled(true); });
-        bindings.SplitVertical([this](auto&&, const auto& args) {     _SplitVertical(std::nullopt);     args.Handled(true); });
-        bindings.SplitHorizontal([this](auto&&, const auto& args) {   _SplitHorizontal(std::nullopt);   args.Handled(true); });
-        bindings.ScrollUpPage([this](auto&&, const auto& args) {      _ScrollPage(-1);                  args.Handled(true); });
-        bindings.ScrollDownPage([this](auto&&, const auto& args) {    _ScrollPage(1);                   args.Handled(true); });
-        bindings.SwitchToTab([this](auto&&, const auto& args) {       _SelectTab({ args.TabIndex() });  args.Handled(true); });
-        bindings.OpenSettings([this](auto&&, const auto& args) {      _OpenSettings();                  args.Handled(true); });
-        bindings.ResizePane([this](auto&&, const auto& args) {        _ResizePane(args.Direction());    args.Handled(true); });
-        bindings.MoveFocus([this](auto&&, const auto& args) {         _MoveFocus(args.Direction());     args.Handled(true); });
-        bindings.CopyText([this](auto&&, const auto& args) {          _CopyText(args.TrimWhitespace()); args.Handled(true); });
-        bindings.PasteText([this](auto&&, const auto& args) {         _PasteText();                     args.Handled(true); });
+        bindings.NewTab([this](auto&&, const auto& args) {          _OpenNewTab(std::nullopt);      args.Handled(true); });
+        bindings.DuplicateTab([this](auto&&, const auto& args) {    _DuplicateTabViewItem();        args.Handled(true); });
+        bindings.CloseTab([this](auto&&, const auto& args) {        _CloseFocusedTab();             args.Handled(true); });
+        bindings.ClosePane([this](auto&&, const auto& args) {       _CloseFocusedPane();            args.Handled(true); });
+        bindings.ScrollUp([this](auto&&, const auto& args) {        _Scroll(-1);                    args.Handled(true); });
+        bindings.ScrollDown([this](auto&&, const auto& args) {      _Scroll(1);                     args.Handled(true); });
+        bindings.NextTab([this](auto&&, const auto& args) {         _SelectNextTab(true);           args.Handled(true); });
+        bindings.PrevTab([this](auto&&, const auto& args) {         _SelectNextTab(false);          args.Handled(true); });
+        bindings.SplitVertical([this](auto&&, const auto& args) {   _SplitVertical(std::nullopt);   args.Handled(true); });
+        bindings.SplitHorizontal([this](auto&&, const auto& args) { _SplitHorizontal(std::nullopt); args.Handled(true); });
+        bindings.ScrollUpPage([this](auto&&, const auto& args) {    _ScrollPage(-1);                args.Handled(true); });
+        bindings.ScrollDownPage([this](auto&&, const auto& args) {  _ScrollPage(1);                 args.Handled(true); });
+        bindings.OpenSettings([this](auto&&, const auto& args) {    _OpenSettings();                args.Handled(true); });
+        bindings.PasteText([this](auto&&, const auto& args) {       _PasteText();                   args.Handled(true); });
+
+        bindings.NewTabWithProfile([this](auto&&, const auto& args) {
+            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
+            {
+                _OpenNewTab({ realArgs.ProfileIndex() });
+                args.Handled(true);
+            }
+        });
+        bindings.SwitchToTab([this](auto&&, const auto& args) {
+            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SwitchToTabArgs>())
+            {
+                _SelectTab({ realArgs.TabIndex() });
+                args.Handled(true);
+            }
+        });
+        bindings.ResizePane([this](auto&&, const auto& args) {
+            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
+            {
+                _ResizePane(realArgs.Direction());
+                args.Handled(true);
+            }
+        });
+        bindings.MoveFocus([this](auto&&, const auto& args) {
+            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
+            {
+                _MoveFocus(realArgs.Direction());
+                args.Handled(true);
+            }
+        });
+        bindings.CopyText([this](auto&&, const auto& args) {
+            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
+            {
+                _CopyText(realArgs.TrimWhitespace());
+                args.Handled(true);
+            }
+        });
         // clang-format on
     }
 

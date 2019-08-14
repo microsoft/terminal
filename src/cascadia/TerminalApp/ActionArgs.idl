@@ -3,14 +3,15 @@
 
 namespace TerminalApp
 {
-    interface IActionEventArgs
-    {
-        Boolean Handled;
-    };
-
     // An empty interface must specify an explicit [uuid] to ensure uniqueness.
     // We also manually have to specify a "version" attribute to make the compiler happy.
     [uuid("191C2BDE-1A60-4BAB-9765-D850F0EF2CAC")][version(1)] interface IActionArgs{};
+
+    interface IActionEventArgs
+    {
+        Boolean Handled;
+        IActionArgs ActionArgs;
+    };
 
     enum Direction
     {
@@ -20,55 +21,34 @@ namespace TerminalApp
         Down
     };
 
-    unsealed runtimeclass CopyTextArgs : IActionArgs
+    [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
+    {
+        ActionEventArgs(IActionArgs args);
+    };
+
+    [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         Boolean TrimWhitespace;
     };
-    [default_interface] runtimeclass CopyTextEventArgs : CopyTextArgs, IActionEventArgs{};
 
-    [default_interface] runtimeclass PasteTextEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass NewTabEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass DuplicateTabEventArgs : IActionEventArgs{};
-
-    unsealed runtimeclass NewTabWithProfileArgs : IActionArgs
+    [default_interface] runtimeclass NewTabWithProfileArgs : IActionArgs
     {
         Int32 ProfileIndex;
     };
-    [default_interface] runtimeclass NewTabWithProfileEventArgs : NewTabWithProfileArgs, IActionEventArgs{};
 
-    [default_interface] runtimeclass NewWindowEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass CloseWindowEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass CloseTabEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass ClosePaneEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass NextTabEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass PrevTabEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass SplitVerticalEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass SplitHorizontalEventArgs : IActionEventArgs{};
-
-    unsealed runtimeclass SwitchToTabArgs : IActionArgs
+    [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
         Int32 TabIndex;
     };
-    [default_interface] runtimeclass SwitchToTabEventArgs : SwitchToTabArgs, IActionEventArgs{};
 
-    [default_interface] runtimeclass IncreaseFontSizeEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass DecreaseFontSizeEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass ScrollUpEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass ScrollDownEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass ScrollUpPageEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass ScrollDownPageEventArgs : IActionEventArgs{};
-    [default_interface] runtimeclass OpenSettingsEventArgs : IActionEventArgs{};
-
-    unsealed runtimeclass ResizePaneArgs : IActionArgs
+    [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
         Direction Direction;
     };
-    [default_interface] runtimeclass ResizePaneEventArgs : ResizePaneArgs, IActionEventArgs{};
 
-    unsealed runtimeclass MoveFocusArgs : IActionArgs
+    [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
         Direction Direction;
     };
-    [default_interface] runtimeclass MoveFocusEventArgs : MoveFocusArgs, IActionEventArgs{};
 
 }

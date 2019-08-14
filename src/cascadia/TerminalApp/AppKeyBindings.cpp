@@ -49,7 +49,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = CopyTextArgs();
             args.TrimWhitespace(true);
-            auto eventArgs = CopyTextEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _CopyTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -57,31 +57,31 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = CopyTextArgs();
             args.TrimWhitespace(false);
-            auto eventArgs = CopyTextEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _CopyTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::PasteText:
         {
-            auto eventArgs = PasteTextEventArgs();
+            auto eventArgs = ActionEventArgs();
             _PasteTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTab:
         {
-            auto eventArgs = NewTabEventArgs();
+            auto eventArgs = ActionEventArgs();
             _NewTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::DuplicateTab:
         {
-            auto eventArgs = DuplicateTabEventArgs();
+            auto eventArgs = ActionEventArgs();
             _DuplicateTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::OpenSettings:
         {
-            auto eventArgs = OpenSettingsEventArgs();
+            auto eventArgs = ActionEventArgs();
             _OpenSettingsHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -90,7 +90,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(0);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -98,7 +98,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(1);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -106,15 +106,15 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(2);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
-            return eventArgs->Handled();
+            return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile3:
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(3);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -122,7 +122,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(4);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -130,7 +130,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(5);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -138,7 +138,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(6);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(7);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -154,83 +154,83 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = NewTabWithProfileArgs();
             args.ProfileIndex(8);
-            auto eventArgs = NewTabWithProfileEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::NewWindow:
         {
-            auto eventArgs = NewWindowEventArgs();
+            auto eventArgs = ActionEventArgs();
             _NewWindowHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::CloseWindow:
         {
-            auto eventArgs = CloseWindowEventArgs();
+            auto eventArgs = ActionEventArgs();
             _CloseWindowHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::CloseTab:
         {
-            auto eventArgs = CloseTabEventArgs();
+            auto eventArgs = ActionEventArgs();
             _CloseTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ClosePane:
         {
-            auto eventArgs = ClosePaneEventArgs();
+            auto eventArgs = ActionEventArgs();
             _ClosePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::ScrollUp:
         {
-            auto eventArgs = ScrollUpEventArgs();
+            auto eventArgs = ActionEventArgs();
             _ScrollUpHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollDown:
         {
-            auto eventArgs = ScrollDownEventArgs();
+            auto eventArgs = ActionEventArgs();
             _ScrollDownHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollUpPage:
         {
-            auto eventArgs = ScrollUpPageEventArgs();
+            auto eventArgs = ActionEventArgs();
             _ScrollUpPageHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollDownPage:
         {
-            auto eventArgs = ScrollDownPageEventArgs();
+            auto eventArgs = ActionEventArgs();
             _ScrollDownPageHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::NextTab:
         {
-            auto eventArgs = NextTabEventArgs();
+            auto eventArgs = ActionEventArgs();
             _NextTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::PrevTab:
         {
-            auto eventArgs = PrevTabEventArgs();
+            auto eventArgs = ActionEventArgs();
             _PrevTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::SplitVertical:
         {
-            auto eventArgs = SplitVerticalEventArgs();
+            auto eventArgs = ActionEventArgs();
             _SplitVerticalHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SplitHorizontal:
         {
-            auto eventArgs = SplitHorizontalEventArgs();
+            auto eventArgs = ActionEventArgs();
             _SplitHorizontalHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -239,7 +239,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(0);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -247,7 +247,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(1);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -255,7 +255,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(2);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -263,7 +263,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(3);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -271,7 +271,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(4);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -279,7 +279,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(5);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -287,7 +287,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(6);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -295,7 +295,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(7);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -303,7 +303,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = SwitchToTabArgs();
             args.TabIndex(8);
-            auto eventArgs = SwitchToTabEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -311,7 +311,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = ResizePaneArgs();
             args.Direction(Direction::Left);
-            auto eventArgs = ResizePaneEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -319,7 +319,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = ResizePaneArgs();
             args.Direction(Direction::Right);
-            auto eventArgs = ResizePaneEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -327,7 +327,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = ResizePaneArgs();
             args.Direction(Direction::Up);
-            auto eventArgs = ResizePaneEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -335,7 +335,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = ResizePaneArgs();
             args.Direction(Direction::Down);
-            auto eventArgs = ResizePaneEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -343,7 +343,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = MoveFocusArgs();
             args.Direction(Direction::Left);
-            auto eventArgs = MoveFocusEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -351,7 +351,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = MoveFocusArgs();
             args.Direction(Direction::Right);
-            auto eventArgs = MoveFocusEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -359,7 +359,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = MoveFocusArgs();
             args.Direction(Direction::Up);
-            auto eventArgs = MoveFocusEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
@@ -367,7 +367,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto args = MoveFocusArgs();
             args.Direction(Direction::Down);
-            auto eventArgs = MoveFocusEventArgs(args);
+            auto eventArgs = ActionEventArgs(args);
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }

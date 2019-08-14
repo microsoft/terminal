@@ -40,29 +40,29 @@ namespace winrt::TerminalApp::implementation
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
         // clang-format off
-        TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::CopyTextEventArgs);
-        TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::PasteTextEventArgs);
-        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::NewTabEventArgs);
-        TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::DuplicateTabEventArgs);
-        TYPED_EVENT(NewTabWithProfile, TerminalApp::AppKeyBindings, TerminalApp::NewTabWithProfileEventArgs);
-        TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::NewWindowEventArgs);
-        TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::CloseWindowEventArgs);
-        TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::CloseTabEventArgs);
-        TYPED_EVENT(ClosePane,         TerminalApp::AppKeyBindings, TerminalApp::ClosePaneEventArgs);
-        TYPED_EVENT(SwitchToTab,       TerminalApp::AppKeyBindings, TerminalApp::SwitchToTabEventArgs);
-        TYPED_EVENT(NextTab,           TerminalApp::AppKeyBindings, TerminalApp::NextTabEventArgs);
-        TYPED_EVENT(PrevTab,           TerminalApp::AppKeyBindings, TerminalApp::PrevTabEventArgs);
-        TYPED_EVENT(SplitVertical,     TerminalApp::AppKeyBindings, TerminalApp::SplitVerticalEventArgs);
-        TYPED_EVENT(SplitHorizontal,   TerminalApp::AppKeyBindings, TerminalApp::SplitHorizontalEventArgs);
-        TYPED_EVENT(IncreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::IncreaseFontSizeEventArgs);
-        TYPED_EVENT(DecreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::DecreaseFontSizeEventArgs);
-        TYPED_EVENT(ScrollUp,          TerminalApp::AppKeyBindings, TerminalApp::ScrollUpEventArgs);
-        TYPED_EVENT(ScrollDown,        TerminalApp::AppKeyBindings, TerminalApp::ScrollDownEventArgs);
-        TYPED_EVENT(ScrollUpPage,      TerminalApp::AppKeyBindings, TerminalApp::ScrollUpPageEventArgs);
-        TYPED_EVENT(ScrollDownPage,    TerminalApp::AppKeyBindings, TerminalApp::ScrollDownPageEventArgs);
-        TYPED_EVENT(OpenSettings,      TerminalApp::AppKeyBindings, TerminalApp::OpenSettingsEventArgs);
-        TYPED_EVENT(ResizePane,        TerminalApp::AppKeyBindings, TerminalApp::ResizePaneEventArgs);
-        TYPED_EVENT(MoveFocus,         TerminalApp::AppKeyBindings, TerminalApp::MoveFocusEventArgs);
+        TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NewTab,            TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(DuplicateTab,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NewTabWithProfile, TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NewWindow,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(CloseWindow,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(CloseTab,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ClosePane,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SwitchToTab,       TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(NextTab,           TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(PrevTab,           TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SplitVertical,     TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(SplitHorizontal,   TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(IncreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(DecreaseFontSize,  TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ScrollUp,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ScrollDown,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ScrollUpPage,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ScrollDownPage,    TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(OpenSettings,      TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(ResizePane,        TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
+        TYPED_EVENT(MoveFocus,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         // clang-format on
 
     private:
