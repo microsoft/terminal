@@ -24,6 +24,7 @@ Abstract:
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 
 #include <windows.h>
+#include <UIAutomation.h>
 #include <stdlib.h>
 #include <string.h>
 #include <shellscalingapi.h>
@@ -50,3 +51,4 @@ Abstract:
 #include <winrt/Windows.ui.xaml.media.h>
 
 #include <wil/resource.h>
+#include <wil/win32_helpers.h>

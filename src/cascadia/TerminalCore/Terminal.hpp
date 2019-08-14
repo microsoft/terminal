@@ -66,7 +66,11 @@ public:
     bool ReverseText(bool reversed) override;
     bool SetCursorPosition(short x, short y) override;
     COORD GetCursorPosition() override;
+    bool DeleteCharacter(const unsigned int uiCount) override;
+    bool InsertCharacter(const unsigned int uiCount) override;
     bool EraseCharacters(const unsigned int numChars) override;
+    bool EraseInLine(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
+    bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) override;
     bool SetWindowTitle(std::wstring_view title) override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF dwColor) override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) override;
@@ -76,7 +80,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const DWORD modifiers) override;
+    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
     void UserScrollViewport(const int viewTop) override;
     int GetScrollOffset() override;
@@ -101,6 +105,23 @@ public:
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+    bool IsAreaSelected() const override;
+    void ClearSelection() override;
+    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+
+    // TODO GitHub #605: Search functionality
+    // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
+    // We should actually abstract this out better once Windows Terminal has Search
+    HRESULT SearchForText(_In_ BSTR text,
+                          _In_ BOOL searchBackward,
+                          _In_ BOOL ignoreCase,
+                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
+                          unsigned int _start,
+                          unsigned int _end,
+                          std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
+                          std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
+                          std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) override;
+
     const std::wstring GetConsoleTitle() const noexcept override;
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -117,10 +138,11 @@ public:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     const bool IsSelectionActive() const noexcept;
+    void DoubleClickSelection(const COORD position);
+    void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
-    void ClearSelection() noexcept;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
@@ -149,6 +171,7 @@ private:
     bool _selectionActive;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
+    std::wstring _wordDelimiters;
 
     std::shared_mutex _readWriteLock;
 
@@ -191,5 +214,9 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const;
     const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    void _ExpandDoubleClickSelectionLeft(const COORD position);
+    void _ExpandDoubleClickSelectionRight(const COORD position);
+    const bool _isWordDelimiter(std::wstring_view cellChar) const;
+    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion
 };

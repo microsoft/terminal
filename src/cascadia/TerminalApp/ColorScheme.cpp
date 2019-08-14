@@ -10,8 +10,6 @@ using namespace TerminalApp;
 using namespace ::Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
-using namespace winrt::TerminalApp;
-using namespace winrt::Windows::Data::Json;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view TableKey{ "colors" };
@@ -68,7 +66,8 @@ void ColorScheme::ApplyScheme(TerminalSettings terminalSettings) const
     terminalSettings.DefaultForeground(_defaultForeground);
     terminalSettings.DefaultBackground(_defaultBackground);
 
-    for (int i = 0; i < _table.size(); i++)
+    auto const tableCount = gsl::narrow_cast<int>(_table.size());
+    for (int i = 0; i < tableCount; i++)
     {
         terminalSettings.SetColorTableEntry(i, _table[i]);
     }

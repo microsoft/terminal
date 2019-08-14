@@ -94,6 +94,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
         void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+        void BeginResizeRequest();
+        void EndResizeRequest();
 
     protected:
         wil::unique_hfile _hFile;
@@ -132,6 +134,7 @@ namespace Microsoft::Console::Render
         Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
+        bool _inResizeRequest{ false };
 
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _WriteFormattedString(const std::string* const pFormat, ...) noexcept;

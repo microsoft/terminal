@@ -3,6 +3,8 @@
   <test name="host" type="unit" binary="Conhost.Unit.Tests.dll" />
   <test name="textBuffer" type="unit" binary="TextBuffer.Unit.Tests.dll" />
   <test name="terminalCore" type="unit" binary="Terminal.Core.Unit.Tests.dll" />
+  <test name="terminalApp" type="unit" binary="UnitTests_TerminalApp\Terminal.App.Unit.Tests.dll" />
+  <test name="localTerminalApp" type="unit" binary="LocalTests_TerminalApp\TerminalApp.LocalTests.dll" />
   <test name="interactivityWin32" type="unit" binary="Conhost.Interactivity.Win32.Unit.Tests.dll" />
   <test name="terminal" type="unit" binary="ConParser.Unit.Tests.dll" />
   <test name="adapter" type="unit" binary="ConAdapter.Unit.Tests.dll" />

@@ -146,9 +146,9 @@ namespace Microsoft::Console::Render
 
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory> _d2dFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteFactory2> _dwriteFactory;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat2> _dwriteTextFormat;
-        ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _dwriteFontFace;
+        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat> _dwriteTextFormat;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
 
@@ -178,17 +178,29 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
-        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace5> _FindFontFace(const std::wstring& familyName,
-                                                                               DWRITE_FONT_WEIGHT weight,
-                                                                               DWRITE_FONT_STRETCH stretch,
-                                                                               DWRITE_FONT_STYLE style) const;
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _ResolveFontFaceWithFallback(std::wstring& familyName,
+                                                                                              DWRITE_FONT_WEIGHT& weight,
+                                                                                              DWRITE_FONT_STRETCH& stretch,
+                                                                                              DWRITE_FONT_STYLE& style,
+                                                                                              std::wstring& localeName) const;
+
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _FindFontFace(std::wstring& familyName,
+                                                                               DWRITE_FONT_WEIGHT& weight,
+                                                                               DWRITE_FONT_STRETCH& stretch,
+                                                                               DWRITE_FONT_STYLE& style,
+                                                                               std::wstring& localeName) const;
+
+        [[nodiscard]] std::wstring _GetLocaleName() const;
+
+        [[nodiscard]] std::wstring _GetFontFamilyName(IDWriteFontFamily* const fontFamily,
+                                                      std::wstring& localeName) const;
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,
                                                FontInfo& actual,
                                                const int dpi,
-                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat2>& textFormat,
+                                               ::Microsoft::WRL::ComPtr<IDWriteTextFormat>& textFormat,
                                                ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1>& textAnalyzer,
-                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace5>& fontFace) const noexcept;
+                                               ::Microsoft::WRL::ComPtr<IDWriteFontFace1>& fontFace) const noexcept;
 
         [[nodiscard]] COORD _GetFontSize() const noexcept;
 

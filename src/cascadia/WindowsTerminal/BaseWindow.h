@@ -3,10 +3,15 @@
 
 #pragma once
 
+#include "..\types\IConsoleWindow.hpp"
+#include "..\types\WindowUiaProviderBase.hpp"
+
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
 
 #include <wil/resource.h>
+
+using namespace Microsoft::Console::Types;
 
 template<typename T>
 class BaseWindow
@@ -51,6 +56,11 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
+        case WM_GETOBJECT:
+        {
+            return HandleGetObject(_window.get(), wparam, lparam);
+        }
+
         case WM_DESTROY:
         {
             PostQuitMessage(0);
@@ -89,6 +99,7 @@ public:
                 // do nothing.
                 break;
             }
+            break;
         }
         case CM_UPDATE_TITLE:
         {
@@ -120,6 +131,22 @@ public:
         return 0;
     }
 
+    [[nodiscard]] LRESULT HandleGetObject(const HWND hWnd, const WPARAM wParam, const LPARAM lParam)
+    {
+        LRESULT retVal = 0;
+
+        // If we are receiving a request from Microsoft UI Automation framework, then return the basic UIA COM interface.
+        if (static_cast<long>(lParam) == static_cast<long>(UiaRootObjectId))
+        {
+            retVal = UiaReturnRawElementProvider(hWnd, wParam, lParam, _GetUiaProvider());
+        }
+        // Otherwise, return 0. We don't implement MS Active Accessibility (the other framework that calls WM_GETOBJECT).
+
+        return retVal;
+    }
+
+    virtual IRawElementProviderSimple* _GetUiaProvider() = 0;
+
     virtual void OnResize(const UINT width, const UINT height) = 0;
     virtual void OnMinimize() = 0;
     virtual void OnRestore() = 0;
@@ -134,7 +161,7 @@ public:
     HWND GetHandle() const noexcept
     {
         return _window.get();
-    };
+    }
 
     float GetCurrentDpiScale() const noexcept
     {
@@ -186,7 +213,7 @@ public:
     {
         _title = newTitle;
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
-    };
+    }
 
 protected:
     using base_type = BaseWindow<T>;
