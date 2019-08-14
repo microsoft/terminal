@@ -28,6 +28,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="MockTermSettings.h" />
     <ClInclude Include="precomp.h" />
   </ItemGroup>
   <PropertyGroup>
