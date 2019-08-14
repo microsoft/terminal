@@ -36,7 +36,6 @@ static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
 static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
-static constexpr std::string_view StartingTitleKey{ "startingTitle" };
 static constexpr std::string_view IconKey{ "icon" };
 static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
 static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
@@ -94,7 +93,6 @@ Profile::Profile(const winrt::guid& guid) :
     _connectionType{},
     _commandline{ L"cmd.exe" },
     _startingDirectory{},
-    _startingTitle{},
     _fontFace{ DEFAULT_FONT_FACE },
     _fontSize{ DEFAULT_FONT_SIZE },
     _acrylicTransparency{ 0.5 },
@@ -180,10 +178,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
     }
 
-    if (_startingTitle)
-    {
-        terminalSettings.StartingTitle(_startingTitle.value());
-    }
+    // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
+    // use the profile name
+    terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
     if (_schemeName)
     {
@@ -314,11 +311,6 @@ Json::Value Profile::ToJson() const
     if (_startingDirectory)
     {
         root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
-    }
-
-    if (_startingTitle)
-    {
-        root[JsonKey(StartingTitleKey)] = winrt::to_string(_startingTitle.value());
     }
 
     if (_backgroundImage)
@@ -476,10 +468,6 @@ Profile Profile::FromJson(const Json::Value& json)
     {
         result._startingDirectory = GetWstringFromJson(startingDirectory);
     }
-    if (auto startingTitle{ json[JsonKey(StartingTitleKey)] })
-    {
-        result._startingTitle = GetWstringFromJson(startingTitle);
-    }
     if (auto icon{ json[JsonKey(IconKey)] })
     {
         result._icon = GetWstringFromJson(icon);
@@ -527,11 +515,6 @@ void Profile::SetCommandline(std::wstring cmdline) noexcept
 void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
 {
     _startingDirectory = std::move(startingDirectory);
-}
-
-void Profile::SetStartingTitle(std::wstring startingTitle) noexcept
-{
-    _startingTitle = std::move(startingTitle);
 }
 
 void Profile::SetName(std::wstring name) noexcept
@@ -608,26 +591,6 @@ std::wstring_view Profile::GetIconPath() const noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
-}
-
-// Method Description:
-// - Returns true if profile's custom tab title is set, if one is set. Otherwise returns false.
-// Return Value:
-// - true if this profile's custom tab title is set. Otherwise returns false.
-bool Profile::HasTabTitle() const noexcept
-{
-    return _tabTitle.has_value();
-}
-
-// Method Description:
-// - Returns the custom tab title, if one is set. Otherwise returns the empty string.
-// Return Value:
-// - this profile's custom tab title, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetTabTitle() const noexcept
-{
-    return HasTabTitle() ?
-               std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
-               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::HasConnectionType() const noexcept
