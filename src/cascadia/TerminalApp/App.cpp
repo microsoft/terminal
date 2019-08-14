@@ -7,6 +7,7 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -1254,16 +1255,7 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 winrt::hstring iconPath{ profile.GetExpandedIconPath() };
-                winrt::Windows::Foundation::Uri iconUri{ iconPath };
-                Controls::BitmapIconSource iconSource;
-                // Make sure to set this to false, so we keep the RGB data of the
-                // image. Otherwise, the icon will be white for all the
-                // non-transparent pixels in the image.
-                iconSource.ShowAsMonochrome(false);
-                iconSource.UriSource(iconUri);
-                Controls::IconSourceElement elem;
-                elem.IconSource(iconSource);
-                return elem;
+                return GetColoredIcon(iconPath);
             }
             CATCH_LOG();
             return { nullptr };
