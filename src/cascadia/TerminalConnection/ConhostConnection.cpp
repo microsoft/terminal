@@ -97,9 +97,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         // If we have a startingTitle, create a mutable character buffer to add
         // it to the STARTUPINFO.
-        std::unique_ptr<wchar_t[]> mutableTitle = std::make_unique<wchar_t[]>(_startingTitle.size() + 1);
+        std::unique_ptr<wchar_t[]> mutableTitle{ nullptr };
         if (!_startingTitle.empty())
         {
+            mutableTitle = std::make_unique<wchar_t[]>(_startingTitle.size() + 1);
             THROW_IF_NULL_ALLOC(mutableTitle);
             THROW_IF_FAILED(StringCchCopy(mutableTitle.get(), _startingTitle.size() + 1, _startingTitle.c_str()));
             si.lpTitle = mutableTitle.get();
