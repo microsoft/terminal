@@ -409,7 +409,6 @@ namespace winrt::TerminalApp::implementation
     // Called when the openNewTabDropdown keybinding is used.
     // Adds the flyout show option to left-align the dropdown with the split button.
     // Shows the dropdown flyout.
-
     void App::_OpenNewTabDropdown()
     {
         Controls::Primitives::FlyoutShowOptions options{};
