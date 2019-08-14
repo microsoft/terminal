@@ -1272,11 +1272,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if (!_closing && (_terminal->IsCursorBlinkingAllowed() || !_terminal->IsCursorVisible()))
-        {
-            _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))	        if (!_closing && (_terminal->IsCursorBlinkingAllowed() || !_terminal->IsCursorVisible()))
+        {	        
+           return;
         }
+        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());	
     }
+    
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
@@ -1655,13 +1657,13 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
         try
         {
-            while (std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()))
+            for (;std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
             {
                 // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
                 // We'll be permissive till the extent that stod function allows us to be by default
                 // Ex. a value like 100.3#535w2 will be read as 100.3, but ;df25 will fail
-                thicknessArr[paddingPropIndex++] = std::stod(token, idx);
+                thicknessArr[paddingPropIndex] = std::stod(token, idx);
             }
         }
         catch (...)
