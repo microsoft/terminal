@@ -13,6 +13,9 @@
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
+using namespace WEX::Logging;
+using namespace WEX::TestExecution;
+
 using namespace Microsoft::Terminal::Core;
 using namespace winrt::Microsoft::Terminal::Settings;
 
@@ -180,8 +183,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Trailing)
         {
 #ifdef _X86_
-            WEX::Logging::Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
-            WEX::Logging::Log::Result(WEX::Logging::TestResults::Skipped);
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(TestResults::Skipped);
             return;
 #else
             Terminal term;
@@ -215,8 +218,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyph_Leading)
         {
 #ifdef _X86_
-            WEX::Logging::Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
-            WEX::Logging::Log::Result(WEX::Logging::TestResults::Skipped);
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(TestResults::Skipped);
             return;
 #else
             Terminal term;
@@ -250,8 +253,8 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
         {
 #ifdef _X86_
-            WEX::Logging::Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
-            WEX::Logging::Log::Result(WEX::Logging::TestResults::Skipped);
+            Log::Comment(L"This test is unreliable on x86 but is fine elsewhere. Disabled on x86.");
+            Log::Result(TestResults::Skipped);
             return;
 #else
             Terminal term;
