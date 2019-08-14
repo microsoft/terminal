@@ -64,7 +64,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         }
 
         // expand selection for Double/Triple Click
-        if (multiClickSelectionMode == selectionExpansionMode::Word)
+        if (_multiClickSelectionMode == SelectionExpansionMode::Word)
         {
             const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
             if (_selectionAnchor == _endSelectionPosition && _isWordDelimiter(cellChar))
@@ -77,7 +77,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
                 selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
             }
         }
-        else if (multiClickSelectionMode == selectionExpansionMode::Line)
+        else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
         {
             selectionRow.Left = 0;
             selectionRow.Right = bufferSize.RightInclusive();
@@ -163,7 +163,7 @@ void Terminal::DoubleClickSelection(const COORD position)
     if (_isWordDelimiter(cellChar))
     {
         SetSelectionAnchor(position);
-        multiClickSelectionMode = selectionExpansionMode::Word;
+        _multiClickSelectionMode = SelectionExpansionMode::Word;
         return;
     }
 
@@ -180,7 +180,7 @@ void Terminal::DoubleClickSelection(const COORD position)
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
-    multiClickSelectionMode = selectionExpansionMode::Word;
+    _multiClickSelectionMode = SelectionExpansionMode::Word;
 }
 
 // Method Description:
@@ -192,7 +192,7 @@ void Terminal::TripleClickSelection(const COORD position)
     SetSelectionAnchor({ 0, position.Y });
     SetEndSelectionPosition({ _buffer->GetSize().RightInclusive(), position.Y });
 
-    multiClickSelectionMode = selectionExpansionMode::Line;
+    _multiClickSelectionMode = SelectionExpansionMode::Line;
 }
 
 // Method Description:
@@ -213,7 +213,7 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionActive = true;
     SetEndSelectionPosition(position);
 
-    multiClickSelectionMode = selectionExpansionMode::Cell;
+    _multiClickSelectionMode = SelectionExpansionMode::Cell;
 }
 
 // Method Description:
@@ -352,13 +352,11 @@ const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 // - the corresponding location on the buffer
 const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
-    // Invalid position if outside of boundaries
-    if (viewportPos.X < 0 || viewportPos.X > _buffer->GetSize().RightInclusive())
-    {
-        THROW_HR(E_INVALIDARG);
-    }
-
+    // Force position to be valid
     COORD positionWithOffsets = viewportPos;
+    positionWithOffsets.X = std::clamp(viewportPos.X, static_cast<SHORT>(0), _buffer->GetSize().RightInclusive());
+    positionWithOffsets.Y = std::clamp(viewportPos.Y, static_cast<SHORT>(0), _buffer->GetSize().BottomInclusive());
+
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;

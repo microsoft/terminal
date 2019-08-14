@@ -5,7 +5,7 @@
 #include <WexTestClass.h>
 
 #include "../cascadia/TerminalCore/Terminal.hpp"
-#include "../cascadia/UnitTests_TerminalCore/MockTermSettings.h"
+#include "MockTermSettings.h"
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
