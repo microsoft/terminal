@@ -708,25 +708,12 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        if (lastFocusedProfileOpt.has_value())
+        tab->SetTabText(newTabTitle);
+
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
         {
-            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-            const auto tabTitle = matchingProfile->GetTabTitle();
-
-            // Checks if tab title has been set in the profile settings and
-            // updates accordingly.
-
-            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(newActualTitle);
-            }
+            _titleChangeHandlers(newTabTitle);
         }
     }
 
@@ -1456,7 +1443,12 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(

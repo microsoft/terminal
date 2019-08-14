@@ -178,6 +178,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
     }
 
+    // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
+    // use the profile name
+    terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
+
     if (_schemeName)
     {
         const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
@@ -592,26 +596,6 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
-}
-
-// Method Description:
-// - Returns true if profile's custom tab title is set, if one is set. Otherwise returns false.
-// Return Value:
-// - true if this profile's custom tab title is set. Otherwise returns false.
-bool Profile::HasTabTitle() const noexcept
-{
-    return _tabTitle.has_value();
-}
-
-// Method Description:
-// - Returns the custom tab title, if one is set. Otherwise returns the empty string.
-// Return Value:
-// - this profile's custom tab title, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetTabTitle() const noexcept
-{
-    return HasTabTitle() ?
-               std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
-               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::HasConnectionType() const noexcept

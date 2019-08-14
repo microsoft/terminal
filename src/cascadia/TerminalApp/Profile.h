@@ -36,8 +36,6 @@ public:
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
-    bool HasTabTitle() const noexcept;
-    std::wstring_view GetTabTitle() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
