@@ -1272,8 +1272,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_BlinkCursor(Windows::Foundation::IInspectable const& /* sender */,
                                    Windows::Foundation::IInspectable const& /* e */)
     {
-        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))	        if (!_closing && (_terminal->IsCursorBlinkingAllowed() || !_terminal->IsCursorVisible()))
-        {	        
+        if ((_closing) || (!_terminal->IsCursorBlinkingAllowed() && _terminal->IsCursorVisible()))
+        {
            return;
         }
         _terminal->SetCursorVisible(!_terminal->IsCursorVisible());	
