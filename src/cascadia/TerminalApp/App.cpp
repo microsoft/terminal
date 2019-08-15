@@ -475,58 +475,25 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
 
-        // clang-format off
-        bindings.NewTab([this](auto&&, const auto& args) {          _OpenNewTab(std::nullopt);      args.Handled(true); });
-        bindings.DuplicateTab([this](auto&&, const auto& args) {    _DuplicateTabViewItem();        args.Handled(true); });
-        bindings.CloseTab([this](auto&&, const auto& args) {        _CloseFocusedTab();             args.Handled(true); });
-        bindings.ClosePane([this](auto&&, const auto& args) {       _CloseFocusedPane();            args.Handled(true); });
-        bindings.ScrollUp([this](auto&&, const auto& args) {        _Scroll(-1);                    args.Handled(true); });
-        bindings.ScrollDown([this](auto&&, const auto& args) {      _Scroll(1);                     args.Handled(true); });
-        bindings.NextTab([this](auto&&, const auto& args) {         _SelectNextTab(true);           args.Handled(true); });
-        bindings.PrevTab([this](auto&&, const auto& args) {         _SelectNextTab(false);          args.Handled(true); });
-        bindings.SplitVertical([this](auto&&, const auto& args) {   _SplitVertical(std::nullopt);   args.Handled(true); });
-        bindings.SplitHorizontal([this](auto&&, const auto& args) { _SplitHorizontal(std::nullopt); args.Handled(true); });
-        bindings.ScrollUpPage([this](auto&&, const auto& args) {    _ScrollPage(-1);                args.Handled(true); });
-        bindings.ScrollDownPage([this](auto&&, const auto& args) {  _ScrollPage(1);                 args.Handled(true); });
-        bindings.OpenSettings([this](auto&&, const auto& args) {    _OpenSettings();                args.Handled(true); });
-        bindings.PasteText([this](auto&&, const auto& args) {       _PasteText();                   args.Handled(true); });
-
-        bindings.NewTabWithProfile([this](auto&&, const auto& args) {
-            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
-            {
-                _OpenNewTab({ realArgs.ProfileIndex() });
-                args.Handled(true);
-            }
-        });
-        bindings.SwitchToTab([this](auto&&, const auto& args) {
-            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SwitchToTabArgs>())
-            {
-                _SelectTab({ realArgs.TabIndex() });
-                args.Handled(true);
-            }
-        });
-        bindings.ResizePane([this](auto&&, const auto& args) {
-            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
-            {
-                _ResizePane(realArgs.Direction());
-                args.Handled(true);
-            }
-        });
-        bindings.MoveFocus([this](auto&&, const auto& args) {
-            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
-            {
-                _MoveFocus(realArgs.Direction());
-                args.Handled(true);
-            }
-        });
-        bindings.CopyText([this](auto&&, const auto& args) {
-            if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
-            {
-                _CopyText(realArgs.TrimWhitespace());
-                args.Handled(true);
-            }
-        });
-        // clang-format on
+        bindings.NewTab({ this, &App::_HandleNewTab });
+        bindings.DuplicateTab({ this, &App::_HandleDuplicateTab });
+        bindings.CloseTab({ this, &App::_HandleCloseTab });
+        bindings.ClosePane({ this, &App::_HandleClosePane });
+        bindings.ScrollUp({ this, &App::_HandleScrollUp });
+        bindings.ScrollDown({ this, &App::_HandleScrollDown });
+        bindings.NextTab({ this, &App::_HandleNextTab });
+        bindings.PrevTab({ this, &App::_HandlePrevTab });
+        bindings.SplitVertical({ this, &App::_HandleSplitVertical });
+        bindings.SplitHorizontal({ this, &App::_HandleSplitHorizontal });
+        bindings.ScrollUpPage({ this, &App::_HandleScrollUpPage });
+        bindings.ScrollDownPage({ this, &App::_HandleScrollDownPage });
+        bindings.OpenSettings({ this, &App::_HandleOpenSettings });
+        bindings.PasteText({ this, &App::_HandlePasteText });
+        bindings.NewTabWithProfile({ this, &App::_HandleNewTabWithProfile });
+        bindings.SwitchToTab({ this, &App::_HandleSwitchToTab });
+        bindings.ResizePane({ this, &App::_HandleResizePane });
+        bindings.MoveFocus({ this, &App::_HandleMoveFocus });
+        bindings.CopyText({ this, &App::_HandleCopyText });
     }
 
     // Method Description:
@@ -1086,10 +1053,17 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void App::_CopyText(const bool trimTrailingWhitespace)
+    // Return Value:
+    // - true iff we we able to copy text (if a selection was active)
+    bool App::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetFocusedControl();
-        control.CopySelectionToClipboard(trimTrailingWhitespace);
+        if (control.HasSelection())
+        {
+            control.CopySelectionToClipboard(trimTrailingWhitespace);
+            return true;
+        }
+        return false;
     }
 
     // Method Description:
@@ -1482,6 +1456,153 @@ namespace winrt::TerminalApp::implementation
             {
                 menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
             }
+        }
+    }
+
+    void App::_HandleNewTab(const IInspectable& /*sender*/,
+                            const TerminalApp::ActionEventArgs& args)
+    {
+        _OpenNewTab(std::nullopt);
+        args.Handled(true);
+    }
+
+    void App::_HandleDuplicateTab(const IInspectable& /*sender*/,
+                                  const TerminalApp::ActionEventArgs& args)
+    {
+        _DuplicateTabViewItem();
+        args.Handled(true);
+    }
+
+    void App::_HandleCloseTab(const IInspectable& /*sender*/,
+                              const TerminalApp::ActionEventArgs& args)
+    {
+        _CloseFocusedTab();
+        args.Handled(true);
+    }
+
+    void App::_HandleClosePane(const IInspectable& /*sender*/,
+                               const TerminalApp::ActionEventArgs& args)
+    {
+        _CloseFocusedPane();
+        args.Handled(true);
+    }
+
+    void App::_HandleScrollUp(const IInspectable& /*sender*/,
+                              const TerminalApp::ActionEventArgs& args)
+    {
+        _Scroll(-1);
+        args.Handled(true);
+    }
+
+    void App::_HandleScrollDown(const IInspectable& /*sender*/,
+                                const TerminalApp::ActionEventArgs& args)
+    {
+        _Scroll(1);
+        args.Handled(true);
+    }
+
+    void App::_HandleNextTab(const IInspectable& /*sender*/,
+                             const TerminalApp::ActionEventArgs& args)
+    {
+        _SelectNextTab(true);
+        args.Handled(true);
+    }
+
+    void App::_HandlePrevTab(const IInspectable& /*sender*/,
+                             const TerminalApp::ActionEventArgs& args)
+    {
+        _SelectNextTab(false);
+        args.Handled(true);
+    }
+
+    void App::_HandleSplitVertical(const IInspectable& /*sender*/,
+                                   const TerminalApp::ActionEventArgs& args)
+    {
+        _SplitVertical(std::nullopt);
+        args.Handled(true);
+    }
+
+    void App::_HandleSplitHorizontal(const IInspectable& /*sender*/,
+                                     const TerminalApp::ActionEventArgs& args)
+    {
+        _SplitHorizontal(std::nullopt);
+        args.Handled(true);
+    }
+
+    void App::_HandleScrollUpPage(const IInspectable& /*sender*/,
+                                  const TerminalApp::ActionEventArgs& args)
+    {
+        _ScrollPage(-1);
+        args.Handled(true);
+    }
+
+    void App::_HandleScrollDownPage(const IInspectable& /*sender*/,
+                                    const TerminalApp::ActionEventArgs& args)
+    {
+        _ScrollPage(1);
+        args.Handled(true);
+    }
+
+    void App::_HandleOpenSettings(const IInspectable& /*sender*/,
+                                  const TerminalApp::ActionEventArgs& args)
+    {
+        _OpenSettings();
+        args.Handled(true);
+    }
+
+    void App::_HandlePasteText(const IInspectable& /*sender*/,
+                               const TerminalApp::ActionEventArgs& args)
+    {
+        _PasteText();
+        args.Handled(true);
+    }
+
+    void App::_HandleNewTabWithProfile(const IInspectable& /*sender*/,
+                                       const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
+        {
+            _OpenNewTab({ realArgs.ProfileIndex() });
+            args.Handled(true);
+        }
+    }
+
+    void App::_HandleSwitchToTab(const IInspectable& /*sender*/,
+                                 const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SwitchToTabArgs>())
+        {
+            _SelectTab({ realArgs.TabIndex() });
+            args.Handled(true);
+        }
+    }
+
+    void App::_HandleResizePane(const IInspectable& /*sender*/,
+                                const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
+        {
+            _ResizePane(realArgs.Direction());
+            args.Handled(true);
+        }
+    }
+
+    void App::_HandleMoveFocus(const IInspectable& /*sender*/,
+                               const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
+        {
+            _MoveFocus(realArgs.Direction());
+            args.Handled(true);
+        }
+    }
+
+    void App::_HandleCopyText(const IInspectable& /*sender*/,
+                              const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
+        {
+            args.Handled(_CopyText(realArgs.TrimWhitespace()));
         }
     }
 

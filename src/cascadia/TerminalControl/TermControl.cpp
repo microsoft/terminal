@@ -1792,6 +1792,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
     }
 
+    bool TermControl::HasSelection() const
+    {
+        return _terminal != nullptr && _terminal->IsAreaSelected();
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
