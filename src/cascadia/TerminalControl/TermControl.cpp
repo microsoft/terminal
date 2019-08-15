@@ -1276,9 +1276,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
            return;
         }
-        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());	
+        _terminal->SetCursorVisible(!_terminal->IsCursorVisible());
     }
-    
+
 
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
