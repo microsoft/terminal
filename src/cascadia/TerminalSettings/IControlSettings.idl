@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.Settings
         Boolean UseAcrylic;
         Boolean CloseOnExit;
         Boolean ConvertPasteLineEndings;
-        
+
         Double TintOpacity;
         ScrollbarState ScrollState;
 
