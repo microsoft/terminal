@@ -300,6 +300,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _startingDir = value;
     }
 
+    hstring TerminalSettings::StartingTitle()
+    {
+        return _startingTitle;
+    }
+
+    void TerminalSettings::StartingTitle(hstring const& value)
+    {
+        _startingTitle = value;
+    }
+
     hstring TerminalSettings::EnvironmentVariables()
     {
         return _envVars;
