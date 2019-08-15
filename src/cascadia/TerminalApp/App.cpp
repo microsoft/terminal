@@ -29,7 +29,7 @@ namespace winrt
 // clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
-// SettingsLoadWarnings/Erros enum is!
+// SettingsLoadWarnings/Errors enum is!
 static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
    L"MissingDefaultProfileText",
    L"DuplicateProfileText"
@@ -300,6 +300,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // Add a note that we're using the default settings in this case.
+        winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
+        const auto usingDefaultsText = _resourceLoader.GetLocalizedString(L"UsingDefaultSettingsText");
+        usingDefaultsRun.Text(usingDefaultsText);
+        warningsTextBlock.Inlines().Append(usingDefaultsRun);
+
         _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
     }
 
@@ -320,7 +326,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        const auto& warnings = _settings->GetLoadWarnings();
+        const auto& warnings = _settings->GetWarnings();
         for (const auto& warning : warnings)
         {
             // Try looking up the warning message key for each warning.
@@ -675,7 +681,7 @@ namespace winrt::TerminalApp::implementation
         {
             auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
             _settings = std::move(newSettings);
-            const auto& warnings = _settings->GetLoadWarnings();
+            const auto& warnings = _settings->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)

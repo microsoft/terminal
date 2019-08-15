@@ -122,11 +122,11 @@
 </value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
-    <value>Could not find your default profile in your list of profiles - temporarily using the first profile. Check to make sure the defaultProfile matches the guid of one of your profiles.
+    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the defaultProfile matches the guid of one of your profiles.
 </value>
   </data>
   <data name="DuplicateProfileText" xml:space="preserve">
-    <value>Found multiple profiles with the same guid in your profiles - temporarily ignoring duplicates. Make sure each profile's guid is unique.
+    <value>Found multiple profiles with the same guid in your profiles - ignoring duplicates. Make sure each profile's guid is unique.
 </value>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
@@ -135,6 +135,11 @@
   </data>
   <data name="ReloadJsonParseErrorText" xml:space="preserve">
     <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.
+</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>
+Temporarily using the Windows Terminal default settings.
 </value>
   </data>
   <data name="InitialJsonParseErrorTitle" xml:space="preserve">

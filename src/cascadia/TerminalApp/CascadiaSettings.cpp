@@ -649,7 +649,7 @@ Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
 //   knew were bad when we called `_ValidateSettings` last.
 // Return Value:
 // - a reference to our list of warnings.
-std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetLoadWarnings()
+std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
 {
     return _warnings;
 }
@@ -702,17 +702,15 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 {
     const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
     const bool nullDefaultProfile = defaultProfileGuid == GUID{};
-    bool foundDefaultProfile = false;
+    bool defaultProfileNotInProfiles = true;
     for (const auto& profile : _profiles)
     {
         if (profile.GetGuid() == defaultProfileGuid)
         {
-            foundDefaultProfile = true;
+            defaultProfileNotInProfiles = false;
             break;
         }
     }
-
-    const bool defaultProfileNotInProfiles = !foundDefaultProfile;
 
     if (nullDefaultProfile || defaultProfileNotInProfiles)
     {

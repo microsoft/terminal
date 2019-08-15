@@ -189,8 +189,8 @@ namespace TerminalAppLocalTests
             const auto settingsObject = VerifyParseSucceeded(goodProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
             settings->_ValidateDefaultProfileExists();
-            VERIFY_ARE_EQUAL(0, settings->_warnings.size());
-            VERIFY_ARE_EQUAL(2, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
             VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
         {
@@ -200,10 +200,10 @@ namespace TerminalAppLocalTests
             const auto settingsObject = VerifyParseSucceeded(badProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
             settings->_ValidateDefaultProfileExists();
-            VERIFY_ARE_EQUAL(1, settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
-            VERIFY_ARE_EQUAL(2, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
             VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
         {
@@ -213,10 +213,10 @@ namespace TerminalAppLocalTests
             const auto settingsObject = VerifyParseSucceeded(badProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
             settings->_ValidateDefaultProfileExists();
-            VERIFY_ARE_EQUAL(1, settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(0));
 
-            VERIFY_ARE_EQUAL(2, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
             VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
         }
     }
@@ -292,8 +292,8 @@ namespace TerminalAppLocalTests
             const auto settingsObject = VerifyParseSucceeded(goodProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
             settings->_ValidateNoDuplicateProfiles();
-            VERIFY_ARE_EQUAL(0, settings->_warnings.size());
-            VERIFY_ARE_EQUAL(2, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
         }
         {
             // Case 2: Bad settings
@@ -304,10 +304,10 @@ namespace TerminalAppLocalTests
 
             settings->_ValidateNoDuplicateProfiles();
 
-            VERIFY_ARE_EQUAL(1, settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
 
-            VERIFY_ARE_EQUAL(1, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_profiles.size());
             VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.at(0).GetName());
         }
         {
@@ -317,10 +317,10 @@ namespace TerminalAppLocalTests
             const auto settingsObject = VerifyParseSucceeded(veryBadProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
             settings->_ValidateNoDuplicateProfiles();
-            VERIFY_ARE_EQUAL(1, settings->_warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
             VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
 
-            VERIFY_ARE_EQUAL(4, settings->_profiles.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(4), settings->_profiles.size());
             VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.at(0).GetName());
             VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.at(1).GetName());
             VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.at(2).GetName());
@@ -359,11 +359,11 @@ namespace TerminalAppLocalTests
 
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(2, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(1));
 
-        VERIFY_ARE_EQUAL(2, settings->_profiles.size());
+        VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
     }
 
