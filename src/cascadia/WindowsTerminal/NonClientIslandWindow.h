@@ -23,6 +23,7 @@ Author(s):
 #include <dwmapi.h>
 #include <windowsx.h>
 #include <wil\resource.h>
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -42,6 +43,8 @@ public:
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
 
+    DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+
 private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };
     winrt::Windows::UI::Xaml::UIElement _clientContent{ nullptr };
@@ -55,7 +58,7 @@ private:
 
     RECT GetDragAreaRect() const noexcept;
 
-    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse, const bool titlebarIsCaption) const noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 

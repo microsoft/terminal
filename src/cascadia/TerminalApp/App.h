@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
         ~App() = default;
 
         hstring GetTitle();
+        void TitlebarClicked();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);

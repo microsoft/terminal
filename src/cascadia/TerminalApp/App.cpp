@@ -1462,6 +1462,23 @@ namespace winrt::TerminalApp::implementation
         return connection;
     }
 
+    // Method Description:
+    // - Used to tell the app that the titlebar has been clicked. The App won't
+    //   actually recieve any clicks in the titlebar area, so this is a helper
+    //   to clue the app in that a click has happened. The App will use this as
+    //   a indicator that it needs to dismiss any open flyouts.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::TitlebarClicked()
+    {
+        if (_newTabButton && _newTabButton.Flyout())
+        {
+            _newTabButton.Flyout().Hide();
+        }
+    }
+
     // -------------------------------- WinRT Events ---------------------------------
     // Winrt events need a method for adding a callback to the event and removing the callback.
     // These macros will define them both for you.
