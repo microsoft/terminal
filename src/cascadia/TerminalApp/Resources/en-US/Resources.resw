@@ -122,11 +122,11 @@
 </value>
   </data>
   <data name="MissingDefaultProfileText" xml:space="preserve">
-    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the defaultProfile matches the guid of one of your profiles.
+    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the defaultProfile matches the GUID of one of your profiles.
 </value>
   </data>
   <data name="DuplicateProfileText" xml:space="preserve">
-    <value>Found multiple profiles with the same guid in your profiles - ignoring duplicates. Make sure each profile's guid is unique.
+    <value>Found multiple profiles with the same GUID in your profiles - ignoring duplicates. Make sure each profile's GUID is unique.
 </value>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
