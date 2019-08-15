@@ -206,7 +206,7 @@ void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
     // update based on TermControl padding
     auto padding = provider->GetPadding();
     clientPoint->x += gsl::narrow<LONG>(padding.Left);
-    clientPoint->y += gsl::narrow<LONG>(padding.Right);
+    clientPoint->y += gsl::narrow<LONG>(padding.Top);
 }
 
 void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const

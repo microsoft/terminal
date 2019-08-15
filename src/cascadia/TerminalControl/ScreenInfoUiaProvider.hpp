@@ -42,7 +42,7 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
-        const COORD getFontSize() const;
+        const COORD GetFontSize() const;
         const winrt::Windows::UI::Xaml::Thickness GetPadding() const;
 
     protected:

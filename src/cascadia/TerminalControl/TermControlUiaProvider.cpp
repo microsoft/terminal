@@ -85,7 +85,12 @@ const COORD TermControlUiaProvider::GetFontSize() const
     return _termControl.GetActualFont().GetSize();
 }
 
-std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)
+const winrt::Windows::UI::Xaml::Thickness TermControlUiaProvider::GetPadding() const
+{
+    return _termControl.GetPadding();
+}
+
+std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* const pProvider)
 {
     std::deque<UiaTextRangeBase*> result;
 

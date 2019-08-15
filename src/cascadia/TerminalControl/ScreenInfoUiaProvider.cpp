@@ -82,7 +82,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
     return S_OK;
 }
 
-const COORD ScreenInfoUiaProvider::getFontSize() const
+const COORD ScreenInfoUiaProvider::GetFontSize() const
 {
     return _termControl.GetActualFont().GetSize();
 }
