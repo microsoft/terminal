@@ -30,8 +30,6 @@ namespace winrt::TerminalApp::implementation
 
         hstring GetTitle();
 
-        void RefreshUIForSettingsReload();
-
         void ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
         TerminalApp::TabRowControl GetTabRow(); // This is a work-around because the winrt events are not working in Page
@@ -111,6 +109,8 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
+
+        void RefreshUIForSettingsReload();
     };
 }
 
