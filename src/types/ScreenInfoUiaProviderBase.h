@@ -78,36 +78,31 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
     protected:
-        virtual std::deque<UiaTextRangeBase*> GetSelectionRangeUTRs(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                    _In_ IRawElementProviderSimple* pProvider) = 0;
+        virtual std::deque<UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) = 0;
 
         // degenerate range
-        virtual UiaTextRangeBase* CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                            _In_ IRawElementProviderSimple* const pProvider) = 0;
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) = 0;
 
         // degenerate range at cursor position
-        virtual UiaTextRangeBase* CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                            _In_ IRawElementProviderSimple* const pProvider,
-                                            const Cursor& cursor) = 0;
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const Cursor& cursor) = 0;
 
         // specific endpoint range
-        virtual UiaTextRangeBase* CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                            _In_ IRawElementProviderSimple* const pProvider,
-                                            const Endpoint start,
-                                            const Endpoint end,
-                                            const bool degenerate) = 0;
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const Endpoint start,
+                                                  const Endpoint end,
+                                                  const bool degenerate) = 0;
 
         // range from a UiaPoint
-        virtual UiaTextRangeBase* CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                            _In_ IRawElementProviderSimple* const pProvider,
-                                            const UiaPoint point) = 0;
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const UiaPoint point) = 0;
+
+        // weak reference to IRenderData
+        Microsoft::Console::Render::IRenderData* _pData;
 
     private:
         // Ref counter for COM object
         ULONG _cRefs;
-
-        // weak reference to IRenderData
-        Microsoft::Console::Render::IRenderData* _pData;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the

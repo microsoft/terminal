@@ -3,7 +3,6 @@
 #include "pch.h"
 
 #include "WindowUiaProvider.hpp"
-#include "../TerminalControl/ScreenInfoUiaProvider.hpp"
 
 #include "../host/renderData.hpp"
 
@@ -19,12 +18,13 @@ WindowUiaProvider::~WindowUiaProvider()
 WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
-    Microsoft::Terminal::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
+    //Microsoft::Terminal::TermControlUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
         pWindowProvider = new WindowUiaProvider(baseWindow);
 
-        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // This may be needed for the signaling model
         /*Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         Microsoft::Console::Render::IRenderData* renderData = &gci.renderData;
@@ -45,11 +45,6 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
             pWindowProvider->Release();
         }
 
-        if (nullptr != pScreenInfoProvider)
-        {
-            pScreenInfoProvider->Release();
-        }
-
         LOG_CAUGHT_EXCEPTION();
 
         return nullptr;
@@ -60,7 +55,8 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
 {
     try
     {
-        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // This may be needed for the signaling model
         //return _pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId);
         return E_NOTIMPL;
     }
@@ -76,7 +72,8 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
     if (id == UIA_Text_TextSelectionChangedEventId ||
         id == UIA_Text_TextChangedEventId)
     {
-        // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+        // This may be needed for the signaling model
         /*if (_pScreenInfoProvider)
         {
             hr = _pScreenInfoProvider->Signal(id);
@@ -116,7 +113,8 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
     *ppProvider = nullptr;
     HRESULT hr = S_OK;
 
-    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // TODO GitHub #2102 or #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // This may be needed for the signaling model
     /*if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
         *ppProvider = _pScreenInfoProvider;
@@ -145,7 +143,8 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // This may be needed for the signaling model
     /**ppProvider = _pScreenInfoProvider;
     (*ppProvider)->AddRef();*/
 
@@ -155,7 +154,8 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
-    // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
+    // This may be needed for the signaling model
     //return _pScreenInfoProvider->QueryInterface(IID_PPV_ARGS(ppProvider));
     return S_OK;
 }

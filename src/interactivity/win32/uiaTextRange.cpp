@@ -257,7 +257,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 
 void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
 {
-    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
+    auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider.get());
     provider->ChangeViewport(NewWindow);
 }
 
@@ -273,6 +273,6 @@ void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
 
 HWND UiaTextRange::_getWindowHandle() const
 {
-    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
+    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider.get());
     return provider->GetWindowHandle();
 }

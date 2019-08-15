@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "UiaTextRange.hpp"
-#include "screenInfoUiaProvider.hpp"
+#include "TermControlUiaProvider.hpp"
 
 using namespace Microsoft::Terminal;
 
@@ -28,12 +28,11 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ Microsoft::Conso
                                                    false);
         if (range == nullptr)
         {
-            // something when wrong, clean up and throw
+            // something went wrong, clean up and throw
             while (!ranges.empty())
             {
                 UiaTextRangeBase* temp = ranges[0];
                 ranges.pop_front();
-                temp->Release();
             }
             throw E_INVALIDARG;
         }
@@ -48,43 +47,28 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ Microsoft::Conso
 UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider)
 {
-    UiaTextRange* range = nullptr;
-    ;
     try
     {
-        range = new UiaTextRange(pData, pProvider);
+        return new UiaTextRange(pData, pProvider);
     }
     catch (...)
     {
-        range = nullptr;
+        return nullptr;
     }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider,
                                    const Cursor& cursor)
 {
-    UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData, pProvider, cursor);
+        return new UiaTextRange(pData, pProvider, cursor);
     }
     catch (...)
     {
-        range = nullptr;
+        return nullptr;
     }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
@@ -93,46 +77,32 @@ UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData*
                                    const Endpoint end,
                                    const bool degenerate)
 {
-    UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData,
-                                 pProvider,
-                                 start,
-                                 end,
-                                 degenerate);
+        return new UiaTextRange(pData,
+                                pProvider,
+                                start,
+                                end,
+                                degenerate);
     }
     catch (...)
     {
-        range = nullptr;
+        return nullptr;
     }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
 }
 
 UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider,
                                    const UiaPoint point)
 {
-    UiaTextRange* range = nullptr;
     try
     {
-        range = new UiaTextRange(pData, pProvider, point);
+        return new UiaTextRange(pData, pProvider, point);
     }
     catch (...)
     {
-        range = nullptr;
+        return nullptr;
     }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
 }
 
 // degenerate range constructor.

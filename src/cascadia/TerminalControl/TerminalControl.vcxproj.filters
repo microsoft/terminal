@@ -15,15 +15,15 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="TermControlAutomationPeer.cpp" />
     <ClCompile Include="XamlUiaTextRange.cpp" />
-    <ClCompile Include="ScreenInfoUiaProvider.cpp" />
+    <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="UiaTextRange.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="TermControl.h" />
-    <ClInclude Include="TermControlAP.h" />
+    <ClInclude Include="TermControlAutomationPeer.h" />
     <ClInclude Include="XamlUiaTextRange.h" />
-    <ClInclude Include="ScreenInfoUiaProvider.hpp" />
+    <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="UiaTextRange.hpp" />
   </ItemGroup>
   <ItemGroup>

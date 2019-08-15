@@ -3,13 +3,13 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- screenInfoUiaProvider.hpp
+- TermControlUiaProvider.hpp
 
 Abstract:
 - This module provides UI Automation access to the screen buffer to
   support both automation tests and accessibility (screen reading)
   applications.
-- This is the ConHost extension of ScreenInfoUiaProviderBase.hpp
+- ConHost and Windows Terminal must use IRenderData to have access to the proper information
 - Based on examples, sample code, and guidance from
   https://msdn.microsoft.com/en-us/library/windows/desktop/ee671596(v=vs.85).aspx
 
@@ -19,32 +19,33 @@ Author(s):
 
 #pragma once
 
-#include "precomp.h"
 #include "..\types\ScreenInfoUiaProviderBase.h"
 #include "..\types\UiaTextRangeBase.hpp"
-#include "uiaTextRange.hpp"
+#include "UiaTextRange.hpp"
+
+namespace Microsoft::Console::Render
+{
+    class IRenderData;
+}
 
 namespace Microsoft::Console::Types
 {
     class WindowUiaProviderBase;
 }
 
-namespace Microsoft::Console::Interactivity::Win32
+namespace Microsoft::Terminal
 {
-    class ScreenInfoUiaProvider final : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
+    class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
-                              _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
+        TermControlUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                               _In_ std::function<RECT()> GetBoundingRect);
 
         // IRawElementProviderFragment methods
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) override;
         IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
-
-        HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
 
     protected:
         std::deque<Microsoft::Console::Types::UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) override;
@@ -67,7 +68,6 @@ namespace Microsoft::Console::Interactivity::Win32
                                                                      const UiaPoint point) override;
 
     private:
-        // weak reference to uia parent
-        Microsoft::Console::Types::WindowUiaProviderBase* const _pUiaParent;
+        std::function<RECT(void)> _getBoundingRect;
     };
 }

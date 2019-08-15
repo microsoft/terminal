@@ -192,7 +192,6 @@ UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) :
     _degenerate{ a._degenerate },
     _pData{ a._pData }
 {
-    (static_cast<IUnknown*>(_pProvider))->AddRef();
     _id = id;
     ++id;
 
@@ -200,11 +199,6 @@ UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) :
     OutputDebugString(L"Copy Constructor\n");
     _outputObjectState();
 #endif
-}
-
-UiaTextRangeBase::~UiaTextRangeBase()
-{
-    (static_cast<IUnknown*>(_pProvider))->Release();
 }
 
 const IdType UiaTextRangeBase::GetId() const

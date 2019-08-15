@@ -17,7 +17,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="ScreenInfoUiaProvider.hpp" />
+    <ClInclude Include="TermControlUiaProvider.hpp" />
     <ClInclude Include="TermControl.h">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClInclude>
@@ -32,7 +32,7 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="ScreenInfoUiaProvider.cpp" />
+    <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="TermControl.cpp">
       <DependentUpon>TermControl.idl</DependentUpon>
     </ClCompile>

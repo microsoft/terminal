@@ -325,9 +325,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         UiaTextRangeBase* range;
         try
         {
-            range = CreateUTR(_pData,
-                              pProvider,
-                              cursor);
+            range = CreateTextRange(pProvider,
+                                    cursor);
         }
         catch (...)
         {
@@ -359,7 +358,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(&pProvider)));
         try
         {
-            ranges = GetSelectionRangeUTRs(_pData, pProvider);
+            ranges = GetSelectionRanges(pProvider);
         }
         catch (...)
         {
@@ -445,11 +444,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         UiaTextRangeBase* range;
         try
         {
-            range = CreateUTR(_pData,
-                              pProvider,
-                              start,
-                              end,
-                              false);
+            range = CreateTextRange(pProvider,
+                                    start,
+                                    end,
+                                    false);
         }
         catch (...)
         {
@@ -489,7 +487,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateUTR(_pData, pProvider);
+        *ppRetVal = CreateTextRange(pProvider);
     }
     catch (...)
     {
@@ -513,9 +511,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateUTR(_pData,
-                              pProvider,
-                              point);
+        *ppRetVal = CreateTextRange(pProvider,
+                                    point);
     }
     catch (...)
     {
@@ -538,7 +535,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateUTR(_pData, pProvider);
+        *ppRetVal = CreateTextRange(pProvider);
     }
     catch (...)
     {

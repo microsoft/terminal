@@ -137,7 +137,7 @@ namespace Microsoft::Console::Types
         };
 
     public:
-        ~UiaTextRangeBase();
+        virtual ~UiaTextRangeBase() = default;
 
         const IdType GetId() const;
         const Endpoint GetStart() const;
@@ -201,7 +201,7 @@ namespace Microsoft::Console::Types
 #endif
         Microsoft::Console::Render::IRenderData* const _pData;
 
-        IRawElementProviderSimple* const _pProvider;
+        wil::com_ptr<IRawElementProviderSimple> const _pProvider;
 
         virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;

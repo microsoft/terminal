@@ -6,16 +6,13 @@
 #include "screenInfoUiaProvider.hpp"
 #include "..\types\WindowUiaProviderBase.hpp"
 
-namespace Types
-{
-    using namespace Microsoft::Console::Types;
-}
-
+using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                             _In_ Types::WindowUiaProviderBase* const pUiaParent) :
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IRenderData* pData,
+                                             _In_ WindowUiaProviderBase* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, pData))
 {
@@ -95,12 +92,11 @@ void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
     _pUiaParent->ChangeViewport(NewWindow);
 }
 
-std::deque<Microsoft::Console::Types::UiaTextRangeBase*> ScreenInfoUiaProvider::GetSelectionRangeUTRs(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                                                      _In_ IRawElementProviderSimple* pProvider)
+std::deque<UiaTextRangeBase*> ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider)
 {
-    std::deque<Microsoft::Console::Types::UiaTextRangeBase*> result;
+    std::deque<UiaTextRangeBase*> result;
 
-    auto ranges = UiaTextRange::GetSelectionRanges(pData, pProvider);
+    auto ranges = UiaTextRange::GetSelectionRanges(_pData, pProvider);
     while (!ranges.empty())
     {
         result.emplace_back(ranges.back());
@@ -110,31 +106,27 @@ std::deque<Microsoft::Console::Types::UiaTextRangeBase*> ScreenInfoUiaProvider::
     return result;
 }
 
-Microsoft::Console::Types::UiaTextRangeBase* ScreenInfoUiaProvider::CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                              _In_ IRawElementProviderSimple* const pProvider)
+UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
 {
-    return UiaTextRange::Create(pData, pProvider);
+    return UiaTextRange::Create(_pData, pProvider);
 }
 
-Microsoft::Console::Types::UiaTextRangeBase* ScreenInfoUiaProvider::CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                              _In_ IRawElementProviderSimple* const pProvider,
-                                                                              const Cursor& cursor)
+UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                         const Cursor& cursor)
 {
-    return UiaTextRange::Create(pData, pProvider, cursor);
+    return UiaTextRange::Create(_pData, pProvider, cursor);
 }
 
-Microsoft::Console::Types::UiaTextRangeBase* ScreenInfoUiaProvider::CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                              _In_ IRawElementProviderSimple* const pProvider,
-                                                                              const Endpoint start,
-                                                                              const Endpoint end,
-                                                                              const bool degenerate)
+UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                         const Endpoint start,
+                                                         const Endpoint end,
+                                                         const bool degenerate)
 {
-    return UiaTextRange::Create(pData, pProvider, start, end, degenerate);
+    return UiaTextRange::Create(_pData, pProvider, start, end, degenerate);
 }
 
-Microsoft::Console::Types::UiaTextRangeBase* ScreenInfoUiaProvider::CreateUTR(_In_ Microsoft::Console::Render::IRenderData* pData,
-                                                                              _In_ IRawElementProviderSimple* const pProvider,
-                                                                              const UiaPoint point)
+UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                         const UiaPoint point)
 {
-    return UiaTextRange::Create(pData, pProvider, point);
+    return UiaTextRange::Create(_pData, pProvider, point);
 }

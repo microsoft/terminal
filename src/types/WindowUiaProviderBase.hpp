@@ -25,7 +25,6 @@ Author(s):
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
-    class ScreenInfoUiaProvider;
 
     class WindowUiaProviderBase :
         public IRawElementProviderSimple,
