@@ -1657,7 +1657,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // std::stod will throw out_of_range expection if the input value is more than DBL_MAX
         try
         {
-            for (;std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
+            for (; std::getline(tokenStream, token, singleCharDelim) && (paddingPropIndex < thicknessArr.size()); paddingPropIndex++)
             {
                 // std::stod internall calls wcstod which handles whitespace prefix (which is ignored)
                 //  & stops the scan when first char outside the range of radix is encountered
@@ -1791,10 +1791,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         {
             // exit early. This is a single click.
             _multiClickCounter = 1;
-            return 1; //return single click
         }
-
-        _multiClickCounter++;
+        else	
+        {
+            _multiClickCounter++;	
+        }	
         return _multiClickCounter;
     }
 
