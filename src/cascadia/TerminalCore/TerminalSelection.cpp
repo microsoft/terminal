@@ -14,13 +14,6 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
-    // copyOnSelect: don't render selection on single cell
-    // (unless specifically allowed by highlighting more than one cell then reducing it)
-    if (_copyOnSelect && !_allowSingleCharSelection && IsSingleCellSelection())
-    {
-        return selectionArea;
-    }
-
     if (!IsSelectionActive())
     {
         return selectionArea;
@@ -74,7 +67,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         if (_multiClickSelectionMode == SelectionExpansionMode::Word)
         {
             const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
-            if (_selectionAnchor == _endSelectionPosition && _isWordDelimiter(cellChar))
+            if (IsSingleCellSelection() && _isWordDelimiter(cellChar))
             {
                 // only highlight the cell if you double click a delimiter
             }
@@ -173,6 +166,12 @@ const bool Terminal::IsSingleCellCopyAllowed() const noexcept
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    // A single cell selection is not considered an active selection,
+    // if it's not allowed
+    if (!_allowSingleCharSelection && IsSingleCellSelection())
+    {
+        return false;
+    }
     return _selectionActive;
 }
 
@@ -245,10 +244,8 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
-    if (_copyOnSelect)
-    {
-        _allowSingleCharSelection = false;
-    }
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
+
     SetEndSelectionPosition(position);
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;

@@ -773,16 +773,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // copy selection, if one exists
                 // copyOnSelect causes right-click to always paste
-                if (_terminal->IsSelectionActive() && !_terminal->IsCopyOnSelectActive())
-                {
-                    CopySelectionToClipboard(!shiftEnabled);
-                }
-                // paste selection, otherwise
-                else
+                if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
+                }
+                else
+                {
+                    CopySelectionToClipboard(!shiftEnabled);
                 }
             }
         }
@@ -809,7 +807,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            if (_terminal->IsSelectionActive() && point.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
@@ -893,16 +891,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // macro directly with a VirtualKeyModifiers
             const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
 
-            // copyOnSelect if there's an active selection...
-            if (_terminal->IsCopyOnSelectActive() && _terminal->IsSelectionActive())
+            if (_terminal->IsCopyOnSelectActive())
             {
-                // copy if not single cell selection...
-                // or if single cell copy allowed (drag off of single cell then back onto it)
-                if (!_terminal->IsSingleCellSelection() ||
-                    (_terminal->IsSingleCellSelection() && _terminal->IsSingleCellCopyAllowed()))
-                {
-                    CopySelectionToClipboard(!shiftEnabled);
-                }
+                CopySelectionToClipboard(!shiftEnabled);
             }
         }
         else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1407,12 +1398,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - get text from buffer and send it to the Windows Clipboard (CascadiaWin32:main.cpp). Also removes rendering of selection.
+    // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
     void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
+        // no selection --> nothing to copy
+        // prevent single cell selection (if not allowed)
+        if (!_terminal->IsSelectionActive() ||
+            (!_terminal->IsSingleCellCopyAllowed() && _terminal->IsSingleCellSelection()))
+        {
+            return;
+        }
+
         // extract text from buffer
         const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
 
