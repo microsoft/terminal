@@ -146,6 +146,8 @@ namespace winrt::TerminalApp::implementation
 
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
+#pragma region ActionHandlers
+        // These are all defined in AppActionHandlers.cpp
         void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleDuplicateTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
@@ -165,6 +167,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+#pragma endregion
     };
 }
 

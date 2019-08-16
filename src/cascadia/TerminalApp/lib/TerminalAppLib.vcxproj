@@ -119,6 +119,9 @@
     <ClCompile Include="../App.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../AppActionHandlers.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
 
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->

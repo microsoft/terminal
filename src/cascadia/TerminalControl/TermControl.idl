@@ -28,8 +28,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
         String Title { get; };
-        Boolean HasSelection();
-        void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+
+        Boolean CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         Boolean ShouldCloseOnExit { get; };

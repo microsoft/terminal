@@ -1391,15 +1391,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
-        // extract text from buffer
-        const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        if (_terminal != nullptr && _terminal->IsAreaSelected())
+        {
+            // extract text from buffer
+            const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
 
-        _terminal->ClearSelection();
+            _terminal->ClearSelection();
 
-        // send data up for clipboard
-        _clipboardCopyHandlers(copiedData);
+            // send data up for clipboard
+            _clipboardCopyHandlers(copiedData);
+            return true;
+        }
+        return false;
     }
 
     // Method Description:
@@ -1790,11 +1795,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // The numbers below just feel well, feel free to change.
         // TODO: Maybe account for space beyond border that user has available
         return std::pow(cursorDistanceFromBorder, 2.0) / 25.0 + 2.0;
-    }
-
-    bool TermControl::HasSelection() const
-    {
-        return _terminal != nullptr && _terminal->IsAreaSelected();
     }
 
     // -------------------------------- WinRT Events ---------------------------------
