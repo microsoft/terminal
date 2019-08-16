@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 
 namespace Microsoft.Terminal.Wpf
 {
@@ -59,6 +49,19 @@ namespace Microsoft.Terminal.Wpf
             {
                 this.termContainer.Connection = value;
             }
+        }
+
+        /// <summary>
+        /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
+        /// </summary>
+        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
+        {
+            PresentationSource source = PresentationSource.FromVisual(this);
+
+            int dpiX;
+            dpiX = (int)(96.0 * source.CompositionTarget.TransformToDevice.M11);
+
+            this.termContainer.SetTheme(theme, fontFamily, fontSize, dpiX);
         }
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)

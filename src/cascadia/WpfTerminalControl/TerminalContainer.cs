@@ -174,6 +174,14 @@ namespace Microsoft.Terminal.Wpf
             }
         }
 
+        /// <summary>
+        /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
+        /// </summary>
+        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
+        {
+            NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+        }
+
         private void Connection_TerminalDisconnected(object sender, EventArgs e)
         {
             // TODO

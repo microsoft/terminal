@@ -4,34 +4,43 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
-extern "C" {
-    __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    __declspec(dllexport) void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data);
-    __declspec(dllexport) void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-    __declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
-    __declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
-    __declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
-    __declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    __declspec(dllexport) HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
-    __declspec(dllexport) void _stdcall ClearSelection(void* terminal);
-    __declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
-    __declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
-    __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
-    __declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
-    __declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
-    __declspec(dllexport) void _stdcall SendCharEvent(void* terminal, char16_t ch);
+enum class CursorStyle : int32_t
+{
+    Vintage = 0,
+    Bar = 1,
+    Underscore = 2,
+    FilledBox = 3,
+    EmptyBox = 4,
+};
 
-    enum CursorStyle
-    {
+typedef struct _TerminalTheme
+{
+    COLORREF DefaultBackground;
+    COLORREF DefaultForeground;
+    CursorStyle CursorStyle;
+    COLORREF ColorTable[16];
+} TerminalTheme, *LPTerminalTheme;
 
-    };
-    struct TerminalSettings
-    {
-        COLORREF DefaultBackground;
-        COLORREF DefaultForeground;
-        CursorStyle CursorShape;
-    };
-    }
+extern "C"
+{
+	__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
+	__declspec(dllexport) void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data);
+	__declspec(dllexport) void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
+	__declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
+	__declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
+	__declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
+	__declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
+	__declspec(dllexport) HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
+	__declspec(dllexport) void _stdcall ClearSelection(void* terminal);
+	__declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
+	__declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
+	__declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
+	__declspec(dllexport) void _stdcall SetTheme(void* terminal, LPTerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+	__declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
+	__declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
+	__declspec(dllexport) void _stdcall SendCharEvent(void* terminal, char16_t ch);
+
+};
 
 struct HwndTerminal {
 public:
@@ -62,5 +71,6 @@ private:
     friend bool _stdcall IsSelectionActive(void* terminal);
     friend void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
     friend void _stdcall SendCharEvent(void* terminal, char16_t ch);
+    friend void _stdcall SetTheme(void* terminal, LPTerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     void _UpdateFont(int newDpi);
 };
