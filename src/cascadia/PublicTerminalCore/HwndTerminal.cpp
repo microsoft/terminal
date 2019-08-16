@@ -355,21 +355,23 @@ void _stdcall DestroyTerminal(void* terminal)
 }
 
 // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
-void _stdcall SetTheme(void* terminal, LPTerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetDefaultForeground(theme->DefaultForeground);
-        publicTerminal->_terminal->SetDefaultBackground(theme->DefaultBackground);
+        publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
+        publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
-            publicTerminal->_terminal->SetColorTableEntry(tableIndex, theme->ColorTable[tableIndex]);
+            publicTerminal->_terminal->SetColorTableEntry(tableIndex, theme.ColorTable[tableIndex]);
         }
     }
+
+    publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
 
     publicTerminal->_desiredFont = { fontFamily, 0, 10, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);

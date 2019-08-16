@@ -4,20 +4,13 @@
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 
-enum class CursorStyle : int32_t
-{
-    Vintage = 0,
-    Bar = 1,
-    Underscore = 2,
-    FilledBox = 3,
-    EmptyBox = 4,
-};
+using namespace Microsoft::Console::VirtualTerminal;
 
 typedef struct _TerminalTheme
 {
     COLORREF DefaultBackground;
     COLORREF DefaultForeground;
-    CursorStyle CursorStyle;
+    DispatchTypes::CursorStyle CursorStyle;
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;
 
@@ -35,7 +28,7 @@ extern "C"
 	__declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
 	__declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
 	__declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
-	__declspec(dllexport) void _stdcall SetTheme(void* terminal, LPTerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+	__declspec(dllexport) void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
 	__declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
 	__declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
 	__declspec(dllexport) void _stdcall SendCharEvent(void* terminal, char16_t ch);
@@ -71,6 +64,6 @@ private:
     friend bool _stdcall IsSelectionActive(void* terminal);
     friend void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
     friend void _stdcall SendCharEvent(void* terminal, char16_t ch);
-    friend void _stdcall SetTheme(void* terminal, LPTerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+    friend void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     void _UpdateFont(int newDpi);
 };

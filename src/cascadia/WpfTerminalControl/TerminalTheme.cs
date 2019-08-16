@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Wpf
     /// </summary>
     /// <remarks>Pack = 1 removes the padding added by some compilers/processors for optimization purposes.</remarks>
     [StructLayout(LayoutKind.Sequential)]
-    public class TerminalTheme
+    public struct TerminalTheme
     {
         public uint DefaultBackground;
         public uint DefaultForeground;
@@ -17,12 +17,15 @@ namespace Microsoft.Terminal.Wpf
         public uint[] ColorTable;
     }
 
-    public enum CursorStyle
+
+    public enum CursorStyle : UInt32
     {
-        Vintage = 0,
-        Bar = 1,
-        Underscore = 2,
-        FilledBox = 3,
-        EmptyBox = 4,
-    }
+        BlinkingBlock = 0,
+        BlinkingBlockDefault = 1,
+        SteadyBlock = 2,
+        BlinkingUnderline = 3,
+        SteadyUnderline = 4,
+        BlinkingBar = 5,
+        SteadyBar = 6
+    };
 }
