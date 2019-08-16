@@ -23,7 +23,6 @@ Author(s):
 #include <dwmapi.h>
 #include <windowsx.h>
 #include <wil\resource.h>
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 class NonClientIslandWindow : public IslandWindow
 {
@@ -42,8 +41,6 @@ public:
     void OnAppInitialized() override;
     void SetContent(winrt::Windows::UI::Xaml::UIElement content) override;
     void SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content);
-
-    DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 
 private:
     winrt::TerminalApp::TitlebarControl _titlebar{ nullptr };

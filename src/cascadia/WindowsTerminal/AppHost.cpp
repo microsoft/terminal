@@ -68,12 +68,12 @@ void AppHost::Initialize()
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
-
-        // Add an event handler to plumb clicks in the titlebar area down to the
-        // application layer.
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-        pNcWindow->DragRegionClicked([this]() { _app.TitlebarClicked(); });
     }
+
+    // Add an event handler to plumb clicks in the titlebar area down to the
+    // application layer.
+    _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
+
     _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
 
     _app.Create();

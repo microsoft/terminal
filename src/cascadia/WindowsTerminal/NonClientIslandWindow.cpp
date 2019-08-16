@@ -811,5 +811,3 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
     }
     return true;
 }
-
-DEFINE_EVENT(NonClientIslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
