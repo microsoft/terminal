@@ -1088,13 +1088,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets focus to the desired tab.
-    void App::_SelectTab(const int tabIndex)
+    // - Sets focus to the desired tab. Returns false if the provided tabIndex
+    //   is greater than the number of tabs we have.
+    // Return Value:
+    // true iff we were able to select that tab index, false otherwise
+    bool App::_SelectTab(const int tabIndex)
     {
         if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
+            return true;
         }
+        return false;
     }
 
     // Method Description:
@@ -1572,8 +1577,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SwitchToTabArgs>())
         {
-            _SelectTab({ realArgs.TabIndex() });
-            args.Handled(true);
+            const auto handled = _SelectTab({ realArgs.TabIndex() });
+            args.Handled(handled);
         }
     }
 
@@ -1602,7 +1607,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
-            args.Handled(_CopyText(realArgs.TrimWhitespace()));
+            const auto handled = _CopyText(realArgs.TrimWhitespace());
+            args.Handled(handled);
         }
     }
 

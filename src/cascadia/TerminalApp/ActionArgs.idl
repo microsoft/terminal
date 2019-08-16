@@ -10,7 +10,7 @@ namespace TerminalApp
     interface IActionEventArgs
     {
         Boolean Handled;
-        IActionArgs ActionArgs;
+        IActionArgs ActionArgs { get; };
     };
 
     enum Direction
@@ -28,27 +28,27 @@ namespace TerminalApp
 
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
-        Boolean TrimWhitespace;
+        Boolean TrimWhitespace { get; };
     };
 
     [default_interface] runtimeclass NewTabWithProfileArgs : IActionArgs
     {
-        Int32 ProfileIndex;
+        Int32 ProfileIndex { get; };
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
-        Int32 TabIndex;
+        Int32 TabIndex { get; };
     };
 
     [default_interface] runtimeclass ResizePaneArgs : IActionArgs
     {
-        Direction Direction;
+        Direction Direction { get; };
     };
 
     [default_interface] runtimeclass MoveFocusArgs : IActionArgs
     {
-        Direction Direction;
+        Direction Direction { get; };
     };
 
 }

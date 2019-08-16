@@ -47,327 +47,327 @@ namespace winrt::TerminalApp::implementation
         {
         case ShortcutAction::CopyText:
         {
-            auto args = CopyTextArgs();
+            CopyTextArgs args{};
             args.TrimWhitespace(true);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _CopyTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::CopyTextWithoutNewlines:
         {
-            auto args = CopyTextArgs();
+            CopyTextArgs args{};
             args.TrimWhitespace(false);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _CopyTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::PasteText:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _PasteTextHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTab:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _NewTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::DuplicateTab:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _DuplicateTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::OpenSettings:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _OpenSettingsHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::NewTabProfile0:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(0);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile1:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(1);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile2:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(2);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile3:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(3);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile4:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(4);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile5:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(5);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile6:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(6);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile7:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(7);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::NewTabProfile8:
         {
-            auto args = NewTabWithProfileArgs();
+            NewTabWithProfileArgs args{};
             args.ProfileIndex(8);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _NewTabWithProfileHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::NewWindow:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _NewWindowHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::CloseWindow:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _CloseWindowHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::CloseTab:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _CloseTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ClosePane:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _ClosePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::ScrollUp:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _ScrollUpHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollDown:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _ScrollDownHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollUpPage:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _ScrollUpPageHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ScrollDownPage:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _ScrollDownPageHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::NextTab:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _NextTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::PrevTab:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _PrevTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::SplitVertical:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _SplitVerticalHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SplitHorizontal:
         {
-            auto eventArgs = ActionEventArgs();
+            ActionEventArgs eventArgs{};
             _SplitHorizontalHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
 
         case ShortcutAction::SwitchToTab0:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(0);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab1:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(1);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab2:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(2);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab3:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(3);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab4:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(4);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab5:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(5);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab6:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(6);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab7:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(7);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::SwitchToTab8:
         {
-            auto args = SwitchToTabArgs();
+            SwitchToTabArgs args{};
             args.TabIndex(8);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _SwitchToTabHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ResizePaneLeft:
         {
-            auto args = ResizePaneArgs();
+            ResizePaneArgs args{};
             args.Direction(Direction::Left);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ResizePaneRight:
         {
-            auto args = ResizePaneArgs();
+            ResizePaneArgs args{};
             args.Direction(Direction::Right);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ResizePaneUp:
         {
-            auto args = ResizePaneArgs();
+            ResizePaneArgs args{};
             args.Direction(Direction::Up);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::ResizePaneDown:
         {
-            auto args = ResizePaneArgs();
+            ResizePaneArgs args{};
             args.Direction(Direction::Down);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _ResizePaneHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::MoveFocusLeft:
         {
-            auto args = MoveFocusArgs();
+            MoveFocusArgs args{};
             args.Direction(Direction::Left);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::MoveFocusRight:
         {
-            auto args = MoveFocusArgs();
+            MoveFocusArgs args{};
             args.Direction(Direction::Right);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::MoveFocusUp:
         {
-            auto args = MoveFocusArgs();
+            MoveFocusArgs args{};
             args.Direction(Direction::Up);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }
         case ShortcutAction::MoveFocusDown:
         {
-            auto args = MoveFocusArgs();
+            MoveFocusArgs args{};
             args.Direction(Direction::Down);
-            auto eventArgs = ActionEventArgs(args);
+            ActionEventArgs eventArgs{ args };
             _MoveFocusHandlers(*this, eventArgs);
             return eventArgs.Handled();
         }

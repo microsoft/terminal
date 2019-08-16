@@ -108,7 +108,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _SelectNextTab(const bool bMoveRight);
-        void _SelectTab(const int tabIndex);
+        bool _SelectTab(const int tabIndex);
 
         void _SetFocusedTabIndex(int tabIndex);
         int _GetFocusedTabIndex() const;

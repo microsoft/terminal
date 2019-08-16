@@ -15,19 +15,10 @@
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
 // Notes on defining ActionArgs and ActionEventArgs:
-// * All properties specific to an action should be defined as in the ActionArgs
-//   class.
-// * ActionEventArgs should extend from the ActionArgs class, and add an
-//   aditional `Handled` property. For EventArgs that require actual args (ex:
-//   NewTabWithProfileEventArgs)
-// * For ActionEventArgs:
-//   - the ctor is internal to the TerminalApp implementation. It uses the
-//     implementation type of the IActionArgs. This lets us construct the args
-//     without getting the activation factory.
-//   - You need to manually set each member of the EventArgs using the Args
-//     that's passed in. DO NOT declare the properties a second time in the
-//     event! Because the EventArgs class uses the Args class as a base class,
-//     the EventArgs already has methods for each property defined.
+// * All properties specific to an action should be defined as an ActionArgs
+//   class that implements IActionArgs
+// * ActionEventArgs holds a single IActionArgs. For events that don't need
+//   additional args, this can be nullptr.
 
 namespace winrt::TerminalApp::implementation
 {

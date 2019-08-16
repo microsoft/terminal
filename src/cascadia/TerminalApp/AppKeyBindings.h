@@ -77,16 +77,3 @@ namespace winrt::TerminalApp::factory_implementation
     {
     };
 }
-
-// public:
-//     winrt::event_token NewTabWithProfile(Windows::Foundation::TypedEventHandler<TerminalApp::AppKeyBindings, TerminalApp::NewTabWithProfileEventArgs> const& handler)
-//     {
-//         return _NewTabWithProfileHandlers.add(handler);
-//     }
-//     void NewTabWithProfile(winrt::event_token const& token) noexcept
-//     {
-//         _NewTabWithProfileHandlers.remove(token);
-//     }
-
-// private:
-//     winrt::event<Windows::Foundation::TypedEventHandler<TerminalApp::AppKeyBindings, TerminalApp::NewTabWithProfileEventArgs>> _NewTabWithProfileHandlers;
