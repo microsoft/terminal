@@ -126,7 +126,7 @@
 </value>
   </data>
   <data name="DuplicateProfileText" xml:space="preserve">
-    <value>Found multiple profiles with the same GUID in your profiles - ignoring duplicates. Make sure each profile's GUID is unique.
+    <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.
 </value>
   </data>
   <data name="NoProfilesText" xml:space="preserve">
