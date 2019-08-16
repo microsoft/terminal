@@ -1324,10 +1324,18 @@ namespace winrt::TerminalApp::implementation
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-        TermControl newControl{ controlSettings, controlConnection };
-
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
+
+        const auto canSplit = splitType == Pane::SplitState::Horizontal ? focusedTab->CanAddHorizontalSplit() :
+                                                                          focusedTab->CanAddVerticalSplit();
+
+        if (!canSplit)
+        {
+            return;
+        }
+
+        TermControl newControl{ controlSettings, controlConnection };
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);

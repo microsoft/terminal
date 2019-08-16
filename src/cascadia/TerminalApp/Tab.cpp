@@ -188,6 +188,15 @@ void Tab::Scroll(const int delta)
 }
 
 // Method Description:
+// - Determines whether the focused pane has sufficient space to be split vertically.
+// Return Value:
+// - True if the focused pane can be split horizontally. False otherwise.
+bool Tab::CanAddVerticalSplit()
+{
+    return _rootPane->CanSplitVertical();
+}
+
+// Method Description:
 // - Vertically split the focused pane in our tree of panes, and place the
 //   given TermControl into the newly created pane.
 // Arguments:
@@ -198,6 +207,15 @@ void Tab::Scroll(const int delta)
 void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
 {
     _rootPane->SplitVertical(profile, control);
+}
+
+// Method Description:
+// - Determines whether the focused pane has sufficient space to be split horizontally.
+// Return Value:
+// - True if the focused pane can be split horizontally. False otherwise.
+bool Tab::CanAddHorizontalSplit()
+{
+    return _rootPane->CanSplitHorizontal();
 }
 
 // Method Description:
