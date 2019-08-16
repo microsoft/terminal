@@ -1197,8 +1197,8 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 
         // these values are byte offsets from start of clipboard
         const size_t htmlStartPos = ClipboardHeaderSize;
-        const size_t htmlEndPos = ClipboardHeaderSize + htmlBuilder.tellp();
-        const size_t fragStartPos = ClipboardHeaderSize + htmlHeader.length();
+        const size_t htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
+        const size_t fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
         const size_t fragEndPos = htmlEndPos - HtmlFooter.length();
 
         // header required by HTML 0.9 format
