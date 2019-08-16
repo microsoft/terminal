@@ -668,7 +668,11 @@ void CascadiaSettings::_ValidateSettings()
 {
     _warnings.clear();
 
+    // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
+
+    // Then do some validation on the profiles. The order of these does not
+    // terribly matter.
     _ValidateNoDuplicateProfiles();
     _ValidateDefaultProfileExists();
 }
@@ -678,7 +682,7 @@ void CascadiaSettings::_ValidateSettings()
 //   profiles at all, we'll throw an error if there aren't any profiles.
 void CascadiaSettings::_ValidateProfilesExist()
 {
-    const bool hasProfiles = _profiles.size() != 0;
+    const bool hasProfiles = !_profiles.empty();
     if (!hasProfiles)
     {
         // Throw an exception. This is an invalid state, and we want the app to
@@ -687,7 +691,7 @@ void CascadiaSettings::_ValidateProfilesExist()
         // We can't add the warning to the list of warnings here, because this
         // object is not going to be returned at any point.
 
-        throw ::TerminalApp::TerminalException(::TerminalApp::SettingsLoadErrors::NoProfiles);
+        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::NoProfiles);
     }
 }
 
@@ -758,9 +762,9 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     // Remove all the duplicates we've marked
     // Walk backwards, so we don't accidentally shift any of the elements
-    for (int reverse = indiciesToDelete.size() - 1; reverse >= 0; reverse--)
+    for (auto iter = indiciesToDelete.rbegin(); iter != indiciesToDelete.rend(); iter++)
     {
-        _profiles.erase(_profiles.begin() + indiciesToDelete.at(reverse));
+        _profiles.erase(_profiles.begin() + *iter);
     }
 
     if (foundDupe)

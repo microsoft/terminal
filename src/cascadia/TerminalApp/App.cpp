@@ -690,7 +690,7 @@ namespace winrt::TerminalApp::implementation
             _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
         }
-        catch (const ::TerminalApp::TerminalException& ex)
+        catch (const ::TerminalApp::SettingsException& ex)
         {
             hr = E_INVALIDARG;
             _settingsLoadExceptionText = _GetErrorText(ex.Error(), _resourceLoader);

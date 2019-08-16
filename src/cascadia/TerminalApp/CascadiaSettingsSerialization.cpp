@@ -43,7 +43,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     const bool foundFile = fileData.has_value();
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
-    const bool fileHasData = foundFile && fileData.value().size() > 0;
+    const bool fileHasData = foundFile && !fileData.value().empty();
     if (foundFile && fileHasData)
     {
         const auto actualData = fileData.value();

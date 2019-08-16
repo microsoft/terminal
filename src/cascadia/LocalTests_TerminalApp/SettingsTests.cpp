@@ -101,7 +101,7 @@ namespace TerminalAppLocalTests
             {
                 settings->_ValidateProfilesExist();
             }
-            catch (const ::TerminalApp::TerminalException ex)
+            catch (const ::TerminalApp::SettingsException ex)
             {
                 VERIFY_IS_TRUE(ex.Error() == ::TerminalApp::SettingsLoadErrors::NoProfiles);
             }
@@ -118,7 +118,7 @@ namespace TerminalAppLocalTests
             {
                 settings->_ValidateProfilesExist();
             }
-            catch (const ::TerminalApp::TerminalException ex)
+            catch (const ::TerminalApp::SettingsException ex)
             {
                 VERIFY_IS_TRUE(ex.Error() == ::TerminalApp::SettingsLoadErrors::NoProfiles);
             }

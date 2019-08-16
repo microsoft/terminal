@@ -34,17 +34,20 @@ namespace TerminalApp
 
     // This is a helper class to wrap up a SettingsLoadErrors into a proper
     // exception type.
-    class TerminalException : public std::runtime_error
+    class SettingsException : public std::runtime_error
     {
     public:
-        TerminalException(const SettingsLoadErrors& error) :
+        SettingsException(const SettingsLoadErrors& error) :
             std::runtime_error{ nullptr },
             _error{ error } {};
 
         // We don't use the what() method - we want to be able to display
         // localizable error messages. Catchers of this exception should use
-        // _GetErrorText to get the localized exception string.
-        const char* what() const override { return nullptr; };
+        // _GetErrorText (in App.cpp) to get the localized exception string.
+        const char* what() const override
+        {
+            return "Exception while loading or validating Terminal settings";
+        };
 
         SettingsLoadErrors Error() const noexcept { return _error; };
 
