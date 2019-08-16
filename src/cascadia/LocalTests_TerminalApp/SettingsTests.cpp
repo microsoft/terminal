@@ -97,35 +97,33 @@ namespace TerminalAppLocalTests
             // Case 2: Bad settings
             const auto settingsObject = VerifyParseSucceeded(settingsWithoutProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
+            bool caughtExpectedException = false;
             try
             {
                 settings->_ValidateProfilesExist();
             }
-            catch (const ::TerminalApp::SettingsException ex)
+            catch (const ::TerminalApp::SettingsException& ex)
             {
                 VERIFY_IS_TRUE(ex.Error() == ::TerminalApp::SettingsLoadErrors::NoProfiles);
+                caughtExpectedException = true;
             }
-            catch (...)
-            {
-                VERIFY_FAIL(L"Expected a SettingsLoadErrors::NoProfiles, but caught another exception type");
-            }
+            VERIFY_IS_TRUE(caughtExpectedException);
         }
         {
             // Case 3: Bad settings
             const auto settingsObject = VerifyParseSucceeded(settingsWithEmptyProfiles);
             auto settings = CascadiaSettings::FromJson(settingsObject);
+            bool caughtExpectedException = false;
             try
             {
                 settings->_ValidateProfilesExist();
             }
-            catch (const ::TerminalApp::SettingsException ex)
+            catch (const ::TerminalApp::SettingsException& ex)
             {
                 VERIFY_IS_TRUE(ex.Error() == ::TerminalApp::SettingsLoadErrors::NoProfiles);
+                caughtExpectedException = true;
             }
-            catch (...)
-            {
-                VERIFY_FAIL(L"Expected a SettingsLoadErrors::NoProfiles, but caught another exception type");
-            }
+            VERIFY_IS_TRUE(caughtExpectedException);
         }
     }
 
