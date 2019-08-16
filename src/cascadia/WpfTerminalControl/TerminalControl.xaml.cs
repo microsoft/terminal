@@ -58,6 +58,11 @@ namespace Microsoft.Terminal.Wpf
         {
             PresentationSource source = PresentationSource.FromVisual(this);
 
+            if (source == null)
+            {
+                return;
+            }
+
             int dpiX;
             dpiX = (int)(96.0 * source.CompositionTarget.TransformToDevice.M11);
 

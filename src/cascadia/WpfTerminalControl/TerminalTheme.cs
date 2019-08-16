@@ -13,7 +13,7 @@ namespace Microsoft.Terminal.Wpf
         public uint DefaultBackground;
         public uint DefaultForeground;
         public CursorStyle CursorStyle;
-        [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.U8, SizeConst = 16)]
+        [MarshalAs(UnmanagedType.ByValArray, ArraySubType = UnmanagedType.U4, SizeConst = 16)]
         public uint[] ColorTable;
     }
 
