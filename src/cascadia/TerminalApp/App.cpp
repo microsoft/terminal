@@ -465,7 +465,7 @@ namespace winrt::TerminalApp::implementation
         return _root->SetTitleBarContent(token);
     }
 
-    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
+    winrt::event_token App::TitleChanged(Windows::Foundation::EventHandler<winrt::hstring> const& handler)
     {
         return _root->TitleChanged(handler);
     }

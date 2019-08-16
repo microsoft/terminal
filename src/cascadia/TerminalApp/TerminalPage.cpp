@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
+#include "Utils.h"
 
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
@@ -190,7 +191,8 @@ namespace winrt::TerminalApp::implementation
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
-        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size()); // the number of profiles should not change in the loop for this to work
+        for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
@@ -300,7 +302,7 @@ namespace winrt::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex >= profiles.size())
+            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
             {
                 return;
             }
@@ -358,7 +360,7 @@ namespace winrt::TerminalApp::implementation
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
         {
-            tabViewItem.Icon(_GetIconFromProfile(*profile));
+            newTab->UpdateIcon(profile->GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &TerminalPage::_OnTabClick });
@@ -405,7 +407,12 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(
@@ -497,25 +504,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        if (lastFocusedProfileOpt.has_value())
+        tab->SetTabText(newTabTitle);
+
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
         {
-            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-            const auto tabTitle = matchingProfile->GetTabTitle();
-
-            // Checks if tab title has been set in the profile settings and
-            // updates accordingly.
-
-            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(*this, newActualTitle);
-            }
+            _titleChangeHandlers(newTabTitle);
         }
     }
 
@@ -530,16 +524,15 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-            auto tabViewItem = tab->GetTabViewItem();
-            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                // _GetIconFromProfile has to run on the main thread
-                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                if (matchingProfile)
-                {
-                    tabViewItem.Icon(TerminalPage::_GetIconFromProfile(*matchingProfile));
-                }
-            });
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            if (matchingProfile)
+            {
+                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+            }
+            else
+            {
+                tab->UpdateIcon({});
+            }
         }
     }
 
@@ -600,8 +593,7 @@ namespace winrt::TerminalApp::implementation
             {
                 focusedTabIndex = tabCount - 1;
             }
-
-            if (focusedTabIndex < 0)
+            else if (focusedTabIndex < 0)
             {
                 focusedTabIndex = 0;
             }
@@ -866,26 +858,7 @@ namespace winrt::TerminalApp::implementation
     // - an IconElement for the profile's icon, if it has one.
     Controls::IconElement TerminalPage::_GetIconFromProfile(const Profile& profile)
     {
-        if (profile.HasIcon())
-        {
-            std::wstring path{ profile.GetIconPath() };
-            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-            winrt::hstring iconPath{ path };
-            winrt::Windows::Foundation::Uri iconUri{ iconPath };
-            Controls::BitmapIconSource iconSource;
-            // Make sure to set this to false, so we keep the RGB data of the
-            // image. Otherwise, the icon will be white for all the
-            // non-transparent pixels in the image.
-            iconSource.ShowAsMonochrome(false);
-            iconSource.UriSource(iconUri);
-            Controls::IconSourceElement elem;
-            elem.IconSource(iconSource);
-            return elem;
-        }
-        else
-        {
-            return { nullptr };
-        }
+        return profile.HasIcon() ? GetColoredIcon(profile.GetExpandedIconPath()) : Controls::IconElement{ nullptr };
     }
 
     // Method Description:
