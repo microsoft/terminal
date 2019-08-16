@@ -63,6 +63,7 @@ namespace winrt::TerminalApp::implementation
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
         HRESULT _settingsLoadedResult;
+        winrt::hstring _settingsLoadExceptionText{};
 
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
@@ -80,6 +81,8 @@ namespace winrt::TerminalApp::implementation
                                     const winrt::hstring& closeButtonText);
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
+        void _ShowLoadWarningsDialog();
+        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
         [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();

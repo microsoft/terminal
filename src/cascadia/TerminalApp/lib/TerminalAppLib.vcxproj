@@ -68,6 +68,7 @@
     <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../AppKeyBindings.h" />
     <ClInclude Include="../App.h" >

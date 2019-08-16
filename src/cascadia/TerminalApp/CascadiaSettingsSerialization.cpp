@@ -41,7 +41,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
     std::optional<std::string> fileData = _ReadSettings();
 
     const bool foundFile = fileData.has_value();
-    if (foundFile)
+    // Make sure the file isn't totally empty. If it is, we'll treat the file
+    // like it doesn't exist at all.
+    const bool fileHasData = foundFile && !fileData.value().empty();
+    if (foundFile && fileHasData)
     {
         const auto actualData = fileData.value();
 
@@ -59,18 +62,20 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // `parse` will return false if it fails.
         if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
         {
-            // TODO:GH#990 display this exception text to the user, in a
-            //      copy-pasteable way.
+            // This will be caught by App::_TryLoadSettings, who will display
+            // the text to the user.
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
         resultPtr = FromJson(root);
 
-        if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
-        {
-            throw winrt::hresult_invalid_argument();
-        }
+        // If this throws, the app will catch it and use the default settings (temporarily)
+        resultPtr->_ValidateSettings();
 
-        if (saveOnLoad)
+        const bool foundWarnings = resultPtr->_warnings.size() > 0;
+
+        // Don't save on load if there were warnings - we tried to gracefully
+        // handle them.
+        if (saveOnLoad && !foundWarnings)
         {
             // Logically compare the json we've parsed from the file to what
             // we'd serialize at runtime. If the values are different, then
