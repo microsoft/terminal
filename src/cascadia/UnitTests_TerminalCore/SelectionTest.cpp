@@ -94,6 +94,104 @@ namespace TerminalCoreUnitTests
             }
         }
 
+        TEST_METHOD(SelectToOutOfBounds)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 10, 10 }, 0, emptyRT);
+
+            auto viewport = term.GetViewport();
+            const SHORT leftBoundary = 0;
+            const SHORT rightBoundary = viewport.RightInclusive();
+
+            // Simulate click at (x,y) = (5,5)
+            term.SetSelectionAnchor({ 5, 5 });
+
+            // Case 1: Move out of right boundary
+            term.SetEndSelectionPosition({ 20, 5 });
+            {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
+
+                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
+            }
+
+            // Case 2: Move out of left boundary
+            term.SetEndSelectionPosition({ -20, 5 });
+            {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
+
+                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, 5, 5, 5 }));
+            }
+
+            // Case 3: Move out of top boundary
+            term.SetEndSelectionPosition({ 5, -20 });
+            {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(6));
+                for (auto selectionRect : selectionRects)
+                {
+                    auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
+                    auto rowValue = selectionRect.BottomInclusive();
+
+                    if (rowValue == 0)
+                    {
+                        // Verify top line
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, rowValue, rightBoundary, rowValue }));
+                    }
+                    else if (rowValue == 5)
+                    {
+                        // Verify last line
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, 5, rowValue }));
+                    }
+                    else
+                    {
+                        // Verify other lines (full)
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, rightBoundary, rowValue }));
+                    }
+                }
+            }
+
+            // Case 4: Move out of bottom boundary
+            term.SetEndSelectionPosition({ 5, 20 });
+            {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(5));
+                for (auto selectionRect : selectionRects)
+                {
+                    auto selection = viewport.ConvertToOrigin(selectionRect).ToInclusive();
+                    auto rowValue = selectionRect.BottomInclusive();
+
+                    if (rowValue == 5)
+                    {
+                        // Verify top line
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
+                    }
+                    else if (rowValue == 9)
+                    {
+                        // Verify bottom line
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, 5, rowValue }));
+                    }
+                    else
+                    {
+                        // Verify other lines (full)
+                        VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, rowValue, rightBoundary, rowValue }));
+                    }
+                }
+            }
+        }
+
         TEST_METHOD(SelectBoxArea)
         {
             Terminal term;
