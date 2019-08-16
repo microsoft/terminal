@@ -25,7 +25,7 @@ public:                                                  \
     winrt::event_token name(args const& handler);        \
     void name(winrt::event_token const& token) noexcept; \
                                                          \
-private:                                                 \
+protected:                                               \
     winrt::event<args> eventHandler;
 
 // This is a helper macro for defining the body of events.

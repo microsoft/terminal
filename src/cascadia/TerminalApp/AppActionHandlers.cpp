@@ -32,6 +32,12 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
         args.Handled(true);
     }
+    void App::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
+    {
+        _OpenNewTabDropdown();
+        args.Handled(true);
+    }
 
     void App::_HandleDuplicateTab(const IInspectable& /*sender*/,
                                   const TerminalApp::ActionEventArgs& args)

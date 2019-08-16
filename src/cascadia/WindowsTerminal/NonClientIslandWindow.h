@@ -55,7 +55,7 @@ private:
 
     RECT GetDragAreaRect() const noexcept;
 
-    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse) const noexcept;
+    [[nodiscard]] LRESULT HitTestNCA(POINT ptMouse, const bool titlebarIsCaption) const noexcept;
 
     [[nodiscard]] HRESULT _UpdateFrameMargins() const noexcept;
 

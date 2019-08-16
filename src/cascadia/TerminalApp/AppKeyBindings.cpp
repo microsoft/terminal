@@ -73,6 +73,12 @@ namespace winrt::TerminalApp::implementation
             _NewTabHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
+        case ShortcutAction::OpenNewTabDropdown:
+        {
+            auto eventArgs = winrt::make_self<ActionEventArgs>();
+            _OpenNewTabDropdownHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
         case ShortcutAction::DuplicateTab:
         {
             auto eventArgs = winrt::make_self<ActionEventArgs>();
@@ -401,5 +407,4 @@ namespace winrt::TerminalApp::implementation
 
         return keyModifiers;
     }
-
 }

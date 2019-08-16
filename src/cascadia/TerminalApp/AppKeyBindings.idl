@@ -10,6 +10,7 @@ namespace TerminalApp
         CopyTextWithoutNewlines,
         PasteText,
         NewTab,
+        OpenNewTabDropdown,
         DuplicateTab,
         NewTabProfile0,
         NewTabProfile1,
@@ -64,6 +65,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PasteText;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTab;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> OpenNewTabDropdown;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> DuplicateTab;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewTabWithProfile;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> NewWindow;

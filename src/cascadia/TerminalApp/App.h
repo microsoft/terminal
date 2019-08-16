@@ -37,6 +37,7 @@ namespace winrt::TerminalApp::implementation
         ~App() = default;
 
         hstring GetTitle();
+        void TitlebarClicked();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::Microsoft::Terminal::TerminalControl::TitleChangedEventArgs);
@@ -62,6 +63,7 @@ namespace winrt::TerminalApp::implementation
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
         HRESULT _settingsLoadedResult;
+        winrt::hstring _settingsLoadExceptionText{};
 
         bool _loadedInitialSettings;
         std::shared_mutex _dialogLock;
@@ -73,12 +75,15 @@ namespace winrt::TerminalApp::implementation
         std::atomic<bool> _settingsReloadQueued{ false };
 
         void _CreateNewTabFlyout();
+        void _OpenNewTabDropdown();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
                                     const winrt::Windows::Foundation::IInspectable& contentElement,
                                     const winrt::hstring& closeButtonText);
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
+        void _ShowLoadWarningsDialog();
+        void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
         [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
         void _LoadSettings();
@@ -149,6 +154,7 @@ namespace winrt::TerminalApp::implementation
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
         void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleDuplicateTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleClosePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
