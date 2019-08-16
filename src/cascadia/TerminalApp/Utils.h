@@ -28,3 +28,5 @@ inline std::string JsonKey(const std::string_view key)
 {
     return static_cast<std::string>(key);
 }
+
+winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
