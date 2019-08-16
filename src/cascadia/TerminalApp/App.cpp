@@ -576,6 +576,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
+    // Called when the openNewTabDropdown keybinding is used.
+    // Adds the flyout show option to left-align the dropdown with the split button.
+    // Shows the dropdown flyout.
+    void App::_OpenNewTabDropdown()
+    {
+        Controls::Primitives::FlyoutShowOptions options{};
+        options.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        _newTabButton.Flyout().ShowAt(_newTabButton, options);
+    }
+
+    // Function Description:
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
@@ -645,6 +656,7 @@ namespace winrt::TerminalApp::implementation
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
         bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
+        bindings.OpenNewTabDropdown([this]() { _OpenNewTabDropdown(); });
         bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
         bindings.CloseTab([this]() { _CloseFocusedTab(); });
         bindings.ClosePane([this]() { _CloseFocusedPane(); });

@@ -75,6 +75,7 @@ namespace winrt::TerminalApp::implementation
         std::atomic<bool> _settingsReloadQueued{ false };
 
         void _CreateNewTabFlyout();
+        void _OpenNewTabDropdown();
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
                                     const winrt::Windows::Foundation::IInspectable& contentElement,
