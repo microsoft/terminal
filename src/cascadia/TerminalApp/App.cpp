@@ -7,6 +7,7 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -698,16 +699,15 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-            auto tabViewItem = tab->GetTabViewItem();
-            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                // _GetIconFromProfile has to run on the main thread
-                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                if (matchingProfile)
-                {
-                    tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
-                }
-            });
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            if (matchingProfile)
+            {
+                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+            }
+            else
+            {
+                tab->UpdateIcon({});
+            }
         }
     }
 
@@ -720,25 +720,12 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
-        if (lastFocusedProfileOpt.has_value())
+        tab->SetTabText(newTabTitle);
+
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
         {
-            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-
-            const auto tabTitle = matchingProfile->GetTabTitle();
-
-            // Checks if tab title has been set in the profile settings and
-            // updates accordingly.
-
-            const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-            tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
-            {
-                _titleChangeHandlers(newActualTitle);
-            }
+            _titleChangeHandlers(newTabTitle);
         }
     }
 
@@ -940,7 +927,7 @@ namespace winrt::TerminalApp::implementation
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
         {
-            tabViewItem.Icon(_GetIconFromProfile(*profile));
+            newTab->UpdateIcon(profile->GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
@@ -1262,26 +1249,7 @@ namespace winrt::TerminalApp::implementation
     // - an IconElement for the profile's icon, if it has one.
     Controls::IconElement App::_GetIconFromProfile(const Profile& profile)
     {
-        if (profile.HasIcon())
-        {
-            std::wstring path{ profile.GetIconPath() };
-            const auto envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(path.data()) };
-            winrt::hstring iconPath{ envExpandedPath };
-            winrt::Windows::Foundation::Uri iconUri{ iconPath };
-            Controls::BitmapIconSource iconSource;
-            // Make sure to set this to false, so we keep the RGB data of the
-            // image. Otherwise, the icon will be white for all the
-            // non-transparent pixels in the image.
-            iconSource.ShowAsMonochrome(false);
-            iconSource.UriSource(iconUri);
-            Controls::IconSourceElement elem;
-            elem.IconSource(iconSource);
-            return elem;
-        }
-        else
-        {
-            return { nullptr };
-        }
+        return profile.HasIcon() ? GetColoredIcon(profile.GetExpandedIconPath()) : Controls::IconElement{ nullptr };
     }
 
     winrt::Microsoft::Terminal::TerminalControl::TermControl App::_GetFocusedControl()
@@ -1487,7 +1455,12 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), settings.InitialRows(), settings.InitialCols(), winrt::guid());
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(
