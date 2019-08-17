@@ -83,27 +83,27 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\x5c',
     L'\x5d',
     L'\x5e',
-    L'\x5f',
-    L'\u25C6', // L'\x60',   -> Diamond
+    L'\u0020', // L'\x5f',   -> Blank
+    L'\u2666', // L'\x60',   -> Diamond (more commonly U+25C6, but U+2666 renders better for us)
     L'\u2592', // L'\x61',   -> Checkerboard
     L'\u2409', // L'\x62',   -> HT, SYMBOL FOR HORIZONTAL TABULATION
     L'\u240c', // L'\x63',   -> FF, SYMBOL FOR FORM FEED
     L'\u240d', // L'\x64',   -> CR, SYMBOL FOR CARRIAGE RETURN
     L'\u240a', // L'\x65',   -> LF, SYMBOL FOR LINE FEED
-    L'\u00B0', // L'\x66',   -> Degree symbol
-    L'\u00B1', // L'\x67',   -> Plus/minus
+    L'\u00b0', // L'\x66',   -> Degree symbol
+    L'\u00b1', // L'\x67',   -> Plus/minus
     L'\u2424', // L'\x68',   -> NL, SYMBOL FOR NEWLINE
     L'\u240b', // L'\x69',   -> VT, SYMBOL FOR VERTICAL TABULATION
     L'\u2518', // L'\x6a',   -> Lower-right corner
     L'\u2510', // L'\x6b',   -> Upper-right corner
     L'\u250c', // L'\x6c',   -> Upper-left corner
     L'\u2514', // L'\x6d',   -> Lower-left corner
-    L'\u253C', // L'\x6e',   -> crossing lines
-    L'\u23ba', // L'\x6f',   -> HORIZONTAL SCAN LINE-3
-    L'\u23bb', // L'\x70',   -> HORIZONTAL SCAN LINE-3
-    L'\u2500', // L'\x71',   -> HORIZONTAL SCAN LINE-5
-    L'\u23bc', // L'\x72',   -> HORIZONTAL SCAN LINE-7
-    L'\u23bd', // L'\x73',   -> HORIZONTAL SCAN LINE-7
+    L'\u253c', // L'\x6e',   -> Crossing lines
+    L'\u23ba', // L'\x6f',   -> Horizontal line - Scan 1
+    L'\u23bb', // L'\x70',   -> Horizontal line - Scan 3
+    L'\u2500', // L'\x71',   -> Horizontal line - Scan 5
+    L'\u23bc', // L'\x72',   -> Horizontal line - Scan 7
+    L'\u23bd', // L'\x73',   -> Horizontal line - Scan 9
     L'\u251c', // L'\x74',   -> Left "T"
     L'\u2524', // L'\x75',   -> Right "T"
     L'\u2534', // L'\x76',   -> Bottom "T"
@@ -111,10 +111,10 @@ const wchar_t TerminalOutput::s_rgDECSpecialGraphicsTranslations[s_uiNumDisplayC
     L'\u2502', // L'\x78',   -> | Vertical bar
     L'\u2264', // L'\x79',   -> Less than or equal to
     L'\u2265', // L'\x7a',   -> Greater than or equal to
-    L'\u03C0', // L'\x7b',   -> Pi
+    L'\u03c0', // L'\x7b',   -> Pi
     L'\u2260', // L'\x7c',   -> Not equal to
-    L'\u00A3', // L'\x7d',   -> UK pound sign
-    L'\u00B7', // L'\x7e',   -> Centered dot
+    L'\u00a3', // L'\x7d',   -> UK pound sign
+    L'\u00b7', // L'\x7e',   -> Centered dot
     L'\x7f' // L'\x7f',   -> DEL
 };
 
@@ -157,7 +157,7 @@ wchar_t TerminalOutput::TranslateKey(const wchar_t wch) const
 {
     wchar_t wchFound = wch;
     if (_wchCurrentCharset == DispatchTypes::VTCharacterSets::USASCII ||
-        wch < '\x60' || wch > '\x7f') // filter out the region we know is unchanged
+        wch < '\x5f' || wch > '\x7f') // filter out the region we know is unchanged
     {
         ; // do nothing, these are the same as default.
     }

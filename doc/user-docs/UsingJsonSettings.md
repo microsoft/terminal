@@ -110,7 +110,7 @@ The schema name can then be referenced in one or more profiles.
 ```json
     "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
     "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "Fill",
+    "backgroundImageStretchMode":  "fill",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
@@ -125,4 +125,49 @@ More information about UWP URI schemes [here](https://docs.microsoft.com/en-us/w
 3. Instead of using a UWP URI you can use a:
     1. URL such as
 `http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg` 
+
     2. Local file location such as `C:\\Users\\Public\\Pictures\\openlogo.jpg` (make sure to use double-escapes instead of single)
+
+### Adding Copy and Paste Keybindings 
+
+As of [#1093](https://github.com/microsoft/terminal/pull/1093) (first available in Windows Terminal v0.3), the Windows Terminal now
+supports copy and paste keyboard shortcuts. However, if you installed and ran
+the terminal before that, you won't automatically get the new keybindings added
+to your settings. If you'd like to add shortcuts for copy and paste, you can do so by inserting the following objects into your `globals.keybindings` array:
+
+```json
+{ "command": "copy", "keys": ["ctrl+shift+c"] },
+{ "command": "paste", "keys": ["ctrl+shift+v"] }
+```
+
+This will add copy and paste on <kbd>ctrl+shift+c</kbd>
+and <kbd>ctrl+shift+v</kbd> respectively.
+
+You can set the keybindings to whatever you'd like. If you prefer
+<kbd>ctrl+c</kbd> to copy, then set the `keys` to `"ctrl+c"`.
+
+You can even set multiple keybindings for a single action if you'd like. For example:
+
+```json
+
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "ctrl+shift+v"
+                ]
+            },
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "shift+insert"
+                ]
+            }
+```
+
+will bind both <kbd>ctrl+shift+v</kbd> and
+<kbd>shift+Insert</kbd> to `paste`.
+
+Note: If you set your copy keybinding to `"ctrl+c"`, you won't be able to send an interrupt to the commandline application using <kbd>Ctrl+C</kbd>. This is a bug, and being tracked by [#2258](https://github.com/microsoft/terminal/issues/2285). 
+Additionally, if you set `paste` to `"ctrl+v"`, commandline applications won't be able to read a ctrl+v from the input. For these reasons, we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`

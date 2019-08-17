@@ -166,6 +166,21 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0; // eat the message
         }
     }
+
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
+    {
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
+        break;
+    }
     case WM_MENUCHAR:
     {
         // GH#891: return this LRESULT here to prevent the app from making a
@@ -177,6 +192,30 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 
     // TODO: handle messages here...
     return base_type::MessageHandler(message, wparam, lparam);
+}
+
+// Routine Description:
+// - Creates/retrieves a handle to the UI Automation provider COM interfaces
+// Arguments:
+// - <none>
+// Return Value:
+// - Pointer to UI Automation provider class/interfaces.
+IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
+{
+    if (nullptr == _pUiaProvider)
+    {
+        try
+        {
+            _pUiaProvider = WindowUiaProvider::Create(this);
+        }
+        catch (...)
+        {
+            LOG_HR(wil::ResultFromCaughtException());
+            _pUiaProvider = nullptr;
+        }
+    }
+
+    return _pUiaProvider;
 }
 
 // Method Description:
@@ -196,22 +235,43 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 // - Called when the window is minimized to the taskbar.
 void IslandWindow::OnMinimize()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
 // Method Description:
 // - Called when the window is restored from having been minimized.
 void IslandWindow::OnRestore()
 {
-    // TODO MSFT#21315817 Stop rendering island content when the app is minimized.
+    // TODO GH#1989 Stop rendering island content when the app is minimized.
 }
 
-void IslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
+void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _rootGrid.Children().Clear();
-    _rootGrid.Children().Append(app.GetRoot());
+    _rootGrid.Children().Append(content);
+}
 
+void IslandWindow::OnAppInitialized()
+{
     // Do a quick resize to force the island to paint
     const auto size = GetPhysicalSize();
     OnSize(size.cx, size.cy);
 }
+
+// Method Description:
+// - Called when the app wants to change its theme. We'll update the root UI
+//   element of the entire XAML tree, so that all UI elements get the theme
+//   applied.
+// Arguments:
+// - arg: the ElementTheme to use as the new theme for the UI
+// Return Value:
+// - <none>
+void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme)
+{
+    _rootGrid.RequestedTheme(requestedTheme);
+    // Invalidate the window rect, so that we'll repaint any elements we're
+    // drawing ourselves to match the new theme
+    ::InvalidateRect(_window.get(), nullptr, false);
+}
+
+DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

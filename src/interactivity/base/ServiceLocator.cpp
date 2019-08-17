@@ -9,6 +9,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 
 #pragma region Private Static Member Initialization

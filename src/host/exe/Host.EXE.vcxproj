@@ -62,6 +62,9 @@
   <ItemGroup>
     <ResourceCompile Include="Host.EXE.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="openconsole.exe.manifest" />
+  </ItemGroup>
   <PropertyGroup>
     <ProjectGuid>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -80,7 +83,6 @@
     </ClCompile>
     <Link>
       <AllowIsolation>true</AllowIsolation>
-      <AdditionalManifestDependencies>type='win32' name='Microsoft.Windows.Common-Controls' version='6.0.0.0' processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'</AdditionalManifestDependencies>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

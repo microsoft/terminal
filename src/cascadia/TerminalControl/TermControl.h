@@ -35,12 +35,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControl();
         TermControl(Settings::IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
-        Windows::UI::Xaml::UIElement GetRoot();
-        Windows::UI::Xaml::Controls::UserControl GetControl();
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
-        void CopySelectionToClipboard(bool trimTrailingWhitespace);
+
+        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
@@ -54,6 +53,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         void SwapChainChanged();
         ~TermControl();
+
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
+        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
@@ -71,7 +73,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TerminalConnection::ITerminalConnection _connection;
         bool _initializedTerminal;
 
-        Windows::UI::Xaml::Controls::UserControl _controlRoot;
         Windows::UI::Xaml::Controls::Grid _root;
         Windows::UI::Xaml::Controls::Image _bgImageLayer;
         Windows::UI::Xaml::Controls::SwapChainPanel _swapChainPanel;
@@ -91,6 +92,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         FontInfo _actualFont;
 
         std::optional<int> _lastScrollOffset;
+
+        // Auto scroll occurs when user, while selecting, drags cursor outside viewport. View is then scrolled to 'follow' the cursor.
+        double _autoScrollVelocity;
+        std::optional<Windows::UI::Input::PointerPoint> _autoScrollingPointerPoint;
+        Windows::UI::Xaml::DispatcherTimer _autoScrollTimer;
+        std::optional<std::chrono::high_resolution_clock::time_point> _lastAutoScrollUpdateTime;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
@@ -122,7 +129,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _ApplyConnectionSettings();
         void _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
@@ -136,6 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _LostFocusHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         void _BlinkCursor(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+        void _SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition);
         void _SendInputToConnection(const std::wstring& wstr);
         void _SwapChainSizeChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _SwapChainScaleChanged(Windows::UI::Xaml::Controls::SwapChainPanel const& sender, Windows::Foundation::IInspectable const& args);
@@ -143,20 +150,27 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _TerminalTitleChanged(const std::wstring_view& wstr);
         void _TerminalScrollPositionChanged(const int viewTop, const int viewHeight, const int bufferSize);
 
-        void _MouseScrollHandler(const double delta);
+        void _MouseScrollHandler(const double delta, Windows::UI::Input::PointerPoint const& pointerPoint);
         void _MouseZoomHandler(const double delta);
         void _MouseTransparencyHandler(const double delta);
 
         bool _CapturePointer(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
         bool _ReleasePointerCapture(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::PointerRoutedEventArgs const& e);
 
+        void _TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity);
+        void _TryStopAutoScroll(const uint32_t pointerId);
+        void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
+
         void _ScrollbarUpdater(Windows::UI::Xaml::Controls::Primitives::ScrollBar scrollbar, const int viewTop, const int viewHeight, const int bufferSize);
         static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
-        DWORD _GetPressedModifierKeys() const;
+        ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
+        void _HandleVoidKeyEvent();
+        bool _TrySendKeyEvent(WORD vkey, ::Microsoft::Terminal::Core::ControlKeyStates modifiers);
 
         const COORD _GetTerminalPosition(winrt::Windows::Foundation::Point cursorPosition);
         const unsigned int _NumberOfClicks(winrt::Windows::Foundation::Point clickPos, Timestamp clickTime);
+        double _GetAutoScrollSpeed(double cursorDistanceFromBorder) const;
     };
 }
 

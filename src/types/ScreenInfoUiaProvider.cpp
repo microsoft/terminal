@@ -3,19 +3,14 @@
 
 #include "precomp.h"
 
-#include "screenInfoUiaProvider.hpp"
-#include "../../host/screenInfo.hpp"
-#include "../inc/ServiceLocator.hpp"
+#include "ScreenInfoUiaProvider.h"
 
-#include "windowUiaProvider.hpp"
-#include "window.hpp"
-#include "windowdpiapi.hpp"
-
+#include "WindowUiaProviderBase.hpp"
 #include "UiaTextRange.hpp"
 
-using namespace Microsoft::Console::Interactivity::Win32;
-using namespace Microsoft::Console::Interactivity::Win32::ScreenInfoUiaProviderTracing;
-using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
+
 // A helper function to create a SafeArray Version of an int array of a specified length
 SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
 {
@@ -36,12 +31,28 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
     return psa;
 }
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ WindowUiaProvider* const pUiaParent) :
-    _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                                             _In_ WindowUiaProviderBase* const pUiaParent,
+                                             _In_ std::function<RECT(void)> GetBoundingRect) :
+    _pUiaParent(pUiaParent),
     _signalFiringMapping{},
-    _cRefs(1)
+    _cRefs(1),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
+    _getBoundingRect(GetBoundingRect)
 {
-    Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
+}
+
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+                                             _In_ WindowUiaProviderBase* const pUiaParent) :
+    _pUiaParent(pUiaParent),
+    _signalFiringMapping{},
+    _cRefs(1),
+    _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
+{
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
 ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
@@ -68,10 +79,11 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalFiringMapping[id] = false;
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     // tracing
-    ApiMsgSignal apiMsg;
+    /*ApiMsgSignal apiMsg;
     apiMsg.Signal = id;
-    Tracing::s_TraceUia(this, ApiCall::Signal, &apiMsg);
+    Tracing::s_TraceUia(this, ApiCall::Signal, &apiMsg);*/
     return hr;
 }
 
@@ -80,14 +92,16 @@ ScreenInfoUiaProvider::~ScreenInfoUiaProvider()
 IFACEMETHODIMP_(ULONG)
 ScreenInfoUiaProvider::AddRef()
 {
-    Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
     return InterlockedIncrement(&_cRefs);
 }
 
 IFACEMETHODIMP_(ULONG)
 ScreenInfoUiaProvider::Release()
 {
-    Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
     long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
@@ -99,7 +113,8 @@ ScreenInfoUiaProvider::Release()
 IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
                                                      _COM_Outptr_result_maybenull_ void** ppInterface)
 {
-    Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
     if (riid == __uuidof(IUnknown))
     {
         *ppInterface = static_cast<IRawElementProviderSimple*>(this);
@@ -135,7 +150,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::QueryInterface(_In_ REFIID riid,
 // Gets UI Automation provider options.
 IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
     *pOptions = ProviderOptions_ServerSideProvider;
     return S_OK;
 }
@@ -145,7 +161,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_ProviderOptions(_Out_ ProviderOptions*
 IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternId,
                                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
 
     *ppInterface = nullptr;
     HRESULT hr = S_OK;
@@ -166,7 +183,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPatternProvider(_In_ PATTERNID patternI
 IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyId,
                                                        _Out_ VARIANT* pVariant)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
 
     pVariant->vt = VT_EMPTY;
 
@@ -235,7 +253,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetPropertyValue(_In_ PROPERTYID propertyI
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
     *ppProvider = nullptr;
 
     return S_OK;
@@ -247,9 +266,13 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_HostRawElementProvider(_COM_Outptr_res
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
-    ApiMsgNavigate apiMsg;
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    /*ApiMsgNavigate apiMsg;
     apiMsg.Direction = direction;
-    Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);
+    Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);*/
     *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
@@ -272,7 +295,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
+
     // Root defers this to host, others must implement it...
     *ppRuntimeId = nullptr;
 
@@ -287,11 +312,19 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetRuntimeId(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
-    const IConsoleWindow* const pIConsoleWindow = _getIConsoleWindow();
-    RETURN_HR_IF_NULL((HRESULT)UIA_E_ELEMENTNOTAVAILABLE, pIConsoleWindow);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
 
-    RECT rc = pIConsoleWindow->GetWindowRect();
+    RECT rc;
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        rc = _getBoundingRect();
+    }
+    else
+    {
+        rc = _pUiaParent->GetWindowRect();
+    }
 
     pRect->left = rc.left;
     pRect->top = rc.top;
@@ -303,20 +336,27 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
+
     *ppRoots = nullptr;
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::SetFocus()
 {
-    Tracing::s_TraceUia(this, ApiCall::SetFocus, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::SetFocus, nullptr);
+
     return Signal(UIA_AutomationFocusChangedEventId);
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+
+    //Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {
         _pUiaParent->QueryInterface(IID_PPV_ARGS(ppProvider));
@@ -336,23 +376,25 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_mayben
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    ApiMsgGetSelection apiMsg;
-    gci.LockConsole();
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //ApiMsgGetSelection apiMsg;
+
+    _LockConsole();
     auto Unlock = wil::scope_exit([&] {
-        gci.UnlockConsole();
+        _UnlockConsole();
     });
 
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
-    if (!Selection::Instance().IsAreaSelected())
+    if (!_pData->IsAreaSelected())
     {
-        apiMsg.AreaSelected = false;
-        apiMsg.SelectionRowCount = 1;
+        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+        //apiMsg.AreaSelected = false;
+        //apiMsg.SelectionRowCount = 1;
+
         // return a degenerate range at the cursor position
-        SCREEN_INFORMATION& screenInfo = _getScreenInfo();
-        const Cursor& cursor = screenInfo.GetTextBuffer().GetCursor();
+        const Cursor& cursor = _getTextBuffer().GetCursor();
 
         // make a safe array
         *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
@@ -373,7 +415,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         UiaTextRange* range;
         try
         {
-            range = UiaTextRange::Create(pProvider,
+            range = UiaTextRange::Create(_pData,
+                                         pProvider,
                                          cursor);
         }
         catch (...)
@@ -406,7 +449,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(&pProvider)));
         try
         {
-            ranges = UiaTextRange::GetSelectionRanges(pProvider);
+            ranges = UiaTextRange::GetSelectionRanges(_pData, pProvider);
         }
         catch (...)
         {
@@ -415,8 +458,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         pProvider->Release();
         RETURN_IF_FAILED(hr);
 
-        apiMsg.AreaSelected = true;
-        apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
+        // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+        //apiMsg.AreaSelected = true;
+        //apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
 
         // make a safe array
         *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(ranges.size()));
@@ -444,22 +488,22 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
         }
     }
 
-    Tracing::s_TraceUia(this, ApiCall::GetSelection, &apiMsg);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetSelection, &apiMsg);
     return S_OK;
 }
 
 IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
 
-    gci.LockConsole();
+    _LockConsole();
     auto Unlock = wil::scope_exit([&] {
-        gci.UnlockConsole();
+        _UnlockConsole();
     });
 
-    const SCREEN_INFORMATION& screenInfo = _getScreenInfo();
-    const auto viewport = screenInfo.GetViewport();
+    const auto viewport = _getViewport();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
 
@@ -491,7 +535,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
         UiaTextRange* range;
         try
         {
-            range = UiaTextRange::Create(pProvider,
+            range = UiaTextRange::Create(_pData,
+                                         pProvider,
                                          start,
                                          end,
                                          false);
@@ -525,7 +570,8 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetVisibleRanges(_Outptr_result_maybenull_
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSimple* /*childElement*/,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
@@ -533,7 +579,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = UiaTextRange::Create(pProvider);
+        *ppRetVal = UiaTextRange::Create(_pData, pProvider);
     }
     catch (...)
     {
@@ -548,14 +594,17 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromChild(_In_ IRawElementProviderSim
 IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
                                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
+
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = UiaTextRange::Create(pProvider,
+        *ppRetVal = UiaTextRange::Create(_pData,
+                                         pProvider,
                                          point);
     }
     catch (...)
@@ -570,14 +619,16 @@ IFACEMETHODIMP ScreenInfoUiaProvider::RangeFromPoint(_In_ UiaPoint point,
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
+
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = UiaTextRange::Create(pProvider);
+        *ppRetVal = UiaTextRange::Create(_pData, pProvider);
     }
     catch (...)
     {
@@ -596,7 +647,9 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_DocumentRange(_COM_Outptr_result_maybe
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
 {
-    Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
+    //Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
+
     *pRetVal = SupportedTextSelection::SupportedTextSelection_Single;
     return S_OK;
 }
@@ -605,18 +658,47 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_SupportedTextSelection(_Out_ Supported
 
 const COORD ScreenInfoUiaProvider::_getScreenBufferCoords() const
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetScreenBufferSize();
+    return _getTextBuffer().GetSize().Dimensions();
 }
 
-SCREEN_INFORMATION& ScreenInfoUiaProvider::_getScreenInfo()
+const TextBuffer& ScreenInfoUiaProvider::_getTextBuffer() const
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    THROW_HR_IF(E_POINTER, !gci.HasActiveOutputBuffer());
-    return gci.GetActiveOutputBuffer();
+    return _pData->GetTextBuffer();
 }
 
-IConsoleWindow* const ScreenInfoUiaProvider::_getIConsoleWindow()
+const Viewport ScreenInfoUiaProvider::_getViewport() const
 {
-    return ServiceLocator::LocateConsoleWindow();
+    return _pData->GetViewport();
+}
+
+void ScreenInfoUiaProvider::_LockConsole() noexcept
+{
+    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
+    _pData->LockConsole();
+}
+
+void ScreenInfoUiaProvider::_UnlockConsole() noexcept
+{
+    // TODO GitHub #2141: Lock and Unlock in conhost should decouple Ctrl+C dispatch and use smarter handling
+    _pData->UnlockConsole();
+}
+
+HWND ScreenInfoUiaProvider::GetWindowHandle() const
+{
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        return nullptr;
+    }
+    return _pUiaParent->GetWindowHandle();
+}
+
+void ScreenInfoUiaProvider::ChangeViewport(const SMALL_RECT NewWindow)
+{
+    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
+    if (_pUiaParent == nullptr)
+    {
+        return;
+    }
+    _pUiaParent->ChangeViewport(NewWindow);
 }

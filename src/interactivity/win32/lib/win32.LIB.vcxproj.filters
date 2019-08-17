@@ -45,9 +45,6 @@
     <ClCompile Include="..\SystemConfigurationProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\UiaTextRange.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\Window.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -69,13 +66,10 @@
     <ClCompile Include="..\InputServices.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\screenInfoUiaProvider.cpp">
+    <ClCompile Include="..\windowtheme.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\windowUiaProvider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\windowtheme.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -113,9 +107,6 @@
     <ClInclude Include="..\SystemConfigurationProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\UiaTextRange.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\Window.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -134,14 +125,14 @@
     <ClInclude Include="..\InputServices.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\screenInfoUiaProvider.hpp">
+    <ClInclude Include="..\windowtheme.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\windowUiaProvider.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\windowtheme.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
 </Project>

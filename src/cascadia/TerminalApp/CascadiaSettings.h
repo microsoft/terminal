@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- CascadiaSettings.hpp
+- CascadiaSettings.h
 
 Abstract:
 - This class acts as the container for all app settings. It's composed of two
@@ -18,7 +18,16 @@ Author(s):
 #pragma once
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "GlobalAppSettings.h"
+#include "TerminalWarnings.h"
 #include "Profile.h"
+
+static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+}
 
 namespace TerminalApp
 {
@@ -45,15 +54,18 @@ public:
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
 
-    static std::wstring GetSettingsPath();
+    static std::wstring GetSettingsPath(const bool useRoamingPath = false);
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
     void CreateDefaults();
 
+    std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
+
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
+    std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
 
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();
@@ -63,9 +75,15 @@ private:
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadSettings();
 
+    void _ValidateSettings();
+    void _ValidateProfilesExist();
+    void _ValidateDefaultProfileExists();
+    void _ValidateNoDuplicateProfiles();
+
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
-    static std::wstring ExpandEnvironmentVariableString(std::wstring_view source);
     static Profile _CreateDefaultProfile(const std::wstring_view name);
+
+    friend class TerminalAppLocalTests::SettingsTests;
 };

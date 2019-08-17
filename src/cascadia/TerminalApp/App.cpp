@@ -7,6 +7,7 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -19,18 +20,98 @@ using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 
-// Note: Generate GUID using TlgGuid.exe tool
-TRACELOGGING_DEFINE_PROVIDER(
-    g_hTerminalAppProvider,
-    "Microsoft.Windows.Terminal.App",
-    // {24a1622f-7da7-5c77-3303-d850bd1ab2ed}
-    (0x24a1622f, 0x7da7, 0x5c77, 0x33, 0x03, 0xd8, 0x50, 0xbd, 0x1a, 0xb2, 0xed),
-    TraceLoggingOptionMicrosoftTelemetry());
-
 namespace winrt
 {
     namespace MUX = Microsoft::UI::Xaml;
     using IInspectable = Windows::Foundation::IInspectable;
+}
+
+// clang-format off
+// !!! IMPORTANT !!!
+// Make sure that these keys are in the same order as the
+// SettingsLoadWarnings/Errors enum is!
+static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
+   L"MissingDefaultProfileText",
+   L"DuplicateProfileText"
+};
+static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
+    L"NoProfilesText"
+};
+// clang-format on
+
+// Function Description:
+// - General-purpose helper for looking up a localized string for a
+//   warning/error. First will look for the given key in the provided map of
+//   keys->strings, where the values in the map are ResourceKeys. If it finds
+//   one, it will lookup the localized string from that ResourceKey.
+// - If it does not find a key, it'll return an empty string
+// Arguments:
+// - key: the value to use to look for a resource key in the given map
+// - map: A map of keys->Resource keys.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - the localized string for the given type, if it exists.
+template<std::size_t N>
+static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader loader)
+{
+    if (index < keys.size())
+    {
+        return loader.GetLocalizedString(keys.at(index));
+    }
+    return {};
+}
+
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadWarning. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadWarningsLabels.
+// Arguments:
+// - warning: the SettingsLoadWarnings value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given warning
+static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
+{
+    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
+}
+
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadError. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadErrorsLabels.
+// Arguments:
+// - error: the SettingsLoadErrors value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given error
+static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
+{
+    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
+}
+
+// Function Description:
+// - Creates a Run of text to display an error message. The text is yellow or
+//   red for dark/light theme, respectively.
+// Arguments:
+// - text: The text of the error message.
+// - resources: The application's resource loader.
+// Return Value:
+// - The fully styled text run.
+static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceDictionary& resources)
+{
+    Documents::Run textRun;
+    textRun.Text(text);
+
+    // Color the text red (light theme) or yellow (dark theme) based on the system theme
+    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
+    if (resources.HasKey(key))
+    {
+        winrt::IInspectable g = resources.Lookup(key);
+        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        textRun.Foreground(brush);
+    }
+
+    return textRun;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -40,7 +121,8 @@ namespace winrt::TerminalApp::implementation
         _tabs{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK },
-        _dialogLock{}
+        _dialogLock{},
+        _resourceLoader{ L"TerminalApp/Resources" }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -61,26 +143,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void App::Create(uint64_t hWnd)
+    void App::Create()
     {
         // Assert that we've already loaded our settings. We have to do
         // this as a MTA, before the app is Create()'d
         WINRT_ASSERT(_loadedInitialSettings);
-        TraceLoggingRegister(g_hTerminalAppProvider);
-        _Create(hWnd);
-    }
 
-    App::~App()
-    {
-        TraceLoggingUnregister(g_hTerminalAppProvider);
-    }
-
-    // Method Description:
-    // - Create all of the initial UI elements of the Terminal app.
-    //    * Initializes the first terminal control, using the default profile,
-    //      and adds it to our list of tabs.
-    void App::_Create(uint64_t parentHwnd)
-    {
         /* !!! TODO
            This is not the correct way to host a XAML page. This exists today because we valued
            getting a .xaml over tearing out all of the terminal logic and splitting it across App
@@ -92,15 +160,21 @@ namespace winrt::TerminalApp::implementation
         _root = terminalPage.as<winrt::Windows::UI::Xaml::Controls::Control>();
         _tabContent = terminalPage->TabContent();
         _tabRow = terminalPage->TabRow();
-        _tabView = terminalPage->TabView();
-        _newTabButton = terminalPage->NewTabButton();
+        _tabView = _tabRow.TabView();
+        _newTabButton = _tabRow.NewTabButton();
 
-        _minMaxCloseControl = terminalPage->MinMaxCloseControl();
-        _minMaxCloseControl.ParentWindowHandle(parentHwnd);
-
-        if (!_settings->GlobalSettings().GetShowTabsInTitlebar())
+        if (_settings->GlobalSettings().GetShowTabsInTitlebar())
         {
-            _minMaxCloseControl.Visibility(Visibility::Collapsed);
+            // Remove the TabView from the page. We'll hang on to it, we need to
+            // put it in the titlebar.
+            uint32_t index = 0;
+            if (terminalPage->Root().Children().IndexOf(_tabRow, index))
+            {
+                terminalPage->Root().Children().RemoveAt(index);
+            }
+
+            // Inform the host that our titlebar content has changed.
+            _setTitleBarContentHandlers(*this, _tabRow);
         }
 
         // Event Bindings (Early)
@@ -116,6 +190,16 @@ namespace winrt::TerminalApp::implementation
         _OpenNewTab(std::nullopt);
 
         _tabContent.SizeChanged({ this, &App::_OnContentSizeChanged });
+
+        _ApplyTheme(_settings->GlobalSettings().GetRequestedTheme());
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "AppCreated",
+            TraceLoggingDescription("Event emitted when the application is started"),
+            TraceLoggingBool(_settings->GlobalSettings().GetShowTabsInTitlebar(), "TabsInTitlebar"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 
     // Method Description:
@@ -151,6 +235,11 @@ namespace winrt::TerminalApp::implementation
         // xaml tree somehow.
         dialog.XamlRoot(_root.XamlRoot());
 
+        // IMPORTANT: Set the requested theme of the dialog, because the
+        // PopupRoot isn't directly in the Xaml tree of our root. So the dialog
+        // won't inherit our RequestedTheme automagically.
+        dialog.RequestedTheme(_settings->GlobalSettings().GetRequestedTheme());
+
         // Display the dialog.
         Controls::ContentDialogResult result = co_await dialog.ShowAsync(Controls::ContentDialogPlacement::Popup);
 
@@ -169,12 +258,86 @@ namespace winrt::TerminalApp::implementation
     void App::_ShowOkDialog(const winrt::hstring& titleKey,
                             const winrt::hstring& contentKey)
     {
-        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        auto title = resourceLoader.GetString(titleKey);
-        auto message = resourceLoader.GetString(contentKey);
-        auto buttonText = resourceLoader.GetString(L"Ok");
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto message = _resourceLoader.GetLocalizedString(contentKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText);
+    }
+
+    // Method Description:
+    // - Displays a dialog for errors found while loading or validating the
+    //   settings. Uses the resources under the provided  title and content keys
+    //   as the title and first content of the dialog, then also displays a
+    //   message for whatever exception was found while validating the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    // Arguments:
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    void App::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
+                                    const winrt::hstring& contentKey)
+    {
+        auto title = _resourceLoader.GetLocalizedString(titleKey);
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        winrt::Windows::UI::Xaml::Documents::Run errorRun;
+        const auto errorLabel = _resourceLoader.GetLocalizedString(contentKey);
+        errorRun.Text(errorLabel);
+        warningsTextBlock.Inlines().Append(errorRun);
+
+        if (FAILED(_settingsLoadedResult))
+        {
+            if (!_settingsLoadExceptionText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, Resources()));
+            }
+        }
+
+        // Add a note that we're using the default settings in this case.
+        winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
+        const auto usingDefaultsText = _resourceLoader.GetLocalizedString(L"UsingDefaultSettingsText");
+        usingDefaultsRun.Text(usingDefaultsText);
+        warningsTextBlock.Inlines().Append(usingDefaultsRun);
+
+        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while loading or validating the
+    //   settings. Displays messages for whatever warnings were found while
+    //   validating the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void App::_ShowLoadWarningsDialog()
+    {
+        auto title = _resourceLoader.GetLocalizedString(L"SettingsValidateErrorTitle");
+        auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        const auto& warnings = _settings->GetWarnings();
+        for (const auto& warning : warnings)
+        {
+            // Try looking up the warning message key for each warning.
+            const auto warningText = _GetWarningText(warning, _resourceLoader);
+            if (!warningText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
+            }
+        }
+
+        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText);
     }
 
     // Method Description:
@@ -183,19 +346,17 @@ namespace winrt::TerminalApp::implementation
     //   Notes link.
     void App::_ShowAboutDialog()
     {
-        auto resourceLoader = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView();
-        const auto title = resourceLoader.GetString(L"AboutTitleText");
-        const auto versionLabel = resourceLoader.GetString(L"VersionLabelText");
-        const auto gettingStartedLabel = resourceLoader.GetString(L"GettingStartedLabelText");
-        const auto documentationLabel = resourceLoader.GetString(L"DocumentationLabelText");
-        const auto releaseNotesLabel = resourceLoader.GetString(L"ReleaseNotesLabelText");
-        const auto gettingStartedUriValue = resourceLoader.GetString(L"GettingStartedUriValue");
-        const auto documentationUriValue = resourceLoader.GetString(L"DocumentationUriValue");
-        const auto releaseNotesUriValue = resourceLoader.GetString(L"ReleaseNotesUriValue");
+        const auto title = _resourceLoader.GetLocalizedString(L"AboutTitleText");
+        const auto versionLabel = _resourceLoader.GetLocalizedString(L"VersionLabelText");
+        const auto gettingStartedLabel = _resourceLoader.GetLocalizedString(L"GettingStartedLabelText");
+        const auto documentationLabel = _resourceLoader.GetLocalizedString(L"DocumentationLabelText");
+        const auto releaseNotesLabel = _resourceLoader.GetLocalizedString(L"ReleaseNotesLabelText");
+        const auto gettingStartedUriValue = _resourceLoader.GetLocalizedString(L"GettingStartedUriValue");
+        const auto documentationUriValue = _resourceLoader.GetLocalizedString(L"DocumentationUriValue");
+        const auto releaseNotesUriValue = _resourceLoader.GetLocalizedString(L"ReleaseNotesUriValue");
         const auto package = winrt::Windows::ApplicationModel::Package::Current();
         const auto packageName = package.DisplayName();
         const auto version = package.Id().Version();
-        Windows::UI::Xaml::Media::SolidColorBrush blueBrush{ Windows::UI::ColorHelper::FromArgb(255, 0, 115, 207) };
         winrt::Windows::UI::Xaml::Documents::Run about;
         winrt::Windows::UI::Xaml::Documents::Run gettingStarted;
         winrt::Windows::UI::Xaml::Documents::Run documentation;
@@ -236,11 +397,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring aboutText{ aboutTextStream.str() };
         about.Text(aboutText);
 
-        const auto buttonText = resourceLoader.GetString(L"Ok");
-
-        gettingStartedLink.Foreground(blueBrush);
-        documentationLink.Foreground(blueBrush);
-        releaseNotesLink.Foreground(blueBrush);
+        const auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
         Controls::TextBlock aboutTextBlock;
         aboutTextBlock.Inlines().Append(about);
@@ -267,7 +424,11 @@ namespace winrt::TerminalApp::implementation
         {
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
-            _ShowOkDialog(titleKey, textKey);
+            _ShowLoadErrorsDialog(titleKey, textKey);
+        }
+        else if (_settingsLoadedResult == S_FALSE)
+        {
+            _ShowLoadWarningsDialog();
         }
     }
 
@@ -320,7 +481,9 @@ namespace winrt::TerminalApp::implementation
         auto keyBindings = _settings->GetKeybindings();
 
         const GUID defaultProfileGuid = _settings->GlobalSettings().GetDefaultProfile();
-        for (int profileIndex = 0; profileIndex < _settings->GetProfiles().size(); profileIndex++)
+        // the number of profiles should not change in the loop for this to work
+        auto const profileCount = gsl::narrow_cast<int>(_settings->GetProfiles().size());
+        for (int profileIndex = 0; profileIndex < profileCount; profileIndex++)
         {
             const auto& profile = _settings->GetProfiles()[profileIndex];
             auto profileMenuItem = Controls::MenuFlyoutItem{};
@@ -329,7 +492,8 @@ namespace winrt::TerminalApp::implementation
             if (profileIndex < 9)
             {
                 // enum value for ShortcutAction::NewTabProfileX; 0==NewTabProfile0
-                auto profileKeyChord = keyBindings.GetKeyBinding(static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0)));
+                const auto action = static_cast<ShortcutAction>(profileIndex + static_cast<int>(ShortcutAction::NewTabProfile0));
+                auto profileKeyChord = keyBindings.GetKeyBinding(action);
 
                 // make sure we find one to display
                 if (profileKeyChord)
@@ -369,7 +533,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Create the settings button.
             auto settingsItem = Controls::MenuFlyoutItem{};
-            settingsItem.Text(L"Settings");
+            settingsItem.Text(_resourceLoader.GetLocalizedString(L"SettingsMenuItem"));
 
             Controls::SymbolIcon ico{};
             ico.Symbol(Controls::Symbol::Setting);
@@ -386,7 +550,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the feedback button.
             auto feedbackFlyout = Controls::MenuFlyoutItem{};
-            feedbackFlyout.Text(L"Feedback");
+            feedbackFlyout.Text(_resourceLoader.GetLocalizedString(L"FeedbackMenuItem"));
 
             Controls::FontIcon feedbackIco{};
             feedbackIco.Glyph(L"\xE939");
@@ -398,7 +562,7 @@ namespace winrt::TerminalApp::implementation
 
             // Create the about button.
             auto aboutFlyout = Controls::MenuFlyoutItem{};
-            aboutFlyout.Text(L"About");
+            aboutFlyout.Text(_resourceLoader.GetLocalizedString(L"AboutMenuItem"));
 
             Controls::SymbolIcon aboutIco{};
             aboutIco.Symbol(Controls::Symbol::Help);
@@ -409,6 +573,17 @@ namespace winrt::TerminalApp::implementation
         }
 
         _newTabButton.Flyout(newTabFlyout);
+    }
+
+    // Function Description:
+    // Called when the openNewTabDropdown keybinding is used.
+    // Adds the flyout show option to left-align the dropdown with the split button.
+    // Shows the dropdown flyout.
+    void App::_OpenNewTabDropdown()
+    {
+        Controls::Primitives::FlyoutShowOptions options{};
+        options.Placement(Controls::Primitives::FlyoutPlacementMode::BottomEdgeAlignedLeft);
+        _newTabButton.Flyout().ShowAt(_newTabButton, options);
     }
 
     // Function Description:
@@ -451,19 +626,9 @@ namespace winrt::TerminalApp::implementation
     void App::_FeedbackButtonOnClick(const IInspectable&,
                                      const RoutedEventArgs&)
     {
-        const auto feedbackUriValue = Windows::ApplicationModel::Resources::ResourceLoader::GetForCurrentView().GetString(L"FeedbackUriValue");
+        const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
 
         winrt::Windows::System::Launcher::LaunchUriAsync({ feedbackUriValue });
-    }
-
-    Windows::UI::Xaml::Controls::Border App::GetDragBar() noexcept
-    {
-        if (_minMaxCloseControl)
-        {
-            return _minMaxCloseControl.DragBar();
-        }
-
-        return nullptr;
     }
 
     // Method Description:
@@ -490,23 +655,27 @@ namespace winrt::TerminalApp::implementation
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _Scroll(-1); });
-        bindings.ScrollDown([this]() { _Scroll(1); });
-        bindings.NextTab([this]() { _SelectNextTab(true); });
-        bindings.PrevTab([this]() { _SelectNextTab(false); });
-        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        bindings.PasteText([this]() { _PasteText(); });
+
+        bindings.NewTab({ this, &App::_HandleNewTab });
+        bindings.OpenNewTabDropdown({ this, &App::_HandleOpenNewTabDropdown });
+        bindings.DuplicateTab({ this, &App::_HandleDuplicateTab });
+        bindings.CloseTab({ this, &App::_HandleCloseTab });
+        bindings.ClosePane({ this, &App::_HandleClosePane });
+        bindings.ScrollUp({ this, &App::_HandleScrollUp });
+        bindings.ScrollDown({ this, &App::_HandleScrollDown });
+        bindings.NextTab({ this, &App::_HandleNextTab });
+        bindings.PrevTab({ this, &App::_HandlePrevTab });
+        bindings.SplitVertical({ this, &App::_HandleSplitVertical });
+        bindings.SplitHorizontal({ this, &App::_HandleSplitHorizontal });
+        bindings.ScrollUpPage({ this, &App::_HandleScrollUpPage });
+        bindings.ScrollDownPage({ this, &App::_HandleScrollDownPage });
+        bindings.OpenSettings({ this, &App::_HandleOpenSettings });
+        bindings.PasteText({ this, &App::_HandlePasteText });
+        bindings.NewTabWithProfile({ this, &App::_HandleNewTabWithProfile });
+        bindings.SwitchToTab({ this, &App::_HandleSwitchToTab });
+        bindings.ResizePane({ this, &App::_HandleResizePane });
+        bindings.MoveFocus({ this, &App::_HandleMoveFocus });
+        bindings.CopyText({ this, &App::_HandleCopyText });
     }
 
     // Method Description:
@@ -525,12 +694,19 @@ namespace winrt::TerminalApp::implementation
         {
             auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
             _settings = std::move(newSettings);
-            hr = S_OK;
+            const auto& warnings = _settings->GetWarnings();
+            hr = warnings.size() == 0 ? S_OK : S_FALSE;
         }
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
+            _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
+        }
+        catch (const ::TerminalApp::SettingsException& ex)
+        {
+            hr = E_INVALIDARG;
+            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _resourceLoader);
         }
         catch (...)
         {
@@ -644,10 +820,16 @@ namespace winrt::TerminalApp::implementation
             _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
                 const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
                 const winrt::hstring textKey = L"ReloadJsonParseErrorText";
-                _ShowOkDialog(titleKey, textKey);
+                _ShowLoadErrorsDialog(titleKey, textKey);
             });
 
             return;
+        }
+        else if (_settingsLoadedResult == S_FALSE)
+        {
+            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                _ShowLoadWarningsDialog();
+            });
         }
 
         // Here, we successfully reloaded the settings, and created a new
@@ -700,16 +882,15 @@ namespace winrt::TerminalApp::implementation
         if (lastFocusedProfileOpt.has_value())
         {
             const auto lastFocusedProfile = lastFocusedProfileOpt.value();
-
-            auto tabViewItem = tab->GetTabViewItem();
-            tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this, lastFocusedProfile, tabViewItem]() {
-                // _GetIconFromProfile has to run on the main thread
-                const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
-                if (matchingProfile)
-                {
-                    tabViewItem.Icon(App::_GetIconFromProfile(*matchingProfile));
-                }
-            });
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            if (matchingProfile)
+            {
+                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+            }
+            else
+            {
+                tab->UpdateIcon({});
+            }
         }
     }
 
@@ -722,32 +903,25 @@ namespace winrt::TerminalApp::implementation
     void App::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+        tab->SetTabText(newTabTitle);
 
-        const auto tabTitle = matchingProfile->GetTabTitle();
-
-        // Checks if tab title has been set in the profile settings and
-        // updates accordingly.
-
-        const auto newActualTitle = tabTitle.empty() ? newTabTitle : tabTitle;
-
-        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
-            _titleChangeHandlers(newActualTitle);
+            _titleChangeHandlers(newTabTitle);
         }
     }
 
     // Method Description:
-    // - Update the current theme of the application. This will manually update
-    //   all of the elements in our UI to match the given theme.
+    // - Update the current theme of the application. This will trigger our
+    //   RequestedThemeChanged event, to have our host change the theme of the
+    //   root of the application.
     // Arguments:
     // - newTheme: The ElementTheme to apply to our elements.
     void App::_ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme)
     {
-        _root.RequestedTheme(newTheme);
+        // Propagate the event to the host layer, so it can update its own UI
+        _requestedThemeChangedHandlers(*this, newTheme);
     }
 
     UIElement App::GetRoot() noexcept
@@ -803,7 +977,7 @@ namespace winrt::TerminalApp::implementation
             const auto profiles = _settings->GetProfiles();
 
             // If we don't have that many profiles, then do nothing.
-            if (realIndex >= profiles.size())
+            if (realIndex >= gsl::narrow<decltype(realIndex)>(profiles.size()))
             {
                 return;
             }
@@ -827,6 +1001,8 @@ namespace winrt::TerminalApp::implementation
             "TabInformation",
             TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
             TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
@@ -888,7 +1064,7 @@ namespace winrt::TerminalApp::implementation
             _UpdateTitle(tab);
         });
 
-        term.GetControl().GotFocus([this, weakTabPtr](auto&&, auto&&) {
+        term.GotFocus([this, weakTabPtr](auto&&, auto&&) {
             auto tab = weakTabPtr.lock();
             if (!tab)
             {
@@ -915,8 +1091,8 @@ namespace winrt::TerminalApp::implementation
     {
         // Initialize the new tab
 
-        // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection connection = TerminalConnection::ConhostConnection(settings.Commandline(), settings.StartingDirectory(), 30, 80, winrt::guid());
+        // Create a connection based on the values in our settings object.
+        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
 
         TermControl term{ settings, connection };
 
@@ -934,7 +1110,7 @@ namespace winrt::TerminalApp::implementation
         // Set this profile's tab to the icon the user specified
         if (profile != nullptr && profile->HasIcon())
         {
-            tabViewItem.Icon(_GetIconFromProfile(*profile));
+            newTab->UpdateIcon(profile->GetExpandedIconPath());
         }
 
         tabViewItem.PointerPressed({ this, &App::_OnTabClick });
@@ -986,6 +1162,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Close the currently focused pane. If the pane is the last pane in the
+    //   tab, the tab will also be closed. This will happen when we handle the
+    //   tab's Closed event.
+    void App::_CloseFocusedPane()
+    {
+        int focusedTabIndex = _GetFocusedTabIndex();
+        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
+        focusedTab->ClosePane();
+    }
+
+    // Method Description:
     // - Move the viewport of the terminal of the currently focused tab up or
     //      down a number of lines. Negative values of `delta` will move the
     //      view up, and positive values will move the viewport down.
@@ -1029,14 +1216,30 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Attempt to move focus between panes, as to focus the child on
+    //   the other side of the separator. See Pane::NavigateFocus for details.
+    // - Moves the focus of the currently focused tab.
+    // Arguments:
+    // - direction: The direction to move the focus in.
+    // Return Value:
+    // - <none>
+    void App::_MoveFocus(const Direction& direction)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        _tabs[focusedTabIndex]->NavigateFocus(direction);
+    }
+
+    // Method Description:
     // - Copy text from the focused terminal to the Windows Clipboard
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void App::_CopyText(const bool trimTrailingWhitespace)
+    // Return Value:
+    // - true iff we we able to copy text (if a selection was active)
+    bool App::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetFocusedControl();
-        control.CopySelectionToClipboard(trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
 
     // Method Description:
@@ -1061,13 +1264,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets focus to the desired tab.
-    void App::_SelectTab(const int tabIndex)
+    // - Sets focus to the desired tab. Returns false if the provided tabIndex
+    //   is greater than the number of tabs we have.
+    // Return Value:
+    // true iff we were able to select that tab index, false otherwise
+    bool App::_SelectTab(const int tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.size())
+        if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
+            return true;
         }
+        return false;
     }
 
     // Method Description:
@@ -1206,12 +1414,12 @@ namespace winrt::TerminalApp::implementation
 
         if (tabIndexFromControl == focusedTabIndex)
         {
-            if (focusedTabIndex >= _tabs.size())
+            auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
+            if (focusedTabIndex >= tabCount)
             {
-                focusedTabIndex = _tabs.size() - 1;
+                focusedTabIndex = tabCount - 1;
             }
-
-            if (focusedTabIndex < 0)
+            else if (focusedTabIndex < 0)
             {
                 focusedTabIndex = 0;
             }
@@ -1231,25 +1439,7 @@ namespace winrt::TerminalApp::implementation
     // - an IconElement for the profile's icon, if it has one.
     Controls::IconElement App::_GetIconFromProfile(const Profile& profile)
     {
-        if (profile.HasIcon())
-        {
-            auto path = profile.GetIconPath();
-            winrt::hstring iconPath{ path };
-            winrt::Windows::Foundation::Uri iconUri{ iconPath };
-            Controls::BitmapIconSource iconSource;
-            // Make sure to set this to false, so we keep the RGB data of the
-            // image. Otherwise, the icon will be white for all the
-            // non-transparent pixels in the image.
-            iconSource.ShowAsMonochrome(false);
-            iconSource.UriSource(iconUri);
-            Controls::IconSourceElement elem;
-            elem.IconSource(iconSource);
-            return elem;
-        }
-        else
-        {
-            return { nullptr };
-        }
+        return profile.HasIcon() ? GetColoredIcon(profile.GetExpandedIconPath()) : Controls::IconElement{ nullptr };
     }
 
     winrt::Microsoft::Terminal::TerminalControl::TermControl App::_GetFocusedControl()
@@ -1302,8 +1492,7 @@ namespace winrt::TerminalApp::implementation
                                             _settings->GlobalSettings().GetDefaultProfile();
         const auto controlSettings = _settings->MakeSettings(realGuid);
 
-        // Create a Conhost connection based on the values in our settings object.
-        TerminalConnection::ITerminalConnection controlConnection = TerminalConnection::ConhostConnection(controlSettings.Commandline(), controlSettings.StartingDirectory(), 30, 80, winrt::guid());
+        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
         TermControl newControl{ controlSettings, controlConnection };
 
@@ -1367,12 +1556,41 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Handles the special case of providing a text override for the UI shortcut due to VK_OEM issue.
+    //      Looks at the flags from the KeyChord modifiers and provides a concatenated string value of all
+    //      in the same order that XAML would put them as well.
+    // Return Value:
+    // - a string representation of the key modifiers for the shortcut
+    //NOTE: This needs to be localized with https://github.com/microsoft/terminal/issues/794 if XAML framework issue not resolved before then
+    static std::wstring _FormatOverrideShortcutText(Settings::KeyModifiers modifiers)
+    {
+        std::wstring buffer{ L"" };
+
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Ctrl))
+        {
+            buffer += L"Ctrl+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Shift))
+        {
+            buffer += L"Shift+";
+        }
+        if (WI_IsFlagSet(modifiers, Settings::KeyModifiers::Alt))
+        {
+            buffer += L"Alt+";
+        }
+
+        return buffer;
+    }
+
+    // Method Description:
     // - Takes a MenuFlyoutItem and a corresponding KeyChord value and creates the accelerator for UI display.
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
-    void App::_SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+    void App::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem& menuItem,
+                                         const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
+#ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
         if (keyChord.Vkey() != VK_OEM_COMMA)
         {
@@ -1392,10 +1610,79 @@ namespace winrt::TerminalApp::implementation
             menuItem.KeyboardAccelerators().Append(menuShortcut);
         }
         else // we've got a comma, so need to just use the alternate method
+#endif
         {
             // extract the modifier and key to a nice format
-            auto overrideString = AppKeyBindings::FormatOverrideShortcutText(keyChord.Modifiers());
-            menuItem.KeyboardAcceleratorTextOverride(overrideString + L" ,");
+            auto overrideString = _FormatOverrideShortcutText(keyChord.Modifiers());
+            auto mappedCh = MapVirtualKeyW(keyChord.Vkey(), MAPVK_VK_TO_CHAR);
+            if (mappedCh != 0)
+            {
+                menuItem.KeyboardAcceleratorTextOverride(overrideString + gsl::narrow_cast<wchar_t>(mappedCh));
+            }
+        }
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile GUID we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid,
+                                                                               winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+    {
+        const auto* const profile = _settings->FindProfile(profileGuid);
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+
+        GUID connectionType{ 0 };
+        if (profile->HasConnectionType())
+        {
+            connectionType = profile->GetConnectionType();
+        }
+
+        if (profile->HasConnectionType() &&
+            profile->GetConnectionType() == AzureConnectionType &&
+            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        {
+            connection = TerminalConnection::AzureConnection(settings.InitialRows(),
+                                                             settings.InitialCols());
+        }
+        else
+        {
+            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
+        }
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "ConnectionCreated",
+            TraceLoggingDescription("Event emitted upon the creation of a connection"),
+            TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return connection;
+    }
+
+    // Method Description:
+    // - Used to tell the app that the titlebar has been clicked. The App won't
+    //   actually recieve any clicks in the titlebar area, so this is a helper
+    //   to clue the app in that a click has happened. The App will use this as
+    //   a indicator that it needs to dismiss any open flyouts.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::TitlebarClicked()
+    {
+        if (_newTabButton && _newTabButton.Flyout())
+        {
+            _newTabButton.Flyout().Hide();
         }
     }
 
@@ -1404,4 +1691,6 @@ namespace winrt::TerminalApp::implementation
     // These macros will define them both for you.
     DEFINE_EVENT(App, TitleChanged, _titleChangeHandlers, TerminalControl::TitleChangedEventArgs);
     DEFINE_EVENT(App, LastTabClosed, _lastTabClosedHandlers, winrt::TerminalApp::LastTabClosedEventArgs);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, SetTitleBarContent, _setTitleBarContentHandlers, TerminalApp::App, UIElement);
+    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(App, RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, ElementTheme);
 }

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <PropertyGroup>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -8,14 +7,25 @@
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
   </PropertyGroup>
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-C46D-4588-B1C0-40F31AE9100B}</ProjectGuid>
     <ProjectName>TerminalConnection</ProjectName>
     <RootNamespace>Microsoft.Terminal.TerminalConnection</RootNamespace>
   </PropertyGroup>
-
+  <PropertyGroup Condition="'$(Platform)' == 'x64'">
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x64-windows</VcpkgTriplet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)' == 'Win32'">
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">x86-windows</VcpkgTriplet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Platform)' == 'arm64'">
+    <VcpkgTriplet Condition="'$(VcpkgTriplet)' == ''">arm64-windows</VcpkgTriplet>
+  </PropertyGroup>
   <ItemGroup>
+    <ClInclude Include="AzureClientID.h" Condition="'$(Platform)'!='ARM64'" />
+    <ClInclude Include="AzureConnection.h" Condition="'$(Platform)'!='ARM64'" />
+    <ClInclude Include="AzureConnection-ARM64.h" Condition="'$(Platform)'=='ARM64'" />
+    <ClInclude Include="AzureConnectionStrings.h" Condition="'$(Platform)'!='ARM64'" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ConhostConnection.h">
       <DependentUpon>ConhostConnection.idl</DependentUpon>
@@ -25,6 +35,8 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="AzureConnection.cpp" Condition="'$(Platform)'!='ARM64'" />
+    <ClCompile Include="AzureConnection-ARM64.cpp" Condition="'$(Platform)'=='ARM64'" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -40,18 +52,16 @@
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConhostConnection.idl" />
     <Midl Include="EchoConnection.idl" />
+    <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-
   <ItemDefinitionGroup>
     <Link>
       <AdditionalDependencies>kernel32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-
   </ItemDefinitionGroup>
-
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
     <!--
@@ -62,7 +72,6 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-
   </ItemGroup>
   <PropertyGroup>
     <!--
@@ -72,7 +81,13 @@
      -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
-
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+  <Import Project="..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets" Condition="Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets')" />
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\vcpkg-cpprestsdk.2.10.0\build\native\vcpkg-cpprestsdk.targets'))" />
+  </Target>
 </Project>

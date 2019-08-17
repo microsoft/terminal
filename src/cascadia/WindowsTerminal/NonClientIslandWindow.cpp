@@ -42,17 +42,82 @@ NonClientIslandWindow::~NonClientIslandWindow()
 // - <unused>
 // Return Value:
 // - <none>
-void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/, winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
+void NonClientIslandWindow::OnDragBarSizeChanged(winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                 winrt::Windows::UI::Xaml::SizeChangedEventArgs /*eventArgs*/)
 {
     _UpdateDragRegion();
 }
 
-void NonClientIslandWindow::OnAppInitialized(winrt::TerminalApp::App app)
+void NonClientIslandWindow::OnAppInitialized()
 {
-    _dragBar = app.GetDragBar();
+    IslandWindow::OnAppInitialized();
+}
+
+void NonClientIslandWindow::Initialize()
+{
+    IslandWindow::Initialize();
+
+    // Set up our grid of content. We'll use _rootGrid as our root element.
+    // There will be two children of this grid - the TitlebarControl, and the
+    // "client content"
+    _rootGrid.Children().Clear();
+    Controls::RowDefinition titlebarRow{};
+    Controls::RowDefinition contentRow{};
+    titlebarRow.Height(GridLengthHelper::Auto());
+
+    _rootGrid.RowDefinitions().Append(titlebarRow);
+    _rootGrid.RowDefinitions().Append(contentRow);
+
+    // Create our titlebar control
+    _titlebar = winrt::TerminalApp::TitlebarControl{ reinterpret_cast<uint64_t>(GetHandle()) };
+    _dragBar = _titlebar.DragBar();
+
     _rootGrid.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
 
-    IslandWindow::OnAppInitialized(app);
+    _rootGrid.Children().Append(_titlebar);
+
+    Controls::Grid::SetRow(_titlebar, 0);
+}
+
+// Method Description:
+// - Set the content of the "client area" of our window to the given content.
+// Arguments:
+// - content: the new UI element to use as the client content
+// Return Value:
+// - <none>
+void NonClientIslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _clientContent = content;
+
+    _rootGrid.Children().Append(content);
+
+    // SetRow only works on FrameworkElement's, so cast it to a FWE before
+    // calling. We know that our content is a Grid, so we don't need to worry
+    // about this.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
+    {
+        Controls::Grid::SetRow(fwe, 1);
+    }
+}
+
+// Method Description:
+// - Set the content of the "titlebar area" of our window to the given content.
+// Arguments:
+// - content: the new UI element to use as the titlebar content
+// Return Value:
+// - <none>
+void NonClientIslandWindow::SetTitlebarContent(winrt::Windows::UI::Xaml::UIElement content)
+{
+    _titlebar.Content(content);
+
+    // When the size of the titlebar content changes, we want to make sure to
+    // update the size of the drag region as well.
+    const auto fwe = content.try_as<winrt::Windows::UI::Xaml::FrameworkElement>();
+    if (fwe)
+    {
+        fwe.SizeChanged({ this, &NonClientIslandWindow::OnDragBarSizeChanged });
+    }
 }
 
 RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
@@ -61,7 +126,12 @@ RECT NonClientIslandWindow::GetDragAreaRect() const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
-        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{ 0.0f, 0.0f, static_cast<float>(_dragBar.ActualWidth()), static_cast<float>(_dragBar.ActualHeight()) };
+        const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
+            0.0f,
+            0.0f,
+            static_cast<float>(_dragBar.ActualWidth()),
+            static_cast<float>(_dragBar.ActualHeight())
+        };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         RECT dragBarRect = {
             static_cast<LONG>(clientDragBarRect.X * scale),
@@ -118,8 +188,14 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
         _rootGrid.Arrange(finalRect);
     }
 
-    // I'm not sure that HWND_BOTTOM is any different than HWND_TOP for us.
-    winrt::check_bool(SetWindowPos(_interopWindowHandle, HWND_BOTTOM, xPos, yPos, windowsWidth, windowsHeight, SWP_SHOWWINDOW));
+    // I'm not sure that HWND_BOTTOM does anything differnet than HWND_TOP for us.
+    winrt::check_bool(SetWindowPos(_interopWindowHandle,
+                                   HWND_BOTTOM,
+                                   xPos,
+                                   yPos,
+                                   windowsWidth,
+                                   windowsHeight,
+                                   SWP_SHOWWINDOW));
 }
 
 // Method Description:
@@ -143,6 +219,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
         const auto width = windowRect.right - windowRect.left;
         const auto height = windowRect.bottom - windowRect.top;
 
+        const auto scale = GetCurrentDpiScale();
         const auto dpi = ::GetDpiForWindow(_window.get());
 
         const auto dragY = ::GetSystemMetricsForDpi(SM_CYDRAG, dpi);
@@ -186,14 +263,22 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // - Hit test the frame for resizing and moving.
 // Arguments:
 // - ptMouse: the mouse point being tested, in absolute (NOT WINDOW) coordinates.
+// - titlebarIsCaption: If true, we want to treat the titlebar area as
+//   HTCAPTION, otherwise we'll return HTNOWHERE for the titlebar.
 // Return Value:
 // - one of the values from
 //  https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
 //   corresponding to the area of the window that was hit
 // NOTE:
-// Largely taken from code on:
+// - Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
+// NOTE[2]: Concerning `titlebarIsCaption`
+// - We want HTNOWHERE as the return value for WM_NCHITTEST, so that we can get
+//   mouse presses in the titlebar area. If we return HTCAPTION there, we won't
+//   get any mouse WMs. However, when we're handling the mouse events, we need
+//   to know if the mouse was in that are or not, so we'll return HTCAPTION in
+//   that handler, to differentiate from the rest of the window.
+[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse, const bool titlebarIsCaption) const noexcept
 {
     // Get the window rectangle.
     RECT rcWindow = BaseWindow::GetWindowRect();
@@ -234,10 +319,11 @@ void NonClientIslandWindow::_UpdateDragRegion()
 
     // clang-format off
     // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
+    const auto topHt = fOnResizeBorder ? HTTOP : (titlebarIsCaption ? HTCAPTION : HTNOWHERE);
     LRESULT hitTests[3][3] = {
-        { HTTOPLEFT,    fOnResizeBorder ? HTTOP : HTCAPTION, HTTOPRIGHT },
-        { HTLEFT,       HTNOWHERE,                           HTRIGHT },
-        { HTBOTTOMLEFT, HTBOTTOM,                            HTBOTTOMRIGHT },
+        { HTTOPLEFT,    topHt,      HTTOPRIGHT },
+        { HTLEFT,       HTNOWHERE,  HTRIGHT },
+        { HTBOTTOMLEFT, HTBOTTOM,   HTBOTTOMRIGHT },
     };
     // clang-format on
 
@@ -318,11 +404,14 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     // First get the monitor pointer from either the active window or the default location (0,0,0,0)
     HMONITOR hMonitor = nullptr;
 
-    // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
-    // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
+    // NOTE: We must use the nearest monitor because sometimes the system moves
+    // the window around into strange spots while performing snap and Win+D
+    // operations. Those operations won't work correctly if we use
+    // MONITOR_DEFAULTTOPRIMARY.
     if (!EqualRect(&rc, &rcZero))
     {
-        // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.
+        // For invalid window handles or when we were passed a non-zero
+        // suggestion rectangle, get the monitor from the rect.
         hMonitor = MonitorFromRect(&rc, MONITOR_DEFAULTTONEAREST);
     }
     else
@@ -331,8 +420,9 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         hMonitor = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     }
 
-    // If for whatever reason there is no monitor, we're going to give back whatever we got since we can't figure anything out.
-    // We won't adjust the DPI either. That's OK. DPI doesn't make much sense with no display.
+    // If for whatever reason there is no monitor, we're going to give back
+    // whatever we got since we can't figure anything out. We won't adjust the
+    // DPI either. That's OK. DPI doesn't make much sense with no display.
     if (nullptr == hMonitor)
     {
         return rc;
@@ -344,9 +434,11 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
 
     GetMonitorInfoW(hMonitor, &MonitorInfo);
 
-    // We have to make a correction to the work area. If we actually consume the entire work area (by maximizing the window)
-    // The window manager will render the borders off-screen.
-    // We need to pad the work rectangle with the border dimensions to represent the actual max outer edges of the window rect.
+    // We have to make a correction to the work area. If we actually consume the
+    // entire work area (by maximizing the window). The window manager will
+    // render the borders off-screen. We need to pad the work rectangle with the
+    // border dimensions to represent the actual max outer edges of the window
+    // rect.
     WINDOWINFO wi = { 0 };
     wi.cbSize = sizeof(WINDOWINFO);
     GetWindowInfo(_window.get(), &wi);
@@ -428,8 +520,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
         if (lRet == 0)
         {
-            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
-
+            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) }, false);
             if (lRet != HTNOWHERE)
             {
                 return lRet;
@@ -464,8 +555,8 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto yPos = _isMaximized ? _maximizedMargins.cyTopHeight : dragY;
 
             // Create brush for borders, titlebar color.
-            const auto backgroundBrush = _dragBar.Background();
-            const auto backgroundSolidBrush = backgroundBrush.as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
+            const auto backgroundBrush = _titlebar.Background();
+            const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
             const auto backgroundColor = backgroundSolidBrush.Color();
             const auto color = RGB(backgroundColor.R, backgroundColor.G, backgroundColor.B);
             _backgroundBrush = wil::unique_hbrush(CreateSolidBrush(color));
@@ -475,12 +566,16 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
             const auto cx = windowRect.right - windowRect.left;
             const auto cy = windowRect.bottom - windowRect.top;
 
-            // Fill in the _entire_ titlebar area.
-            RECT dragBarRect = {};
-            dragBarRect.left = xPos;
-            dragBarRect.right = xPos + cx;
-            dragBarRect.top = yPos;
-            dragBarRect.bottom = yPos + cy;
+            // Fill in ONLY the titlebar area. If we paint the _entirety_ of the
+            // window rect here, the single pixel of the bottom border (set in
+            // _UpdateFrameMargins) will be drawn, and blend with whatever the
+            // border color is.
+            RECT dragBarRect = GetDragAreaRect();
+            const auto dragHeight = RECT_HEIGHT(&dragBarRect);
+            dragBarRect.left = 0;
+            dragBarRect.right = cx;
+            dragBarRect.top = 0;
+            dragBarRect.bottom = dragHeight + yPos;
             ::FillRect(hdc.get(), &dragBarRect, _backgroundBrush.get());
 
             // Draw the top window border
@@ -507,9 +602,14 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
     {
         POINT point1 = {};
         ::GetCursorPos(&point1);
-        const auto region = HitTestNCA(point1);
+
+        const auto region = HitTestNCA(point1, true);
         if (region == HTCAPTION)
         {
+            // If we clicked in the titlebar, raise an event so the app host can
+            // dispatch an appropriate event.
+            _DragRegionClickedHandlers();
+
             const auto longParam = MAKELPARAM(point1.x, point1.y);
             ::SetActiveWindow(_window.get());
             ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
@@ -535,6 +635,12 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         {
             break;
         }
+    }
+    case WM_DPICHANGED:
+    {
+        auto lprcNewScale = reinterpret_cast<RECT*>(lParam);
+        OnSize(RECT_WIDTH(lprcNewScale), RECT_HEIGHT(lprcNewScale));
+        break;
     }
     }
 

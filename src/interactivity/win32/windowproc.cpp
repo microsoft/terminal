@@ -25,9 +25,10 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
-#include "../interactivity/win32/windowtheme.hpp"
-#include "../interactivity/win32/windowUiaProvider.hpp"
-#include "../interactivity/win32/CustomWindowMessages.h"
+#include "..\interactivity\win32\windowtheme.hpp"
+#include "..\interactivity\win32\CustomWindowMessages.h"
+
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>
