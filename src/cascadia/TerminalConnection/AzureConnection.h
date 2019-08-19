@@ -15,6 +15,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct AzureConnection : AzureConnectionT<AzureConnection>
     {
+        static bool IsAzureConnectionAvailable();
         AzureConnection(const uint32_t rows, const uint32_t cols);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);

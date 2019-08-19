@@ -9,6 +9,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "winrt/Microsoft.Terminal.TerminalConnection.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -239,26 +240,13 @@ void CascadiaSettings::_CreateDefaultProfiles()
     powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
     powershellProfile.SetUseAcrylic(false);
 
-    // The Azure connection has a boost dependency, and boost does not support ARM64
-    // so we don't create a default profile for the Azure cloud shell if we're in ARM64
-#ifndef _M_ARM64
-    auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
-    azureCloudShellProfile.SetCommandline(L"Azure");
-    azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-    azureCloudShellProfile.SetColorScheme({ L"Solarized Dark" });
-    azureCloudShellProfile.SetAcrylicOpacity(0.85);
-    azureCloudShellProfile.SetUseAcrylic(true);
-    azureCloudShellProfile.SetCloseOnExit(false);
-    azureCloudShellProfile.SetConnectionType(AzureConnectionType);
-#endif
-
     // If the user has installed PowerShell Core, we add PowerShell Core as a default.
     // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
     std::filesystem::path psCoreCmdline{};
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        pwshProfile.SetCommandline(psCoreCmdline);
+        pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
         pwshProfile.SetColorScheme({ L"Campbell" });
 
@@ -274,9 +262,20 @@ void CascadiaSettings::_CreateDefaultProfiles()
 
     _profiles.emplace_back(powershellProfile);
     _profiles.emplace_back(cmdProfile);
-#ifndef _M_ARM64
-    _profiles.emplace_back(azureCloudShellProfile);
-#endif
+
+    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+    {
+        auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
+        azureCloudShellProfile.SetCommandline(L"Azure");
+        azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        azureCloudShellProfile.SetColorScheme({ L"Vintage" });
+        azureCloudShellProfile.SetAcrylicOpacity(0.6);
+        azureCloudShellProfile.SetUseAcrylic(true);
+        azureCloudShellProfile.SetCloseOnExit(false);
+        azureCloudShellProfile.SetConnectionType(AzureConnectionType);
+        _profiles.emplace_back(azureCloudShellProfile);
+    }
+
     try
     {
         _AppendWslProfiles(_profiles);
@@ -297,6 +296,11 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::NewTab,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('T') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::OpenNewTabDropdown,
+                              KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
+                                        static_cast<int>(' ') });
+
     keyBindings.SetKeyBinding(ShortcutAction::DuplicateTab,
                               KeyChord{ KeyModifiers::Ctrl | KeyModifiers::Shift,
                                         static_cast<int>('D') });
@@ -643,4 +647,133 @@ Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
     newProfile.SetIconPath(iconPath);
 
     return newProfile;
+}
+
+// Method Description:
+// - Gets our list of warnings we found during loading. These are things that we
+//   knew were bad when we called `_ValidateSettings` last.
+// Return Value:
+// - a reference to our list of warnings.
+std::vector<TerminalApp::SettingsLoadWarnings>& CascadiaSettings::GetWarnings()
+{
+    return _warnings;
+}
+
+// Method Description:
+// - Attempts to validate this settings structure. If there are critical errors
+//   found, they'll be thrown as a SettingsLoadError. Non-critical errors, such
+//   as not finding the default profile, will only result in an error. We'll add
+//   all these warnings to our list of warnings, and the application can chose
+//   to display these to the user.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void CascadiaSettings::_ValidateSettings()
+{
+    _warnings.clear();
+
+    // Make sure to check that profiles exists at all first and foremost:
+    _ValidateProfilesExist();
+
+    // Then do some validation on the profiles. The order of these does not
+    // terribly matter.
+    _ValidateNoDuplicateProfiles();
+    _ValidateDefaultProfileExists();
+}
+
+// Method Description:
+// - Checks if the settings contain profiles at all. As we'll need to have some
+//   profiles at all, we'll throw an error if there aren't any profiles.
+void CascadiaSettings::_ValidateProfilesExist()
+{
+    const bool hasProfiles = !_profiles.empty();
+    if (!hasProfiles)
+    {
+        // Throw an exception. This is an invalid state, and we want the app to
+        // be able to gracefully use the default settings.
+
+        // We can't add the warning to the list of warnings here, because this
+        // object is not going to be returned at any point.
+
+        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::NoProfiles);
+    }
+}
+
+// Method Description:
+// - Checks if the "globals.defaultProfile" is set to one of the profiles we
+//   actually have. If the value is unset, or the value is set to something that
+//   doesn't exist in the list of profiles, we'll arbitrarily pick the first
+//   profile to use temporarily as the default.
+// - Appends a SettingsLoadWarnings::MissingDefaultProfile to our list of
+//   warnings if we failed to find the default.
+void CascadiaSettings::_ValidateDefaultProfileExists()
+{
+    const auto defaultProfileGuid = GlobalSettings().GetDefaultProfile();
+    const bool nullDefaultProfile = defaultProfileGuid == GUID{};
+    bool defaultProfileNotInProfiles = true;
+    for (const auto& profile : _profiles)
+    {
+        if (profile.GetGuid() == defaultProfileGuid)
+        {
+            defaultProfileNotInProfiles = false;
+            break;
+        }
+    }
+
+    if (nullDefaultProfile || defaultProfileNotInProfiles)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile);
+        // Use the first profile as the new default
+
+        // _temporarily_ set the default profile to the first profile. Because
+        // we're adding a warning, this settings change won't be re-serialized.
+        GlobalSettings().SetDefaultProfile(_profiles[0].GetGuid());
+    }
+}
+
+// Method Description:
+// - Checks to make sure there aren't any duplicate profiles in the list of
+//   profiles. If so, we'll remove the subsequent entries (temporarily), as they
+//   won't be accessible anyways.
+// - Appends a SettingsLoadWarnings::DuplicateProfile to our list of warnings if
+//   we find any such duplicate.
+void CascadiaSettings::_ValidateNoDuplicateProfiles()
+{
+    bool foundDupe = false;
+
+    std::vector<size_t> indiciesToDelete{};
+
+    // Helper to establish an ordering on guids
+    struct GuidEquality
+    {
+        bool operator()(const GUID& lhs, const GUID& rhs) const
+        {
+            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
+        }
+    };
+    std::set<GUID, GuidEquality> uniqueGuids{};
+
+    // Try collecting all the unique guids. If we ever encounter a guid that's
+    // already in the set, then we need to delete that profile.
+    for (int i = 0; i < _profiles.size(); i++)
+    {
+        if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
+        {
+            foundDupe = true;
+            indiciesToDelete.push_back(i);
+        }
+    }
+
+    // Remove all the duplicates we've marked
+    // Walk backwards, so we don't accidentally shift any of the elements
+    for (auto iter = indiciesToDelete.rbegin(); iter != indiciesToDelete.rend(); iter++)
+    {
+        _profiles.erase(_profiles.begin() + *iter);
+    }
+
+    if (foundDupe)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::DuplicateProfile);
+    }
 }

@@ -150,7 +150,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     TerminalSettings terminalSettings{};
 
     // Fill in the Terminal Setting's CoreSettings from the profile
-    for (int i = 0; i < _colorTable.size(); i++)
+    auto const colorTableCount = gsl::narrow_cast<int>(_colorTable.size());
+    for (int i = 0; i < colorTableCount; i++)
     {
         terminalSettings.SetColorTableEntry(i, _colorTable[i]);
     }
@@ -176,6 +177,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         const auto evaluatedDirectory = Profile::EvaluateStartingDirectory(_startingDirectory.value());
         terminalSettings.StartingDirectory(winrt::to_hstring(evaluatedDirectory.c_str()));
     }
+
+    // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
+    // use the profile name
+    terminalSettings.StartingTitle(_tabTitle ? _tabTitle.value() : _name);
 
     if (_schemeName)
     {
@@ -489,12 +494,12 @@ Profile Profile::FromJson(const Json::Value& json)
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
 {
-    _fontFace = fontFace;
+    _fontFace = std::move(fontFace);
 }
 
 void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
 {
-    _schemeName = schemeName;
+    _schemeName = std::move(schemeName);
 }
 
 void Profile::SetAcrylicOpacity(double opacity) noexcept
@@ -504,17 +509,17 @@ void Profile::SetAcrylicOpacity(double opacity) noexcept
 
 void Profile::SetCommandline(std::wstring cmdline) noexcept
 {
-    _commandline = cmdline;
+    _commandline = std::move(cmdline);
 }
 
 void Profile::SetStartingDirectory(std::wstring startingDirectory) noexcept
 {
-    _startingDirectory = startingDirectory;
+    _startingDirectory = std::move(startingDirectory);
 }
 
 void Profile::SetName(std::wstring name) noexcept
 {
-    _name = name;
+    _name = std::move(name);
 }
 
 void Profile::SetUseAcrylic(bool useAcrylic) noexcept
@@ -553,27 +558,33 @@ bool Profile::HasIcon() const noexcept
 // - tabTitle: the tab title
 void Profile::SetTabTitle(std::wstring tabTitle) noexcept
 {
-    _tabTitle = tabTitle;
+    _tabTitle = std::move(tabTitle);
 }
 
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
 // - path: the path
-void Profile::SetIconPath(std::wstring_view path) noexcept
+void Profile::SetIconPath(std::wstring_view path)
 {
+    static_assert(!noexcept(_icon.emplace(path)));
     _icon.emplace(path);
 }
 
 // Method Description:
-// - Returns this profile's icon path, if one is set. Otherwise returns the empty string.
+// - Returns this profile's icon path, if one is set. Otherwise returns the
+//   empty string. This method will expand any environment variables in the
+//   path, if there are any.
 // Return Value:
 // - this profile's icon path, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetIconPath() const noexcept
+winrt::hstring Profile::GetExpandedIconPath() const
 {
-    return HasIcon() ?
-               std::wstring_view{ _icon.value().c_str(), _icon.value().size() } :
-               std::wstring_view{ L"", 0 };
+    if (!HasIcon())
+    {
+        return { L"" };
+    }
+    winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_icon.value().data()) };
+    return envExpandedPath;
 }
 
 // Method Description:
@@ -585,26 +596,6 @@ std::wstring_view Profile::GetIconPath() const noexcept
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
-}
-
-// Method Description:
-// - Returns true if profile's custom tab title is set, if one is set. Otherwise returns false.
-// Return Value:
-// - true if this profile's custom tab title is set. Otherwise returns false.
-bool Profile::HasTabTitle() const noexcept
-{
-    return _tabTitle.has_value();
-}
-
-// Method Description:
-// - Returns the custom tab title, if one is set. Otherwise returns the empty string.
-// Return Value:
-// - this profile's custom tab title, if one is set. Otherwise returns the empty string.
-std::wstring_view Profile::GetTabTitle() const noexcept
-{
-    return HasTabTitle() ?
-               std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
-               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::HasConnectionType() const noexcept

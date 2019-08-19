@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
                                          const hstring& startingDirectory,
+                                         const hstring& startingTitle,
                                          const uint32_t initialRows,
                                          const uint32_t initialCols,
                                          const guid& initialGuid) :
@@ -25,6 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialCols{ initialCols },
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
+        _startingTitle{ startingTitle },
         _guid{ initialGuid }
     {
         if (_guid == guid{})
@@ -79,35 +81,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
-        THROW_IF_FAILED(
-            CreateConPty(cmdline,
-                         startingDirectory,
-                         static_cast<short>(_initialCols),
-                         static_cast<short>(_initialRows),
-                         &_inPipe,
-                         &_outPipe,
-                         &_signalPipe,
-                         &_piConhost,
-                         CREATE_SUSPENDED,
-                         extraEnvVars));
-
-        _hJob.reset(CreateJobObjectW(nullptr, nullptr));
-        THROW_LAST_ERROR_IF_NULL(_hJob);
-
-        // We want the conhost and all associated descendant processes
-        // to be terminated when the tab is closed. GUI applications
-        // spawned from the shell tend to end up in their own jobs.
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION jobExtendedInformation{};
-        jobExtendedInformation.BasicLimitInformation.LimitFlags =
-            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
-        THROW_IF_WIN32_BOOL_FALSE(SetInformationJobObject(_hJob.get(),
-                                                          JobObjectExtendedLimitInformation,
-                                                          &jobExtendedInformation,
-                                                          sizeof(jobExtendedInformation)));
-
-        THROW_IF_WIN32_BOOL_FALSE(AssignProcessToJobObject(_hJob.get(), _piConhost.hProcess));
-
         // Create our own output handling thread
         // Each connection needs to make sure to drain the output from its backing host.
         _hOutputThread.reset(CreateThread(nullptr,
@@ -119,8 +92,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
-        // Wind up the conhost! We only do this after we've got everything in place.
-        THROW_LAST_ERROR_IF(-1 == ResumeThread(_piConhost.hThread));
+        STARTUPINFO si = { 0 };
+        si.cb = sizeof(STARTUPINFOW);
+
+        // If we have a startingTitle, create a mutable character buffer to add
+        // it to the STARTUPINFO.
+        std::unique_ptr<wchar_t[]> mutableTitle{ nullptr };
+        if (!_startingTitle.empty())
+        {
+            mutableTitle = std::make_unique<wchar_t[]>(_startingTitle.size() + 1);
+            THROW_IF_NULL_ALLOC(mutableTitle);
+            THROW_IF_FAILED(StringCchCopy(mutableTitle.get(), _startingTitle.size() + 1, _startingTitle.c_str()));
+            si.lpTitle = mutableTitle.get();
+        }
+
+        THROW_IF_FAILED(
+            CreateConPty(cmdline,
+                         startingDirectory,
+                         static_cast<short>(_initialCols),
+                         static_cast<short>(_initialRows),
+                         &_inPipe,
+                         &_outPipe,
+                         &_signalPipe,
+                         &_piConhost,
+                         0,
+                         si,
+                         extraEnvVars));
 
         _connected = true;
     }
