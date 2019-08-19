@@ -113,13 +113,13 @@ namespace winrt::TerminalApp::implementation
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _SelectNextTab(const bool bMoveRight);
-        void _SelectTab(const int tabIndex);
+        bool _SelectTab(const int tabIndex);
 
         void _SetFocusedTabIndex(int tabIndex);
         int _GetFocusedTabIndex() const;
 
         void _Scroll(int delta);
-        void _CopyText(const bool trimTrailingWhitespace);
+        bool _CopyText(const bool trimTrailingWhitespace);
         void _PasteText();
         void _SplitVertical(const std::optional<GUID>& profileGuid);
         void _SplitHorizontal(const std::optional<GUID>& profileGuid);
@@ -150,6 +150,30 @@ namespace winrt::TerminalApp::implementation
         void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
 
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
+
+#pragma region ActionHandlers
+        // These are all defined in AppActionHandlers.cpp
+        void _HandleNewTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenNewTabDropdown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleDuplicateTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCloseTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleClosePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleScrollUp(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleScrollDown(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleNextTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandlePrevTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSplitVertical(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSplitHorizontal(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleScrollUpPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleScrollDownPage(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleOpenSettings(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandlePasteText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleNewTabWithProfile(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleSwitchToTab(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+#pragma endregion
     };
 }
 

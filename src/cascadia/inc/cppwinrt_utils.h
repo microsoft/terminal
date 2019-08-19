@@ -57,6 +57,42 @@ private:                                                                        
     winrt::event_token className::name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return eventHandler.add(handler); } \
     void className::name(winrt::event_token const& token) noexcept { eventHandler.remove(token); }
 
+// This is a helper macro for both declaring the signature of an event, and
+// defining the body. Winrt events need a method for adding a callback to the
+// event and removing the callback. This macro will both declare the method
+// signatures and define them both for you, because they don't really vary from
+// event to event.
+// Use this in a classes header if you have a Windows.Foundation.TypedEventHandler
+#define TYPED_EVENT(name, sender, args)                                                                                                     \
+public:                                                                                                                                     \
+    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& handler) { return _##name##Handlers.add(handler); } \
+    void name(winrt::event_token const& token) noexcept { _##name##Handlers.remove(token); }                                                \
+                                                                                                                                            \
+private:                                                                                                                                    \
+    winrt::event<Windows::Foundation::TypedEventHandler<sender, args>> _##name##Handlers;
+
+// Use this macro to quick implement both the getter and setter for a property.
+// This should only be used for simple types where there's no logic in the
+// getter/setter beyond just accessing/updating the value.
+#define GETSET_PROPERTY(type, name, ...)              \
+public:                                               \
+    type name() const { return _##name; }             \
+    void name(const type& value) { _##name = value; } \
+                                                      \
+private:                                              \
+    type _##name{ __VA_ARGS__ };
+
+// Use this macro for quickly defining the factory_implementation part of a
+// class. CppWinrt requires these for the compiler, but more often than not,
+// they require no customization. See
+// https://docs.microsoft.com/en-us/uwp/cpp-ref-for-winrt/implements#marker-types
+// and https://docs.microsoft.com/en-us/uwp/cpp-ref-for-winrt/static-lifetime
+// for examples of when you might _not_ want to use this.
+#define BASIC_FACTORY(typeName)                                       \
+    struct typeName : typeName##T<typeName, implementation::typeName> \
+    {                                                                 \
+    };
+
 // This is a helper method for deserializing a SAFEARRAY of
 // COM objects and converting it to a vector that
 // owns the extracted COM objects

@@ -655,26 +655,27 @@ namespace winrt::TerminalApp::implementation
         // Hook up the KeyBinding object's events to our handlers.
         // They should all be hooked up here, regardless of whether or not
         //      there's an actual keychord for them.
-        bindings.NewTab([this]() { _OpenNewTab(std::nullopt); });
-        bindings.OpenNewTabDropdown([this]() { _OpenNewTabDropdown(); });
-        bindings.DuplicateTab([this]() { _DuplicateTabViewItem(); });
-        bindings.CloseTab([this]() { _CloseFocusedTab(); });
-        bindings.ClosePane([this]() { _CloseFocusedPane(); });
-        bindings.NewTabWithProfile([this](const auto index) { _OpenNewTab({ index }); });
-        bindings.ScrollUp([this]() { _Scroll(-1); });
-        bindings.ScrollDown([this]() { _Scroll(1); });
-        bindings.NextTab([this]() { _SelectNextTab(true); });
-        bindings.PrevTab([this]() { _SelectNextTab(false); });
-        bindings.SplitVertical([this]() { _SplitVertical(std::nullopt); });
-        bindings.SplitHorizontal([this]() { _SplitHorizontal(std::nullopt); });
-        bindings.ScrollUpPage([this]() { _ScrollPage(-1); });
-        bindings.ScrollDownPage([this]() { _ScrollPage(1); });
-        bindings.SwitchToTab([this](const auto index) { _SelectTab({ index }); });
-        bindings.OpenSettings([this]() { _OpenSettings(); });
-        bindings.ResizePane([this](const auto direction) { _ResizePane(direction); });
-        bindings.MoveFocus([this](const auto direction) { _MoveFocus(direction); });
-        bindings.CopyText([this](const auto trimWhitespace) { _CopyText(trimWhitespace); });
-        bindings.PasteText([this]() { _PasteText(); });
+
+        bindings.NewTab({ this, &App::_HandleNewTab });
+        bindings.OpenNewTabDropdown({ this, &App::_HandleOpenNewTabDropdown });
+        bindings.DuplicateTab({ this, &App::_HandleDuplicateTab });
+        bindings.CloseTab({ this, &App::_HandleCloseTab });
+        bindings.ClosePane({ this, &App::_HandleClosePane });
+        bindings.ScrollUp({ this, &App::_HandleScrollUp });
+        bindings.ScrollDown({ this, &App::_HandleScrollDown });
+        bindings.NextTab({ this, &App::_HandleNextTab });
+        bindings.PrevTab({ this, &App::_HandlePrevTab });
+        bindings.SplitVertical({ this, &App::_HandleSplitVertical });
+        bindings.SplitHorizontal({ this, &App::_HandleSplitHorizontal });
+        bindings.ScrollUpPage({ this, &App::_HandleScrollUpPage });
+        bindings.ScrollDownPage({ this, &App::_HandleScrollDownPage });
+        bindings.OpenSettings({ this, &App::_HandleOpenSettings });
+        bindings.PasteText({ this, &App::_HandlePasteText });
+        bindings.NewTabWithProfile({ this, &App::_HandleNewTabWithProfile });
+        bindings.SwitchToTab({ this, &App::_HandleSwitchToTab });
+        bindings.ResizePane({ this, &App::_HandleResizePane });
+        bindings.MoveFocus({ this, &App::_HandleMoveFocus });
+        bindings.CopyText({ this, &App::_HandleCopyText });
     }
 
     // Method Description:
@@ -1233,10 +1234,12 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void App::_CopyText(const bool trimTrailingWhitespace)
+    // Return Value:
+    // - true iff we we able to copy text (if a selection was active)
+    bool App::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetFocusedControl();
-        control.CopySelectionToClipboard(trimTrailingWhitespace);
+        return control.CopySelectionToClipboard(trimTrailingWhitespace);
     }
 
     // Method Description:
@@ -1261,13 +1264,18 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Sets focus to the desired tab.
-    void App::_SelectTab(const int tabIndex)
+    // - Sets focus to the desired tab. Returns false if the provided tabIndex
+    //   is greater than the number of tabs we have.
+    // Return Value:
+    // true iff we were able to select that tab index, false otherwise
+    bool App::_SelectTab(const int tabIndex)
     {
         if (tabIndex >= 0 && tabIndex < gsl::narrow_cast<decltype(tabIndex)>(_tabs.size()))
         {
             _SetFocusedTabIndex(tabIndex);
+            return true;
         }
+        return false;
     }
 
     // Method Description:
