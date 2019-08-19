@@ -109,7 +109,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& se
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, winrt::TerminalApp::LastTabClosedEventArgs)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args)
 {
     _window->Close();
 }

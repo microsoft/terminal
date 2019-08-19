@@ -15,7 +15,7 @@ public:
     virtual ~AppHost();
 
     void AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle);
-    void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, winrt::TerminalApp::LastTabClosedEventArgs);
+    void LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args);
     void Initialize();
 
 private:

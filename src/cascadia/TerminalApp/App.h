@@ -38,8 +38,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
 
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT(TitleChanged, _titleChangeHandlers, winrt::hstring);
-        //DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(SetTitleBarContent, _setTitleBarContentHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, TerminalApp::App, winrt::Windows::UI::Xaml::ElementTheme);
@@ -52,7 +51,6 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The two roots currently are _root and _tabRow
         // (which is a root when the tabs are in the titlebar.)
-        //Windows::UI::Xaml::Controls::Control _root{ nullptr };
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;

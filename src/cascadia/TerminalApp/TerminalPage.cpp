@@ -509,7 +509,7 @@ namespace winrt::TerminalApp::implementation
         if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
             tab->IsFocused())
         {
-            _titleChangeHandlers(newTabTitle);
+            _titleChangeHandlers(*this, newTabTitle);
         }
     }
 
