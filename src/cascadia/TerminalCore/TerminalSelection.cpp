@@ -261,24 +261,16 @@ void Terminal::ClearSelection()
 //    and get text to appear on separate lines.
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
 {
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    auto data = _buffer->GetTextForClipboard(!_boxSelection,
-                                             trimTrailingWhitespace,
-                                             _GetSelectionRects(),
-                                             GetForegroundColor,
-                                             GetBackgroundColor);
-
-    std::wstring result;
-    for (const auto& text : data.text)
-    {
-        result += text;
-    }
-
-    return result;
+    return _buffer->GetTextForClipboard(!_boxSelection,
+                                        trimTrailingWhitespace,
+                                        _GetSelectionRects(),
+                                        GetForegroundColor,
+                                        GetBackgroundColor);
 }
 
 // Method Description:
