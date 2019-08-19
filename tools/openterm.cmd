@@ -7,7 +7,9 @@ rem    Passes any args along.
 setlocal
 set _last_build_bin=%OPENCON%\bin\%ARCH%\%_LAST_BUILD_CONF%
 set _last_build=%OPENCON%\%ARCH%\%_LAST_BUILD_CONF%
-set _package_output=%OPENCON%\src\cascadia\CascadiaPackage\bin\%ARCH%\%_LAST_BUILD_CONF%
+set _package_root="%OPENCON%\src\cascadia\CascadiaPackage"
+set _package_obj=%_package_root%\obj\%ARCH%\%_LAST_BUILD_CONF%
+set _package_output=%_package_root%\bin\%ARCH%\%_LAST_BUILD_CONF%
 
 if not exist %_last_build%\WindowsTerminal.exe (
     echo Could not locate the WindowsTerminal.exe in %_last_build%. Double check that it has been built and try again.
@@ -20,23 +22,33 @@ rem Generate a unique name, so that we can debug multiple revisions of the binar
 
 (xcopy /Y %_last_build_bin%\OpenConsole.exe %TEMP%\%copy_dir%\conhost.exe*) > nul
 (xcopy /Y %_last_build_bin%\console.dll %TEMP%\%copy_dir%\console.dll*) > nul
-rem (xcopy /Y %_last_build_bin%\VtPipeTerm.exe %TEMP%\%copy_dir%\VtPipeTerm.exe*) > nul
-rem (xcopy /Y %_last_build_bin%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe*) > nul
 
-rem (xcopy /Y %_last_build%\TerminalSettings.dll %TEMP%\%copy_dir%\TerminalSettings.dll*) > nul
-rem (xcopy /Y %_last_build%\TerminalConnection.dll %TEMP%\%copy_dir%\TerminalConnection.dll*) > nul
-rem (xcopy /Y %_last_build%\TerminalControl.dll %TEMP%\%copy_dir%\TerminalControl.dll*) > nul
-rem (xcopy /Y %_last_build%\TerminalApp.dll %TEMP%\%copy_dir%\TerminalApp.dll*) > nul
-rem (xcopy /Y %_last_build%\Microsoft.UI.Xaml.dll %TEMP%\%copy_dir%\Microsoft.UI.Xaml.dll*) > nul
-rem (xcopy /Y %_last_build%\Microsoft.Toolkit.Win32.UI.XamlHost.dll %TEMP%\%copy_dir%\Microsoft.Toolkit.Win32.UI.XamlHost.dll*) > nul
 (xcopy /Y %_last_build%\*.dll %TEMP%\%copy_dir%\*.dll*) > nul
-rem (xcopy /Y %_last_build%\*.xbf %TEMP%\%copy_dir%\*.xbf*) > nul
 (xcopy /Y %_last_build%\WindowsTerminal.exe %TEMP%\%copy_dir%\WindowsTerminal.exe*) > nul
+(xcopy /Y %_last_build%\*.xbf %TEMP%\%copy_dir%\*.xbf*) > nul
+
+rem If the resources.pri file is older than WindowsTerminal.exe binary, than we
+rem definitely need to rebuild it. This step will only work once the
+rem CascadiaPackage has been built once! Instead of trying to totally reverse
+rem engineer the wapproj MakePri machinery, we're just going to assume that 99%
+rem of the work was already done for us:
+
+rem @echo on
+rem set _need_to_build_resources=1
+rem if (%_need_to_build_resources%)==(1) (
+rem     "C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64\MakePri.exe" ^
+rem     New -ProjectRoot %_package_root%\ ^
+rem     -ConfigXml %_package_obj%\priconfig.xml ^
+rem     -OutputFile %_package_output%\resources.pri ^
+rem     -IndexName WindowsTerminalDev ^
+rem     -Verbose -Overwrite
+rem )
 
 rem Copy the resources form the package project to the same directory too. We
 rem need this to be able to launch. TODO: Find out how to generate this if we're
 rem _only_ building the WindowsTerminal project.
 (xcopy /Y %_package_output%\resources.pri %TEMP%\%copy_dir%\resources.pri*) > nul
 
-start %TEMP%\%copy_dir%\WindowsTerminal.exe %*
+rem start %TEMP%\%copy_dir%\WindowsTerminal.exe %*
+start %TEMP%\%copy_dir%\
 echo Launching %TEMP%\%copy_dir%\WindowsTerminal.exe...
