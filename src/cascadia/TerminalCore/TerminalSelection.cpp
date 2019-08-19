@@ -67,7 +67,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         if (_multiClickSelectionMode == SelectionExpansionMode::Word)
         {
             const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
-            if (IsSingleCellSelection() && _isWordDelimiter(cellChar))
+            if (_isSingleCellSelection() && _isWordDelimiter(cellChar))
             {
                 // only highlight the cell if you double click a delimiter
             }
@@ -146,18 +146,9 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 // - Checks if selection is on a single cell
 // Return Value:
 // - bool representing if selection is only a single cell. Used for copyOnSelect
-const bool Terminal::IsSingleCellSelection() const noexcept
+const bool Terminal::_isSingleCellSelection() const noexcept
 {
     return (_selectionAnchor == _endSelectionPosition);
-}
-
-// Method Description:
-// - Checks if selection on a single cell is allowed for rendering purposes
-// Return Value:
-// - bool representing if selection is only a single cell. Used for copyOnSelect
-const bool Terminal::IsSingleCellCopyAllowed() const noexcept
-{
-    return _allowSingleCharSelection;
 }
 
 // Method Description:
@@ -168,7 +159,7 @@ const bool Terminal::IsSelectionActive() const noexcept
 {
     // A single cell selection is not considered an active selection,
     // if it's not allowed
-    if (!_allowSingleCharSelection && IsSingleCellSelection())
+    if (!_allowSingleCharSelection && _isSingleCellSelection())
     {
         return false;
     }
@@ -266,7 +257,7 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // and update on new buffer output (used in _GetSelectionRects())
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
-    if (_copyOnSelect && !IsSingleCellSelection())
+    if (_copyOnSelect && !_isSingleCellSelection())
     {
         _allowSingleCharSelection = true;
     }

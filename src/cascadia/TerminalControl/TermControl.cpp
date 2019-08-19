@@ -1407,10 +1407,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
         // no selection --> nothing to copy
-        // prevent single cell selection (if not allowed)
-        if (_terminal == nullptr ||
-            !_terminal->IsSelectionActive() ||
-            (!_terminal->IsSingleCellCopyAllowed() && _terminal->IsSingleCellSelection()))
+        if (_terminal == nullptr || !_terminal->IsSelectionActive())
         {
             return false;
         }
