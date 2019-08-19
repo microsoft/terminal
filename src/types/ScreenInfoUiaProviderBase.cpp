@@ -144,6 +144,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOpti
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patternId,
                                                              _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
+    RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
+    *ppInterface = nullptr;
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetPatternProvider, nullptr);
 
@@ -238,6 +241,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
+    RETURN_HR_IF(E_INVALIDARG, ppProvider == nullptr);
     *ppProvider = nullptr;
 
     return S_OK;
@@ -252,6 +256,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     //Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
 
     // Root defers this to host, others must implement it...
+    RETURN_HR_IF(E_INVALIDARG, ppRuntimeId == nullptr);
     *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
@@ -268,6 +273,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_resul
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
 
+    RETURN_HR_IF(E_INVALIDARG, ppRoots == nullptr);
     *ppRoots = nullptr;
     return S_OK;
 }
@@ -294,6 +300,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         _UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
@@ -412,6 +419,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         _UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     const auto viewport = _getViewport();
     const COORD screenBufferCoords = _getScreenBufferCoords();
     const int totalLines = screenBufferCoords.Y;
@@ -481,6 +491,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
 
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
@@ -505,6 +518,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
 
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
 
@@ -528,6 +544,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
+
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));

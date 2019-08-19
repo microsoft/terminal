@@ -40,7 +40,7 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                 ranges.pop_front();
                 temp->Release();
             }
-            throw E_INVALIDARG;
+            THROW_HR(E_INVALIDARG);
         }
         else
         {
@@ -173,6 +173,8 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
     try
     {
         *ppRetVal = new UiaTextRange(*this);
@@ -211,7 +213,7 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
-
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
     try
     {

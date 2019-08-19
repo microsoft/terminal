@@ -21,14 +21,13 @@ ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IUiaData* pData,
 IFACEMETHODIMP ScreenInfoUiaProvider::Navigate(_In_ NavigateDirection direction,
                                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
-    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+    RETURN_HR_IF(E_INVALIDARG, ppProvider == nullptr);
+    *ppProvider = nullptr;
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     /*ApiMsgNavigate apiMsg;
     apiMsg.Direction = direction;
     Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);*/
-    *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
     {
@@ -65,9 +64,10 @@ IFACEMETHODIMP ScreenInfoUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect
 
 IFACEMETHODIMP ScreenInfoUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
-    // TODO GitHub 2120: _pUiaParent should not be allowed to be null
-    RETURN_HR_IF(E_NOTIMPL, _pUiaParent == nullptr);
+    RETURN_HR_IF(E_INVALIDARG, ppProvider == nullptr);
+    *ppProvider = nullptr;
 
+    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetFragmentRoot, nullptr);
     try
     {

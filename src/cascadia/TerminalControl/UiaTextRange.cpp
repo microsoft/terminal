@@ -35,7 +35,7 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                 UiaTextRangeBase* temp = ranges[0];
                 ranges.pop_front();
             }
-            throw E_INVALIDARG;
+            THROW_HR(E_INVALIDARG);
         }
         else
         {
@@ -139,6 +139,8 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
 
 IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
 {
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
     try
     {
         *ppRetVal = new UiaTextRange(*this);
@@ -179,17 +181,17 @@ IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
     return E_NOTIMPL;
 }
 
-void UiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
+void UiaTextRange::_ChangeViewport(const SMALL_RECT /*NewWindow*/)
 {
     // TODO GitHub #2361: Update viewport when calling UiaTextRangeBase::ScrollIntoView()
 }
 
-void UiaTextRange::_TranslatePointToScreen(LPPOINT clientPoint) const
+void UiaTextRange::_TranslatePointToScreen(LPPOINT /*clientPoint*/) const
 {
     // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
 }
 
-void UiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) const
+void UiaTextRange::_TranslatePointFromScreen(LPPOINT /*screenPoint*/) const
 {
     // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
 }
