@@ -502,7 +502,7 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -522,6 +522,13 @@ void CloseConsoleProcessState()
     //      not running under lock (eg PtySignalInputThread::_GetData), then the
     //      ctrl event will never actually get dispatched.
     // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
+
+    // If someone has the global lock and is stuck, we need to cancel their synchronous IO if we attempt to take the lock and can't.
+    while (!gci.TryLockConsole())
+    {
+        const auto owningThreadHandle = gci.GetOwningThread();
+        CancelSynchronousIo(owningThreadHandle);
+    }
+
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 }

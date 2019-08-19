@@ -113,6 +113,7 @@ public:
     bool TryLockConsole();
     void UnlockConsole();
     bool IsConsoleLocked() const;
+    HANDLE GetOwningThread() const;
     ULONG GetCSRecursionCount();
 
     Microsoft::Console::VirtualTerminal::VtIo* GetVtIo();
