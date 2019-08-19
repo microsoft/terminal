@@ -24,8 +24,8 @@ namespace Microsoft::Console::Types
     {
     public:
         virtual ~IUiaData() = 0;
-        // TODO GitHub #1992: Move some of these functions to IAccessibilityData (or IUiaData)
-        virtual bool IsAreaSelected() const = 0;
+
+        virtual const bool IsSelectionActive() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;
 

@@ -56,7 +56,7 @@ public:
 #pragma endregion
 
 #pragma region IUiaData
-    bool IsAreaSelected() const override;
+    const bool IsSelectionActive() const override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
 

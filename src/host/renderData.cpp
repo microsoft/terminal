@@ -343,7 +343,7 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const n
 // - <none>
 // Return Value:
 // - True if the selection variables contain valid selection data. False otherwise.
-bool RenderData::IsAreaSelected() const
+const bool RenderData::IsSelectionActive() const
 {
     return Selection::Instance().IsAreaSelected();
 }

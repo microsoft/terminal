@@ -387,7 +387,7 @@ IFACEMETHODIMP ScreenInfoUiaProvider::GetSelection(_Outptr_result_maybenull_ SAF
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
-    if (!_pData->IsAreaSelected())
+    if (!_pData->IsSelectionActive())
     {
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //apiMsg.AreaSelected = false;

@@ -116,7 +116,7 @@ public:
 
 #pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    bool IsAreaSelected() const override;
+    const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
 
@@ -146,7 +146,6 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    const bool IsSelectionActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
