@@ -38,7 +38,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
-        void CopySelectionToClipboard(bool trimTrailingWhitespace);
+
+        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;

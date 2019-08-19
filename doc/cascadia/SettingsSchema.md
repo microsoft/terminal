@@ -88,6 +88,7 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - copyTextWithoutNewlines
 - paste
 - newTab
+- openNewTabDropdown
 - duplicateTab
 - newTabProfile0
 - newTabProfile1

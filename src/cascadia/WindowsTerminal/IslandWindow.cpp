@@ -166,6 +166,21 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
             return 0; // eat the message
         }
     }
+
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
+    {
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
+        break;
+    }
     case WM_MENUCHAR:
     {
         // GH#891: return this LRESULT here to prevent the app from making a
@@ -258,3 +273,5 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
     // drawing ourselves to match the new theme
     ::InvalidateRect(_window.get(), nullptr, false);
 }
+
+DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

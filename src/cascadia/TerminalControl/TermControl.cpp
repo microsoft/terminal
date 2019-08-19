@@ -1404,14 +1404,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
         // no selection --> nothing to copy
         // prevent single cell selection (if not allowed)
-        if (!_terminal->IsSelectionActive() ||
+        if (_terminal == nullptr ||
+            !_terminal->IsSelectionActive() ||
             (!_terminal->IsSingleCellCopyAllowed() && _terminal->IsSingleCellSelection()))
         {
-            return;
+            return false;
         }
 
         // extract text from buffer
@@ -1424,6 +1425,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // send data up for clipboard
         _clipboardCopyHandlers(copiedData);
+        return true;
     }
 
     // Method Description:

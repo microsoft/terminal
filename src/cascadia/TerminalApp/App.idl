@@ -30,5 +30,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<App, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
 
         String GetTitle();
+
+        void TitlebarClicked();
     }
 }
