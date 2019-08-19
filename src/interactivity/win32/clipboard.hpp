@@ -45,7 +45,6 @@ namespace Microsoft::Console::Interactivity::Win32
                                                         const std::vector<SMALL_RECT>& selectionRects);
 
         void CopyHTMLToClipboard(const TextBuffer::TextAndColor& rows);
-        std::string GenHTML(const TextBuffer::TextAndColor& rows);
         void CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, _In_ bool const fAlsoCopyHtml);
 
         bool FilterCharacterOnPaste(_Inout_ WCHAR* const pwch);
