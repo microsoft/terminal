@@ -23,7 +23,7 @@ Author(s):
 
 #include "precomp.h"
 #include "../buffer/out/textBuffer.hpp"
-#include "../renderer/inc/IRenderData.hpp"
+#include "IUiaData.h"
 
 namespace Microsoft::Console::Types
 {
@@ -36,12 +36,12 @@ namespace Microsoft::Console::Types
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+        ScreenInfoUiaProvider(_In_ IUiaData* pData,
                               _In_ WindowUiaProviderBase* const pUiaParent,
                               _In_ std::function<RECT()> GetBoundingRect);
 
         // TODO GitHub 2120: pUiaParent should not be allowed to be null
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+        ScreenInfoUiaProvider(_In_ IUiaData* pData,
                               _In_ WindowUiaProviderBase* const pUiaParent);
         virtual ~ScreenInfoUiaProvider();
 
@@ -93,7 +93,7 @@ namespace Microsoft::Console::Types
         WindowUiaProviderBase* const _pUiaParent;
 
         // weak reference to IRenderData
-        Microsoft::Console::Render::IRenderData* _pData;
+        IUiaData* _pData;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
