@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Tab.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -140,6 +141,21 @@ void Tab::_Focus()
 void Tab::UpdateFocus()
 {
     _rootPane->UpdateFocus();
+}
+
+void Tab::UpdateIcon(const winrt::hstring iconPath)
+{
+    // Don't reload our icon if it hasn't changed.
+    if (iconPath == _lastIconPath)
+    {
+        return;
+    }
+
+    _lastIconPath = iconPath;
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        _tabViewItem.Icon(GetColoredIcon(_lastIconPath));
+    });
 }
 
 // Method Description:

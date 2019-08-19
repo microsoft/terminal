@@ -1391,26 +1391,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
-        // extract text from buffer
-        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
-
-        // convert text: vector<string> --> string
-        std::wstring textData;
-        for (const auto& text : bufferData.text)
+        if (_terminal != nullptr && _terminal->IsAreaSelected())
         {
-            textData += text;
+            // extract text from buffer
+            const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+
+            // convert text: vector<string> --> string
+            std::wstring textData;
+            for (const auto& text : bufferData.text)
+            {
+                textData += text;
+            }
+
+            // convert text to HTML format
+            const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName(), "Windows Terminal");
+
+            _terminal->ClearSelection();
+
+            // send data up for clipboard
+            auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), textData.size()), winrt::to_hstring(htmlData));
+            _clipboardCopyHandlers(*this, *copyArgs);
+            return true;
         }
-
-        // convert text to HTML format
-        const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName(), "Windows Terminal");
-
-        _terminal->ClearSelection();
-
-        // send data up for clipboard
-        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), textData.size()), winrt::to_hstring(htmlData));
-        _clipboardCopyHandlers(*this, *copyArgs);
+        return false;
     }
 
     // Method Description:

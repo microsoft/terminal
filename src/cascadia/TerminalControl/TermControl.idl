@@ -18,8 +18,7 @@ namespace Microsoft.Terminal.TerminalControl
         void HandleClipboardData(String data);
     }
 
-    [default_interface]
-    runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl
     {
         TermControl();
         TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
@@ -34,7 +33,8 @@ namespace Microsoft.Terminal.TerminalControl
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
         String Title { get; };
-        void CopySelectionToClipboard(Boolean trimTrailingWhitespace);
+
+        Boolean CopySelectionToClipboard(Boolean trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         Boolean ShouldCloseOnExit { get; };

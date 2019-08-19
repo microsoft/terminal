@@ -7,6 +7,7 @@
 #include "WindowUiaProvider.hpp"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 class IslandWindow :
     public BaseWindow<IslandWindow>,
@@ -65,6 +66,8 @@ public:
     };
 
 #pragma endregion
+
+    DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 
 protected:
     void ForceResize()

@@ -22,7 +22,7 @@ namespace Microsoft.Terminal.Settings
         Boolean UseAcrylic;
         Boolean CloseOnExit;
         Double TintOpacity;
-        ScrollbarState ScrollState; 
+        ScrollbarState ScrollState;
 
         String FontFace;
         Int32 FontSize;
@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Settings
 
         String Commandline;
         String StartingDirectory;
+        String StartingTitle;
         String EnvironmentVariables;
 
         String BackgroundImage;
