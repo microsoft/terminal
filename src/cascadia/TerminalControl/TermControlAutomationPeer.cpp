@@ -29,7 +29,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(winrt::Microsoft::Terminal::TerminalControl::implementation::TermControl const& owner) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(owner), // pass owner to FrameworkElementAutomationPeer
-        _uiaProvider{ owner.GetRenderData(), nullptr, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this) } {};
+        _uiaProvider{ owner.GetUiaData(), nullptr, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this) } {};
 
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
     {

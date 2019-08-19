@@ -24,6 +24,7 @@
     <ClCompile Include="..\WindowUiaProviderBase.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IConsoleWindow.hpp" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
@@ -32,6 +33,7 @@
     <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenInfoUiaProvider.h" />

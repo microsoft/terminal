@@ -117,11 +117,6 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
     return result;
 }
 
-bool Terminal::IsAreaSelected() const
-{
-    return _selectionActive;
-}
-
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     SetSelectionAnchor(coordStart);
@@ -137,8 +132,8 @@ HRESULT Terminal::SearchForText(_In_ BSTR /*text*/,
                                 _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/,
                                 unsigned int /*_start*/,
                                 unsigned int /*_end*/,
-                                std::function<unsigned int(IRenderData*, const COORD)> /*_coordToEndpoint*/,
-                                std::function<COORD(IRenderData*, const unsigned int)> /*_endpointToCoord*/,
+                                std::function<unsigned int(IUiaData*, const COORD)> /*_coordToEndpoint*/,
+                                std::function<COORD(IUiaData*, const unsigned int)> /*_endpointToCoord*/,
                                 std::function<IFACEMETHODIMP(ITextRangeProvider**)> /*Clone*/)
 {
     return E_NOTIMPL;
