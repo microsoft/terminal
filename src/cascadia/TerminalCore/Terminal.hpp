@@ -11,6 +11,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
@@ -30,7 +31,8 @@ namespace Microsoft::Terminal::Core
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
-    public Microsoft::Console::Render::IRenderData
+    public Microsoft::Console::Render::IRenderData,
+    public Microsoft::Console::Types::IUiaData
 {
 public:
     Terminal();
@@ -86,11 +88,17 @@ public:
     int GetScrollOffset() override;
 #pragma endregion
 
-#pragma region IRenderData
-    // These methods are defined in TerminalRenderData.cpp
+#pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
+#pragma endregion
+
+#pragma region IRenderData
+    // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
     const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
@@ -104,13 +112,14 @@ public:
     bool IsCursorDoubleWidth() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
+#pragma endregion
+
+#pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    bool IsAreaSelected() const override;
+    const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
     const std::wstring GetConsoleTitle() const noexcept override;
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -123,7 +132,6 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    const bool IsSelectionActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
@@ -150,7 +158,13 @@ private:
 
     bool _snapOnInput;
 
-    // Text Selection
+#pragma region Text Selection
+    enum SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line
+    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
@@ -158,6 +172,8 @@ private:
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
+    SelectionExpansionMode _multiClickSelectionMode;
+#pragma endregion
 
     std::shared_mutex _readWriteLock;
 
@@ -200,8 +216,8 @@ private:
     std::vector<SMALL_RECT> _GetSelectionRects() const;
     const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    void _ExpandDoubleClickSelectionLeft(const COORD position);
-    void _ExpandDoubleClickSelectionRight(const COORD position);
+    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
+    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
     const bool _isWordDelimiter(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
 #pragma endregion

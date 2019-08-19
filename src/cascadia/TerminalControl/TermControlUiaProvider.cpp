@@ -6,9 +6,8 @@
 
 using namespace Microsoft::Terminal;
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Render;
 
-TermControlUiaProvider::TermControlUiaProvider(_In_ IRenderData* pData,
+TermControlUiaProvider::TermControlUiaProvider(_In_ IUiaData* pData,
                                                _In_ std::function<RECT(void)> GetBoundingRect) :
     _getBoundingRect(GetBoundingRect),
     ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, pData))

@@ -38,7 +38,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
-        void CopySelectionToClipboard(bool trimTrailingWhitespace);
+
+        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
@@ -54,7 +55,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
+        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 

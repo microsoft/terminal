@@ -69,6 +69,11 @@ void AppHost::Initialize()
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
+
+    // Add an event handler to plumb clicks in the titlebar area down to the
+    // application layer.
+    _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
+
     _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
 
     _app.Create();

@@ -22,7 +22,7 @@ Author(s):
 
 #include "inc/viewport.hpp"
 #include "../buffer/out/textBuffer.hpp"
-#include "../renderer/inc/IRenderData.hpp"
+#include "IUiaData.h"
 
 #include <deque>
 #include <tuple>
@@ -116,7 +116,7 @@ namespace Microsoft::Console::Types
             // direction moving
             MovementDirection Direction;
 
-            MoveState(Microsoft::Console::Render::IRenderData* pData,
+            MoveState(IUiaData* pData,
                       const UiaTextRangeBase& range,
                       const MovementDirection direction);
 
@@ -145,7 +145,7 @@ namespace Microsoft::Console::Types
         const bool IsDegenerate() const;
 
         // TODO GitHub #605:
-        // only used for RenderData::FindText. Remove after Search added properly
+        // only used for UiaData::FindText. Remove after Search added properly
         void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate);
 
         // IUnknown methods
@@ -196,10 +196,10 @@ namespace Microsoft::Console::Types
 
     protected:
 #if _DEBUG
-        void _outputRowConversions(Microsoft::Console::Render::IRenderData* pData);
+        void _outputRowConversions(IUiaData* pData);
         void _outputObjectState();
 #endif
-        Microsoft::Console::Render::IRenderData* const _pData;
+        IUiaData* const _pData;
 
         wil::com_ptr<IRawElementProviderSimple> const _pProvider;
 
@@ -208,16 +208,16 @@ namespace Microsoft::Console::Types
         virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
         // degenerate range
-        UiaTextRangeBase(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRangeBase(_In_ IUiaData* pData,
                          _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
-        UiaTextRangeBase(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRangeBase(_In_ IUiaData* pData,
                          _In_ IRawElementProviderSimple* const pProvider,
                          const Cursor& cursor);
 
         // specific endpoint range
-        UiaTextRangeBase(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRangeBase(_In_ IUiaData* pData,
                          _In_ IRawElementProviderSimple* const pProvider,
                          const Endpoint start,
                          const Endpoint end,
@@ -259,50 +259,50 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        static const COORD _getScreenBufferCoords(Microsoft::Console::Render::IRenderData* pData);
+        static const COORD _getScreenBufferCoords(IUiaData* pData);
         COORD _getScreenFontSize() const;
 
-        static const unsigned int _getTotalRows(Microsoft::Console::Render::IRenderData* pData);
-        static const unsigned int _getRowWidth(Microsoft::Console::Render::IRenderData* pData);
+        static const unsigned int _getTotalRows(IUiaData* pData);
+        static const unsigned int _getRowWidth(IUiaData* pData);
 
         static const unsigned int _getFirstScreenInfoRowIndex();
-        static const unsigned int _getLastScreenInfoRowIndex(Microsoft::Console::Render::IRenderData* pData);
+        static const unsigned int _getLastScreenInfoRowIndex(IUiaData* pData);
 
         static const Column _getFirstColumnIndex();
-        static const Column _getLastColumnIndex(Microsoft::Console::Render::IRenderData* pData);
+        static const Column _getLastColumnIndex(IUiaData* pData);
 
-        const unsigned int _rowCountInRange(Microsoft::Console::Render::IRenderData* pData) const;
+        const unsigned int _rowCountInRange(IUiaData* pData) const;
 
-        static const TextBufferRow _endpointToTextBufferRow(Microsoft::Console::Render::IRenderData* pData,
+        static const TextBufferRow _endpointToTextBufferRow(IUiaData* pData,
                                                             const Endpoint endpoint);
-        static const ScreenInfoRow _textBufferRowToScreenInfoRow(Microsoft::Console::Render::IRenderData* pData,
+        static const ScreenInfoRow _textBufferRowToScreenInfoRow(IUiaData* pData,
                                                                  const TextBufferRow row);
 
-        static const TextBufferRow _screenInfoRowToTextBufferRow(Microsoft::Console::Render::IRenderData* pData,
+        static const TextBufferRow _screenInfoRowToTextBufferRow(IUiaData* pData,
                                                                  const ScreenInfoRow row);
-        static const Endpoint _textBufferRowToEndpoint(Microsoft::Console::Render::IRenderData* pData, const TextBufferRow row);
+        static const Endpoint _textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row);
 
-        static const ScreenInfoRow _endpointToScreenInfoRow(Microsoft::Console::Render::IRenderData* pData,
+        static const ScreenInfoRow _endpointToScreenInfoRow(IUiaData* pData,
                                                             const Endpoint endpoint);
-        static const Endpoint _screenInfoRowToEndpoint(Microsoft::Console::Render::IRenderData* pData,
+        static const Endpoint _screenInfoRowToEndpoint(IUiaData* pData,
                                                        const ScreenInfoRow row);
 
-        static COORD _endpointToCoord(Microsoft::Console::Render::IRenderData* pData,
+        static COORD _endpointToCoord(IUiaData* pData,
                                       const Endpoint endpoint);
-        static Endpoint _coordToEndpoint(Microsoft::Console::Render::IRenderData* pData,
+        static Endpoint _coordToEndpoint(IUiaData* pData,
                                          const COORD coord);
 
-        static const Column _endpointToColumn(Microsoft::Console::Render::IRenderData* pData,
+        static const Column _endpointToColumn(IUiaData* pData,
                                               const Endpoint endpoint);
 
-        static const Row _normalizeRow(Microsoft::Console::Render::IRenderData* pData, const Row row);
+        static const Row _normalizeRow(IUiaData* pData, const Row row);
 
-        static const ViewportRow _screenInfoRowToViewportRow(Microsoft::Console::Render::IRenderData* pData,
+        static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
                                                              const ScreenInfoRow row);
         static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
                                                              const SMALL_RECT viewport);
 
-        static const bool _isScreenInfoRowInViewport(Microsoft::Console::Render::IRenderData* pData,
+        static const bool _isScreenInfoRowInViewport(IUiaData* pData,
                                                      const ScreenInfoRow row);
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
                                                      const SMALL_RECT viewport);
@@ -310,71 +310,71 @@ namespace Microsoft::Console::Types
         static const unsigned int _getViewportHeight(const SMALL_RECT viewport);
         static const unsigned int _getViewportWidth(const SMALL_RECT viewport);
 
-        void _addScreenInfoRowBoundaries(Microsoft::Console::Render::IRenderData* pData,
+        void _addScreenInfoRowBoundaries(IUiaData* pData,
                                          const ScreenInfoRow screenInfoRow,
                                          _Inout_ std::vector<double>& coords) const;
 
-        static const int _compareScreenCoords(Microsoft::Console::Render::IRenderData* pData,
+        static const int _compareScreenCoords(IUiaData* pData,
                                               const ScreenInfoRow rowA,
                                               const Column colA,
                                               const ScreenInfoRow rowB,
                                               const Column colB);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacter(Microsoft::Console::Render::IRenderData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacter(IUiaData* pData,
                                                               const int moveCount,
                                                               const MoveState moveState,
                                                               _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(Microsoft::Console::Render::IRenderData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(IUiaData* pData,
                                                                      const int moveCount,
                                                                      const MoveState moveState,
                                                                      _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(Microsoft::Console::Render::IRenderData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(IUiaData* pData,
                                                                       const int moveCount,
                                                                       const MoveState moveState,
                                                                       _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByLine(Microsoft::Console::Render::IRenderData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByLine(IUiaData* pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
                                                          _Out_ int* const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByDocument(Microsoft::Console::Render::IRenderData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByDocument(IUiaData* pData,
                                                              const int moveCount,
                                                              const MoveState moveState,
                                                              _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(Microsoft::Console::Render::IRenderData* pData,
+        _moveEndpointByUnitCharacter(IUiaData* pData,
                                      const int moveCount,
                                      const TextPatternRangeEndpoint endpoint,
                                      const MoveState moveState,
                                      _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(Microsoft::Console::Render::IRenderData* pData,
+        _moveEndpointByUnitCharacterForward(IUiaData* pData,
                                             const int moveCount,
                                             const TextPatternRangeEndpoint endpoint,
                                             const MoveState moveState,
                                             _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(Microsoft::Console::Render::IRenderData* pData,
+        _moveEndpointByUnitCharacterBackward(IUiaData* pData,
                                              const int moveCount,
                                              const TextPatternRangeEndpoint endpoint,
                                              const MoveState moveState,
                                              _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(Microsoft::Console::Render::IRenderData* pData,
+        _moveEndpointByUnitLine(IUiaData* pData,
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
                                 _Out_ int* const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(Microsoft::Console::Render::IRenderData* pData,
+        _moveEndpointByUnitDocument(IUiaData* pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,

@@ -83,6 +83,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring StartingDirectory();
         void StartingDirectory(hstring const& value);
 
+        hstring StartingTitle();
+        void StartingTitle(hstring const& value);
+
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
 
@@ -115,6 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
         hstring _commandline;
         hstring _startingDir;
+        hstring _startingTitle;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;

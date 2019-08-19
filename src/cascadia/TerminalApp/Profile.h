@@ -36,8 +36,6 @@ public:
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
-    bool HasTabTitle() const noexcept;
-    std::wstring_view GetTabTitle() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
@@ -55,7 +53,7 @@ public:
     void SetConnectionType(GUID connectionType) noexcept;
 
     bool HasIcon() const noexcept;
-    std::wstring_view GetIconPath() const noexcept;
+    winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;

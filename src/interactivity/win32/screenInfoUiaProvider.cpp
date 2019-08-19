@@ -11,7 +11,7 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Interactivity;
 using namespace Microsoft::Console::Interactivity::Win32;
 
-ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IRenderData* pData,
+ScreenInfoUiaProvider::ScreenInfoUiaProvider(_In_ IUiaData* pData,
                                              _In_ WindowUiaProviderBase* const pUiaParent) :
     _pUiaParent(THROW_HR_IF_NULL(E_INVALIDARG, pUiaParent)),
     ScreenInfoUiaProviderBase(THROW_HR_IF_NULL(E_INVALIDARG, pData))

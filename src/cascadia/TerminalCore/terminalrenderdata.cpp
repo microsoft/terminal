@@ -117,11 +117,6 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
     return result;
 }
 
-bool Terminal::IsAreaSelected() const
-{
-    return _selectionActive;
-}
-
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
     SetSelectionAnchor(coordStart);

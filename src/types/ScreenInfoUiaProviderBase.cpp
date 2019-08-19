@@ -29,7 +29,7 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
     return psa;
 }
 
-ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ Microsoft::Console::Render::IRenderData* pData) :
+ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     _signalFiringMapping{},
     _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
@@ -297,7 +297,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
-    if (!_pData->IsAreaSelected())
+    if (!_pData->IsSelectionActive())
     {
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //apiMsg.AreaSelected = false;

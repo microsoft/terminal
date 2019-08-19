@@ -23,8 +23,8 @@ Author(s):
 
 #include "precomp.h"
 #include "../buffer/out/textBuffer.hpp"
-#include "../renderer/inc/IRenderData.hpp"
 #include "UiaTextRangeBase.hpp"
+#include "IUiaData.h"
 
 namespace Microsoft::Console::Types
 {
@@ -37,7 +37,7 @@ namespace Microsoft::Console::Types
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProviderBase(_In_ Microsoft::Console::Render::IRenderData* pData);
+        ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
         virtual ~ScreenInfoUiaProviderBase();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
@@ -98,7 +98,7 @@ namespace Microsoft::Console::Types
                                                   const UiaPoint point) = 0;
 
         // weak reference to IRenderData
-        Microsoft::Console::Render::IRenderData* _pData;
+        IUiaData* _pData;
 
     private:
         // Ref counter for COM object

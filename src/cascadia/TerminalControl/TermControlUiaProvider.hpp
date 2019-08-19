@@ -23,22 +23,12 @@ Author(s):
 #include "..\types\UiaTextRangeBase.hpp"
 #include "UiaTextRange.hpp"
 
-namespace Microsoft::Console::Render
-{
-    class IRenderData;
-}
-
-namespace Microsoft::Console::Types
-{
-    class WindowUiaProviderBase;
-}
-
 namespace Microsoft::Terminal
 {
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        TermControlUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+        TermControlUiaProvider(_In_ Microsoft::Console::Types::IUiaData* pData,
                                _In_ std::function<RECT()> GetBoundingRect);
 
         // IRawElementProviderFragment methods

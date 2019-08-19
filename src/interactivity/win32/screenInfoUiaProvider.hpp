@@ -24,17 +24,12 @@ Author(s):
 #include "..\types\UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"
 
-namespace Microsoft::Console::Types
-{
-    class WindowUiaProviderBase;
-}
-
 namespace Microsoft::Console::Interactivity::Win32
 {
     class ScreenInfoUiaProvider final : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
-        ScreenInfoUiaProvider(_In_ Microsoft::Console::Render::IRenderData* pData,
+        ScreenInfoUiaProvider(_In_ Microsoft::Console::Types::IUiaData* pData,
                               _In_ Microsoft::Console::Types::WindowUiaProviderBase* const pUiaParent);
 
         // IRawElementProviderFragment methods

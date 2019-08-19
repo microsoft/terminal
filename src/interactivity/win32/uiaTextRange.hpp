@@ -24,27 +24,27 @@ namespace Microsoft::Console::Interactivity::Win32
     class UiaTextRange final : public Microsoft::Console::Types::UiaTextRangeBase
     {
     public:
-        static std::deque<UiaTextRange*> GetSelectionRanges(_In_ Microsoft::Console::Render::IRenderData* pData,
+        static std::deque<UiaTextRange*> GetSelectionRanges(_In_ Microsoft::Console::Types::IUiaData* pData,
                                                             _In_ IRawElementProviderSimple* pProvider);
 
         // degenerate range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
                                     _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
-        static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
                                     _In_ IRawElementProviderSimple* const pProvider,
                                     const Cursor& cursor);
 
         // specific endpoint range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
                                     _In_ IRawElementProviderSimple* const pProvider,
                                     const Endpoint start,
                                     const Endpoint end,
                                     const bool degenerate);
 
         // range from a UiaPoint
-        static UiaTextRange* Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
                                     _In_ IRawElementProviderSimple* const pProvider,
                                     const UiaPoint point);
 
@@ -61,23 +61,23 @@ namespace Microsoft::Console::Interactivity::Win32
 
     private:
         // degenerate range
-        UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
-        UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider,
                      const Cursor& cursor);
 
         // specific endpoint range
-        UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider,
                      const Endpoint start,
                      const Endpoint end,
                      const bool degenerate);
 
         // range from a UiaPoint
-        UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+        UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider,
                      const UiaPoint point);
 

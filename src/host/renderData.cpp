@@ -7,7 +7,6 @@
 
 #include "dbcs.h"
 #include "handle.h"
-
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
 #pragma hdrstop
@@ -16,6 +15,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
+#pragma region IBaseData
 // Routine Description:
 // - Retrieves the viewport that applies over the data available in the GetTextBuffer() call
 // Return Value:
@@ -47,6 +47,48 @@ const FontInfo& RenderData::GetFontInfo() noexcept
     return gci.GetActiveOutputBuffer().GetCurrentFont();
 }
 
+// Method Description:
+// - Retrieves one rectangle per line describing the area of the viewport
+//   that should be highlighted in some way to represent a user-interactive selection
+// Return Value:
+// - Vector of Viewports describing the area selected
+std::vector<Viewport> RenderData::GetSelectionRects() noexcept
+{
+    std::vector<Viewport> result;
+
+    try
+    {
+        for (const auto& select : Selection::Instance().GetSelectionRects())
+        {
+            result.emplace_back(Viewport::FromInclusive(select));
+        }
+    }
+    CATCH_LOG();
+
+    return result;
+}
+
+// Method Description:
+// - Lock the console for reading the contents of the buffer. Ensures that the
+//      contents of the console won't be changed in the middle of a paint
+//      operation.
+//   Callers should make sure to also call RenderData::UnlockConsole once
+//      they're done with any querying they need to do.
+void RenderData::LockConsole() noexcept
+{
+    ::LockConsole();
+}
+
+// Method Description:
+// - Unlocks the console after a call to RenderData::LockConsole.
+void RenderData::UnlockConsole() noexcept
+{
+    ::UnlockConsole();
+}
+
+#pragma endregion
+
+#pragma region IRenderData
 // Routine Description:
 // - Retrieves the brush colors that should be used in absence of any other color data from
 //   cells in the text buffer.
@@ -227,62 +269,6 @@ bool RenderData::IsCursorDoubleWidth() const noexcept
     return gci.GetActiveOutputBuffer().CursorIsDoubleWidth();
 }
 
-// Method Description:
-// - Retrieves one rectangle per line describing the area of the viewport
-//   that should be highlighted in some way to represent a user-interactive selection
-// Return Value:
-// - Vector of Viewports describing the area selected
-std::vector<Viewport> RenderData::GetSelectionRects() noexcept
-{
-    std::vector<Viewport> result;
-
-    try
-    {
-        for (const auto& select : Selection::Instance().GetSelectionRects())
-        {
-            result.emplace_back(Viewport::FromInclusive(select));
-        }
-    }
-    CATCH_LOG();
-
-    return result;
-}
-
-// Routine Description:
-// - Determines whether the selection area is empty.
-// Arguments:
-// - <none>
-// Return Value:
-// - True if the selection variables contain valid selection data. False otherwise.
-bool RenderData::IsAreaSelected() const
-{
-    return Selection::Instance().IsAreaSelected();
-}
-
-// Routine Description:
-// - If a selection exists, clears it and restores the state.
-//   Will also unblock a blocked write if one exists.
-// Arguments:
-// - <none> (Uses global state)
-// Return Value:
-// - <none>
-void RenderData::ClearSelection()
-{
-    Selection::Instance().ClearSelection();
-}
-
-// Routine Description:
-// - Resets the current selection and selects a new region from the start to end coordinates
-// Arguments:
-// - coordStart - Position to start selection area from
-// - coordEnd - Position to select up to
-// Return Value:
-// - <none>
-void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
-{
-    Selection::Instance().SelectNewRegion(coordStart, coordEnd);
-}
-
 // Routine Description:
 // - Checks the user preference as to whether grid line drawing is allowed around the edges of each cell.
 // - This is for backwards compatibility with old behaviors in the legacy console.
@@ -346,21 +332,41 @@ const COLORREF RenderData::GetBackgroundColor(const TextAttribute& attr) const n
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     return gci.LookupBackgroundColor(attr);
 }
+#pragma endregion
 
-// Method Description:
-// - Lock the console for reading the contents of the buffer. Ensures that the
-//      contents of the console won't be changed in the middle of a paint
-//      operation.
-//   Callers should make sure to also call RenderData::UnlockConsole once
-//      they're done with any querying they need to do.
-void RenderData::LockConsole() noexcept
+#pragma region IUiaData
+// Routine Description:
+// - Determines whether the selection area is empty.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if the selection variables contain valid selection data. False otherwise.
+const bool RenderData::IsSelectionActive() const
 {
-    ::LockConsole();
+    return Selection::Instance().IsAreaSelected();
 }
 
-// Method Description:
-// - Unlocks the console after a call to RenderData::LockConsole.
-void RenderData::UnlockConsole() noexcept
+// Routine Description:
+// - If a selection exists, clears it and restores the state.
+//   Will also unblock a blocked write if one exists.
+// Arguments:
+// - <none> (Uses global state)
+// Return Value:
+// - <none>
+void RenderData::ClearSelection()
 {
-    ::UnlockConsole();
+    Selection::Instance().ClearSelection();
 }
+
+// Routine Description:
+// - Resets the current selection and selects a new region from the start to end coordinates
+// Arguments:
+// - coordStart - Position to start selection area from
+// - coordEnd - Position to select up to
+// Return Value:
+// - <none>
+void RenderData::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+{
+    Selection::Instance().SelectNewRegion(coordStart, coordEnd);
+}
+#pragma endregion

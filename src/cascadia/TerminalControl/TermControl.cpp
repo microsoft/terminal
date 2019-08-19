@@ -347,7 +347,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return winrt::make<winrt::Microsoft::Terminal::TerminalControl::implementation::TermControlAutomationPeer>(*this);
     }
 
-    ::Microsoft::Console::Render::IRenderData* TermControl::GetRenderData() const
+    ::Microsoft::Console::Types::IUiaData* TermControl::GetUiaData() const
     {
         return _terminal.get();
     }
@@ -1391,15 +1391,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
-    void TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
+    bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
-        // extract text from buffer
-        const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+        if (_terminal != nullptr && _terminal->IsSelectionActive())
+        {
+            // extract text from buffer
+            const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
 
-        _terminal->ClearSelection();
+            _terminal->ClearSelection();
 
-        // send data up for clipboard
-        _clipboardCopyHandlers(copiedData);
+            // send data up for clipboard
+            _clipboardCopyHandlers(copiedData);
+            return true;
+        }
+        return false;
     }
 
     // Method Description:

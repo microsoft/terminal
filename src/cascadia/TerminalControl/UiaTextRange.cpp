@@ -6,8 +6,9 @@
 #include "TermControlUiaProvider.hpp"
 
 using namespace Microsoft::Terminal;
+using namespace Microsoft::Console::Types;
 
-std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ Microsoft::Console::Render::IRenderData* pData,
+std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
                                                            _In_ IRawElementProviderSimple* pProvider)
 {
     std::deque<UiaTextRange*> ranges;
@@ -44,7 +45,7 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ Microsoft::Conso
     return ranges;
 }
 
-UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider)
 {
     try
@@ -57,7 +58,7 @@ UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData*
     }
 }
 
-UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider,
                                    const Cursor& cursor)
 {
@@ -71,7 +72,7 @@ UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData*
     }
 }
 
-UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider,
                                    const Endpoint start,
                                    const Endpoint end,
@@ -91,7 +92,7 @@ UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData*
     }
 }
 
-UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
                                    _In_ IRawElementProviderSimple* const pProvider,
                                    const UiaPoint point)
 {
@@ -106,19 +107,19 @@ UiaTextRange* UiaTextRange::Create(_In_ Microsoft::Console::Render::IRenderData*
 }
 
 // degenerate range constructor.
-UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData, _In_ IRawElementProviderSimple* const pProvider) :
+UiaTextRange::UiaTextRange(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
     UiaTextRangeBase(pData, pProvider)
 {
 }
 
-UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
                            _In_ IRawElementProviderSimple* const pProvider,
                            const Cursor& cursor) :
     UiaTextRangeBase(pData, pProvider, cursor)
 {
 }
 
-UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
                            _In_ IRawElementProviderSimple* const pProvider,
                            const Endpoint start,
                            const Endpoint end,
@@ -128,7 +129,7 @@ UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
 }
 
 // returns a degenerate text range of the start of the row closest to the y value of point
-UiaTextRange::UiaTextRange(_In_ Microsoft::Console::Render::IRenderData* pData,
+UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
                            _In_ IRawElementProviderSimple* const pProvider,
                            const UiaPoint point) :
     UiaTextRangeBase(pData, pProvider)
