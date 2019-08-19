@@ -1393,7 +1393,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     //    and get text to appear on separate lines.
     bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
-        if (_terminal != nullptr && _terminal->IsAreaSelected())
+        if (_terminal != nullptr && _terminal->IsSelectionActive())
         {
             // extract text from buffer
             const auto copiedData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
