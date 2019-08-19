@@ -1540,7 +1540,7 @@ namespace winrt::TerminalApp::implementation
 
             // copy html to dataPack
             const auto htmlData = copiedData.Html();
-            if (htmlData.size())
+            if (!htmlData.empty())
             {
                 dataPack.SetHtmlFormat(htmlData);
             }
