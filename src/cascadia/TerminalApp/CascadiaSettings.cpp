@@ -676,6 +676,9 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
+    // TODO: Verify all profiles actually had a GUID specified, otherwise
+    // generate a GUID for them
+
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
     _ValidateNoDuplicateProfiles();

@@ -16,6 +16,12 @@ Author(s):
 #pragma once
 #include "ColorScheme.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+};
+
 namespace TerminalApp
 {
     class Profile;
@@ -33,6 +39,8 @@ public:
 
     Json::Value ToJson() const;
     static Profile FromJson(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json);
+    void LayerJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
@@ -103,4 +111,6 @@ private:
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;
+
+    friend class TerminalAppLocalTests::SettingsTests;
 };

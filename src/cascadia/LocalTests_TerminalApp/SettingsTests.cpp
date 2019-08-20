@@ -35,6 +35,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateDefaultProfileExists);
         TEST_METHOD(ValidateDuplicateProfiles);
         TEST_METHOD(ValidateManyWarnings);
+        TEST_METHOD(CanLayerProfile);
+        TEST_METHOD(LayerProfileProperties);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -365,4 +367,94 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
     }
 
+    void SettingsTests::CanLayerProfile()
+    {
+        const std::string profile0String{ R"({
+            "name" : "profile0",
+            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile1String{ R"({
+            "name" : "profile1",
+            "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile2String{ R"({
+            "name" : "profile2",
+            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile3String{ R"({
+            "name" : "profile3"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto profile1Json = VerifyParseSucceeded(profile1String);
+        const auto profile2Json = VerifyParseSucceeded(profile2String);
+        const auto profile3Json = VerifyParseSucceeded(profile3String);
+
+        auto profile0 = Profile::FromJson(profile0Json);
+
+        VERIFY_IS_FALSE(profile0.ShouldBeLayered(profile1Json));
+        VERIFY_IS_TRUE(profile0.ShouldBeLayered(profile2Json));
+        VERIFY_IS_FALSE(profile0.ShouldBeLayered(profile3Json));
+
+        auto profile1 = Profile::FromJson(profile1Json);
+
+        VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile0Json));
+        // A profile _can_ be layered with itself, though what's the point?
+        VERIFY_IS_TRUE(profile1.ShouldBeLayered(profile1Json));
+        VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile2Json));
+        VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile3Json));
+
+        auto profile3 = Profile::FromJson(profile3Json);
+
+        VERIFY_IS_FALSE(profile3.ShouldBeLayered(profile0Json));
+        // A profile _can_ be layered with itself, though what's the point?
+        VERIFY_IS_FALSE(profile3.ShouldBeLayered(profile1Json));
+        VERIFY_IS_FALSE(profile3.ShouldBeLayered(profile2Json));
+        VERIFY_IS_FALSE(profile3.ShouldBeLayered(profile3Json));
+    }
+
+    void SettingsTests::LayerProfileProperties()
+    {
+        const std::string profile0String{ R"({
+            "name": "profile0",
+            "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "foreground": "#000000",
+            "background": "#010101"
+        })" };
+        const std::string profile1String{ R"({
+            "name": "profile2",
+            "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "foreground": "#020202",
+            "colorScheme": "Campbell"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto profile1Json = VerifyParseSucceeded(profile1String);
+
+        auto profile0 = Profile::FromJson(profile0Json);
+        VERIFY_IS_TRUE(profile0._defaultForeground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), profile0._defaultForeground.value());
+
+        VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
+
+        VERIFY_ARE_EQUAL(L"profile0", profile0._name);
+
+        VERIFY_IS_FALSE(profile0._schemeName.has_value());
+
+        Log::Comment(NoThrowString().Format(
+            L"Layering profile2 on top of profile0"));
+        profile0.LayerJson(profile1Json);
+
+        VERIFY_IS_TRUE(profile0._defaultForeground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), profile0._defaultForeground.value());
+
+        VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
+
+        VERIFY_ARE_EQUAL(L"profile2", profile0._name);
+
+        VERIFY_IS_TRUE(profile0._schemeName.has_value());
+        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+    }
 }

@@ -346,46 +346,70 @@ Profile Profile::FromJson(const Json::Value& json)
 {
     Profile result{};
 
+    result.LayerJson(json);
+
+    return result;
+}
+
+bool Profile::ShouldBeLayered(const Json::Value& json)
+{
+    if (auto guid{ json[JsonKey(GuidKey)] })
+    {
+        auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
+        return _guid == otherGuid;
+    }
+
+    // TODO: Add a test for this
+
+    // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
+
+    return false;
+}
+
+void Profile::LayerJson(const Json::Value& json)
+{
     // Profile-specific Settings
     if (auto name{ json[JsonKey(NameKey)] })
     {
-        result._name = GetWstringFromJson(name);
+        _name = GetWstringFromJson(name);
     }
     if (auto guid{ json[JsonKey(GuidKey)] })
     {
-        result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
+        _guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
-    else
-    {
-        result._guid = Utils::CreateGuid();
+    // TODO: Originally, if a profile didn't have a GUID set, we'd synthesize
+    // one on their behalf. We should still do this, but
+    // else
+    // {
+    //     result._guid = Utils::CreateGuid();
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-    }
+    //     TraceLoggingWrite(
+    //         g_hTerminalAppProvider,
+    //         "SynthesizedGuidForProfile",
+    //         TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
+    //         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+    //         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    // }
 
     // Core Settings
     if (auto foreground{ json[JsonKey(ForegroundKey)] })
     {
         const auto color = Utils::ColorFromHexString(foreground.asString());
-        result._defaultForeground = color;
+        _defaultForeground = color;
     }
     if (auto background{ json[JsonKey(BackgroundKey)] })
     {
         const auto color = Utils::ColorFromHexString(background.asString());
-        result._defaultBackground = color;
+        _defaultBackground = color;
     }
     if (auto colorScheme{ json[JsonKey(ColorSchemeKey)] })
     {
-        result._schemeName = GetWstringFromJson(colorScheme);
+        _schemeName = GetWstringFromJson(colorScheme);
     }
     else if (auto colorScheme{ json[JsonKey(ColorSchemeKeyOld)] })
     {
         // TODO:GH#1069 deprecate old settings key
-        result._schemeName = GetWstringFromJson(colorScheme);
+        _schemeName = GetWstringFromJson(colorScheme);
     }
     else if (auto colortable{ json[JsonKey(ColorTableKey)] })
     {
@@ -395,7 +419,7 @@ Profile Profile::FromJson(const Json::Value& json)
             if (tableEntry.isString())
             {
                 const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                result._colorTable[i] = color;
+                _colorTable[i] = color;
             }
             i++;
         }
@@ -403,93 +427,91 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto historySize{ json[JsonKey(HistorySizeKey)] })
     {
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        result._historySize = historySize.asInt();
+        _historySize = historySize.asInt();
     }
     if (auto snapOnInput{ json[JsonKey(SnapOnInputKey)] })
     {
-        result._snapOnInput = snapOnInput.asBool();
+        _snapOnInput = snapOnInput.asBool();
     }
     if (auto cursorColor{ json[JsonKey(CursorColorKey)] })
     {
         const auto color = Utils::ColorFromHexString(cursorColor.asString());
-        result._cursorColor = color;
+        _cursorColor = color;
     }
     if (auto cursorHeight{ json[JsonKey(CursorHeightKey)] })
     {
-        result._cursorHeight = cursorHeight.asUInt();
+        _cursorHeight = cursorHeight.asUInt();
     }
     if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
     {
-        result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+        _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
     if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
     {
-        result._tabTitle = GetWstringFromJson(tabTitle);
+        _tabTitle = GetWstringFromJson(tabTitle);
     }
 
     // Control Settings
     if (auto connectionType{ json[JsonKey(ConnectionTypeKey)] })
     {
-        result._connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
+        _connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
     }
     if (auto commandline{ json[JsonKey(CommandlineKey)] })
     {
-        result._commandline = GetWstringFromJson(commandline);
+        _commandline = GetWstringFromJson(commandline);
     }
     if (auto fontFace{ json[JsonKey(FontFaceKey)] })
     {
-        result._fontFace = GetWstringFromJson(fontFace);
+        _fontFace = GetWstringFromJson(fontFace);
     }
     if (auto fontSize{ json[JsonKey(FontSizeKey)] })
     {
-        result._fontSize = fontSize.asInt();
+        _fontSize = fontSize.asInt();
     }
     if (auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] })
     {
-        result._acrylicTransparency = acrylicTransparency.asFloat();
+        _acrylicTransparency = acrylicTransparency.asFloat();
     }
     if (auto useAcrylic{ json[JsonKey(UseAcrylicKey)] })
     {
-        result._useAcrylic = useAcrylic.asBool();
+        _useAcrylic = useAcrylic.asBool();
     }
     if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
     {
-        result._closeOnExit = closeOnExit.asBool();
+        _closeOnExit = closeOnExit.asBool();
     }
     if (auto padding{ json[JsonKey(PaddingKey)] })
     {
-        result._padding = GetWstringFromJson(padding);
+        _padding = GetWstringFromJson(padding);
     }
     if (auto scrollbarState{ json[JsonKey(ScrollbarStateKey)] })
     {
-        result._scrollbarState = GetWstringFromJson(scrollbarState);
+        _scrollbarState = GetWstringFromJson(scrollbarState);
     }
     if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
     {
-        result._startingDirectory = GetWstringFromJson(startingDirectory);
+        _startingDirectory = GetWstringFromJson(startingDirectory);
     }
     if (auto icon{ json[JsonKey(IconKey)] })
     {
-        result._icon = GetWstringFromJson(icon);
+        _icon = GetWstringFromJson(icon);
     }
     if (auto backgroundImage{ json[JsonKey(BackgroundImageKey)] })
     {
-        result._backgroundImage = GetWstringFromJson(backgroundImage);
+        _backgroundImage = GetWstringFromJson(backgroundImage);
     }
     if (auto backgroundImageOpacity{ json[JsonKey(BackgroundImageOpacityKey)] })
     {
-        result._backgroundImageOpacity = backgroundImageOpacity.asFloat();
+        _backgroundImageOpacity = backgroundImageOpacity.asFloat();
     }
     if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] })
     {
-        result._backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
+        _backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
     }
     if (auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] })
     {
-        result._backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
+        _backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
     }
-
-    return result;
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
