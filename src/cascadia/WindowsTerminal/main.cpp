@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AppHost.h"
 #include "resource.h"
+// #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 using namespace winrt;
 using namespace Windows::UI;
@@ -106,6 +107,8 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
     // provides an implementation of Windows.UI.Xaml.Application.
     AppHost host;
+
+    // winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
 
     // !!! LOAD BEARING !!!
     // This is _magic_. Do the initial loading of our settings *BEFORE* we

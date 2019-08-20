@@ -24,8 +24,8 @@ rem Generate a unique name, so that we can debug multiple revisions of the binar
 (xcopy /Y %_last_build_bin%\console.dll %TEMP%\%copy_dir%\console.dll*) > nul
 
 (xcopy /Y %_last_build%\*.dll %TEMP%\%copy_dir%\*.dll*) > nul
-(xcopy /Y %_last_build%\WindowsTerminal.exe %TEMP%\%copy_dir%\WindowsTerminal.exe*) > nul
 (xcopy /Y %_last_build%\*.xbf %TEMP%\%copy_dir%\*.xbf*) > nul
+(xcopy /Y %_last_build%\WindowsTerminal.exe %TEMP%\%copy_dir%\WindowsTerminal.exe*) > nul
 
 rem If the resources.pri file is older than WindowsTerminal.exe binary, than we
 rem definitely need to rebuild it. This step will only work once the

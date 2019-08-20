@@ -5,6 +5,7 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -31,6 +32,7 @@ namespace TerminalAppLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
+        TEST_METHOD(TryCreateConnection);
         TEST_METHOD(ValidateProfilesExist);
         TEST_METHOD(ValidateDefaultProfileExists);
         TEST_METHOD(ValidateDuplicateProfiles);
@@ -54,6 +56,12 @@ namespace TerminalAppLocalTests
         const bool parseResult = reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
+    }
+
+    void SettingsTests::TryCreateConnection()
+    {
+        winrt::Microsoft::Terminal::TerminalConnection::EchoConnection conn{};
+        VERIFY_IS_NOT_NULL(conn);
     }
 
     void SettingsTests::TryCreateWinRTType()
