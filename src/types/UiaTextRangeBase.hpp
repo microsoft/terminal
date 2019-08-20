@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- UiaTextRange.hpp
+- UiaTextRangeBase.hpp
 
 Abstract:
 - This module provides UI Automation access to the text of the console
@@ -31,7 +31,7 @@ Author(s):
 class UiaTextRangeTests;
 #endif
 
-// The UiaTextRange deals with several data structures that have
+// The UiaTextRangeBase deals with several data structures that have
 // similar semantics. In order to keep the information from these data
 // structures separated, each structure has its own naming for a
 // row.
@@ -73,7 +73,7 @@ constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
 {
-    class UiaTextRange final : public ITextRangeProvider
+    class UiaTextRangeBase : public ITextRangeProvider
     {
     private:
         static IdType id;
@@ -117,7 +117,7 @@ namespace Microsoft::Console::Types
             MovementDirection Direction;
 
             MoveState(IUiaData* pData,
-                      const UiaTextRange& range,
+                      const UiaTextRangeBase& range,
                       const MovementDirection direction);
 
         private:
@@ -137,30 +137,7 @@ namespace Microsoft::Console::Types
         };
 
     public:
-        static std::deque<UiaTextRange*> GetSelectionRanges(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* pProvider);
-
-        // degenerate range
-        static UiaTextRange* Create(_In_ IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        static UiaTextRange* Create(_In_ IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Cursor& cursor);
-
-        // specific endpoint range
-        static UiaTextRange* Create(_In_ IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Endpoint start,
-                                    const Endpoint end,
-                                    const bool degenerate);
-
-        // range from a UiaPoint
-        static UiaTextRange* Create(_In_ IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const UiaPoint point);
-
-        ~UiaTextRange();
+        virtual ~UiaTextRangeBase() = default;
 
         const IdType GetId() const;
         const Endpoint GetStart() const;
@@ -180,7 +157,7 @@ namespace Microsoft::Console::Types
                                       _COM_Outptr_result_maybenull_ void** ppInterface);
 
         // ITextRangeProvider methods
-        IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+        virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal);
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
@@ -191,10 +168,10 @@ namespace Microsoft::Console::Types
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP FindText(_In_ BSTR text,
-                                _In_ BOOL searchBackward,
-                                _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+        virtual IFACEMETHODIMP FindText(_In_ BSTR text,
+                                        _In_ BOOL searchBackward,
+                                        _In_ BOOL ignoreCase,
+                                        _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
                                          _Out_ VARIANT* pRetVal);
         IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
@@ -224,34 +201,31 @@ namespace Microsoft::Console::Types
 #endif
         IUiaData* const _pData;
 
-        IRawElementProviderSimple* const _pProvider;
+        wil::com_ptr<IRawElementProviderSimple> const _pProvider;
 
-        RECT _getTerminalRect() const;
-        HWND _getWindowHandle() const;
+        virtual void _ChangeViewport(const SMALL_RECT NewWindow) = 0;
+        virtual void _TranslatePointToScreen(LPPOINT clientPoint) const = 0;
+        virtual void _TranslatePointFromScreen(LPPOINT screenPoint) const = 0;
 
-    private:
         // degenerate range
-        UiaTextRange(_In_ IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider);
+        UiaTextRangeBase(_In_ IUiaData* pData,
+                         _In_ IRawElementProviderSimple* const pProvider);
 
         // degenerate range at cursor position
-        UiaTextRange(_In_ IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const Cursor& cursor);
+        UiaTextRangeBase(_In_ IUiaData* pData,
+                         _In_ IRawElementProviderSimple* const pProvider,
+                         const Cursor& cursor);
 
         // specific endpoint range
-        UiaTextRange(_In_ IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const Endpoint start,
-                     const Endpoint end,
-                     const bool degenerate);
+        UiaTextRangeBase(_In_ IUiaData* pData,
+                         _In_ IRawElementProviderSimple* const pProvider,
+                         const Endpoint start,
+                         const Endpoint end,
+                         const bool degenerate);
 
-        // range from a UiaPoint
-        UiaTextRange(_In_ IUiaData* pData,
-                     _In_ IRawElementProviderSimple* const pProvider,
-                     const UiaPoint point);
+        void Initialize(_In_ const UiaPoint point);
 
-        UiaTextRange(const UiaTextRange& a);
+        UiaTextRangeBase(const UiaTextRangeBase& a);
 
         // used to debug objects passed back and forth
         // between the provider and the client
@@ -282,6 +256,8 @@ namespace Microsoft::Console::Types
         // degenerate range internally with a bool. If a range is degenerate
         // then both endpoints will contain the same value.
         bool _degenerate;
+
+        RECT _getTerminalRect() const;
 
         static const COORD _getScreenBufferCoords(IUiaData* pData);
         COORD _getScreenFontSize() const;
@@ -409,7 +385,7 @@ namespace Microsoft::Console::Types
 #endif
     };
 
-    namespace UiaTextRangeTracing
+    namespace UiaTextRangeBaseTracing
     {
         enum class ApiCall
         {

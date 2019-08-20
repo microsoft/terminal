@@ -2,52 +2,52 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-#include "UiaTextRange.hpp"
-#include "ScreenInfoUiaProvider.h"
+#include "UiaTextRangeBase.hpp"
+#include "ScreenInfoUiaProviderBase.h"
 
 using namespace Microsoft::Console::Types;
-using namespace Microsoft::Console::Types::UiaTextRangeTracing;
+using namespace Microsoft::Console::Types::UiaTextRangeBaseTracing;
 
 // toggle these for additional logging in a debug build
 //#define UIATEXTRANGE_DEBUG_MSGS 1
 #undef UIATEXTRANGE_DEBUG_MSGS
 
-IdType UiaTextRange::id = 1;
+IdType UiaTextRangeBase::id = 1;
 
-UiaTextRange::MoveState::MoveState(IUiaData* pData,
-                                   const UiaTextRange& range,
-                                   const MovementDirection direction) :
-    StartScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(pData, range.GetStart()) },
-    StartColumn{ UiaTextRange::_endpointToColumn(pData, range.GetStart()) },
-    EndScreenInfoRow{ UiaTextRange::_endpointToScreenInfoRow(pData, range.GetEnd()) },
-    EndColumn{ UiaTextRange::_endpointToColumn(pData, range.GetEnd()) },
+UiaTextRangeBase::MoveState::MoveState(IUiaData* pData,
+                                       const UiaTextRangeBase& range,
+                                       const MovementDirection direction) :
+    StartScreenInfoRow{ UiaTextRangeBase::_endpointToScreenInfoRow(pData, range.GetStart()) },
+    StartColumn{ UiaTextRangeBase::_endpointToColumn(pData, range.GetStart()) },
+    EndScreenInfoRow{ UiaTextRangeBase::_endpointToScreenInfoRow(pData, range.GetEnd()) },
+    EndColumn{ UiaTextRangeBase::_endpointToColumn(pData, range.GetEnd()) },
     Direction{ direction }
 {
     if (direction == MovementDirection::Forward)
     {
-        LimitingRow = UiaTextRange::_getLastScreenInfoRowIndex(pData);
-        FirstColumnInRow = UiaTextRange::_getFirstColumnIndex();
-        LastColumnInRow = UiaTextRange::_getLastColumnIndex(pData);
+        LimitingRow = UiaTextRangeBase::_getLastScreenInfoRowIndex(pData);
+        FirstColumnInRow = UiaTextRangeBase::_getFirstColumnIndex();
+        LastColumnInRow = UiaTextRangeBase::_getLastColumnIndex(pData);
         Increment = MovementIncrement::Forward;
     }
     else
     {
-        LimitingRow = UiaTextRange::_getFirstScreenInfoRowIndex();
-        FirstColumnInRow = UiaTextRange::_getLastColumnIndex(pData);
-        LastColumnInRow = UiaTextRange::_getFirstColumnIndex();
+        LimitingRow = UiaTextRangeBase::_getFirstScreenInfoRowIndex();
+        FirstColumnInRow = UiaTextRangeBase::_getLastColumnIndex(pData);
+        LastColumnInRow = UiaTextRangeBase::_getFirstColumnIndex();
         Increment = MovementIncrement::Backward;
     }
 }
 
-UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
-                                   const Column startColumn,
-                                   const ScreenInfoRow endScreenInfoRow,
-                                   const Column endColumn,
-                                   const ScreenInfoRow limitingRow,
-                                   const Column firstColumnInRow,
-                                   const Column lastColumnInRow,
-                                   const MovementIncrement increment,
-                                   const MovementDirection direction) :
+UiaTextRangeBase::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
+                                       const Column startColumn,
+                                       const ScreenInfoRow endScreenInfoRow,
+                                       const Column endColumn,
+                                       const ScreenInfoRow limitingRow,
+                                       const Column firstColumnInRow,
+                                       const Column lastColumnInRow,
+                                       const MovementIncrement increment,
+                                       const MovementDirection direction) :
     StartScreenInfoRow{ startScreenInfoRow },
     StartColumn{ startColumn },
     EndScreenInfoRow{ endScreenInfoRow },
@@ -65,7 +65,7 @@ UiaTextRange::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
 // This is a debugging function that prints out the current
 // relationship between screen info rows, text buffer rows, and
 // endpoints.
-void UiaTextRange::_outputRowConversions(IUiaData* pData)
+void UiaTextRangeBase::_outputRowConversions(IUiaData* pData)
 {
     try
     {
@@ -86,7 +86,7 @@ void UiaTextRange::_outputRowConversions(IUiaData* pData)
     }
 }
 
-void UiaTextRange::_outputObjectState()
+void UiaTextRangeBase::_outputObjectState()
 {
     std::wstringstream ss;
     ss << "Object State";
@@ -101,136 +101,8 @@ void UiaTextRange::_outputObjectState()
 }
 #endif // _DEBUG
 
-std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
-                                                           _In_ IRawElementProviderSimple* pProvider)
-{
-    std::deque<UiaTextRange*> ranges;
-
-    // get the selection rects
-    const auto rectangles = pData->GetSelectionRects();
-
-    // create a range for each row
-    for (const auto& rect : rectangles)
-    {
-        ScreenInfoRow currentRow = rect.Top();
-        Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
-        Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
-        UiaTextRange* range = UiaTextRange::Create(pData,
-                                                   pProvider,
-                                                   start,
-                                                   end,
-                                                   false);
-        if (range == nullptr)
-        {
-            // something when wrong, clean up and throw
-            while (!ranges.empty())
-            {
-                UiaTextRange* temp = ranges[0];
-                ranges.pop_front();
-                temp->Release();
-            }
-            throw E_INVALIDARG;
-        }
-        else
-        {
-            ranges.push_back(range);
-        }
-    }
-    return ranges;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider)
-{
-    UiaTextRange* range = nullptr;
-    ;
-    try
-    {
-        range = new UiaTextRange(pData, pProvider);
-    }
-    catch (...)
-    {
-        range = nullptr;
-    }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor& cursor)
-{
-    UiaTextRange* range = nullptr;
-    try
-    {
-        range = new UiaTextRange(pData, pProvider, cursor);
-    }
-    catch (...)
-    {
-        range = nullptr;
-    }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Endpoint start,
-                                   const Endpoint end,
-                                   const bool degenerate)
-{
-    UiaTextRange* range = nullptr;
-    try
-    {
-        range = new UiaTextRange(pData,
-                                 pProvider,
-                                 start,
-                                 end,
-                                 degenerate);
-    }
-    catch (...)
-    {
-        range = nullptr;
-    }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const UiaPoint point)
-{
-    UiaTextRange* range = nullptr;
-    try
-    {
-        range = new UiaTextRange(pData, pProvider, point);
-    }
-    catch (...)
-    {
-        range = nullptr;
-    }
-
-    if (range)
-    {
-        pProvider->AddRef();
-    }
-    return range;
-}
-
 // degenerate range constructor.
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
+UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
     _cRefs{ 1 },
     _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
     _start{ 0 },
@@ -248,10 +120,10 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData, _In_ IRawElementProviderSimple*
     Tracing::s_TraceUia(nullptr, ApiCall::Constructor, &apiMsg);*/
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Cursor& cursor) :
-    UiaTextRange(pData, pProvider)
+UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData,
+                                   _In_ IRawElementProviderSimple* const pProvider,
+                                   const Cursor& cursor) :
+    UiaTextRangeBase(pData, pProvider)
 {
     _degenerate = true;
     _start = _screenInfoRowToEndpoint(_pData, cursor.GetPosition().Y) + cursor.GetPosition().X;
@@ -263,12 +135,12 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
 #endif
 }
 
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const Endpoint start,
-                           const Endpoint end,
-                           const bool degenerate) :
-    UiaTextRange(pData, pProvider)
+UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData,
+                                   _In_ IRawElementProviderSimple* const pProvider,
+                                   const Endpoint start,
+                                   const Endpoint end,
+                                   const bool degenerate) :
+    UiaTextRangeBase(pData, pProvider)
 {
     THROW_HR_IF(E_INVALIDARG, !degenerate && start > end);
 
@@ -282,11 +154,7 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
 #endif
 }
 
-// returns a degenerate text range of the start of the row closest to the y value of point
-UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
-                           _In_ IRawElementProviderSimple* const pProvider,
-                           const UiaPoint point) :
-    UiaTextRange(pData, pProvider)
+void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
 {
     POINT clientPoint;
     clientPoint.x = static_cast<LONG>(point.x);
@@ -306,15 +174,7 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
     else
     {
         // change point coords to pixels relative to window
-        HWND hwnd = _getWindowHandle();
-        if (hwnd == nullptr)
-        {
-            // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF SCREENTOCLIENT()
-        }
-        else
-        {
-            ScreenToClient(hwnd, &clientPoint);
-        }
+        _TranslatePointFromScreen(&clientPoint);
 
         const COORD currentFontSize = _getScreenFontSize();
         row = (clientPoint.y / currentFontSize.Y) + viewport.Top;
@@ -322,14 +182,9 @@ UiaTextRange::UiaTextRange(_In_ IUiaData* pData,
     _start = _screenInfoRowToEndpoint(_pData, row);
     _end = _start;
     _degenerate = true;
-
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Constructor\n");
-    _outputObjectState();
-#endif
 }
 
-UiaTextRange::UiaTextRange(const UiaTextRange& a) :
+UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) :
     _cRefs{ 1 },
     _pProvider{ a._pProvider },
     _start{ a._start },
@@ -337,7 +192,6 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
     _degenerate{ a._degenerate },
     _pData{ a._pData }
 {
-    (static_cast<IUnknown*>(_pProvider))->AddRef();
     _id = id;
     ++id;
 
@@ -347,22 +201,17 @@ UiaTextRange::UiaTextRange(const UiaTextRange& a) :
 #endif
 }
 
-UiaTextRange::~UiaTextRange()
-{
-    (static_cast<IUnknown*>(_pProvider))->Release();
-}
-
-const IdType UiaTextRange::GetId() const
+const IdType UiaTextRangeBase::GetId() const
 {
     return _id;
 }
 
-const Endpoint UiaTextRange::GetStart() const
+const Endpoint UiaTextRangeBase::GetStart() const
 {
     return _start;
 }
 
-const Endpoint UiaTextRange::GetEnd() const
+const Endpoint UiaTextRangeBase::GetEnd() const
 {
     return _end;
 }
@@ -373,12 +222,12 @@ const Endpoint UiaTextRange::GetEnd() const
 // - <none>
 // Return Value:
 // - true if range is degenerate, false otherwise.
-const bool UiaTextRange::IsDegenerate() const
+const bool UiaTextRangeBase::IsDegenerate() const
 {
     return _degenerate;
 }
 
-void UiaTextRange::SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate)
+void UiaTextRangeBase::SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate)
 {
     _start = start;
     _end = end;
@@ -388,7 +237,7 @@ void UiaTextRange::SetRangeValues(const Endpoint start, const Endpoint end, cons
 #pragma region IUnknown
 
 IFACEMETHODIMP_(ULONG)
-UiaTextRange::AddRef()
+UiaTextRangeBase::AddRef()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
@@ -396,7 +245,7 @@ UiaTextRange::AddRef()
 }
 
 IFACEMETHODIMP_(ULONG)
-UiaTextRange::Release()
+UiaTextRangeBase::Release()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
@@ -409,8 +258,11 @@ UiaTextRange::Release()
     return val;
 }
 
-IFACEMETHODIMP UiaTextRange::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
+IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
 {
+    RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
+    *ppInterface = nullptr;
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
 
@@ -436,48 +288,16 @@ IFACEMETHODIMP UiaTextRange::QueryInterface(_In_ REFIID riid, _COM_Outptr_result
 
 #pragma region ITextRangeProvider
 
-IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
-{
-    try
-    {
-        *ppRetVal = new UiaTextRange(*this);
-    }
-    catch (...)
-    {
-        *ppRetVal = nullptr;
-        return wil::ResultFromCaughtException();
-    }
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
-
-#if defined(_DEBUG) && defined(UIATEXTRANGE_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRange*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgClone apiMsg;
-    apiMsg.CloneId = static_cast<UiaTextRange*>(*ppRetVal)->GetId();
-    Tracing::s_TraceUia(this, ApiCall::Clone, &apiMsg);*/
-
-    return S_OK;
-}
-
-IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = FALSE;
-    UiaTextRange* other = static_cast<UiaTextRange*>(pRange);
+    UiaTextRangeBase* other = static_cast<UiaTextRangeBase*>(pRange);
     if (other)
     {
         *pRetVal = !!(_start == other->GetStart() &&
@@ -494,13 +314,16 @@ IFACEMETHODIMP UiaTextRange::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ 
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
-                                              _In_ ITextRangeProvider* pTargetRange,
-                                              _In_ TextPatternRangeEndpoint targetEndpoint,
-                                              _Out_ int* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
+                                                  _In_ ITextRangeProvider* pTargetRange,
+                                                  _In_ TextPatternRangeEndpoint targetEndpoint,
+                                                  _Out_ int* pRetVal)
 {
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    *pRetVal = 0;
+
     // get the text range that we're comparing to
-    UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
+    UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
@@ -543,7 +366,7 @@ IFACEMETHODIMP UiaTextRange::CompareEndpoints(_In_ TextPatternRangeEndpoint endp
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
+IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
@@ -589,48 +412,21 @@ IFACEMETHODIMP UiaTextRange::ExpandToEnclosingUnit(_In_ TextUnit unit)
 }
 
 // we don't support this currently
-IFACEMETHODIMP UiaTextRange::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
-                                           _In_ VARIANT /*val*/,
-                                           _In_ BOOL /*searchBackward*/,
-                                           _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
+IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
+                                               _In_ VARIANT /*val*/,
+                                               _In_ BOOL /*searchBackward*/,
+                                               _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindAttribute, nullptr);
     return E_NOTIMPL;
 }
 
-IFACEMETHODIMP UiaTextRange::FindText(_In_ BSTR text,
-                                      _In_ BOOL searchBackward,
-                                      _In_ BOOL ignoreCase,
-                                      _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
+                                                   _Out_ VARIANT* pRetVal)
 {
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::FindText, nullptr);
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
 
-    *ppRetVal = nullptr;
-    try
-    {
-        // TODO GitHub #605: Search functionality
-        // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
-        // We should actually abstract this out better once Windows Terminal has Search
-
-        std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone = std::bind(&UiaTextRange::Clone, this, std::placeholders::_1);
-        return _pData->SearchForText(text,
-                                     searchBackward,
-                                     ignoreCase,
-                                     ppRetVal,
-                                     _start,
-                                     _end,
-                                     _coordToEndpoint,
-                                     _endpointToCoord,
-                                     Clone);
-    }
-    CATCH_RETURN();
-}
-
-IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                               _Out_ VARIANT* pRetVal)
-{
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetAttributeValue, nullptr);
     if (textAttributeId == UIA_IsReadOnlyAttributeId)
@@ -646,13 +442,14 @@ IFACEMETHODIMP UiaTextRange::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttribut
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
     try
@@ -707,18 +504,24 @@ IFACEMETHODIMP UiaTextRange::GetBoundingRectangles(_Outptr_result_maybenull_ SAF
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal)
 {
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangles, nullptr);
     return _pProvider->QueryInterface(IID_PPV_ARGS(ppRetVal));
 }
 
-IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
+
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    *pRetVal = nullptr;
 
     std::wstring wstr = L"";
 
@@ -811,15 +614,16 @@ IFACEMETHODIMP UiaTextRange::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
-                                  _In_ int count,
-                                  _Out_ int* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
+                                      _In_ int count,
+                                      _Out_ int* pRetVal)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
     if (count == 0)
     {
@@ -881,16 +685,17 @@ IFACEMETHODIMP UiaTextRange::Move(_In_ TextUnit unit,
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
-                                                _In_ TextUnit unit,
-                                                _In_ int count,
-                                                _Out_ int* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
+                                                    _In_ TextUnit unit,
+                                                    _In_ int count,
+                                                    _Out_ int* pRetVal)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
 
+    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
     if (count == 0)
     {
@@ -948,16 +753,16 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint en
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
-                                                 _In_ ITextRangeProvider* pTargetRange,
-                                                 _In_ TextPatternRangeEndpoint targetEndpoint)
+IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
+                                                     _In_ ITextRangeProvider* pTargetRange,
+                                                     _In_ TextPatternRangeEndpoint targetEndpoint)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
         _pData->UnlockConsole();
     });
 
-    UiaTextRange* range = static_cast<UiaTextRange*>(pTargetRange);
+    UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
@@ -1058,7 +863,7 @@ IFACEMETHODIMP UiaTextRange::MoveEndpointByRange(_In_ TextPatternRangeEndpoint e
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::Select()
+IFACEMETHODIMP UiaTextRangeBase::Select()
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
@@ -1090,7 +895,7 @@ IFACEMETHODIMP UiaTextRange::Select()
 }
 
 // we don't support this
-IFACEMETHODIMP UiaTextRange::AddToSelection()
+IFACEMETHODIMP UiaTextRangeBase::AddToSelection()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::AddToSelection, nullptr);
@@ -1098,14 +903,14 @@ IFACEMETHODIMP UiaTextRange::AddToSelection()
 }
 
 // we don't support this
-IFACEMETHODIMP UiaTextRange::RemoveFromSelection()
+IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RemoveFromSelection, nullptr);
     return E_NOTIMPL;
 }
 
-IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
+IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
 {
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&] {
@@ -1179,8 +984,7 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
 
     try
     {
-        auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
-        provider->ChangeViewport(newViewport);
+        _ChangeViewport(newViewport);
     }
     CATCH_RETURN();
 
@@ -1193,10 +997,12 @@ IFACEMETHODIMP UiaTextRange::ScrollIntoView(_In_ BOOL alignToTop)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
+
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
 
     // we don't have any children
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
@@ -1209,12 +1015,12 @@ IFACEMETHODIMP UiaTextRange::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** p
 
 #pragma endregion
 
-const COORD UiaTextRange::_getScreenBufferCoords(IUiaData* pData)
+const COORD UiaTextRangeBase::_getScreenBufferCoords(IUiaData* pData)
 {
     return pData->GetTextBuffer().GetSize().Dimensions();
 }
 
-COORD UiaTextRange::_getScreenFontSize() const
+COORD UiaTextRangeBase::_getScreenFontSize() const
 {
     COORD coordRet = _pData->GetFontInfo().GetSize();
 
@@ -1231,7 +1037,7 @@ COORD UiaTextRange::_getScreenFontSize() const
 // - <none>
 // Return Value:
 // - The number of rows
-const unsigned int UiaTextRange::_getTotalRows(IUiaData* pData)
+const unsigned int UiaTextRangeBase::_getTotalRows(IUiaData* pData)
 {
     return pData->GetTextBuffer().TotalRowCount();
 }
@@ -1242,7 +1048,7 @@ const unsigned int UiaTextRange::_getTotalRows(IUiaData* pData)
 // - <none>
 // Return Value:
 // - The row width
-const unsigned int UiaTextRange::_getRowWidth(IUiaData* pData)
+const unsigned int UiaTextRangeBase::_getRowWidth(IUiaData* pData)
 {
     // make sure that we can't leak a 0
     return std::max(static_cast<unsigned int>(_getScreenBufferCoords(pData).X), 1u);
@@ -1254,7 +1060,7 @@ const unsigned int UiaTextRange::_getRowWidth(IUiaData* pData)
 // - endpoint - the endpoint to translate
 // Return Value:
 // - the column value
-const Column UiaTextRange::_endpointToColumn(IUiaData* pData, const Endpoint endpoint)
+const Column UiaTextRangeBase::_endpointToColumn(IUiaData* pData, const Endpoint endpoint)
 {
     return endpoint % _getRowWidth(pData);
 }
@@ -1265,8 +1071,8 @@ const Column UiaTextRange::_endpointToColumn(IUiaData* pData, const Endpoint end
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the text buffer row value
-const TextBufferRow UiaTextRange::_endpointToTextBufferRow(IUiaData* pData,
-                                                           const Endpoint endpoint)
+const TextBufferRow UiaTextRangeBase::_endpointToTextBufferRow(IUiaData* pData,
+                                                               const Endpoint endpoint)
 {
     return endpoint / _getRowWidth(pData);
 }
@@ -1278,7 +1084,7 @@ const TextBufferRow UiaTextRange::_endpointToTextBufferRow(IUiaData* pData,
 // - <none>
 // Return Value:
 // - The number of rows in the range.
-const unsigned int UiaTextRange::_rowCountInRange(IUiaData* pData) const
+const unsigned int UiaTextRangeBase::_rowCountInRange(IUiaData* pData) const
 {
     if (_degenerate)
     {
@@ -1302,8 +1108,8 @@ const unsigned int UiaTextRange::_rowCountInRange(IUiaData* pData) const
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                const TextBufferRow row)
+const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(IUiaData* pData,
+                                                                    const TextBufferRow row)
 {
     const int firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row - firstRowIndex);
@@ -1316,7 +1122,7 @@ const ScreenInfoRow UiaTextRange::_textBufferRowToScreenInfoRow(IUiaData* pData,
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row)
+const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row)
 {
     const SMALL_RECT viewport = pData->GetViewport().ToInclusive();
     return _screenInfoRowToViewportRow(row, viewport);
@@ -1329,8 +1135,8 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(IUiaData* pData, con
 // - viewport - the viewport to use for the conversion
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                            const SMALL_RECT viewport)
+const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                                const SMALL_RECT viewport)
 {
     return row - viewport.Top;
 }
@@ -1343,7 +1149,7 @@ const ViewportRow UiaTextRange::_screenInfoRowToViewportRow(const ScreenInfoRow 
 // - the non-normalized row index
 // Return Value:
 // - the normalized row index
-const Row UiaTextRange::_normalizeRow(IUiaData* pData, const Row row)
+const Row UiaTextRangeBase::_normalizeRow(IUiaData* pData, const Row row)
 {
     const unsigned int totalRows = _getTotalRows(pData);
     return ((row + totalRows) % totalRows);
@@ -1355,7 +1161,7 @@ const Row UiaTextRange::_normalizeRow(IUiaData* pData, const Row row)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport height
-const unsigned int UiaTextRange::_getViewportHeight(const SMALL_RECT viewport)
+const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewport)
 {
     FAIL_FAST_IF(!(viewport.Bottom >= viewport.Top));
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -1369,7 +1175,7 @@ const unsigned int UiaTextRange::_getViewportHeight(const SMALL_RECT viewport)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport width
-const unsigned int UiaTextRange::_getViewportWidth(const SMALL_RECT viewport)
+const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport)
 {
     FAIL_FAST_IF(!(viewport.Right >= viewport.Left));
 
@@ -1385,8 +1191,8 @@ const unsigned int UiaTextRange::_getViewportWidth(const SMALL_RECT viewport)
 // - row - the screen info row to check
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isScreenInfoRowInViewport(IUiaData* pData,
-                                                    const ScreenInfoRow row)
+const bool UiaTextRangeBase::_isScreenInfoRowInViewport(IUiaData* pData,
+                                                        const ScreenInfoRow row)
 {
     return _isScreenInfoRowInViewport(row, pData->GetViewport().ToInclusive());
 }
@@ -1398,8 +1204,8 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(IUiaData* pData,
 // - viewport - the viewport to use for the bounds
 // Return Value:
 // - true if the row is within the bounds of the viewport
-const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                    const SMALL_RECT viewport)
+const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
+                                                        const SMALL_RECT viewport)
 {
     ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
@@ -1412,8 +1218,8 @@ const bool UiaTextRange::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent TextBufferRow.
-const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                const ScreenInfoRow row)
+const TextBufferRow UiaTextRangeBase::_screenInfoRowToTextBufferRow(IUiaData* pData,
+                                                                    const ScreenInfoRow row)
 {
     const TextBufferRow firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row + firstRowIndex);
@@ -1425,7 +1231,7 @@ const TextBufferRow UiaTextRange::_screenInfoRowToTextBufferRow(IUiaData* pData,
 // - row - the TextBufferRow to convert
 // Return Value:
 // - the equivalent Endpoint, starting at the beginning of the TextBufferRow.
-const Endpoint UiaTextRange::_textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row)
+const Endpoint UiaTextRangeBase::_textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row)
 {
     return _getRowWidth(pData) * row;
 }
@@ -1436,8 +1242,8 @@ const Endpoint UiaTextRange::_textBufferRowToEndpoint(IUiaData* pData, const Tex
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent Endpoint.
-const Endpoint UiaTextRange::_screenInfoRowToEndpoint(IUiaData* pData,
-                                                      const ScreenInfoRow row)
+const Endpoint UiaTextRangeBase::_screenInfoRowToEndpoint(IUiaData* pData,
+                                                          const ScreenInfoRow row)
 {
     return _textBufferRowToEndpoint(pData, _screenInfoRowToTextBufferRow(pData, row));
 }
@@ -1448,8 +1254,8 @@ const Endpoint UiaTextRange::_screenInfoRowToEndpoint(IUiaData* pData,
 // - endpoint - the endpoint to convert
 // Return Value:
 // - the equivalent ScreenInfoRow.
-const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(IUiaData* pData,
-                                                           const Endpoint endpoint)
+const ScreenInfoRow UiaTextRangeBase::_endpointToScreenInfoRow(IUiaData* pData,
+                                                               const Endpoint endpoint)
 {
     return _textBufferRowToScreenInfoRow(pData, _endpointToTextBufferRow(pData, endpoint));
 }
@@ -1463,9 +1269,9 @@ const ScreenInfoRow UiaTextRange::_endpointToScreenInfoRow(IUiaData* pData,
 // - <none>
 // Notes:
 // - alters coords. may throw an exception.
-void UiaTextRange::_addScreenInfoRowBoundaries(IUiaData* pData,
-                                               const ScreenInfoRow screenInfoRow,
-                                               _Inout_ std::vector<double>& coords) const
+void UiaTextRangeBase::_addScreenInfoRowBoundaries(IUiaData* pData,
+                                                   const ScreenInfoRow screenInfoRow,
+                                                   _Inout_ std::vector<double>& coords) const
 {
     const COORD currentFontSize = _getScreenFontSize();
 
@@ -1501,17 +1307,8 @@ void UiaTextRange::_addScreenInfoRowBoundaries(IUiaData* pData,
 
     // convert the coords to be relative to the screen instead of
     // the client window
-    HWND hwnd = _getWindowHandle();
-
-    if (hwnd == nullptr)
-    {
-        // TODO GitHub #2103: NON-HWND IMPLEMENTATION OF CLIENTTOSCREEN()
-    }
-    else
-    {
-        ClientToScreen(hwnd, &topLeft);
-        ClientToScreen(hwnd, &bottomRight);
-    }
+    _TranslatePointToScreen(&topLeft);
+    _TranslatePointToScreen(&bottomRight);
 
     const LONG width = bottomRight.x - topLeft.x;
     const LONG height = bottomRight.y - topLeft.y;
@@ -1529,7 +1326,7 @@ void UiaTextRange::_addScreenInfoRowBoundaries(IUiaData* pData,
 // - <none>
 // Return Value:
 // - the index of the first row (0-indexed) of the screen info
-const unsigned int UiaTextRange::_getFirstScreenInfoRowIndex()
+const unsigned int UiaTextRangeBase::_getFirstScreenInfoRowIndex()
 {
     return 0;
 }
@@ -1540,7 +1337,7 @@ const unsigned int UiaTextRange::_getFirstScreenInfoRowIndex()
 // - <none>
 // Return Value:
 // - the index of the last row (0-indexed) of the screen info
-const unsigned int UiaTextRange::_getLastScreenInfoRowIndex(IUiaData* pData)
+const unsigned int UiaTextRangeBase::_getLastScreenInfoRowIndex(IUiaData* pData)
 {
     return _getTotalRows(pData) - 1;
 }
@@ -1551,7 +1348,7 @@ const unsigned int UiaTextRange::_getLastScreenInfoRowIndex(IUiaData* pData)
 // - <none>
 // Return Value:
 // - the index of the first column (0-indexed) of the screen info rows
-const Column UiaTextRange::_getFirstColumnIndex()
+const Column UiaTextRangeBase::_getFirstColumnIndex()
 {
     return 0;
 }
@@ -1562,7 +1359,7 @@ const Column UiaTextRange::_getFirstColumnIndex()
 // - <none>
 // Return Value:
 // - the index of the last column (0-indexed) of the screen info rows
-const Column UiaTextRange::_getLastColumnIndex(IUiaData* pData)
+const Column UiaTextRangeBase::_getLastColumnIndex(IUiaData* pData)
 {
     return _getRowWidth(pData) - 1;
 }
@@ -1578,11 +1375,11 @@ const Column UiaTextRange::_getLastColumnIndex(IUiaData* pData)
 //   -1 if A < B
 //    1 if A > B
 //    0 if A == B
-const int UiaTextRange::_compareScreenCoords(IUiaData* pData,
-                                             const ScreenInfoRow rowA,
-                                             const Column colA,
-                                             const ScreenInfoRow rowB,
-                                             const Column colB)
+const int UiaTextRangeBase::_compareScreenCoords(IUiaData* pData,
+                                                 const ScreenInfoRow rowA,
+                                                 const Column colA,
+                                                 const ScreenInfoRow rowB,
+                                                 const Column colB)
 {
     FAIL_FAST_IF(!(rowA >= _getFirstScreenInfoRowIndex()));
     FAIL_FAST_IF(!(rowA <= _getLastScreenInfoRowIndex(pData)));
@@ -1627,10 +1424,10 @@ const int UiaTextRange::_compareScreenCoords(IUiaData* pData,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - a pair of endpoints of the form <start, end>
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(IUiaData* pData,
-                                                             const int moveCount,
-                                                             const MoveState moveState,
-                                                             _Out_ int* const pAmountMoved)
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacter(IUiaData* pData,
+                                                                 const int moveCount,
+                                                                 const MoveState moveState,
+                                                                 _Out_ int* const pAmountMoved)
 {
     if (moveState.Direction == MovementDirection::Forward)
     {
@@ -1642,10 +1439,10 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacter(IUiaData* pData,
     }
 }
 
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(IUiaData* pData,
-                                                                    const int moveCount,
-                                                                    const MoveState moveState,
-                                                                    _Out_ int* const pAmountMoved)
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterForward(IUiaData* pData,
+                                                                        const int moveCount,
+                                                                        const MoveState moveState,
+                                                                        _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
     int count = moveCount;
@@ -1688,11 +1485,12 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterForward(IUiaData* pD
     return std::make_pair<Endpoint, Endpoint>(std::move(start), std::move(end));
 }
 
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(IUiaData* pData,
-                                                                     const int moveCount,
-                                                                     const MoveState moveState,
-                                                                     _Out_ int* const pAmountMoved)
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(IUiaData* pData,
+                                                                         const int moveCount,
+                                                                         const MoveState moveState,
+                                                                         _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
@@ -1745,11 +1543,12 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByCharacterBackward(IUiaData* p
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - a pair of endpoints of the form <start, end>
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(IUiaData* pData,
-                                                        const int moveCount,
-                                                        const MoveState moveState,
-                                                        _Out_ int* const pAmountMoved)
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByLine(IUiaData* pData,
+                                                            const int moveCount,
+                                                            const MoveState moveState,
+                                                            _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
     Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
     Endpoint end = _screenInfoRowToEndpoint(pData, moveState.EndScreenInfoRow) + moveState.EndColumn;
@@ -1792,13 +1591,14 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByLine(IUiaData* pData,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - a pair of endpoints of the form <start, end>
-std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(IUiaData* pData,
-                                                            const int /*moveCount*/,
-                                                            const MoveState moveState,
-                                                            _Out_ int* const pAmountMoved)
+std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByDocument(IUiaData* pData,
+                                                                const int /*moveCount*/,
+                                                                const MoveState moveState,
+                                                                _Out_ int* const pAmountMoved)
 {
     // We can't move by anything larger than a line, so move by document will apply and will
     // just report that it can't do that.
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
 
     // We then have to return the same endpoints as what we initially had so nothing happens.
@@ -1819,12 +1619,13 @@ std::pair<Endpoint, Endpoint> UiaTextRange::_moveByDocument(IUiaData* pData,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(IUiaData* pData,
-                                                                                const int moveCount,
-                                                                                const TextPatternRangeEndpoint endpoint,
-                                                                                const MoveState moveState,
-                                                                                _Out_ int* const pAmountMoved)
+std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitCharacter(IUiaData* pData,
+                                                                                    const int moveCount,
+                                                                                    const TextPatternRangeEndpoint endpoint,
+                                                                                    const MoveState moveState,
+                                                                                    _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     if (moveState.Direction == MovementDirection::Forward)
     {
         return _moveEndpointByUnitCharacterForward(pData, moveCount, endpoint, moveState, pAmountMoved);
@@ -1836,12 +1637,13 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitCharacter(
 }
 
 std::tuple<Endpoint, Endpoint, bool>
-UiaTextRange::_moveEndpointByUnitCharacterForward(IUiaData* pData,
-                                                  const int moveCount,
-                                                  const TextPatternRangeEndpoint endpoint,
-                                                  const MoveState moveState,
-                                                  _Out_ int* const pAmountMoved)
+UiaTextRangeBase::_moveEndpointByUnitCharacterForward(IUiaData* pData,
+                                                      const int moveCount,
+                                                      const TextPatternRangeEndpoint endpoint,
+                                                      const MoveState moveState,
+                                                      _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
@@ -1925,12 +1727,13 @@ UiaTextRange::_moveEndpointByUnitCharacterForward(IUiaData* pData,
 }
 
 std::tuple<Endpoint, Endpoint, bool>
-UiaTextRange::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
-                                                   const int moveCount,
-                                                   const TextPatternRangeEndpoint endpoint,
-                                                   const MoveState moveState,
-                                                   _Out_ int* const pAmountMoved)
+UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
+                                                       const int moveCount,
+                                                       const TextPatternRangeEndpoint endpoint,
+                                                       const MoveState moveState,
+                                                       _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
@@ -2025,12 +1828,13 @@ UiaTextRange::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(IUiaData* pData,
-                                                                           const int moveCount,
-                                                                           const TextPatternRangeEndpoint endpoint,
-                                                                           const MoveState moveState,
-                                                                           _Out_ int* const pAmountMoved)
+std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitLine(IUiaData* pData,
+                                                                               const int moveCount,
+                                                                               const TextPatternRangeEndpoint endpoint,
+                                                                               const MoveState moveState,
+                                                                               _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
     int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
@@ -2184,12 +1988,13 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitLine(IUiaD
 // - pAmountMoved - the number of times that the return values are "moved"
 // Return Value:
 // - A tuple of elements of the form <start, end, degenerate>
-std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(IUiaData* pData,
-                                                                               const int moveCount,
-                                                                               const TextPatternRangeEndpoint endpoint,
-                                                                               const MoveState moveState,
-                                                                               _Out_ int* const pAmountMoved)
+std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitDocument(IUiaData* pData,
+                                                                                   const int moveCount,
+                                                                                   const TextPatternRangeEndpoint endpoint,
+                                                                                   const MoveState moveState,
+                                                                                   _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
 
     Endpoint start;
@@ -2251,18 +2056,18 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRange::_moveEndpointByUnitDocument(I
     return std::make_tuple(start, end, degenerate);
 }
 
-COORD UiaTextRange::_endpointToCoord(IUiaData* pData, const Endpoint endpoint)
+COORD UiaTextRangeBase::_endpointToCoord(IUiaData* pData, const Endpoint endpoint)
 {
     return { gsl::narrow<short>(_endpointToColumn(pData, endpoint)), gsl::narrow<short>(_endpointToScreenInfoRow(pData, endpoint)) };
 }
 
-Endpoint UiaTextRange::_coordToEndpoint(IUiaData* pData,
-                                        const COORD coord)
+Endpoint UiaTextRangeBase::_coordToEndpoint(IUiaData* pData,
+                                            const COORD coord)
 {
     return _screenInfoRowToEndpoint(pData, coord.Y) + coord.X;
 }
 
-RECT UiaTextRange::_getTerminalRect() const
+RECT UiaTextRangeBase::_getTerminalRect() const
 {
     UiaRect result;
 
@@ -2276,10 +2081,4 @@ RECT UiaTextRange::_getTerminalRect() const
         gsl::narrow<LONG>(result.left + result.width),
         gsl::narrow<LONG>(result.top + result.height)
     };
-}
-
-HWND UiaTextRange::_getWindowHandle() const
-{
-    const auto provider = static_cast<ScreenInfoUiaProvider*>(_pProvider);
-    return provider->GetWindowHandle();
 }

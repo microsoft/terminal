@@ -5,7 +5,6 @@
 
 #include "IUiaWindow.h"
 #include "WindowUiaProviderBase.hpp"
-#include "ScreenInfoUiaProvider.h"
 
 using namespace Microsoft::Console::Types;
 

@@ -3,7 +3,7 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- screenInfoUiaProvider.hpp
+- ScreenInfoUiaProviderBase.hpp
 
 Abstract:
 - This module provides UI Automation access to the screen buffer to
@@ -23,6 +23,7 @@ Author(s):
 
 #include "precomp.h"
 #include "../buffer/out/textBuffer.hpp"
+#include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
 
 namespace Microsoft::Console::Types
@@ -30,20 +31,14 @@ namespace Microsoft::Console::Types
     class WindowUiaProviderBase;
     class Viewport;
 
-    class ScreenInfoUiaProvider :
+    class ScreenInfoUiaProviderBase :
         public IRawElementProviderSimple,
         public IRawElementProviderFragment,
         public ITextProvider
     {
     public:
-        ScreenInfoUiaProvider(_In_ IUiaData* pData,
-                              _In_ WindowUiaProviderBase* const pUiaParent,
-                              _In_ std::function<RECT()> GetBoundingRect);
-
-        // TODO GitHub 2120: pUiaParent should not be allowed to be null
-        ScreenInfoUiaProvider(_In_ IUiaData* pData,
-                              _In_ WindowUiaProviderBase* const pUiaParent);
-        virtual ~ScreenInfoUiaProvider();
+        ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
+        virtual ~ScreenInfoUiaProviderBase();
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
 
@@ -64,13 +59,13 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
 
         // IRawElementProviderFragment methods
-        IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
-                                _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider);
+        virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
+                                        _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
         IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
-        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
+        virtual IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) = 0;
         IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
         IFACEMETHODIMP SetFocus();
-        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
+        virtual IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) = 0;
 
         // ITextProvider
         IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
@@ -82,18 +77,32 @@ namespace Microsoft::Console::Types
         IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
         IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
 
-        HWND GetWindowHandle() const;
-        void ChangeViewport(const SMALL_RECT NewWindow);
+    protected:
+        virtual std::deque<UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) = 0;
+
+        // degenerate range
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider) = 0;
+
+        // degenerate range at cursor position
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const Cursor& cursor) = 0;
+
+        // specific endpoint range
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const Endpoint start,
+                                                  const Endpoint end,
+                                                  const bool degenerate) = 0;
+
+        // range from a UiaPoint
+        virtual UiaTextRangeBase* CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
+                                                  const UiaPoint point) = 0;
+
+        // weak reference to IRenderData
+        IUiaData* _pData;
 
     private:
         // Ref counter for COM object
         ULONG _cRefs;
-
-        // weak reference to uia parent
-        WindowUiaProviderBase* const _pUiaParent;
-
-        // weak reference to IRenderData
-        IUiaData* _pData;
 
         // this is used to prevent the object from
         // signaling an event while it is already in the
@@ -113,9 +122,6 @@ namespace Microsoft::Console::Types
         const Viewport _getViewport() const;
         void _LockConsole() noexcept;
         void _UnlockConsole() noexcept;
-
-        // these functions are reserved for Windows Terminal
-        std::function<RECT(void)> _getBoundingRect;
     };
 
     namespace ScreenInfoUiaProviderTracing
