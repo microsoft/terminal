@@ -631,13 +631,6 @@ a `source` key to the profile. Everything else in the profile can remain the
 same. Once the `source` is added, we'll know to treat it as a dynamic profile,
 and it'll respond dynamically.
 
-<!-- We could special case our deserializer to handler this scenario. While parsing
-the user settings for profiles, if it comes across a profile with the powershell
-core GUID and no `source`, it could manually insert a `source` to that profile.
-This would have the unintended side-effect of _always_ migrating that profile to
-be a dynamic profile.
- -->
-
 This is actually something that will automatically be covered by the scenario
 mentioned above in "Profiles with the same `guid` as a dynamic profile but not
 the same `source`". When we encounter the existing Powershell Core profiles that
