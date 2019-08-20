@@ -71,6 +71,9 @@ private:
     void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
 
+    void _LayerOrCreateProfile(const Json::Value& profileJson);
+    Profile* _FindMatchingProfile(const Json::Value& profileJson);
+
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
     static std::optional<std::string> _ReadSettings();

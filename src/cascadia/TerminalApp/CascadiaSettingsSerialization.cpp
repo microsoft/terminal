@@ -210,13 +210,41 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         {
             if (profileJson.isObject())
             {
-                auto profile = Profile::FromJson(profileJson);
-                resultPtr->_profiles.emplace_back(profile);
+                // auto profile = Profile::FromJson(profileJson);
+                // resultPtr->_profiles.emplace_back(profile);
+                resultPtr->_LayerOrCreateProfile(profileJson);
             }
         }
     }
 
     return resultPtr;
+}
+
+void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
+{
+    // Layer the json on top of an existing profile, if we have one:
+    auto pProfile = _FindMatchingProfile(profileJson);
+    if (pProfile)
+    {
+        pProfile->LayerJson(profileJson);
+    }
+    else
+    {
+        auto profile = Profile::FromJson(profileJson);
+        _profiles.emplace_back(profile);
+    }
+}
+
+Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
+{
+    for (auto& profile : _profiles)
+    {
+        if (profile.ShouldBeLayered(profileJson))
+        {
+            return &profile;
+        }
+    }
+    return nullptr;
 }
 
 // Function Description:

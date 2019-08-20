@@ -37,6 +37,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateManyWarnings);
         TEST_METHOD(CanLayerProfile);
         TEST_METHOD(LayerProfileProperties);
+        TEST_METHOD(LayerProfilesOnArray);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -477,5 +478,87 @@ namespace TerminalAppLocalTests
 
         VERIFY_IS_TRUE(profile0._schemeName.has_value());
         VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+    }
+
+    void SettingsTests::LayerProfilesOnArray()
+    {
+        const std::string profile0String{ R"({
+            "name" : "profile0",
+            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile1String{ R"({
+            "name" : "profile1",
+            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile2String{ R"({
+            "name" : "profile2",
+            "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile3String{ R"({
+            "name" : "profile3",
+            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile4String{ R"({
+            "name" : "profile4",
+            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto profile1Json = VerifyParseSucceeded(profile1String);
+        const auto profile2Json = VerifyParseSucceeded(profile2String);
+        const auto profile3Json = VerifyParseSucceeded(profile3String);
+        const auto profile4Json = VerifyParseSucceeded(profile4String);
+
+        CascadiaSettings settings{};
+
+        VERIFY_ARE_EQUAL(0, settings._profiles.size());
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile4Json));
+
+        settings._LayerOrCreateProfile(profile0Json);
+        VERIFY_ARE_EQUAL(1, settings._profiles.size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+
+        settings._LayerOrCreateProfile(profile1Json);
+        VERIFY_ARE_EQUAL(2, settings._profiles.size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+
+        settings._LayerOrCreateProfile(profile2Json);
+        VERIFY_ARE_EQUAL(3, settings._profiles.size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
+
+        settings._LayerOrCreateProfile(profile3Json);
+        VERIFY_ARE_EQUAL(3, settings._profiles.size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(0)._name);
+
+        settings._LayerOrCreateProfile(profile4Json);
+        VERIFY_ARE_EQUAL(3, settings._profiles.size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
     }
 }
