@@ -1546,6 +1546,7 @@ namespace winrt::TerminalApp::implementation
             }
 
             Clipboard::SetContent(dataPack);
+            Clipboard::Flush();
         });
     }
 
