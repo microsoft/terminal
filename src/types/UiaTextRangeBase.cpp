@@ -320,6 +320,7 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
                                                   _Out_ int* pRetVal)
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    *pRetVal = 0;
 
     // get the text range that we're comparing to
     UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
