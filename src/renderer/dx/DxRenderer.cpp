@@ -295,14 +295,14 @@ DxEngine::~DxEngine()
     RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                              &_d2dBrushForeground));
 
-    D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
-        D2D1_CAP_STYLE_SQUARE,
-        D2D1_CAP_STYLE_SQUARE,
-        D2D1_CAP_STYLE_SQUARE,
-        D2D1_LINE_JOIN_MITER,
-        0.f,
-        D2D1_DASH_STYLE_SOLID,
-        0.f,
+    const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        D2D1_CAP_STYLE_SQUARE, // startCap
+        D2D1_CAP_STYLE_SQUARE, // endCap
+        D2D1_CAP_STYLE_SQUARE, // dashCap
+        D2D1_LINE_JOIN_MITER, // lineJoin
+        0.f, // miterLimit
+        D2D1_DASH_STYLE_SOLID, // dashStyle
+        0.f, // dashOffset
     };
     RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
 
@@ -1136,8 +1136,8 @@ enum class CursorPaintType
     }
     case CursorPaintType::Outline:
     {
-        // DrawRectangle in antialiasing mode will straddle the pixels; fix that
-        // This locks the rectangle to the interior of the cell.
+        // DrawRectangle in straddles physical pixels in an attempt to draw a line
+        // between them. To avoid this, bump the rectangle around by half the stroke width.
         rect.top += 0.5f;
         rect.left += 0.5f;
         rect.bottom -= 0.5f;
