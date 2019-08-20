@@ -30,12 +30,9 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
-// Arguments:
-// - saveOnLoad: If true, we'll write the settings back out after we load them,
-//   to make sure the schema is updated.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<std::string> fileData = _ReadSettings();
@@ -70,22 +67,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
 
         // If this throws, the app will catch it and use the default settings (temporarily)
         resultPtr->_ValidateSettings();
-
-        const bool foundWarnings = resultPtr->_warnings.size() > 0;
-
-        // Don't save on load if there were warnings - we tried to gracefully
-        // handle them.
-        if (saveOnLoad && !foundWarnings)
-        {
-            // Logically compare the json we've parsed from the file to what
-            // we'd serialize at runtime. If the values are different, then
-            // write the updated schema back out.
-            const Json::Value reserialized = resultPtr->ToJson();
-            if (reserialized != root)
-            {
-                resultPtr->SaveAll();
-            }
-        }
     }
     else
     {

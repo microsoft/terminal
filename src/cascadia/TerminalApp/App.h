@@ -85,7 +85,7 @@ namespace winrt::TerminalApp::implementation
         void _ShowLoadWarningsDialog();
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
-        [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
+        [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _LoadSettings();
         void _OpenSettings();
 
