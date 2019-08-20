@@ -153,83 +153,82 @@ namespace TerminalAppLocalTests
 
     void ColorSchemeTests::LayerColorSchemesOnArray()
     {
-        // const std::string profile0String{ R"({
-        //     "name" : "profile0",
-        //     "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
-        // })" };
-        // const std::string profile1String{ R"({
-        //     "name" : "profile1",
-        //     "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
-        // })" };
-        // const std::string profile2String{ R"({
-        //     "name" : "profile2",
-        //     "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
-        // })" };
-        // const std::string profile3String{ R"({
-        //     "name" : "profile3",
-        //     "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
-        // })" };
-        // const std::string profile4String{ R"({
-        //     "name" : "profile4",
-        //     "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
-        // })" };
+        const std::string scheme0String{ R"({
+            "name": "scheme0",
+            "foreground": "#000000",
+            "background": "#010101"
+        })" };
+        const std::string scheme1String{ R"({
+            "name": "scheme1",
+            "foreground": "#020202",
+            "background": "#030303"
+        })" };
+        const std::string scheme2String{ R"({
+            "name": "scheme0",
+            "foreground": "#040404",
+            "background": "#050505"
+        })" };
+        const std::string scheme3String{ R"({
+            // "name": "scheme3",
+            "foreground": "#060606",
+            "background": "#070707"
+        })" };
 
-        // const auto profile0Json = VerifyParseSucceeded(profile0String);
-        // const auto profile1Json = VerifyParseSucceeded(profile1String);
-        // const auto profile2Json = VerifyParseSucceeded(profile2String);
-        // const auto profile3Json = VerifyParseSucceeded(profile3String);
-        // const auto profile4Json = VerifyParseSucceeded(profile4String);
+        const auto scheme0Json = VerifyParseSucceeded(scheme0String);
+        const auto scheme1Json = VerifyParseSucceeded(scheme1String);
+        const auto scheme2Json = VerifyParseSucceeded(scheme2String);
+        const auto scheme3Json = VerifyParseSucceeded(scheme3String);
 
-        // CascadiaSettings settings{};
+        CascadiaSettings settings{};
 
-        // VERIFY_ARE_EQUAL(0, settings._profiles.size());
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile4Json));
+        VERIFY_ARE_EQUAL(0, settings._globals.GetColorSchemes().size());
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
 
-        // settings._LayerOrCreateProfile(profile0Json);
-        // VERIFY_ARE_EQUAL(1, settings._profiles.size());
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        settings._LayerOrCreateColorScheme(scheme0Json);
+        VERIFY_ARE_EQUAL(1, settings._globals.GetColorSchemes().size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), settings._globals.GetColorSchemes().at(0)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), settings._globals.GetColorSchemes().at(0)._defaultBackground);
 
-        // settings._LayerOrCreateProfile(profile1Json);
-        // VERIFY_ARE_EQUAL(2, settings._profiles.size());
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
+        settings._LayerOrCreateColorScheme(scheme1Json);
+        VERIFY_ARE_EQUAL(2, settings._globals.GetColorSchemes().size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), settings._globals.GetColorSchemes().at(0)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), settings._globals.GetColorSchemes().at(0)._defaultBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
-        // settings._LayerOrCreateProfile(profile2Json);
-        // VERIFY_ARE_EQUAL(3, settings._profiles.size());
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        // VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
+        settings._LayerOrCreateColorScheme(scheme2Json);
+        VERIFY_ARE_EQUAL(2, settings._globals.GetColorSchemes().size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), settings._globals.GetColorSchemes().at(0)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), settings._globals.GetColorSchemes().at(0)._defaultBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
-        // settings._LayerOrCreateProfile(profile3Json);
-        // VERIFY_ARE_EQUAL(3, settings._profiles.size());
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        // VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(0)._name);
-
-        // settings._LayerOrCreateProfile(profile4Json);
-        // VERIFY_ARE_EQUAL(3, settings._profiles.size());
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile0Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile1Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile2Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile3Json));
-        // VERIFY_IS_NOT_NULL(settings._FindMatchingProfile(profile4Json));
-        // VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
+        settings._LayerOrCreateColorScheme(scheme3Json);
+        VERIFY_ARE_EQUAL(3, settings._globals.GetColorSchemes().size());
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), settings._globals.GetColorSchemes().at(0)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), settings._globals.GetColorSchemes().at(0)._defaultBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
+        VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), settings._globals.GetColorSchemes().at(2)._defaultForeground);
+        VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), settings._globals.GetColorSchemes().at(2)._defaultBackground);
     }
 }

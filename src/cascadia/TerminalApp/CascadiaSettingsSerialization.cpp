@@ -191,15 +191,15 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
     // Not having any profiles is also bad - should we say the file is corrupted?
     //      Or should we just recreate the default profiles?
 
-    auto& resultSchemes = resultPtr->_globals.GetColorSchemes();
     if (auto schemes{ json[SchemesKey.data()] })
     {
         for (auto schemeJson : schemes)
         {
             if (schemeJson.isObject())
             {
-                auto scheme = ColorScheme::FromJson(schemeJson);
-                resultSchemes.emplace_back(std::move(scheme));
+                // auto scheme = ColorScheme::FromJson(schemeJson);
+                // resultSchemes.emplace_back(std::move(scheme));
+                resultPtr->_LayerOrCreateColorScheme(schemeJson);
             }
         }
     }
@@ -247,6 +247,33 @@ Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
     return nullptr;
 }
 
+void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
+{
+    // Layer the json on top of an existing profile, if we have one:
+    auto pScheme = _FindMatchingColorScheme(schemeJson);
+    if (pScheme)
+    {
+        pScheme->LayerJson(schemeJson);
+    }
+    else
+    {
+        auto scheme = ColorScheme::FromJson(schemeJson);
+        _globals.GetColorSchemes().emplace_back(scheme);
+    }
+}
+
+ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
+{
+    for (auto& scheme : _globals.GetColorSchemes())
+    {
+        if (scheme.ShouldBeLayered(schemeJson))
+        {
+            return &scheme;
+        }
+    }
+    return nullptr;
+}
+
 // Function Description:
 // - Returns true if we're running in a packaged context.
 //   If we are, we want to change our settings path slightly.
@@ -274,7 +301,13 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 {
     auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
 
-    auto hOut = CreateFileW(pathToSettingsFile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    auto hOut = CreateFileW(pathToSettingsFile.c_str(),
+                            GENERIC_WRITE,
+                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                            NULL,
+                            CREATE_ALWAYS,
+                            FILE_ATTRIBUTE_NORMAL,
+                            NULL);
     if (hOut == INVALID_HANDLE_VALUE)
     {
         THROW_LAST_ERROR();

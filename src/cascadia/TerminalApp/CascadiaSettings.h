@@ -75,6 +75,8 @@ private:
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
+    void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
+    ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
