@@ -512,7 +512,7 @@ There could alternatively be a hidden option for the "Open Settings" button,
 where holding <kbd>Alt</kbd> while clicking on the button would open the
 `defaults.json` instead.
 
-We could additionally add a `ShortcutAction` (to be bound to a keyybinding) that
+We could additionally add a `ShortcutAction` (to be bound to a keybinding) that
 would `openDefaultSettings`, and we could bind that to
 <kbd>ctrl</kbd>+<kbd>alt</kbd>+<kbd>\`</kbd>, similar to `openSettings` on
 <kbd>ctrl</kbd>+<kbd>\`</kbd>.
@@ -624,7 +624,7 @@ to their modifications.
 
 Right now, default-generated Powershell Core profiles exist with a stable guid
 we've generated for them. However, when we move Powershell Core to being a
-dynamicically generated profile, we'll have to ensure that we don't create a
+dynamically generated profile, we'll have to ensure that we don't create a
 duplicated "dynamic" entry for that profile. If we want to convert the existing
 Powershell Core profiles into a dynamic profile, we'll need to make sure to add
 a `source` key to the profile. Everything else in the profile can remain the
@@ -633,7 +633,7 @@ and it'll respond dynamically.
 
 <!-- We could special case our deserializer to handler this scenario. While parsing
 the user settings for profiles, if it comes across a profile with the powershell
-core GUID and no `source` , it could manually insert a `source` to that profile.
+core GUID and no `source`, it could manually insert a `source` to that profile.
 This would have the unintended side-effect of _always_ migrating that profile to
 be a dynamic profile.
  -->
