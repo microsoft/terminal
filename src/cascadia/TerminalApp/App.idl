@@ -25,6 +25,7 @@ namespace TerminalApp
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();
+        void TitlebarClicked();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

@@ -56,7 +56,6 @@ namespace winrt::TerminalApp::implementation
         std::unique_ptr<::TerminalApp::CascadiaSettings> _settings;
 
         HRESULT _settingsLoadedResult;
-        winrt::hstring _settingsLoadExceptionText{};
 
         bool _loadedInitialSettings;
 

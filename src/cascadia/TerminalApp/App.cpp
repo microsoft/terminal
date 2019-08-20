@@ -22,94 +22,6 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-// clang-format off
-// !!! IMPORTANT !!!
-// Make sure that these keys are in the same order as the
-// SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
-   L"MissingDefaultProfileText",
-   L"DuplicateProfileText"
-};
-static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
-    L"NoProfilesText"
-};
-// clang-format on
-
-// Function Description:
-// - General-purpose helper for looking up a localized string for a
-//   warning/error. First will look for the given key in the provided map of
-//   keys->strings, where the values in the map are ResourceKeys. If it finds
-//   one, it will lookup the localized string from that ResourceKey.
-// - If it does not find a key, it'll return an empty string
-// Arguments:
-// - key: the value to use to look for a resource key in the given map
-// - map: A map of keys->Resource keys.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
-// Return Value:
-// - the localized string for the given type, if it exists.
-template<std::size_t N>
-static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader loader)
-{
-    if (index < keys.size())
-    {
-        return loader.GetLocalizedString(keys.at(index));
-    }
-    return {};
-}
-
-// Function Description:
-// - Gets the text from our ResourceDictionary for the given
-//   SettingsLoadWarning. If there is no such text, we'll return nullptr.
-// - The warning should have an entry in settingsLoadWarningsLabels.
-// Arguments:
-// - warning: the SettingsLoadWarnings value to get the localized text for.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
-// Return Value:
-// - localized text for the given warning
-static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
-{
-    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
-}
-
-// Function Description:
-// - Gets the text from our ResourceDictionary for the given
-//   SettingsLoadError. If there is no such text, we'll return nullptr.
-// - The warning should have an entry in settingsLoadErrorsLabels.
-// Arguments:
-// - error: the SettingsLoadErrors value to get the localized text for.
-// - loader: the ScopedResourceLoader to use to look up the localized string.
-// Return Value:
-// - localized text for the given error
-static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
-{
-    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
-}
-
-// Function Description:
-// - Creates a Run of text to display an error message. The text is yellow or
-//   red for dark/light theme, respectively.
-// Arguments:
-// - text: The text of the error message.
-// - resources: The application's resource loader.
-// Return Value:
-// - The fully styled text run.
-static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceDictionary& resources)
-{
-    Documents::Run textRun;
-    textRun.Text(text);
-
-    // Color the text red (light theme) or yellow (dark theme) based on the system theme
-    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
-    if (resources.HasKey(key))
-    {
-        winrt::IInspectable g = resources.Lookup(key);
-        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
-        textRun.Foreground(brush);
-    }
-
-    return textRun;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
@@ -217,7 +129,11 @@ namespace winrt::TerminalApp::implementation
         {
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
-            _root->ShowOkDialog(titleKey, textKey);
+            _root->ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+        }
+        else if (_settingsLoadedResult == S_FALSE)
+        {
+            _root->ShowLoadWarningsDialog();
         }
     }
 
@@ -280,13 +196,13 @@ namespace winrt::TerminalApp::implementation
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
-            _settingsLoadExceptionText = e.message();
+            _root->SetSettingsLoadExceptionText(e.message());
             LOG_HR(hr);
         }
         catch (const ::TerminalApp::SettingsException& ex)
         {
             hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _resourceLoader);
+            _root->SetSettingsLoadExceptionText(ex.Error());
         }
         catch (...)
         {
@@ -398,15 +314,15 @@ namespace winrt::TerminalApp::implementation
             _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
                 const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
                 const winrt::hstring textKey = L"ReloadJsonParseErrorText";
-                _root->ShowOkDialog(titleKey, textKey);
+                _root->ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
             });
 
             return;
         }
         else if (_settingsLoadedResult == S_FALSE)
         {
-            _root.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                _ShowLoadWarningsDialog();
+            _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+                _root->ShowLoadWarningsDialog();
             });
         }
 
@@ -453,6 +369,23 @@ namespace winrt::TerminalApp::implementation
             return _root->GetTitle();
         }
         return { L"Windows Terminal" };
+    }
+
+    // Method Description:
+    // - Used to tell the app that the titlebar has been clicked. The App won't
+    //   actually recieve any clicks in the titlebar area, so this is a helper
+    //   to clue the app in that a click has happened. The App will use this as
+    //   a indicator that it needs to dismiss any open flyouts.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::TitlebarClicked()
+    {
+        if (_root)
+        {
+            _root->TitlebarClicked();
+        }
     }
 
     // Methods that proxy typed event handlers through TerminalPage
