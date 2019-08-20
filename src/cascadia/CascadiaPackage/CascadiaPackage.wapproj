@@ -249,6 +249,7 @@
     <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-400.png">
       <Link>Images\Wide310x150Logo.scale-400.png</Link>
     </Content>
+    <!-- Profile Icons -->
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png" />
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png" />
     <Content Include="ProfileIcons\{574e775e-4f2a-5b96-ac1e-a2962a402336}.scale-100.png" />
@@ -259,9 +260,16 @@
     <Content Include="ProfileIcons\{9acb9455-ca41-5af7-950f-6bca1bc9722f}.scale-200.png" />
     <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-100.png" />
     <Content Include="ProfileIcons\{b453ae62-4e3d-5e58-b989-0a998ec441b8}.scale-200.png" />
+    <!-- Default Settings -->
+    <Content Include="$(OpenConsoleDir)src\cascadia\TerminalApp\defaults.json">
+      <Link>defaults.json</Link>
+    </Content>
+    <!-- Resources -->
     <PRIResource Include="Resources\en-US\Resources.resw" />
   </ItemGroup>
+
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
+
   <ItemGroup>
     <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
     <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
