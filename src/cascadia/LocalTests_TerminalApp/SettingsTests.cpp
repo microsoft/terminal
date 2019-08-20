@@ -422,14 +422,20 @@ namespace TerminalAppLocalTests
             "background": "#010101"
         })" };
         const std::string profile1String{ R"({
-            "name": "profile2",
+            "name": "profile1",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#020202",
             "colorScheme": "Campbell"
         })" };
+        const std::string profile2String{ R"({
+            "name": "profile2",
+            "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "foreground": "#030303"
+        })" };
 
         const auto profile0Json = VerifyParseSucceeded(profile0String);
         const auto profile1Json = VerifyParseSucceeded(profile1String);
+        const auto profile2Json = VerifyParseSucceeded(profile2String);
 
         auto profile0 = Profile::FromJson(profile0Json);
         VERIFY_IS_TRUE(profile0._defaultForeground.has_value());
@@ -443,11 +449,26 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(profile0._schemeName.has_value());
 
         Log::Comment(NoThrowString().Format(
-            L"Layering profile2 on top of profile0"));
+            L"Layering profile1 on top of profile0"));
         profile0.LayerJson(profile1Json);
 
         VERIFY_IS_TRUE(profile0._defaultForeground.has_value());
         VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), profile0._defaultForeground.value());
+
+        VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
+
+        VERIFY_ARE_EQUAL(L"profile1", profile0._name);
+
+        VERIFY_IS_TRUE(profile0._schemeName.has_value());
+        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+
+        Log::Comment(NoThrowString().Format(
+            L"Layering profile2 on top of (profile0+profile1)"));
+        profile0.LayerJson(profile2Json);
+
+        VERIFY_IS_TRUE(profile0._defaultForeground.has_value());
+        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), profile0._defaultForeground.value());
 
         VERIFY_IS_TRUE(profile0._defaultBackground.has_value());
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), profile0._defaultBackground.value());
