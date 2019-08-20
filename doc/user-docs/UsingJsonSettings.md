@@ -99,7 +99,7 @@ The schema name can then be referenced in one or more profiles.
 
 ### Add a custom background to the WSL Debian terminal profile
 
-1. Download the Debian SVG logo https://www.debian.org/logos/openlogo.svg
+1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
 2. Put the image in the
  `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\`
  directory (same directory as your `profiles.json` file).
@@ -108,9 +108,10 @@ The schema name can then be referenced in one or more profiles.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
 ```json
-    "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
-    "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "fill",
+    "backgroundImage": "ms-appdata:///Roaming/openlogo-100.jpg",
+    "backgroundImageOpacity": 1,
+    "backgroundImageStretchMode" : "none",
+    "backgroundImageAlignment" : "topRight",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
