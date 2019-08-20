@@ -778,110 +778,57 @@ void Pane::_ApplySplitDefinitions()
 }
 
 // Method Description:
-// - Determines whether the pane can be split vertically
+// - Determines whether the pane can be split
 // Arguments:
 // - splitType: what type of split we want to create.
 // Return Value:
-// - True if the pane can be split vertically. False otherwise.
-bool Pane::CanSplitVertical()
+// - True if the pane can be split. False otherwise.
+bool Pane::CanSplit(SplitState splitType)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            return _firstChild->CanSplitVertical();
+            return _firstChild->CanSplit(splitType);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            return _secondChild->CanSplitVertical();
+            return _secondChild->CanSplit(splitType);
         }
 
         return false;
     }
 
-    return _CanSplit(SplitState::Vertical);
+    return _CanSplit(splitType);
 }
 
 // Method Description:
-// - Vertically split the focused pane in our tree of panes, and place the given
+// - Split the focused pane in our tree of panes, and place the given
 //   TermControl into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
-// Arguments:
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
-// Return Value:
-// - <none>
-void Pane::SplitVertical(const GUID& profile, const TermControl& control)
-{
-    // If we're not the leaf, recurse into our children to split them.
-    if (!_IsLeaf())
-    {
-        if (_firstChild->_HasFocusedChild())
-        {
-            _firstChild->SplitVertical(profile, control);
-        }
-        else if (_secondChild->_HasFocusedChild())
-        {
-            _secondChild->SplitVertical(profile, control);
-        }
-
-        return;
-    }
-
-    _Split(SplitState::Vertical, profile, control);
-}
-
-// Method Description:
-// - Determines whether the pane can be split horizontally
 // Arguments:
 // - splitType: what type of split we want to create.
-// Return Value:
-// - True if the pane can be split horizontally. False otherwise.
-bool Pane::CanSplitHorizontal()
-{
-    if (!_IsLeaf())
-    {
-        if (_firstChild->_HasFocusedChild())
-        {
-            return _firstChild->CanSplitHorizontal();
-        }
-        else if (_secondChild->_HasFocusedChild())
-        {
-            return _secondChild->CanSplitHorizontal();
-        }
-
-        return false;
-    }
-
-    return _CanSplit(SplitState::Horizontal);
-}
-
-// Method Description:
-// - Horizontally split the focused pane in our tree of panes, and place the given
-//   TermControl into the newly created pane. If we're the focused pane, then
-//   we'll create two new children, and place them side-by-side in our Grid.
-// Arguments:
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
+void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& control)
 {
     if (!_IsLeaf())
     {
         if (_firstChild->_HasFocusedChild())
         {
-            _firstChild->SplitHorizontal(profile, control);
+            _firstChild->Split(splitType, profile, control);
         }
         else if (_secondChild->_HasFocusedChild())
         {
-            _secondChild->SplitHorizontal(profile, control);
+            _secondChild->Split(splitType, profile, control);
         }
 
         return;
     }
 
-    _Split(SplitState::Horizontal, profile, control);
+    _Split(splitType, profile, control);
 }
 
 // Method Description:

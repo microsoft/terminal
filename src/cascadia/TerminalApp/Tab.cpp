@@ -204,47 +204,28 @@ void Tab::Scroll(const int delta)
 }
 
 // Method Description:
-// - Determines whether the focused pane has sufficient space to be split vertically.
+// - Determines whether the focused pane has sufficient space to be split.
+// Arguments:
+// - splitType: The type of split we want to create.
 // Return Value:
-// - True if the focused pane can be split horizontally. False otherwise.
-bool Tab::CanAddVerticalSplit()
+// - True if the focused pane can be split. False otherwise.
+bool Tab::CanAddSplit(Pane::SplitState splitType)
 {
-    return _rootPane->CanSplitVertical();
+    return _rootPane->CanSplit(splitType);
 }
 
 // Method Description:
-// - Vertically split the focused pane in our tree of panes, and place the
+// - Split the focused pane in our tree of panes, and place the
 //   given TermControl into the newly created pane.
 // Arguments:
+// - splitType: The type of split we want to create.
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
+void Tab::AddSplit(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _rootPane->SplitVertical(profile, control);
-}
-
-// Method Description:
-// - Determines whether the focused pane has sufficient space to be split horizontally.
-// Return Value:
-// - True if the focused pane can be split horizontally. False otherwise.
-bool Tab::CanAddHorizontalSplit()
-{
-    return _rootPane->CanSplitHorizontal();
-}
-
-// Method Description:
-// - Horizontally split the focused pane in our tree of panes, and place the
-//   given TermControl into the newly created pane.
-// Arguments:
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
-// Return Value:
-// - <none>
-void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
-{
-    _rootPane->SplitHorizontal(profile, control);
+    _rootPane->Split(splitType, profile, control);
 }
 
 // Method Description:

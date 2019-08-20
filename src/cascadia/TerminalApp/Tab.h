@@ -19,10 +19,8 @@ public:
     void SetFocused(const bool focused);
 
     void Scroll(const int delta);
-    bool CanAddVerticalSplit();
-    void AddVerticalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    bool CanAddHorizontalSplit();
-    void AddHorizontalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool CanAddSplit(Pane::SplitState splitType);
+    void AddSplit(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateFocus();
     void UpdateIcon(const winrt::hstring iconPath);

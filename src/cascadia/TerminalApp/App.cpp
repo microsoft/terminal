@@ -1493,8 +1493,7 @@ namespace winrt::TerminalApp::implementation
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
-        const auto canSplit = splitType == Pane::SplitState::Horizontal ? focusedTab->CanAddHorizontalSplit() :
-                                                                          focusedTab->CanAddVerticalSplit();
+        const auto canSplit = focusedTab->CanAddSplit(splitType);
 
         if (!canSplit)
         {
@@ -1506,8 +1505,7 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
-                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
+        focusedTab->AddSplit(splitType, realGuid, newControl);
     }
 
     // Method Description:
