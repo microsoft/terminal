@@ -28,6 +28,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     struct TermControl;
 }
 
+namespace Microsoft::Terminal
+{
     class TermControlUiaProvider : public Microsoft::Console::Types::ScreenInfoUiaProviderBase
     {
     public:
