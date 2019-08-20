@@ -27,6 +27,8 @@ static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
+    class ProfileTests;
+    class ColorSchemeTests;
 }
 
 namespace TerminalApp
@@ -89,4 +91,6 @@ private:
     static Profile _CreateDefaultProfile(const std::wstring_view name);
 
     friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ProfileTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
 };

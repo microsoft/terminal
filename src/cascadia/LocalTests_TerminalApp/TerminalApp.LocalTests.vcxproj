@@ -6,11 +6,14 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="precomp.h" />
+    <ClInclude Include="JsonTestClass.h" />
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="SettingsTests.cpp" />
+    <ClCompile Include="ProfileTests.cpp" />
+    <ClCompile Include="ColorSchemeTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

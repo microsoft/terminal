@@ -20,6 +20,7 @@ Author(s):
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
+    class ProfileTests;
 };
 
 namespace TerminalApp
@@ -113,4 +114,5 @@ private:
     std::optional<std::wstring> _icon;
 
     friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ProfileTests;
 };

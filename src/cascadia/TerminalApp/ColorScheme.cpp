@@ -106,20 +106,35 @@ Json::Value ColorScheme::ToJson() const
 ColorScheme ColorScheme::FromJson(const Json::Value& json)
 {
     ColorScheme result{};
+    result.LayerJson(json);
+    return result;
+}
 
+bool ColorScheme::ShouldBeLayered(const Json::Value& json)
+{
     if (auto name{ json[JsonKey(NameKey)] })
     {
-        result._schemeName = winrt::to_hstring(name.asString());
+        auto otherName = GetWstringFromJson(name);
+        return otherName == _schemeName;
+    }
+    return false;
+}
+
+void ColorScheme::LayerJson(const Json::Value& json)
+{
+    if (auto name{ json[JsonKey(NameKey)] })
+    {
+        _schemeName = winrt::to_hstring(name.asString());
     }
     if (auto fgString{ json[JsonKey(ForegroundKey)] })
     {
         const auto color = Utils::ColorFromHexString(fgString.asString());
-        result._defaultForeground = color;
+        _defaultForeground = color;
     }
     if (auto bgString{ json[JsonKey(BackgroundKey)] })
     {
         const auto color = Utils::ColorFromHexString(bgString.asString());
-        result._defaultBackground = color;
+        _defaultBackground = color;
     }
 
     // Legacy Deserialization. Leave in place to allow forward compatibility
@@ -132,7 +147,7 @@ ColorScheme ColorScheme::FromJson(const Json::Value& json)
             if (tableEntry.isString())
             {
                 auto color = Utils::ColorFromHexString(tableEntry.asString());
-                result._table.at(i) = color;
+                _table.at(i) = color;
             }
             i++;
         }
@@ -144,12 +159,10 @@ ColorScheme ColorScheme::FromJson(const Json::Value& json)
         if (auto str{ json[JsonKey(current)] })
         {
             const auto color = Utils::ColorFromHexString(str.asString());
-            result._table.at(i) = color;
+            _table.at(i) = color;
         }
         i++;
     }
-
-    return result;
 }
 
 std::wstring_view ColorScheme::GetName() const noexcept
