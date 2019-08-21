@@ -273,6 +273,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
+    // - This method returns a tenant's ID and display name (if one if available).
+    //   If there is no display name, a placeholder is returned in its stead.
+    // Arguments:
+    // - tenant - the unparsed tenant
+    // Return value:
+    // - a tuple containing the ID and display name of the tenant.
+    static std::tuple<utility::string_t, utility::string_t> _crackTenant(const json::value& tenant)
+    {
+        auto tenantId{ tenant.at(L"tenantId").as_string() };
+        auto displayName{ tenant.has_string_field(L"displayName") ? tenant.at(L"displayName").as_string() : unknownTenantName };
+        return { tenantId, displayName };
+    }
+
+    // Method description:
     // - this method bridges the thread to the Azure connection instance
     // Arguments:
     // - lpParameter: the Azure connection parameter
@@ -508,8 +522,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
         else if (_tenantList.size() == 1)
         {
-            _tenantID = tenantListAsArray.at(0).at(L"tenantId").as_string();
-            _displayName = tenantListAsArray.at(0).at(L"displayName").as_string();
+            const auto& chosenTenant = tenantListAsArray.at(0);
+            std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
 
             // We have to refresh now that we have the tenantID
             const auto refreshResponse = _RefreshTokens();
@@ -537,7 +551,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _maxSize = tenantListAsArray.size();
         for (int i = 0; i < _maxSize; i++)
         {
-            _outputHandlers(_StrFormatHelper(ithTenant, i, tenantListAsArray.at(i).at(L"displayName").as_string().c_str(), tenantListAsArray.at(i).at(L"tenantId").as_string().c_str()));
+            const auto& tenant = tenantListAsArray.at(i);
+            const auto [tenantId, tenantDisplayName] = _crackTenant(tenant);
+            _outputHandlers(_StrFormatHelper(ithTenant, i, tenantDisplayName.c_str(), tenantId.c_str()));
         }
         _outputHandlers(winrt::to_hstring(enterTenant));
         // Use a lock to wait for the user to input a valid number
@@ -550,8 +566,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             return E_FAIL;
         }
-        _tenantID = tenantListAsArray.at(_tenantNumber).at(L"tenantId").as_string();
-        _displayName = tenantListAsArray.at(_tenantNumber).at(L"displayName").as_string();
+
+        const auto& chosenTenant = tenantListAsArray.at(_tenantNumber);
+        std::tie(_tenantID, _displayName) = _crackTenant(chosenTenant);
 
         // We have to refresh now that we have the tenantID
         const auto refreshResponse = _RefreshTokens();
