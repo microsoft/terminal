@@ -146,6 +146,7 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    const bool IsCopyOnSelectActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
@@ -183,6 +184,8 @@ private:
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
+    bool _allowSingleCharSelection;
+    bool _copyOnSelect;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
@@ -234,5 +237,6 @@ private:
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
     const bool _isWordDelimiter(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    const bool _isSingleCellSelection() const noexcept;
 #pragma endregion
 };

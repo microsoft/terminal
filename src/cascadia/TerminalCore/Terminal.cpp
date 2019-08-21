@@ -45,6 +45,8 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _boxSelection{ false },
     _selectionActive{ false },
+    _allowSingleCharSelection{ false },
+    _copyOnSelect{ false },
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
@@ -134,6 +136,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     _snapOnInput = settings.SnapOnInput();
 
     _wordDelimiters = settings.WordDelimiters();
+
+    _copyOnSelect = settings.CopyOnSelect();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer

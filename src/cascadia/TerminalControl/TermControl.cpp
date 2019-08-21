@@ -773,15 +773,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             }
             else if (point.Properties().IsRightButtonPressed())
             {
-                // copy selection, if one exists
-                if (_terminal->IsSelectionActive())
-                {
-                    CopySelectionToClipboard(!shiftEnabled);
-                }
-                // paste selection, otherwise
-                else
+                // copyOnSelect causes right-click to always paste
+                if (_terminal->IsCopyOnSelectActive() || !_terminal->IsSelectionActive())
                 {
                     PasteTextFromClipboard();
+                }
+                else
+                {
+                    CopySelectionToClipboard(!shiftEnabled);
                 }
             }
         }
@@ -808,7 +807,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
         {
-            if (_terminal->IsSelectionActive() && point.Properties().IsLeftButtonPressed())
+            if (point.Properties().IsLeftButtonPressed())
             {
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
@@ -885,7 +884,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         const auto ptr = args.Pointer();
 
-        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
+        if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Mouse)
+        {
+            const auto modifiers = static_cast<uint32_t>(args.KeyModifiers());
+            // static_cast to a uint32_t because we can't use the WI_IsFlagSet
+            // macro directly with a VirtualKeyModifiers
+            const auto shiftEnabled = WI_IsFlagSet(modifiers, static_cast<uint32_t>(VirtualKeyModifiers::Shift));
+
+            if (_terminal->IsCopyOnSelectActive())
+            {
+                CopySelectionToClipboard(!shiftEnabled);
+            }
+        }
+        else if (ptr.PointerDeviceType() == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             _touchAnchor = std::nullopt;
         }
@@ -1387,35 +1398,41 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - get text from buffer and send it to the Windows Clipboard (CascadiaWin32:main.cpp). Also removes rendering of selection.
+    // - Given a copy-able selection, get the selected text from the buffer and send it to the
+    //     Windows Clipboard (CascadiaWin32:main.cpp).
+    // - CopyOnSelect does NOT clear the selection
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
     bool TermControl::CopySelectionToClipboard(bool trimTrailingWhitespace)
     {
-        if (_terminal != nullptr && _terminal->IsSelectionActive())
+        // no selection --> nothing to copy
+        if (_terminal == nullptr || !_terminal->IsSelectionActive())
         {
-            // extract text from buffer
-            const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
-
-            // convert text: vector<string> --> string
-            std::wstring textData;
-            for (const auto& text : bufferData.text)
-            {
-                textData += text;
-            }
-
-            // convert text to HTML format
-            const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName(), "Windows Terminal");
-
-            _terminal->ClearSelection();
-
-            // send data up for clipboard
-            auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), textData.size()), winrt::to_hstring(htmlData));
-            _clipboardCopyHandlers(*this, *copyArgs);
-            return true;
+            return false;
         }
-        return false;
+        // extract text from buffer
+        const auto bufferData = _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace);
+
+        // convert text: vector<string> --> string
+        std::wstring textData;
+        for (const auto& text : bufferData.text)
+        {
+            textData += text;
+        }
+
+        // convert text to HTML format
+        const auto htmlData = TextBuffer::GenHTML(bufferData, _actualFont.GetUnscaledSize().Y, _actualFont.GetFaceName(), "Windows Terminal");
+
+        if (!_terminal->IsCopyOnSelectActive())
+        {
+            _terminal->ClearSelection();
+        }
+
+        // send data up for clipboard
+        auto copyArgs = winrt::make_self<CopyToClipboardEventArgs>(winrt::hstring(textData.data(), textData.size()), winrt::to_hstring(htmlData));
+        _clipboardCopyHandlers(*this, *copyArgs);
+        return true;
     }
 
     // Method Description:

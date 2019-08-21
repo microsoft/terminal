@@ -778,6 +778,31 @@ void Pane::_ApplySplitDefinitions()
 }
 
 // Method Description:
+// - Determines whether the pane can be split vertically
+// Arguments:
+// - splitType: what type of split we want to create.
+// Return Value:
+// - True if the pane can be split vertically. False otherwise.
+bool Pane::CanSplitVertical()
+{
+    if (!_IsLeaf())
+    {
+        if (_firstChild->_HasFocusedChild())
+        {
+            return _firstChild->CanSplitVertical();
+        }
+        else if (_secondChild->_HasFocusedChild())
+        {
+            return _secondChild->CanSplitVertical();
+        }
+
+        return false;
+    }
+
+    return _CanSplit(SplitState::Vertical);
+}
+
+// Method Description:
 // - Vertically split the focused pane in our tree of panes, and place the given
 //   TermControl into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
@@ -807,6 +832,31 @@ void Pane::SplitVertical(const GUID& profile, const TermControl& control)
 }
 
 // Method Description:
+// - Determines whether the pane can be split horizontally
+// Arguments:
+// - splitType: what type of split we want to create.
+// Return Value:
+// - True if the pane can be split horizontally. False otherwise.
+bool Pane::CanSplitHorizontal()
+{
+    if (!_IsLeaf())
+    {
+        if (_firstChild->_HasFocusedChild())
+        {
+            return _firstChild->CanSplitHorizontal();
+        }
+        else if (_secondChild->_HasFocusedChild())
+        {
+            return _secondChild->CanSplitHorizontal();
+        }
+
+        return false;
+    }
+
+    return _CanSplit(SplitState::Horizontal);
+}
+
+// Method Description:
 // - Horizontally split the focused pane in our tree of panes, and place the given
 //   TermControl into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
@@ -832,6 +882,40 @@ void Pane::SplitHorizontal(const GUID& profile, const TermControl& control)
     }
 
     _Split(SplitState::Horizontal, profile, control);
+}
+
+// Method Description:
+// - Determines whether the pane can be split.
+// Arguments:
+// - splitType: what type of split we want to create.
+// Return Value:
+// - True if the pane can be split. False otherwise.
+bool Pane::_CanSplit(SplitState splitType)
+{
+    const bool changeWidth = _splitState == SplitState::Vertical;
+
+    const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
+                           gsl::narrow_cast<float>(_root.ActualHeight()) };
+
+    const Size minSize = _GetMinSize();
+
+    if (splitType == SplitState::Vertical)
+    {
+        const auto widthMinusSeparator = actualSize.Width - PaneSeparatorSize;
+        const auto newWidth = widthMinusSeparator * Half;
+
+        return newWidth > minSize.Width;
+    }
+
+    if (splitType == SplitState::Horizontal)
+    {
+        const auto heightMinusSeparator = actualSize.Height - PaneSeparatorSize;
+        const auto newHeight = heightMinusSeparator * Half;
+
+        return newHeight > minSize.Height;
+    }
+
+    return false;
 }
 
 // Method Description:
