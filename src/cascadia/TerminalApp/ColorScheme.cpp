@@ -6,8 +6,8 @@
 #include "../../types/inc/Utils.hpp"
 #include "Utils.h"
 
-using namespace TerminalApp;
 using namespace ::Microsoft::Console;
+using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 

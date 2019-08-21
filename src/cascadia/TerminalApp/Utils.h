@@ -31,24 +31,65 @@ inline std::string JsonKey(const std::string_view key)
 
 winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
 
-template<typename T, typename F>
-void GetOptionalValue(const Json::Value& json,
-                      std::string_view key,
-                      std::optional<T>& target,
-                      F conversion);
+namespace TerminalApp
+{
+    class AppUtils;
+};
 
-void GetOptionalColor(const Json::Value& json,
-                      std::string_view key,
-                      std::optional<uint32_t>& color);
+class TerminalApp::AppUtils final
+{
+    // using AlignmentPair = std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>;
 
-void GetOptionalString(const Json::Value& json,
-                       std::string_view key,
-                       std::optional<std::wstring>& target);
+public:
+    static void GetOptionalColor(const Json::Value& json,
+                                 std::string_view key,
+                                 std::optional<uint32_t>& color);
 
-void GetOptionalGuid(const Json::Value& json,
-                     std::string_view key,
-                     std::optional<GUID>& target);
+    static void GetOptionalString(const Json::Value& json,
+                                  std::string_view key,
+                                  std::optional<std::wstring>& target);
 
-void GetOptionalDouble(const Json::Value& json,
-                       std::string_view key,
-                       std::optional<double>& target);
+    static void GetOptionalGuid(const Json::Value& json,
+                                std::string_view key,
+                                std::optional<GUID>& target);
+
+    static void GetOptionalDouble(const Json::Value& json,
+                                  std::string_view key,
+                                  std::optional<double>& target);
+
+    // private:
+    template<typename T, typename F>
+    static void GetOptionalValue(const Json::Value& json,
+                                 std::string_view key,
+                                 std::optional<T>& target,
+                                 F&& conversion)
+    {
+        if (json.isMember(JsonKey(key)))
+        {
+            if (auto jsonVal{ json[JsonKey(key)] })
+            {
+                target = conversion(jsonVal);
+            }
+            else
+            {
+                target = std::nullopt;
+            }
+        }
+    }
+    // template<>
+    // static void GetOptionalValue<AlignmentPair,
+    //                              std::function<AlignmentPair(const Json::Value&)>>(
+    //     const Json::Value& json,
+    //     std::string_view key,
+    //     std::optional<AlignmentPair>& target,
+    //     std::function<AlignmentPair(const Json::Value&)>&& conversion)
+    // {
+    //     auto conversionfn = [](const Json::Value& value) -> AlignmentPair {
+    //         return ParseImageAlignment(value.asString());
+    //     };
+    //     GetOptionalValue(json,
+    //                      key,
+    //                      target,
+    //                      conversionfn);
+    // };
+};
