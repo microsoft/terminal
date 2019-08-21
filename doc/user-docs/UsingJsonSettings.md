@@ -71,6 +71,8 @@ Example settings include
     ....
 ```
 
+> 👉 **Note**: To use backslashes in any path field, you'll need to escape them following JSON escaping rules (they should look like `\\`). As an alternative, you can use forward slashes.
+
 The profile GUID is used to reference the default profile in the global settings.
 
 The values for background image stretch mode are documented [here](https://docs.microsoft.com/en-us/uwp/api/windows.ui.xaml.media.stretch)
