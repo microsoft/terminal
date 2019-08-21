@@ -17,6 +17,10 @@ namespace winrt::TerminalApp::implementation
     {
         _keyShortcuts[chord] = action;
     }
+    void AppKeyBindings::ClearKeyBinding(const Settings::KeyChord& chord)
+    {
+        _keyShortcuts.erase(chord);
+    }
 
     Microsoft::Terminal::Settings::KeyChord AppKeyBindings::GetKeyBinding(TerminalApp::ShortcutAction const& action)
     {

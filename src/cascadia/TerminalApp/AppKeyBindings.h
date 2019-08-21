@@ -35,6 +35,7 @@ namespace winrt::TerminalApp::implementation
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+        void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);

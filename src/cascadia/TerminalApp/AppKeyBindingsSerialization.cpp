@@ -13,6 +13,8 @@ using namespace winrt::TerminalApp;
 static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
 
+static constexpr std::string_view UnboundKey{ "unbound" };
+
 static constexpr std::string_view CopyTextKey{ "copy" };
 static constexpr std::string_view CopyTextWithoutNewlinesKey{ "copyTextWithoutNewlines" };
 static constexpr std::string_view PasteTextKey{ "paste" };
@@ -194,25 +196,52 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
 winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const Json::Value& json)
 {
     winrt::TerminalApp::AppKeyBindings newBindings{};
+    LayerJson(newBindings, json);
+    return newBindings;
+}
 
+void AppKeyBindingsSerialization::LayerJson(winrt::TerminalApp::AppKeyBindings& bindings, const Json::Value& json)
+{
     for (const auto& value : json)
     {
-        if (value.isObject())
+        if (!value.isObject())
         {
-            const auto commandString = value[JsonKey(CommandKey)];
-            const auto keys = value[JsonKey(KeysKey)];
+            continue;
+        }
 
-            if (commandString && keys)
+        const auto commandVal = value[JsonKey(CommandKey)];
+        const auto keys = value[JsonKey(KeysKey)];
+
+        if (commandVal && keys)
+        {
+            if (!keys.isArray() || keys.size() != 1)
             {
-                if (!keys.isArray() || keys.size() != 1)
+                continue;
+            }
+            const auto keyChordString = winrt::to_hstring(keys[0].asString());
+            ShortcutAction action;
+
+            auto commandString = commandVal.asString();
+            // If the key chord was bound to null, or "unbound", then remove
+            // the keybinding from the AppKeyBindings.
+            // Otherwise, add the keybinding.
+            // TODO: this works for `"command": "unbound"`, but not `"command": null`
+            if (commandString.empty() || commandString == UnboundKey)
+            {
+                try
+                {
+                    const auto chord = KeyChordSerialization::FromString(keyChordString);
+                    bindings.ClearKeyBinding(chord);
+                }
+                catch (...)
                 {
                     continue;
                 }
-                const auto keyChordString = winrt::to_hstring(keys[0].asString());
-                ShortcutAction action;
-
+            }
+            else
+            {
                 // Try matching the command to one we have
-                const auto found = commandNames.find(commandString.asString());
+                const auto found = commandNames.find(commandVal.asString());
                 if (found != commandNames.end())
                 {
                     action = found->second;
@@ -226,7 +255,7 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
                 try
                 {
                     const auto chord = KeyChordSerialization::FromString(keyChordString);
-                    newBindings.SetKeyBinding(action, chord);
+                    bindings.SetKeyBinding(action, chord);
                 }
                 catch (...)
                 {
@@ -235,5 +264,4 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
             }
         }
     }
-    return newBindings;
 }

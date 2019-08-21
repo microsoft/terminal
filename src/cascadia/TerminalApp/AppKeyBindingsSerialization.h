@@ -24,5 +24,6 @@ class AppKeyBindingsSerialization final
 {
 public:
     static winrt::TerminalApp::AppKeyBindings FromJson(const Json::Value& json);
+    static void LayerJson(winrt::TerminalApp::AppKeyBindings& bindings, const Json::Value& json);
     static Json::Value ToJson(const winrt::TerminalApp::AppKeyBindings& bindings);
 };
