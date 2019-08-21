@@ -8,7 +8,7 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 ### Quick-Guidance to Core Contributors
 1. Look at `Needs-Attention` as top priority
 1. Look at `Needs-Triage` during triage meetings to get a handle on what's new and sort it out
-1. Look at `Needs-Tag-Fix` when you have a few minutes to fix up things tagged impoperly
+1. Look at `Needs-Tag-Fix` when you have a few minutes to fix up things tagged improperly
 1. Manually add `Needs-Author-Feedback` when there's something we need the author to follow up on and want attention if they return it or an auto-close for inactivity if it goes stale.
 
 ### Tagging/Process Details
