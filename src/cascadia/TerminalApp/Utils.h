@@ -33,13 +33,11 @@ winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstr
 
 namespace TerminalApp
 {
-    class AppUtils;
+    class JsonUtils;
 };
 
-class TerminalApp::AppUtils final
+class TerminalApp::JsonUtils final
 {
-    // using AlignmentPair = std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment>;
-
 public:
     static void GetOptionalColor(const Json::Value& json,
                                  std::string_view key,
@@ -57,7 +55,8 @@ public:
                                   std::string_view key,
                                   std::optional<double>& target);
 
-    // private:
+    // Be careful, if you pass a lambda stright into this, it will explode in
+    // the linker.
     template<typename T, typename F>
     static void GetOptionalValue(const Json::Value& json,
                                  std::string_view key,
@@ -76,20 +75,4 @@ public:
             }
         }
     }
-    // template<>
-    // static void GetOptionalValue<AlignmentPair,
-    //                              std::function<AlignmentPair(const Json::Value&)>>(
-    //     const Json::Value& json,
-    //     std::string_view key,
-    //     std::optional<AlignmentPair>& target,
-    //     std::function<AlignmentPair(const Json::Value&)>&& conversion)
-    // {
-    //     auto conversionfn = [](const Json::Value& value) -> AlignmentPair {
-    //         return ParseImageAlignment(value.asString());
-    //     };
-    //     GetOptionalValue(json,
-    //                      key,
-    //                      target,
-    //                      conversionfn);
-    // };
 };

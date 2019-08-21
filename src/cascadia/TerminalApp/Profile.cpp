@@ -360,11 +360,14 @@ bool Profile::ShouldBeLayered(const Json::Value& json)
         return _guid == otherGuid;
     }
 
-    // TODO: Add a test for this
-
     // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
 
     return false;
+}
+
+winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
+{
+    return Profile::ParseImageStretchMode(json.asString());
 }
 
 std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
@@ -400,13 +403,13 @@ void Profile::LayerJson(const Json::Value& json)
     // }
 
     // Core Settings
-    AppUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
+    JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
 
-    AppUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
+    JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
 
-    AppUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
     // TODO:GH#1069 deprecate old settings key
-    AppUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
+    JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
 
     // Only look for the "table" if there's no "schemeName"
     if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
@@ -452,10 +455,10 @@ void Profile::LayerJson(const Json::Value& json)
         auto cursorShape{ json[JsonKey(CursorShapeKey)] };
         _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
-    AppUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
+    JsonUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    AppUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
+    JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
 
     if (json.isMember(JsonKey(CommandlineKey)))
     {
@@ -493,29 +496,19 @@ void Profile::LayerJson(const Json::Value& json)
         _padding = GetWstringFromJson(padding);
     }
 
-    AppUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
+    JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
 
-    AppUtils::GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
+    JsonUtils::GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
 
-    AppUtils::GetOptionalString(json, IconKey, _icon);
+    JsonUtils::GetOptionalString(json, IconKey, _icon);
 
-    AppUtils::GetOptionalString(json, BackgroundImageKey, _backgroundImage);
+    JsonUtils::GetOptionalString(json, BackgroundImageKey, _backgroundImage);
 
-    AppUtils::GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
+    JsonUtils::GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
 
-    if (json.isMember(JsonKey(BackgroundImageStretchModeKey)))
-    {
-        auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] };
-        _backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
-    }
+    JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
 
-    // Utils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment);
-    AppUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
-    // if (json.isMember(JsonKey(BackgroundImageAlignmentKey)))
-    // {
-    //     auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] };
-    //     _backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
-    // }
+    JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept

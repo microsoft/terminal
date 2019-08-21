@@ -72,6 +72,7 @@ private:
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
+    static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
     static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
