@@ -164,26 +164,26 @@ bool Pane::ResizePane(const Direction& direction)
     {
         return _Resize(direction);
     }
-    else
+
+    // If neither of our children were the focused leaf, then recurse into
+    // our children and see if they can handle the resize.
+    // For each child, if it has a focused descendant, try having that child
+    // handle the resize.
+    // If the child wasn't able to handle the resize, it's possible that
+    // there were no descendants with a separator the correct direction. If
+    // our separator _is_ the correct direction, then we should be the pane
+    // to resize. Otherwise, just return false, as we couldn't handle it
+    // either.
+    if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
     {
-        // If neither of our children were the focused leaf, then recurse into
-        // our children and see if they can handle the resize.
-        // For each child, if it has a focused descendant, try having that child
-        // handle the resize.
-        // If the child wasn't able to handle the resize, it's possible that
-        // there were no descendants with a separator the correct direction. If
-        // our separator _is_ the correct direction, then we should be the pane
-        // to resize. Otherwise, just return false, as we couldn't handle it
-        // either.
-        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
-        {
-            return _firstChild->ResizePane(direction) || _Resize(direction);
-        }
-        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
-        {
-            return _secondChild->ResizePane(direction) || _Resize(direction);
-        }
+        return _firstChild->ResizePane(direction) || _Resize(direction);
     }
+
+    if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+    {
+        return _secondChild->ResizePane(direction) || _Resize(direction);
+    }
+
     return false;
 }
 
@@ -253,26 +253,26 @@ bool Pane::NavigateFocus(const Direction& direction)
     {
         return _NavigateFocus(direction);
     }
-    else
+
+    // If neither of our children were the focused leaf, then recurse into
+    // our children and see if they can handle the focus move.
+    // For each child, if it has a focused descendant, try having that child
+    // handle the focus move.
+    // If the child wasn't able to handle the focus move, it's possible that
+    // there were no descendants with a separator the correct direction. If
+    // our separator _is_ the correct direction, then we should be the pane
+    // to move focus into our other child. Otherwise, just return false, as
+    // we couldn't handle it either.
+    if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
     {
-        // If neither of our children were the focused leaf, then recurse into
-        // our children and see if they can handle the focus move.
-        // For each child, if it has a focused descendant, try having that child
-        // handle the focus move.
-        // If the child wasn't able to handle the focus move, it's possible that
-        // there were no descendants with a separator the correct direction. If
-        // our separator _is_ the correct direction, then we should be the pane
-        // to move focus into our other child. Otherwise, just return false, as
-        // we couldn't handle it either.
-        if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
-        {
-            return _firstChild->NavigateFocus(direction) || _NavigateFocus(direction);
-        }
-        else if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
-        {
-            return _secondChild->NavigateFocus(direction) || _NavigateFocus(direction);
-        }
+        return _firstChild->NavigateFocus(direction) || _NavigateFocus(direction);
     }
+
+    if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+    {
+        return _secondChild->NavigateFocus(direction) || _NavigateFocus(direction);
+    }
+
     return false;
 }
 
@@ -348,15 +348,13 @@ std::shared_ptr<Pane> Pane::GetFocusedPane()
     {
         return _lastFocused ? shared_from_this() : nullptr;
     }
-    else
+
+    auto firstFocused = _firstChild->GetFocusedPane();
+    if (firstFocused != nullptr)
     {
-        auto firstFocused = _firstChild->GetFocusedPane();
-        if (firstFocused != nullptr)
-        {
-            return firstFocused;
-        }
-        return _secondChild->GetFocusedPane();
+        return firstFocused;
     }
+    return _secondChild->GetFocusedPane();
 }
 
 // Method Description:
@@ -785,21 +783,22 @@ void Pane::_ApplySplitDefinitions()
 // - True if the pane can be split. False otherwise.
 bool Pane::CanSplit(SplitState splitType)
 {
-    if (!_IsLeaf())
+    if (_IsLeaf())
     {
-        if (_firstChild->_HasFocusedChild())
-        {
-            return _firstChild->CanSplit(splitType);
-        }
-        else if (_secondChild->_HasFocusedChild())
-        {
-            return _secondChild->CanSplit(splitType);
-        }
-
-        return false;
+        return _CanSplit(splitType);
     }
 
-    return _CanSplit(splitType);
+    if (_firstChild->_HasFocusedChild())
+    {
+        return _firstChild->CanSplit(splitType);
+    }
+
+    if (_secondChild->_HasFocusedChild())
+    {
+        return _secondChild->CanSplit(splitType);
+    }
+
+    return false;
 }
 
 // Method Description:
@@ -951,14 +950,12 @@ Size Pane::_GetMinSize() const
     {
         return _control.MinimumSize();
     }
-    else
-    {
-        const auto firstSize = _firstChild->_GetMinSize();
-        const auto secondSize = _secondChild->_GetMinSize();
-        const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
-        const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
-        return { newWidth, newHeight };
-    }
+
+    const auto firstSize = _firstChild->_GetMinSize();
+    const auto secondSize = _secondChild->_GetMinSize();
+    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
+    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
+    return { newWidth, newHeight };
 }
 
 DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
