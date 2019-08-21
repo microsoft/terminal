@@ -1066,7 +1066,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title of the focused control if there is one, else "Windows Terminal"
-    hstring TerminalPage::GetTitle()
+    hstring TerminalPage::Title()
     {
         if (_settings->GlobalSettings().GetShowTitleInTitlebar())
         {
@@ -1306,7 +1306,7 @@ namespace winrt::TerminalApp::implementation
                 _tabContent.Children().Append(tab->GetRootElement());
 
                 tab->SetFocused(true);
-                _titleChangeHandlers(*this, GetTitle());
+                _titleChangeHandlers(*this, Title());
             }
             CATCH_LOG();
         }

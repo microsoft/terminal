@@ -21,7 +21,7 @@ namespace TerminalApp
 
         Windows.UI.Xaml.UIElement GetRoot();
 
-		String GetTitle();
+        String Title { get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Boolean GetShowTabsInTitlebar();

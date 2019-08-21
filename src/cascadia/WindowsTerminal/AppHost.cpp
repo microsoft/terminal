@@ -81,7 +81,7 @@ void AppHost::Initialize()
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
     _app.LastTabClosed({ this, &AppHost::LastTabClosed });
 
-    _window->UpdateTitle(_app.GetTitle().c_str());
+    _window->UpdateTitle(_app.Title());
     
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.

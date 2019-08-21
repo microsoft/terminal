@@ -25,6 +25,7 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         App();
+        ~App() = default;
 
         void Create();
         void LoadSettings();
@@ -34,7 +35,7 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 
-        hstring GetTitle();
+        hstring Title();
         void TitlebarClicked();
 
         // -------------------------------- WinRT Events ---------------------------------

@@ -362,11 +362,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - the title of the focused control if there is one, else "Windows Terminal"
-    hstring App::GetTitle()
+    hstring App::Title()
     {
         if (_root)
         {
-            return _root->GetTitle();
+            return _root->Title();
         }
         return { L"Windows Terminal" };
     }

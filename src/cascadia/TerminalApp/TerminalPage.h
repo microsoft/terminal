@@ -30,7 +30,7 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
-        hstring GetTitle();
+        hstring Title();
 
         void ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void ShowLoadWarningsDialog();
