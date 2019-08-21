@@ -273,7 +273,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Method description:
-    // - This method returns a tenant's ID and display name (if one if available).
+    // - This method returns a tenant's ID and display name (if one is available).
     //   If there is no display name, a placeholder is returned in its stead.
     // Arguments:
     // - tenant - the unparsed tenant
