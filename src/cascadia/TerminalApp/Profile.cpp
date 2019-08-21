@@ -353,8 +353,9 @@ Profile Profile::FromJson(const Json::Value& json)
 
 bool Profile::ShouldBeLayered(const Json::Value& json)
 {
-    if (auto guid{ json[JsonKey(GuidKey)] })
+    if (json.isMember(JsonKey(GuidKey)))
     {
+        auto guid{ json[JsonKey(GuidKey)] };
         auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
         return _guid == otherGuid;
     }
@@ -369,12 +370,14 @@ bool Profile::ShouldBeLayered(const Json::Value& json)
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
-    if (auto name{ json[JsonKey(NameKey)] })
+    if (json.isMember(JsonKey(NameKey)))
     {
+        auto name{ json[JsonKey(NameKey)] };
         _name = GetWstringFromJson(name);
     }
-    if (auto guid{ json[JsonKey(GuidKey)] })
+    if (json.isMember(JsonKey(GuidKey)))
     {
+        auto guid{ json[JsonKey(GuidKey)] };
         _guid = Utils::GuidFromString(GetWstringFromJson(guid));
     }
     // TODO: Originally, if a profile didn't have a GUID set, we'd synthesize
@@ -392,27 +395,20 @@ void Profile::LayerJson(const Json::Value& json)
     // }
 
     // Core Settings
-    if (auto foreground{ json[JsonKey(ForegroundKey)] })
+    GetOptionalColor(json, ForegroundKey, _defaultForeground);
+
+    GetOptionalColor(json, BackgroundKey, _defaultBackground);
+
+    GetOptionalString(json, ColorSchemeKey, _schemeName);
+    // TODO:GH#1069 deprecate old settings key
+    GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
+
+    // Only look for the "table" if there's no "schemeName"
+    if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
+        !(json.isMember(JsonKey(ColorSchemeKeyOld))) &&
+        json.isMember(JsonKey(ColorTableKey)))
     {
-        const auto color = Utils::ColorFromHexString(foreground.asString());
-        _defaultForeground = color;
-    }
-    if (auto background{ json[JsonKey(BackgroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(background.asString());
-        _defaultBackground = color;
-    }
-    if (auto colorScheme{ json[JsonKey(ColorSchemeKey)] })
-    {
-        _schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colorScheme{ json[JsonKey(ColorSchemeKeyOld)] })
-    {
-        // TODO:GH#1069 deprecate old settings key
-        _schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colortable{ json[JsonKey(ColorTableKey)] })
-    {
+        auto colortable{ json[JsonKey(ColorTableKey)] };
         int i = 0;
         for (const auto& tableEntry : colortable)
         {
@@ -424,92 +420,92 @@ void Profile::LayerJson(const Json::Value& json)
             i++;
         }
     }
-    if (auto historySize{ json[JsonKey(HistorySizeKey)] })
+    if (json.isMember(JsonKey(HistorySizeKey)))
     {
+        auto historySize{ json[JsonKey(HistorySizeKey)] };
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
         _historySize = historySize.asInt();
     }
-    if (auto snapOnInput{ json[JsonKey(SnapOnInputKey)] })
+    if (json.isMember(JsonKey(SnapOnInputKey)))
     {
+        auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
         _snapOnInput = snapOnInput.asBool();
     }
-    if (auto cursorColor{ json[JsonKey(CursorColorKey)] })
+    if (json.isMember(JsonKey(CursorColorKey)))
     {
+        auto cursorColor{ json[JsonKey(CursorColorKey)] };
         const auto color = Utils::ColorFromHexString(cursorColor.asString());
         _cursorColor = color;
     }
-    if (auto cursorHeight{ json[JsonKey(CursorHeightKey)] })
+    if (json.isMember(JsonKey(CursorHeightKey)))
     {
+        auto cursorHeight{ json[JsonKey(CursorHeightKey)] };
         _cursorHeight = cursorHeight.asUInt();
     }
-    if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
+    if (json.isMember(JsonKey(CursorShapeKey)))
     {
+        auto cursorShape{ json[JsonKey(CursorShapeKey)] };
         _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
-    if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
-    {
-        _tabTitle = GetWstringFromJson(tabTitle);
-    }
+    GetOptionalString(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    if (auto connectionType{ json[JsonKey(ConnectionTypeKey)] })
+    GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
+
+    if (json.isMember(JsonKey(CommandlineKey)))
     {
-        _connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
-    }
-    if (auto commandline{ json[JsonKey(CommandlineKey)] })
-    {
+        auto commandline{ json[JsonKey(CommandlineKey)] };
         _commandline = GetWstringFromJson(commandline);
     }
-    if (auto fontFace{ json[JsonKey(FontFaceKey)] })
+    if (json.isMember(JsonKey(FontFaceKey)))
     {
+        auto fontFace{ json[JsonKey(FontFaceKey)] };
         _fontFace = GetWstringFromJson(fontFace);
     }
-    if (auto fontSize{ json[JsonKey(FontSizeKey)] })
+    if (json.isMember(JsonKey(FontSizeKey)))
     {
+        auto fontSize{ json[JsonKey(FontSizeKey)] };
         _fontSize = fontSize.asInt();
     }
-    if (auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] })
+    if (json.isMember(JsonKey(AcrylicTransparencyKey)))
     {
+        auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] };
         _acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (auto useAcrylic{ json[JsonKey(UseAcrylicKey)] })
+    if (json.isMember(JsonKey(UseAcrylicKey)))
     {
+        auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
         _useAcrylic = useAcrylic.asBool();
     }
-    if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
+    if (json.isMember(JsonKey(CloseOnExitKey)))
     {
+        auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
         _closeOnExit = closeOnExit.asBool();
     }
-    if (auto padding{ json[JsonKey(PaddingKey)] })
+    if (json.isMember(JsonKey(PaddingKey)))
     {
+        auto padding{ json[JsonKey(PaddingKey)] };
         _padding = GetWstringFromJson(padding);
     }
-    if (auto scrollbarState{ json[JsonKey(ScrollbarStateKey)] })
+
+    GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
+
+    GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
+
+    GetOptionalString(json, IconKey, _icon);
+
+    GetOptionalString(json, BackgroundImageKey, _backgroundImage);
+
+    GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
+
+    if (json.isMember(JsonKey(BackgroundImageStretchModeKey)))
     {
-        _scrollbarState = GetWstringFromJson(scrollbarState);
-    }
-    if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
-    {
-        _startingDirectory = GetWstringFromJson(startingDirectory);
-    }
-    if (auto icon{ json[JsonKey(IconKey)] })
-    {
-        _icon = GetWstringFromJson(icon);
-    }
-    if (auto backgroundImage{ json[JsonKey(BackgroundImageKey)] })
-    {
-        _backgroundImage = GetWstringFromJson(backgroundImage);
-    }
-    if (auto backgroundImageOpacity{ json[JsonKey(BackgroundImageOpacityKey)] })
-    {
-        _backgroundImageOpacity = backgroundImageOpacity.asFloat();
-    }
-    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] })
-    {
+        auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] };
         _backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
     }
-    if (auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] })
+    if (json.isMember(JsonKey(BackgroundImageAlignmentKey)))
     {
+        auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] };
         _backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
     }
 }

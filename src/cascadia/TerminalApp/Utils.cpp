@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "Utils.h"
+#include "../../types/inc/Utils.hpp"
+
+using namespace ::Microsoft::Console;
 
 // Method Description:
 // - Contstructs a wstring from a given Json::Value object. Reads the object as
@@ -45,4 +48,75 @@ winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstr
     }
 
     return elem;
+}
+
+template<typename T, typename F>
+void GetOptionalValue(const Json::Value& json,
+                      std::string_view key,
+                      std::optional<T>& target,
+                      F conversion)
+{
+    if (json.isMember(JsonKey(key)))
+    {
+        if (auto jsonVal{ json[JsonKey(key)] })
+        {
+            target = conversion(jsonVal);
+        }
+        else
+        {
+            target = std::nullopt;
+        }
+    }
+}
+
+void GetOptionalColor(const Json::Value& json,
+                      std::string_view key,
+                      std::optional<uint32_t>& color)
+{
+    auto conversionFn = [](const Json::Value& value) -> uint32_t {
+        return Utils::ColorFromHexString(value.asString());
+    };
+    GetOptionalValue(json,
+                     key,
+                     color,
+                     conversionFn);
+}
+
+void GetOptionalString(const Json::Value& json,
+                       std::string_view key,
+                       std::optional<std::wstring>& target)
+{
+    auto conversionFn = [](const Json::Value& value) -> std::wstring {
+        return GetWstringFromJson(value);
+    };
+    GetOptionalValue(json,
+                     key,
+                     target,
+                     conversionFn);
+}
+
+void GetOptionalGuid(const Json::Value& json,
+                     std::string_view key,
+                     std::optional<GUID>& target)
+{
+    auto conversionFn = [](const Json::Value& value) -> GUID {
+        return Utils::GuidFromString(GetWstringFromJson(value));
+    };
+    GetOptionalValue(json,
+                     key,
+                     target,
+                     conversionFn);
+}
+
+void GetOptionalDouble(const Json::Value& json,
+                       std::string_view key,
+                       std::optional<double>& target)
+{
+    auto conversionFn = [](const Json::Value& value) -> double {
+        return value.asFloat();
+    };
+    GetOptionalValue(json,
+                     key,
+                     target,
+                     conversionFn);
 }

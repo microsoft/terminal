@@ -30,3 +30,25 @@ inline std::string JsonKey(const std::string_view key)
 }
 
 winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
+
+template<typename T, typename F>
+void GetOptionalValue(const Json::Value& json,
+                      std::string_view key,
+                      std::optional<T>& target,
+                      F conversion);
+
+void GetOptionalColor(const Json::Value& json,
+                      std::string_view key,
+                      std::optional<uint32_t>& color);
+
+void GetOptionalString(const Json::Value& json,
+                       std::string_view key,
+                       std::optional<std::wstring>& target);
+
+void GetOptionalGuid(const Json::Value& json,
+                     std::string_view key,
+                     std::optional<GUID>& target);
+
+void GetOptionalDouble(const Json::Value& json,
+                       std::string_view key,
+                       std::optional<double>& target);

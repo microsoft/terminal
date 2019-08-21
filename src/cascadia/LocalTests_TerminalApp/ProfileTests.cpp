@@ -177,10 +177,38 @@ namespace TerminalAppLocalTests
             "icon": "another-real.png"
         })" };
 
-        // TODO: The default profiles all have icons. A user should be able to
-        // remove them by setting the icon to null.
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto profile1Json = VerifyParseSucceeded(profile1String);
+        const auto profile2Json = VerifyParseSucceeded(profile2String);
+        const auto profile3Json = VerifyParseSucceeded(profile3String);
 
-        VERIFY_IS_TRUE(false, L"TODO: Write this test");
+        auto profile0 = Profile::FromJson(profile0Json);
+        VERIFY_IS_TRUE(profile0._icon.has_value());
+        VERIFY_ARE_EQUAL(L"not-null.png", profile0._icon.value());
+
+        Log::Comment(NoThrowString().Format(
+            L"Verify that layering an object the key set to null will clear the key"));
+        profile0.LayerJson(profile1Json);
+        VERIFY_IS_FALSE(profile0._icon.has_value());
+
+        profile0.LayerJson(profile2Json);
+        VERIFY_IS_FALSE(profile0._icon.has_value());
+
+        profile0.LayerJson(profile3Json);
+        VERIFY_IS_TRUE(profile0._icon.has_value());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0._icon.value());
+
+        Log::Comment(NoThrowString().Format(
+            L"Verify that layering an object _without_ the key will not clear the key"));
+        profile0.LayerJson(profile2Json);
+        VERIFY_IS_TRUE(profile0._icon.has_value());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile0._icon.value());
+
+        auto profile1 = Profile::FromJson(profile1Json);
+        VERIFY_IS_FALSE(profile1._icon.has_value());
+        profile1.LayerJson(profile3Json);
+        VERIFY_IS_TRUE(profile1._icon.has_value());
+        VERIFY_ARE_EQUAL(L"another-real.png", profile1._icon.value());
     }
 
     void ProfileTests::LayerProfilesOnArray()
