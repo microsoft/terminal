@@ -839,8 +839,6 @@ void Pane::Split(SplitState splitType, const GUID& profile, const TermControl& c
 // - True if the pane can be split. False otherwise.
 bool Pane::_CanSplit(SplitState splitType)
 {
-    const bool changeWidth = _splitState == SplitState::Vertical;
-
     const Size actualSize{ gsl::narrow_cast<float>(_root.ActualWidth()),
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
 
