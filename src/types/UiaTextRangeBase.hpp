@@ -260,7 +260,7 @@ namespace Microsoft::Console::Types
         RECT _getTerminalRect() const;
 
         static const COORD _getScreenBufferCoords(IUiaData* pData);
-        COORD _getScreenFontSize() const;
+        virtual const COORD _getScreenFontSize() const;
 
         static const unsigned int _getTotalRows(IUiaData* pData);
         static const unsigned int _getRowWidth(IUiaData* pData);
