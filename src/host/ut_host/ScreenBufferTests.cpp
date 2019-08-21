@@ -3125,33 +3125,62 @@ auto _ValidateLinesContain(int startLine, int endLine, T expectedContent, TextAt
 
 void ScreenBufferTests::ScrollOperations()
 {
+    enum ScrollType : int
+    {
+        ScrollUp,
+        ScrollDown,
+        InsertLine,
+        DeleteLine,
+        ReverseIndex
+    };
     enum ScrollDirection : int
     {
         Up,
         Down
     };
 
+    ScrollType scrollType;
     ScrollDirection scrollDirection;
     int scrollMagnitude;
 
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:scrollDirection", L"{0, 1}")
+        TEST_METHOD_PROPERTY(L"Data:scrollType", L"{0, 1, 2, 3, 4}")
         TEST_METHOD_PROPERTY(L"Data:scrollMagnitude", L"{1, 2, 5}")
     END_TEST_METHOD_PROPERTIES()
 
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollDirection", (int&)scrollDirection));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", (int&)scrollType));
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollMagnitude", scrollMagnitude));
 
     std::wstringstream escapeSequence;
-    switch (scrollDirection)
+    switch (scrollType)
     {
-    case Up:
+    case ScrollUp:
         Log::Comment(L"Testing scroll up (SU).");
         escapeSequence << "\x1b[" << scrollMagnitude << "S";
+        scrollDirection = Up;
         break;
-    case Down:
+    case ScrollDown:
         Log::Comment(L"Testing scroll down (SD).");
         escapeSequence << "\x1b[" << scrollMagnitude << "T";
+        scrollDirection = Down;
+        break;
+    case InsertLine:
+        Log::Comment(L"Testing insert line (IL).");
+        escapeSequence << "\x1b[" << scrollMagnitude << "L";
+        scrollDirection = Down;
+        break;
+    case DeleteLine:
+        Log::Comment(L"Testing delete line (DL).");
+        escapeSequence << "\x1b[" << scrollMagnitude << "M";
+        scrollDirection = Up;
+        break;
+    case ReverseIndex:
+        Log::Comment(L"Testing reverse index (RI).");
+        for (auto i = 0; i < scrollMagnitude; ++i)
+        {
+            escapeSequence << "\x1bM";
+        }
+        scrollDirection = Down;
         break;
     default:
         VERIFY_FAIL();
@@ -3191,6 +3220,11 @@ void ScreenBufferTests::ScrollOperations()
 
     // Place the cursor in the center.
     auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
+    // Unless this is reverse index, which has to be be at the top of the viewport.
+    if (scrollType == ReverseIndex)
+    {
+        cursorPos.Y = viewportStart;
+    }
 
     Log::Comment(L"Set the cursor position and perform the operation.");
     VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
@@ -3207,9 +3241,18 @@ void ScreenBufferTests::ScrollOperations()
     const auto deletedLines = scrollDirection == Up ? scrollMagnitude : 0;
     const auto insertedLines = scrollDirection == Down ? scrollMagnitude : 0;
 
+    // Insert and delete operations only scroll the viewport below the cursor position.
+    const auto scrollStart = (scrollType == InsertLine || scrollType == DeleteLine) ? cursorPos.Y : viewportStart;
+
     // Reset the viewport character and line number for the verification loop.
     viewportChar = L'A';
     viewportLine = viewportStart;
+
+    Log::Comment(L"Lines above the scrolled area should remain unchanged.");
+    while (viewportLine < scrollStart)
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains(viewportLine++, viewportChar++, viewportAttr));
+    }
 
     Log::Comment(L"Scrolled area should have moved up/down by given magnitude.");
     viewportChar += wchar_t(deletedLines); // Characters dropped when deleting
@@ -3220,7 +3263,7 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"The revealed area should now be blank, with default buffer attributes.");
-    const auto revealedStart = scrollDirection == Up ? viewportEnd - deletedLines : viewportStart;
+    const auto revealedStart = scrollDirection == Up ? viewportEnd - deletedLines : scrollStart;
     const auto revealedEnd = revealedStart + scrollMagnitude;
     VERIFY_IS_TRUE(_ValidateLinesContain(revealedStart, revealedEnd, L' ', si.GetAttributes()));
 }
