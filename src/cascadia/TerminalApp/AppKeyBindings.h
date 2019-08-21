@@ -7,6 +7,13 @@
 #include "ActionArgs.h"
 #include "..\inc\cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class KeyBindingsTests;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     struct KeyChordHash
@@ -70,6 +77,9 @@ namespace winrt::TerminalApp::implementation
     private:
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
+
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::KeyBindingsTests;
     };
 }
 

@@ -14,6 +14,7 @@
     <ClCompile Include="SettingsTests.cpp" />
     <ClCompile Include="ProfileTests.cpp" />
     <ClCompile Include="ColorSchemeTests.cpp" />
+    <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>

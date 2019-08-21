@@ -6,7 +6,8 @@ namespace TerminalApp
 {
     enum ShortcutAction
     {
-        CopyText = 0,
+        Invalid = 0,
+        CopyText,
         CopyTextWithoutNewlines,
         PasteText,
         NewTab,

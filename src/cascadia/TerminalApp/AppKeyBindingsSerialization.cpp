@@ -13,6 +13,7 @@ using namespace winrt::TerminalApp;
 static constexpr std::string_view KeysKey{ "keys" };
 static constexpr std::string_view CommandKey{ "command" };
 
+// This key is reserved to remove a keybinding, instead of mapping it to an action.
 static constexpr std::string_view UnboundKey{ "unbound" };
 
 static constexpr std::string_view CopyTextKey{ "copy" };
@@ -120,6 +121,7 @@ static const std::map<std::string_view, ShortcutAction, std::less<>> commandName
     { MoveFocusUpKey, ShortcutAction::MoveFocusUp },
     { MoveFocusDownKey, ShortcutAction::MoveFocusDown },
     { OpenSettingsKey, ShortcutAction::OpenSettings },
+    { UnboundKey, ShortcutAction::Invalid },
 };
 
 // Function Description:
@@ -200,7 +202,21 @@ winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const J
     return newBindings;
 }
 
-void AppKeyBindingsSerialization::LayerJson(winrt::TerminalApp::AppKeyBindings& bindings, const Json::Value& json)
+// Method Description:
+// - Deserialize an AppKeyBindings from the key mappings that are in the array
+//   `json`. The json array should contain an array of objects with both a
+//   `command` string and a `keys` array, where `command` is one of the names
+//   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
+//   the array should contain a single string, which can be deserialized into a
+//   KeyChord.
+// - Applies the deserialized keybindings to the provided `bindings` object. If
+//   a key chord in `json` is already bound to an action, that chord will be
+//   overwritten with the new action. If a chord is bound to `null` or
+//   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
+// Arguments:
+// - bindings: An AppKeyBindings object to layer the new bindings onto.
+// - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
+void AppKeyBindingsSerialization::LayerJson(const winrt::TerminalApp::AppKeyBindings& bindings, const Json::Value& json)
 {
     for (const auto& value : json)
     {
@@ -212,55 +228,52 @@ void AppKeyBindingsSerialization::LayerJson(winrt::TerminalApp::AppKeyBindings& 
         const auto commandVal = value[JsonKey(CommandKey)];
         const auto keys = value[JsonKey(KeysKey)];
 
-        if (commandVal && keys)
+        if (keys)
         {
             if (!keys.isArray() || keys.size() != 1)
             {
                 continue;
             }
             const auto keyChordString = winrt::to_hstring(keys[0].asString());
-            ShortcutAction action;
+            // Invalid is our placeholder that the action was not parsed.
+            ShortcutAction action = ShortcutAction::Invalid;
 
-            auto commandString = commandVal.asString();
-            // If the key chord was bound to null, or "unbound", then remove
-            // the keybinding from the AppKeyBindings.
-            // Otherwise, add the keybinding.
-            // TODO: this works for `"command": "unbound"`, but not `"command": null`
-            if (commandString.empty() || commandString == UnboundKey)
+            // Only try to parse the action if it's actually a string value.
+            // `null` will not pass this check.
+            if (commandVal.isString())
             {
-                try
-                {
-                    const auto chord = KeyChordSerialization::FromString(keyChordString);
-                    bindings.ClearKeyBinding(chord);
-                }
-                catch (...)
-                {
-                    continue;
-                }
-            }
-            else
-            {
-                // Try matching the command to one we have
+                auto commandString = commandVal.asString();
+
+                // Try matching the command to one we have. If we can't find the
+                // action name in our list of names, let's just unbind that key.
                 const auto found = commandNames.find(commandVal.asString());
                 if (found != commandNames.end())
                 {
                     action = found->second;
                 }
-                else
-                {
-                    continue;
-                }
+            }
 
-                // Try parsing the chord
-                try
+            // Try parsing the chord
+            try
+            {
+                const auto chord = KeyChordSerialization::FromString(keyChordString);
+
+                // If we couldn't find the action they want to set the chord to,
+                // or the action was `null` or `"unbound"`, just clear out the
+                // keybinding. Otherwise, set the keybinding to the action we
+                // found.
+                if (action != ShortcutAction::Invalid)
                 {
-                    const auto chord = KeyChordSerialization::FromString(keyChordString);
                     bindings.SetKeyBinding(action, chord);
                 }
-                catch (...)
+                else
                 {
-                    continue;
+                    bindings.ClearKeyBinding(chord);
                 }
+            }
+            catch (...)
+            {
+                continue;
             }
         }
     }

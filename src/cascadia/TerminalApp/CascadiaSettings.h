@@ -29,6 +29,7 @@ namespace TerminalAppLocalTests
     class SettingsTests;
     class ProfileTests;
     class ColorSchemeTests;
+    class KeyBindingsTests;
 }
 
 namespace TerminalApp
@@ -101,4 +102,5 @@ private:
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;
+    friend class TerminalAppLocalTests::KeyBindingsTests;
 };
