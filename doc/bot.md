@@ -41,7 +41,7 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - When a comment on the thread says `/dup #<issue ID>`...
 1. Reply with a comment explaining that the issue is a duplicate and recommend that the opener and interested parties follow the issue on the listed ID number.
 1. Close the issue
-1. Remove `Needs-Triage` and `Needs-Tag-Fix`
+1. Remove all `Needs-*` tags
 1. Add `Resolution-Duplicate`
 
 ### Issue Management
