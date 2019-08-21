@@ -17,12 +17,60 @@ using namespace ::Microsoft::Console;
 static constexpr std::wstring_view SettingsFilename{ L"profiles.json" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
+static constexpr std::wstring_view PackagedDefaultsPath{ L"ms-appx:///" };
+static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
+
 static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
+
+void CascadiaSettings::_LayerJsonString(const std::string& fileData)
+{
+    // Ignore UTF-8 BOM
+    auto actualDataStart = fileData.c_str();
+    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
+    {
+        actualDataStart += Utf8Bom.size();
+    }
+
+    std::string errs; // This string will recieve any error text from failing to parse.
+    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+    // Parse the json data.
+    Json::Value root;
+    // `parse` will return false if it fails.
+    if (!reader->parse(actualDataStart, fileData.c_str() + fileData.size(), &root, &errs))
+    {
+        // This will be caught by App::_TryLoadSettings, who will display
+        // the text to the user.
+        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+    }
+
+    LayerJson(root);
+}
+
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
+{
+    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+
+    std::optional<std::string> defaultsFileData = _ReadDefaultSettings();
+    const bool foundDefaultsFile = defaultsFileData.has_value();
+    const bool defaultsFileHasData = foundDefaultsFile && !defaultsFileData.value().empty();
+
+    if (foundDefaultsFile && defaultsFileHasData)
+    {
+        resultPtr->_LayerJsonString(defaultsFileData.value());
+    }
+    else
+    {
+        // This is BAD. There was no defaults file?? We really don't expect
+        // that. The defaults should be in our package, and read-only.
+        // TODO: Throw an exception here?
+    }
+    return resultPtr;
+}
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -34,48 +82,26 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 // - a unique_ptr containing a new CascadiaSettings object.
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
-    std::unique_ptr<CascadiaSettings> resultPtr;
-    std::optional<std::string> fileData = _ReadSettings();
+    auto resultPtr = LoadDefaults();
 
+    std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
     const bool fileHasData = foundFile && !fileData.value().empty();
     if (foundFile && fileHasData)
     {
-        const auto actualData = fileData.value();
-
-        // Ignore UTF-8 BOM
-        auto actualDataStart = actualData.c_str();
-        if (actualData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
-        {
-            actualDataStart += Utf8Bom.size();
-        }
-
-        // Parse the json data.
-        Json::Value root;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-        std::string errs; // This string will recieve any error text from failing to parse.
-        // `parse` will return false if it fails.
-        if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
-        {
-            // This will be caught by App::_TryLoadSettings, who will display
-            // the text to the user.
-            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-        }
-        resultPtr = FromJson(root);
-
-        // If this throws, the app will catch it and use the default settings (temporarily)
-        resultPtr->_ValidateSettings();
+        resultPtr->_LayerJsonString(fileData.value());
     }
     else
     {
-        resultPtr = std::make_unique<CascadiaSettings>();
-        resultPtr->CreateDefaults();
-
-        // The settings file does not exist. Let's commit one.
-        resultPtr->SaveAll();
+        // TODO: We didn't find the user settings. We'll need to create a file
+        // to temporarily use as the user defaults.
     }
+
+    // If this throws, the app will catch it and use the default settings (temporarily)
+    // TODO: What does "use the default settings (temporarily)" mean nowadays?
+    resultPtr->_ValidateSettings();
 
     return resultPtr;
 }
@@ -138,30 +164,37 @@ Json::Value CascadiaSettings::ToJson() const
 std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    resultPtr->LayerJson(json);
+    return resultPtr;
+}
 
+void CascadiaSettings::LayerJson(const Json::Value& json)
+{
     if (auto globals{ json[GlobalsKey.data()] })
     {
         if (globals.isObject())
         {
-            resultPtr->_globals = GlobalAppSettings::FromJson(globals);
+            _globals.LayerJson(globals);
         }
     }
-    else
-    {
-        // If there's no globals key in the root object, then try looking at the
-        // root object for those properties instead, to gracefully upgrade.
-        // This will attempt to do the legacy keybindings loading too
-        resultPtr->_globals = GlobalAppSettings::FromJson(json);
+    // TODO: We used to have fallback code for migrating globals from the root
+    // here, do we want to keep migrating that?
+    // else
+    // {
+    //     // If there's no globals key in the root object, then try looking at the
+    //     // root object for those properties instead, to gracefully upgrade.
+    //     // This will attempt to do the legacy keybindings loading too
+    //     resultPtr->_globals = GlobalAppSettings::FromJson(json);
 
-        // If we didn't find keybindings in the legacy path, then they probably
-        // don't exist in the file. Create the default keybindings if we
-        // couldn't find any keybindings.
-        auto keybindings{ json[KeybindingsKey.data()] };
-        if (!keybindings)
-        {
-            resultPtr->_CreateDefaultKeybindings();
-        }
-    }
+    //     // If we didn't find keybindings in the legacy path, then they probably
+    //     // don't exist in the file. Create the default keybindings if we
+    //     // couldn't find any keybindings.
+    //     auto keybindings{ json[KeybindingsKey.data()] };
+    //     if (!keybindings)
+    //     {
+    //         resultPtr->_CreateDefaultKeybindings();
+    //     }
+    // }
 
     // TODO:MSFT:20737698 - Display an error if we failed to parse settings
     // What should we do here if these keys aren't found?For default profile,
@@ -178,9 +211,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         {
             if (schemeJson.isObject())
             {
-                // auto scheme = ColorScheme::FromJson(schemeJson);
-                // resultSchemes.emplace_back(std::move(scheme));
-                resultPtr->_LayerOrCreateColorScheme(schemeJson);
+                _LayerOrCreateColorScheme(schemeJson);
             }
         }
     }
@@ -191,14 +222,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
         {
             if (profileJson.isObject())
             {
-                // auto profile = Profile::FromJson(profileJson);
-                // resultPtr->_profiles.emplace_back(profile);
-                resultPtr->_LayerOrCreateProfile(profileJson);
+                _LayerOrCreateProfile(profileJson);
             }
         }
     }
-
-    return resultPtr;
 }
 
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
@@ -306,7 +333,7 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 //      otherwise the optional will be empty.
 //   If the file exists, but we fail to read it, this can throw an exception
 //      from reading the file
-std::optional<std::string> CascadiaSettings::_ReadSettings()
+std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 {
     const auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
     wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
@@ -371,14 +398,37 @@ std::optional<std::string> CascadiaSettings::_ReadSettings()
         }
     }
 
+    return _ReadFile(hFile.get());
+}
+
+std::optional<std::string> CascadiaSettings::_ReadDefaultSettings()
+{
+    const auto pathToSettingsFile{ CascadiaSettings::GetDefaultSettingsPath() };
+    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
+                                         GENERIC_READ,
+                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                         nullptr,
+                                         OPEN_EXISTING,
+                                         FILE_ATTRIBUTE_NORMAL,
+                                         nullptr) };
+
+    if (!hFile)
+    {
+        return std::nullopt;
+    }
+    return _ReadFile(hFile.get());
+}
+
+std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
+{
     // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile.get(), nullptr);
+    const auto fileSize = GetFileSize(hFile, nullptr);
     THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
 
     auto utf8buffer = std::make_unique<char[]>(fileSize);
 
     DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile.get(), utf8buffer.get(), fileSize, &bytesRead, nullptr));
+    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
 
     // convert buffer to UTF-8 string
     std::string utf8string(utf8buffer.get(), fileSize);
@@ -419,4 +469,43 @@ std::wstring CascadiaSettings::GetSettingsPath(const bool useRoamingPath)
     std::filesystem::create_directories(parentDirectoryForSettingsFile);
 
     return parentDirectoryForSettingsFile / SettingsFilename;
+}
+
+std::wstring CascadiaSettings::GetDefaultSettingsPath()
+{
+    // Both of these posts suggest getting the path to the exe, then removing
+    // the exe's name to get the package root:
+    // * https://blogs.msdn.microsoft.com/appconsult/2017/06/23/accessing-to-the-files-in-the-installation-folder-in-a-desktop-bridge-application/
+    // * https://blogs.msdn.microsoft.com/appconsult/2017/03/06/handling-data-in-a-converted-desktop-app-with-the-desktop-bridge/
+    //
+    // This would break if we ever moved our exe out of the package root.
+    // HOWEVER, if we try to look for a defaults.json that's simply in the same
+    // directory as the exe, that will work for unpackaged scenarios as well. So
+    // let's try that.
+
+    // GetModuleHandle(null) will get us the current exe's HMODULE
+    HMODULE hModule = GetModuleHandle(nullptr);
+    THROW_LAST_ERROR_IF(hModule == nullptr);
+
+    // Use GetModuleFileName() with module handle to get the path.
+    // Unfortunately, GetModuleFileName will truncate the path to the
+    // passed in size, and provides no way of querying the size needed. So
+    // we need to just keep trying to get the path into a buffer until we
+    // get the entire path. .
+
+    auto bufferSize = 0;
+    auto result = 0;
+    std::unique_ptr<wchar_t[]> buffer;
+    do
+    {
+        bufferSize += MAX_PATH;
+        buffer = std::make_unique<wchar_t[]>(bufferSize);
+        result = GetModuleFileName(hModule, buffer.get(), bufferSize);
+    } while (result >= bufferSize);
+
+    // TODO: ensure this madness works for something longer than MAX_PATH
+
+    std::filesystem::path exePath{ buffer.get() };
+    std::filesystem::path rootDir = exePath.parent_path();
+    return rootDir / DefaultsFilename;
 }

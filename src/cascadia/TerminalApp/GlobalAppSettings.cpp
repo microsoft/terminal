@@ -189,57 +189,61 @@ Json::Value GlobalAppSettings::ToJson() const
 GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
     GlobalAppSettings result{};
+    result.LayerJson(json);
+    return result;
+}
 
+void GlobalAppSettings::LayerJson(const Json::Value& json)
+{
     if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
         auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
-        result._defaultProfile = guid;
+        _defaultProfile = guid;
     }
 
     if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
-        result._alwaysShowTabs = alwaysShowTabs.asBool();
+        _alwaysShowTabs = alwaysShowTabs.asBool();
     }
     if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {
-        result._initialRows = initialRows.asInt();
+        _initialRows = initialRows.asInt();
     }
     if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
-        result._initialCols = initialCols.asInt();
+        _initialCols = initialCols.asInt();
     }
 
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
-        result._showTitleInTitlebar = showTitleInTitlebar.asBool();
+        _showTitleInTitlebar = showTitleInTitlebar.asBool();
     }
 
     if (auto showTabsInTitlebar{ json[JsonKey(ShowTabsInTitlebarKey)] })
     {
-        result._showTabsInTitlebar = showTabsInTitlebar.asBool();
+        _showTabsInTitlebar = showTabsInTitlebar.asBool();
     }
 
     if (auto wordDelimiters{ json[JsonKey(WordDelimitersKey)] })
     {
-        result._wordDelimiters = GetWstringFromJson(wordDelimiters);
+        _wordDelimiters = GetWstringFromJson(wordDelimiters);
     }
 
     if (auto copyOnSelect{ json[JsonKey(CopyOnSelectKey)] })
     {
-        result._copyOnSelect = copyOnSelect.asBool();
+        _copyOnSelect = copyOnSelect.asBool();
     }
 
     if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
     {
-        result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+        _requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
     }
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
+        // _keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
+        AppKeyBindingsSerialization::LayerJson(_keybindings, keybindings);
     }
-
-    return result;
 }
 
 // Method Description:

@@ -42,6 +42,7 @@ public:
     CascadiaSettings();
     ~CascadiaSettings();
 
+    static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
     void SaveAll() const;
 
@@ -55,8 +56,10 @@ public:
 
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
+    void LayerJson(const Json::Value& json);
 
     static std::wstring GetSettingsPath(const bool useRoamingPath = false);
+    static std::wstring GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
@@ -77,10 +80,13 @@ private:
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
+    void _LayerJsonString(const std::string& fileData);
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
-    static std::optional<std::string> _ReadSettings();
+    static std::optional<std::string> _ReadUserSettings();
+    static std::optional<std::string> _ReadDefaultSettings();
+    static std::optional<std::string> _ReadFile(HANDLE hFile);
 
     void _ValidateSettings();
     void _ValidateProfilesExist();

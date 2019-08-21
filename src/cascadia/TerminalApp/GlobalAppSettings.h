@@ -57,6 +57,7 @@ public:
 
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
+    void LayerJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
