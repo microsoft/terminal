@@ -67,11 +67,11 @@ Example settings include
     "fontSize" : 9,
     "guid" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "name" : "Debian",
-    "startingDirectory" : "%USERPROFILE%/wslhome"
+    "startingDirectory" : "%USERPROFILE%\\wslhome"
     ....
 ```
 
-> 👉 **Note**: To use backslashes in any path field, you'll need to escape them following JSON escaping rules (they should look like `\\`). As an alternative, you can use forward slashes.
+> 👉 **Note**: To use backslashes in any path field, you'll need to escape them following JSON escaping rules (like shown above). As an alternative, you can use forward slashes ("%USERPROFILE%/wslhome").
 
 The profile GUID is used to reference the default profile in the global settings.
 
