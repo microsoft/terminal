@@ -209,7 +209,7 @@ void Tab::Scroll(const int delta)
 // - splitType: The type of split we want to create.
 // Return Value:
 // - True if the focused pane can be split. False otherwise.
-bool Tab::CanAddSplit(Pane::SplitState splitType)
+bool Tab::CanSplitPane(Pane::SplitState splitType)
 {
     return _rootPane->CanSplit(splitType);
 }
@@ -223,7 +223,7 @@ bool Tab::CanAddSplit(Pane::SplitState splitType)
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddSplit(Pane::SplitState splitType, const GUID& profile, TermControl& control)
+void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
     _rootPane->Split(splitType, profile, control);
 }
