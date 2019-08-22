@@ -1,5 +1,19 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- JsonTestClass.h
+
+Abstract:
+- This class is a helper that can be used to quickly create tests that need to
+  read & parse json data. Test classes that need to read JSON should make sure
+  to derive from this class, and also make sure to call InitializeJsonReader()
+  in the TEST_CLASS_SETUP().
+
+Author(s):
+    Mike Griese (migrie) August-2019
+--*/
 
 class JsonTestClass
 {

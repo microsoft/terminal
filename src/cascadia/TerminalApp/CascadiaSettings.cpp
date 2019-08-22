@@ -804,6 +804,15 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
     }
 }
 
+// Method Description:
+// - Re-orders the list of profiles to match what the user would expect them to
+//   be. Orders profiles to be in the ordering { [profiles from user settings],
+//   [default profiles that weren't in the user profiles]}.
+// - Does not set any warnings.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
 {
     std::set<GUID, GuidOrdering> uniqueGuids{};
@@ -835,6 +844,10 @@ void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
     collectGuids(_defaultSettings);
     GuidEquality equals{};
     // Re-order the list of _profiles to match that ordering
+    // for (gIndex=0 -> uniqueGuids.size)
+    //   pIndex = the pIndex of the profile with guid==guids[gIndex]
+    //   profiles.swap(pIndex <-> gIndex)
+    // This is O(N^2), which is kinda rough. I'm sure there's a better way
     for (size_t gIndex = 0; gIndex < guidOrder.size(); gIndex++)
     {
         const auto guid = guidOrder.at(gIndex);
@@ -848,24 +861,19 @@ void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
             }
         }
     }
-    // For each gIndex : guids
-    //   find the pIndex of the profile with guid=guids[gIndex]
-    //   profiles.swap(pIndex <-> gIndex)
-    // N^2, which kinda sucks
 }
 
+// Method Description:
+// - Removes any profiles marked "hidden" from the list of profiles.
+// - Does not set any warnings.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_ValidateRemoveHiddenProfiles()
 {
     _profiles.erase(std::remove_if(_profiles.begin(),
                                    _profiles.end(),
                                    [](auto profile) { return profile.IsHidden(); }),
                     _profiles.end());
-    // // Walk backwards, so we don't accidentally shift any of the elements
-    // for (auto iter = _profiles.rbegin(); iter != _profiles.rend(); iter++)
-    // {
-    //     if (iter->IsHidden())
-    //     {
-    //         _profiles.erase(iter);
-    //     }
-    // }
 }

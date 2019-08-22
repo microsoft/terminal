@@ -9,10 +9,13 @@
 #include "utils.h"
 #include <appmodel.h>
 #include <shlobj.h>
+
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
 // userDefault.h is like the above, but with a default template for the user's profiles.json.
 #include "userDefaults.h"
+// Both defaults.h and userDefaults.h are generated at build time into the
+// "Generated Files" directory.
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -22,7 +25,6 @@ using namespace ::Microsoft::Console;
 static constexpr std::wstring_view SettingsFilename{ L"profiles.json" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
-static constexpr std::wstring_view PackagedDefaultsPath{ L"ms-appx:///" };
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
 static constexpr std::string_view ProfilesKey{ "profiles" };
@@ -67,6 +69,13 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     return resultPtr;
 }
 
+// Function Description:
+// - Creates a new CascadiaSettings object initialized with settings from the
+//   hardcoded defaults.json.
+// Arguments:
+// - <none>
+// Return Value:
+// - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
@@ -79,6 +88,20 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     return resultPtr;
 }
 
+// Method Description:
+// - Attempts to read the given data as a string of JSON, parse that JSON, and
+//   then layer the settings from that JSON object on our current settings. See
+//   CascadiaSettings::LayerJson for detauls on how the layering works.
+// - Will ignore leading UTF-8 BOMs.
+// - Additionally, will store the parsed JSON in this object, as either our
+//   _defaultSettings or our _userSettings, depending on isDefaultSettings.
+// Arguments:
+// - fileData: the string to parse as JSON data
+// - isDefaultSettings: if true, we should store the parsed JSON as our
+//   defaultSettings. Otherwise, we'll store the parsed JSON as our user
+//   settings.
+// Return Value:
+// - <none>
 void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool isDefaultSettings)
 {
     // Ignore UTF-8 BOM
@@ -168,6 +191,16 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
     return resultPtr;
 }
 
+// Method Description:
+// - Layer values from the given json object on top of the existing properties
+//   of this object. For any keys we're expecting to be able to parse in the
+//   given object, we'll parse them and replace our settings with values from
+//   the new json object. Properties that _aren't_ in the json object will _not_
+//   be replaced.
+// Arguments:
+// - json: an object which should be a partial serialization of a CascadiaSettings object.
+// Return Value:
+// <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
     if (auto globals{ json[GlobalsKey.data()] })
@@ -205,6 +238,14 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
     }
 }
 
+// Method Description:
+// - Given a partial json serialization of a Profile object, either layers that
+//   json on a matching Profile we already have, or creates a new Profile
+//   object from those settings.
+// Arguments:
+// - json: an object which should be a partial serialization of a Profile object.
+// Return Value:
+// - <none>
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 {
     // Layer the json on top of an existing profile, if we have one:
@@ -220,6 +261,17 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
     }
 }
 
+// Method Description:
+// - Finds a profile from our list of profiles that matches the given json
+//   object. Uses Profile::ShouldBeLayered to determine if the Json::Value is a
+//   match or not. This method should be used to find a profile to layer the
+//   given settings upon.
+// - Returns nullptr if no such match exists.
+// Arguments:
+// - <none>
+// Return Value:
+// - a Profile that can be layered with the given json object, iff such a
+//   profile exists.
 Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
 {
     for (auto& profile : _profiles)
@@ -232,6 +284,14 @@ Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
     return nullptr;
 }
 
+// Method Description:
+// - Given a partial json serialization of a ColorScheme object, either layers that
+//   json on a matching ColorScheme we already have, or creates a new ColorScheme
+//   object from those settings.
+// Arguments:
+// - json: an object which should be a partial serialization of a ColorScheme object.
+// Return Value:
+// - <none>
 void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 {
     // Layer the json on top of an existing profile, if we have one:
@@ -247,6 +307,17 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
     }
 }
 
+// Method Description:
+// - Finds a color scheme from our list of color schemes that matches the given
+//   json object. Uses ColorScheme::ShouldBeLayered to determine if the
+//   Json::Value is a match or not. This method should be used to find a color
+//   scheme to layer the given settings upon.
+// - Returns nullptr if no such match exists.
+// Arguments:
+// - <none>
+// Return Value:
+// - a ColorScheme that can be layered with the given json object, iff such a
+//   color scheme exists.
 ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schemeJson)
 {
     for (auto& scheme : _globals.GetColorSchemes())
@@ -378,6 +449,13 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
     return _ReadFile(hFile.get());
 }
 
+// Method Description:
+// - Reads the content in UTF-8 encoding of the given file using the Win32 APIs
+// Arguments:
+// - <none>
+// Return Value:
+// - an optional with the content of the file if we were able to read it. If we
+//   fail to read it, this can throw an exception from reading the file
 std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 {
     // fileSize is in bytes
@@ -469,6 +547,13 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
     return rootDir / DefaultsFilename;
 }
 
+// Function Description:
+// - Gets the object in the given JSON obejct under the "profiles" key. Returns
+//   null if there's no "profiles" key.
+// Arguments:
+// - json: the json object to get the profiles from.
+// Return Value:
+// - the Json::Value representing the profiles property from the given object
 const Json::Value& CascadiaSettings::_GetProfiles(const Json::Value& json)
 {
     return json[JsonKey(ProfilesKey)];

@@ -1,4 +1,5 @@
-# This script is used for taking a json file and stamping it into
+# This script is used for taking a json file and stamping it into a header with
+# the contents of that json files as a constexpr string_view in the header.
 
 param (
     [parameter(Mandatory=$true, Position=0)]

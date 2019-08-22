@@ -354,6 +354,14 @@ Profile Profile::FromJson(const Json::Value& json)
     return result;
 }
 
+// Method Description:
+// - Returns true if we think the provided json object represents an instance of
+//   the same object as this object. If true, we should layer that json object
+//   on us, instead of creating a new object.
+// Arguments:
+// - json: The json object to query to see if it's the same
+// Return Value:
+// - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json)
 {
     if (json.isMember(JsonKey(GuidKey)))
@@ -380,11 +388,30 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(cons
     return Profile::ParseImageStretchMode(json.asString());
 }
 
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageAlignment. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - A pair of HorizontalAlignment and VerticalAlignment
 std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
 {
     return Profile::ParseImageAlignment(json.asString());
 }
 
+// Method Description:
+// - Layer values from the given json object on top of the existing properties
+//   of this object. For any keys we're expecting to be able to parse in the
+//   given object, we'll parse them and replace our settings with values from
+//   the new json object. Properties that _aren't_ in the json object will _not_
+//   be replaced.
+// - Optional values in the profile that are set to `null` in the json object
+//   will be set to nullopt.
+// Arguments:
+// - json: an object which should be a partial serialization of a Profile object.
+// Return Value:
+// <none>
 void Profile::LayerJson(const Json::Value& json)
 {
     // Profile-specific Settings
@@ -638,6 +665,11 @@ GUID Profile::GetConnectionType() const noexcept
 bool Profile::GetCloseOnExit() const noexcept
 {
     return _closeOnExit;
+}
+
+bool Profile::IsHidden() const noexcept
+{
+    return _hidden;
 }
 
 // Method Description:
@@ -927,9 +959,4 @@ void Profile::GenerateGuidIfNecessary() noexcept
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
-}
-
-bool Profile::IsHidden() const noexcept
-{
-    return _hidden;
 }
