@@ -61,8 +61,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         _WriteSettings(UserSettingsJson);
     }
 
-    // If this throws, the app will catch it and use the default settings (temporarily)
-    // TODO: What does "use the default settings (temporarily)" mean nowadays?
+    // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
 
     return resultPtr;
