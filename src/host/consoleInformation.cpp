@@ -75,9 +75,9 @@ void CONSOLE_INFORMATION::UnlockConsole()
     LeaveCriticalSection(&_csConsoleLock);
 }
 
-HANDLE CONSOLE_INFORMATION::GetOwningThread() const
+DWORD CONSOLE_INFORMATION::GetOwningThreadId() const
 {
-    return _csConsoleLock.OwningThread;
+    return HandleToULong(_csConsoleLock.OwningThread);
 }
 
 ULONG CONSOLE_INFORMATION::GetCSRecursionCount()

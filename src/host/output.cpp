@@ -526,8 +526,14 @@ void CloseConsoleProcessState()
     // If someone has the global lock and is stuck, we need to cancel their synchronous IO if we attempt to take the lock and can't.
     while (!gci.TryLockConsole())
     {
-        const auto owningThreadHandle = gci.GetOwningThread();
-        CancelSynchronousIo(owningThreadHandle);
+        const auto owningThreadId = gci.GetOwningThreadId();
+        wil::unique_handle owningThreadHandle;
+        owningThreadHandle.reset(OpenThread(THREAD_TERMINATE, FALSE, owningThreadId));
+        LOG_LAST_ERROR_IF_NULL(owningThreadHandle.get());
+        if (owningThreadHandle)
+        {
+            LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(owningThreadHandle.get()));
+        }
     }
 
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
