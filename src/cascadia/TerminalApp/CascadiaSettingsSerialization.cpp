@@ -10,6 +10,8 @@
 #include <shlobj.h>
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
+// userDefault.h is like the above, but with a default template for the user's profiles.json.
+#include "userDefaults.h"
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -89,8 +91,9 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     }
     else
     {
-        // TODO: We didn't find the user settings. We'll need to create a file
-        // to temporarily use as the user defaults.
+        // We didn't find the user settings. We'll need to create a file
+        // to use as the user defaults.
+        _WriteSettings(UserSettingsJson);
     }
 
     // If this throws, the app will catch it and use the default settings (temporarily)
