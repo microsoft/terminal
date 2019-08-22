@@ -677,8 +677,12 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
+    // Re-order profiles so that all profiles from the user's settings appear
+    // before profiles that _weren't_ in the user profiles.
     _ValidateProfilesMatchUserSettingsOrder();
 
+    // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
+    // json, and will get confused if the profile isn't in the list.
     _ValidateRemoveHiddenProfiles();
 
     // Verify all profiles actually had a GUID specified, otherwise generate a
@@ -691,13 +695,13 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateNoDuplicateProfiles();
     _ValidateDefaultProfileExists();
 
-    // TODO: ensure that all the profile's color scheme names are actually the
-    // names of schemes we've parsed. If the scheme doesn't exist, just use the
-    // hardcoded defaults
+    // TODO:<future> ensure that all the profile's color scheme names are
+    // actually the names of schemes we've parsed. If the scheme doesn't exist,
+    // just use the hardcoded defaults
 
-    // TODO: ensure there's at least one key bound. Display a warning if there's
-    // _NO_ keys bound to any actions. That's highly irregular, and likely an
-    // indication of an error somehow.
+    // TODO:<future> ensure there's at least one key bound. Display a warning if
+    // there's _NO_ keys bound to any actions. That's highly irregular, and
+    // likely an indication of an error somehow.
 }
 
 // Method Description:
@@ -852,4 +856,16 @@ void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
 
 void CascadiaSettings::_ValidateRemoveHiddenProfiles()
 {
+    _profiles.erase(std::remove_if(_profiles.begin(),
+                                   _profiles.end(),
+                                   [](auto profile) { return profile.IsHidden(); }),
+                    _profiles.end());
+    // // Walk backwards, so we don't accidentally shift any of the elements
+    // for (auto iter = _profiles.rbegin(); iter != _profiles.rend(); iter++)
+    // {
+    //     if (iter->IsHidden())
+    //     {
+    //         _profiles.erase(iter);
+    //     }
+    // }
 }

@@ -15,6 +15,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
+static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
@@ -79,6 +80,7 @@ Profile::Profile(const winrt::guid& guid) :
     _guid(guid),
     _name{ L"Default" },
     _schemeName{},
+    _hidden{ false },
 
     _defaultForeground{},
     _defaultBackground{},
@@ -244,6 +246,7 @@ Json::Value Profile::ToJson() const
     ///// Profile-specific settings /////
     root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid));
     root[JsonKey(NameKey)] = winrt::to_string(_name);
+    root[JsonKey(HiddenKey)] = _hidden;
 
     ///// Core Settings /////
     if (_defaultForeground)
@@ -398,6 +401,11 @@ void Profile::LayerJson(const Json::Value& json)
         // differentiate a profile not having a GUID from a profile having it's
         // GUID specifically set to {0}
         _guidSet = true;
+    }
+    if (json.isMember(JsonKey(HiddenKey)))
+    {
+        auto hidden{ json[JsonKey(HiddenKey)] };
+        _hidden = hidden.asBool();
     }
 
     // Core Settings
@@ -919,4 +927,9 @@ void Profile::GenerateGuidIfNecessary() noexcept
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
+}
+
+bool Profile::IsHidden() const noexcept
+{
+    return _hidden;
 }

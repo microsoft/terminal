@@ -66,6 +66,7 @@ public:
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;
+    bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
 
@@ -87,6 +88,7 @@ private:
     bool _guidSet{ false };
     std::wstring _name;
     std::optional<GUID> _connectionType;
+    bool _hidden{ false };
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
