@@ -88,7 +88,7 @@ SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, 
     }
     else
     {
-        selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
+        selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : _buffer->GetSize().Left();
         selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
     }
 
@@ -109,20 +109,12 @@ void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
     // expand selection for Double/Triple Click
     if (_multiClickSelectionMode == SelectionExpansionMode::Word)
     {
-        const auto cellChar = _buffer->GetCellDataAt({ _selectionAnchor.X, row })->Chars();
-        if (_isSingleCellSelection() && _isWordDelimiter(cellChar))
-        {
-            // only highlight the cell if you double click a delimiter
-        }
-        else
-        {
-            selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
-            selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
-        }
+        selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
+        selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
     }
     else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
     {
-        selectionRow.Left = 0;
+        selectionRow.Left = _buffer->GetSize().Left();
         selectionRow.Right = _buffer->GetSize().RightInclusive();
     }
 
@@ -140,7 +132,8 @@ void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
 const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
-    if (xPos <= 0 || xPos > _buffer->GetSize().RightInclusive())
+    const auto bufferSize = _buffer->GetSize();
+    if (xPos <= bufferSize.Left() || xPos > bufferSize.RightInclusive())
     {
         return xPos;
     }
@@ -151,7 +144,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
     {
         // move off by highlighting the lead half too.
         // alters position.X
-        _buffer->GetSize().DecrementInBounds(position);
+        bufferSize.DecrementInBounds(position);
     }
     return position.X;
 }
@@ -165,7 +158,8 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
 const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
-    if (xPos < 0 || xPos >= _buffer->GetSize().RightInclusive())
+    const auto bufferSize = _buffer->GetSize();
+    if (xPos < bufferSize.Left() || xPos >= bufferSize.RightInclusive())
     {
         return xPos;
     }
@@ -176,7 +170,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
     {
         // move off by highlighting the trailing half too.
         // alters position.X
-        _buffer->GetSize().IncrementInBounds(position);
+        bufferSize.IncrementInBounds(position);
     }
     return position.X;
 }
@@ -220,15 +214,8 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD position)
 {
-    // if you double click a delimiter, just select that one cell
     COORD positionWithOffsets = _ConvertToBufferCell(position);
     const auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    if (_isWordDelimiter(cellChar))
-    {
-        SetSelectionAnchor(position);
-        _multiClickSelectionMode = SelectionExpansionMode::Word;
-        return;
-    }
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
@@ -343,23 +330,31 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 }
 
 // Method Description:
-// - expand the double click selection to the left (stopped by delimiter)
+// - expand the double click selection to the left
+// - stopped by delimiter if started on delimiter
 // Arguments:
 // - position: viewport coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
 const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
-    COORD positionWithOffsets = position;
+    // can't expand left
     const auto bufferViewport = _buffer->GetSize();
+    if (position.X == bufferViewport.Left())
+    {
+        return position;
+    }
+
+    COORD positionWithOffsets = position;
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != 0 && !_isWordDelimiter(cellChar))
+    const bool startedOnDelimiter = _isWordDelimiter(cellChar);
+    while (positionWithOffsets.X != bufferViewport.Left() && (_isWordDelimiter(cellChar) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != 0 && _isWordDelimiter(cellChar))
+    if (_isWordDelimiter(cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -369,23 +364,31 @@ const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) cons
 }
 
 // Method Description:
-// - expand the double click selection to the right (stopped by delimiter)
+// - expand the double click selection to the right
+// - stopped by delimiter if started on delimiter
 // Arguments:
 // - position: viewport coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
 const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
-    COORD positionWithOffsets = position;
+    // can't expand right
     const auto bufferViewport = _buffer->GetSize();
+    if (position.X == bufferViewport.RightInclusive())
+    {
+        return position;
+    }
+
+    COORD positionWithOffsets = position;
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_isWordDelimiter(cellChar))
+    const bool startedOnDelimiter = _isWordDelimiter(cellChar);
+    while (positionWithOffsets.X != bufferViewport.RightInclusive() && (_isWordDelimiter(cellChar) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() && _isWordDelimiter(cellChar))
+    if (positionWithOffsets.X != bufferViewport.RightInclusive() && (_isWordDelimiter(cellChar) != startedOnDelimiter))
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
@@ -415,8 +418,7 @@ const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
     // Force position to be valid
     COORD positionWithOffsets = viewportPos;
-    positionWithOffsets.X = std::clamp(viewportPos.X, static_cast<SHORT>(0), _buffer->GetSize().RightInclusive());
-    positionWithOffsets.Y = std::clamp(viewportPos.Y, static_cast<SHORT>(0), _buffer->GetSize().BottomInclusive());
+    _buffer->GetSize().Clamp(positionWithOffsets);
 
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
