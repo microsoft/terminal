@@ -31,6 +31,22 @@ inline std::string JsonKey(const std::string_view key)
 
 winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
 
+// Helper to establish an ordering on guids
+struct GuidOrdering
+{
+    bool operator()(const GUID& lhs, const GUID& rhs) const
+    {
+        return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
+    }
+};
+struct GuidEquality
+{
+    bool operator()(const GUID& lhs, const GUID& rhs) const
+    {
+        return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
+    }
+};
+
 namespace TerminalApp
 {
     class JsonUtils;

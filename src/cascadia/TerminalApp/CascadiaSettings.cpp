@@ -9,7 +9,7 @@
 #include "CascadiaSettings.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "winrt/Microsoft.Terminal.TerminalConnection.h"
+#include "Utils.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -677,6 +677,10 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
+    _ValidateProfilesMatchUserSettingsOrder();
+
+    _ValidateRemoveHiddenProfiles();
+
     // Verify all profiles actually had a GUID specified, otherwise generate a
     // GUID for them. Make sure to do this before de-duping profiles and
     // checking that the default profile is set.
@@ -686,6 +690,14 @@ void CascadiaSettings::_ValidateSettings()
     // terribly matter.
     _ValidateNoDuplicateProfiles();
     _ValidateDefaultProfileExists();
+
+    // TODO: ensure that all the profile's color scheme names are actually the
+    // names of schemes we've parsed. If the scheme doesn't exist, just use the
+    // hardcoded defaults
+
+    // TODO: ensure there's at least one key bound. Display a warning if there's
+    // _NO_ keys bound to any actions. That's highly irregular, and likely an
+    // indication of an error somehow.
 }
 
 // Method Description:
@@ -762,15 +774,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     std::vector<size_t> indiciesToDelete{};
 
-    // Helper to establish an ordering on guids
-    struct GuidEquality
-    {
-        bool operator()(const GUID& lhs, const GUID& rhs) const
-        {
-            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
-        }
-    };
-    std::set<GUID, GuidEquality> uniqueGuids{};
+    std::set<GUID, GuidOrdering> uniqueGuids{};
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
@@ -794,4 +798,58 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
     {
         _warnings.push_back(::TerminalApp::SettingsLoadWarnings::DuplicateProfile);
     }
+}
+
+void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
+{
+    std::set<GUID, GuidOrdering> uniqueGuids{};
+    std::deque<GUID> guidOrder{};
+
+    auto collectGuids = [&](const auto& json) {
+        for (auto profileJson : _GetProfiles(json))
+        {
+            if (profileJson.isObject())
+            {
+                if (profileJson.isMember("guid"))
+                {
+                    auto guidJson{ profileJson["guid"] };
+                    auto guid = Utils::GuidFromString(GetWstringFromJson(guidJson));
+
+                    if (uniqueGuids.insert(guid).second)
+                    {
+                        guidOrder.push_back(guid);
+                    }
+                }
+            }
+        }
+    };
+
+    // Push all the userSettings profiles' GUIDS into the set
+    collectGuids(_userSettings);
+
+    // Push all the defaultSettings profiles' GUIDS into the set
+    collectGuids(_defaultSettings);
+    GuidEquality equals{};
+    // Re-order the list of _profiles to match that ordering
+    for (size_t gIndex = 0; gIndex < guidOrder.size(); gIndex++)
+    {
+        const auto guid = guidOrder.at(gIndex);
+        for (size_t pIndex = gIndex; pIndex < _profiles.size(); pIndex++)
+        {
+            auto profileGuid = _profiles.at(pIndex).GetGuid();
+            if (equals(profileGuid, guid))
+            {
+                std::iter_swap(_profiles.begin() + pIndex, _profiles.begin() + gIndex);
+                break;
+            }
+        }
+    }
+    // For each gIndex : guids
+    //   find the pIndex of the profile with guid=guids[gIndex]
+    //   profiles.swap(pIndex <-> gIndex)
+    // N^2, which kinda sucks
+}
+
+void CascadiaSettings::_ValidateRemoveHiddenProfiles()
+{
 }

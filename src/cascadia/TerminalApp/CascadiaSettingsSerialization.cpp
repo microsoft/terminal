@@ -6,6 +6,7 @@
 #include "CascadiaSettings.h"
 #include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
+#include "utils.h"
 #include <appmodel.h>
 #include <shlobj.h>
 // defaults.h is a file containing the default json settings in a std::string_view
@@ -31,49 +32,13 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 
-void CascadiaSettings::_LayerJsonString(std::string_view fileData)
-{
-    // Ignore UTF-8 BOM
-
-    auto actualDataStart = fileData.data();
-    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
-    {
-        actualDataStart += Utf8Bom.size();
-    }
-
-    std::string errs; // This string will recieve any error text from failing to parse.
-    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-    // Parse the json data.
-    Json::Value root;
-    // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), &root, &errs))
-    {
-        // This will be caught by App::_TryLoadSettings, who will display
-        // the text to the user.
-        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-    }
-
-    LayerJson(root);
-}
-
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
-{
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
-
-    // We already have the defaults in memory, because we stamp them into a
-    // header as part of the build process. We don't need to bother with reading
-    // them from a file (and the potential that could fail)
-    resultPtr->_LayerJsonString(DefaultJson);
-
-    return resultPtr;
-}
-
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
+// - Loads both the settings from the defaults.json and the user's profiles.json
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
@@ -87,7 +52,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     const bool fileHasData = foundFile && !fileData.value().empty();
     if (foundFile && fileHasData)
     {
-        resultPtr->_LayerJsonString(fileData.value());
+        resultPtr->_LayerJsonString(fileData.value(), false);
     }
     else
     {
@@ -101,6 +66,45 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     resultPtr->_ValidateSettings();
 
     return resultPtr;
+}
+
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
+{
+    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+
+    // We already have the defaults in memory, because we stamp them into a
+    // header as part of the build process. We don't need to bother with reading
+    // them from a file (and the potential that could fail)
+    resultPtr->_LayerJsonString(DefaultJson, true);
+
+    return resultPtr;
+}
+
+void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool isDefaultSettings)
+{
+    // Ignore UTF-8 BOM
+    auto actualDataStart = fileData.data();
+    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
+    {
+        actualDataStart += Utf8Bom.size();
+    }
+
+    std::string errs; // This string will recieve any error text from failing to parse.
+    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+    // Parse the json data into either our defaults or user settings. We'll keep
+    // these original json values around for later, in case we need to parse
+    // their raw contents again.
+    Json::Value* pRoot = isDefaultSettings ? &_defaultSettings : &_userSettings;
+    // `parse` will return false if it fails.
+    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), pRoot, &errs))
+    {
+        // This will be caught by App::_TryLoadSettings, who will display
+        // the text to the user.
+        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+    }
+
+    LayerJson(*pRoot);
 }
 
 // Method Description:
@@ -174,33 +178,13 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
             _globals.LayerJson(globals);
         }
     }
-    // TODO: We used to have fallback code for migrating globals from the root
-    // here, do we want to keep migrating that?
-    // else
-    // {
-    //     // If there's no globals key in the root object, then try looking at the
-    //     // root object for those properties instead, to gracefully upgrade.
-    //     // This will attempt to do the legacy keybindings loading too
-    //     resultPtr->_globals = GlobalAppSettings::FromJson(json);
-
-    //     // If we didn't find keybindings in the legacy path, then they probably
-    //     // don't exist in the file. Create the default keybindings if we
-    //     // couldn't find any keybindings.
-    //     auto keybindings{ json[KeybindingsKey.data()] };
-    //     if (!keybindings)
-    //     {
-    //         resultPtr->_CreateDefaultKeybindings();
-    //     }
-    // }
-
-    // TODO:MSFT:20737698 - Display an error if we failed to parse settings
-    // What should we do here if these keys aren't found?For default profile,
-    //      we could always pick the first  profile and just set that as the default.
-    // Finding no schemes is probably fine, unless of course one profile
-    //      references a scheme.  We could fail with come error saying the
-    //      profiles file is corrupted.
-    // Not having any profiles is also bad - should we say the file is corrupted?
-    //      Or should we just recreate the default profiles?
+    else
+    {
+        // If there's no globals key in the root object, then try looking at the
+        // root object for those properties instead, to gracefully upgrade.
+        // This will attempt to do the legacy keybindings loading too
+        _globals.LayerJson(json);
+    }
 
     if (auto schemes{ json[SchemesKey.data()] })
     {
@@ -213,14 +197,11 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
         }
     }
 
-    if (auto profiles{ json[ProfilesKey.data()] })
+    for (auto profileJson : _GetProfiles(json))
     {
-        for (auto profileJson : profiles)
+        if (profileJson.isObject())
         {
-            if (profileJson.isObject())
-            {
-                _LayerOrCreateProfile(profileJson);
-            }
+            _LayerOrCreateProfile(profileJson);
         }
     }
 }
@@ -487,4 +468,9 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
     std::filesystem::path exePath{ buffer.get() };
     std::filesystem::path rootDir = exePath.parent_path();
     return rootDir / DefaultsFilename;
+}
+
+const Json::Value& CascadiaSettings::_GetProfiles(const Json::Value& json)
+{
+    return json[JsonKey(ProfilesKey)];
 }

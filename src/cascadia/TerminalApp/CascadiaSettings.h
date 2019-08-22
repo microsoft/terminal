@@ -16,7 +16,7 @@ Author(s):
 
 --*/
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
@@ -73,6 +73,9 @@ private:
     std::vector<Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
 
+    Json::Value _userSettings;
+    Json::Value _defaultSettings;
+
     void _CreateDefaultKeybindings();
     void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
@@ -81,7 +84,8 @@ private:
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
-    void _LayerJsonString(std::string_view fileData);
+    void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
+    static const Json::Value& _GetProfiles(const Json::Value& json);
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
@@ -93,6 +97,8 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
+    void _ValidateProfilesMatchUserSettingsOrder();
+    void _ValidateRemoveHiddenProfiles();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
