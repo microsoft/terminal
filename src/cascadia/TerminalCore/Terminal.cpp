@@ -196,7 +196,7 @@ void Terminal::Write(std::wstring_view stringView)
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that
 //   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT br processed any further. If we return false, the event
+//   event should NOT be processed any further. If we return false, the event
 //   was NOT translated, and we should instead use the event to try and get the
 //   real character out of the event.
 // Arguments:
