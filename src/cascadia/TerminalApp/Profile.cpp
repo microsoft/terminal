@@ -387,20 +387,11 @@ void Profile::LayerJson(const Json::Value& json)
     {
         auto guid{ json[JsonKey(GuidKey)] };
         _guid = Utils::GuidFromString(GetWstringFromJson(guid));
+        // Mark that we did in fact set a GUID for this profile. This way we can
+        // differentiate a profile not having a GUID from a profile having it's
+        // GUID specifically set to {0}
+        _guidSet = true;
     }
-    // TODO: Originally, if a profile didn't have a GUID set, we'd synthesize
-    // one on their behalf. We should still do this, but
-    // else
-    // {
-    //     result._guid = Utils::CreateGuid();
-
-    //     TraceLoggingWrite(
-    //         g_hTerminalAppProvider,
-    //         "SynthesizedGuidForProfile",
-    //         TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-    //         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-    //         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-    // }
 
     // Core Settings
     JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
@@ -900,5 +891,25 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     default:
     case CursorStyle::Bar:
         return CursorShapeBar;
+    }
+}
+
+// Method Description:
+// - If this profile never had a GUID set for it, generate a runtime GUID for
+//   the profile. If a profile had their guid manually set to {0}, this method
+//   will _not_ change the profile's GUID.
+void Profile::GenerateGuidIfNecessary() noexcept
+{
+    if (!_guidSet)
+    {
+        _guid = Utils::CreateGuid();
+        _guidSet = true;
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SynthesizedGuidForProfile",
+            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
 }

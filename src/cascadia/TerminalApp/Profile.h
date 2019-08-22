@@ -67,6 +67,8 @@ public:
 
     bool GetCloseOnExit() const noexcept;
 
+    void GenerateGuidIfNecessary() noexcept;
+
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
@@ -82,6 +84,7 @@ private:
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     GUID _guid;
+    bool _guidSet{ false };
     std::wstring _name;
     std::optional<GUID> _connectionType;
 

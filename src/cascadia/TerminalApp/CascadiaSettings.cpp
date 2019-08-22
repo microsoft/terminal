@@ -677,8 +677,10 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
-    // TODO: Verify all profiles actually had a GUID specified, otherwise
-    // generate a GUID for them
+    // Verify all profiles actually had a GUID specified, otherwise generate a
+    // GUID for them. Make sure to do this before de-duping profiles and
+    // checking that the default profile is set.
+    _ValidateProfilesHaveGuid();
 
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
@@ -701,6 +703,18 @@ void CascadiaSettings::_ValidateProfilesExist()
         // object is not going to be returned at any point.
 
         throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::NoProfiles);
+    }
+}
+
+// Method Description:
+// - Walks through each profile, and ensures that they had a GUID set at some
+//   point. If the profile did _not_ have a GUID ever set for it, generate a
+//   temporary runtime GUID for it. This valitation does not add any warnnings.
+void CascadiaSettings::_ValidateProfilesHaveGuid()
+{
+    for (auto& profile : _profiles)
+    {
+        profile.GenerateGuidIfNecessary();
     }
 }
 

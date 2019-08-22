@@ -91,6 +91,7 @@ private:
 
     void _ValidateSettings();
     void _ValidateProfilesExist();
+    void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
 
