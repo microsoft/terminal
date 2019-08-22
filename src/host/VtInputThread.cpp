@@ -24,14 +24,14 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - hPipe - a handle to the file representing the read end of the VT pipe.
 // - inheritCursor - a bool indicating if the state machine should expect a
 //      cursor positioning sequence. See MSFT:15681311.
-VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
+VtInputThread::VtInputThread(wil::unique_hfile hPipe,
+                             wil::shared_event shutdownEvent,
                              const bool inheritCursor) :
     _hFile{ std::move(hPipe) },
+    _shutdownEvent{ shutdownEvent },
     _hThread{},
     _utf8Parser{ CP_UTF8 },
-    _dwThreadId{ 0 },
-    _exitRequested{ false },
-    _exitResult{ S_OK }
+    _dwThreadId{ 0 }
 {
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
@@ -100,40 +100,19 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // - Do a single ReadFile from our pipe, and try and handle it. If handling
 //      failed, throw or log, depending on what the caller wants.
 // Arguments:
-// - throwOnFail: If true, throw an exception if there was an error processing
-//      the input recieved. Otherwise, log the error.
-// Return Value:
 // - <none>
-void VtInputThread::DoReadInput(const bool throwOnFail)
+// Return Value:
+// - S_OK or relevant error
+[[nodiscard]] HRESULT VtInputThread::DoReadInput()
 {
     byte buffer[256];
     DWORD dwRead = 0;
-    bool fSuccess = !!ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
 
-    // If we failed to read because the terminal broke our pipe (usually due
-    //      to dying itself), close gracefully with ERROR_BROKEN_PIPE.
-    // Otherwise throw an exception. ERROR_BROKEN_PIPE is the only case that
-    //       we want to gracefully close in.
-    if (!fSuccess)
-    {
-        _exitRequested = true;
-        _exitResult = HRESULT_FROM_WIN32(GetLastError());
-        return;
-    }
+    RETURN_IF_WIN32_BOOL_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
-    HRESULT hr = _HandleRunInput(buffer, dwRead);
-    if (FAILED(hr))
-    {
-        if (throwOnFail)
-        {
-            _exitResult = hr;
-            _exitRequested = true;
-        }
-        else
-        {
-            LOG_IF_FAILED(hr);
-        }
-    }
+    RETURN_IF_FAILED(_HandleRunInput(buffer, dwRead));
+    
+    return S_OK;
 }
 
 // Method Description:
@@ -145,13 +124,16 @@ void VtInputThread::DoReadInput(const bool throwOnFail)
 //      have caused us to exit.
 DWORD VtInputThread::_InputThread()
 {
-    while (!_exitRequested)
-    {
-        DoReadInput(true);
-    }
-    ServiceLocator::LocateGlobals().getConsoleInformation().GetVtIo()->CloseInput();
+    auto onExitTriggerShutdown = wil::scope_exit([&] {
+        _shutdownEvent.SetEvent();
+    });
 
-    return _exitResult;
+    while (true)
+    {
+        RETURN_IF_FAILED(DoReadInput());
+    }
+
+    return S_OK;
 }
 
 // Method Description:

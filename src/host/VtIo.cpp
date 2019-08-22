@@ -25,8 +25,15 @@ VtIo::VtIo() :
     _initialized(false),
     _objectsCreated(false),
     _lookingForCursorPosition(false),
-    _IoMode(VtIoMode::INVALID)
+    _IoMode(VtIoMode::INVALID),
+    _shutdownEvent()
 {
+    _shutdownEvent.create(wil::EventOptions::ManualReset);
+
+    _shutdownWatchdog = std::async(std::launch::async, [&] {
+        _shutdownEvent.wait();
+        CloseConsoleProcessState();
+    });
 }
 
 // Routine Description:
@@ -146,7 +153,7 @@ VtIo::VtIo() :
     {
         if (IsValidHandle(_hInput.get()))
         {
-            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _lookingForCursorPosition);
+            _pVtInputThread = std::make_unique<VtInputThread>(std::move(_hInput), _shutdownEvent, _lookingForCursorPosition);
         }
 
         if (IsValidHandle(_hOutput.get()))
@@ -158,6 +165,7 @@ VtIo::VtIo() :
             {
             case VtIoMode::XTERM_256:
                 _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                                                                    _shutdownEvent,
                                                                     gci,
                                                                     initialViewport,
                                                                     gci.GetColorTable(),
@@ -165,6 +173,7 @@ VtIo::VtIo() :
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
+                                                                 _shutdownEvent,
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
@@ -173,6 +182,7 @@ VtIo::VtIo() :
                 break;
             case VtIoMode::XTERM_ASCII:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
+                                                                 _shutdownEvent,
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
@@ -181,6 +191,7 @@ VtIo::VtIo() :
                 break;
             case VtIoMode::WIN_TELNET:
                 _pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(_hOutput),
+                                                                     _shutdownEvent,
                                                                      gci,
                                                                      initialViewport,
                                                                      gci.GetColorTable(),
@@ -188,10 +199,6 @@ VtIo::VtIo() :
                 break;
             default:
                 return E_FAIL;
-            }
-            if (_pVtRenderEngine)
-            {
-                _pVtRenderEngine->SetTerminalOwner(this);
             }
         }
     }
@@ -245,18 +252,22 @@ bool VtIo::IsUsingVt() const
     // We need both handles for this initialization to work. If we don't have
     //      both, we'll skip it. They either aren't going to be reading output
     //      (so they can't get the DSR) or they can't write the response to us.
+    // GH Microsoft/Terminal#1810:
+    // - We can't just infinite loop and let them hang. It needs to recognize an error
+    //   condition otherwise it can be getting notified on another thread of a proper shutdown
+    //   and be unable to actually leave this loop and let go of the lock.
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
-        LOG_IF_FAILED(_pVtRenderEngine->RequestCursor());
+        RETURN_IF_FAILED(_pVtRenderEngine->RequestCursor());
         while (_lookingForCursorPosition)
         {
-            _pVtInputThread->DoReadInput(false);
+            RETURN_IF_FAILED(_pVtInputThread->DoReadInput());
         }
     }
 
     if (_pVtInputThread)
     {
-        LOG_IF_FAILED(_pVtInputThread->Start());
+        RETURN_IF_FAILED(_pVtInputThread->Start());
     }
 
     if (_pPtySignalInputThread)
@@ -343,59 +354,6 @@ bool VtIo::IsUsingVt() const
         _lookingForCursorPosition = false;
     }
     return hr;
-}
-
-void VtIo::CloseInput()
-{
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
-    _pVtInputThread = nullptr;
-    _ShutdownIfNeeded();
-}
-
-void VtIo::CloseOutput()
-{
-    // This will release the lock when it goes out of scope
-    std::lock_guard<std::mutex> lk(_shutdownLock);
-
-    Globals& g = ServiceLocator::LocateGlobals();
-    // DON'T RemoveRenderEngine, as that requires the engine list lock, and this
-    // is usually being triggered on a paint operation, when the lock is already
-    // owned by the paint.
-    // Instead we're releasing the Engine here. A pointer to it has already been
-    // given to the Renderer, so we don't want the unique_ptr to delete it. The
-    // Renderer will own its lifetime now.
-    _pVtRenderEngine.release();
-
-    g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(nullptr);
-
-    _ShutdownIfNeeded();
-}
-
-void VtIo::_ShutdownIfNeeded()
-{
-    // The callers should have both accquired the _shutdownLock at this point -
-    //      we dont want a race on who is actually responsible for closing it.
-    if (_objectsCreated && _pVtInputThread == nullptr && _pVtRenderEngine == nullptr)
-    {
-        // At this point, we no longer have a renderer or inthread. So we've
-        //      effectively been disconnected from the terminal.
-
-        // If we have any remaining attached processes, this will prepare us to send a ctrl+close to them
-        // if we don't, this will cause us to rundown and exit.
-        CloseConsoleProcessState();
-
-        // If we haven't terminated by now, that's because there's a client that's still attached.
-        // Force the handling of the control events by the attached clients.
-        // As of MSFT:19419231, CloseConsoleProcessState will make sure this
-        //      happens if this method is called outside of lock, but if we're
-        //      currently locked, we want to make sure ctrl events are handled
-        //      _before_ we RundownAndExit.
-        ProcessCtrlEvents();
-
-        // Make sure we terminate.
-        ServiceLocator::RundownAndExit(ERROR_BROKEN_PIPE);
-    }
 }
 
 // Method Description:

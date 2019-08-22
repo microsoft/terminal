@@ -33,7 +33,8 @@ namespace Microsoft::Console::Render
         static const size_t ERASE_CHARACTER_STRING_LENGTH = 8;
         static const COORD INVALID_COORDS;
 
-        VtEngine(_In_ wil::unique_hfile hPipe,
+        VtEngine(wil::unique_hfile hPipe,
+                 wil::shared_event shutdownEvent,
                  const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
@@ -93,11 +94,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring& str) noexcept = 0;
 
-        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
 
     protected:
+        wil::shared_event _shutdownEvent;
         wil::unique_hfile _hFile;
         std::string _buffer;
 
@@ -128,10 +129,6 @@ namespace Microsoft::Console::Render
         bool _skipCursor;
         bool _newBottomLine;
         COORD _deferredCursorPos;
-
-        bool _pipeBroken;
-        HRESULT _exitResult;
-        Microsoft::Console::ITerminalOwner* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };

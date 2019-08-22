@@ -25,10 +25,12 @@ const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
+VtEngine::VtEngine(wil::unique_hfile pipe,
+                   wil::shared_event shutdownEvent,
                    const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
     RenderEngineBase(),
+    _shutdownEvent(shutdownEvent),
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -49,9 +51,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _pipeBroken(false),
-    _exitResult{ S_OK },
-    _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
     _inResizeRequest{ false },
@@ -104,19 +103,14 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     }
 #endif
 
-    if (!_pipeBroken)
+    if (!_shutdownEvent.is_signaled())
     {
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
         _buffer.clear();
         if (!fSuccess)
         {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _pipeBroken = true;
-            if (_terminalOwner)
-            {
-                _terminalOwner->CloseOutput();
-            }
-            return _exitResult;
+            _shutdownEvent.SetEvent();
+            RETURN_LAST_ERROR();
         }
     }
 

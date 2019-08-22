@@ -13,11 +13,10 @@ class ConsoleArguments;
 
 namespace Microsoft::Console::VirtualTerminal
 {
-    class VtIo : public Microsoft::Console::ITerminalOwner
+    class VtIo
     {
     public:
         VtIo();
-        virtual ~VtIo() override = default;
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
@@ -33,13 +32,13 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
-        void CloseInput() override;
-        void CloseOutput() override;
-
         void BeginResize();
         void EndResize();
 
     private:
+        wil::shared_event _shutdownEvent;
+        std::future<void> _shutdownWatchdog;
+
         // After CreateIoHandlers is called, these will be invalid.
         wil::unique_hfile _hInput;
         wil::unique_hfile _hOutput;
@@ -58,8 +57,6 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
-
-        void _ShutdownIfNeeded();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;
