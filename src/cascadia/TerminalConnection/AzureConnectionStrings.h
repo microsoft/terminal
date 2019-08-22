@@ -28,4 +28,5 @@ const auto authString = L"Authenticated.\r\n";
 const auto internetOrServerIssue = L"Could not connect to Azure. You may not have internet or the server might be down.\r\n";
 const auto oldCredentialsFlushedMessage = L"Authentication parameters changed. You'll need to log in again.\r\n";
 
+const auto unknownTenantName = L"<unknown tenant name>";
 const auto ithTenant = L"Tenant %d: %s (%s)\r\n";
