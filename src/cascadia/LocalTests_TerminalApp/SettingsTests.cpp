@@ -37,6 +37,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateDuplicateProfiles);
         TEST_METHOD(ValidateManyWarnings);
         TEST_METHOD(LayerGlobalProperties);
+        TEST_METHOD(ValidateProfileOrdering);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -388,6 +389,100 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(240, settings._globals._initialCols);
         VERIFY_ARE_EQUAL(60, settings._globals._initialRows);
         VERIFY_ARE_EQUAL(false, settings._globals._showTabsInTitlebar);
+    }
+
+    void SettingsTests::ValidateProfileOrdering()
+    {
+        const std::string userProfiles0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const std::string defaultProfilesString{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile2",
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile3",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const std::string userProfiles1String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile4",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile5",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        const auto userProfiles0Json = VerifyParseSucceeded(userProfiles0String);
+        const auto userProfiles1Json = VerifyParseSucceeded(userProfiles1String);
+        const auto defaultProfilesJson = VerifyParseSucceeded(defaultProfilesString);
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Case 1: Simple swapping of the ordering. The user has the "
+                L"default profiles in the opposite order of the default ordering."));
+
+            CascadiaSettings settings{};
+            settings._LayerJsonString(defaultProfilesString, true);
+            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
+
+            settings._LayerJsonString(userProfiles0String, false);
+            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
+
+            settings._ValidateProfilesMatchUserSettingsOrder();
+            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Case 2: Make sure all the user's profiles appear before the defaults."));
+
+            CascadiaSettings settings{};
+            settings._LayerJsonString(defaultProfilesString, true);
+            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
+
+            settings._LayerJsonString(userProfiles1String, false);
+            VERIFY_ARE_EQUAL(3, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(2)._name);
+
+            settings._ValidateProfilesMatchUserSettingsOrder();
+            VERIFY_ARE_EQUAL(3, settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(2)._name);
+        }
     }
 
 }
