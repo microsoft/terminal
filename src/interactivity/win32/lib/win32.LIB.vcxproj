@@ -19,7 +19,9 @@
     <ClCompile Include="..\precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="..\screenInfoUiaProvider.cpp" />
     <ClCompile Include="..\SystemConfigurationProvider.cpp" />
+    <ClCompile Include="..\uiaTextRange.cpp" />
     <ClCompile Include="..\Window.cpp" />
     <ClCompile Include="..\WindowDpiApi.cpp" />
     <ClCompile Include="..\WindowIme.cpp" />
@@ -41,7 +43,9 @@
     <ClInclude Include="..\Menu.hpp" />
     <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\screenInfoUiaProvider.hpp" />
     <ClInclude Include="..\SystemConfigurationProvider.hpp" />
+    <ClInclude Include="..\uiaTextRange.hpp" />
     <ClInclude Include="..\Window.hpp" />
     <ClInclude Include="..\WindowDpiApi.hpp" />
     <ClInclude Include="..\WindowIme.hpp" />

@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "XamlUiaTextRange.h"
-#include "../types/UiaTextRange.hpp"
+#include "UiaTextRange.hpp"
 
 namespace UIA
 {

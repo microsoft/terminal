@@ -57,6 +57,6 @@ namespace Microsoft::Console::Interactivity::Win32
         WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
         ~WindowUiaProvider();
 
-        Microsoft::Console::Types::ScreenInfoUiaProvider* _pScreenInfoProvider;
+        ScreenInfoUiaProvider* _pScreenInfoProvider;
     };
 }

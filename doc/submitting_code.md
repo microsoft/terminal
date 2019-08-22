@@ -3,7 +3,7 @@
 
 In Openconsole, `dev/main` is the master branch for the repo.
 
-Any branch that begins with `dev/` is recognized by our CI system and will automatically run x86 and amd64 builds and run our unit and feature tests. For feature branchs the pattern we use is `dev/<alias>/<whatever you want here>`. ex. `dev/austdi/SomeCoolUnicodeFeature`. The important parts are the dev prefix and your alias.
+Any branch that begins with `dev/` is recognized by our CI system and will automatically run x86 and amd64 builds and run our unit and feature tests. For feature branches the pattern we use is `dev/<alias>/<whatever you want here>`. ex. `dev/austdi/SomeCoolUnicodeFeature`. The important parts are the dev prefix and your alias.
 
 `inbox` is a special branch that coordinates Openconsole code to the main OS repo.
 
@@ -15,12 +15,12 @@ Because we build outside of the OS repo, we need a way to get code back into it 
 
 ## What to do when cherry-picking to inbox fails
 
-Sometimes VSTS doesn't want to allow a cherry pick to the inbox branch. It might have a valid reason or it might just be finicky. You'll need to complete the merge manually on a local machine. The steps are:
+Sometimes VSTS doesn't want to allow a cherry pick to the inbox branch. It might have a valid reason, or it might just be finicky. You'll need to complete the merge manually on a local machine. The steps are:
 
 1. make sure you have pulled the latest commits for the `dev/main` and `inbox` branches
 2. make a new branch from inbox
 3. cherry-pick the commits from the PR to the newly created branch (this is easier if you squashed your commits when you merged into `dev/main`
-4. fix any merge conficts and commit
+4. fix any merge conflicts and commit
 5. push the new branch to the remote
 6. create a new PR of that branch in `inbox`
 7. complete PR and continue on to completing the auto-created PR in the OS repo
