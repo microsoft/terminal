@@ -36,6 +36,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateDefaultProfileExists);
         TEST_METHOD(ValidateDuplicateProfiles);
         TEST_METHOD(ValidateManyWarnings);
+        TEST_METHOD(LayerGlobalProperties);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -351,6 +352,42 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+    }
+
+    void SettingsTests::LayerGlobalProperties()
+    {
+        const std::string settings0String{ R"(
+        {
+            "globals": {
+                "alwaysShowTabs": true,
+                "initialCols" : 120,
+                "initialRows" : 30
+            }
+        })" };
+        const std::string settings1String{ R"(
+        {
+            "globals": {
+                "showTabsInTitlebar": false,
+                "initialCols" : 240,
+                "initialRows" : 60
+            }
+        })" };
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+        const auto settings1Json = VerifyParseSucceeded(settings1String);
+
+        CascadiaSettings settings{};
+
+        settings.LayerJson(settings0Json);
+        VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
+        VERIFY_ARE_EQUAL(120, settings._globals._initialCols);
+        VERIFY_ARE_EQUAL(30, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(true, settings._globals._showTabsInTitlebar);
+
+        settings.LayerJson(settings1Json);
+        VERIFY_ARE_EQUAL(true, settings._globals._alwaysShowTabs);
+        VERIFY_ARE_EQUAL(240, settings._globals._initialCols);
+        VERIFY_ARE_EQUAL(60, settings._globals._initialRows);
+        VERIFY_ARE_EQUAL(false, settings._globals._showTabsInTitlebar);
     }
 
 }

@@ -17,6 +17,12 @@ Author(s):
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+};
+
 namespace TerminalApp
 {
     class GlobalAppSettings;
@@ -81,4 +87,6 @@ private:
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
+    friend class TerminalAppLocalTests::SettingsTests;
 };
