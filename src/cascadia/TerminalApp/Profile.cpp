@@ -365,6 +365,13 @@ bool Profile::ShouldBeLayered(const Json::Value& json)
     return false;
 }
 
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageStretchMode. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - An appropriate value from Windows.UI.Xaml.Media.Stretch
 winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
 {
     return Profile::ParseImageStretchMode(json.asString());

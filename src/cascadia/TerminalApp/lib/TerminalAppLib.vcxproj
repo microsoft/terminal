@@ -319,4 +319,17 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
+
+  <!-- This target will take our defaults.json and stamp it into a .h file that
+  we can include in the code directly. This way, we don't need to worry about
+  failing to load the default settings at runtime. -->
+  <Target Name="_TerminalAppGenerateDefaultsH"
+          Inputs="..\defaults.json"
+          Outputs="Generated Files\defaults.h"
+          BeforeTargets="BeforeClCompile">
+
+    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;'" />
+
+  </Target>
+
 </Project>

@@ -8,6 +8,8 @@
 #include "../../types/inc/utils.hpp"
 #include <appmodel.h>
 #include <shlobj.h>
+// defaults.h is a file containing the default json settings in a std::string_view
+#include "defaults.h"
 
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -27,10 +29,11 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 
-void CascadiaSettings::_LayerJsonString(const std::string& fileData)
+void CascadiaSettings::_LayerJsonString(std::string_view fileData)
 {
     // Ignore UTF-8 BOM
-    auto actualDataStart = fileData.c_str();
+
+    auto actualDataStart = fileData.data();
     if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
     {
         actualDataStart += Utf8Bom.size();
@@ -41,7 +44,7 @@ void CascadiaSettings::_LayerJsonString(const std::string& fileData)
     // Parse the json data.
     Json::Value root;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, fileData.c_str() + fileData.size(), &root, &errs))
+    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), &root, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
@@ -55,20 +58,11 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 {
     std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
 
-    std::optional<std::string> defaultsFileData = _ReadDefaultSettings();
-    const bool foundDefaultsFile = defaultsFileData.has_value();
-    const bool defaultsFileHasData = foundDefaultsFile && !defaultsFileData.value().empty();
+    // We already have the defaults in memory, because we stamp them into a
+    // header as part of the build process. We don't need to bother with reading
+    // them from a file (and the potential that could fail)
+    resultPtr->_LayerJsonString(DefaultJson);
 
-    if (foundDefaultsFile && defaultsFileHasData)
-    {
-        resultPtr->_LayerJsonString(defaultsFileData.value());
-    }
-    else
-    {
-        // This is BAD. There was no defaults file?? We really don't expect
-        // that. The defaults should be in our package, and read-only.
-        // TODO: Throw an exception here?
-    }
     return resultPtr;
 }
 
@@ -398,24 +392,6 @@ std::optional<std::string> CascadiaSettings::_ReadUserSettings()
         }
     }
 
-    return _ReadFile(hFile.get());
-}
-
-std::optional<std::string> CascadiaSettings::_ReadDefaultSettings()
-{
-    const auto pathToSettingsFile{ CascadiaSettings::GetDefaultSettingsPath() };
-    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
-                                         GENERIC_READ,
-                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                         nullptr,
-                                         OPEN_EXISTING,
-                                         FILE_ATTRIBUTE_NORMAL,
-                                         nullptr) };
-
-    if (!hFile)
-    {
-        return std::nullopt;
-    }
     return _ReadFile(hFile.get());
 }
 
