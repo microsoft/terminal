@@ -367,6 +367,7 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void App::_ShowCloseWarningDialog()
     {
+        // To do: change these strings to localized strings in resource loader
         auto title = L"Close window warning";
         auto primaryButtonText = _resourceLoader.GetLocalizedString(L"OK");
         auto secondaryButtonText = L"Cancel";
