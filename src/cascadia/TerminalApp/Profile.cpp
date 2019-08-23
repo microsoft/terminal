@@ -423,11 +423,14 @@ void Profile::LayerJson(const Json::Value& json)
     if (json.isMember(JsonKey(GuidKey)))
     {
         auto guid{ json[JsonKey(GuidKey)] };
-        _guid = Utils::GuidFromString(GetWstringFromJson(guid));
-        // Mark that we did in fact set a GUID for this profile. This way we can
-        // differentiate a profile not having a GUID from a profile having it's
-        // GUID specifically set to {0}
-        _guidSet = true;
+        if (guid.isString())
+        {
+            _guid = Utils::GuidFromString(GetWstringFromJson(guid));
+            // Mark that we did in fact set a GUID for this profile. This way we can
+            // differentiate a profile not having a GUID from a profile having it's
+            // GUID specifically set to {0}
+            _guidSet = true;
+        }
     }
     if (json.isMember(JsonKey(HiddenKey)))
     {
