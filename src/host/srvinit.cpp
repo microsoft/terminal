@@ -249,7 +249,8 @@ void ConsoleCheckDebug()
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(g.hConsoleInputInitEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(g.hConsoleInputSetupEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(g.hConsoleInputInitializedEvent.create(wil::EventOptions::None));
 
     // Set up and tell the driver about the input available event.
     RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
@@ -552,13 +553,20 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         {
             ServiceLocator::LocateGlobals().dwInputThreadId = pNewThread->GetThreadId();
 
-            // The ConsoleInputThread needs to lock the console so we must first unlock it ourselves.
-            UnlockConsole();
-            g.hConsoleInputInitEvent.wait();
-            LockConsole();
+            // The ConsoleInputThread needs to perform things under lock,
+            // but if we unlock it, we don't know who will get the lock.
+            // So we will signal that it is safe for the other thread to do its work as
+            // we hold the lock on its behalf and wait for it to tell us that it is done.
+            g.hConsoleInputSetupEvent.SetEvent();
+            g.hConsoleInputInitializedEvent.wait();
 
-            CloseHandle(Thread);
-            g.hConsoleInputInitEvent.release();
+            // OK, we've been told that the input thread is done initializing under lock.
+            // Cleanup the handles and events we used to maintain our virtual lock passing dance.
+
+            CloseHandle(Thread); // This doesn't stop the thread from running.
+
+            g.hConsoleInputInitializedEvent.release();
+            g.hConsoleInputSetupEvent.release();
 
             if (!NT_SUCCESS(g.ntstatusConsoleInputInitStatus))
             {

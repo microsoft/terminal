@@ -11,7 +11,7 @@
 
 #include "../renderer/base/renderer.hpp"
 #include "../types/inc/utils.hpp"
-#include "input.h" // ProcessCtrlEvents
+#include "handle.h" // LockConsole and UnlockConsole
 #include "output.h" // CloseConsoleProcessState
 
 using namespace Microsoft::Console;
@@ -126,6 +126,9 @@ VtIo::VtIo() :
     _shutdownWatchdog = std::async(std::launch::async, [&] {
         _shutdownEvent.wait();
 
+        LockConsole();
+        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+        
         CloseConsoleProcessState();
     });
 

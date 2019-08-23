@@ -503,6 +503,9 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
 void CloseConsoleProcessState()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+
+    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
+        
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 
@@ -514,14 +517,4 @@ void CloseConsoleProcessState()
     }
 
     HandleCtrlEvent(CTRL_CLOSE_EVENT);
-
-    // Jiggle the handle: (see MSFT:19419231)
-    // When we call this function, we'll only actually close the console once
-    //      we're totally unlocked. If our caller has the console locked, great,
-    //      we'll displatch the ctrl event once they unlock. However, if they're
-    //      not running under lock (eg PtySignalInputThread::_GetData), then the
-    //      ctrl event will never actually get dispatched.
-    // So, lock and unlock here, to make sure the ctrl event gets handled.
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 }
