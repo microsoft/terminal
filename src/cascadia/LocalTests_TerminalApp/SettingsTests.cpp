@@ -457,7 +457,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
 
             settings._ValidateProfilesMatchUserSettingsOrder();
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
         }
