@@ -119,7 +119,8 @@ namespace winrt::TerminalApp::implementation
     void App::_HandleOpenSettings(const IInspectable& /*sender*/,
                                   const TerminalApp::ActionEventArgs& args)
     {
-        _OpenSettings();
+        // TODO:<future> Add an optional arg for opening the defaults here
+        _OpenSettings(false);
         args.Handled(true);
     }
 
