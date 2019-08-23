@@ -35,6 +35,7 @@ PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe,
     _dwThreadId{ 0 },
     _consoleConnected{ false }
 {
+    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
     THROW_IF_NULL_ALLOC(_pConApi.get());
 }
@@ -95,7 +96,7 @@ void PtySignalInputThread::ConnectConsole() noexcept
         case PTY_SIGNAL_RESIZE_WINDOW:
         {
             PTY_SIGNAL_RESIZE resizeMsg = { 0 };
-            _GetData(&resizeMsg, sizeof(resizeMsg));
+            RETURN_IF_FAILED(_GetData(&resizeMsg, sizeof(resizeMsg)));
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });

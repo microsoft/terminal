@@ -32,6 +32,7 @@ VtIo::VtIo() :
 
     _shutdownWatchdog = std::async(std::launch::async, [&] {
         _shutdownEvent.wait();
+
         CloseConsoleProcessState();
     });
 }
@@ -225,6 +226,8 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
+    DebugBreak();
+
     // If we haven't been set up, do nothing (because there's nothing to start)
     if (!_objectsCreated)
     {
@@ -240,6 +243,11 @@ bool VtIo::IsUsingVt() const
             g.getConsoleInformation().GetActiveOutputBuffer().SetTerminalConnection(_pVtRenderEngine.get());
         }
         CATCH_RETURN();
+    }
+    
+    if (_pVtInputThread)
+    {
+        RETURN_IF_FAILED(_pVtInputThread->Start());
     }
 
     // MSFT: 15813316
@@ -259,15 +267,11 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         RETURN_IF_FAILED(_pVtRenderEngine->RequestCursor());
-        while (_lookingForCursorPosition)
+        while (!_shutdownEvent.is_signaled() && _lookingForCursorPosition)
         {
-            RETURN_IF_FAILED(_pVtInputThread->DoReadInput());
+            std::this_thread::yield(); // Give room for the VT Input thread to go pick up the answer.
+            // and timeout?
         }
-    }
-
-    if (_pVtInputThread)
-    {
-        RETURN_IF_FAILED(_pVtInputThread->Start());
     }
 
     if (_pPtySignalInputThread)
@@ -304,7 +308,7 @@ bool VtIo::IsUsingVt() const
     {
         try
         {
-            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal));
+            _pPtySignalInputThread = std::make_unique<PtySignalInputThread>(std::move(_hSignal), _shutdownEvent);
 
             // Start it if it was successfully created.
             RETURN_IF_FAILED(_pPtySignalInputThread->Start());

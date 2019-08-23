@@ -59,10 +59,25 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
 #endif
+
+    _shutdownWatchdog = std::async(std::launch::async, [&] {
+        _shutdownEvent.wait();
+        const auto threadId = _blockedThreadId.load();
+        if (threadId)
+        {
+            wil::unique_handle threadHandle(OpenThread(STANDARD_RIGHTS_ALL | THREAD_TERMINATE, FALSE, threadId));
+            LOG_LAST_ERROR_IF_NULL(threadHandle.get());
+            if (threadHandle)
+            {
+                LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(threadHandle.get()));
+            }
+        }
+    });
 }
 
 // Method Description:
@@ -105,7 +120,10 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
 
     if (!_shutdownEvent.is_signaled())
     {
+        _blockedThreadId.store(GetCurrentThreadId());
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _blockedThreadId.store(0);
+
         _buffer.clear();
         if (!fSuccess)
         {
@@ -391,11 +409,6 @@ bool VtEngine::_AllIsInvalid() const
     // Prevent us from clearing the entire viewport on the first paint
     _firstPaint = false;
     return S_OK;
-}
-
-void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
-{
-    _terminalOwner = terminalOwner;
 }
 
 // Method Description:

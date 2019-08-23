@@ -18,7 +18,6 @@ Author(s):
 #include "../inc/RenderEngineBase.hpp"
 #include "../../inc/IDefaultColorProvider.hpp"
 #include "../../inc/ITerminalOutputConnection.hpp"
-#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
@@ -98,7 +97,11 @@ namespace Microsoft::Console::Render
         void EndResizeRequest();
 
     protected:
+
         wil::shared_event _shutdownEvent;
+        std::future<void> _shutdownWatchdog;
+        std::atomic<DWORD> _blockedThreadId;
+
         wil::unique_hfile _hFile;
         std::string _buffer;
 

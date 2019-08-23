@@ -33,6 +33,7 @@ VtInputThread::VtInputThread(wil::unique_hfile hPipe,
     _utf8Parser{ CP_UTF8 },
     _dwThreadId{ 0 }
 {
+    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
 
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -45,6 +46,14 @@ VtInputThread::VtInputThread(wil::unique_hfile hPipe,
 
     _pInputStateMachine = std::make_unique<StateMachine>(engine.release());
     THROW_IF_NULL_ALLOC(_pInputStateMachine.get());
+
+    _shutdownWatchdog = std::async(std::launch::async, [&] {
+        _shutdownEvent.wait();
+        if (_hThread)
+        {
+            LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(_hThread.get()));
+        }
+    });
 }
 
 // Method Description:
@@ -103,7 +112,7 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // - <none>
 // Return Value:
 // - S_OK or relevant error
-[[nodiscard]] HRESULT VtInputThread::DoReadInput()
+[[nodiscard]] HRESULT VtInputThread::_DoReadInput()
 {
     byte buffer[256];
     DWORD dwRead = 0;
@@ -130,7 +139,7 @@ DWORD VtInputThread::_InputThread()
 
     while (true)
     {
-        RETURN_IF_FAILED(DoReadInput());
+        RETURN_IF_FAILED(_DoReadInput());
     }
 
     return S_OK;
