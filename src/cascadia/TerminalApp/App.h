@@ -79,11 +79,14 @@ namespace winrt::TerminalApp::implementation
 
         fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
                                     const winrt::Windows::Foundation::IInspectable& contentElement,
-                                    const winrt::hstring& closeButtonText);
+                                    const winrt::hstring& primaryButtonText,
+                                    const winrt::hstring& secondaryButtonText,
+                                    bool isClosingWindow);
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
         void _ShowLoadWarningsDialog();
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
+        void _ShowCloseWarningDialog();
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _LoadSettings();
@@ -98,6 +101,7 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _UpdateTabView();
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
@@ -112,6 +116,8 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTabViewItem();
         void _CloseFocusedTab();
         void _CloseFocusedPane();
+        void _CloseWindow();
+        void CloseAllTabs();
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const int tabIndex);
 
@@ -173,6 +179,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }
