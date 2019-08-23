@@ -11,6 +11,9 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 
+#include "PowershellCoreProfileGenerator.h"
+#include "WslDistroGenerator.h"
+
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
@@ -19,7 +22,7 @@ using namespace Microsoft::Console;
 
 // {2bde4a90-d05f-401c-9492-e40884ead1d8}
 // uuidv5 properties: name format is UTF-16LE bytes
-static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
+// static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 
@@ -28,8 +31,13 @@ static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af
 
 CascadiaSettings::CascadiaSettings() :
     _globals{},
-    _profiles{}
+    _profiles{},
+    _profileGenerators{}
+// _profileGenerators{ std::make_unique<PowershellCoreProfileGenerator>(),
+//                     std::make_unique<WslDistroGenerator>() }
 {
+    _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
+    _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
 }
 
 CascadiaSettings::~CascadiaSettings()

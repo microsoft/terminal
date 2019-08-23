@@ -119,6 +119,16 @@ GUID Profile::GetGuid() const noexcept
     return _guid;
 }
 
+void Profile::SetSource(const GUID& source, const bool generateGuidFromName) noexcept
+{
+    _source = source;
+    if (generateGuidFromName)
+    {
+        _guid = Utils::CreateV5Uuid(source, gsl::as_bytes(gsl::make_span(_name)));
+        _guidSet = true;
+    }
+}
+
 // Function Description:
 // - Searches a list of color schemes to find one matching the given name. Will
 //return the first match in the list, if the list has multiple schemes with the same name.

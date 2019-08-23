@@ -69,6 +69,9 @@
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IDynamicProfileGenerator.h" />
+    <ClInclude Include="../PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="../WslDistroGenerator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ActionArgs.h"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
@@ -108,6 +111,8 @@
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../ScopedResourceLoader.cpp" />
+    <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="../WslDistroGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

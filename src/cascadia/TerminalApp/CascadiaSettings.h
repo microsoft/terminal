@@ -20,6 +20,11 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
+#include "IDynamicProfileGenerator.h"
+
+// {2bde4a90-d05f-401c-9492-e40884ead1d8}
+// uuidv5 properties: name format is UTF-16LE bytes
+static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
 static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
 
@@ -73,6 +78,8 @@ private:
     std::vector<Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
 
+    std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators{};
+
     Json::Value _userSettings;
     Json::Value _defaultSettings;
 
@@ -86,6 +93,8 @@ private:
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
     void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfiles(const Json::Value& json);
+
+    void _LoadDynamicProfiles();
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);

@@ -47,6 +47,10 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     auto resultPtr = LoadDefaults();
 
+    // TODO: We're going to need to parse the user settings to find the
+    // suppressed dynamic profiles before we attempt to generate those profiles.
+    resultPtr->_LoadDynamicProfiles();
+
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
     // Make sure the file isn't totally empty. If it is, we'll treat the file
@@ -86,6 +90,27 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     resultPtr->_LayerJsonString(DefaultJson, true);
 
     return resultPtr;
+}
+
+void CascadiaSettings::_LoadDynamicProfiles()
+{
+    GuidEquality equals{};
+    GUID nullGuid{ 0 };
+    for (auto& generator : _profileGenerators)
+    {
+        auto generatorNamespace = generator->GetNamespace();
+        auto isInboxGenerator = generatorNamespace == L"Windows.Terminal";
+        auto namespaceGuid = isInboxGenerator ? TERMINAL_PROFILE_NAMESPACE_GUID :
+                                                Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(generatorNamespace)));
+        auto profiles = generator->GenerateProfiles();
+        for (auto& profile : profiles)
+        {
+            auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
+            profile.SetSource(namespaceGuid, shouldGenerateGuid);
+
+            _profiles.emplace_back(profile);
+        }
+    }
 }
 
 // Method Description:
