@@ -658,7 +658,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void App::_SettingsButtonOnClick(const IInspectable&,
-                                        const RoutedEventArgs&)
+                                     const RoutedEventArgs&)
     {
         LaunchSettings();
     }
@@ -667,7 +667,7 @@ namespace winrt::TerminalApp::implementation
     // - Called when the feedback button is clicked. Launches github in your
     //   default browser, navigated to the "issues" page of the Terminal repo.
     void App::_FeedbackButtonOnClick(const IInspectable&,
-                                        const RoutedEventArgs&)
+                                     const RoutedEventArgs&)
     {
         const auto feedbackUriValue = _resourceLoader.GetLocalizedString(L"FeedbackUriValue");
 
@@ -681,7 +681,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - <none>
     void App::_AboutButtonOnClick(const IInspectable&,
-                                    const RoutedEventArgs&)
+                                  const RoutedEventArgs&)
     {
         _ShowAboutDialog();
     }
@@ -809,30 +809,30 @@ namespace winrt::TerminalApp::implementation
         const auto folder = settingsPath.parent_path();
 
         _reader.create(folder.c_str(),
-                        false,
-                        wil::FolderChangeEvents::All,
-                        [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
-                            // We want file modifications, AND when files are renamed to be
-                            // profiles.json. This second case will oftentimes happen with text
-                            // editors, who will write a temp file, then rename it to be the
-                            // actual file you wrote. So listen for that too.
-                            if (!(event == wil::FolderChangeEvent::Modified ||
-                                    event == wil::FolderChangeEvent::RenameNewName))
-                            {
-                                return;
-                            }
+                       false,
+                       wil::FolderChangeEvents::All,
+                       [this, settingsPath](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                           // We want file modifications, AND when files are renamed to be
+                           // profiles.json. This second case will oftentimes happen with text
+                           // editors, who will write a temp file, then rename it to be the
+                           // actual file you wrote. So listen for that too.
+                           if (!(event == wil::FolderChangeEvent::Modified ||
+                                 event == wil::FolderChangeEvent::RenameNewName))
+                           {
+                               return;
+                           }
 
-                            std::filesystem::path modifiedFilePath = fileModified;
+                           std::filesystem::path modifiedFilePath = fileModified;
 
-                            // Getting basename (filename.ext)
-                            const auto settingsBasename = settingsPath.filename();
-                            const auto modifiedBasename = modifiedFilePath.filename();
+                           // Getting basename (filename.ext)
+                           const auto settingsBasename = settingsPath.filename();
+                           const auto modifiedBasename = modifiedFilePath.filename();
 
-                            if (settingsBasename == modifiedBasename)
-                            {
-                                this->_DispatchReloadSettings();
-                            }
-                        });
+                           if (settingsBasename == modifiedBasename)
+                           {
+                               this->_DispatchReloadSettings();
+                           }
+                       });
     }
 
     // Method Description:
@@ -993,8 +993,8 @@ namespace winrt::TerminalApp::implementation
         // Show tabs when there's more than 1, or the user has chosen to always
         // show the tab bar.
         const bool isVisible = _settings->GlobalSettings().GetShowTabsInTitlebar() ||
-                                (_tabs.size() > 1) ||
-                                _settings->GlobalSettings().GetAlwaysShowTabs();
+                               (_tabs.size() > 1) ||
+                               _settings->GlobalSettings().GetAlwaysShowTabs();
 
         // collapse/show the tabs themselves
         _tabView.Visibility(isVisible ? Visibility::Visible : Visibility::Collapsed);
@@ -1572,7 +1572,7 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
 
         const auto canSplit = splitType == Pane::SplitState::Horizontal ? focusedTab->CanAddHorizontalSplit() :
-                                                                            focusedTab->CanAddVerticalSplit();
+                                                                          focusedTab->CanAddVerticalSplit();
 
         if (!canSplit)
         {
@@ -1585,7 +1585,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterTerminalEvents(newControl, focusedTab);
 
         return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
-                                                            focusedTab->AddVerticalSplit(realGuid, newControl);
+                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
     }
 
     // Method Description:
@@ -1611,7 +1611,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
     void App::_CopyToClipboardHandler(const IInspectable& /*sender*/,
-                                        const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
+                                      const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
     {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
             DataPackage dataPack = DataPackage();
@@ -1639,7 +1639,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - eventArgs: the PasteFromClipboard event sent from the TermControl
     void App::_PasteFromClipboardHandler(const IInspectable& /*sender*/,
-                                            const PasteFromClipboardEventArgs& eventArgs)
+                                         const PasteFromClipboardEventArgs& eventArgs)
     {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [eventArgs]() {
             PasteFromClipboard(eventArgs);
@@ -1679,7 +1679,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
     void App::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem & menuItem,
-                                            const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
+                                         const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
         // work around https://github.com/microsoft/microsoft-ui-xaml/issues/708 in case of VK_OEM_COMMA
@@ -1721,7 +1721,7 @@ namespace winrt::TerminalApp::implementation
     // Return value:
     // - the desired connection
     TerminalConnection::ITerminalConnection App::_CreateConnectionFromSettings(GUID profileGuid,
-                                                                                winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
+                                                                               winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
         TerminalConnection::ITerminalConnection connection{ nullptr };
@@ -1737,16 +1737,16 @@ namespace winrt::TerminalApp::implementation
             TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
         {
             connection = TerminalConnection::AzureConnection(settings.InitialRows(),
-                                                                settings.InitialCols());
+                                                             settings.InitialCols());
         }
         else
         {
             connection = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                                settings.StartingDirectory(),
-                                                                settings.StartingTitle(),
-                                                                settings.InitialRows(),
-                                                                settings.InitialCols(),
-                                                                winrt::guid());
+                                                               settings.StartingDirectory(),
+                                                               settings.StartingTitle(),
+                                                               settings.InitialRows(),
+                                                               settings.InitialCols(),
+                                                               winrt::guid());
         }
 
         TraceLoggingWrite(
