@@ -207,13 +207,6 @@ void Terminal::Write(std::wstring_view stringView)
 // - false if we did not translate the key, and it should be processed into a character.
 bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 {
-    // The windows keys should not be handled at all. This must be the first to be
-    // checked to prevent automatic scrolling
-    if (vkey == VK_LWIN || vkey == VK_RWIN)
-    {
-        return true;
-    }
-
     if (_snapOnInput && _scrollOffset != 0)
     {
         auto lock = LockForWriting();
