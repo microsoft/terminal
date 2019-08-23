@@ -38,6 +38,7 @@ namespace Microsoft::Console
         [[nodiscard]] HRESULT _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
 
         wil::shared_event _shutdownEvent;
+        
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;
         DWORD _dwThreadId;

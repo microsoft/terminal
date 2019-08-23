@@ -28,13 +28,7 @@ VtIo::VtIo() :
     _IoMode(VtIoMode::INVALID),
     _shutdownEvent()
 {
-    _shutdownEvent.create(wil::EventOptions::ManualReset);
-
-    _shutdownWatchdog = std::async(std::launch::async, [&] {
-        _shutdownEvent.wait();
-
-        CloseConsoleProcessState();
-    });
+    
 }
 
 // Routine Description:
@@ -125,9 +119,23 @@ VtIo::VtIo() :
     _hOutput.reset(OutHandle);
     _hSignal.reset(SignalHandle);
 
+    // Since we have a valid request for a PTY, set up the events and watchdog mechanisms
+    // required to tear everything apart correctly at the end of a PTY session.
+    _shutdownEvent.create(wil::EventOptions::ManualReset);
+
+    _shutdownWatchdog = std::async(std::launch::async, [&] {
+        _shutdownEvent.wait();
+
+        CloseConsoleProcessState();
+    });
+
+    // We also need to register to know when the last process is exiting.
+    ServiceLocator::LocateGlobals().getConsoleInformation().ProcessHandleList.RegisterForNotifyOnLastFree(std::bind(&VtIo::_OnLastProcessExit, this));
+
     // The only way we're initialized is if the args said we're in conpty mode.
     // If the args say so, then at least one of in, out, or signal was specified
     _initialized = true;
+
     return S_OK;
 }
 
@@ -226,8 +234,6 @@ bool VtIo::IsUsingVt() const
 //      appropriate HRESULT indicating failure.
 [[nodiscard]] HRESULT VtIo::StartIfNeeded()
 {
-    DebugBreak();
-
     // If we haven't been set up, do nothing (because there's nothing to start)
     if (!_objectsCreated)
     {
@@ -391,5 +397,30 @@ void VtIo::EndResize()
     if (_pVtRenderEngine)
     {
         _pVtRenderEngine->EndResizeRequest();
+    }
+}
+
+// Method Description:
+// - Called when the last client process exits. We'll use this to shut off the main IO thread.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtIo::_OnLastProcessExit()
+{
+    // If a shutdown is signaled because one of the PTY pipes has broken connection with the
+    // hosting Terminal on top and we've been notified that the last client application has just
+    // disconnected, then we want to stop all IO channel communication.
+    //
+    // Normally IO channel communication stops itself when all outstanding references to the console
+    // session are broken with the driver, but in this circumstance, the Terminal application may still
+    // be holding a server, reference, or other handle to the session. It is implied that breaking any
+    // one of the connections or calling ClosePseudoConsole is a specific request to close all those things off from the
+    // Terminal's end. That means those handles are not really valid means of keeping the session open and therefore
+    // once the client connections are gone, there's no longer a reason to stick around even if the Terminal on top
+    // didn't fully clean up all of its handles before reaching this state.
+    if (_shutdownEvent.is_signaled())
+    {
+        ServiceLocator::LocateGlobals().pDeviceComm->Shutdown();
     }
 }

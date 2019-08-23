@@ -652,7 +652,8 @@ DWORD WINAPI ConsoleIoThread(LPVOID /*lpParameter*/)
         HRESULT hr = ServiceLocator::LocateGlobals().pDeviceComm->ReadIo(ReplyMsg, &ReceiveMsg);
         if (FAILED(hr))
         {
-            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED))
+            if (hr == HRESULT_FROM_WIN32(ERROR_PIPE_NOT_CONNECTED) ||
+                hr == E_APPLICATION_EXITING)
             {
                 fShouldExit = true;
 

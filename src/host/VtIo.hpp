@@ -49,13 +49,14 @@ namespace Microsoft::Console::VirtualTerminal
         bool _objectsCreated;
 
         bool _lookingForCursorPosition;
-        std::mutex _shutdownLock;
-
+        
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;
 
         [[nodiscard]] HRESULT _Initialize(const HANDLE InHandle, const HANDLE OutHandle, const std::wstring& VtMode, _In_opt_ const HANDLE SignalHandle);
+
+        void _OnLastProcessExit();
 
 #ifdef UNIT_TESTING
         friend class VtIoTests;
