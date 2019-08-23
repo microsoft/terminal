@@ -447,12 +447,12 @@ namespace TerminalAppLocalTests
 
             CascadiaSettings settings{};
             settings._LayerJsonString(defaultProfilesString, true);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
             settings._LayerJsonString(userProfiles0String, false);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
 
@@ -468,18 +468,18 @@ namespace TerminalAppLocalTests
 
             CascadiaSettings settings{};
             settings._LayerJsonString(defaultProfilesString, true);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
             settings._LayerJsonString(userProfiles1String, false);
-            VERIFY_ARE_EQUAL(3, settings._profiles.size());
+            VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(2)._name);
 
             settings._ValidateProfilesMatchUserSettingsOrder();
-            VERIFY_ARE_EQUAL(3, settings._profiles.size());
+            VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(2)._name);
@@ -544,14 +544,14 @@ namespace TerminalAppLocalTests
         {
             CascadiaSettings settings{};
             settings._LayerJsonString(defaultProfilesString, true);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
             settings._LayerJsonString(userProfiles0String, false);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
@@ -559,7 +559,7 @@ namespace TerminalAppLocalTests
 
             settings._ValidateProfilesMatchUserSettingsOrder();
             settings._ValidateRemoveHiddenProfiles();
-            VERIFY_ARE_EQUAL(1, settings._profiles.size());
+            VERIFY_ARE_EQUAL(1u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
         }
@@ -567,14 +567,14 @@ namespace TerminalAppLocalTests
         {
             CascadiaSettings settings{};
             settings._LayerJsonString(defaultProfilesString, true);
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
             settings._LayerJsonString(userProfiles1String, false);
-            VERIFY_ARE_EQUAL(4, settings._profiles.size());
+            VERIFY_ARE_EQUAL(4u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(2)._name);
@@ -586,7 +586,7 @@ namespace TerminalAppLocalTests
 
             settings._ValidateProfilesMatchUserSettingsOrder();
             settings._ValidateRemoveHiddenProfiles();
-            VERIFY_ARE_EQUAL(2, settings._profiles.size());
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);

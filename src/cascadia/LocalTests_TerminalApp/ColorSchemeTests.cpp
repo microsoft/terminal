@@ -181,14 +181,14 @@ namespace TerminalAppLocalTests
 
         CascadiaSettings settings{};
 
-        VERIFY_ARE_EQUAL(0, settings._globals.GetColorSchemes().size());
+        VERIFY_ARE_EQUAL(0u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme2Json));
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
 
         settings._LayerOrCreateColorScheme(scheme0Json);
-        VERIFY_ARE_EQUAL(1, settings._globals.GetColorSchemes().size());
+        VERIFY_ARE_EQUAL(1u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
@@ -197,7 +197,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), settings._globals.GetColorSchemes().at(0)._defaultBackground);
 
         settings._LayerOrCreateColorScheme(scheme1Json);
-        VERIFY_ARE_EQUAL(2, settings._globals.GetColorSchemes().size());
+        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
@@ -208,7 +208,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
         settings._LayerOrCreateColorScheme(scheme2Json);
-        VERIFY_ARE_EQUAL(2, settings._globals.GetColorSchemes().size());
+        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
@@ -219,7 +219,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
         settings._LayerOrCreateColorScheme(scheme3Json);
-        VERIFY_ARE_EQUAL(3, settings._globals.GetColorSchemes().size());
+        VERIFY_ARE_EQUAL(3u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
         VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
