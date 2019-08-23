@@ -44,6 +44,11 @@ the MIT License. See LICENSE in the project root for license information. -->
                         <Setter Target="CloseButtonStyle" Value="{StaticResource AccentButtonStyle}" />
                     </Style>
 
+                    <!-- We need to manually create the error text brush as a
+                    theme-dependent brush. SystemControlErrorTextForegroundBrush
+                    is unfortunately static. -->
+                    <SolidColorBrush x:Name="ErrorTextBrush" Color="{ThemeResource SystemErrorTextColor}" />
+
                     <ResourceDictionary.ThemeDictionaries>
                         <ResourceDictionary x:Key="Dark">
                             <!-- Define resources for Dark mode here -->

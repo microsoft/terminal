@@ -4,6 +4,7 @@
 #pragma once
 
 #include "TermControl.g.h"
+#include "CopyToClipboardEventArgs.g.h"
 #include "PasteFromClipboardEventArgs.g.h"
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.h>
@@ -14,6 +15,22 @@
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
+    struct CopyToClipboardEventArgs :
+        public CopyToClipboardEventArgsT<CopyToClipboardEventArgs>
+    {
+    public:
+        CopyToClipboardEventArgs(hstring text, hstring html) :
+            _text(text),
+            _html(html) {}
+
+        hstring Text() { return _text; };
+        hstring Html() { return _html; };
+
+    private:
+        hstring _text;
+        hstring _html;
+    };
+
     struct PasteFromClipboardEventArgs :
         public PasteFromClipboardEventArgsT<PasteFromClipboardEventArgs>
     {
@@ -38,7 +55,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void UpdateSettings(Settings::IControlSettings newSettings);
 
         hstring Title();
-        void CopySelectionToClipboard(bool trimTrailingWhitespace);
+
+        bool CopySelectionToClipboard(bool trimTrailingWhitespace);
         void PasteTextFromClipboard();
         void Close();
         bool ShouldCloseOnExit() const noexcept;
@@ -54,7 +72,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Render::IRenderData* GetRenderData() const;
+        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
+        const FontInfo GetActualFont() const;
+        const Windows::UI::Xaml::Thickness GetPadding() const;
 
         static Windows::Foundation::Point GetProposedDimensions(Microsoft::Terminal::Settings::IControlSettings const& settings, const uint32_t dpi);
 
@@ -63,9 +83,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         DECLARE_EVENT(TitleChanged,             _titleChangedHandlers,              TerminalControl::TitleChangedEventArgs);
         DECLARE_EVENT(ConnectionClosed,         _connectionClosedHandlers,          TerminalControl::ConnectionClosedEventArgs);
         DECLARE_EVENT(ScrollPositionChanged,    _scrollPositionChangedHandlers,     TerminalControl::ScrollPositionChangedEventArgs);
-        DECLARE_EVENT(CopyToClipboard,          _clipboardCopyHandlers,             TerminalControl::CopyToClipboardEventArgs);
 
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard, _clipboardPasteHandlers, TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(PasteFromClipboard,  _clipboardPasteHandlers,    TerminalControl::TermControl, TerminalControl::PasteFromClipboardEventArgs);
+        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(CopyToClipboard,     _clipboardCopyHandlers,     TerminalControl::TermControl, TerminalControl::CopyToClipboardEventArgs);
         // clang-format on
 
     private:

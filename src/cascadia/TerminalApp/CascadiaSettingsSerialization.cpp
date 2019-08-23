@@ -30,18 +30,18 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 //      it will load the settings from our packaged localappdata. If we're
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
-// Arguments:
-// - saveOnLoad: If true, we'll write the settings back out after we load them,
-//   to make sure the schema is updated.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
-std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoad)
+std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     std::unique_ptr<CascadiaSettings> resultPtr;
     std::optional<std::string> fileData = _ReadSettings();
 
     const bool foundFile = fileData.has_value();
-    if (foundFile)
+    // Make sure the file isn't totally empty. If it is, we'll treat the file
+    // like it doesn't exist at all.
+    const bool fileHasData = foundFile && !fileData.value().empty();
+    if (foundFile && fileHasData)
     {
         const auto actualData = fileData.value();
 
@@ -59,28 +59,14 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll(const bool saveOnLoa
         // `parse` will return false if it fails.
         if (!reader->parse(actualDataStart, actualData.c_str() + actualData.size(), &root, &errs))
         {
-            // TODO:GH#990 display this exception text to the user, in a
-            //      copy-pasteable way.
+            // This will be caught by App::_TryLoadSettings, who will display
+            // the text to the user.
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
         resultPtr = FromJson(root);
 
-        if (resultPtr->GlobalSettings().GetDefaultProfile() == GUID{})
-        {
-            throw winrt::hresult_invalid_argument();
-        }
-
-        if (saveOnLoad)
-        {
-            // Logically compare the json we've parsed from the file to what
-            // we'd serialize at runtime. If the values are different, then
-            // write the updated schema back out.
-            const Json::Value reserialized = resultPtr->ToJson();
-            if (reserialized != root)
-            {
-                resultPtr->SaveAll();
-            }
-        }
+        // If this throws, the app will catch it and use the default settings (temporarily)
+        resultPtr->_ValidateSettings();
     }
     else
     {

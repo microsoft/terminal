@@ -29,25 +29,14 @@ Author(s):
 #include <json.h>
 #include "consoletaeftemplates.hpp"
 
-// Needed just for XamlIslands to work at all:
-#include <winrt/Windows.system.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/Windows.UI.Xaml.Hosting.h>
-#include <windows.ui.xaml.hosting.desktopwindowxamlsource.h>
-
 // Common includes for most tests:
 #include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 
-#include <winrt/Windows.Foundation.h>
-#include <winrt/Windows.Foundation.Collections.h>
-#include <winrt/windows.ui.core.h>
-#include <winrt/Windows.ui.input.h>
-#include <winrt/Windows.UI.Xaml.Controls.h>
-#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
-#include <winrt/Windows.ui.xaml.media.h>
-#include <winrt/Windows.ui.xaml.input.h>
-
-#include <windows.ui.xaml.media.dxinterop.h>
+// Are you thinking about adding WinRT things here? If so, you probably want to
+// add your test to TerminalApp.LocalTests, not TerminalApp.UnitTests. The
+// UnitTests run in CI, while the LocalTests do not. However, since the CI can't
+// run XAML islands or unpackaged WinRT, any tests using those features will
+// need to be added to the LocalTests.

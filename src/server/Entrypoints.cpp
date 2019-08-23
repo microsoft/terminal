@@ -86,10 +86,14 @@
             HostStartupInfo.cb = sizeof(STARTUPINFO);
             GetStartupInfoW(&HostStartupInfo);
 
-            // If we were started with Title is Link Name, then pass the flag and the link name down to the child.
+            // Pass the title we were started with down to our child process.
+            // Conhost itself absolutely doesn't care about this value, but the
+            // child might.
+            StartupInformation.StartupInfo.lpTitle = HostStartupInfo.lpTitle;
+            // If we were started with Title is Link Name, then pass the flag
+            // down to the child. (the link name was already passed down above)
             if (WI_IsFlagSet(HostStartupInfo.dwFlags, STARTF_TITLEISLINKNAME))
             {
-                StartupInformation.StartupInfo.lpTitle = HostStartupInfo.lpTitle;
                 StartupInformation.StartupInfo.dwFlags |= STARTF_TITLEISLINKNAME;
             }
         }

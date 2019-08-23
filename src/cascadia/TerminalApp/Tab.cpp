@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Tab.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -142,6 +143,21 @@ void Tab::UpdateFocus()
     _rootPane->UpdateFocus();
 }
 
+void Tab::UpdateIcon(const winrt::hstring iconPath)
+{
+    // Don't reload our icon if it hasn't changed.
+    if (iconPath == _lastIconPath)
+    {
+        return;
+    }
+
+    _lastIconPath = iconPath;
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        _tabViewItem.Icon(GetColoredIcon(_lastIconPath));
+    });
+}
+
 // Method Description:
 // - Gets the title string of the last focused terminal control in our tree.
 //   Returns the empty string if there is no such control.
@@ -188,6 +204,15 @@ void Tab::Scroll(const int delta)
 }
 
 // Method Description:
+// - Determines whether the focused pane has sufficient space to be split vertically.
+// Return Value:
+// - True if the focused pane can be split horizontally. False otherwise.
+bool Tab::CanAddVerticalSplit()
+{
+    return _rootPane->CanSplitVertical();
+}
+
+// Method Description:
 // - Vertically split the focused pane in our tree of panes, and place the
 //   given TermControl into the newly created pane.
 // Arguments:
@@ -198,6 +223,15 @@ void Tab::Scroll(const int delta)
 void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
 {
     _rootPane->SplitVertical(profile, control);
+}
+
+// Method Description:
+// - Determines whether the focused pane has sufficient space to be split horizontally.
+// Return Value:
+// - True if the focused pane can be split horizontally. False otherwise.
+bool Tab::CanAddHorizontalSplit()
+{
+    return _rootPane->CanSplitHorizontal();
 }
 
 // Method Description:

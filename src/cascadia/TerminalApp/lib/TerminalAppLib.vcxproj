@@ -68,8 +68,14 @@
     <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../ActionArgs.h"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../AppKeyBindings.h" >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
@@ -108,7 +114,13 @@
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ActionArgs.cpp" >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../App.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../AppActionHandlers.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
 
@@ -128,6 +140,7 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../ActionArgs.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>

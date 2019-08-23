@@ -295,6 +295,17 @@ DxEngine::~DxEngine()
     RETURN_IF_FAILED(_d2dRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White),
                                                              &_d2dBrushForeground));
 
+    const D2D1_STROKE_STYLE_PROPERTIES strokeStyleProperties{
+        D2D1_CAP_STYLE_SQUARE, // startCap
+        D2D1_CAP_STYLE_SQUARE, // endCap
+        D2D1_CAP_STYLE_SQUARE, // dashCap
+        D2D1_LINE_JOIN_MITER, // lineJoin
+        0.f, // miterLimit
+        D2D1_DASH_STYLE_SOLID, // dashStyle
+        0.f, // dashOffset
+    };
+    RETURN_IF_FAILED(_d2dFactory->CreateStrokeStyle(&strokeStyleProperties, nullptr, 0, &_strokeStyle));
+
     // If in composition mode, apply scaling factor matrix
     if (_chainMode == SwapChainMode::ForComposition)
     {
@@ -936,7 +947,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     const auto existingColor = _d2dBrushForeground->GetColor();
     const auto restoreBrushOnExit = wil::scope_exit([&] { _d2dBrushForeground->SetColor(existingColor); });
 
-    _d2dBrushForeground->SetColor(D2D1::ColorF(color));
+    _d2dBrushForeground->SetColor(_ColorFFromColorRef(color));
 
     const auto font = _GetFontSize();
     D2D_POINT_2F target;
@@ -948,14 +959,15 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 
     for (size_t i = 0; i < cchLine; i++)
     {
-        start = target;
+        // 0.5 pixel offset for crisp lines
+        start = { target.x + 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Top)
         {
             end = start;
             end.x += font.X;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get());
+            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         if (lines & GridLines::Left)
@@ -963,7 +975,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
             end = start;
             end.y += font.Y;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get());
+            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         // NOTE: Watch out for inclusive/exclusive rectangles here.
@@ -973,26 +985,25 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         // The bottom left corner inclusive is at 0,15 which is Y (0) + Font Height (16) - 1 = 15.
         // The top right corner inclusive is at 7,0 which is X (0) + Font Height (8) - 1 = 7.
 
-        start = target;
-        start.y += font.Y - 1;
+        // 0.5 pixel offset for crisp lines; -0.5 on the Y to fit _in_ the cell, not outside it.
+        start = { target.x + 0.5f, target.y + font.Y - 0.5f };
 
         if (lines & GridLines::Bottom)
         {
             end = start;
-            end.x += font.X;
+            end.x += font.X - 1.f;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get());
+            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
-        start = target;
-        start.x += font.X - 1;
+        start = { target.x + font.X - 0.5f, target.y + 0.5f };
 
         if (lines & GridLines::Right)
         {
             end = start;
-            end.y += font.Y;
+            end.y += font.Y - 1.f;
 
-            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get());
+            _d2dRenderTarget->DrawLine(start, end, _d2dBrushForeground.Get(), 1.0f, _strokeStyle.Get());
         }
 
         // Move to the next character in this run.
@@ -1125,6 +1136,13 @@ enum class CursorPaintType
     }
     case CursorPaintType::Outline:
     {
+        // DrawRectangle in straddles physical pixels in an attempt to draw a line
+        // between them. To avoid this, bump the rectangle around by half the stroke width.
+        rect.top += 0.5f;
+        rect.left += 0.5f;
+        rect.bottom -= 0.5f;
+        rect.right -= 0.5f;
+
         _d2dRenderTarget->DrawRectangle(rect, brush.Get());
         break;
     }

@@ -67,9 +67,11 @@ Example settings include
     "fontSize" : 9,
     "guid" : "{58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530}",
     "name" : "Debian",
-    "startingDirectory" : "%USERPROFILE%/wslhome"
+    "startingDirectory" : "%USERPROFILE%\\wslhome"
     ....
 ```
+
+> 👉 **Note**: To use backslashes in any path field, you'll need to escape them following JSON escaping rules (like shown above). As an alternative, you can use forward slashes ("%USERPROFILE%/wslhome").
 
 The profile GUID is used to reference the default profile in the global settings.
 
@@ -99,7 +101,7 @@ The schema name can then be referenced in one or more profiles.
 
 ### Add a custom background to the WSL Debian terminal profile
 
-1. Download the Debian SVG logo https://www.debian.org/logos/openlogo.svg
+1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
 2. Put the image in the
  `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\`
  directory (same directory as your `profiles.json` file).
@@ -108,9 +110,10 @@ The schema name can then be referenced in one or more profiles.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
 ```json
-    "backgroundImage": "ms-appdata:///Roaming/openlogo.jpg",
-    "backgroundImageOpacity": 0.3,
-    "backgroundImageStretchMode":  "fill",
+    "backgroundImage": "ms-appdata:///Roaming/openlogo-100.jpg",
+    "backgroundImageOpacity": 1,
+    "backgroundImageStretchMode" : "none",
+    "backgroundImageAlignment" : "topRight",
 ```
 5. Make sure that `useAcrylic` is `false`.
 6. Save the file.
@@ -126,3 +129,47 @@ More information about UWP URI schemes [here](https://docs.microsoft.com/en-us/w
     1. URL such as
 `http://open.esa.int/files/2017/03/Mayer_and_Bond_craters_seen_by_SMART-1-350x346.jpg` 
     2. Local file location such as `C:\Users\Public\Pictures\openlogo.jpg`
+
+### Adding Copy and Paste Keybindings 
+
+As of [#1093](https://github.com/microsoft/terminal/pull/1093) (first available in Windows Terminal v0.3), the Windows Terminal now
+supports copy and paste keyboard shortcuts. However, if you installed and ran
+the terminal before that, you won't automatically get the new keybindings added
+to your settings. If you'd like to add shortcuts for copy and paste, you can do so by inserting the following objects into your `globals.keybindings` array:
+
+```json
+{ "command": "copy", "keys": ["ctrl+shift+c"] },
+{ "command": "paste", "keys": ["ctrl+shift+v"] }
+```
+
+This will add copy and paste on <kbd>ctrl+shift+c</kbd>
+and <kbd>ctrl+shift+v</kbd> respectively.
+
+You can set the keybindings to whatever you'd like. If you prefer
+<kbd>ctrl+c</kbd> to copy, then set the `keys` to `"ctrl+c"`.
+
+You can even set multiple keybindings for a single action if you'd like. For example:
+
+```json
+
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "ctrl+shift+v"
+                ]
+            },
+            {
+                "command" : "paste",
+                "keys" :
+                [
+                    "shift+insert"
+                ]
+            }
+```
+
+will bind both <kbd>ctrl+shift+v</kbd> and
+<kbd>shift+Insert</kbd> to `paste`.
+
+Note: If you set your copy keybinding to `"ctrl+c"`, you won't be able to send an interrupt to the commandline application using <kbd>Ctrl+C</kbd>. This is a bug, and being tracked by [#2258](https://github.com/microsoft/terminal/issues/2285). 
+Additionally, if you set `paste` to `"ctrl+v"`, commandline applications won't be able to read a ctrl+v from the input. For these reasons, we suggest `"ctrl+shift+c"` and `"ctrl+shift+v"`

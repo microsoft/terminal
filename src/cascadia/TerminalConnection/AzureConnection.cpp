@@ -23,6 +23,8 @@ using namespace web::websockets::client;
 using namespace concurrency::streams;
 using namespace winrt::Windows::Security::Credentials;
 
+static constexpr int CurrentCredentialVersion = 1;
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     // This file only builds for non-ARM64 so we don't need to check that here
@@ -387,6 +389,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // - E_FAIL if the user closes the tab
     HRESULT AzureConnection::_AccessHelper()
     {
+        bool oldVersionEncountered = false;
         auto vault = PasswordVault();
         winrt::Windows::Foundation::Collections::IVectorView<PasswordCredential> credList;
         // FindAllByResource throws an exception if there are no credentials stored under the given resource so we wrap it in a try-catch block
@@ -400,13 +403,37 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             _state = State::DeviceFlow;
             return S_FALSE;
         }
-        _maxStored = credList.Size();
-        // Display the user's saved connection settings
-        for (int i = 0; i < _maxStored; i++)
+        _maxStored = 0;
+        for (const auto& entry : credList)
         {
-            auto entry = credList.GetAt(i);
             auto nameJson = json::value::parse(entry.UserName().c_str());
-            _outputHandlers(_StrFormatHelper(ithTenant, i, nameJson.at(L"displayName").as_string().c_str(), nameJson.at(L"tenantID").as_string().c_str()));
+            std::optional<int> credentialVersion;
+            if (nameJson.has_integer_field(U("ver")))
+            {
+                credentialVersion = nameJson.at(U("ver")).as_integer();
+            }
+
+            if (!credentialVersion.has_value() || credentialVersion.value() != CurrentCredentialVersion)
+            {
+                // ignore credentials that aren't from the latest credential revision
+                vault.Remove(entry);
+                oldVersionEncountered = true;
+                continue;
+            }
+
+            _outputHandlers(_StrFormatHelper(ithTenant, _maxStored, nameJson.at(L"displayName").as_string().c_str(), nameJson.at(L"tenantID").as_string().c_str()));
+            _maxStored++;
+        }
+
+        if (!_maxStored)
+        {
+            if (oldVersionEncountered)
+            {
+                _outputHandlers(winrt::to_hstring(oldCredentialsFlushedMessage));
+            }
+            // No valid up-to-date credentials were found, so start the device flow
+            _state = State::DeviceFlow;
+            return S_FALSE;
         }
 
         _outputHandlers(winrt::to_hstring(enterTenant));
@@ -846,6 +873,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         auto vault = PasswordVault();
         json::value userName;
+        userName[U("ver")] = CurrentCredentialVersion;
         userName[U("displayName")] = json::value::string(_displayName);
         userName[U("tenantID")] = json::value::string(_tenantID);
         json::value passWord;

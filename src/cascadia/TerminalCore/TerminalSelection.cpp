@@ -14,7 +14,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
-    if (!_selectionActive)
+    if (!IsSelectionActive())
     {
         return selectionArea;
     }
@@ -63,6 +63,27 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
             selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
         }
 
+        // expand selection for Double/Triple Click
+        if (_multiClickSelectionMode == SelectionExpansionMode::Word)
+        {
+            const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
+            if (_isSingleCellSelection() && _isWordDelimiter(cellChar))
+            {
+                // only highlight the cell if you double click a delimiter
+            }
+            else
+            {
+                selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
+                selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
+            }
+        }
+        else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
+        {
+            selectionRow.Left = 0;
+            selectionRow.Right = bufferSize.RightInclusive();
+        }
+
+        // expand selection for Wide Glyphs
         selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
         selectionRow.Right = _ExpandWideGlyphSelectionRight(selectionRow.Right, row);
 
@@ -122,12 +143,36 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 }
 
 // Method Description:
+// - Checks if selection is on a single cell
+// Return Value:
+// - bool representing if selection is only a single cell. Used for copyOnSelect
+const bool Terminal::_isSingleCellSelection() const noexcept
+{
+    return (_selectionAnchor == _endSelectionPosition);
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    // A single cell selection is not considered an active selection,
+    // if it's not allowed
+    if (!_allowSingleCharSelection && _isSingleCellSelection())
+    {
+        return false;
+    }
     return _selectionActive;
+}
+
+// Method Description:
+// - Checks if the CopyOnSelect setting is active
+// Return Value:
+// - true if feature is active, false otherwise.
+const bool Terminal::IsCopyOnSelectActive() const noexcept
+{
+    return _copyOnSelect;
 }
 
 // Method Description:
@@ -142,16 +187,24 @@ void Terminal::DoubleClickSelection(const COORD position)
     if (_isWordDelimiter(cellChar))
     {
         SetSelectionAnchor(position);
+        _multiClickSelectionMode = SelectionExpansionMode::Word;
         return;
     }
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
-    _ExpandDoubleClickSelectionLeft(position);
+    _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_selectionAnchor.Y));
+    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
-    _ExpandDoubleClickSelectionRight(position);
+    _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_endSelectionPosition.Y));
+    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+
+    _selectionActive = true;
+    _multiClickSelectionMode = SelectionExpansionMode::Word;
 }
 
 // Method Description:
@@ -162,6 +215,8 @@ void Terminal::TripleClickSelection(const COORD position)
 {
     SetSelectionAnchor({ 0, position.Y });
     SetEndSelectionPosition({ _buffer->GetSize().RightInclusive(), position.Y });
+
+    _multiClickSelectionMode = SelectionExpansionMode::Line;
 }
 
 // Method Description:
@@ -180,7 +235,11 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
+
     SetEndSelectionPosition(position);
+
+    _multiClickSelectionMode = SelectionExpansionMode::Cell;
 }
 
 // Method Description:
@@ -197,6 +256,11 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+
+    if (_copyOnSelect && !_isSingleCellSelection())
+    {
+        _allowSingleCharSelection = true;
+    }
 }
 
 // Method Description:
@@ -213,6 +277,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
+    _allowSingleCharSelection = false;
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
     _selectionAnchor_YOffset = 0;
@@ -228,24 +293,16 @@ void Terminal::ClearSelection()
 //    and get text to appear on separate lines.
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
 {
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    auto data = _buffer->GetTextForClipboard(!_boxSelection,
-                                             trimTrailingWhitespace,
-                                             _GetSelectionRects(),
-                                             GetForegroundColor,
-                                             GetBackgroundColor);
-
-    std::wstring result;
-    for (const auto& text : data.text)
-    {
-        result += text;
-    }
-
-    return result;
+    return _buffer->GetTextForClipboard(!_boxSelection,
+                                        trimTrailingWhitespace,
+                                        _GetSelectionRects(),
+                                        GetForegroundColor,
+                                        GetBackgroundColor);
 }
 
 // Method Description:
@@ -253,16 +310,10 @@ const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhi
 // Arguments:
 // - position: viewport coordinate for selection
 // Return Value:
-// - update _selectionAnchor to new expanded location
-void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
+// - updated copy of "position" to new expanded location (with vertical offset)
+COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
-    // don't change the value if at/outside the boundary
-    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
-    {
-        return;
-    }
-
-    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    COORD positionWithOffsets = position;
     const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     while (positionWithOffsets.X != 0 && !_isWordDelimiter(cellChar))
@@ -271,16 +322,13 @@ void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != 0 || _isWordDelimiter(cellChar))
+    if (positionWithOffsets.X != 0 && _isWordDelimiter(cellChar))
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
     }
 
-    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
-    _selectionAnchor = positionWithOffsets;
-    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
-    _selectionActive = true;
+    return positionWithOffsets;
 }
 
 // Method Description:
@@ -288,16 +336,10 @@ void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
 // Arguments:
 // - position: viewport coordinate for selection
 // Return Value:
-// - update _endSelectionPosition to new expanded location
-void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
+// - updated copy of "position" to new expanded location (with vertical offset)
+COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
-    // don't change the value if at/outside the boundary
-    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
-    {
-        return;
-    }
-
-    COORD positionWithOffsets = _ConvertToBufferCell(position);
+    COORD positionWithOffsets = position;
     const auto bufferViewport = _buffer->GetSize();
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_isWordDelimiter(cellChar))
@@ -306,15 +348,13 @@ void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() || _isWordDelimiter(cellChar))
+    if (positionWithOffsets.X != bufferViewport.RightInclusive() && _isWordDelimiter(cellChar))
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
     }
 
-    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
-    _endSelectionPosition = positionWithOffsets;
-    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    return positionWithOffsets;
 }
 
 // Method Description:
@@ -336,7 +376,11 @@ const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 // - the corresponding location on the buffer
 const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
+    // Force position to be valid
     COORD positionWithOffsets = viewportPos;
+    positionWithOffsets.X = std::clamp(viewportPos.X, static_cast<SHORT>(0), _buffer->GetSize().RightInclusive());
+    positionWithOffsets.Y = std::clamp(viewportPos.Y, static_cast<SHORT>(0), _buffer->GetSize().BottomInclusive());
+
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;
