@@ -24,6 +24,7 @@ Author(s):
 #include "Utils.h"
 #include <io.h>
 #include <fcntl.h>
+#include "DefaultProfileUtils.h"
 
 // // fwdecl unittest classes
 // namespace TerminalAppLocalTests
@@ -41,7 +42,7 @@ using namespace ::TerminalApp;
 
 std::wstring WslDistroGenerator::GetNamespace()
 {
-    return L"Windows.Terminal";
+    return L"Windows.Terminal.Wsl";
     // return { nullptr };
 }
 
@@ -117,9 +118,10 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
             {
                 distName.resize(firstChar);
             }
-            // auto WSLDistro{ _CreateDefaultProfile(distName) };
-            TerminalApp::Profile WSLDistro{ GUID{ 0 } };
-            WSLDistro.SetName(distName);
+            auto WSLDistro{ CreateDefaultProfile(distName) };
+            // TerminalApp::Profile WSLDistro{ GUID{ 0 } };
+            // WSLDistro.SetName(distName);
+
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
             WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);

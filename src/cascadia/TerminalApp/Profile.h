@@ -44,7 +44,7 @@ public:
     void LayerJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
-    void SetSource(const GUID& source, const bool generateGuidFromName) noexcept;
+    void SetSource(const std::wstring& sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
@@ -86,7 +86,7 @@ private:
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
     GUID _guid;
-    std::optional<GUID> _source{ std::nullopt };
+    std::optional<std::wstring> _source{ std::nullopt };
     bool _guidSet{ false };
     std::wstring _name;
     std::optional<GUID> _connectionType;

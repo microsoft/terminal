@@ -33,8 +33,6 @@ CascadiaSettings::CascadiaSettings() :
     _globals{},
     _profiles{},
     _profileGenerators{}
-// _profileGenerators{ std::make_unique<PowershellCoreProfileGenerator>(),
-//                     std::make_unique<WslDistroGenerator>() }
 {
     _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
     _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());

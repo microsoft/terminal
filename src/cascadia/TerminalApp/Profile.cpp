@@ -119,14 +119,9 @@ GUID Profile::GetGuid() const noexcept
     return _guid;
 }
 
-void Profile::SetSource(const GUID& source, const bool generateGuidFromName) noexcept
+void Profile::SetSource(const std::wstring& sourceNamespace) noexcept
 {
-    _source = source;
-    if (generateGuidFromName)
-    {
-        _guid = Utils::CreateV5Uuid(source, gsl::as_bytes(gsl::make_span(_name)));
-        _guidSet = true;
-    }
+    _source = sourceNamespace;
 }
 
 // Function Description:

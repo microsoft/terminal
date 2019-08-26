@@ -18,10 +18,10 @@ Author(s):
 // #include "GlobalAppSettings.h"
 // #include "TerminalWarnings.h"
 #include "PowershellCoreProfileGenerator.h"
-
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
+#include "DefaultProfileUtils.h"
 
 using namespace ::TerminalApp;
 
@@ -46,7 +46,7 @@ std::wstring PowershellCoreProfileGenerator::GetNamespace()
     // Lets leave that as a todo for now.
     // TODO: reconcile lecacy dynamic profile's guids, namespace guids, and suppressing them
     // return { nullptr };
-    return L"Windows.Terminal";
+    return L"Windows.Terminal.PowershellCore";
 }
 
 std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfiles()
@@ -56,18 +56,18 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
     std::filesystem::path psCoreCmdline{};
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
-        // auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        TerminalApp::Profile pwshProfile{ GUID{ 0 } };
+        auto pwshProfile{ CreateDefaultProfile(L"PowerShell Core") };
+        // TerminalApp::Profile pwshProfile{ GUID{ 0 } };
 
-        pwshProfile.SetName(L"PowerShell Core");
+        // pwshProfile.SetName(L"PowerShell Core");
 
         // std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
         // iconPath.append(Utils::GuidToString(profileGuid));
         // iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
-        std::wstring iconPath{ L"ms-appx:///ProfileIcons/" };
-        iconPath.append(LegacyGuid);
-        iconPath.append(L".png");
-        pwshProfile.SetIconPath(iconPath);
+        // std::wstring iconPath{ L"ms-appx:///ProfileIcons/" };
+        // iconPath.append(LegacyGuid);
+        // iconPath.append(L".png");
+        // pwshProfile.SetIconPath(iconPath);
 
         pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);

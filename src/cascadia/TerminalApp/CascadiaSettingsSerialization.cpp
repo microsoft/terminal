@@ -99,14 +99,16 @@ void CascadiaSettings::_LoadDynamicProfiles()
     for (auto& generator : _profileGenerators)
     {
         auto generatorNamespace = generator->GetNamespace();
-        auto isInboxGenerator = generatorNamespace == L"Windows.Terminal";
-        auto namespaceGuid = isInboxGenerator ? TERMINAL_PROFILE_NAMESPACE_GUID :
-                                                Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(generatorNamespace)));
+
+        // auto isInboxGenerator = generatorNamespace == L"Windows.Terminal";
+        // auto namespaceGuid = isInboxGenerator ? TERMINAL_PROFILE_NAMESPACE_GUID :
+        //                                         Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(generatorNamespace)));
+
         auto profiles = generator->GenerateProfiles();
         for (auto& profile : profiles)
         {
-            auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
-            profile.SetSource(namespaceGuid, shouldGenerateGuid);
+            // auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
+            profile.SetSource(generatorNamespace);
 
             _profiles.emplace_back(profile);
         }

@@ -68,6 +68,7 @@
     <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../DefaultProfileUtils.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="../IDynamicProfileGenerator.h" />
     <ClInclude Include="../PowershellCoreProfileGenerator.h" />
@@ -110,6 +111,7 @@
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="../WslDistroGenerator.cpp" />
