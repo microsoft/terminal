@@ -218,6 +218,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                 TraceLoggingWrite(g_hTerminalConnectionProvider,
                                   "RecievedFirstByte",
                                   TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
