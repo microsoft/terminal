@@ -76,8 +76,6 @@ private:
     Json::Value _userSettings;
     Json::Value _defaultSettings;
 
-    void _CreateDefaultKeybindings();
-    void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
