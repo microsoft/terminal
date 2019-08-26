@@ -6,14 +6,14 @@
 #include "..\..\inc\consoletaeftemplates.hpp"
 #include "CommonState.hpp"
 
-#include "..\types\UiaTextRange.hpp"
+#include "uiaTextRange.hpp"
 #include "../../../buffer/out/textBuffer.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 
-using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Interactivity::Win32;
 
 // UiaTextRange takes an object that implements
 // IRawElementProviderSimple as a constructor argument. Making a real

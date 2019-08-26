@@ -49,7 +49,10 @@ public:
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
+    bool CanSplitHorizontal();
     void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    bool CanSplitVertical();
     void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
@@ -79,6 +82,7 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
+    bool _CanSplit(SplitState splitType);
     void _Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
     void _CreateRowColDefinitions(const winrt::Windows::Foundation::Size& rootSize);
     void _CreateSplitContent();

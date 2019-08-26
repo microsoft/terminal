@@ -21,6 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorShape{ CursorStyle::Vintage },
         _cursorHeight{ DEFAULT_CURSOR_HEIGHT },
         _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
+        _copyOnSelect{ false },
         _useAcrylic{ false },
         _closeOnExit{ true },
         _tintOpacity{ 0.5 },
@@ -147,6 +148,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
     void TerminalSettings::WordDelimiters(hstring const& value)
     {
         _wordDelimiters = value;
+    }
+
+    bool TerminalSettings::CopyOnSelect()
+    {
+        return _copyOnSelect;
+    }
+
+    void TerminalSettings::CopyOnSelect(bool value)
+    {
+        _copyOnSelect = value;
     }
 
     bool TerminalSettings::UseAcrylic()

@@ -3,8 +3,8 @@
 
 #include "precomp.h"
 #include "tracing.hpp"
-#include "../types/UiaTextRange.hpp"
-#include "../types/ScreenInfoUiaProvider.h"
+#include "../types/UiaTextRangeBase.hpp"
+#include "../types/ScreenInfoUiaProviderBase.h"
 
 #include "../types/WindowUiaProviderBase.hpp"
 

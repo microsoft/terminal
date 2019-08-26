@@ -28,8 +28,8 @@ Author(s):
 #include "TermControlAutomationPeer.g.h"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include "../../renderer/inc/IRenderData.hpp"
-#include "../types/ScreenInfoUiaProvider.h"
 #include "../types/WindowUiaProviderBase.hpp"
+#include "TermControlUiaProvider.hpp"
 
 namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 {
@@ -56,7 +56,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         RECT GetBoundingRectWrapped();
 
     private:
-        ::Microsoft::Console::Types::ScreenInfoUiaProvider _uiaProvider;
+        ::Microsoft::Terminal::TermControlUiaProvider _uiaProvider;
 
         winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
