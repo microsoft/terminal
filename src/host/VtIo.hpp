@@ -49,7 +49,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _objectsCreated;
 
         bool _lookingForCursorPosition;
-        
+
         std::unique_ptr<Microsoft::Console::Render::VtEngine> _pVtRenderEngine;
         std::unique_ptr<Microsoft::Console::VtInputThread> _pVtInputThread;
         std::unique_ptr<Microsoft::Console::PtySignalInputThread> _pPtySignalInputThread;

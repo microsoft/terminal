@@ -996,7 +996,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     // When the setup event is triggered, the I/O thread has told us that it is
     // officially holding the global lock on our behalf and we're free to setup.
     ServiceLocator::LocateGlobals().hConsoleInputSetupEvent.wait();
-    
+
     HHOOK hhook = nullptr;
     NTSTATUS Status = STATUS_SUCCESS;
 

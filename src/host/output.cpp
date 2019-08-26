@@ -505,7 +505,7 @@ void CloseConsoleProcessState()
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
     FAIL_FAST_IF(!(gci.IsConsoleLocked()));
-        
+
     // If there are no connected processes, sending control events is pointless as there's no one do send them to. In
     // this case we'll just exit conhost.
 

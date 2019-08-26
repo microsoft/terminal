@@ -28,7 +28,6 @@ VtIo::VtIo() :
     _IoMode(VtIoMode::INVALID),
     _shutdownEvent()
 {
-    
 }
 
 // Routine Description:
@@ -128,7 +127,7 @@ VtIo::VtIo() :
 
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        
+
         CloseConsoleProcessState();
     });
 
@@ -253,7 +252,7 @@ bool VtIo::IsUsingVt() const
         }
         CATCH_RETURN();
     }
-    
+
     if (_pVtInputThread)
     {
         RETURN_IF_FAILED(_pVtInputThread->Start());

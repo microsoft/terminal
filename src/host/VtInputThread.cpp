@@ -120,7 +120,7 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
     RETURN_IF_WIN32_BOOL_FALSE(ReadFile(_hFile.get(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr));
 
     RETURN_IF_FAILED(_HandleRunInput(buffer, dwRead));
-    
+
     return S_OK;
 }
 

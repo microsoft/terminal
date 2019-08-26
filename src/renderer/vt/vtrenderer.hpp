@@ -97,7 +97,6 @@ namespace Microsoft::Console::Render
         void EndResizeRequest();
 
     protected:
-
         wil::shared_event _shutdownEvent;
         std::future<void> _shutdownWatchdog;
         std::atomic<DWORD> _blockedThreadId;
