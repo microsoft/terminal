@@ -199,6 +199,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "WindowCreated",
+        TraceLoggingDescription("Event emitted upon creating the application window"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 }
 
 // Method Description:
