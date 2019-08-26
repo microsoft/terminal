@@ -953,7 +953,11 @@ void Profile::GenerateGuidIfNecessary() noexcept
 {
     if (!_guidSet)
     {
-        _guid = Utils::CreateGuid();
+        // _guid = Utils::CreateGuid();
+
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        _guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_name)));
         _guidSet = true;
 
         TraceLoggingWrite(
