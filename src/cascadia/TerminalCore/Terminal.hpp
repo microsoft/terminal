@@ -220,9 +220,9 @@ private:
     const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
     const COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
     const COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    const bool _isWordDelimiter(std::wstring_view cellChar) const;
+    const int _GetDelimiterClass(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    const bool _isSingleCellSelection() const noexcept;
+    const bool _IsSingleCellSelection() const noexcept;
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
     SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
     void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;

@@ -444,6 +444,40 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
         }
 
+        TEST_METHOD(DoubleClick_DelimiterClass)
+        {
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 100, 100 }, 0, emptyRT);
+
+            // set word delimiters for terminal
+            auto settings = winrt::make<MockTermSettings>(0, 100, 100);
+            term.UpdateSettings(settings);
+
+            // Insert text at position (4,10)
+            const std::wstring_view text = L"C:\\Terminal>";
+            term.SetCursorPosition(4, 10);
+            term.Write(text);
+
+            // Simulate click at (x,y) = (15,10)
+            // this is over the '>' char
+            auto clickPos = COORD{ 15, 10 };
+            term.DoubleClickSelection(clickPos);
+
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // ---Validate selection area---
+            // "Terminal" is in class 2
+            // ">" is in class 1
+            // the white space to the right of the ">" is in class 0
+            // Double-clicking the ">" should only highlight that cell
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 15, 10, 15, 10 }));
+        }
+
         TEST_METHOD(DoubleClickDrag_Right)
         {
             Terminal term;

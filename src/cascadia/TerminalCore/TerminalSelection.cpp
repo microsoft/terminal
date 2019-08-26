@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 
@@ -179,7 +180,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 // - Checks if selection is on a single cell
 // Return Value:
 // - bool representing if selection is only a single cell. Used for copyOnSelect
-const bool Terminal::_isSingleCellSelection() const noexcept
+const bool Terminal::_IsSingleCellSelection() const noexcept
 {
     return (_selectionAnchor == _endSelectionPosition);
 }
@@ -192,7 +193,7 @@ const bool Terminal::IsSelectionActive() const noexcept
 {
     // A single cell selection is not considered an active selection,
     // if it's not allowed
-    if (!_allowSingleCharSelection && _isSingleCellSelection())
+    if (!_allowSingleCharSelection && _IsSingleCellSelection())
     {
         return false;
     }
@@ -282,7 +283,7 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // and update on new buffer output (used in _GetSelectionRects())
     _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
-    if (_copyOnSelect && !_isSingleCellSelection())
+    if (_copyOnSelect && !_IsSingleCellSelection())
     {
         _allowSingleCharSelection = true;
     }
@@ -347,14 +348,14 @@ const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) cons
 
     COORD positionWithOffsets = position;
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    const bool startedOnDelimiter = _isWordDelimiter(cellChar);
-    while (positionWithOffsets.X != bufferViewport.Left() && (_isWordDelimiter(cellChar) == startedOnDelimiter))
+    const int startedOnDelimiter = _GetDelimiterClass(cellChar);
+    while (positionWithOffsets.X != bufferViewport.Left() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (_isWordDelimiter(cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -381,14 +382,14 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
 
     COORD positionWithOffsets = position;
     auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    const bool startedOnDelimiter = _isWordDelimiter(cellChar);
-    while (positionWithOffsets.X != bufferViewport.RightInclusive() && (_isWordDelimiter(cellChar) == startedOnDelimiter))
+    const int startedOnDelimiter = _GetDelimiterClass(cellChar);
+    while (positionWithOffsets.X != bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() && (_isWordDelimiter(cellChar) != startedOnDelimiter))
+    if (positionWithOffsets.X != bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) != startedOnDelimiter))
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
@@ -398,14 +399,28 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
 }
 
 // Method Description:
-// - check if buffer cell data contains delimiter for double click selection
+// - get delimiter class for buffer cell data
+// - used for double click selection
 // Arguments:
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
-// - true if cell data contains the delimiter.
-const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
+// - 0: contains a space (or control character)
+// - 1: contains a delimiter imported from settings
+// - 2: otherwise
+const int Terminal::_GetDelimiterClass(std::wstring_view cellChar) const
 {
-    return _wordDelimiters.find(cellChar) != std::wstring_view::npos;
+    if (cellChar[0] <= UNICODE_SPACE)
+    {
+        return 0;
+    }
+    else if (_wordDelimiters.find(cellChar) != std::wstring_view::npos)
+    {
+        return 1;
+    }
+    else
+    {
+        return 2;
+    }
 }
 
 // Method Description:
