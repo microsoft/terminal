@@ -219,7 +219,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                   "RecievedFirstByte",
                                   TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
                                   TraceLoggingFloat64(delta.count(), "Duration"),
-                                  // TraceLoggingGuid(profileGuid, "ProfileGuid"),
                                   TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                                   TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
                 _recievedFirstByte = true;
