@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "AppKeyBindingsSerialization.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -241,7 +242,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        // _keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
         AppKeyBindingsSerialization::LayerJson(_keybindings, keybindings);
     }
 }

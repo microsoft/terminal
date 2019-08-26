@@ -7,6 +7,7 @@
 #include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include "utils.h"
+#include "JsonUtils.h"
 #include <appmodel.h>
 #include <shlobj.h>
 
@@ -229,7 +230,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
         }
     }
 
-    for (auto profileJson : _GetProfiles(json))
+    for (auto profileJson : _GetProfilesJsonObject(json))
     {
         if (profileJson.isObject())
         {
@@ -520,29 +521,13 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
     // directory as the exe, that will work for unpackaged scenarios as well. So
     // let's try that.
 
-    // GetModuleHandle(null) will get us the current exe's HMODULE
     HMODULE hModule = GetModuleHandle(nullptr);
     THROW_LAST_ERROR_IF(hModule == nullptr);
 
-    // Use GetModuleFileName() with module handle to get the path.
-    // Unfortunately, GetModuleFileName will truncate the path to the
-    // passed in size, and provides no way of querying the size needed. So
-    // we need to just keep trying to get the path into a buffer until we
-    // get the entire path. .
+    std::wstring exePathString{};
+    THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
 
-    auto bufferSize = 0;
-    auto result = 0;
-    std::unique_ptr<wchar_t[]> buffer;
-    do
-    {
-        bufferSize += MAX_PATH;
-        buffer = std::make_unique<wchar_t[]>(bufferSize);
-        result = GetModuleFileName(hModule, buffer.get(), bufferSize);
-    } while (result >= bufferSize);
-
-    // TODO: ensure this madness works for something longer than MAX_PATH
-
-    std::filesystem::path exePath{ buffer.get() };
+    std::filesystem::path exePath{ exePathString };
     std::filesystem::path rootDir = exePath.parent_path();
     return rootDir / DefaultsFilename;
 }
@@ -554,7 +539,7 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
 // - json: the json object to get the profiles from.
 // Return Value:
 // - the Json::Value representing the profiles property from the given object
-const Json::Value& CascadiaSettings::_GetProfiles(const Json::Value& json)
+const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& json)
 {
     return json[JsonKey(ProfilesKey)];
 }

@@ -5,6 +5,7 @@
 #include "ColorScheme.h"
 #include "../../types/inc/Utils.hpp"
 #include "Utils.h"
+#include "JsonUtils.h"
 
 using namespace ::Microsoft::Console;
 using namespace TerminalApp;
@@ -122,8 +123,8 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json)
 {
     if (auto name{ json[JsonKey(NameKey)] })
     {
-        auto otherName = GetWstringFromJson(name);
-        return otherName == _schemeName;
+        auto nameFromJson = GetWstringFromJson(name);
+        return nameFromJson == _schemeName;
     }
     return false;
 }

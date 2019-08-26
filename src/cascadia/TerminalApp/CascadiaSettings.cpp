@@ -819,7 +819,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
     std::deque<GUID> guidOrder{};
 
     auto collectGuids = [&](const auto& json) {
-        for (auto profileJson : _GetProfiles(json))
+        for (auto profileJson : _GetProfilesJsonObject(json))
         {
             if (profileJson.isObject())
             {

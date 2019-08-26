@@ -85,7 +85,7 @@ private:
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
     void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
-    static const Json::Value& _GetProfiles(const Json::Value& json);
+    static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);

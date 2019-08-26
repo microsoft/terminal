@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Profile.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
