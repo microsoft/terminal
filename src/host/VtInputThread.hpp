@@ -26,6 +26,8 @@ namespace Microsoft::Console
                       wil::shared_event shutdownEvent,
                       const bool inheritCursor);
 
+        ~VtInputThread();
+
         [[nodiscard]] HRESULT Start();
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
 

@@ -16,6 +16,7 @@ namespace Microsoft::Console::VirtualTerminal
     {
     public:
         VtIo();
+        ~VtIo();
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 

@@ -92,6 +92,12 @@ class Microsoft::Console::Render::VtRendererTest
         return true;
     }
 
+    TEST_METHOD_SETUP(MethodSetup)
+    {
+        _shutdownEvent.ResetEvent();
+        return true;
+    }
+
     // Defining a TEST_METHOD_CLEANUP seemed to break x86 test pass. Not sure why,
     //  something about the clipboard tests and
     //  YOU_CAN_ONLY_DESIGNATE_ONE_CLASS_METHOD_TO_BE_A_TEST_METHOD_SETUP_METHOD

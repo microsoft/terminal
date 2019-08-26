@@ -31,6 +31,12 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
         return true;
     }
 
+    TEST_METHOD_SETUP(VtIoMethodSetup)
+    {
+        _shutdownEvent.ResetEvent();
+        return true;
+    }
+
     // General Tests:
     TEST_METHOD(NoOpStartTest);
     TEST_METHOD(ModeParsingTest);

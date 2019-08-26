@@ -80,6 +80,14 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
     });
 }
 
+VtEngine::~VtEngine()
+{
+    if (_shutdownEvent)
+    {
+        _shutdownEvent.SetEvent();
+    }
+}
+
 // Method Description:
 // - Writes the characters to our file handle. If we're building the unit tests,
 //      we can instead write to the test callback, in order to avoid needing to

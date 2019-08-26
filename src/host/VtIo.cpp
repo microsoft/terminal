@@ -30,6 +30,14 @@ VtIo::VtIo() :
 {
 }
 
+VtIo::~VtIo()
+{
+    if (_shutdownEvent)
+    {
+        _shutdownEvent.SetEvent();
+    }
+}
+
 // Routine Description:
 //  Tries to get the VtIoMode from the given string. If it's not one of the
 //      *_STRING constants in VtIoMode.hpp, then it returns E_INVALIDARG.

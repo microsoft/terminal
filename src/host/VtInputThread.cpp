@@ -56,6 +56,14 @@ VtInputThread::VtInputThread(wil::unique_hfile hPipe,
     });
 }
 
+VtInputThread::~VtInputThread()
+{
+    if (_shutdownEvent)
+    {
+        _shutdownEvent.SetEvent();
+    }
+}
+
 // Method Description:
 // - Processes a buffer of input characters. The characters should be utf-8
 //      encoded, and will get converted to wchar_t's to be processed by the

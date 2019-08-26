@@ -37,7 +37,7 @@ namespace Microsoft::Console::Render
                  const Microsoft::Console::IDefaultColorProvider& colorProvider,
                  const Microsoft::Console::Types::Viewport initialViewport);
 
-        virtual ~VtEngine() override = default;
+        ~VtEngine() override;
 
         [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
