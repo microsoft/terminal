@@ -81,17 +81,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
-        // Create our own output handling thread
-        // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          StaticOutputThreadProc,
-                                          this,
-                                          0,
-                                          nullptr));
-
-        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
-
         STARTUPINFO si = { 0 };
         si.cb = sizeof(STARTUPINFOW);
 
@@ -120,6 +109,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          extraEnvVars));
 
         _startTime = std::chrono::system_clock::now();
+
+        // Create our own output handling thread
+        // This must be done after the pipes are populated.
+        // Each connection needs to make sure to drain the output from its backing host.
+        _hOutputThread.reset(CreateThread(nullptr,
+                                          0,
+                                          StaticOutputThreadProc,
+                                          this,
+                                          0,
+                                          nullptr));
+
+        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _connected = true;
     }

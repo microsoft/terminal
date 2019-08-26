@@ -16,6 +16,10 @@ Author(s):
 #pragma once
 #include "ColorScheme.h"
 
+// GUID used for generating GUIDs at runtime, for profiles that did not have a
+// GUID specified manually.
+constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 0x4499, { 0x8a, 0x50, 0x40, 0x31, 0x3c, 0xaf, 0x51, 0x0a } };
+
 namespace TerminalApp
 {
     class Profile;
