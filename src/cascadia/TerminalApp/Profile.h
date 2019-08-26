@@ -22,6 +22,11 @@ namespace TerminalAppLocalTests
     class SettingsTests;
     class ProfileTests;
 };
+namespace TerminalAppUnitTests
+{
+    class SettingsTests;
+    class JsonTests;
+};
 
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
 // GUID specified manually.
@@ -35,8 +40,8 @@ namespace TerminalApp
 class TerminalApp::Profile final
 {
 public:
-    Profile(const winrt::guid& guid);
     Profile();
+    Profile(const std::optional<GUID>& guid);
 
     ~Profile();
 
@@ -88,8 +93,7 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
-    GUID _guid;
-    bool _guidSet{ false };
+    std::optional<GUID> _guid{ std::nullopt };
     std::wstring _name;
     std::optional<GUID> _connectionType;
     bool _hidden{ false };
@@ -127,4 +131,5 @@ private:
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };
