@@ -590,7 +590,7 @@ namespace winrt::TerminalApp::implementation
     // - Called when the settings button is clicked. ShellExecutes the settings
     //   file, as to open it in the default editor for .json files. Does this in
     //   a background thread, as to not hang/crash the UI thread.
-    fire_and_forget LaunchSettings(const bool openDefaults)
+    fire_and_forget App::_LaunchSettings(const bool openDefaults)
     {
         // This will switch the execution of the function to a background (not
         // UI) thread. This is IMPORTANT, because the Windows.Storage API's
@@ -624,7 +624,7 @@ namespace winrt::TerminalApp::implementation
         const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
                                 WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        LaunchSettings(altPressed);
+        _LaunchSettings(altPressed);
     }
 
     // Method Description:
@@ -1148,11 +1148,6 @@ namespace winrt::TerminalApp::implementation
             return focusedIndex;
         }
         return -1;
-    }
-
-    void App::_OpenSettings(const bool openDefaults)
-    {
-        LaunchSettings(openDefaults);
     }
 
     // Method Description:

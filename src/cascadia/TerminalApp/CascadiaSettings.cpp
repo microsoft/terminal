@@ -679,11 +679,11 @@ void CascadiaSettings::_ValidateSettings()
 
     // Re-order profiles so that all profiles from the user's settings appear
     // before profiles that _weren't_ in the user profiles.
-    _ValidateProfilesMatchUserSettingsOrder();
+    _ReorderProfilesToMatchUserSettingsOrder();
 
     // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
     // json, and will get confused if the profile isn't in the list.
-    _ValidateRemoveHiddenProfiles();
+    _RemoveHiddenProfiles();
 
     // Verify all profiles actually had a GUID specified, otherwise generate a
     // GUID for them. Make sure to do this before de-duping profiles and
@@ -813,7 +813,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
+void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 {
     std::set<GUID, GuidOrdering> uniqueGuids{};
     std::deque<GUID> guidOrder{};
@@ -870,10 +870,10 @@ void CascadiaSettings::_ValidateProfilesMatchUserSettingsOrder()
 // - <none>
 // Return Value:
 // - <none>
-void CascadiaSettings::_ValidateRemoveHiddenProfiles()
+void CascadiaSettings::_RemoveHiddenProfiles()
 {
     _profiles.erase(std::remove_if(_profiles.begin(),
                                    _profiles.end(),
-                                   [](auto profile) { return profile.IsHidden(); }),
+                                   [](auto&& profile) { return profile.IsHidden(); }),
                     _profiles.end());
 }

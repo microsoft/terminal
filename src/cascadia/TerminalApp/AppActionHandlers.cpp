@@ -120,7 +120,7 @@ namespace winrt::TerminalApp::implementation
                                   const TerminalApp::ActionEventArgs& args)
     {
         // TODO:<future> Add an optional arg for opening the defaults here
-        _OpenSettings(false);
+        _LaunchSettings(false);
         args.Handled(true);
     }
 

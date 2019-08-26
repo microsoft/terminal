@@ -97,8 +97,8 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
-    void _ValidateProfilesMatchUserSettingsOrder();
-    void _ValidateRemoveHiddenProfiles();
+    void _ReorderProfilesToMatchUserSettingsOrder();
+    void _RemoveHiddenProfiles();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);

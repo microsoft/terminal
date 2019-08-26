@@ -456,7 +456,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
@@ -478,7 +478,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(2)._name);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
             VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(1)._name);
@@ -557,8 +557,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(true, settings._profiles.at(1)._hidden);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
-            settings._ValidateRemoveHiddenProfiles();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
+            settings._RemoveHiddenProfiles();
             VERIFY_ARE_EQUAL(1u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
@@ -584,8 +584,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(2)._hidden);
             VERIFY_ARE_EQUAL(true, settings._profiles.at(3)._hidden);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
-            settings._ValidateRemoveHiddenProfiles();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
+            settings._RemoveHiddenProfiles();
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(1)._name);

@@ -52,7 +52,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
     const bool fileHasData = foundFile && !fileData.value().empty();
-    if (foundFile && fileHasData)
+    if (fileHasData)
     {
         resultPtr->_LayerJsonString(fileData.value(), false);
     }
@@ -78,7 +78,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 {
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = std::make_unique<CascadiaSettings>();
 
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
@@ -117,16 +117,16 @@ void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool is
     // Parse the json data into either our defaults or user settings. We'll keep
     // these original json values around for later, in case we need to parse
     // their raw contents again.
-    Json::Value* pRoot = isDefaultSettings ? &_defaultSettings : &_userSettings;
+    Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), pRoot, &errs))
+    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), &root, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
 
-    LayerJson(*pRoot);
+    LayerJson(root);
 }
 
 // Method Description:
@@ -186,7 +186,7 @@ Json::Value CascadiaSettings::ToJson() const
 // - a new CascadiaSettings instance created from the values in `json`
 std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = std::make_unique<CascadiaSettings>();
     resultPtr->LayerJson(json);
     return resultPtr;
 }
@@ -243,7 +243,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 //   json on a matching Profile we already have, or creates a new Profile
 //   object from those settings.
 // Arguments:
-// - json: an object which should be a partial serialization of a Profile object.
+// - json: an object which may be a partial serialization of a Profile object.
 // Return Value:
 // - <none>
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
