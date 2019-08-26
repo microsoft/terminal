@@ -15,9 +15,9 @@ using namespace Windows::Foundation::Numerics;
 // just generate an arbitrary GUID
 TRACELOGGING_DEFINE_PROVIDER(
     g_hWindowsTerminalProvider,
-    "Micorsoft.Windows.Terminal",
-    // {1d3f19fc-c27d-58e7-7389-f265af9d9ff2}
-    (0x1d3f19fc, 0xc27d, 0x58e7, 0x73, 0x89, 0xf2, 0x65, 0xaf, 0x9d, 0x9f, 0xf2),
+    "Microsoft.Windows.Terminal",
+    // {fa12215e-b545-5f65-a7d8-6f7625e6867d}
+    (0xfa12215e, 0xb545, 0x5f65, 0xa7, 0xd8, 0x6f, 0x76, 0x25, 0xe6, 0x86, 0x7d),
     TraceLoggingOptionMicrosoftTelemetry());
 
 // Routine Description:
@@ -103,6 +103,7 @@ static void EnsureNativeArchitecture()
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    TraceLoggingRegister(g_hWindowsTerminalProvider);
     TraceLoggingWrite(
         g_hWindowsTerminalProvider,
         "ExecutableStarted",
