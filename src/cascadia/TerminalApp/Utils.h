@@ -34,7 +34,7 @@ winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstr
 // Helper to establish an ordering on guids. This does _NOT_ work to check if
 // two guids are the same. Use this with a std::set for determining if GUIDS are
 // unique
-struct GuidOrdering
+struct GuidOrdering : std::less<GUID>
 {
     bool operator()(const GUID& lhs, const GUID& rhs) const
     {
@@ -43,7 +43,7 @@ struct GuidOrdering
 };
 
 // Helper to establish if two GUIDs are equal.
-struct GuidEquality
+struct GuidEquality : std::equal_to<GUID>
 {
     bool operator()(const GUID& lhs, const GUID& rhs) const
     {
