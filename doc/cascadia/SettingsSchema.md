@@ -43,7 +43,7 @@ Properties listed below are specific to each unique profile.
 | `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Colors use hex color format: `"#rrggbb"`. Ordering is as follows: `[black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]` |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
-| `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
+| `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. See [Images and Icons](./#images_and_icons) below for help on specifying your own icons |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 
@@ -133,3 +133,49 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusUp
 - moveFocusDown
 
+## Background Images and Icons
+Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders, and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
+
+The most useful URI schemes to remember when customizing background images and icons are:
+
+| URI Scheme | Corresponding Physical Path | Use / description |
+| --- | --- | ---|
+| `ms-appdata:///Local/` | `%localappdata%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` | Per-machine files |
+| `ms-appdata:///Roaming/` | `%localappdata%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\RoamingState\` | Common files |
+
+> ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
+
+### Background images
+You can apply a separate background image to each of your profiles, allowing you to configure/brand/style each of your profiles independenly from one another if you wish. To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image should stretch to fill the available space using `backgroundImageStretchMode`.
+
+### Icons
+Terminal displays icons for each of your shell/connection profiles. By default, Terminal will specify a default icon for profiles referencing PowerShell, Cmd, etc., and a 'Tux' penguin icon for Linux/WSL distros. Terminal ships these standard icons as part of its app package, referred to via the `ms-appx` URI Scheme.
+
+Icons should be sized to 48px x 48px, and can be stored as .PNG, .GIF, or .JPG files.
+
+> ⚠ Note: Be sure to scale your images correctly. If you do not, Terminal will scale your icons when they're displayed, causing a noticeable delay and loss of quality.
+
+### Storing images
+To specify an image of your own, store your image(s) in your `...\LocalState\` folder for icons local to a single machine, or in your `...\RoamingState\` folder for icons you want on all your machines. 
+
+### Referencing images
+Images can be referred-to from your `profiles.json` configuration using the URI Schemes above.
+
+For example, you could
+1. Download & extract the [Ubuntu roundel logo](https://design.ubuntu.com/brand/ubuntu-logo/)
+1. Resize it to 48px AND 256px square
+1. Store the resized images files in your Terminal's `...\RoamingState` folder
+1. Set your Ubuntu profile's icon and background image accordingly:
+
+    ``` json
+        ...
+        "icon" : "ms-appdata:///roaming/icon-ubuntu-48.png",
+        "backgroundImage": "ms-appdata:///roaming/icon-ubuntu-256.png",
+        "backgroundImageAlignment": "bottomRight",
+        "backgroundImageOpacity": 0.05,
+        "backgroundImageStretchMode": "none"
+    ```
+
+    With these settings, your Terminal's Ubuntu profile would look similar to this:
+
+    ![Custom icon and background image](../images/custom-icon-and-background-image.jpg)
