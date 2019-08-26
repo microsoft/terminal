@@ -176,19 +176,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
-    // Arguments:
-    // - saveOnLoad: If true, after loading the settings, we should re-write
-    //   them to the file, to make sure the schema is updated. See
-    //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
-    [[nodiscard]] HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
+    [[nodiscard]] HRESULT App::_TryLoadSettings() noexcept
     {
         HRESULT hr = E_FAIL;
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
+            auto newSettings = CascadiaSettings::LoadAll();
             _settings = std::move(newSettings);
             const auto& warnings = _settings->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;
@@ -229,7 +225,7 @@ namespace winrt::TerminalApp::implementation
         //    we should display the loading error.
         //    * We can't display the error now, because we might not have a
         //      UI yet. We'll display the error in _OnLoaded.
-        _settingsLoadedResult = _TryLoadSettings(true);
+        _settingsLoadedResult = _TryLoadSettings();
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -307,7 +303,7 @@ namespace winrt::TerminalApp::implementation
         //  - don't change the settings (and don't actually apply the new settings)
         //  - don't persist them.
         //  - display a loading error
-        _settingsLoadedResult = _TryLoadSettings(false);
+        _settingsLoadedResult = _TryLoadSettings();
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -398,10 +394,6 @@ namespace winrt::TerminalApp::implementation
         return _root->SetTitleBarContent(token);
     }
 
-    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
-    {
-        return _root->TitleChanged(handler);
-    }
     void App::TitleChanged(winrt::event_token const& token) noexcept
     {
         return _root->TitleChanged(token);

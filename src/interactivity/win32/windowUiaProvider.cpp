@@ -3,7 +3,7 @@
 #include "precomp.h"
 
 #include "windowUiaProvider.hpp"
-#include "../types/ScreenInfoUiaProvider.h"
+#include "screenInfoUiaProvider.hpp"
 
 #include "../types/IUiaData.h"
 #include "../host/renderData.hpp"
@@ -29,7 +29,7 @@ WindowUiaProvider::~WindowUiaProvider()
 WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
-    Microsoft::Console::Types::ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
+    ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
     try
     {
         pWindowProvider = new WindowUiaProvider(baseWindow);
@@ -38,7 +38,7 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         IUiaData* uiaData = &gci.renderData;
 
-        pScreenInfoProvider = new Microsoft::Console::Types::ScreenInfoUiaProvider(uiaData, pWindowProvider);
+        pScreenInfoProvider = new ScreenInfoUiaProvider(uiaData, pWindowProvider);
         pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree

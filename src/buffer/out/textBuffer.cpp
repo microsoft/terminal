@@ -6,10 +6,12 @@
 #include "textBuffer.hpp"
 #include "CharRow.hpp"
 
+#include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 
 #pragma hdrstop
 
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Types;
 
 // Routine Description:
@@ -1042,4 +1044,179 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
     }
 
     return data;
+}
+
+// Routine Description:
+// - Generates a CF_HTML compliant structure based on the passed in text and color data
+// Arguments:
+// - rows - the text and color data we will format & encapsulate
+// - fontHeightPoints - the unscaled font height
+// - fontFaceName - the name of the font used
+// - htmlTitle - value used in title tag of html header. Used to name the application
+// Return Value:
+// - string containing the generated HTML
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string& htmlTitle)
+{
+    try
+    {
+        std::ostringstream htmlBuilder;
+
+        // First we have to add some standard
+        // HTML boiler plate required for CF_HTML
+        // as part of the HTML Clipboard format
+        const std::string htmlHeader =
+            "<!DOCTYPE><HTML><HEAD><TITLE>" + htmlTitle + "</TITLE></HEAD><BODY>";
+        htmlBuilder << htmlHeader;
+
+        htmlBuilder << "<!--StartFragment -->";
+
+        // apply global style in div element
+        {
+            htmlBuilder << "<DIV STYLE=\"";
+            htmlBuilder << "display:inline-block;";
+            htmlBuilder << "white-space:pre;";
+
+            // fixme: this is only walkaround for filling background after last char of row.
+            // It is based on first char of first row, not the actual char at correct position.
+            htmlBuilder << "background-color:";
+            const COLORREF globalBgColor = rows.BkAttr.at(0).at(0);
+            htmlBuilder << Utils::ColorToHexString(globalBgColor);
+            htmlBuilder << ";";
+
+            htmlBuilder << "font-family:";
+            if (fontFaceName[0] != '\0')
+            {
+                htmlBuilder << "'";
+                htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
+                htmlBuilder << "',";
+            }
+            // even with different font, add monospace as fallback
+            htmlBuilder << "monospace;";
+
+            htmlBuilder << "font-size:";
+            htmlBuilder << fontHeightPoints;
+            htmlBuilder << "pt;";
+
+            // note: MS Word doesn't support padding (in this way at least)
+            htmlBuilder << "padding:";
+            htmlBuilder << 4; // todo: customizable padding
+            htmlBuilder << "px;";
+
+            htmlBuilder << "\">";
+        }
+
+        // copy text and info color from buffer
+        bool hasWrittenAnyText = false;
+        std::optional<COLORREF> fgColor = std::nullopt;
+        std::optional<COLORREF> bkColor = std::nullopt;
+        for (UINT row = 0; row < rows.text.size(); row++)
+        {
+            size_t startOffset = 0;
+
+            if (row != 0)
+            {
+                htmlBuilder << "<BR>";
+            }
+
+            for (UINT col = 0; col < rows.text[row].length(); col++)
+            {
+                // do not include \r nor \n as they don't have attributes
+                // and are not HTML friendly. For line break use '<BR>' instead.
+                bool isLastCharInRow =
+                    col == rows.text[row].length() - 1 ||
+                    rows.text[row][col + 1] == '\r' ||
+                    rows.text[row][col + 1] == '\n';
+
+                bool colorChanged = false;
+                if (!fgColor.has_value() || rows.FgAttr[row][col] != fgColor.value())
+                {
+                    fgColor = rows.FgAttr[row][col];
+                    colorChanged = true;
+                }
+
+                if (!bkColor.has_value() || rows.BkAttr[row][col] != bkColor.value())
+                {
+                    bkColor = rows.BkAttr[row][col];
+                    colorChanged = true;
+                }
+
+                const auto writeAccumulatedChars = [&](bool includeCurrent) {
+                    if (col > startOffset)
+                    {
+                        // note: this should be escaped (for '<', '>', and '&'),
+                        // however MS Word doesn't appear to support HTML entities
+                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text[row].data() + startOffset, col - startOffset + includeCurrent));
+                        startOffset = col;
+                    }
+                };
+
+                if (colorChanged)
+                {
+                    writeAccumulatedChars(false);
+
+                    if (hasWrittenAnyText)
+                    {
+                        htmlBuilder << "</SPAN>";
+                    }
+
+                    htmlBuilder << "<SPAN STYLE=\"";
+                    htmlBuilder << "color:";
+                    htmlBuilder << Utils::ColorToHexString(fgColor.value());
+                    htmlBuilder << ";";
+                    htmlBuilder << "background-color:";
+                    htmlBuilder << Utils::ColorToHexString(bkColor.value());
+                    htmlBuilder << ";";
+                    htmlBuilder << "\">";
+                }
+
+                hasWrittenAnyText = true;
+
+                if (isLastCharInRow)
+                {
+                    writeAccumulatedChars(true);
+                    break;
+                }
+            }
+        }
+
+        if (hasWrittenAnyText)
+        {
+            // last opened span wasn't closed in loop above, so close it now
+            htmlBuilder << "</SPAN>";
+        }
+
+        htmlBuilder << "</DIV>";
+
+        htmlBuilder << "<!--EndFragment -->";
+
+        constexpr std::string_view HtmlFooter = "</BODY></HTML>";
+        htmlBuilder << HtmlFooter;
+
+        // once filled with values, there will be exactly 157 bytes in the clipboard header
+        constexpr size_t ClipboardHeaderSize = 157;
+
+        // these values are byte offsets from start of clipboard
+        const size_t htmlStartPos = ClipboardHeaderSize;
+        const size_t htmlEndPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlBuilder.tellp());
+        const size_t fragStartPos = ClipboardHeaderSize + gsl::narrow<size_t>(htmlHeader.length());
+        const size_t fragEndPos = htmlEndPos - HtmlFooter.length();
+
+        // header required by HTML 0.9 format
+        std::ostringstream clipHeaderBuilder;
+        clipHeaderBuilder << "Version:0.9\r\n";
+        clipHeaderBuilder << std::setfill('0');
+        clipHeaderBuilder << "StartHTML:" << std::setw(10) << htmlStartPos << "\r\n";
+        clipHeaderBuilder << "EndHTML:" << std::setw(10) << htmlEndPos << "\r\n";
+        clipHeaderBuilder << "StartFragment:" << std::setw(10) << fragStartPos << "\r\n";
+        clipHeaderBuilder << "EndFragment:" << std::setw(10) << fragEndPos << "\r\n";
+        clipHeaderBuilder << "StartSelection:" << std::setw(10) << fragStartPos << "\r\n";
+        clipHeaderBuilder << "EndSelection:" << std::setw(10) << fragEndPos << "\r\n";
+
+        return clipHeaderBuilder.str() + htmlBuilder.str();
+    }
+    catch (...)
+    {
+        LOG_HR(wil::ResultFromCaughtException());
+        return {};
+    }
 }

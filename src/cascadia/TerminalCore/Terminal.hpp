@@ -119,20 +119,6 @@ public:
     const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-
-    // TODO GitHub #605: Search functionality
-    // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
-    // We should actually abstract this out better once Windows Terminal has Search
-    HRESULT SearchForText(_In_ BSTR text,
-                          _In_ BOOL searchBackward,
-                          _In_ BOOL ignoreCase,
-                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
-                          unsigned int _start,
-                          unsigned int _end,
-                          std::function<unsigned int(IUiaData*, const COORD)> _coordToEndpoint,
-                          std::function<COORD(IUiaData*, const unsigned int)> _endpointToCoord,
-                          std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) override;
-
     const std::wstring GetConsoleTitle() const noexcept override;
 #pragma endregion
 
@@ -146,13 +132,14 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
+    const bool IsCopyOnSelectActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
 
-    const std::wstring RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
+    const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
 private:
@@ -183,6 +170,8 @@ private:
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
+    bool _allowSingleCharSelection;
+    bool _copyOnSelect;
     SHORT _selectionAnchor_YOffset;
     SHORT _endSelectionPosition_YOffset;
     std::wstring _wordDelimiters;
@@ -234,5 +223,6 @@ private:
     COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
     const bool _isWordDelimiter(std::wstring_view cellChar) const;
     const COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    const bool _isSingleCellSelection() const noexcept;
 #pragma endregion
 };

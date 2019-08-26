@@ -6,7 +6,12 @@ namespace Microsoft.Terminal.TerminalControl
     delegate void TitleChangedEventArgs(String newTitle);
     delegate void ConnectionClosedEventArgs();
     delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
-    delegate void CopyToClipboardEventArgs(String copiedData);
+
+    runtimeclass CopyToClipboardEventArgs
+    {
+        String Text { get; };
+        String Html { get; };
+    }
 
     runtimeclass PasteFromClipboardEventArgs
     {
@@ -24,7 +29,7 @@ namespace Microsoft.Terminal.TerminalControl
 
         event TitleChangedEventArgs TitleChanged;
         event ConnectionClosedEventArgs ConnectionClosed;
-        event CopyToClipboardEventArgs CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
 
         String Title { get; };

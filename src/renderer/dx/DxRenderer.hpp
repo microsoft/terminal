@@ -151,6 +151,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _dwriteFontFace;
         ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
         ::Microsoft::WRL::ComPtr<CustomTextRenderer> _customRenderer;
+        ::Microsoft::WRL::ComPtr<ID2D1StrokeStyle> _strokeStyle;
 
         // Device-Dependent Resources
         bool _haveDeviceResources;

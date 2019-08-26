@@ -14,7 +14,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
     std::vector<SMALL_RECT> selectionArea;
 
-    if (!_selectionActive)
+    if (!IsSelectionActive())
     {
         return selectionArea;
     }
@@ -67,7 +67,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         if (_multiClickSelectionMode == SelectionExpansionMode::Word)
         {
             const auto cellChar = _buffer->GetCellDataAt(selectionAnchorWithOffset)->Chars();
-            if (_selectionAnchor == _endSelectionPosition && _isWordDelimiter(cellChar))
+            if (_isSingleCellSelection() && _isWordDelimiter(cellChar))
             {
                 // only highlight the cell if you double click a delimiter
             }
@@ -143,12 +143,36 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 }
 
 // Method Description:
+// - Checks if selection is on a single cell
+// Return Value:
+// - bool representing if selection is only a single cell. Used for copyOnSelect
+const bool Terminal::_isSingleCellSelection() const noexcept
+{
+    return (_selectionAnchor == _endSelectionPosition);
+}
+
+// Method Description:
 // - Checks if selection is active
 // Return Value:
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    // A single cell selection is not considered an active selection,
+    // if it's not allowed
+    if (!_allowSingleCharSelection && _isSingleCellSelection())
+    {
+        return false;
+    }
     return _selectionActive;
+}
+
+// Method Description:
+// - Checks if the CopyOnSelect setting is active
+// Return Value:
+// - true if feature is active, false otherwise.
+const bool Terminal::IsCopyOnSelectActive() const noexcept
+{
+    return _copyOnSelect;
 }
 
 // Method Description:
@@ -211,6 +235,8 @@ void Terminal::SetSelectionAnchor(const COORD position)
     _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
+
     SetEndSelectionPosition(position);
 
     _multiClickSelectionMode = SelectionExpansionMode::Cell;
@@ -230,6 +256,11 @@ void Terminal::SetEndSelectionPosition(const COORD position)
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
     _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+
+    if (_copyOnSelect && !_isSingleCellSelection())
+    {
+        _allowSingleCharSelection = true;
+    }
 }
 
 // Method Description:
@@ -246,6 +277,7 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
+    _allowSingleCharSelection = false;
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
     _selectionAnchor_YOffset = 0;
@@ -261,24 +293,16 @@ void Terminal::ClearSelection()
 //    and get text to appear on separate lines.
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
 {
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    auto data = _buffer->GetTextForClipboard(!_boxSelection,
-                                             trimTrailingWhitespace,
-                                             _GetSelectionRects(),
-                                             GetForegroundColor,
-                                             GetBackgroundColor);
-
-    std::wstring result;
-    for (const auto& text : data.text)
-    {
-        result += text;
-    }
-
-    return result;
+    return _buffer->GetTextForClipboard(!_boxSelection,
+                                        trimTrailingWhitespace,
+                                        _GetSelectionRects(),
+                                        GetForegroundColor,
+                                        GetBackgroundColor);
 }
 
 // Method Description:
