@@ -35,6 +35,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         bool _connected{};
         std::atomic<bool> _closing{ false };
+        bool _recievedFirstByte{ false };
+        std::chrono::system_clock::time_point _startTime{};
 
         wil::unique_hfile _inPipe; // The pipe for writing input to
         wil::unique_hfile _outPipe; // The pipe for reading output from
