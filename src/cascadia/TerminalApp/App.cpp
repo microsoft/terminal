@@ -7,6 +7,7 @@
 
 #include "App.g.cpp"
 #include "TerminalPage.h"
+#include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "Utils.h"
 
 using namespace winrt::Windows::ApplicationModel::DataTransfer;

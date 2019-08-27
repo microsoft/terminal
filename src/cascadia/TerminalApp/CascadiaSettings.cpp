@@ -13,6 +13,7 @@
 
 #include "PowershellCoreProfileGenerator.h"
 #include "WslDistroGenerator.h"
+#include "AzureCloudShellGenerator.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
@@ -36,6 +37,7 @@ CascadiaSettings::CascadiaSettings() :
 {
     _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
     _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
+    _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
 }
 
 CascadiaSettings::~CascadiaSettings()
