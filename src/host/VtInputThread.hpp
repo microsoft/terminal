@@ -37,6 +37,7 @@ namespace Microsoft::Console
         
         [[nodiscard]] HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch);
         DWORD _InputThread();
+        [[nodiscard]] HRESULT _ReadInput();
 
         wil::shared_event _shutdownEvent;
         std::future<void> _shutdownWatchdog;

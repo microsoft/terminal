@@ -49,9 +49,14 @@ VtInputThread::VtInputThread(wil::unique_hfile hPipe,
 
     _shutdownWatchdog = std::async(std::launch::async, [&] {
         _shutdownEvent.wait();
-        if (_hThread)
+        if (_dwThreadId != 0)
         {
-            LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(_hThread.get()));
+            wil::unique_handle threadHandle(OpenThread(STANDARD_RIGHTS_ALL | THREAD_TERMINATE, FALSE, _dwThreadId));
+            LOG_LAST_ERROR_IF_NULL(threadHandle.get());
+            if (threadHandle)
+            {
+                LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(threadHandle.get()));
+            }
         }
     });
 }
@@ -113,13 +118,31 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
     return pInstance->_InputThread();
 }
 
+[[nodiscard]] HRESULT VtInputThread::DoReadInput()
+{
+    // If there's already a thread pumping VT input, it's not valid to read this from the outside.
+    RETURN_HR_IF(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _dwThreadId != 0);
+
+    // Store which thread is attempting to read VT input. It may get blocked indefinitely and need
+    // to get unstuck by a shutdown event.
+    _dwThreadId = GetCurrentThreadId();
+
+    // Set it back to 0 on the way out.
+    auto restoreThreadId = wil::scope_exit([&] {
+        _dwThreadId = 0;
+    });
+
+    // Perform the blocking read operation.
+    return _ReadInput();
+}
+
 // Method Description:
 // - Do a single ReadFile from our pipe, and try and handle it. 
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK or relevant error
-[[nodiscard]] HRESULT VtInputThread::DoReadInput()
+[[nodiscard]] HRESULT VtInputThread::_ReadInput()
 {
     // TODO: Make it so my only public call can be during initialization.
 
