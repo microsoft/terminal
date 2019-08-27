@@ -214,7 +214,8 @@ private:
     UINT _uHistoryBufferSize;
     UINT _uNumberOfHistoryBuffers;
     BOOL _bHistoryNoDup;
-    COLORREF _ColorTable[COLOR_TABLE_SIZE];
+    // The memcpy will end after COLOR_TABLE_SIZE entries in _256ColorTable.
+    COLORREF _256ColorTable[XTERM_COLOR_TABLE_SIZE];
     // END - memcpy
     UINT _uCodePage;
     UINT _uScrollScale;
@@ -234,7 +235,7 @@ private:
     bool _fUseDx;
     bool _fCopyColor;
 
-    COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
+    // COLORREF _XtermColorTable[XTERM_COLOR_TABLE_SIZE];
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;

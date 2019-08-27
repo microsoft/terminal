@@ -81,8 +81,8 @@ Settings::Settings() :
     _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
-    gsl::span<COLORREF> xtermTableView = { _XtermColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> tableView = { _256ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> xtermTableView = { _256ColorTable, gsl::narrow<ptrdiff_t>(XTERM_COLOR_TABLE_SIZE) };
     ::Microsoft::Console::Utils::Initialize256ColorTable(xtermTableView);
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
 }
@@ -123,8 +123,9 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
+    gsl::span<COLORREF> tableView = { _256ColorTable, gsl::narrow<ptrdiff_t>(COLOR_TABLE_SIZE) };
     ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
+    // We don't need to worry about the 256 colors, because they're always set in the ctor.
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
@@ -221,7 +222,7 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _bHistoryNoDup = pStateInfo->HistoryNoDup;
     _uHistoryBufferSize = pStateInfo->HistoryBufferSize;
     _uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
-    memmove(_ColorTable, pStateInfo->ColorTable, sizeof(_ColorTable));
+    memmove(_256ColorTable, pStateInfo->ColorTable, COLOR_TABLE_SIZE * sizeof(COLORREF));
     _uCodePage = pStateInfo->CodePage;
     _bWrapText = !!pStateInfo->fWrapText;
     _fFilterOnPaste = pStateInfo->fFilterOnPaste;
@@ -263,7 +264,8 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.HistoryNoDup = _bHistoryNoDup;
     csi.HistoryBufferSize = _uHistoryBufferSize;
     csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
-    memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    // memmove(csi.ColorTable, _ColorTable, sizeof(_ColorTable));
+    memmove(csi.ColorTable, _256ColorTable, COLOR_TABLE_SIZE * sizeof(COLORREF));
     csi.CodePage = _uCodePage;
     csi.fWrapText = !!_bWrapText;
     csi.fFilterOnPaste = _fFilterOnPaste;
@@ -691,24 +693,36 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
 
 const COLORREF* const Settings::GetColorTable() const
 {
-    return _ColorTable;
+    return _256ColorTable;
 }
+
+// Method Description:
+// - Sets cSize entries of the colortable, by copying the values from
+//   pColorTable into our color table. Copies at most COLOR_TABLE_SIZE (16)
+//   entries.
+// Arguments:
+// - pColorTable: The array of COLORREFs to copy from
+// - cSize the number of entries in pColorTable
+// Return Value:
+// - <none>
 void Settings::SetColorTable(_In_reads_(cSize) const COLORREF* const pColorTable, const size_t cSize)
 {
     size_t cSizeWritten = std::min(cSize, static_cast<size_t>(COLOR_TABLE_SIZE));
 
-    memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
+    // memmove(_ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
+    memmove(_256ColorTable, pColorTable, cSizeWritten * sizeof(COLORREF));
 }
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        _ColorTable[index] = ColorValue;
-    }
-    else
-    {
-        _XtermColorTable[index] = ColorValue;
-    }
+    _256ColorTable[index] = ColorValue;
+    // if (index < ARRAYSIZE(_ColorTable))
+    // {
+    //     _ColorTable[index] = ColorValue;
+    // }
+    // else
+    // {
+    //     _XtermColorTable[index] = ColorValue;
+    // }
 }
 
 bool Settings::IsStartupTitleIsLinkNameSet() const
@@ -728,19 +742,21 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
 
 const size_t Settings::GetColorTableSize() const
 {
-    return ARRAYSIZE(_ColorTable);
+    return COLOR_TABLE_SIZE;
+    // return ARRAYSIZE(_ColorTable);
 }
 
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
-    if (index < ARRAYSIZE(_ColorTable))
-    {
-        return _ColorTable[index];
-    }
-    else
-    {
-        return _XtermColorTable[index];
-    }
+    return _256ColorTable[index];
+    // if (index < ARRAYSIZE(_ColorTable))
+    // {
+    //     return _ColorTable[index];
+    // }
+    // else
+    // {
+    //     return _XtermColorTable[index];
+    // }
 }
 
 // Routine Description:
@@ -797,7 +813,8 @@ WORD Settings::GenerateLegacyAttributes(const TextAttribute attributes) const
 // The index in ColorTable of the nearest match to Color.
 WORD Settings::FindNearestTableIndex(const COLORREF Color) const
 {
-    return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
+    // return ::FindNearestTableIndex(Color, _ColorTable, ARRAYSIZE(_ColorTable));
+    return ::FindNearestTableIndex(Color, GetColorTable(), COLOR_TABLE_SIZE);
 }
 
 COLORREF Settings::GetCursorColor() const noexcept
