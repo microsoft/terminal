@@ -478,7 +478,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     std::vector<size_t> indiciesToDelete{};
 
-    std::set<GUID, GuidOrdering> uniqueGuids{};
+    std::set<GUID> uniqueGuids{};
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
@@ -515,7 +515,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 // - <none>
 void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 {
-    std::set<GUID, GuidOrdering> uniqueGuids{};
+    std::set<GUID> uniqueGuids{};
     std::deque<GUID> guidOrder{};
 
     auto collectGuids = [&](const auto& json) {
@@ -542,7 +542,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 
     // Push all the defaultSettings profiles' GUIDS into the set
     collectGuids(_defaultSettings);
-    GuidEquality equals{};
+    std::equal_to<GUID> equals{};
     // Re-order the list of _profiles to match that ordering
     // for (gIndex=0 -> uniqueGuids.size)
     //   pIndex = the pIndex of the profile with guid==guids[gIndex]

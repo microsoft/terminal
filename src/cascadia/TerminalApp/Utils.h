@@ -31,22 +31,25 @@ inline std::string JsonKey(const std::string_view key)
 
 winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
 
-// Helper to establish an ordering on guids. This does _NOT_ work to check if
-// two guids are the same. Use this with a std::set for determining if GUIDS are
-// unique
-struct GuidOrdering : std::less<GUID>
+// This is a pair of helpers for determining if a pair of guids are equal, and
+// establishing an ordering on GUIDs (via std::less).
+namespace std
 {
-    bool operator()(const GUID& lhs, const GUID& rhs) const
+    template<>
+    struct less<GUID>
     {
-        return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
-    }
-};
+        bool operator()(const GUID& lhs, const GUID& rhs) const
+        {
+            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
+        }
+    };
 
-// Helper to establish if two GUIDs are equal.
-struct GuidEquality : std::equal_to<GUID>
-{
-    bool operator()(const GUID& lhs, const GUID& rhs) const
+    template<>
+    struct equal_to<GUID>
     {
-        return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
-    }
-};
+        bool operator()(const GUID& lhs, const GUID& rhs) const
+        {
+            return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
+        }
+    };
+}
