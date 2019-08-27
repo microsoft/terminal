@@ -740,9 +740,15 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
-const size_t Settings::GetColorTableSize() const
+const size_t Settings::GetLegacyColorTableSize() const
 {
     return COLOR_TABLE_SIZE;
+    // return ARRAYSIZE(_ColorTable);
+}
+
+const size_t Settings::GetColorTableSize() const
+{
+    return XTERM_COLOR_TABLE_SIZE;
     // return ARRAYSIZE(_ColorTable);
 }
 
@@ -913,7 +919,7 @@ bool Settings::GetUseDx() const noexcept
 COLORREF Settings::CalculateDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return fg != INVALID_COLOR ? fg : ForegroundColor(GetFillAttribute(), GetColorTable(), GetLegacyColorTableSize());
 }
 
 // Method Description:
@@ -928,7 +934,7 @@ COLORREF Settings::CalculateDefaultForeground() const noexcept
 COLORREF Settings::CalculateDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetColorTableSize());
+    return bg != INVALID_COLOR ? bg : BackgroundColor(GetFillAttribute(), GetColorTable(), GetLegacyColorTableSize());
 }
 
 // Method Description:

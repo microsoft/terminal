@@ -917,24 +917,38 @@ void DoSrvPrivateSetConsoleXtermTextAttribute(SCREEN_INFORMATION& screenInfo,
                                               const int iXtermTableEntry,
                                               const bool fIsForeground)
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    // const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& buffer = screenInfo.GetActiveBuffer();
     TextAttribute NewAttributes = buffer.GetAttributes();
 
-    COLORREF rgbColor;
-    if (iXtermTableEntry < COLOR_TABLE_SIZE)
-    {
-        //Convert the xterm index to the win index
-        WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
+    // ////////////////////////
+    // COLORREF rgbColor;
+    // if (iXtermTableEntry < COLOR_TABLE_SIZE)
+    // {
+    //     //Convert the xterm index to the win index
+    //     WORD iWinEntry = ::XtermToWindowsIndex(iXtermTableEntry);
 
-        rgbColor = gci.GetColorTableEntry(iWinEntry);
+    //     rgbColor = gci.GetColorTableEntry(iWinEntry);
+    // }
+    // else
+    // {
+    //     rgbColor = gci.GetColorTableEntry(iXtermTableEntry);
+    // }
+
+    // NewAttributes.SetColor(rgbColor, fIsForeground);
+    // ////////////////////////
+    std::optional<BYTE> newFG{ std::nullopt }; // = fIsForeground ? iXtermTableEntry : std::nullopt;
+    std::optional<BYTE> newBG{ std::nullopt }; // = fIsForeground ? std::nullopt : iXtermTableEntry;
+    if (fIsForeground)
+    {
+        newFG = static_cast<BYTE>(iXtermTableEntry);
     }
     else
     {
-        rgbColor = gci.GetColorTableEntry(iXtermTableEntry);
+        newBG = static_cast<BYTE>(iXtermTableEntry);
     }
 
-    NewAttributes.SetColor(rgbColor, fIsForeground);
+    NewAttributes.SetIndexedAttributes(newFG, newBG);
 
     buffer.SetAttributes(NewAttributes);
 }

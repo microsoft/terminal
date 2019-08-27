@@ -419,7 +419,7 @@ void Telemetry::WriteFinalTraceLog()
                                     TraceLoggingBool(gci.GetQuickEdit(), "QuickEdit"),
                                     TraceLoggingValue(gci.GetWindowAlpha(), "WindowAlpha"),
                                     TraceLoggingBool(gci.GetWrapText(), "WrapText"),
-                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetColorTableSize(), "ColorTable"),
+                                    TraceLoggingUInt32Array((UINT32 const*)gci.GetColorTable(), (UINT16)gci.GetLegacyColorTableSize(), "ColorTable"),
                                     TraceLoggingValue(gci.CP, "CodePageInput"),
                                     TraceLoggingValue(gci.OutputCP, "CodePageOutput"),
                                     TraceLoggingValue(gci.GetFontSize().X, "FontSizeX"),

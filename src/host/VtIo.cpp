@@ -161,14 +161,14 @@ VtIo::VtIo() :
                                                                     gci,
                                                                     initialViewport,
                                                                     gci.GetColorTable(),
-                                                                    static_cast<WORD>(gci.GetColorTableSize()));
+                                                                    static_cast<WORD>(gci.GetLegacyColorTableSize()));
                 break;
             case VtIoMode::XTERM:
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 static_cast<WORD>(gci.GetLegacyColorTableSize()),
                                                                  false);
                 break;
             case VtIoMode::XTERM_ASCII:
@@ -176,7 +176,7 @@ VtIo::VtIo() :
                                                                  gci,
                                                                  initialViewport,
                                                                  gci.GetColorTable(),
-                                                                 static_cast<WORD>(gci.GetColorTableSize()),
+                                                                 static_cast<WORD>(gci.GetLegacyColorTableSize()),
                                                                  true);
                 break;
             case VtIoMode::WIN_TELNET:
@@ -184,7 +184,7 @@ VtIo::VtIo() :
                                                                      gci,
                                                                      initialViewport,
                                                                      gci.GetColorTable(),
-                                                                     static_cast<WORD>(gci.GetColorTableSize()));
+                                                                     static_cast<WORD>(gci.GetLegacyColorTableSize()));
                 break;
             default:
                 return E_FAIL;
