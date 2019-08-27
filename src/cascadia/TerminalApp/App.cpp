@@ -208,7 +208,7 @@ namespace winrt::TerminalApp::implementation
     //   displays buttons (or a single button). Two buttons (primary and secondary)
     //   will be displayed if this is an warning dialog for closing the termimal,
     //   this allows the users to abondon the closing action. Otherwise, a single
-    //   close button will be displayed. 
+    //   close button will be displayed.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
@@ -368,9 +368,9 @@ namespace winrt::TerminalApp::implementation
     void App::_ShowCloseWarningDialog()
     {
         // To do: change these strings to localized strings in resource loader
-        auto title = L"Close window warning";
+        auto title = _resourceLoader.GetLocalizedString(L"CloseWindowWarningTitle");
         auto primaryButtonText = _resourceLoader.GetLocalizedString(L"OK");
-        auto secondaryButtonText = L"Cancel";
+        auto secondaryButtonText = _resourceLoader.GetLocalizedString(L"Cancel");
 
         Controls::TextBlock warningsTextBlock;
         // Make sure you can copy-paste
@@ -378,7 +378,7 @@ namespace winrt::TerminalApp::implementation
         // Make sure the lines of text wrap
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
-        const auto warningText = L"You have more than one tab opened";
+        const auto warningText = _resourceLoader.GetLocalizedString(L"CloseWindowWarningText");
         warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
 
         _ShowDialog(winrt::box_value(title), warningsTextBlock, primaryButtonText, secondaryButtonText, true);
@@ -1221,7 +1221,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Close the terminal app with keys. If there are more
-    // - than one tab opened, show a warning dialog. 
+    // - than one tab opened, show a warning dialog.
     void App::_CloseWindow()
     {
         if (_tabs.size() > 1)
@@ -1679,7 +1679,7 @@ namespace winrt::TerminalApp::implementation
     //   Takes into account a special case for an error condition for a comma
     // Arguments:
     // - MenuFlyoutItem that will be displayed, and a KeyChord to map an accelerator
-    void App::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem & menuItem,
+    void App::_SetAcceleratorForMenuItem(Controls::MenuFlyoutItem& menuItem,
                                          const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord)
     {
 #ifdef DEP_MICROSOFT_UI_XAML_708_FIXED
