@@ -22,6 +22,94 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
+// clang-format off
+// !!! IMPORTANT !!!
+// Make sure that these keys are in the same order as the
+// SettingsLoadWarnings/Errors enum is!
+static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
+   L"MissingDefaultProfileText",
+   L"DuplicateProfileText"
+};
+static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
+    L"NoProfilesText"
+};
+// clang-format on
+
+// Function Description:
+// - General-purpose helper for looking up a localized string for a
+//   warning/error. First will look for the given key in the provided map of
+//   keys->strings, where the values in the map are ResourceKeys. If it finds
+//   one, it will lookup the localized string from that ResourceKey.
+// - If it does not find a key, it'll return an empty string
+// Arguments:
+// - key: the value to use to look for a resource key in the given map
+// - map: A map of keys->Resource keys.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - the localized string for the given type, if it exists.
+template<std::size_t N>
+static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader loader)
+{
+    if (index < keys.size())
+    {
+        return loader.GetLocalizedString(keys.at(index));
+    }
+    return {};
+}
+
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadWarning. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadWarningsLabels.
+// Arguments:
+// - warning: the SettingsLoadWarnings value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given warning
+static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
+{
+    return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
+}
+
+// Function Description:
+// - Gets the text from our ResourceDictionary for the given
+//   SettingsLoadError. If there is no such text, we'll return nullptr.
+// - The warning should have an entry in settingsLoadErrorsLabels.
+// Arguments:
+// - error: the SettingsLoadErrors value to get the localized text for.
+// - loader: the ScopedResourceLoader to use to look up the localized string.
+// Return Value:
+// - localized text for the given error
+static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
+{
+    return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
+}
+
+// Function Description:
+// - Creates a Run of text to display an error message. The text is yellow or
+//   red for dark/light theme, respectively.
+// Arguments:
+// - text: The text of the error message.
+// - resources: The application's resource loader.
+// Return Value:
+// - The fully styled text run.
+static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceDictionary& resources)
+{
+    Documents::Run textRun;
+    textRun.Text(text);
+
+    // Color the text red (light theme) or yellow (dark theme) based on the system theme
+    winrt::IInspectable key = winrt::box_value(L"ErrorTextBrush");
+    if (resources.HasKey(key))
+    {
+        winrt::IInspectable g = resources.Lookup(key);
+        auto brush = g.try_as<winrt::Windows::UI::Xaml::Media::Brush>();
+        textRun.Foreground(brush);
+    }
+
+    return textRun;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
@@ -62,7 +150,7 @@ namespace winrt::TerminalApp::implementation
 
         _root->ShowDialog({ this, &App::_ShowDialog });
 
-        _root->SetSettings(_settings.get(), false);
+        _root->SetSettings(_settings, false);
         _root->Loaded({ this, &App::_OnLoaded });
         _root->Create();
 
@@ -115,6 +203,92 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for errors found while loading or validating the
+    //   settings. Uses the resources under the provided  title and content keys
+    //   as the title and first content of the dialog, then also displays a
+    //   message for whatever exception was found while validating the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    // Arguments:
+    // - titleKey: The key to use to lookup the title text from our resources.
+    // - contentKey: The key to use to lookup the content text from our resources.
+    void App::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
+                                   const winrt::hstring& contentKey,
+                                   HRESULT settingsLoadedResult)
+    {
+        auto title = _root->GetResourceLoader().GetLocalizedString(titleKey);
+        auto buttonText = _root->GetResourceLoader().GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        winrt::Windows::UI::Xaml::Documents::Run errorRun;
+        const auto errorLabel = _root->GetResourceLoader().GetLocalizedString(contentKey);
+        errorRun.Text(errorLabel);
+        warningsTextBlock.Inlines().Append(errorRun);
+
+        if (FAILED(settingsLoadedResult))
+        {
+            if (!_settingsLoadExceptionText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(_settingsLoadExceptionText, Resources()));
+            }
+        }
+
+        // Add a note that we're using the default settings in this case.
+        winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
+        const auto usingDefaultsText = _root->GetResourceLoader().GetLocalizedString(L"UsingDefaultSettingsText");
+        usingDefaultsRun.Text(usingDefaultsText);
+        warningsTextBlock.Inlines().Append(usingDefaultsRun);
+
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(warningsTextBlock));
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(nullptr, dialog);
+    }
+
+    // Method Description:
+    // - Displays a dialog for warnings found while loading or validating the
+    //   settings. Displays messages for whatever warnings were found while
+    //   validating the settings.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void App::_ShowLoadWarningsDialog()
+    {
+        auto title = _root->GetResourceLoader().GetLocalizedString(L"SettingsValidateErrorTitle");
+        auto buttonText = _root->GetResourceLoader().GetLocalizedString(L"Ok");
+
+        Controls::TextBlock warningsTextBlock;
+        // Make sure you can copy-paste
+        warningsTextBlock.IsTextSelectionEnabled(true);
+        // Make sure the lines of text wrap
+        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+
+        const auto& warnings = _settings->GetWarnings();
+        for (const auto& warning : warnings)
+        {
+            // Try looking up the warning message key for each warning.
+            const auto warningText = _GetWarningText(warning, _root->GetResourceLoader());
+            if (!warningText.empty())
+            {
+                warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
+            }
+        }
+
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(warningsTextBlock));
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(nullptr, dialog);
+    }
+
+    // Method Description:
     // - Triggered when the application is fiished loading. If we failed to load
     //   the settings, then this will display the error dialog. This is done
     //   here instead of when loading the settings, because we need our UI to be
@@ -129,11 +303,11 @@ namespace winrt::TerminalApp::implementation
         {
             const winrt::hstring titleKey = L"InitialJsonParseErrorTitle";
             const winrt::hstring textKey = L"InitialJsonParseErrorText";
-            _root->ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+            _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
         }
         else if (_settingsLoadedResult == S_FALSE)
         {
-            _root->ShowLoadWarningsDialog();
+            _ShowLoadWarningsDialog();
         }
     }
 
@@ -192,13 +366,13 @@ namespace winrt::TerminalApp::implementation
         catch (const winrt::hresult_error& e)
         {
             hr = e.code();
-            _root->SetSettingsLoadExceptionText(e.message());
+            _settingsLoadExceptionText = e.message();
             LOG_HR(hr);
         }
         catch (const ::TerminalApp::SettingsException& ex)
         {
             hr = E_INVALIDARG;
-            _root->SetSettingsLoadExceptionText(ex.Error());
+            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _root->GetResourceLoader());
         }
         catch (...)
         {
@@ -310,7 +484,7 @@ namespace winrt::TerminalApp::implementation
             _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
                 const winrt::hstring titleKey = L"ReloadJsonParseErrorTitle";
                 const winrt::hstring textKey = L"ReloadJsonParseErrorText";
-                _root->ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
+                _ShowLoadErrorsDialog(titleKey, textKey, _settingsLoadedResult);
             });
 
             return;
@@ -318,7 +492,7 @@ namespace winrt::TerminalApp::implementation
         else if (_settingsLoadedResult == S_FALSE)
         {
             _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
-                _root->ShowLoadWarningsDialog();
+                _ShowLoadWarningsDialog();
             });
         }
 
@@ -326,7 +500,7 @@ namespace winrt::TerminalApp::implementation
         // TerminalSettings object.
 
         // Update the settings in TerminalPage
-        _root->SetSettings(_settings.get(), true);
+        _root->SetSettings(_settings, true);
 
         _root->Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
             // Refresh the UI theme
@@ -394,6 +568,10 @@ namespace winrt::TerminalApp::implementation
         return _root->SetTitleBarContent(token);
     }
 
+    winrt::event_token App::TitleChanged(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::hstring> const& handler)
+    {
+        return _root->TitleChanged(handler);
+    }
     void App::TitleChanged(winrt::event_token const& token) noexcept
     {
         return _root->TitleChanged(token);
@@ -406,16 +584,6 @@ namespace winrt::TerminalApp::implementation
     void App::LastTabClosed(winrt::event_token const& token) noexcept
     {
         return _root->LastTabClosed(token);
-    }
-
-    winrt::event_token App::ShowDialog(
-        Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog> const& handler)
-    {
-        return _root->ShowDialog(handler);
-    }
-    void App::ShowDialog(winrt::event_token const& token) noexcept
-    {
-        return _root->ShowDialog(token);
     }
 
     // -------------------------------- WinRT Events ---------------------------------

@@ -24,17 +24,15 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        void SetSettings(::TerminalApp::CascadiaSettings* settings, bool needRefreshUI);
-        void SetSettingsLoadExceptionText(hstring exceptionText);
-        void SetSettingsLoadExceptionText(::TerminalApp::SettingsLoadErrors error);
+        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
         void Create();
 
         hstring Title();
 
         void ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
-        void ShowLoadWarningsDialog();
-        void ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
+
+        ScopedResourceLoader GetResourceLoader();
 
         void TitlebarClicked();
 
@@ -45,18 +43,22 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(ShowDialog, _showDialogHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::Controls::ContentDialog);
 
     private:
+        // If you add controls here, but forget to null them either here or in
+        // the ctor, you're going to have a bad time. It'll mysteriously fail to
+        // activate the app.
+        // ALSO: If you add any UIElements as roots here, make sure they're
+        // updated in App::_ApplyTheme. The roots currently is _tabRow
+        // (which is a root when the tabs are in the titlebar.)
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
         Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
-        ::TerminalApp::CascadiaSettings* _settings{ nullptr };
+        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
         ScopedResourceLoader _resourceLoader;
-
-        winrt::hstring _settingsLoadExceptionText{};
 
         void _ShowAboutDialog();
 
@@ -101,7 +103,7 @@ namespace winrt::TerminalApp::implementation
         static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
-        void _CopyToClipboardHandler(const winrt::hstring& copiedData);
+        void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
         void _PasteFromClipboardHandler(const IInspectable& sender,
                                         const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
         bool _CopyText(const bool trimTrailingWhitespace);
