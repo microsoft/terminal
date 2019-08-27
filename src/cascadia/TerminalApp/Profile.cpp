@@ -14,6 +14,7 @@ using namespace ::Microsoft::Console;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
+static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view HiddenKey{ "hidden" };
@@ -258,6 +259,10 @@ Json::Value Profile::ToJson() const
     }
     root[JsonKey(NameKey)] = winrt::to_string(_name);
     root[JsonKey(HiddenKey)] = _hidden;
+    if (_source.has_value())
+    {
+        root[JsonKey(SourceKey)] = winrt::to_string(_source.value());
+    }
 
     ///// Core Settings /////
     if (_defaultForeground)
