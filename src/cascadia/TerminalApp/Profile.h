@@ -24,7 +24,6 @@ namespace TerminalAppLocalTests
 };
 namespace TerminalAppUnitTests
 {
-    class SettingsTests;
     class JsonTests;
 };
 
@@ -96,7 +95,7 @@ private:
     std::optional<GUID> _guid{ std::nullopt };
     std::wstring _name;
     std::optional<GUID> _connectionType;
-    bool _hidden{ false };
+    bool _hidden;
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;

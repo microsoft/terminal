@@ -395,11 +395,11 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateNoDuplicateProfiles();
     _ValidateDefaultProfileExists();
 
-    // TODO:<future> ensure that all the profile's color scheme names are
+    // TODO:GH#2547 ensure that all the profile's color scheme names are
     // actually the names of schemes we've parsed. If the scheme doesn't exist,
     // just use the hardcoded defaults
 
-    // TODO:<future> ensure there's at least one key bound. Display a warning if
+    // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
     // likely an indication of an error somehow.
 }

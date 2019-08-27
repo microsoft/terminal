@@ -3,8 +3,6 @@
 
 #include "pch.h"
 #include "Utils.h"
-#include "../../types/inc/Utils.hpp"
-
 
 // Method Description:
 // - Contstructs a wstring from a given Json::Value object. Reads the object as

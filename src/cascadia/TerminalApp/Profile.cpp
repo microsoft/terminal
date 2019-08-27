@@ -672,6 +672,14 @@ bool Profile::GetCloseOnExit() const noexcept
     return _closeOnExit;
 }
 
+// Method Description:
+// - If a profile is marked hidden, it should not appear in the dropdown list of
+//   profiles. This setting is used to "remove" default and dynamic profiles
+//   from the list of profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the profile chould be hidden from the list of profiles.
 bool Profile::IsHidden() const noexcept
 {
     return _hidden;
