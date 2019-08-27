@@ -60,6 +60,8 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     if (fileHasData)
     {
         resultPtr->_LayerJsonString(fileData.value(), false);
+
+        resultPtr->WriteDynamicalProfilesToUserSettings();
     }
     else
     {
@@ -99,10 +101,6 @@ void CascadiaSettings::_LoadDynamicProfiles()
     for (auto& generator : _profileGenerators)
     {
         auto generatorNamespace = generator->GetNamespace();
-
-        // auto isInboxGenerator = generatorNamespace == L"Windows.Terminal";
-        // auto namespaceGuid = isInboxGenerator ? TERMINAL_PROFILE_NAMESPACE_GUID :
-        //                                         Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(generatorNamespace)));
 
         auto profiles = generator->GenerateProfiles();
         for (auto& profile : profiles)
@@ -173,6 +171,56 @@ void CascadiaSettings::SaveAll() const
     const auto serializedString = Json::writeString(wbuilder, json);
 
     _WriteSettings(serializedString);
+}
+
+void CascadiaSettings::WriteDynamicalProfilesToUserSettings()
+{
+    // - Find the set of profiles that weren't either in the default profiles or
+    //   in the user profiles. TODO: Do this in not O(N^2)
+    // - For each of those profiles,
+    //   * Diff them from the default profile
+    //   * Serialize that diff
+    //   * TODO: insert that diff to the end of the list of profiles. Commas!
+    //      * TODO: make that diff indented appropriately? That might not be
+    //        possible. Or, we could _assume_ each profile will start 8 spaces
+    //        in, with its members all being 12 spaced, and just insert 8 spaces
+    //        at the start of every line. That's insane, BUT IT MIGHT JUST WORK
+    const Profile defaultProfile{};
+
+    Json::StreamWriterBuilder wbuilder;
+    // Use 4 spaces to indent instead of \t
+    wbuilder.settings_["indentation"] = "    ";
+
+    auto isInJsonObj = [](const auto& profile, const auto& json) {
+        for (auto profileJson : _GetProfilesJsonObject(json))
+        {
+            if (profileJson.isObject())
+            {
+                if (profile.ShouldBeLayered(profileJson))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+
+    for (const auto& profile : _profiles)
+    {
+        if (isInJsonObj(profile, _userSettings))
+        {
+            continue;
+        }
+        if (isInJsonObj(profile, _defaultSettings))
+        {
+            continue;
+        }
+        const auto diff = profile.DiffToJson(defaultProfile);
+        const auto profileSerialization = Json::writeString(wbuilder, diff);
+        auto a = 0;
+        a++;
+        a;
+    }
 }
 
 // Method Description:

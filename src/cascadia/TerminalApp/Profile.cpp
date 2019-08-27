@@ -439,7 +439,7 @@ Profile Profile::FromJson(const Json::Value& json)
 // - json: The json object to query to see if it's the same
 // Return Value:
 // - true iff the json object has the same `GUID` as we do.
-bool Profile::ShouldBeLayered(const Json::Value& json)
+bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
     if (!_guid.has_value())
     {
