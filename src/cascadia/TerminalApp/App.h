@@ -87,7 +87,8 @@ namespace winrt::TerminalApp::implementation
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _LoadSettings();
-        void _OpenSettings(const bool openDefaults);
+
+        fire_and_forget _LaunchSettings(const bool openDefaults);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 

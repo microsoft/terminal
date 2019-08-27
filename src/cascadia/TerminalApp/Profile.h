@@ -22,6 +22,14 @@ namespace TerminalAppLocalTests
     class SettingsTests;
     class ProfileTests;
 };
+namespace TerminalAppUnitTests
+{
+    class JsonTests;
+};
+
+// GUID used for generating GUIDs at runtime, for profiles that did not have a
+// GUID specified manually.
+constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 0x4499, { 0x8a, 0x50, 0x40, 0x31, 0x3c, 0xaf, 0x51, 0x0a } };
 
 namespace TerminalApp
 {
@@ -31,8 +39,8 @@ namespace TerminalApp
 class TerminalApp::Profile final
 {
 public:
-    Profile(const winrt::guid& guid);
     Profile();
+    Profile(const std::optional<GUID>& guid);
 
     ~Profile();
 
@@ -85,12 +93,11 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
-    GUID _guid;
+    std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
-    bool _guidSet{ false };
     std::wstring _name;
     std::optional<GUID> _connectionType;
-    bool _hidden{ false };
+    bool _hidden;
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
@@ -125,4 +132,5 @@ private:
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };

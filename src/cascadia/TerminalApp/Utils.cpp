@@ -3,9 +3,6 @@
 
 #include "pch.h"
 #include "Utils.h"
-#include "../../types/inc/Utils.hpp"
-
-using namespace ::TerminalApp;
 
 // Method Description:
 // - Contstructs a wstring from a given Json::Value object. Reads the object as
@@ -48,56 +45,4 @@ winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstr
     }
 
     return elem;
-}
-
-void JsonUtils::GetOptionalColor(const Json::Value& json,
-                                 std::string_view key,
-                                 std::optional<uint32_t>& color)
-{
-    auto conversionFn = [](const Json::Value& value) -> uint32_t {
-        return ::Microsoft::Console::Utils::ColorFromHexString(value.asString());
-    };
-    GetOptionalValue(json,
-                     key,
-                     color,
-                     conversionFn);
-}
-
-void JsonUtils::GetOptionalString(const Json::Value& json,
-                                  std::string_view key,
-                                  std::optional<std::wstring>& target)
-{
-    auto conversionFn = [](const Json::Value& value) -> std::wstring {
-        return GetWstringFromJson(value);
-    };
-    GetOptionalValue(json,
-                     key,
-                     target,
-                     conversionFn);
-}
-
-void JsonUtils::GetOptionalGuid(const Json::Value& json,
-                                std::string_view key,
-                                std::optional<GUID>& target)
-{
-    auto conversionFn = [](const Json::Value& value) -> GUID {
-        return ::Microsoft::Console::Utils::GuidFromString(GetWstringFromJson(value));
-    };
-    GetOptionalValue(json,
-                     key,
-                     target,
-                     conversionFn);
-}
-
-void JsonUtils::GetOptionalDouble(const Json::Value& json,
-                                  std::string_view key,
-                                  std::optional<double>& target)
-{
-    auto conversionFn = [](const Json::Value& value) -> double {
-        return value.asFloat();
-    };
-    GetOptionalValue(json,
-                     key,
-                     target,
-                     conversionFn);
 }

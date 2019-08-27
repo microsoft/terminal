@@ -5,6 +5,7 @@
 #include "AppKeyBindingsSerialization.h"
 #include "KeyChordSerialization.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include <winrt/Microsoft.Terminal.Settings.h>
 
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -246,7 +247,7 @@ void AppKeyBindingsSerialization::LayerJson(const winrt::TerminalApp::AppKeyBind
 
                 // Try matching the command to one we have. If we can't find the
                 // action name in our list of names, let's just unbind that key.
-                const auto found = commandNames.find(commandVal.asString());
+                const auto found = commandNames.find(commandString);
                 if (found != commandNames.end())
                 {
                     action = found->second;

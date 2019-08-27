@@ -2,14 +2,8 @@
 // For documentation on these settings, see: https://aka.ms/terminal-documentation
 
 {
-    "globals":
-    {
-        "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+    "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
-        // Add any keybinding overrides to this array.
-        // To unbind a default keybinding, set the command to "unbound"
-        "keybindings":[]
-    },
     "profiles":
     [
         {
@@ -27,5 +21,9 @@
     ],
 
     // Add custom color schemes to this array
-    "schemes": []
+    "schemes": [],
+
+    // Add any keybinding overrides to this array.
+    // To unbind a default keybinding, set the command to "unbound"
+    "keybindings": []
 }

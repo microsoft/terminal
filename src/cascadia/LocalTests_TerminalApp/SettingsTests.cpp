@@ -39,6 +39,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(LayerGlobalProperties);
         TEST_METHOD(ValidateProfileOrdering);
         TEST_METHOD(ValidateHideProfiles);
+        TEST_METHOD(ValidateProfilesGenerateGuids);
+        TEST_METHOD(GeneratedGuidRoundtrips);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -456,7 +458,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
@@ -478,7 +480,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(2)._name);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
             VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(1)._name);
@@ -557,8 +559,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(true, settings._profiles.at(1)._hidden);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
-            settings._ValidateRemoveHiddenProfiles();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
+            settings._RemoveHiddenProfiles();
             VERIFY_ARE_EQUAL(1u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
@@ -584,8 +586,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(2)._hidden);
             VERIFY_ARE_EQUAL(true, settings._profiles.at(3)._hidden);
 
-            settings._ValidateProfilesMatchUserSettingsOrder();
-            settings._ValidateRemoveHiddenProfiles();
+            settings._ReorderProfilesToMatchUserSettingsOrder();
+            settings._RemoveHiddenProfiles();
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile5", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(1)._name);
@@ -594,4 +596,133 @@ namespace TerminalAppLocalTests
         }
     }
 
+    void SettingsTests::ValidateProfilesGenerateGuids()
+    {
+        const std::string profile0String{ R"(
+        {
+            "name" : "profile0"
+        })" };
+        const std::string profile1String{ R"(
+        {
+            "name" : "profile1"
+        })" };
+        const std::string profile2String{ R"(
+        {
+            "name" : "profile2",
+            "guid" : null
+        })" };
+        const std::string profile3String{ R"(
+        {
+            "name" : "profile3",
+            "guid" : "{00000000-0000-0000-0000-000000000000}"
+        })" };
+        const std::string profile4String{ R"(
+        {
+            "name" : "profile4",
+            "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string profile5String{ R"(
+        {
+            "name" : "profile2"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto profile1Json = VerifyParseSucceeded(profile1String);
+        const auto profile2Json = VerifyParseSucceeded(profile2String);
+        const auto profile3Json = VerifyParseSucceeded(profile3String);
+        const auto profile4Json = VerifyParseSucceeded(profile4String);
+        const auto profile5Json = VerifyParseSucceeded(profile5String);
+
+        const auto profile0 = Profile::FromJson(profile0Json);
+        const auto profile1 = Profile::FromJson(profile1Json);
+        const auto profile2 = Profile::FromJson(profile2Json);
+        const auto profile3 = Profile::FromJson(profile3Json);
+        const auto profile4 = Profile::FromJson(profile4Json);
+        const auto profile5 = Profile::FromJson(profile5Json);
+
+        const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const GUID nullGuid{ 0 };
+
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+        VERIFY_IS_FALSE(profile1._guid.has_value());
+        VERIFY_IS_FALSE(profile2._guid.has_value());
+        VERIFY_IS_TRUE(profile3._guid.has_value());
+        VERIFY_IS_TRUE(profile4._guid.has_value());
+        VERIFY_IS_FALSE(profile5._guid.has_value());
+
+        VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+
+        CascadiaSettings settings{};
+        settings._profiles.emplace_back(profile0);
+        settings._profiles.emplace_back(profile1);
+        settings._profiles.emplace_back(profile2);
+        settings._profiles.emplace_back(profile3);
+        settings._profiles.emplace_back(profile4);
+        settings._profiles.emplace_back(profile5);
+
+        settings._ValidateProfilesHaveGuid();
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(4)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(5)._guid.has_value());
+
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).GetGuid(), nullGuid);
+        VERIFY_ARE_EQUAL(settings._profiles.at(3).GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).GetGuid(), nullGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).GetGuid(), nullGuid);
+
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(2).GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).GetGuid(), cmdGuid);
+        VERIFY_ARE_EQUAL(settings._profiles.at(4).GetGuid(), cmdGuid);
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(5).GetGuid(), cmdGuid);
+
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(0).GetGuid(), settings._profiles.at(2).GetGuid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(1).GetGuid(), settings._profiles.at(2).GetGuid());
+        VERIFY_ARE_EQUAL(settings._profiles.at(2).GetGuid(), settings._profiles.at(2).GetGuid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(3).GetGuid(), settings._profiles.at(2).GetGuid());
+        VERIFY_ARE_NOT_EQUAL(settings._profiles.at(4).GetGuid(), settings._profiles.at(2).GetGuid());
+        VERIFY_ARE_EQUAL(settings._profiles.at(5).GetGuid(), settings._profiles.at(2).GetGuid());
+    }
+
+    void SettingsTests::GeneratedGuidRoundtrips()
+    {
+        // Parse a profile without a guid.
+        // We should automatically generate a GUID for that profile.
+        // When that profile is serialized and deserialized again, the GUID we
+        // generated for it should persist.
+        const std::string profileWithoutGuid{ R"({
+                                              "name" : "profile0"
+                                              })" };
+        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+
+        const auto profile0 = Profile::FromJson(profile0Json);
+        const GUID nullGuid{ 0 };
+
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+
+        const auto serialized0Profile = profile0.ToJson();
+        const auto profile1 = Profile::FromJson(serialized0Profile);
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+        VERIFY_ARE_EQUAL(profile1._guid.has_value(), profile0._guid.has_value());
+
+        CascadiaSettings settings{};
+        settings._profiles.emplace_back(profile1);
+        settings._ValidateProfilesHaveGuid();
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+
+        const auto serialized1Profile = settings._profiles.at(0).ToJson();
+
+        const auto profile2 = Profile::FromJson(serialized1Profile);
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_ARE_EQUAL(settings._profiles.at(0)._guid.has_value(), profile2._guid.has_value());
+        VERIFY_ARE_EQUAL(settings._profiles.at(0).GetGuid(), profile2.GetGuid());
+    }
 }

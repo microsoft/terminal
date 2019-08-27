@@ -83,8 +83,6 @@ private:
     Json::Value _userSettings;
     Json::Value _defaultSettings;
 
-    void _CreateDefaultKeybindings();
-    void _CreateDefaultSchemes();
     void _CreateDefaultProfiles();
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
@@ -92,7 +90,7 @@ private:
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
     void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
-    static const Json::Value& _GetProfiles(const Json::Value& json);
+    static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
 
     void _LoadDynamicProfiles();
 
@@ -106,8 +104,8 @@ private:
     void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
-    void _ValidateProfilesMatchUserSettingsOrder();
-    void _ValidateRemoveHiddenProfiles();
+    void _ReorderProfilesToMatchUserSettingsOrder();
+    void _RemoveHiddenProfiles();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);

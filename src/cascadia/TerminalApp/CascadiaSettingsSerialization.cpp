@@ -7,6 +7,7 @@
 #include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include "utils.h"
+#include "JsonUtils.h"
 #include <appmodel.h>
 #include <shlobj.h>
 
@@ -56,7 +57,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
     const bool fileHasData = foundFile && !fileData.value().empty();
-    if (foundFile && fileHasData)
+    if (fileHasData)
     {
         resultPtr->_LayerJsonString(fileData.value(), false);
     }
@@ -82,7 +83,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 // - a unique_ptr to a CascadiaSettings with the settings from defaults.json
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 {
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = std::make_unique<CascadiaSettings>();
 
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
@@ -94,7 +95,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 
 void CascadiaSettings::_LoadDynamicProfiles()
 {
-    GuidEquality equals{};
     GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
@@ -144,16 +144,16 @@ void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool is
     // Parse the json data into either our defaults or user settings. We'll keep
     // these original json values around for later, in case we need to parse
     // their raw contents again.
-    Json::Value* pRoot = isDefaultSettings ? &_defaultSettings : &_userSettings;
+    Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), pRoot, &errs))
+    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), &root, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
 
-    LayerJson(*pRoot);
+    LayerJson(root);
 }
 
 // Method Description:
@@ -213,7 +213,7 @@ Json::Value CascadiaSettings::ToJson() const
 // - a new CascadiaSettings instance created from the values in `json`
 std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
-    std::unique_ptr<CascadiaSettings> resultPtr = std::make_unique<CascadiaSettings>();
+    auto resultPtr = std::make_unique<CascadiaSettings>();
     resultPtr->LayerJson(json);
     return resultPtr;
 }
@@ -256,7 +256,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
         }
     }
 
-    for (auto profileJson : _GetProfiles(json))
+    for (auto profileJson : _GetProfilesJsonObject(json))
     {
         if (profileJson.isObject())
         {
@@ -270,7 +270,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 //   json on a matching Profile we already have, or creates a new Profile
 //   object from those settings.
 // Arguments:
-// - json: an object which should be a partial serialization of a Profile object.
+// - json: an object which may be a partial serialization of a Profile object.
 // Return Value:
 // - <none>
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
@@ -547,29 +547,13 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
     // directory as the exe, that will work for unpackaged scenarios as well. So
     // let's try that.
 
-    // GetModuleHandle(null) will get us the current exe's HMODULE
     HMODULE hModule = GetModuleHandle(nullptr);
     THROW_LAST_ERROR_IF(hModule == nullptr);
 
-    // Use GetModuleFileName() with module handle to get the path.
-    // Unfortunately, GetModuleFileName will truncate the path to the
-    // passed in size, and provides no way of querying the size needed. So
-    // we need to just keep trying to get the path into a buffer until we
-    // get the entire path. .
+    std::wstring exePathString{};
+    THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
 
-    auto bufferSize = 0;
-    auto result = 0;
-    std::unique_ptr<wchar_t[]> buffer;
-    do
-    {
-        bufferSize += MAX_PATH;
-        buffer = std::make_unique<wchar_t[]>(bufferSize);
-        result = GetModuleFileName(hModule, buffer.get(), bufferSize);
-    } while (result >= bufferSize);
-
-    // TODO: ensure this madness works for something longer than MAX_PATH
-
-    std::filesystem::path exePath{ buffer.get() };
+    std::filesystem::path exePath{ exePathString };
     std::filesystem::path rootDir = exePath.parent_path();
     return rootDir / DefaultsFilename;
 }
@@ -581,7 +565,7 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
 // - json: the json object to get the profiles from.
 // Return Value:
 // - the Json::Value representing the profiles property from the given object
-const Json::Value& CascadiaSettings::_GetProfiles(const Json::Value& json)
+const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& json)
 {
     return json[JsonKey(ProfilesKey)];
 }

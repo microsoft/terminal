@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Profile.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
@@ -72,11 +73,11 @@ static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
 Profile::Profile() :
-    Profile(Utils::CreateGuid())
+    Profile(std::nullopt)
 {
 }
 
-Profile::Profile(const winrt::guid& guid) :
+Profile::Profile(const std::optional<GUID>& guid) :
     _guid(guid),
     _name{ L"Default" },
     _schemeName{},
@@ -116,7 +117,9 @@ Profile::~Profile()
 
 GUID Profile::GetGuid() const noexcept
 {
-    return _guid;
+    // This can throw if we never had our guid set to a legitimate value.
+    THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
+    return _guid.value();
 }
 
 void Profile::SetSource(const std::wstring& sourceNamespace) noexcept
@@ -249,7 +252,10 @@ Json::Value Profile::ToJson() const
     Json::Value root;
 
     ///// Profile-specific settings /////
-    root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid));
+    if (_guid.has_value())
+    {
+        root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+    }
     root[JsonKey(NameKey)] = winrt::to_string(_name);
     root[JsonKey(HiddenKey)] = _hidden;
 
@@ -369,11 +375,16 @@ Profile Profile::FromJson(const Json::Value& json)
 // - true iff the json object has the same `GUID` as we do.
 bool Profile::ShouldBeLayered(const Json::Value& json)
 {
+    if (!_guid.has_value())
+    {
+        return false;
+    }
+
     if (json.isMember(JsonKey(GuidKey)))
     {
         auto guid{ json[JsonKey(GuidKey)] };
         auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
-        return _guid == otherGuid;
+        return _guid.value() == otherGuid;
     }
 
     // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
@@ -425,18 +436,9 @@ void Profile::LayerJson(const Json::Value& json)
         auto name{ json[JsonKey(NameKey)] };
         _name = GetWstringFromJson(name);
     }
-    if (json.isMember(JsonKey(GuidKey)))
-    {
-        auto guid{ json[JsonKey(GuidKey)] };
-        if (guid.isString())
-        {
-            _guid = Utils::GuidFromString(GetWstringFromJson(guid));
-            // Mark that we did in fact set a GUID for this profile. This way we can
-            // differentiate a profile not having a GUID from a profile having it's
-            // GUID specifically set to {0}
-            _guidSet = true;
-        }
-    }
+
+    JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
+
     if (json.isMember(JsonKey(HiddenKey)))
     {
         auto hidden{ json[JsonKey(HiddenKey)] };
@@ -675,6 +677,14 @@ bool Profile::GetCloseOnExit() const noexcept
     return _closeOnExit;
 }
 
+// Method Description:
+// - If a profile is marked hidden, it should not appear in the dropdown list of
+//   profiles. This setting is used to "remove" default and dynamic profiles
+//   from the list of profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the profile chould be hidden from the list of profiles.
 bool Profile::IsHidden() const noexcept
 {
     return _hidden;
@@ -955,10 +965,11 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
 //   will _not_ change the profile's GUID.
 void Profile::GenerateGuidIfNecessary() noexcept
 {
-    if (!_guidSet)
+    if (!_guid.has_value())
     {
-        _guid = Utils::CreateGuid();
-        _guidSet = true;
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        _guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_name)));
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
