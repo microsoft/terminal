@@ -47,6 +47,7 @@ public:
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
 
     Json::Value ToJson() const;
+    Json::Value DiffToJson(const Profile& other) const;
     static Profile FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json);
     void LayerJson(const Json::Value& json);

@@ -356,6 +356,67 @@ Json::Value Profile::ToJson() const
 }
 
 // Method Description:
+// - This generates a json object `diff` s.t.
+//      this = other.LayerJson(diff)
+// So if:
+// - this has a nullopt for an optional, diff will have null for that member
+// - this has a value for an optional, diff will have our value. If the other
+//   did _not_ have a value, and we did, diff will have our value.
+// Arguments:
+// - other: the other profile object to use as the "base" for this diff. The
+//   result could be layered upon that json object to re-create this object's
+//   serialization.
+// Return Value:
+// - a diff between this and the other object, such that this could be recreated
+//   from the diff and the other object.
+Json::Value Profile::DiffToJson(const Profile& other) const
+{
+    auto otherJson = other.ToJson();
+    auto myJson = ToJson();
+    Json::Value diff{};
+
+    // Iterate in two steps:
+    // - first over all the keys in the 'other' object's serialization.
+    // - then over all the keys in our serialization.
+    // In this way, we ensure all keys from both objects are present in the
+    // final object.
+    for (const auto& key : otherJson.getMemberNames())
+    {
+        if (myJson.isMember(key))
+        {
+            // Both objects have the key
+            auto otherVal = otherJson[key];
+            auto myVal = myJson[key];
+            if (otherVal != myVal)
+            {
+                diff[key] = myVal;
+            }
+        }
+        else
+        {
+            // key is not in this json object. Set to null, so that when the
+            // diff is layered upon the original object, we'll properly set
+            // nullopt for any optionals that weren't present in this object.
+            diff[key] = Json::Value::null;
+        }
+    }
+    for (const auto& key : myJson.getMemberNames())
+    {
+        if (otherJson.isMember(key))
+        {
+            // both objects have this key. Do nothing, this is handled above
+        }
+        else
+        {
+            // We ahve a key the other object did not. Add our value.
+            diff[key] = myJson[key];
+        }
+    }
+
+    return diff;
+}
+
+// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a Profile object.
