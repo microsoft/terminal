@@ -20,28 +20,39 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         return selectionArea;
     }
 
-    auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
-
-    SHORT selectionRectSize;
-    THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
-    THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
-    selectionArea.reserve(selectionRectSize);
-    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+    try
     {
-        SMALL_RECT selectionRow = _GetSelectionRow(row, higherCoord, lowerCoord);
-        _ExpandSelectionRow(selectionRow);
-        selectionArea.emplace_back(selectionRow);
+        // NOTE: origin (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the origin
+        // the physically "lower" coordinate is further from the origin
+        auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
+
+        SHORT selectionRectSize;
+        THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
+        THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
+        selectionArea.reserve(selectionRectSize);
+        for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+        {
+            SMALL_RECT selectionRow = _GetSelectionRow(row, higherCoord, lowerCoord);
+            _ExpandSelectionRow(selectionRow);
+            selectionArea.emplace_back(selectionRow);
+        }
+    }
+    catch (...)
+    {
+        selectionArea = {};
     }
     return selectionArea;
 }
 
 // Method Description:
 // - convert selection anchors to proper coordinates for rendering
+// NOTE: origin (0,0) is top-left so vertical comparison is inverted
 // Arguments:
 // - None
 // Return Value:
-// - tuple.first: the higher coordinate (or leftmost)
-// - tuple.second: the lower coordinate (or rightmost)
+// - tuple.first: the physically "higher" coordinate (closer to origin)
+// - tuple.second: the physically "lower" coordinate (further from origin)
 std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
 {
     // create these new anchors for comparison and rendering
@@ -67,14 +78,14 @@ std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
 }
 
 // Method Description:
-// - convert selection anchors to proper coordinates for rendering
+// - constructs the selection row at the given row
+// NOTE: origin (0,0) is top-left so vertical comparison is inverted
 // Arguments:
 // - row: the buffer y-value under observation
-// - higherCoord: the higher coordinate (or leftmost)
-// - lowerCoord: the lower coordinate (or rightmost)
+// - higherCoord: the physically "higher" coordinate (closer to origin)
+// - lowerCoord: the physically "lower" coordinate (further from origin)
 // Return Value:
-// - tuple.first: the coordinate the higher coordinate (or leftmost)
-// - tuple.second: the lower coordinate (or rightmost)
+// - the selection row needed for rendering
 SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const
 {
     SMALL_RECT selectionRow;
@@ -216,7 +227,6 @@ const bool Terminal::IsCopyOnSelectActive() const noexcept
 void Terminal::DoubleClickSelection(const COORD position)
 {
     COORD positionWithOffsets = _ConvertToBufferCell(position);
-    const auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
@@ -334,28 +344,32 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 // - expand the double click selection to the left
 // - stopped by delimiter if started on delimiter
 // Arguments:
-// - position: viewport coordinate for selection
+// - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
 const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
-    // can't expand left
     const auto bufferViewport = _buffer->GetSize();
+
+    // force position to be within bounds
+    COORD positionWithOffsets = position;
+    bufferViewport.Clamp(positionWithOffsets);
+
+    // can't expand left
     if (position.X == bufferViewport.Left())
     {
-        return position;
+        return positionWithOffsets;
     }
 
-    COORD positionWithOffsets = position;
-    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    const int startedOnDelimiter = _GetDelimiterClass(cellChar);
-    while (positionWithOffsets.X != bufferViewport.Left() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
+    auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
+    const UINT startedOnDelimiter = _GetDelimiterClass(*cellChar);
+    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*cellChar) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+        cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
     }
 
-    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(*cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -368,28 +382,32 @@ const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) cons
 // - expand the double click selection to the right
 // - stopped by delimiter if started on delimiter
 // Arguments:
-// - position: viewport coordinate for selection
+// - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
 const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
-    // can't expand right
     const auto bufferViewport = _buffer->GetSize();
+
+    // force position to be within bounds
+    COORD positionWithOffsets = position;
+    bufferViewport.Clamp(positionWithOffsets);
+
+    // can't expand right
     if (position.X == bufferViewport.RightInclusive())
     {
-        return position;
+        return positionWithOffsets;
     }
 
-    COORD positionWithOffsets = position;
-    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    const int startedOnDelimiter = _GetDelimiterClass(cellChar);
-    while (positionWithOffsets.X != bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
+    auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
+    const UINT startedOnDelimiter = _GetDelimiterClass(*cellChar);
+    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*cellChar) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+        cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) != startedOnDelimiter))
+    if (_GetDelimiterClass(*cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
@@ -407,9 +425,9 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
 // - 0: contains a space (or control character)
 // - 1: contains a delimiter imported from settings
 // - 2: otherwise
-const int Terminal::_GetDelimiterClass(std::wstring_view cellChar) const
+const UINT Terminal::_GetDelimiterClass(const WCHAR cellChar) const noexcept
 {
-    if (cellChar[0] <= UNICODE_SPACE)
+    if (cellChar <= UNICODE_SPACE)
     {
         return 0;
     }
