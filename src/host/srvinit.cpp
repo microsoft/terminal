@@ -249,8 +249,8 @@ void ConsoleCheckDebug()
 {
     auto& g = ServiceLocator::LocateGlobals();
     RETURN_IF_FAILED(ConsoleServerInitialization(Server, args));
-    RETURN_IF_FAILED(g.hConsoleInputSetupEvent.create(wil::EventOptions::None));
-    RETURN_IF_FAILED(g.hConsoleInputInitializedEvent.create(wil::EventOptions::None));
+    RETURN_IF_FAILED(g.hConsoleInputSetupEvent.create(wil::EventOptions::ManualReset));
+    RETURN_IF_FAILED(g.hConsoleInputInitializedEvent.create(wil::EventOptions::ManualReset));
 
     // Set up and tell the driver about the input available event.
     RETURN_IF_FAILED(g.hInputEvent.create(wil::EventOptions::ManualReset));
