@@ -1601,7 +1601,8 @@ bool AdaptDispatch::SoftReset()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
-    // Sets the SGR state to normal.
+    // Sets the SGR state to normal - this must be done before EraseInDisplay
+    //      to ensure that it clears with the default background color.
     bool fSuccess = SoftReset();
 
     // Clears the screen - Needs to be done in two operations.

@@ -3530,12 +3530,15 @@ void ScreenBufferTests::HardResetBuffer()
 
     auto isBufferClear = [&]() {
         auto offset = 0;
+        auto width = si.GetBufferSize().Width();
         for (auto iter = si.GetCellDataAt({}); iter; ++iter, ++offset)
         {
             if (iter->Chars() != L" " || iter->TextAttr() != TextAttribute{})
             {
                 Log::Comment(NoThrowString().Format(
-                    L"Buffer not clear at offset %d", offset));
+                    L"Buffer not clear at (X:%d, Y:%d)",
+                    offset % width,
+                    offset / width));
                 return false;
             }
         }
