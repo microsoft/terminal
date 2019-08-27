@@ -171,7 +171,7 @@ DWORD VtInputThread::_InputThread()
 
     while (true)
     {
-        RETURN_IF_FAILED(DoReadInput());
+        RETURN_IF_FAILED(_ReadInput());
     }
 
     return S_OK;
