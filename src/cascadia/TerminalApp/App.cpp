@@ -213,8 +213,8 @@ namespace winrt::TerminalApp::implementation
     // - titleKey: The key to use to lookup the title text from our resources.
     // - contentKey: The key to use to lookup the content text from our resources.
     void App::_ShowLoadErrorsDialog(const winrt::hstring& titleKey,
-                                   const winrt::hstring& contentKey,
-                                   HRESULT settingsLoadedResult)
+                                    const winrt::hstring& contentKey,
+                                    HRESULT settingsLoadedResult)
     {
         auto title = _root->GetResourceLoader().GetLocalizedString(titleKey);
         auto buttonText = _root->GetResourceLoader().GetLocalizedString(L"Ok");
