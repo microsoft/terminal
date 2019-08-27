@@ -52,7 +52,7 @@ public:
     void LayerJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
-    void SetSource(const std::wstring& sourceNamespace) noexcept;
+    void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;

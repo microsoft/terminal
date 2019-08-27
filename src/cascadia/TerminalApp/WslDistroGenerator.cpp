@@ -14,9 +14,6 @@ Author(s):
 #include "pch.h"
 
 #pragma once
-// #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-// #include "GlobalAppSettings.h"
-// #include "TerminalWarnings.h"
 #include "WslDistroGenerator.h"
 
 #include "../../types/inc/utils.hpp"
@@ -26,12 +23,6 @@ Author(s):
 #include <fcntl.h>
 #include "DefaultProfileUtils.h"
 
-// // fwdecl unittest classes
-// namespace TerminalAppLocalTests
-// {
-//     class SettingsTests;
-// }
-
 // Legacy GUIDs
 // Debian 58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
 // Ubuntu 2c4de342-38b7-51cf-b940-2309a097f518
@@ -40,10 +31,9 @@ Author(s):
 
 using namespace ::TerminalApp;
 
-std::wstring WslDistroGenerator::GetNamespace()
+std::wstring_view WslDistroGenerator::GetNamespace()
 {
-    return L"Windows.Terminal.Wsl";
-    // return { nullptr };
+    return WslGeneratorNamespace;
 }
 
 std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
@@ -119,16 +109,10 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
                 distName.resize(firstChar);
             }
             auto WSLDistro{ CreateDefaultProfile(distName) };
-            // TerminalApp::Profile WSLDistro{ GUID{ 0 } };
-            // WSLDistro.SetName(distName);
 
             WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
             WSLDistro.SetColorScheme({ L"Campbell" });
             WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            // std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
-            // iconPath.append(DEFAULT_LINUX_ICON_GUID);
-            // iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
-            // WSLDistro.SetIconPath(iconPath);
             WSLDistro.SetIconPath(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
             profiles.emplace_back(WSLDistro);
         }

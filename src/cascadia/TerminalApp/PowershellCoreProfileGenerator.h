@@ -26,9 +26,11 @@ class TerminalApp::PowershellCoreProfileGenerator : public TerminalApp::IDynamic
 public:
     PowershellCoreProfileGenerator() = default;
     ~PowershellCoreProfileGenerator() = default;
-    std::wstring GetNamespace() override;
+    std::wstring_view GetNamespace() override;
 
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
+
+    static constexpr std::wstring_view PowershellCoreGeneratorNamespace{ L"Windows.Terminal.PowershellCore" };
 
 private:
     static constexpr std::wstring_view LegacyGuid{ L"{574e775e-4f2a-5b96-ac1e-a2962a402336}" };

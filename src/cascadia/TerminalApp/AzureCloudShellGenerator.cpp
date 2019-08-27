@@ -28,9 +28,9 @@ Author(s):
 
 using namespace ::TerminalApp;
 
-std::wstring AzureCloudShellGenerator::GetNamespace()
+std::wstring_view AzureCloudShellGenerator::GetNamespace()
 {
-    return L"Windows.Terminal.Azure";
+    return AzureGeneratorNamespace;
 }
 
 std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()

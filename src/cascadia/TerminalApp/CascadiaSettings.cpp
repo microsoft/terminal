@@ -31,13 +31,21 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
 CascadiaSettings::CascadiaSettings() :
+    CascadiaSettings(true)
+{
+}
+
+CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _globals{},
     _profiles{},
     _profileGenerators{}
 {
-    _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
-    _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
-    _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+    if (addDynamicProfiles)
+    {
+        _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+    }
 }
 
 CascadiaSettings::~CascadiaSettings()

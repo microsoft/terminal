@@ -25,7 +25,8 @@ class TerminalApp::WslDistroGenerator : public TerminalApp::IDynamicProfileGener
 public:
     WslDistroGenerator() = default;
     ~WslDistroGenerator() = default;
-    std::wstring GetNamespace() override;
-
+    std::wstring_view GetNamespace() override;
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
+
+    static constexpr std::wstring_view WslGeneratorNamespace{ L"Windows.Terminal.Wsl" };
 };

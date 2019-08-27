@@ -27,7 +27,9 @@ class TerminalApp::AzureCloudShellGenerator : public TerminalApp::IDynamicProfil
 public:
     AzureCloudShellGenerator() = default;
     ~AzureCloudShellGenerator() = default;
-    std::wstring GetNamespace() override;
+    std::wstring_view GetNamespace() override;
 
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
+
+    static constexpr std::wstring_view AzureGeneratorNamespace{ L"Windows.Terminal.Azure" };
 };

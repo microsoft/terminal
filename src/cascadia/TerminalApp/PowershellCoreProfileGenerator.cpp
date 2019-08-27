@@ -14,9 +14,6 @@ Author(s):
 
 #include "pch.h"
 #pragma once
-// #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-// #include "GlobalAppSettings.h"
-// #include "TerminalWarnings.h"
 #include "PowershellCoreProfileGenerator.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
@@ -25,28 +22,9 @@ Author(s):
 
 using namespace ::TerminalApp;
 
-std::wstring PowershellCoreProfileGenerator::GetNamespace()
+std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 {
-    // return TERMINAL_PROFILE_NAMESPACE_GUID;/ return L"Windows.Terminal.PowershellCore";
-
-    // Right now the powershell core profile is generated with
-    // name = "Powershell Core"
-    // auto profileGuid{ Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name))) };
-    // Profile newProfile{ profileGuid };
-
-    // However with our current interface, this won't work at all for migrating
-
-    // We'll just have the built-in profiles return null for their
-    // Namespace, and special-case that internally as
-    // TERMINAL_PROFILE_NAMESPACE_GUID
-
-    // This howeevr means we won't be able to disable wsl/pscore/azure
-    // individually. Might need to handle internal dynamic generators
-    // differently.
-    // Lets leave that as a todo for now.
-    // TODO: reconcile lecacy dynamic profile's guids, namespace guids, and suppressing them
-    // return { nullptr };
-    return L"Windows.Terminal.PowershellCore";
+    return PowershellCoreGeneratorNamespace;
 }
 
 std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfiles()
@@ -57,17 +35,6 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ CreateDefaultProfile(L"PowerShell Core") };
-        // TerminalApp::Profile pwshProfile{ GUID{ 0 } };
-
-        // pwshProfile.SetName(L"PowerShell Core");
-
-        // std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
-        // iconPath.append(Utils::GuidToString(profileGuid));
-        // iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
-        // std::wstring iconPath{ L"ms-appx:///ProfileIcons/" };
-        // iconPath.append(LegacyGuid);
-        // iconPath.append(L".png");
-        // pwshProfile.SetIconPath(iconPath);
 
         pwshProfile.SetCommandline(std::move(psCoreCmdline));
         pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);

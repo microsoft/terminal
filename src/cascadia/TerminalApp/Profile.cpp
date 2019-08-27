@@ -123,7 +123,7 @@ GUID Profile::GetGuid() const noexcept
     return _guid.value();
 }
 
-void Profile::SetSource(const std::wstring& sourceNamespace) noexcept
+void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
 {
     _source = sourceNamespace;
 }
