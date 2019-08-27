@@ -86,7 +86,6 @@ VtIo::~VtIo()
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
     {
-        DebugBreak();
         return _Initialize(pArgs->GetVtInHandle(), pArgs->GetVtOutHandle(), pArgs->GetVtMode(), pArgs->GetSignalHandle());
     }
     // Didn't need to initialize if we didn't have VT stuff. It's still OK, but report we did nothing.
@@ -262,11 +261,6 @@ bool VtIo::IsUsingVt() const
         CATCH_RETURN();
     }
 
-    if (_pVtInputThread)
-    {
-        RETURN_IF_FAILED(_pVtInputThread->Start());
-    }
-
     // MSFT: 15813316
     // If the terminal application wants us to inherit the cursor position,
     //  we're going to emit a VT sequence to ask for the cursor position, then
@@ -284,11 +278,22 @@ bool VtIo::IsUsingVt() const
     if (_lookingForCursorPosition && _pVtRenderEngine && _pVtInputThread)
     {
         RETURN_IF_FAILED(_pVtRenderEngine->RequestCursor());
+
+        // The consequences of the VT Input
+        // receiving its cursor position information cause additional entrances to the global
+        // lock that we're already holding on the IO thread as a part of initialization here.
+        // So we have to pump the read manually here until we get what we're looking for.
         while (!_shutdownEvent.is_signaled() && _lookingForCursorPosition)
         {
-            std::this_thread::yield(); // Give room for the VT Input thread to go pick up the answer.
-            // and timeout?
+            RETURN_IF_FAILED(_pVtInputThread->DoReadInput());
         }
+    }
+
+    // We can't start the VT input thread until after we've pumped it manually
+    // (if necessary) above for the cursor response. 
+    if (_pVtInputThread)
+    {
+        RETURN_IF_FAILED(_pVtInputThread->Start());
     }
 
     if (_pPtySignalInputThread)

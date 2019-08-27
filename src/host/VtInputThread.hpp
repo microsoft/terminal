@@ -31,8 +31,10 @@ namespace Microsoft::Console
         [[nodiscard]] HRESULT Start();
         static DWORD WINAPI StaticVtInputThreadProc(_In_ LPVOID lpParameter);
 
+        [[nodiscard]] HRESULT DoReadInput();
+
     private:
-        [[nodiscard]] HRESULT _DoReadInput();
+        
         [[nodiscard]] HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch);
         DWORD _InputThread();
 

@@ -114,14 +114,15 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
-// - Do a single ReadFile from our pipe, and try and handle it. If handling
-//      failed, throw or log, depending on what the caller wants.
+// - Do a single ReadFile from our pipe, and try and handle it. 
 // Arguments:
 // - <none>
 // Return Value:
 // - S_OK or relevant error
-[[nodiscard]] HRESULT VtInputThread::_DoReadInput()
+[[nodiscard]] HRESULT VtInputThread::DoReadInput()
 {
+    // TODO: Make it so my only public call can be during initialization.
+
     byte buffer[256];
     DWORD dwRead = 0;
 
@@ -147,7 +148,7 @@ DWORD VtInputThread::_InputThread()
 
     while (true)
     {
-        RETURN_IF_FAILED(_DoReadInput());
+        RETURN_IF_FAILED(DoReadInput());
     }
 
     return S_OK;
