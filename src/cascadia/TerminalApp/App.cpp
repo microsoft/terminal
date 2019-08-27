@@ -680,19 +680,15 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to load the settings. If we fail for any reason, returns an error.
-    // Arguments:
-    // - saveOnLoad: If true, after loading the settings, we should re-write
-    //   them to the file, to make sure the schema is updated. See
-    //   `CascadiaSettings::LoadAll` for details.
     // Return Value:
     // - S_OK if we successfully parsed the settings, otherwise an appropriate HRESULT.
-    [[nodiscard]] HRESULT App::_TryLoadSettings(const bool saveOnLoad) noexcept
+    [[nodiscard]] HRESULT App::_TryLoadSettings() noexcept
     {
         HRESULT hr = E_FAIL;
 
         try
         {
-            auto newSettings = CascadiaSettings::LoadAll(saveOnLoad);
+            auto newSettings = CascadiaSettings::LoadAll();
             _settings = std::move(newSettings);
             const auto& warnings = _settings->GetWarnings();
             hr = warnings.size() == 0 ? S_OK : S_FALSE;
@@ -733,7 +729,7 @@ namespace winrt::TerminalApp::implementation
         //    we should display the loading error.
         //    * We can't display the error now, because we might not have a
         //      UI yet. We'll display the error in _OnLoaded.
-        _settingsLoadedResult = _TryLoadSettings(true);
+        _settingsLoadedResult = _TryLoadSettings();
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -813,7 +809,7 @@ namespace winrt::TerminalApp::implementation
         //  - don't change the settings (and don't actually apply the new settings)
         //  - don't persist them.
         //  - display a loading error
-        _settingsLoadedResult = _TryLoadSettings(false);
+        _settingsLoadedResult = _TryLoadSettings();
 
         if (FAILED(_settingsLoadedResult))
         {
@@ -1494,10 +1490,18 @@ namespace winrt::TerminalApp::implementation
 
         const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
 
-        TermControl newControl{ controlSettings, controlConnection };
-
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
+
+        const auto canSplit = splitType == Pane::SplitState::Horizontal ? focusedTab->CanAddHorizontalSplit() :
+                                                                          focusedTab->CanAddVerticalSplit();
+
+        if (!canSplit)
+        {
+            return;
+        }
+
+        TermControl newControl{ controlSettings, controlConnection };
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
@@ -1528,16 +1532,25 @@ namespace winrt::TerminalApp::implementation
     //   terminal control raises it's CopyToClipboard event.
     // Arguments:
     // - copiedData: the new string content to place on the clipboard.
-    void App::_CopyToClipboardHandler(const winrt::hstring& copiedData)
+    void App::_CopyToClipboardHandler(const IInspectable& /*sender*/,
+                                      const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData)
     {
         _root.Dispatcher().RunAsync(CoreDispatcherPriority::High, [copiedData]() {
             DataPackage dataPack = DataPackage();
             dataPack.RequestedOperation(DataPackageOperation::Copy);
-            dataPack.SetText(copiedData);
-            Clipboard::SetContent(dataPack);
 
-            // TODO: MSFT 20642290 and 20642291
-            // rtf copy and html copy
+            // copy text to dataPack
+            dataPack.SetText(copiedData.Text());
+
+            // copy html to dataPack
+            const auto htmlData = copiedData.Html();
+            if (!htmlData.empty())
+            {
+                dataPack.SetHtmlFormat(htmlData);
+            }
+
+            Clipboard::SetContent(dataPack);
+            Clipboard::Flush();
         });
     }
 

@@ -85,7 +85,7 @@ namespace winrt::TerminalApp::implementation
         void _ShowLoadWarningsDialog();
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
 
-        [[nodiscard]] HRESULT _TryLoadSettings(const bool saveOnLoad) noexcept;
+        [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _LoadSettings();
         void _OpenSettings();
 
@@ -146,7 +146,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
 
-        void _CopyToClipboardHandler(const winrt::hstring& copiedData);
+        void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
         void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
 
         static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
