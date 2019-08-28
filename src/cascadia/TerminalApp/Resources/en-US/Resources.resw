@@ -200,6 +200,6 @@ Temporarily using the Windows Terminal default settings.
     <value>Close all</value>
   </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Do you want to close all tabs ?</value>
+    <value>Do you want to close all tabs?</value>
   </data>
 </root>
