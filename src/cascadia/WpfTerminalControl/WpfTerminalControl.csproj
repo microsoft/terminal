@@ -69,7 +69,7 @@
     <Compile Include="ITerminalConnection.cs" />
     <Compile Include="NativeMethods.cs" />
     <Compile Include="TerminalContainer.cs" />
-    <Compile Include="TerminalSettings.cs" />
+    <Compile Include="TerminalTheme.cs" />
     <Compile Include="TerminalControl.xaml.cs">
       <DependentUpon>TerminalControl.xaml</DependentUpon>
     </Compile>
