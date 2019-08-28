@@ -458,15 +458,18 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         }
     }
 
+    const auto& otherSource = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+
     // For profiles with a `source`, also check the `source` property.
     bool sourceMatches = false;
     if (_source.has_value())
     {
-        if (json.isMember(JsonKey(SourceKey)))
-        {
-            auto source{ json[JsonKey(SourceKey)] };
-            sourceMatches = source.isString() && (GetWstringFromJson(source) == _source);
-        }
+        const auto otherSourceString = GetWstringFromJson(otherSource);
+        sourceMatches = otherSourceString == _source;
+        // if (json.isMember(JsonKey(SourceKey)))
+        // {
+        //     auto source{ json[JsonKey(SourceKey)] };
+        // }
 
         // TODO: special case the legacy dynamic profiles here. In this case,
         // `this` is a dynamic profile with a source, and our _source is only of
@@ -476,18 +479,18 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     else
     {
         // We do not have a source. the only way we match is if source is set to null or "".
-        if (json.isMember(JsonKey(SourceKey)))
-        {
-            auto source{ json[JsonKey(SourceKey)] };
-            if (source.isNull() || (source.isString() && source == ""))
-            {
-                sourceMatches = true;
-            }
-        }
-        else
+        if (otherSource.isNull() || (otherSource.isString() && otherSource == ""))
         {
             sourceMatches = true;
         }
+        // if (json.isMember(JsonKey(SourceKey)))
+        // {
+        //     auto source{ json[JsonKey(SourceKey)] };
+        // }
+        // else
+        // {
+        //     sourceMatches = true;
+        // }
     }
 
     return sourceMatches;

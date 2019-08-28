@@ -95,7 +95,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // settings string back to the file.
     if (needToWriteFile)
     {
-        _WriteSettings(_userSettingsString);
+        _WriteSettings(resultPtr->_userSettingsString);
     }
 
     // If this throws, the app will catch it and use the default settings
