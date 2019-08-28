@@ -40,6 +40,7 @@ namespace TerminalAppUnitTests
 
         // Profiles without a source should not be layered on those with one
         TEST_METHOD(DontLayerUserProfilesOnDynamicProfiles);
+        TEST_METHOD(DoLayerUserProfilesOnDynamicsWhenSourceMatches);
 
         // Make sure profiles that are disabled in _userSettings don't get generated
         TEST_METHOD(TestDontRunDisabledGenerators);
@@ -203,7 +204,7 @@ namespace TerminalAppUnitTests
         gen0->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles{};
             Profile p0{ guid0 };
-            p0.SetName(L"profile0"); // this is _profiles.at(2)
+            p0.SetName(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
             return profiles;
         };
@@ -211,8 +212,8 @@ namespace TerminalAppUnitTests
         gen1->pfnGenerate = [guid0, guid1]() {
             std::vector<Profile> profiles{};
             Profile p0{ guid0 }, p1{ guid1 };
-            p0.SetName(L"profile0"); // this is _profiles.at(3)
-            p1.SetName(L"profile1"); // this is _profiles.at(4)
+            p0.SetName(L"profile0"); // this is _profiles.at(1)
+            p1.SetName(L"profile1"); // this is _profiles.at(2)
             profiles.push_back(p0);
             profiles.push_back(p1);
             return profiles;
@@ -255,6 +256,83 @@ namespace TerminalAppUnitTests
         VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2)._guid.value());
         VERIFY_ARE_EQUAL(guid0, settings._profiles.at(3)._guid.value());
         VERIFY_ARE_EQUAL(guid1, settings._profiles.at(4)._guid.value());
+    }
+
+    void DynamicProfileTests::DoLayerUserProfilesOnDynamicsWhenSourceMatches()
+    {
+        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        const std::string userProfiles{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0FromUserSettings", // this is _profiles.at(0)
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile1FromUserSettings", // this is _profiles.at(2)
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.1"
+                }
+            ]
+        })" };
+
+        auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+        gen0->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 };
+            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            profiles.push_back(p0);
+            return profiles;
+        };
+        auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+        gen1->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 }, p1{ guid1 };
+            p0.SetName(L"profile0"); // this is _profiles.at(1)
+            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        CascadiaSettings settings{ false };
+        settings._profileGenerators.emplace_back(std::move(gen0));
+        settings._profileGenerators.emplace_back(std::move(gen1));
+
+        Log::Comment(NoThrowString().Format(
+            L"All profiles with the same name have the same GUID. However, they"
+            L" will not be layered, because they have different source's"));
+
+        // parse userProfiles as the user settings
+        settings._ParseJsonString(userProfiles, false);
+        VERIFY_ARE_EQUAL(0u, settings._profiles.size(), L"Just parsing the user settings doesn't actually layer them");
+        settings._LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.0", settings._profiles.at(0)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(2)._source.value());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(0)._guid.value());
+        VERIFY_ARE_EQUAL(guid0, settings._profiles.at(1)._guid.value());
+        VERIFY_ARE_EQUAL(guid1, settings._profiles.at(2)._guid.value());
+
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(2)._name);
     }
 
     void DynamicProfileTests::TestDontRunDisabledGenerators()
