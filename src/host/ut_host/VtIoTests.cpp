@@ -441,6 +441,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     Log::Comment(L"\tinitializing vtio");
 
     VtIo vtio;
+    vtio._doNotTerminate = true; // suspend process termination on teardown so we don't lose the test host process
     VERIFY_IS_FALSE(vtio.IsUsingVt());
     VERIFY_ARE_EQUAL(nullptr, vtio._pPtySignalInputThread);
     VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));

@@ -60,6 +60,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _OnLastProcessExit();
 
 #ifdef UNIT_TESTING
+        bool _doNotTerminate;
         friend class VtIoTests;
 #endif
     };

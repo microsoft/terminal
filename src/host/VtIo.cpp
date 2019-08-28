@@ -26,6 +26,9 @@ VtIo::VtIo() :
     _objectsCreated(false),
     _lookingForCursorPosition(false),
     _IoMode(VtIoMode::INVALID),
+#ifdef UNIT_TESTING
+    _doNotTerminate(false),
+#endif
     _shutdownEvent()
 {
 }
@@ -135,6 +138,15 @@ VtIo::~VtIo()
 
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+#ifdef UNIT_TESTING
+        // Don't close process state if we're unit testing and this has been set by a friend because
+        // it will trigger the rundown and exit TerminateProcess killing the test host!
+        if (_doNotTerminate)
+        {
+            return;
+        }
+#endif
 
         CloseConsoleProcessState();
     });
