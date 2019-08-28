@@ -484,6 +484,10 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
                 sourceMatches = true;
             }
         }
+        else
+        {
+            sourceMatches = true;
+        }
     }
 
     return sourceMatches;

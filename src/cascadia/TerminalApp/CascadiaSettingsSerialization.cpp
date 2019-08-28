@@ -56,6 +56,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
     const bool fileHasData = foundFile && !fileData.value().empty();
+    bool needToWriteFile = false;
     if (fileHasData)
     {
         resultPtr->_ParseJsonString(fileData.value(), false);
@@ -66,19 +67,36 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         // to use as the user defaults.
         // For now, just parse our user settings template as their user settings.
         resultPtr->_ParseJsonString(UserSettingsJson, false);
-        _WriteSettings(UserSettingsJson);
+        needToWriteFile = true;
+        // _WriteSettings(UserSettingsJson);
     }
 
-    // TODO: We're going to need to parse the user settings to find the
-    // suppressed dynamic profiles before we attempt to generate those profiles.
+    // Load profiles from dynamic profile generators. _userSettings should be
+    // created by now, because we're going to check in there for any generators
+    // that should be disabled.
     resultPtr->_LoadDynamicProfiles();
 
     // Apply the user's settings
     resultPtr->LayerJson(resultPtr->_userSettings);
 
-    // After layering the user settings, chack if there are any new profiles
+    // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.
-    resultPtr->WriteDynamicalProfilesToUserSettings();
+    needToWriteFile |= resultPtr->AppendDynamicProfilesToUserSettings();
+
+    // TODO: If powershell core is installed, we need to set that to the default
+    // profile, but only when the settings file was newly created. We'll
+    // re-write the segment of the
+
+    // TODO: If AppendDynamicProfilesToUserSettings (or the pwsh check above)
+    // changed the file, then our local settings JSON is no longer accurate. We
+    // should re-parse, but not re-layer
+
+    // If we created the file, or found new dynamic profiles, write the user
+    // settings string back to the file.
+    if (needToWriteFile)
+    {
+        _WriteSettings(_userSettingsString);
+    }
 
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
@@ -205,18 +223,15 @@ void CascadiaSettings::SaveAll() const
     _WriteSettings(serializedString);
 }
 
-void CascadiaSettings::WriteDynamicalProfilesToUserSettings()
+bool CascadiaSettings::AppendDynamicProfilesToUserSettings()
 {
     // - Find the set of profiles that weren't either in the default profiles or
     //   in the user profiles. TODO: Do this in not O(N^2)
     // - For each of those profiles,
     //   * Diff them from the default profile
     //   * Serialize that diff
-    //   * TODO: insert that diff to the end of the list of profiles. Commas!
-    //      * TODO: make that diff indented appropriately? That might not be
-    //        possible. Or, we could _assume_ each profile will start 8 spaces
-    //        in, with its members all being 12 spaced, and just insert 8 spaces
-    //        at the start of every line. That's insane, BUT IT MIGHT JUST WORK
+    //   * Insert that diff to the end of the list of profiles.
+
     const Profile defaultProfile{};
 
     Json::StreamWriterBuilder wbuilder;
@@ -237,8 +252,18 @@ void CascadiaSettings::WriteDynamicalProfilesToUserSettings()
         return false;
     };
 
+    // Get the index in the user settings string of the _last_ profile.
+    // We want to start inserting profiles immediately following the last profile.
+    const auto userProfilesObj = _GetProfilesJsonObject(_userSettings);
+    const auto numProfiles = userProfilesObj.size();
+    const auto lastProfile = userProfilesObj[numProfiles - 1];
+    size_t currentInsertIndex = lastProfile.getOffsetLimit();
+
+    bool changedFile = false;
+
     for (const auto& profile : _profiles)
     {
+        // Skip profiles that are in the user settings or the default settings.
         if (isInJsonObj(profile, _userSettings))
         {
             continue;
@@ -247,12 +272,37 @@ void CascadiaSettings::WriteDynamicalProfilesToUserSettings()
         {
             continue;
         }
+
         const auto diff = profile.DiffToJson(defaultProfile);
-        const auto profileSerialization = Json::writeString(wbuilder, diff);
-        auto a = 0;
-        a++;
-        a;
+        auto profileSerialization = Json::writeString(wbuilder, diff);
+
+        // Add 8 spaces to the start of each line
+        profileSerialization.insert(0, "        ");
+        // Get the first newline
+        size_t pos = profileSerialization.find("\n");
+        // for each newline...
+        while (pos != std::string::npos)
+        {
+            // Replace the current newline with a newline followed by 8
+            // additional spaces at the start of the line
+            profileSerialization.replace(pos, 1, "\n        ");
+            // Get the next newline
+            pos = profileSerialization.find("\n", pos + 9);
+        }
+
+        // Write a comma, newline to the file
+        changedFile = true;
+        _userSettingsString.insert(currentInsertIndex, ",");
+        currentInsertIndex++;
+        _userSettingsString.insert(currentInsertIndex, "\n");
+        currentInsertIndex++;
+
+        // Write the profile's serialization to the file
+        _userSettingsString.insert(currentInsertIndex, profileSerialization);
+        currentInsertIndex += profileSerialization.size();
     }
+
+    return changedFile;
 }
 
 // Method Description:

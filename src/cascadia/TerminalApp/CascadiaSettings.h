@@ -54,7 +54,7 @@ public:
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
     void SaveAll() const;
-    void WriteDynamicalProfilesToUserSettings();
+    bool AppendDynamicProfilesToUserSettings();
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
