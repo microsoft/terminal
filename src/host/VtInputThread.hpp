@@ -34,7 +34,6 @@ namespace Microsoft::Console
         [[nodiscard]] HRESULT DoReadInput();
 
     private:
-        
         [[nodiscard]] HRESULT _HandleRunInput(_In_reads_(cch) const byte* const charBuffer, const int cch);
         DWORD _InputThread();
         [[nodiscard]] HRESULT _ReadInput();

@@ -302,7 +302,7 @@ bool VtIo::IsUsingVt() const
     }
 
     // We can't start the VT input thread until after we've pumped it manually
-    // (if necessary) above for the cursor response. 
+    // (if necessary) above for the cursor response.
     if (_pVtInputThread)
     {
         RETURN_IF_FAILED(_pVtInputThread->Start());

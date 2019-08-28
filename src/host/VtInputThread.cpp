@@ -137,7 +137,7 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 }
 
 // Method Description:
-// - Do a single ReadFile from our pipe, and try and handle it. 
+// - Do a single ReadFile from our pipe, and try and handle it.
 // Arguments:
 // - <none>
 // Return Value:
