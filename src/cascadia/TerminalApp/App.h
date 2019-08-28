@@ -77,11 +77,7 @@ namespace winrt::TerminalApp::implementation
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
 
-        fire_and_forget _ShowDialog(const winrt::Windows::Foundation::IInspectable& titleElement,
-                                    const winrt::Windows::Foundation::IInspectable& contentElement,
-                                    const winrt::hstring& primaryButtonText,
-                                    const winrt::hstring& secondaryButtonText,
-                                    bool isClosingWindow);
+        fire_and_forget _ShowDialog(Windows::UI::Xaml::Controls::ContentDialog dialog);
         void _ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
         void _ShowAboutDialog();
         void _ShowLoadWarningsDialog();
@@ -117,7 +113,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseWindow();
-        void CloseAllTabs();
+        void _CloseAllTabs();
         void _SelectNextTab(const bool bMoveRight);
         bool _SelectTab(const int tabIndex);
 

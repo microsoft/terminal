@@ -218,11 +218,7 @@ namespace winrt::TerminalApp::implementation
     // - secondaryButtonText: The string to use on the secondary button, this is
     //                        currently only used for closing the whole window
     // - isClosingWindow: whether this dialog is for closing the whole app window
-    fire_and_forget App::_ShowDialog(const IInspectable& titleElement,
-                                     const IInspectable& contentElement,
-                                     const winrt::hstring& primaryButtonText,
-                                     const winrt::hstring& secondaryButtonText,
-                                     bool isClosingWindow)
+    fire_and_forget App::_ShowDialog(Controls::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
         // called when we await, which is not what we want.
@@ -232,21 +228,6 @@ namespace winrt::TerminalApp::implementation
             // Another dialog is visible.
             return;
         }
-
-        Controls::ContentDialog dialog;
-
-        if (isClosingWindow)
-        {
-            dialog.PrimaryButtonText(primaryButtonText);
-            dialog.SecondaryButtonText(secondaryButtonText);
-            auto token = dialog.PrimaryButtonClick({ this, &App::_CloseWarningPrimaryButtonOnClick });
-        }
-        else
-        {
-            dialog.CloseButtonText(primaryButtonText);
-        }
-        dialog.Title(titleElement);
-        dialog.Content(contentElement);
 
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
@@ -280,7 +261,13 @@ namespace winrt::TerminalApp::implementation
         auto message = _resourceLoader.GetLocalizedString(contentKey);
         auto buttonText = _resourceLoader.GetLocalizedString(L"Ok");
 
-        _ShowDialog(winrt::box_value(title), winrt::box_value(message), buttonText, buttonText, false);
+        Controls::ContentDialog dialog;
+
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(winrt::box_value(message));
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(dialog);
     }
 
     // Method Description:
@@ -324,7 +311,13 @@ namespace winrt::TerminalApp::implementation
         usingDefaultsRun.Text(usingDefaultsText);
         warningsTextBlock.Inlines().Append(usingDefaultsRun);
 
-        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText, buttonText, false);
+        Controls::ContentDialog dialog;
+
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(warningsTextBlock);
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(dialog);
     }
 
     // Method Description:
@@ -355,7 +348,13 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        _ShowDialog(winrt::box_value(title), warningsTextBlock, buttonText, buttonText, false);
+        Controls::ContentDialog dialog;
+
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(warningsTextBlock);
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(dialog);
     }
 
     // Method Description:
@@ -369,19 +368,17 @@ namespace winrt::TerminalApp::implementation
     {
         // To do: change these strings to localized strings in resource loader
         auto title = _resourceLoader.GetLocalizedString(L"CloseWindowWarningTitle");
-        auto primaryButtonText = _resourceLoader.GetLocalizedString(L"OK");
-        auto secondaryButtonText = _resourceLoader.GetLocalizedString(L"Cancel");
+        auto primaryButtonText = _resourceLoader.GetLocalizedString(L"Close all");
+        auto closeButtonText = _resourceLoader.GetLocalizedString(L"Cancel");
 
-        Controls::TextBlock warningsTextBlock;
-        // Make sure you can copy-paste
-        warningsTextBlock.IsTextSelectionEnabled(true);
-        // Make sure the lines of text wrap
-        warningsTextBlock.TextWrapping(TextWrapping::Wrap);
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
 
-        const auto warningText = _resourceLoader.GetLocalizedString(L"CloseWindowWarningText");
-        warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
+        dialog.PrimaryButtonText(primaryButtonText);
+        dialog.CloseButtonText(closeButtonText);
+        auto token = dialog.PrimaryButtonClick({ this, &App::_CloseWarningPrimaryButtonOnClick });
 
-        _ShowDialog(winrt::box_value(title), warningsTextBlock, primaryButtonText, secondaryButtonText, true);
+        _ShowDialog(dialog);
     }
 
     // Method Description:
@@ -450,7 +447,13 @@ namespace winrt::TerminalApp::implementation
         aboutTextBlock.Inlines().Append(releaseNotesLink);
         aboutTextBlock.IsTextSelectionEnabled(true);
 
-        _ShowDialog(winrt::box_value(title), aboutTextBlock, buttonText, buttonText, false);
+        Controls::ContentDialog dialog;
+
+        dialog.Title(winrt::box_value(title));
+        dialog.Content(aboutTextBlock);
+        dialog.CloseButtonText(buttonText);
+
+        _ShowDialog(dialog);
     }
 
     // Method Description:
@@ -690,7 +693,7 @@ namespace winrt::TerminalApp::implementation
     void App::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender,
                                                 Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs)
     {
-        CloseAllTabs();
+        _CloseAllTabs();
     }
 
     // Method Description:
@@ -1230,14 +1233,14 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            CloseAllTabs();
+            _CloseAllTabs();
         }
     }
 
     // Method Description:
     // - Close all the tabs opened and this will finally terminate
     // - the terminal
-    void App::CloseAllTabs()
+    void App::_CloseAllTabs()
     {
         int tabCount = _tabs.size();
         for (int i = tabCount - 1; i >= 0; i--)

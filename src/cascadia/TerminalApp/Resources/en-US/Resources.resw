@@ -196,10 +196,10 @@ Temporarily using the Windows Terminal default settings.
   <data name="Cancel" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="CloseWindowWarningText" xml:space="preserve">
-    <value>You have more than one tab opened</value>
+  <data name="Close all" xml:space="preserve">
+    <value>Close all</value>
   </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
-    <value>Close Window Warning</value>
+    <value>Do you want to close all tabs ?</value>
   </data>
 </root>
