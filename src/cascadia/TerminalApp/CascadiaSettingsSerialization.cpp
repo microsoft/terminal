@@ -181,7 +181,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     if (!isDefaultSettings)
     {
         size_t cch = actualDataEnd - actualDataStart;
-        _userSettingsString = std::string( actualDataStart, cch );
+        _userSettingsString = std::string(actualDataStart, cch);
     }
     // LayerJson(root);
 }
@@ -657,5 +657,5 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
     {
         return json[JsonKey(GlobalsKey)][JsonKey(DisabledProfileSourcesKey)];
     }
-    return json[JsonKey(ProfilesKey)];
+    return json[JsonKey(DisabledProfileSourcesKey)];
 }

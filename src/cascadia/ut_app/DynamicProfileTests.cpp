@@ -185,7 +185,106 @@ namespace TerminalAppUnitTests
     }
     void DynamicProfileTests::TestDontRunDisabledGenerators()
     {
-        VERIFY_IS_TRUE(false);
+        const std::string settings0String{ R"(
+        {
+            "disabledProfileSources": ["Terminal.App.UnitTest.0"]
+        })" };
+        const std::string settings1String{ R"(
+        {
+            "disabledProfileSources": ["Terminal.App.UnitTest.0", "Terminal.App.UnitTest.1"]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        auto gen0GenerateFn = []() {
+            std::vector<Profile> profiles{};
+            Profile p0{};
+            p0.SetName(L"profile0");
+            profiles.push_back(p0);
+            return profiles;
+        };
+
+        auto gen1GenerateFn = []() {
+            std::vector<Profile> profiles{};
+            Profile p0{}, p1{};
+            p0.SetName(L"profile1");
+            p1.SetName(L"profile2");
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        auto gen2GenerateFn = []() {
+            std::vector<Profile> profiles{};
+            Profile p0{}, p1{};
+            p0.SetName(L"profile3");
+            p1.SetName(L"profile4");
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Case 1: Disable a single profile generator"));
+            CascadiaSettings settings{ false };
+
+            auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+            auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+            auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.2");
+            gen0->pfnGenerate = gen0GenerateFn;
+            gen1->pfnGenerate = gen1GenerateFn;
+            gen2->pfnGenerate = gen2GenerateFn;
+            settings._profileGenerators.emplace_back(std::move(gen0));
+            settings._profileGenerators.emplace_back(std::move(gen1));
+            settings._profileGenerators.emplace_back(std::move(gen2));
+
+            // Parse as the user settings:
+            settings._ParseJsonString(settings0String, false);
+            // DebugBreak();
+            settings._LoadDynamicProfiles();
+
+            VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+            VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+            VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+            VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+            VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(0)._source.value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings._profiles.at(1)._source.value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(2)._source.value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(3)._source.value());
+            VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(2)._name);
+            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(3)._name);
+        }
+
+        {
+            Log::Comment(NoThrowString().Format(
+                L"Case 2: Disable multiple profile generators"));
+            CascadiaSettings settings{ false };
+            auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+            auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+            auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.2");
+            gen0->pfnGenerate = gen0GenerateFn;
+            gen1->pfnGenerate = gen1GenerateFn;
+            gen2->pfnGenerate = gen2GenerateFn;
+            settings._profileGenerators.emplace_back(std::move(gen0));
+            settings._profileGenerators.emplace_back(std::move(gen1));
+            settings._profileGenerators.emplace_back(std::move(gen2));
+
+            // Parse as the user settings:
+            settings._ParseJsonString(settings1String, false);
+            settings._LoadDynamicProfiles();
+
+            VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+            VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+            VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(0)._source.value());
+            VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.2", settings._profiles.at(1)._source.value());
+            VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
+        }
     }
     void DynamicProfileTests::TestLegacyProfilesMigrate()
     {
