@@ -18,6 +18,7 @@ Author(s):
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include "AzureCloudShellGenerator.h"
+#include "LegacyProfileGeneratorNamespaces.h"
 
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"

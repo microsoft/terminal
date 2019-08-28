@@ -27,6 +27,4 @@ public:
     ~WslDistroGenerator() = default;
     std::wstring_view GetNamespace() override;
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
-
-    static constexpr std::wstring_view WslGeneratorNamespace{ L"Windows.Terminal.Wsl" };
 };

@@ -30,6 +30,4 @@ public:
     std::wstring_view GetNamespace() override;
 
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
-
-    static constexpr std::wstring_view AzureGeneratorNamespace{ L"Windows.Terminal.Azure" };
 };

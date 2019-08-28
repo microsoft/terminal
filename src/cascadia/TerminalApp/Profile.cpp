@@ -8,6 +8,8 @@
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
+#include "LegacyProfileGeneratorNamespaces.h"
+
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::Microsoft::Console;
@@ -464,17 +466,24 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     bool sourceMatches = false;
     if (_source.has_value())
     {
-        const auto otherSourceString = GetWstringFromJson(otherSource);
-        sourceMatches = otherSourceString == _source;
-        // if (json.isMember(JsonKey(SourceKey)))
-        // {
-        //     auto source{ json[JsonKey(SourceKey)] };
-        // }
-
-        // TODO: special case the legacy dynamic profiles here. In this case,
-        // `this` is a dynamic profile with a source, and our _source is only of
-        // the legacy DPG namespaces. We're looking to see if the other json
-        // object has the same guid, but _no_ "source"
+        if (json.isMember(JsonKey(SourceKey)))
+        {
+            const auto otherSourceString = GetWstringFromJson(otherSource);
+            sourceMatches = otherSourceString == _source.value();
+        }
+        else
+        {
+            // Special case the legacy dynamic profiles here. In this case,
+            // `this` is a dynamic profile with a source, and our _source is one
+            // of the legacy DPG namespaces. We're looking to see if the other
+            // json object has the same guid, but _no_ "source"
+            if (_source.value() == WslGeneratorNamespace ||
+                _source.value() == AzureGeneratorNamespace ||
+                _source.value() == PowershellCoreGeneratorNamespace)
+            {
+                sourceMatches = true;
+            }
+        }
     }
     else
     {
@@ -483,14 +492,6 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         {
             sourceMatches = true;
         }
-        // if (json.isMember(JsonKey(SourceKey)))
-        // {
-        //     auto source{ json[JsonKey(SourceKey)] };
-        // }
-        // else
-        // {
-        //     sourceMatches = true;
-        // }
     }
 
     return sourceMatches;

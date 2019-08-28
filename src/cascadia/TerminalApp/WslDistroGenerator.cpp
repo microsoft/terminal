@@ -15,6 +15,7 @@ Author(s):
 
 #pragma once
 #include "WslDistroGenerator.h"
+#include "LegacyProfileGeneratorNamespaces.h"
 
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"

@@ -15,6 +15,7 @@ Author(s):
 #include "pch.h"
 #pragma once
 #include "PowershellCoreProfileGenerator.h"
+#include "LegacyProfileGeneratorNamespaces.h"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"

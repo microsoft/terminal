@@ -30,9 +30,8 @@ public:
 
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
 
-    static constexpr std::wstring_view PowershellCoreGeneratorNamespace{ L"Windows.Terminal.PowershellCore" };
-
 private:
+    // TODO: Do I still need this?
     static constexpr std::wstring_view LegacyGuid{ L"{574e775e-4f2a-5b96-ac1e-a2962a402336}" };
 
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
