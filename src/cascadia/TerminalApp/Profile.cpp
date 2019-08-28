@@ -1033,9 +1033,16 @@ void Profile::GenerateGuidIfNecessary() noexcept
 {
     if (!_guid.has_value())
     {
+        // If we have a _source, then we can from a dynamic profile generator.
+        // Use our source to build the naespace guid, instead of using the
+        // default GUID.
+        GUID namespaceGuid = _source.has_value() ?
+                                 Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_source.value()))) :
+                                 RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
+
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_name)));
+        _guid = Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(_name)));
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,

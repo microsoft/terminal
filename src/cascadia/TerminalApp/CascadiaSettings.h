@@ -33,7 +33,11 @@ namespace TerminalAppLocalTests
     class ProfileTests;
     class ColorSchemeTests;
     class KeyBindingsTests;
-}
+};
+namespace TerminalAppUnitTests
+{
+    class DynamicProfileTests;
+};
 
 namespace TerminalApp
 {
@@ -80,6 +84,7 @@ private:
 
     std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators{};
 
+    std::string _userSettingsString;
     Json::Value _userSettings;
     Json::Value _defaultSettings;
 
@@ -89,8 +94,9 @@ private:
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
-    void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
+    void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
+    static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
 
     void _LoadDynamicProfiles();
 
@@ -116,4 +122,5 @@ private:
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;
     friend class TerminalAppLocalTests::KeyBindingsTests;
+    friend class TerminalAppUnitTests::DynamicProfileTests;
 };

@@ -25,6 +25,7 @@ namespace TerminalAppLocalTests
 namespace TerminalAppUnitTests
 {
     class JsonTests;
+    class DynamicProfileTests;
 };
 
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
@@ -134,4 +135,5 @@ private:
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppUnitTests::JsonTests;
+    friend class TerminalAppUnitTests::DynamicProfileTests;
 };

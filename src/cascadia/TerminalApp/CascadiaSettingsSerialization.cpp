@@ -33,6 +33,8 @@ static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
 static constexpr std::string_view SchemesKey{ "schemes" };
 
+static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
+
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 
 // Method Description:
@@ -48,27 +50,35 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 {
     auto resultPtr = LoadDefaults();
 
-    // TODO: We're going to need to parse the user settings to find the
-    // suppressed dynamic profiles before we attempt to generate those profiles.
-    resultPtr->_LoadDynamicProfiles();
-
     std::optional<std::string> fileData = _ReadUserSettings();
     const bool foundFile = fileData.has_value();
+
     // Make sure the file isn't totally empty. If it is, we'll treat the file
     // like it doesn't exist at all.
     const bool fileHasData = foundFile && !fileData.value().empty();
     if (fileHasData)
     {
-        resultPtr->_LayerJsonString(fileData.value(), false);
-
-        resultPtr->WriteDynamicalProfilesToUserSettings();
+        resultPtr->_ParseJsonString(fileData.value(), false);
     }
     else
     {
         // We didn't find the user settings. We'll need to create a file
         // to use as the user defaults.
+        // For now, just parse our user settings template as their user settings.
+        resultPtr->_ParseJsonString(UserSettingsJson, false);
         _WriteSettings(UserSettingsJson);
     }
+
+    // TODO: We're going to need to parse the user settings to find the
+    // suppressed dynamic profiles before we attempt to generate those profiles.
+    resultPtr->_LoadDynamicProfiles();
+
+    // Apply the user's settings
+    resultPtr->LayerJson(resultPtr->_userSettings);
+
+    // After layering the user settings, chack if there are any new profiles
+    // that need to be inserted into their user settings file.
+    resultPtr->WriteDynamicalProfilesToUserSettings();
 
     // If this throws, the app will catch it and use the default settings
     resultPtr->_ValidateSettings();
@@ -90,33 +100,50 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     // We already have the defaults in memory, because we stamp them into a
     // header as part of the build process. We don't need to bother with reading
     // them from a file (and the potential that could fail)
-    resultPtr->_LayerJsonString(DefaultJson, true);
+    resultPtr->_ParseJsonString(DefaultJson, true);
+    resultPtr->LayerJson(resultPtr->_defaultSettings);
 
     return resultPtr;
 }
 
 void CascadiaSettings::_LoadDynamicProfiles()
 {
+    std::vector<std::wstring> ignoredNamespaces{};
+    const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
+    if (disabledProfileSources.isArray())
+    {
+        for (const auto& ns : disabledProfileSources)
+        {
+            ignoredNamespaces.emplace_back(GetWstringFromJson(ns));
+        }
+    }
+
     GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
         auto generatorNamespace = generator->GetNamespace();
 
-        auto profiles = generator->GenerateProfiles();
-        for (auto& profile : profiles)
+        if (std::find(ignoredNamespaces.begin(), ignoredNamespaces.end(), generatorNamespace) != ignoredNamespaces.end())
         {
-            // auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
-            profile.SetSource(generatorNamespace);
+            // namespace should be ignored
+        }
+        else
+        {
+            auto profiles = generator->GenerateProfiles();
+            for (auto& profile : profiles)
+            {
+                // auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
+                profile.SetSource(generatorNamespace);
 
-            _profiles.emplace_back(profile);
+                _profiles.emplace_back(profile);
+            }
         }
     }
 }
 
 // Method Description:
-// - Attempts to read the given data as a string of JSON, parse that JSON, and
-//   then layer the settings from that JSON object on our current settings. See
-//   CascadiaSettings::LayerJson for detauls on how the layering works.
+// - Attempts to read the given data as a string of JSON and parse that JSON
+//   into a Json::Value.
 // - Will ignore leading UTF-8 BOMs.
 // - Additionally, will store the parsed JSON in this object, as either our
 //   _defaultSettings or our _userSettings, depending on isDefaultSettings.
@@ -127,10 +154,11 @@ void CascadiaSettings::_LoadDynamicProfiles()
 //   settings.
 // Return Value:
 // - <none>
-void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool isDefaultSettings)
+void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool isDefaultSettings)
 {
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
+    auto actualDataEnd = fileData.data() + fileData.size();
     if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
     {
         actualDataStart += Utf8Bom.size();
@@ -144,14 +172,18 @@ void CascadiaSettings::_LayerJsonString(std::string_view fileData, const bool is
     // their raw contents again.
     Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
     // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, fileData.data() + fileData.size(), &root, &errs))
+    if (!reader->parse(actualDataStart, actualDataEnd, &root, &errs))
     {
         // This will be caught by App::_TryLoadSettings, who will display
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
-
-    LayerJson(root);
+    if (!isDefaultSettings)
+    {
+        size_t cch = actualDataEnd - actualDataStart;
+        _userSettingsString = std::string( actualDataStart, cch );
+    }
+    // LayerJson(root);
 }
 
 // Method Description:
@@ -615,5 +647,15 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
 // - the Json::Value representing the profiles property from the given object
 const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& json)
 {
+    return json[JsonKey(ProfilesKey)];
+}
+
+const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const Json::Value& json)
+{
+    // Check the globals first, then look in the root.
+    if (json.isMember(JsonKey(GlobalsKey)))
+    {
+        return json[JsonKey(GlobalsKey)][JsonKey(DisabledProfileSourcesKey)];
+    }
     return json[JsonKey(ProfilesKey)];
 }
