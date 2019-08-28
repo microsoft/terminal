@@ -13,23 +13,25 @@ using namespace Microsoft::Terminal::Core;
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
 std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 {
-    std::vector<SMALL_RECT> selectionArea;
+    std::vector<SMALL_RECT> result = {};
 
     if (!IsSelectionActive())
     {
-        return selectionArea;
+        return result;
     }
 
     try
     {
-        // NOTE: origin (0,0) is the top-left of the screen
-        // the physically "higher" coordinate is closer to the origin
-        // the physically "lower" coordinate is further from the origin
+        // NOTE: (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the top-left
+        // the physically "lower" coordinate is closer to the bottom-right
         auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
 
         SHORT selectionRectSize;
         THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
         THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
+
+        std::vector<SMALL_RECT> selectionArea = {};
         selectionArea.reserve(selectionRectSize);
         for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
         {
@@ -37,22 +39,20 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
             _ExpandSelectionRow(selectionRow);
             selectionArea.emplace_back(selectionRow);
         }
+        result.swap(selectionArea);
     }
-    catch (...)
-    {
-        selectionArea = {};
-    }
-    return selectionArea;
+    CATCH_LOG();
+    return result;
 }
 
 // Method Description:
 // - convert selection anchors to proper coordinates for rendering
-// NOTE: origin (0,0) is top-left so vertical comparison is inverted
+// NOTE: (0,0) is top-left so vertical comparison is inverted
 // Arguments:
 // - None
 // Return Value:
-// - tuple.first: the physically "higher" coordinate (closer to origin)
-// - tuple.second: the physically "lower" coordinate (further from origin)
+// - tuple.first: the physically "higher" coordinate (closer to the top-left)
+// - tuple.second: the physically "lower" coordinate (closer to the bottom-right)
 std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
 {
     // create these new anchors for comparison and rendering
@@ -79,11 +79,11 @@ std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
 
 // Method Description:
 // - constructs the selection row at the given row
-// NOTE: origin (0,0) is top-left so vertical comparison is inverted
+// NOTE: (0,0) is top-left so vertical comparison is inverted
 // Arguments:
 // - row: the buffer y-value under observation
-// - higherCoord: the physically "higher" coordinate (closer to origin)
-// - lowerCoord: the physically "lower" coordinate (further from origin)
+// - higherCoord: the physically "higher" coordinate (closer to the top-left)
+// - lowerCoord: the physically "lower" coordinate (closer to the bottom-right)
 // Return Value:
 // - the selection row needed for rendering
 SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const
@@ -362,14 +362,14 @@ const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) cons
     }
 
     auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
-    const UINT startedOnDelimiter = _GetDelimiterClass(*cellChar);
-    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*cellChar) == startedOnDelimiter))
+    const auto startedOnDelimiter = _GetDelimiterClass(cellChar);
+    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
     }
 
-    if (_GetDelimiterClass(*cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -400,14 +400,14 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
     }
 
     auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
-    const UINT startedOnDelimiter = _GetDelimiterClass(*cellChar);
-    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*cellChar) == startedOnDelimiter))
+    const auto startedOnDelimiter = _GetDelimiterClass(cellChar);
+    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
         cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
     }
 
-    if (_GetDelimiterClass(*cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
@@ -422,22 +422,20 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
 // Arguments:
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
-// - 0: contains a space (or control character)
-// - 1: contains a delimiter imported from settings
-// - 2: otherwise
-const UINT Terminal::_GetDelimiterClass(const WCHAR cellChar) const noexcept
+// - the delimiter class for the given char
+const Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view cellChar) const noexcept
 {
-    if (cellChar <= UNICODE_SPACE)
+    if (cellChar[0] <= UNICODE_SPACE)
     {
-        return 0;
+        return DelimiterClass::ControlChar;
     }
     else if (_wordDelimiters.find(cellChar) != std::wstring_view::npos)
     {
-        return 1;
+        return DelimiterClass::DelimiterChar;
     }
     else
     {
-        return 2;
+        return DelimiterClass::RegularChar;
     }
 }
 
