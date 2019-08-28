@@ -446,16 +446,47 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         return false;
     }
 
+    // First, check that GUIDs match. This is easy. If they don't match, they
+    // should _definitely_ not layer.
     if (json.isMember(JsonKey(GuidKey)))
     {
         auto guid{ json[JsonKey(GuidKey)] };
         auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
-        return _guid.value() == otherGuid;
+        if (_guid.value() != otherGuid)
+        {
+            return false;
+        }
     }
 
-    // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
+    // For profiles with a `source`, also check the `source` property.
+    bool sourceMatches = false;
+    if (_source.has_value())
+    {
+        if (json.isMember(JsonKey(SourceKey)))
+        {
+            auto source{ json[JsonKey(SourceKey)] };
+            sourceMatches = source.isString() && (GetWstringFromJson(source) == _source);
+        }
 
-    return false;
+        // TODO: special case the legacy dynamic profiles here. In this case,
+        // `this` is a dynamic profile with a source, and our _source is only of
+        // the legacy DPG namespaces. We're looking to see if the other json
+        // object has the same guid, but _no_ "source"
+    }
+    else
+    {
+        // We do not have a source. the only way we match is if source is set to null or "".
+        if (json.isMember(JsonKey(SourceKey)))
+        {
+            auto source{ json[JsonKey(SourceKey)] };
+            if (source.isNull() || (source.isString() && source == ""))
+            {
+                sourceMatches = true;
+            }
+        }
+    }
+
+    return sourceMatches;
 }
 
 // Method Description:
