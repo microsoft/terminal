@@ -12,6 +12,7 @@
     <ClCompile Include="API_InputTests.cpp" />
     <ClCompile Include="API_ModeTests.cpp" />
     <ClCompile Include="API_OutputTests.cpp" />
+    <ClCompile Include="API_PtyTests.cpp" />
     <ClCompile Include="API_RgbColorTests.cpp" />
     <ClCompile Include="API_TitleTests.cpp" />
     <ClCompile Include="API_PolicyTests.cpp" />
