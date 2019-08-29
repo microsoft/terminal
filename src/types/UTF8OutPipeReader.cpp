@@ -9,6 +9,8 @@
 UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     _outPipe{ outPipe }
 {
+    _buffer.fill(0);
+    _utf8Partials.fill(0);
 }
 
 // Method Description:
@@ -30,17 +32,17 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     bool fSuccess{};
 
     // in case of early escaping
-    *_buffer = 0;
-    strView = std::string_view{ reinterpret_cast<char*>(_buffer), 0 };
+    _buffer.at(0) = 0;
+    strView = std::string_view{ reinterpret_cast<char*>(_buffer.at(0)), 0 };
 
     // copy UTF-8 code units that were remaining from the previously read chunk (if any)
     if (_dwPartialsLen != 0)
     {
-        std::move(_utf8Partials, _utf8Partials + _dwPartialsLen, _buffer);
+        std::move(_utf8Partials.cbegin(), _utf8Partials.cbegin() + _dwPartialsLen, _buffer.begin());
     }
 
     // try to read data
-    fSuccess = !!ReadFile(_outPipe, &_buffer[_dwPartialsLen], std::extent<decltype(_buffer)>::value - _dwPartialsLen, &dwRead, nullptr);
+    fSuccess = !!ReadFile(_outPipe, &_buffer.at(_dwPartialsLen), std::extent<decltype(_buffer)>::value - _dwPartialsLen, &dwRead, nullptr);
 
     dwRead += _dwPartialsLen;
     _dwPartialsLen = 0;
@@ -65,8 +67,8 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
         return S_OK;
     }
 
-    const BYTE* const endPtr{ _buffer + dwRead };
-    const BYTE* backIter{ endPtr - 1 };
+    const auto endPtr = _buffer.cbegin() + dwRead;
+    auto backIter = endPtr - 1;
     // If the last byte in the buffer was a byte belonging to a UTF-8 multi-byte character
     if ((*backIter & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
     {
@@ -80,9 +82,9 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
                 //  Use the bitmask at index `dwSequenceLen`. Compare the result with the operand having the same index. If they
                 //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
                 //  sequence is a complete UTF-8 code point and the whole buffer is ready for the conversion to hstring.
-                if ((*backIter & _cmpMasks[dwSequenceLen]) != _cmpOperands[dwSequenceLen])
+                if ((*backIter & _cmpMasks.at(dwSequenceLen)) != _cmpOperands.at(dwSequenceLen))
                 {
-                    std::move(backIter, endPtr, _utf8Partials);
+                    std::move(backIter, endPtr, _utf8Partials.begin());
                     dwRead -= dwSequenceLen;
                     _dwPartialsLen = dwSequenceLen;
                 }
@@ -93,6 +95,6 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     }
 
     // give back a view of the part of the buffer that contains complete code points only
-    strView = std::string_view{ reinterpret_cast<char*>(_buffer), dwRead };
+    strView = std::string_view{ reinterpret_cast<char*>(_buffer.at(0)), dwRead };
     return S_OK;
 }

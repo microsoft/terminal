@@ -46,7 +46,7 @@ private:
     };
 
     // array of bitmasks
-    constexpr const static BYTE _cmpMasks[]{
+    constexpr const static std::array<BYTE, 4> _cmpMasks{
         0, // unused
         _Utf8BitMasks::MaskContinuationByte,
         _Utf8BitMasks::MaskLeadByteTwoByteSequence,
@@ -54,7 +54,7 @@ private:
     };
 
     // array of values for the comparisons
-    constexpr const static BYTE _cmpOperands[]{
+    constexpr const static std::array<BYTE, 4> _cmpOperands{
         0, // unused
         _Utf8BitMasks::IsAsciiByte, // intentionally conflicts with MaskContinuationByte
         _Utf8BitMasks::IsLeadByteTwoByteSequence,
@@ -62,7 +62,7 @@ private:
     };
 
     HANDLE _outPipe; // non-owning reference to a pipe.
-    BYTE _buffer[4096]{ 0 }; // buffer for the chunk read
-    BYTE _utf8Partials[4]{ 0 }; // buffer for code units of a partial UTF-8 code point that have to be cached
+    std::array<BYTE, 4096> _buffer; // buffer for the chunk read.
+    std::array<BYTE, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
     DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
 };
