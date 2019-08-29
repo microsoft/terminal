@@ -377,8 +377,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     return _dwriteFactory->CreateTextLayout(string,
                                             static_cast<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
-                                            (float)_displaySizePixels.cx,
-                                            _glyphCell.cy != 0 ? _glyphCell.cy : (float)_displaySizePixels.cy,
+                                            gsl::narrow<float>(_displaySizePixels.cx),
+                                            _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>( _displaySizePixels.cy),
                                             ppTextLayout);
 }
 
@@ -1089,7 +1089,7 @@ enum class CursorPaintType
     {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
-        ulHeight = (ULONG)((_glyphCell.cy * ulHeight) / 100);
+        ulHeight = gsl::narrow<ULONG>((_glyphCell.cy * ulHeight) / 100);
         rect.top = rect.bottom - ulHeight;
         break;
     }
@@ -1300,10 +1300,10 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
     SMALL_RECT r;
-    r.Top = (SHORT)(floor(_invalidRect.top / _glyphCell.cy));
-    r.Left = (SHORT)(floor(_invalidRect.left / _glyphCell.cx));
-    r.Bottom = (SHORT)(floor(_invalidRect.bottom / _glyphCell.cy));
-    r.Right = (SHORT)(floor(_invalidRect.right / _glyphCell.cx));
+    r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));
+    r.Left = gsl::narrow<SHORT>(floor(_invalidRect.left / _glyphCell.cx));
+    r.Bottom = gsl::narrow<SHORT>(floor(_invalidRect.bottom / _glyphCell.cy));
+    r.Right = gsl::narrow<SHORT>(floor(_invalidRect.right / _glyphCell.cx));
 
     // Exclusive to inclusive
     r.Bottom--;
@@ -1321,7 +1321,7 @@ float DxEngine::GetScaling() const noexcept
 // - Nearest integer short x and y values for each cell.
 [[nodiscard]] COORD DxEngine::_GetFontSize() const noexcept
 {
-    return { (SHORT)(_glyphCell.cx), (SHORT)(_glyphCell.cy) };
+    return { gsl::narrow<SHORT>(_glyphCell.cx), gsl::narrow<SHORT>(_glyphCell.cy) };
 }
 
 // Routine Description:
@@ -1371,7 +1371,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
 {
-    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;
+    return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
 }
 
 // Routine Description:

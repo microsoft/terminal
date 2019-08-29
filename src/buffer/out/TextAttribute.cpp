@@ -102,12 +102,12 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
 {
     if (setForeground)
     {
-        const BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        const BYTE fgIndex = gsl::narrow_cast<BYTE>(attrs & FG_ATTRS);
         _foreground = TextColor(fgIndex);
     }
     if (setBackground)
     {
-        const BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
         _background = TextColor(bgIndex);
     }
     if (setMeta)

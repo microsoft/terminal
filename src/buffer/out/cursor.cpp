@@ -207,7 +207,7 @@ void Cursor::SetPosition(const COORD cPosition)
 void Cursor::SetXPosition(const int NewX)
 {
     _RedrawCursor();
-    _cPosition.X = (SHORT)NewX;
+    _cPosition.X = gsl::narrow<SHORT>(NewX);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -215,7 +215,7 @@ void Cursor::SetXPosition(const int NewX)
 void Cursor::SetYPosition(const int NewY)
 {
     _RedrawCursor();
-    _cPosition.Y = (SHORT)NewY;
+    _cPosition.Y = gsl::narrow<SHORT>(NewY);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -223,7 +223,7 @@ void Cursor::SetYPosition(const int NewY)
 void Cursor::IncrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
-    _cPosition.X += (SHORT)DeltaX;
+    _cPosition.X += gsl::narrow<SHORT>(DeltaX);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -231,7 +231,7 @@ void Cursor::IncrementXPosition(const int DeltaX)
 void Cursor::IncrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
-    _cPosition.Y += (SHORT)DeltaY;
+    _cPosition.Y += gsl::narrow<SHORT>(DeltaY);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -239,7 +239,7 @@ void Cursor::IncrementYPosition(const int DeltaY)
 void Cursor::DecrementXPosition(const int DeltaX)
 {
     _RedrawCursor();
-    _cPosition.X -= (SHORT)DeltaX;
+    _cPosition.X -= gsl::narrow<SHORT>(DeltaX);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -247,7 +247,7 @@ void Cursor::DecrementXPosition(const int DeltaX)
 void Cursor::DecrementYPosition(const int DeltaY)
 {
     _RedrawCursor();
-    _cPosition.Y -= (SHORT)DeltaY;
+    _cPosition.Y -= gsl::narrow<SHORT>(DeltaY);
     _RedrawCursor();
     ResetDelayEOLWrap();
 }
@@ -342,7 +342,7 @@ const COLORREF Cursor::GetColor() const
 
 void Cursor::SetColor(const unsigned int color)
 {
-    _color = (COLORREF)color;
+    _color = static_cast<COLORREF>(color);
 }
 
 void Cursor::SetType(const CursorType type)

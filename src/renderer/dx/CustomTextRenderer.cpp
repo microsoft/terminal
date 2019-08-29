@@ -63,7 +63,7 @@ using namespace Microsoft::Console::Render;
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
     // Matrix structures are defined identically
-    drawingContext->renderTarget->GetTransform((D2D1_MATRIX_3X2_F*)transform);
+    drawingContext->renderTarget->GetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(transform));
     return S_OK;
 }
 #pragma endregion
