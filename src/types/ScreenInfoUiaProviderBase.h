@@ -44,38 +44,38 @@ namespace Microsoft::Console::Types
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
-        AddRef();
+        AddRef() override;
         IFACEMETHODIMP_(ULONG)
-        Release();
+        Release() override;
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
-        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
+        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;
         IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface) override;
         IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
-                                        _Out_ VARIANT* pVariant);
-        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
+                                        _Out_ VARIANT* pVariant) override;
+        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) override;
 
         // IRawElementProviderFragment methods
         virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
+        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
         virtual IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) = 0;
-        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
-        IFACEMETHODIMP SetFocus();
+        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) override;
+        IFACEMETHODIMP SetFocus() override;
         virtual IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) = 0;
 
         // ITextProvider
-        IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-        IFACEMETHODIMP GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+        IFACEMETHODIMP GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
+        IFACEMETHODIMP GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
         IFACEMETHODIMP RangeFromChild(_In_ IRawElementProviderSimple* childElement,
-                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
         IFACEMETHODIMP RangeFromPoint(_In_ UiaPoint point,
-                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
-        IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal);
+                                      _COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+        IFACEMETHODIMP get_DocumentRange(_COM_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+        IFACEMETHODIMP get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal) override;
 
     protected:
         virtual std::deque<UiaTextRangeBase*> GetSelectionRanges(_In_ IRawElementProviderSimple* pProvider) = 0;

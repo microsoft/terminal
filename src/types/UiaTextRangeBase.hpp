@@ -150,49 +150,49 @@ namespace Microsoft::Console::Types
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
-        AddRef();
+        AddRef() override;
         IFACEMETHODIMP_(ULONG)
-        Release();
+        Release() override;
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
-        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal);
+        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
-                                        _Out_ int* pRetVal);
-        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit);
+                                        _Out_ int* pRetVal) override;
+        IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
-                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal);
+                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
         virtual IFACEMETHODIMP FindText(_In_ BSTR text,
                                         _In_ BOOL searchBackward,
                                         _In_ BOOL ignoreCase,
                                         _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                         _Out_ VARIANT* pRetVal);
-        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
-        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal);
+                                         _Out_ VARIANT* pRetVal) override;
+        IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
+        IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) override;
         IFACEMETHODIMP GetText(_In_ int maxLength,
-                               _Out_ BSTR* pRetVal);
+                               _Out_ BSTR* pRetVal) override;
         IFACEMETHODIMP Move(_In_ TextUnit unit,
                             _In_ int count,
-                            _Out_ int* pRetVal);
+                            _Out_ int* pRetVal) override;
         IFACEMETHODIMP MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                           _In_ TextUnit unit,
                                           _In_ int count,
-                                          _Out_ int* pRetVal);
+                                          _Out_ int* pRetVal) override;
         IFACEMETHODIMP MoveEndpointByRange(_In_ TextPatternRangeEndpoint endpoint,
                                            _In_ ITextRangeProvider* pTargetRange,
-                                           _In_ TextPatternRangeEndpoint targetEndpoint);
-        IFACEMETHODIMP Select();
-        IFACEMETHODIMP AddToSelection();
-        IFACEMETHODIMP RemoveFromSelection();
-        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop);
-        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal);
+                                           _In_ TextPatternRangeEndpoint targetEndpoint) override;
+        IFACEMETHODIMP Select() override;
+        IFACEMETHODIMP AddToSelection() override;
+        IFACEMETHODIMP RemoveFromSelection() override;
+        IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) override;
+        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
 
     protected:
 #if _DEBUG
