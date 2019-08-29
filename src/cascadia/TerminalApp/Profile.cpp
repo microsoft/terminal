@@ -80,7 +80,7 @@ Profile::Profile() :
 Profile::Profile(const std::optional<GUID>& guid) :
     _guid(guid),
     _name{ L"Default" },
-    _schemeName{},
+    _schemeName{ L"Campbell" },
     _hidden{ false },
 
     _defaultForeground{},
