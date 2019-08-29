@@ -6,9 +6,11 @@
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/Profile.h"
 #include "../TerminalApp/CascadiaSettings.h"
+#include "../TerminalApp/LegacyProfileGeneratorNamespaces.h"
+
+#include "../LocalTests_TerminalApp/JsonTestClass.h"
 
 #include "TestDynamicProfileGenerator.h"
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -446,7 +448,113 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::TestLegacyProfilesMigrate()
     {
-        VERIFY_IS_TRUE(false);
+        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
+        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        GUID guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        GUID guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+        GUID guid4 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}");
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    // This pwsh profile does not have a source, but should still be layered
+                    "name" : "profile0FromUserSettings", // this is _profiles.at(0)
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    // This Azure profile does not have a source, but should still be layered
+                    "name" : "profile3FromUserSettings", // this is _profiles.at(3)
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    // This profile did not come from a dynamic source
+                    "name" : "profile4FromUserSettings", // this is _profiles.at(4)
+                    "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    // This WSL profile does not have a source, but should still be layered
+                    "name" : "profile1FromUserSettings", // this is _profiles.at(1)
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    // This WSL profile does have a source, and should be layered
+                    "name" : "profile2FromUserSettings", // this is _profiles.at(2)
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "source": "Windows.Terminal.Wsl"
+                }
+            ]
+        })" };
+
+        auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.PowershellCore");
+        gen0->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 };
+            p0.SetName(L"profile0");
+            profiles.push_back(p0);
+            return profiles;
+        };
+        auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Wsl");
+        gen1->pfnGenerate = [guid2, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid1 }, p1{ guid2 };
+            p0.SetName(L"profile1");
+            p1.SetName(L"profile2");
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+        auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Azure");
+        gen2->pfnGenerate = [guid3]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid3 };
+            p0.SetName(L"profile3");
+            profiles.push_back(p0);
+            return profiles;
+        };
+
+        CascadiaSettings settings{ false };
+        settings._profileGenerators.emplace_back(std::move(gen0));
+        settings._profileGenerators.emplace_back(std::move(gen1));
+        settings._profileGenerators.emplace_back(std::move(gen2));
+
+        settings._ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+
+        settings._LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings._profiles.at(0)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(1)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(2)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings._profiles.at(3)._source.value());
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(3)._name);
+
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(5u, settings._profiles.size());
+
+        VERIFY_IS_TRUE(settings._profiles.at(0)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._source.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._source.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(4)._source.has_value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.PowershellCore", settings._profiles.at(0)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(1)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Wsl", settings._profiles.at(2)._source.value());
+        VERIFY_ARE_EQUAL(L"Windows.Terminal.Azure", settings._profiles.at(3)._source.value());
+        // settings._profiles.at(4) does not have a soruce
+        VERIFY_ARE_EQUAL(L"profile0FromUserSettings", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"profile1FromUserSettings", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"profile2FromUserSettings", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"profile3FromUserSettings", settings._profiles.at(3)._name);
+        VERIFY_ARE_EQUAL(L"profile4FromUserSettings", settings._profiles.at(4)._name);
     }
 
     void DynamicProfileTests::UserProfilesWithInvalidSourcesAreIgnored()
