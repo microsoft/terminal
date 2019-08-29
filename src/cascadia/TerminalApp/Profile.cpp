@@ -84,7 +84,7 @@ Profile::Profile() :
 Profile::Profile(const std::optional<GUID>& guid) :
     _guid(guid),
     _name{ L"Default" },
-    _schemeName{},
+    _schemeName{ L"Campbell" },
     _hidden{ false },
 
     _defaultForeground{},
@@ -1073,16 +1073,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
 {
     if (!_guid.has_value())
     {
-        // If we have a _source, then we can from a dynamic profile generator.
-        // Use our source to build the naespace guid, instead of using the
-        // default GUID.
-        const GUID namespaceGuid = _source.has_value() ?
-                                       Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_source.value()))) :
-                                       RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
-
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        _guid = Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(_name)));
+        _guid = Profile::GenerateGuidForProfile(_name, _source);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -1105,4 +1096,18 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
 {
     const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
     return !source.isNull();
+}
+
+GUID Profile::GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
+{
+    // If we have a _source, then we can from a dynamic profile generator. Use
+    // our source to build the naespace guid, instead of using the default GUID.
+
+    const GUID namespaceGuid = source.has_value() ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :
+                                   RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
+
+    // Always use the name to generate the temporary GUID. That way, across
+    // reloads, we'll generate the same static GUID.
+    return Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name)));
 }

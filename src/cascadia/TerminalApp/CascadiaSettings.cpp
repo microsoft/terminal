@@ -163,6 +163,11 @@ void CascadiaSettings::_ValidateSettings()
     // Make sure to check that profiles exists at all first and foremost:
     _ValidateProfilesExist();
 
+    // Verify all profiles actually had a GUID specified, otherwise generate a
+    // GUID for them. Make sure to do this before de-duping profiles and
+    // checking that the default profile is set.
+    _ValidateProfilesHaveGuid();
+
     // Re-order profiles so that all profiles from the user's settings appear
     // before profiles that _weren't_ in the user profiles.
     _ReorderProfilesToMatchUserSettingsOrder();
@@ -170,11 +175,6 @@ void CascadiaSettings::_ValidateSettings()
     // Remove hidden profiles _after_ re-ordering. The re-ordering uses the raw
     // json, and will get confused if the profile isn't in the list.
     _RemoveHiddenProfiles();
-
-    // Verify all profiles actually had a GUID specified, otherwise generate a
-    // GUID for them. Make sure to do this before de-duping profiles and
-    // checking that the default profile is set.
-    _ValidateProfilesHaveGuid();
 
     // Then do some validation on the profiles. The order of these does not
     // terribly matter.
@@ -313,6 +313,19 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
                 {
                     auto guidJson{ profileJson["guid"] };
                     auto guid = Utils::GuidFromString(GetWstringFromJson(guidJson));
+
+                    if (uniqueGuids.insert(guid).second)
+                    {
+                        guidOrder.push_back(guid);
+                    }
+                }
+                else
+                {
+                    // In this case, _we_ generated a GUID for that profile. We
+                    // should similarly generate that guid here, so we can order
+                    // it appropriately.
+                    auto name = GetWstringFromJson(profileJson["name"]);
+                    auto guid = Profile::GenerateGuidForProfile(name);
 
                     if (uniqueGuids.insert(guid).second)
                     {

@@ -338,14 +338,14 @@
           Inputs="..\defaults.json"
           Outputs="Generated Files\defaults.h"
           BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
   </Target>
   <!-- Same as above, but for the default profiles.json template -->
   <Target Name="_TerminalAppGenerateUserSettingsH"
           Inputs="..\userDefaults.json"
           Outputs="Generated Files\userDefaults.h"
           BeforeTargets="BeforeClCompile">
-    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
 
 </Project>
