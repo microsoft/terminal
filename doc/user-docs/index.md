@@ -36,7 +36,7 @@ default shell is displayed (default shortcut `Ctrl+Shift+1`).
 
 ## Running a Different Shell
 
-Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed.
+Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed. For more information, see [the installation guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
 Windows Terminal uses PowerShell as its default shell. You can also use Windows Terminal to launch other shells, such as `cmd.exe` or WSL's `bash`:
 
