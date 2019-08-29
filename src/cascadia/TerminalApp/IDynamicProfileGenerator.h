@@ -3,10 +3,17 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
--
+- IDynamicProfileGenerator
 
 Abstract:
--
+- The DynamicProfileGenerator interface. A dynamic profile generator is a object
+  that can synthesize a list of profiles based on some arbitrary, typically
+  external criteria. Profiles from dynamic sources are only available in the
+  user's profiles if the generator actually ran and created the profile.
+- Each DPG must have a unique namespace to associate with itself. If the
+  namespace is not unique, the generator risks affecting profiles from
+  conflicting generators.
+
 Author(s):
 - Mike Griese - August 2019
 

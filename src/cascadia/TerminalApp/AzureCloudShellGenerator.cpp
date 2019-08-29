@@ -1,16 +1,6 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
-Module Name:
--
-
-Abstract:
--
-Author(s):
-- Mike Griese - August 2019
-
---*/
 #include "pch.h"
 
 #pragma once
@@ -34,6 +24,13 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace()
     return AzureGeneratorNamespace;
 }
 
+// Method Description:
+// - Checks if the Azure Cloud shell is available on this playform, and if it
+//   is, creates a profile to be able to launch it.
+// Arguments:
+// - <none>
+// Return Value:
+// - a vector with the Azure Cloud Shell connection profile, if available.
 std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()
 {
     std::vector<TerminalApp::Profile> profiles{};

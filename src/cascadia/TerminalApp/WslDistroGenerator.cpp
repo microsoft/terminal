@@ -1,16 +1,6 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
-Module Name:
--
-
-Abstract:
--
-Author(s):
-- Mike Griese - August 2019
-
---*/
 #include "pch.h"
 
 #pragma once
@@ -37,6 +27,12 @@ std::wstring_view WslDistroGenerator::GetNamespace()
     return WslGeneratorNamespace;
 }
 
+// Method Description:
+// -  Enumerates all the installed WSL distros to create profiles for them.
+// Arguments:
+// - <none>
+// Return Value:
+// - a vector with all distros for all the installed WSL distros
 std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
 {
     std::vector<TerminalApp::Profile> profiles{};

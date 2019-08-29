@@ -3,10 +3,13 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
--
+- AzureCloudShellGenerator
 
 Abstract:
--
+- This is the dynamic profile generator for the azure cloud shell connector.
+  Checks if the Azure Cloud shell is available on this playform, and if it is,
+  creates a profile to be able to launch it.
+
 Author(s):
 - Mike Griese - August 2019
 

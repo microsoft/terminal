@@ -1,16 +1,5 @@
-/*++
-Copyright (c) Microsoft Corporation
-Licensed under the MIT license.
-
-Module Name:
--
-
-Abstract:
--
-Author(s):
-- Mike Griese - August 2019
-
---*/
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
 #include "pch.h"
 #pragma once
@@ -31,6 +20,12 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
     return PowershellCoreGeneratorNamespace;
 }
 
+// Method Description:
+// - Checks if pwsh is installed, and if it is, creates a profile to launch it.
+// Arguments:
+// - <none>
+// Return Value:
+// - a vector with the PowerShell Core profile, if available.
 std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfiles()
 {
     std::vector<TerminalApp::Profile> profiles{};

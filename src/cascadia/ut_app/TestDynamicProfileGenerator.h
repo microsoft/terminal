@@ -3,8 +3,14 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- Profile.hpp
+- TestDynamicProfileGenerator.hpp
 
+Abstract:
+- This is a helper class for writing tests using dynamic profiles. Lets you
+  easily set a arbitrary namespace and generation function for the profiles.
+
+Author(s):
+- Mike Griese - August 2019
 --*/
 
 #include "../TerminalApp/IDynamicProfileGenerator.h"
@@ -14,7 +20,8 @@ namespace TerminalAppUnitTests
     class TestDynamicProfileGenerator;
 };
 
-class TerminalAppUnitTests::TestDynamicProfileGenerator final : public TerminalApp::IDynamicProfileGenerator
+class TerminalAppUnitTests::TestDynamicProfileGenerator final :
+    public TerminalApp::IDynamicProfileGenerator
 {
 public:
     TestDynamicProfileGenerator(std::wstring_view ns) :

@@ -44,7 +44,9 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
 // - Loads both the settings from the defaults.json and the user's profiles.json
-// - Also runs and dynamic profile generators. If any of those generators create new profiles, we'll
+// - Also runs and dynamic profile generators. If any of those generators create
+//   new profiles, we'll write the user settings back to the file, with the new
+//   profiles inserted into their list of profiles.
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
@@ -81,7 +83,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.
-    needToWriteFile |= resultPtr->AppendDynamicProfilesToUserSettings();
+    needToWriteFile |= resultPtr->_AppendDynamicProfilesToUserSettings();
 
     // TODO: If powershell core is installed, we need to set that to the default
     // profile, but only when the settings file was newly created. We'll
@@ -124,6 +126,16 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
     return resultPtr;
 }
 
+// Method Description:
+// - Runs each of the configured dynamic profile generators (DPGs). Adds
+//   profiles from any DPGs that ran to the end of our list of profiles.
+// - Uses the Json::Value _userSettings to check which DPGs should not be run.
+//   If the user settings has any namespaces in the "disabledProfileSources"
+//   property, we'll ensure that any DPGs with a matching namespace _don't_ run.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void CascadiaSettings::_LoadDynamicProfiles()
 {
     std::vector<std::wstring> ignoredNamespaces{};
@@ -150,7 +162,8 @@ void CascadiaSettings::_LoadDynamicProfiles()
             auto profiles = generator->GenerateProfiles();
             for (auto& profile : profiles)
             {
-                // auto shouldGenerateGuid = equals(nullGuid, profile.GetGuid());
+                // If the profile did not have a GUID when it was generated,
+                // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
                 profile.SetSource(generatorNamespace);
 
                 _profiles.emplace_back(profile);
@@ -165,6 +178,8 @@ void CascadiaSettings::_LoadDynamicProfiles()
 // - Will ignore leading UTF-8 BOMs.
 // - Additionally, will store the parsed JSON in this object, as either our
 //   _defaultSettings or our _userSettings, depending on isDefaultSettings.
+// - Does _not_ apply the json onto our current settings. Callers should make
+//   sure to call LayerJson to ensure the settings are applied.
 // Arguments:
 // - fileData: the string to parse as JSON data
 // - isDefaultSettings: if true, we should store the parsed JSON as our
@@ -196,12 +211,15 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
         // the text to the user.
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
+
+    // If this is the user settings, also store away the original settings
+    // string. We'll need to keep it around so we can modify it without
+    // re-serializing their settings.
     if (!isDefaultSettings)
     {
         size_t cch = actualDataEnd - actualDataStart;
         _userSettingsString = std::string(actualDataStart, cch);
     }
-    // LayerJson(root);
 }
 
 // Method Description:
@@ -223,7 +241,23 @@ void CascadiaSettings::SaveAll() const
     _WriteSettings(serializedString);
 }
 
-bool CascadiaSettings::AppendDynamicProfilesToUserSettings()
+// Method Description:
+// - Finds all the dynamic profiles we've generated that _don't_ exist in the
+//   user's settings. Generates a minimal blob of json for them, and inserts
+//   them into the user's settings at the end of the list of profiles.
+// - Does not reformat the user's settings file.
+// - Does not write the file! Only modifies in-place the _userSettingsString
+//   member. Callers should make sure to call
+//   _WriteSettings(_userSettingsString) to make sure to persist these changes!
+// - Assumes that the `profiles` object is at an indentation of 4 spaces, and
+//   therefore each profile should be indented 8 spaces. If the user's settings
+//   have a different indentation, we'll still insert valid json, it'll just be
+//   indented incorrectly.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we've made changes to the _userSettingsString that should be persisted.
+bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 {
     // - Find the set of profiles that weren't either in the default profiles or
     //   in the user profiles. TODO: Do this in not O(N^2)
@@ -264,15 +298,13 @@ bool CascadiaSettings::AppendDynamicProfilesToUserSettings()
     for (const auto& profile : _profiles)
     {
         // Skip profiles that are in the user settings or the default settings.
-        if (isInJsonObj(profile, _userSettings))
-        {
-            continue;
-        }
-        if (isInJsonObj(profile, _defaultSettings))
+        if (isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
         }
 
+        // Generate a diff for the profile, that contains the minimal set of
+        // changes to re-create this profile.
         const auto diff = profile.DiffToJson(defaultProfile);
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
@@ -710,6 +742,14 @@ const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& j
     return json[JsonKey(ProfilesKey)];
 }
 
+// Function Description:
+// - Gets the object in the given JSON obejct under the "disabledProfileSources"
+//   key. Returns null if there's no "disabledProfileSources" key.
+// Arguments:
+// - json: the json object to get the disabled profile sources from.
+// Return Value:
+// - the Json::Value representing the `disabledProfileSources` property from the
+//   given object
 const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const Json::Value& json)
 {
     // Check the globals first, then look in the root.
