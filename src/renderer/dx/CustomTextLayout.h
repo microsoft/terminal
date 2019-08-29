@@ -35,34 +35,34 @@ namespace Microsoft::Console::Render
                                                      FLOAT originY);
 
         // IDWriteTextAnalysisSource methods
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
-                                                                          _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                          _Out_ UINT32* textLength) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
-                                                                              _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                              _Out_ UINT32* textLength) override;
-        [[nodiscard]] virtual DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
+                                                                  _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                  _Out_ UINT32* textLength) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
+                                                                      _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                      _Out_ UINT32* textLength) override;
+        [[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
+                                                              _Out_ UINT32* textLength,
+                                                              _Outptr_result_z_ WCHAR const** localeName) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                                       _Out_ UINT32* textLength,
-                                                                      _Outptr_result_z_ WCHAR const** localeName) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
-                                                                              _Out_ UINT32* textLength,
-                                                                              _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
+                                                                      _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
 
         // IDWriteTextAnalysisSink methods
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
-                                                                          UINT32 textLength,
-                                                                          _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
-                                                                           UINT32 textLength,
-                                                                           _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
-                                                                     UINT32 textLength,
-                                                                     UINT8 explicitLevel,
-                                                                     UINT8 resolvedLevel) override;
-        [[nodiscard]] virtual HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
-                                                                              UINT32 textLength,
-                                                                              _In_ IDWriteNumberSubstitution* numberSubstitution) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
+                                                                  UINT32 textLength,
+                                                                  _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetLineBreakpoints(UINT32 textPosition,
+                                                                   UINT32 textLength,
+                                                                   _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetBidiLevel(UINT32 textPosition,
+                                                             UINT32 textLength,
+                                                             UINT8 explicitLevel,
+                                                             UINT8 resolvedLevel) override;
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE SetNumberSubstitution(UINT32 textPosition,
+                                                                      UINT32 textLength,
+                                                                      _In_ IDWriteNumberSubstitution* numberSubstitution) override;
 
     protected:
         // A single contiguous run of characters containing the same analysis results.
