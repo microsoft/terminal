@@ -479,13 +479,13 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         }
 
         // convert to a safearray
-        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, static_cast<ULONG>(coords.size()));
+        *ppRetVal = SafeArrayCreateVector(VT_R8, 0, gsl::narrow<ULONG>(coords.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
         HRESULT hr;
-        for (LONG i = 0; i < static_cast<LONG>(coords.size()); ++i)
+        for (LONG i = 0; i < gsl::narrow<LONG>(coords.size()); ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, &coords.at(i));
             if (FAILED(hr))
@@ -880,11 +880,11 @@ IFACEMETHODIMP UiaTextRangeBase::Select()
         COORD coordStart;
         COORD coordEnd;
 
-        coordStart.X = static_cast<SHORT>(_endpointToColumn(_pData, _start));
-        coordStart.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_pData, _start));
+        coordStart.X = gsl::narrow<SHORT>(_endpointToColumn(_pData, _start));
+        coordStart.Y = gsl::narrow<SHORT>(_endpointToScreenInfoRow(_pData, _start));
 
-        coordEnd.X = static_cast<SHORT>(_endpointToColumn(_pData, _end));
-        coordEnd.Y = static_cast<SHORT>(_endpointToScreenInfoRow(_pData, _end));
+        coordEnd.X = gsl::narrow<SHORT>(_endpointToColumn(_pData, _end));
+        coordEnd.Y = gsl::narrow<SHORT>(_endpointToScreenInfoRow(_pData, _end));
 
         _pData->SelectNewRegion(coordStart, coordEnd);
     }
@@ -948,15 +948,15 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
         if (startScreenInfoRow + viewportHeight <= bottomRow)
         {
             // we can align to the top
-            newViewport.Top = static_cast<SHORT>(startScreenInfoRow);
-            newViewport.Bottom = static_cast<SHORT>(startScreenInfoRow + viewportHeight - 1);
+            newViewport.Top = gsl::narrow<SHORT>(startScreenInfoRow);
+            newViewport.Bottom = gsl::narrow<SHORT>(startScreenInfoRow + viewportHeight - 1);
         }
         else
         {
             // we can align to the top so we'll just move the viewport
             // to the bottom of the screen buffer
-            newViewport.Bottom = static_cast<SHORT>(bottomRow);
-            newViewport.Top = static_cast<SHORT>(bottomRow - viewportHeight + 1);
+            newViewport.Bottom = gsl::narrow<SHORT>(bottomRow);
+            newViewport.Top = gsl::narrow<SHORT>(bottomRow - viewportHeight + 1);
         }
     }
     else
@@ -966,20 +966,20 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
         if (endScreenInfoRow >= viewportHeight)
         {
             // we can align to bottom
-            newViewport.Bottom = static_cast<SHORT>(endScreenInfoRow);
-            newViewport.Top = static_cast<SHORT>(endScreenInfoRow - viewportHeight + 1);
+            newViewport.Bottom = gsl::narrow<SHORT>(endScreenInfoRow);
+            newViewport.Top = gsl::narrow<SHORT>(endScreenInfoRow - viewportHeight + 1);
         }
         else
         {
             // we can't align to bottom so we'll move the viewport to
             // the top of the screen buffer
-            newViewport.Top = static_cast<SHORT>(topRow);
-            newViewport.Bottom = static_cast<SHORT>(topRow + viewportHeight - 1);
+            newViewport.Top = gsl::narrow<SHORT>(topRow);
+            newViewport.Bottom = gsl::narrow<SHORT>(topRow + viewportHeight - 1);
         }
     }
 
-    FAIL_FAST_IF(!(newViewport.Top >= static_cast<SHORT>(topRow)));
-    FAIL_FAST_IF(!(newViewport.Bottom <= static_cast<SHORT>(bottomRow)));
+    FAIL_FAST_IF(!(newViewport.Top >= gsl::narrow<SHORT>(topRow)));
+    FAIL_FAST_IF(!(newViewport.Bottom <= gsl::narrow<SHORT>(bottomRow)));
     FAIL_FAST_IF(!(_getViewportHeight(oldViewport) == _getViewportHeight(newViewport)));
 
     try
@@ -1209,7 +1209,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 {
     const ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
-           viewportRow < static_cast<ViewportRow>(_getViewportHeight(viewport));
+           viewportRow < gsl::narrow<ViewportRow>(_getViewportHeight(viewport));
 }
 
 // Routine Description:
@@ -1513,7 +1513,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(IUiaDat
             // get the right cell for the next row
             const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
             const size_t right = row.GetCharRow().MeasureRight();
-            currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
+            currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
         }
         else
         {
@@ -1768,7 +1768,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
             // get the right cell for the next row
             const ROW& row = pData->GetTextBuffer().GetRowByOffset(currentScreenInfoRow);
             const size_t right = row.GetCharRow().MeasureRight();
-            currentColumn = static_cast<Column>((right == 0) ? 0 : right - 1);
+            currentColumn = gsl::narrow<Column>((right == 0) ? 0 : right - 1);
         }
         else
         {

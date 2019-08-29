@@ -39,9 +39,9 @@ public:
     }
 
     constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
-        _wAttrLegacy{ static_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ static_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
-        _background{ static_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
+        _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
+        _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
         _isBold{ false }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.

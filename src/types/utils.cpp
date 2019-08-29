@@ -98,9 +98,9 @@ COLORREF Utils::ColorFromHexString(const std::string str)
     std::string gStr{ &str.at(3), 2 };
     std::string bStr{ &str.at(5), 2 };
 
-    const BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
-    const BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
-    const BYTE b = static_cast<BYTE>(std::stoul(bStr, nullptr, 16));
+    const BYTE r = gsl::narrow_cast<BYTE>(std::stoul(rStr, nullptr, 16));
+    const BYTE g = gsl::narrow_cast<BYTE>(std::stoul(gStr, nullptr, 16));
+    const BYTE b = gsl::narrow_cast<BYTE>(std::stoul(bStr, nullptr, 16));
 
     return RGB(r, g, b);
 }

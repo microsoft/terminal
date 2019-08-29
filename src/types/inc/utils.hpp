@@ -46,7 +46,7 @@ namespace Microsoft::Console::Utils
 
     constexpr unsigned long EndianSwap(unsigned long value)
     {
-        return static_cast<unsigned long>(EndianSwap(static_cast<uint32_t>(value)));
+        return gsl::narrow_cast<unsigned long>(EndianSwap(gsl::narrow_cast<uint32_t>(value)));
     }
 
     constexpr GUID EndianSwap(GUID value)

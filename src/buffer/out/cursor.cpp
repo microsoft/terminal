@@ -342,7 +342,7 @@ const COLORREF Cursor::GetColor() const
 
 void Cursor::SetColor(const unsigned int color)
 {
-    _color = static_cast<COLORREF>(color);
+    _color = gsl::narrow_cast<COLORREF>(color);
 }
 
 void Cursor::SetType(const CursorType type)

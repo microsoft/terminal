@@ -232,7 +232,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         Run& run = _runs.at(runIndex);
         const UINT32 textStart = run.textStart;
         const UINT32 textLength = run.textLength;
-        UINT32 maxGlyphCount = static_cast<UINT32>(_glyphIndices.size() - glyphStart);
+        UINT32 maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
         run.glyphStart = glyphStart;
@@ -945,7 +945,7 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
         return;
     }
 
-    _runIndex = static_cast<UINT32>(
+    _runIndex = gsl::narrow<UINT32>(
         std::find(_runs.begin(), _runs.end(), textPosition) - _runs.begin());
 }
 
@@ -983,7 +983,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;
-    frontHalf.nextRunIndex = static_cast<UINT32>(totalRuns);
-    _runIndex = static_cast<UINT32>(totalRuns);
+    frontHalf.nextRunIndex = gsl::narrow<UINT32>(totalRuns);
+    _runIndex = gsl::narrow<UINT32>(totalRuns);
 }
 #pragma endregion

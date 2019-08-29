@@ -155,7 +155,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_res
     }
     catch (...)
     {
-        return static_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
+        return gsl::narrow_cast<HRESULT>(UIA_E_ELEMENTNOTAVAILABLE);
     }
 }
 #pragma endregion

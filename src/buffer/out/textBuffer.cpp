@@ -62,7 +62,7 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 // - Total number of rows in the buffer
 UINT TextBuffer::TotalRowCount() const
 {
-    return static_cast<UINT>(_storage.size());
+    return gsl::narrow<UINT>(_storage.size());
 }
 
 // Routine Description:
@@ -586,7 +586,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::View
 
     const ROW* pCurrRow = &GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
+    coordEndOfText.X = gsl::narrow<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -597,7 +597,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(const Microsoft::Console::Types::View
         pCurrRow = &GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = static_cast<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
+        coordEndOfText.X = gsl::narrow<short>(pCurrRow->GetCharRow().MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 

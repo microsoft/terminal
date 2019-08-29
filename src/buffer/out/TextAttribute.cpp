@@ -87,10 +87,10 @@ void TextAttribute::SetBackground(const COLORREF rgbBackground)
 
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
-    _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
+    _wAttrLegacy = gsl::narrow_cast<WORD>(wLegacy & META_ATTRS);
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    const BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
-    const BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
+    const BYTE fgIndex = gsl::narrow_cast<BYTE>(wLegacy & FG_ATTRS);
+    const BYTE bgIndex = gsl::narrow_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
 }

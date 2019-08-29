@@ -375,7 +375,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     _Out_ IDWriteTextLayout** ppTextLayout) noexcept
 {
     return _dwriteFactory->CreateTextLayout(string,
-                                            static_cast<UINT32>(stringLength),
+                                            gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
                                             gsl::narrow<float>(_displaySizePixels.cx),
                                             _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>( _displaySizePixels.cy),
@@ -1219,8 +1219,8 @@ enum class CursorPaintType
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
-    const short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    const short widthInChars = gsl::narrow<short>(viewInPixels.Width() / _glyphCell.cx);
+    const short heightInChars = gsl::narrow<short>(viewInPixels.Height() / _glyphCell.cy);
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }

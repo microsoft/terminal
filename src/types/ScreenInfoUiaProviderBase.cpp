@@ -379,14 +379,14 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         //apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
 
         // make a safe array
-        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(ranges.size()));
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(ranges.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
 
         // fill the safe array
-        for (LONG i = 0; i < static_cast<LONG>(ranges.size()); ++i)
+        for (LONG i = 0; i < gsl::narrow<LONG>(ranges.size()); ++i)
         {
             hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges.at(i)));
             if (FAILED(hr))
@@ -428,7 +428,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
     // make a safe array
     const size_t rowCount = viewport.Height();
-    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rowCount));
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(rowCount));
     if (*ppRetVal == nullptr)
     {
         return E_OUTOFMEMORY;
@@ -473,7 +473,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             return hr;
         }
 
-        LONG currentIndex = static_cast<LONG>(i);
+        LONG currentIndex = gsl::narrow<LONG>(i);
         hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
         if (FAILED(hr))
         {
