@@ -26,13 +26,13 @@ namespace winrt::TerminalApp::implementation
 
         void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
+        void SetResourceLoader(std::shared_ptr<ScopedResourceLoader> resourceLoader);
+
         void Create();
 
         hstring Title();
 
         void ShowOkDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey);
-
-        ScopedResourceLoader GetResourceLoader();
 
         void TitlebarClicked();
 
@@ -58,7 +58,7 @@ namespace winrt::TerminalApp::implementation
 
         std::vector<std::shared_ptr<Tab>> _tabs;
 
-        ScopedResourceLoader _resourceLoader;
+        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         void _ShowAboutDialog();
 

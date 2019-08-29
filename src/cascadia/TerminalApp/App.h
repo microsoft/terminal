@@ -52,7 +52,9 @@ namespace winrt::TerminalApp::implementation
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
 
-        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings;
+        std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
+
+        std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         HRESULT _settingsLoadedResult;
         winrt::hstring _settingsLoadExceptionText{};

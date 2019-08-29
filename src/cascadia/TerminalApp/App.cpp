@@ -48,11 +48,11 @@ static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
 // Return Value:
 // - the localized string for the given type, if it exists.
 template<std::size_t N>
-static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, ScopedResourceLoader loader)
+static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys, std::shared_ptr<ScopedResourceLoader> loader)
 {
     if (index < keys.size())
     {
-        return loader.GetLocalizedString(keys.at(index));
+        return loader->GetLocalizedString(keys.at(index));
     }
     return {};
 }
@@ -66,7 +66,7 @@ static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_vi
 // - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - localized text for the given warning
-static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, ScopedResourceLoader loader)
+static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warning, std::shared_ptr<ScopedResourceLoader> loader)
 {
     return _GetMessageText(static_cast<uint32_t>(warning), settingsLoadWarningsLabels, loader);
 }
@@ -80,7 +80,7 @@ static winrt::hstring _GetWarningText(::TerminalApp::SettingsLoadWarnings warnin
 // - loader: the ScopedResourceLoader to use to look up the localized string.
 // Return Value:
 // - localized text for the given error
-static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, ScopedResourceLoader loader)
+static winrt::hstring _GetErrorText(::TerminalApp::SettingsLoadErrors error, std::shared_ptr<ScopedResourceLoader> loader)
 {
     return _GetMessageText(static_cast<uint32_t>(error), settingsLoadErrorsLabels, loader);
 }
@@ -113,7 +113,6 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 namespace winrt::TerminalApp::implementation
 {
     App::App() :
-        _settings{},
         _dialogLock{},
         _loadedInitialSettings{ false },
         _settingsLoadedResult{ S_OK }
@@ -126,6 +125,8 @@ namespace winrt::TerminalApp::implementation
 
         // Initialize will become protected or be deleted when GH#1339 (workaround for MSFT:22116519) are fixed.
         Initialize();
+
+        _resourceLoader = std::make_shared<ScopedResourceLoader>(L"TerminalApp/Resources");
 
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
@@ -151,6 +152,7 @@ namespace winrt::TerminalApp::implementation
         _root->ShowDialog({ this, &App::_ShowDialog });
 
         _root->SetSettings(_settings, false);
+        _root->SetResourceLoader(_resourceLoader);
         _root->Loaded({ this, &App::_OnLoaded });
         _root->Create();
 
@@ -216,8 +218,8 @@ namespace winrt::TerminalApp::implementation
                                     const winrt::hstring& contentKey,
                                     HRESULT settingsLoadedResult)
     {
-        auto title = _root->GetResourceLoader().GetLocalizedString(titleKey);
-        auto buttonText = _root->GetResourceLoader().GetLocalizedString(L"Ok");
+        auto title = _resourceLoader->GetLocalizedString(titleKey);
+        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
         // Make sure you can copy-paste
@@ -226,7 +228,7 @@ namespace winrt::TerminalApp::implementation
         warningsTextBlock.TextWrapping(TextWrapping::Wrap);
 
         winrt::Windows::UI::Xaml::Documents::Run errorRun;
-        const auto errorLabel = _root->GetResourceLoader().GetLocalizedString(contentKey);
+        const auto errorLabel = _resourceLoader->GetLocalizedString(contentKey);
         errorRun.Text(errorLabel);
         warningsTextBlock.Inlines().Append(errorRun);
 
@@ -240,7 +242,7 @@ namespace winrt::TerminalApp::implementation
 
         // Add a note that we're using the default settings in this case.
         winrt::Windows::UI::Xaml::Documents::Run usingDefaultsRun;
-        const auto usingDefaultsText = _root->GetResourceLoader().GetLocalizedString(L"UsingDefaultSettingsText");
+        const auto usingDefaultsText = _resourceLoader->GetLocalizedString(L"UsingDefaultSettingsText");
         usingDefaultsRun.Text(usingDefaultsText);
         warningsTextBlock.Inlines().Append(usingDefaultsRun);
 
@@ -260,8 +262,8 @@ namespace winrt::TerminalApp::implementation
     //   when this is called, nothing happens. See _ShowDialog for details
     void App::_ShowLoadWarningsDialog()
     {
-        auto title = _root->GetResourceLoader().GetLocalizedString(L"SettingsValidateErrorTitle");
-        auto buttonText = _root->GetResourceLoader().GetLocalizedString(L"Ok");
+        auto title = _resourceLoader->GetLocalizedString(L"SettingsValidateErrorTitle");
+        auto buttonText = _resourceLoader->GetLocalizedString(L"Ok");
 
         Controls::TextBlock warningsTextBlock;
         // Make sure you can copy-paste
@@ -273,7 +275,7 @@ namespace winrt::TerminalApp::implementation
         for (const auto& warning : warnings)
         {
             // Try looking up the warning message key for each warning.
-            const auto warningText = _GetWarningText(warning, _root->GetResourceLoader());
+            const auto warningText = _GetWarningText(warning, _resourceLoader);
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, Resources()));
@@ -372,7 +374,7 @@ namespace winrt::TerminalApp::implementation
         catch (const ::TerminalApp::SettingsException& ex)
         {
             hr = E_INVALIDARG;
-            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _root->GetResourceLoader());
+            _settingsLoadExceptionText = _GetErrorText(ex.Error(), _resourceLoader);
         }
         catch (...)
         {
