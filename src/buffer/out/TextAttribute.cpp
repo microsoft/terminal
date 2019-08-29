@@ -89,8 +89,8 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
     _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
-    BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
+    const BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
+    const BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
 }
@@ -102,12 +102,12 @@ void TextAttribute::SetLegacyAttributes(const WORD attrs,
 {
     if (setForeground)
     {
-        BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        const BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
         _foreground = TextColor(fgIndex);
     }
     if (setBackground)
     {
-        BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        const BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
         _background = TextColor(bgIndex);
     }
     if (setMeta)
@@ -133,12 +133,12 @@ void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foregro
 {
     if (foreground)
     {
-        BYTE fgIndex = (*foreground) & 0xFF;
+        const BYTE fgIndex = (*foreground) & 0xFF;
         _foreground = TextColor(fgIndex);
     }
     if (background)
     {
-        BYTE bgIndex = (*background) & 0xFF;
+        const BYTE bgIndex = (*background) & 0xFF;
         _background = TextColor(bgIndex);
     }
 }

@@ -165,7 +165,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
         brush = static_cast<ID2D1Brush*>(clientDrawingEffect);
     }
 
-    D2D1_RECT_F rect = D2D1::RectF(x, y, x + width, y + thickness);
+    const D2D1_RECT_F rect = D2D1::RectF(x, y, x + width, y + thickness);
     drawingContext->renderTarget->FillRectangle(&rect, brush);
 }
 
@@ -233,12 +233,11 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
 
     // Since we've delegated the drawing of the background of the text into this function, the origin passed in isn't actually the baseline.
     // It's the top left corner. Save that off first.
-    D2D1_POINT_2F origin = D2D1::Point2F(baselineOriginX, baselineOriginY);
+    const D2D1_POINT_2F origin = D2D1::Point2F(baselineOriginX, baselineOriginY);
 
     // Then make a copy for the baseline origin (which is part way down the left side of the text, not the top or bottom).
     // We'll use this baseline Origin for drawing the actual text.
-    D2D1_POINT_2F baselineOrigin = origin;
-    baselineOrigin.y += drawingContext->spacing.baseline;
+    const D2D1_POINT_2F baselineOrigin = { origin.x, origin.y + drawingContext->spacing.baseline };
 
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
@@ -270,7 +269,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
         RETURN_IF_FAILED(drawingContext->dwriteFactory->QueryInterface(dwriteFactory4.GetAddressOf()));
 
         // The list of glyph image formats this renderer is prepared to support.
-        DWRITE_GLYPH_IMAGE_FORMATS supportedFormats =
+        const DWRITE_GLYPH_IMAGE_FORMATS supportedFormats =
             DWRITE_GLYPH_IMAGE_FORMATS_TRUETYPE |
             DWRITE_GLYPH_IMAGE_FORMATS_CFF |
             DWRITE_GLYPH_IMAGE_FORMATS_COLR |
@@ -283,7 +282,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
         // Determine whether there are any color glyph runs within glyphRun. If
         // there are, glyphRunEnumerator can be used to iterate through them.
         ::Microsoft::WRL::ComPtr<IDWriteColorGlyphRunEnumerator1> glyphRunEnumerator;
-        HRESULT hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin,
+        const HRESULT hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin,
                                                             glyphRun,
                                                             glyphRunDescription,
                                                             supportedFormats,
@@ -320,7 +319,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                 DWRITE_COLOR_GLYPH_RUN1 const* colorRun;
                 RETURN_IF_FAILED(glyphRunEnumerator->GetCurrentRun(&colorRun));
 
-                D2D1_POINT_2F currentBaselineOrigin = D2D1::Point2F(colorRun->baselineOriginX, colorRun->baselineOriginY);
+                const D2D1_POINT_2F currentBaselineOrigin = D2D1::Point2F(colorRun->baselineOriginX, colorRun->baselineOriginY);
 
                 switch (colorRun->glyphImageFormat)
                 {

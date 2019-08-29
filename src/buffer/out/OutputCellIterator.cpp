@@ -485,7 +485,7 @@ OutputCellView OutputCellIterator::s_GenerateViewLegacyAttr(const WORD& legacyAt
     WORD cleanAttr = legacyAttr;
     WI_ClearAllFlags(cleanAttr, COMMON_LVB_SBCSDBCS); // don't use legacy lead/trailing byte flags for colors
 
-    TextAttribute attr(cleanAttr);
+    const TextAttribute attr(cleanAttr);
     return s_GenerateView(attr);
 }
 

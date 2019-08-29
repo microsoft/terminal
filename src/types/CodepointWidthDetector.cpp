@@ -443,7 +443,7 @@ bool CodepointWidthDetector::_checkFallbackViaCache(const std::wstring_view glyp
     const std::wstring findMe{ glyph };
 
     // TODO: Cache needs to be emptied when font changes.
-    auto it = _fallbackCache.find(findMe);
+    const auto it = _fallbackCache.find(findMe);
     if (it == _fallbackCache.end())
     {
         auto result = _pfnFallbackMethod(glyph);

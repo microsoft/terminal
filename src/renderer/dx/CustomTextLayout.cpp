@@ -146,7 +146,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         }
 
         // Resequence the resulting runs in order before returning to caller.
-        size_t totalRuns = _runs.size();
+        const size_t totalRuns = _runs.size();
         std::vector<LinkedRun> runs;
         runs.resize(totalRuns);
 
@@ -178,7 +178,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
         // Estimate the maximum number of glyph indices needed to hold a string.
-        UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
+        const UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
 
         _glyphIndices.resize(estimatedGlyphCount);
         _glyphOffsets.resize(estimatedGlyphCount);
@@ -230,8 +230,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         // will shape as if the line is not broken.
 
         Run& run = _runs.at(runIndex);
-        UINT32 textStart = run.textStart;
-        UINT32 textLength = run.textLength;
+        const UINT32 textStart = run.textStart;
+        const UINT32 textLength = run.textLength;
         UINT32 maxGlyphCount = static_cast<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
@@ -291,7 +291,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
             {
                 // Try again using a larger buffer.
                 maxGlyphCount = _EstimateGlyphCount(maxGlyphCount);
-                UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+                const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
 
                 glyphProps.resize(maxGlyphCount);
                 _glyphIndices.resize(totalGlyphsArrayCount);
@@ -477,7 +477,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
         {
             // Get the run
-            Run& run = _runs.at(runIndex);
+            const Run& run = _runs.at(runIndex);
 
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
@@ -912,7 +912,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
     if (textLength < runTextLength)
     {
         runTextLength = textLength; // Limit to what's actually left.
-        UINT32 runTextStart = run.textStart;
+        const UINT32 runTextStart = run.textStart;
 
         _SplitCurrentRun(runTextStart + runTextLength);
     }
@@ -957,13 +957,13 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 // - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-    UINT32 runTextStart = _runs.at(_runIndex).textStart;
+    const UINT32 runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)
         return; // no change
 
     // Grow runs by one.
-    size_t totalRuns = _runs.size();
+    const size_t totalRuns = _runs.size();
     try
     {
         _runs.resize(totalRuns + 1);
@@ -979,7 +979,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     backHalf = frontHalf;
 
     // Adjust runs' text positions and lengths.
-    UINT32 splitPoint = splitPosition - runTextStart;
+    const UINT32 splitPoint = splitPosition - runTextStart;
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;

@@ -290,10 +290,10 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         // two elements in our internal list.
         else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
         {
-            auto left = _list.begin();
+            const auto left = _list.begin();
             if (iStart == left->GetLength() && NewAttr == left->GetAttributes())
             {
-                auto right = left + 1;
+                const auto right = left + 1;
                 left->IncrementLength();
                 right->DecrementLength();
 

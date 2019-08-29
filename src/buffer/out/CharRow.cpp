@@ -264,7 +264,7 @@ std::wstring CharRow::GetTextRaw() const
     wstr.reserve(_data.size());
     for (size_t i = 0; i < _data.size(); ++i)
     {
-        auto glyph = GlyphAt(i);
+        const auto glyph = GlyphAt(i);
         for (auto it = glyph.begin(); it != glyph.end(); ++it)
         {
             wstr.push_back(*it);
@@ -280,7 +280,7 @@ std::wstring CharRow::GetText() const
 
     for (size_t i = 0; i < _data.size(); ++i)
     {
-        auto glyph = GlyphAt(i);
+        const auto glyph = GlyphAt(i);
         if (!DbcsAttrAt(i).IsTrailing())
         {
             for (auto it = glyph.begin(); it != glyph.end(); ++it)

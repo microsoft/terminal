@@ -59,9 +59,9 @@ public:
 
     constexpr WORD GetLegacyAttributes() const noexcept
     {
-        BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
-        BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
-        WORD meta = (_wAttrLegacy & META_ATTRS);
+        const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
+        const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
+        const WORD meta = (_wAttrLegacy & META_ATTRS);
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }
 
@@ -80,11 +80,11 @@ public:
     constexpr WORD GetLegacyAttributes(const BYTE defaultFgIndex,
                                        const BYTE defaultBgIndex) const noexcept
     {
-        BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
-        BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
-        BYTE fg = (fgIndex & FG_ATTRS);
-        BYTE bg = (bgIndex << 4) & BG_ATTRS;
-        WORD meta = (_wAttrLegacy & META_ATTRS);
+        const BYTE fgIndex = _foreground.IsLegacy() ? _foreground.GetIndex() : defaultFgIndex;
+        const BYTE bgIndex = _background.IsLegacy() ? _background.GetIndex() : defaultBgIndex;
+        const BYTE fg = (fgIndex & FG_ATTRS);
+        const BYTE bg = (bgIndex << 4) & BG_ATTRS;
+        const WORD meta = (_wAttrLegacy & META_ATTRS);
         return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
     }
 

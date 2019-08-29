@@ -542,7 +542,7 @@ bool TextBuffer::IncrementCircularBuffer()
     _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
+    const bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.
@@ -1122,7 +1122,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             {
                 // do not include \r nor \n as they don't have attributes
                 // and are not HTML friendly. For line break use '<BR>' instead.
-                bool isLastCharInRow =
+                const bool isLastCharInRow =
                     col == rows.text.at(row).length() - 1 ||
                     rows.text.at(row).at(col + 1) == '\r' ||
                     rows.text.at(row).at(col + 1) == '\n';

@@ -26,7 +26,7 @@ WindowUiaProviderBase::AddRef()
 IFACEMETHODIMP_(ULONG)
 WindowUiaProviderBase::Release()
 {
-    long val = InterlockedDecrement(&_cRefs);
+    const long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
         delete this;

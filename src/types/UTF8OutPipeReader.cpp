@@ -49,7 +49,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
 
     if (!fSuccess) // reading failed (we must check this first, because dwRead will also be 0.)
     {
-        auto lastError = GetLastError();
+        const auto lastError = GetLastError();
         if (lastError == ERROR_BROKEN_PIPE)
         {
             // This is a successful, but detectable, exit.
@@ -73,7 +73,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     if ((*backIter & _Utf8BitMasks::MaskAsciiByte) > _Utf8BitMasks::IsAsciiByte)
     {
         // Check only up to 3 last bytes, if no Lead Byte was found then the byte before must be the Lead Byte and no partials are in the buffer
-        for (DWORD dwSequenceLen{ 1UL }, stop{ dwRead < 4UL ? dwRead : 4UL }; dwSequenceLen < stop; ++dwSequenceLen, --backIter)
+        for (DWORD dwSequenceLen{ 1UL }; dwSequenceLen < std::min(dwRead, 4UL); ++dwSequenceLen, --backIter)
         {
             // If Lead Byte found
             if ((*backIter & _Utf8BitMasks::MaskContinuationByte) > _Utf8BitMasks::IsContinuationByte)

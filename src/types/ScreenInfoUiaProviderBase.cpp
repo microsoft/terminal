@@ -85,7 +85,7 @@ ScreenInfoUiaProviderBase::Release()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-    long val = InterlockedDecrement(&_cRefs);
+    const long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
         delete this;
@@ -260,7 +260,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
-    int rId[] = { UiaAppendRuntimeId, -1 };
+    const int rId[] = { UiaAppendRuntimeId, -1 };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
     *ppRuntimeId = BuildIntSafeArray(rId, 2);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);

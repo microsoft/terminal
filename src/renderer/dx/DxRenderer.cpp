@@ -147,7 +147,7 @@ DxEngine::~DxEngine()
                               // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-    D3D_FEATURE_LEVEL FeatureLevels[] = {
+    const D3D_FEATURE_LEVEL FeatureLevels[] = {
         D3D_FEATURE_LEVEL_11_1,
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_1,
@@ -277,7 +277,7 @@ DxEngine::~DxEngine()
 {
     RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
 
-    D2D1_RENDER_TARGET_PROPERTIES props =
+    const D2D1_RENDER_TARGET_PROPERTIES props =
         D2D1::RenderTargetProperties(
             D2D1_RENDER_TARGET_TYPE_DEFAULT,
             D2D1::PixelFormat(DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED),
@@ -440,7 +440,7 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain() noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
-    SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
+    const SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
     return Invalidate(&sr);
 }
 
@@ -671,7 +671,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
     {
         UnionRect(&_invalidRect, &_invalidRect, &rc);
 
-        RECT rcScreen = _GetDisplayRect();
+        const RECT rcScreen = _GetDisplayRect();
         IntersectRect(&_invalidRect, &_invalidRect, &rcScreen);
     }
     else
@@ -766,7 +766,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
             {
                 _presentDirty = _invalidRect;
 
-                RECT display = _GetDisplayRect();
+                const RECT display = _GetDisplayRect();
                 SubtractRect(&_presentScroll, &display, &_presentDirty);
                 _presentOffset.x = _invalidScroll.cx;
                 _presentOffset.y = _invalidScroll.cy;
@@ -1219,8 +1219,8 @@ enum class CursorPaintType
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
-    short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
+    const short widthInChars = static_cast<short>(viewInPixels.Width() / _glyphCell.cx);
+    const short heightInChars = static_cast<short>(viewInPixels.Height() / _glyphCell.cy);
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
@@ -1345,7 +1345,7 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK or relevant DirectWrite error.
 [[nodiscard]] HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
-    Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+    const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
 
     // Create the text layout
     CustomTextLayout layout(_dwriteFactory.Get(),
@@ -1691,9 +1691,9 @@ float DxEngine::GetScaling() const noexcept
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
         // or rounding or scaling manipulation.
-        COORD unscaled = desired.GetEngineSize();
+        const COORD unscaled = desired.GetEngineSize();
 
-        COORD scaled = coordSize;
+        const COORD scaled = coordSize;
 
         actual.SetFromEngine(fontName.data(),
                              desired.GetFamily(),

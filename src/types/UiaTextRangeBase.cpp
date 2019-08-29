@@ -469,7 +469,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
             const unsigned int totalRowsInRange = _rowCountInRange(_pData);
             for (unsigned int i = 0; i < totalRowsInRange; ++i)
             {
-                ScreenInfoRow screenInfoRow = _textBufferRowToScreenInfoRow(_pData, startRow + i);
+                const ScreenInfoRow screenInfoRow = _textBufferRowToScreenInfoRow(_pData, startRow + i);
                 if (!_isScreenInfoRowInViewport(_pData, screenInfoRow))
                 {
                     continue;
@@ -657,12 +657,12 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
         moveFunc = &_moveByLine;
     }
 
-    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     std::pair<Endpoint, Endpoint> newEndpoints;
 
     try
     {
-        MoveState moveState{ _pData, *this, moveDirection };
+        const MoveState moveState{ _pData, *this, moveDirection };
         newEndpoints = moveFunc(_pData,
                                 count,
                                 moveState,
@@ -721,7 +721,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     _outputRowConversions();
 #endif
 
-    MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const MovementDirection moveDirection = (count > 0) ? MovementDirection::Forward : MovementDirection::Backward;
 
     auto moveFunc = &_moveEndpointByUnitDocument;
     if (unit == TextUnit::TextUnit_Character)
@@ -736,7 +736,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     std::tuple<Endpoint, Endpoint, bool> moveResults;
     try
     {
-        MoveState moveState{ _pData, *this, moveDirection };
+        const MoveState moveState{ _pData, *this, moveDirection };
         moveResults = moveFunc(_pData, count, endpoint, moveState, pRetVal);
     }
     CATCH_RETURN();
@@ -1207,7 +1207,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(IUiaData* pData,
 const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
                                                         const SMALL_RECT viewport)
 {
-    ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
+    const ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
            viewportRow < static_cast<ViewportRow>(_getViewportHeight(viewport));
 }
@@ -1445,7 +1445,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterForward(IUiaData
                                                                         _Out_ int* const pAmountMoved)
 {
     *pAmountMoved = 0;
-    int count = moveCount;
+    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
 
@@ -1492,7 +1492,7 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(IUiaDat
 {
     THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
-    int count = moveCount;
+    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
     Column currentColumn = moveState.StartColumn;
 
@@ -1645,7 +1645,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(IUiaData* pData,
 {
     THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
-    int count = moveCount;
+    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
     Column currentColumn;
 
@@ -1693,7 +1693,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(IUiaData* pData,
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
-    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    const Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
     Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
     Endpoint end = _screenInfoRowToEndpoint(pData, moveState.EndScreenInfoRow) + moveState.EndColumn;
     bool degenerate = false;
@@ -1735,7 +1735,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
 {
     THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
     *pAmountMoved = 0;
-    int count = moveCount;
+    const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
     Column currentColumn;
 
@@ -1784,7 +1784,7 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
-    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    const Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
     Endpoint start = _screenInfoRowToEndpoint(pData, moveState.StartScreenInfoRow) + moveState.StartColumn;
     Endpoint end = _screenInfoRowToEndpoint(pData, moveState.EndScreenInfoRow) + moveState.EndColumn;
     bool degenerate = false;
@@ -1849,7 +1849,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitLine(I
         return std::make_tuple(start, end, degenerate);
     }
 
-    MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
+    const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
 
     if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
@@ -1954,7 +1954,7 @@ std::tuple<Endpoint, Endpoint, bool> UiaTextRangeBase::_moveEndpointByUnitLine(I
     }
 
     // translate the row back to an endpoint and handle any crossed endpoints
-    Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
+    const Endpoint convertedEndpoint = _screenInfoRowToEndpoint(pData, currentScreenInfoRow) + currentColumn;
     if (endpoint == TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start)
     {
         start = convertedEndpoint;
