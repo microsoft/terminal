@@ -77,6 +77,7 @@ public:
     bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
+    static GUID GenerateGuidForProfile(const std::wstring& name) noexcept;
 
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);

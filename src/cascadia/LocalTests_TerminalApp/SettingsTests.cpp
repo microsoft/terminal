@@ -6,6 +6,7 @@
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
 #include "JsonTestClass.h"
+#include <defaults.h>
 
 using namespace Microsoft::Console;
 using namespace TerminalApp;
@@ -41,6 +42,9 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ValidateHideProfiles);
         TEST_METHOD(ValidateProfilesGenerateGuids);
         TEST_METHOD(GeneratedGuidRoundtrips);
+        TEST_METHOD(TestAllValidationsWithNullGuids);
+        TEST_METHOD(TestReorderWithNullGuids);
+        TEST_METHOD(TestTheCrashDustinFound);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -724,5 +728,191 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_ARE_EQUAL(settings._profiles.at(0)._guid.has_value(), profile2._guid.has_value());
         VERIFY_ARE_EQUAL(settings._profiles.at(0).GetGuid(), profile2.GetGuid());
+    }
+
+    void SettingsTests::TestAllValidationsWithNullGuids()
+    {
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1"
+                }
+            ]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings{};
+        settings._LayerJsonString(settings0String, false);
+
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(1)._guid.has_value());
+
+        settings._ValidateSettings();
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+    }
+
+    void SettingsTests::TestReorderWithNullGuids()
+    {
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                },
+                {
+                    "name" : "profile1"
+                },
+                {
+                    "name" : "cmdFromUserSettings",
+                    "guid" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}" // from defaults.json
+                }
+            ]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings{};
+        settings._LayerJsonString(DefaultJson, true);
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+
+        settings._LayerJsonString(settings0String, false);
+
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(3)._name);
+
+        settings._ValidateSettings();
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"cmdFromUserSettings", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
+    }
+
+    void SettingsTests::TestTheCrashDustinFound()
+    {
+        Log::Comment(NoThrowString().Format(
+            L"During the GH#2515 PR, this set of settings was found to cause an"
+            L" exception, crashing the terminal. This test ensures that it doesn't."));
+
+        Log::Comment(NoThrowString().Format(
+            L"While similar to TestReorderWithNullGuids, there's something else"
+            L" about this scenario specifically that causes a crash, when "
+            L" TestReorderWithNullGuids did _not_."));
+
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+            "profiles": [
+                {
+                    "guid" : "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                    "acrylicOpacity" : 0.5,
+                    "closeOnExit" : true,
+                    "background" : "#8A00FF",
+                    "foreground" : "#F2F2F2",
+                    "commandline" : "cmd.exe",
+                    "cursorColor" : "#FFFFFF",
+                    "fontFace" : "Cascadia Code",
+                    "fontSize" : 10,
+                    "historySize" : 9001,
+                    "padding" : "20",
+                    "snapOnInput" : true,
+                    "startingDirectory" : "%USERPROFILE%",
+                    "useAcrylic" : true
+                },
+                {
+                    "name" : "ThisProfileShouldNotCrash",
+                    "tabTitle" : "Ubuntu",
+                    "acrylicOpacity" : 0.5,
+                    "background" : "#2C001E",
+                    "closeOnExit" : true,
+                    "colorScheme" : "Campbell",
+                    "commandline" : "wsl.exe",
+                    "cursorColor" : "#FFFFFF",
+                    "cursorShape" : "bar",
+                    "fontSize" : 10,
+                    "historySize" : 9001,
+                    "padding" : "0, 0, 0, 0",
+                    "snapOnInput" : true,
+                    "useAcrylic" : true
+                },
+                {
+                    // This is the same profile that would be generated by the WSL profile generator.
+                    "name" : "Ubuntu",
+                    "guid" : "{2C4DE342-38B7-51CF-B940-2309A097F518}",
+                    "acrylicOpacity" : 0.5,
+                    "background" : "#2C001E",
+                    "closeOnExit" : false,
+                    "cursorColor" : "#FFFFFF",
+                    "cursorShape" : "bar",
+                    "fontSize" : 10,
+                    "historySize" : 9001,
+                    "snapOnInput" : true,
+                    "useAcrylic" : true
+                }
+            ]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings{};
+        settings._LayerJsonString(DefaultJson, true);
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+
+        settings._LayerJsonString(settings0String, false);
+
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(3)._name);
+
+        settings._ValidateSettings();
+        VERIFY_ARE_EQUAL(0u, settings._warnings.size());
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
     }
 }

@@ -964,7 +964,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_name)));
+        _guid = Profile::GenerateGuidForProfile(_name);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -973,4 +973,9 @@ void Profile::GenerateGuidIfNecessary() noexcept
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
+}
+
+GUID Profile::GenerateGuidForProfile(const std::wstring& name) noexcept
+{
+    return Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
 }
