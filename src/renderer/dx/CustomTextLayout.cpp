@@ -485,10 +485,10 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
             glyphRun.bidiLevel = run.bidiLevel;
             glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
             glyphRun.fontFace = run.fontFace.Get();
-            glyphRun.glyphAdvances = _glyphAdvances.data() + run.glyphStart;
+            glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
             glyphRun.glyphCount = run.glyphCount;
-            glyphRun.glyphIndices = _glyphIndices.data() + run.glyphStart;
-            glyphRun.glyphOffsets = _glyphOffsets.data() + run.glyphStart;
+            glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
+            glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
             glyphRun.isSideways = false;
 
             DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
@@ -566,7 +566,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 
     if (textPosition < _text.size())
     {
-        *textString = _text.data() + textPosition;
+        *textString = &_text.at(textPosition);
         *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
     }
 

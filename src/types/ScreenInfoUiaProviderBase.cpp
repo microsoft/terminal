@@ -15,9 +15,11 @@ SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int
     SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, length);
     if (psa != nullptr)
     {
+        const auto dataSpan = gsl::make_span(data, length);
+
         for (long i = 0; i < length; i++)
         {
-            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(data[i]))))
+            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(dataSpan.at(i)))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;

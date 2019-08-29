@@ -248,12 +248,13 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     rect.bottom = rect.top + drawingContext->cellSize.height;
     rect.left = origin.x;
     rect.right = rect.left;
+    const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
 
-    for (UINT32 i = 0; i < glyphRun->glyphCount; i++)
+    for (const auto& advance : advancesSpan)
     {
-        rect.right += glyphRun->glyphAdvances[i];
+        rect.right += advance;
     }
-
+        
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
     // Now go onto drawing the text.

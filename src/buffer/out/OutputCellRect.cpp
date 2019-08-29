@@ -64,7 +64,7 @@ OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
 // - Pointer to the location in the rectangle that represents the start of the requested row.
 OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
 {
-    return (_storage.data() + (row * _cols));
+    return &_storage.at(row * _cols);
 }
 
 // Routine Description:
@@ -76,7 +76,7 @@ OutputCell* OutputCellRect::_FindRowOffset(const size_t row)
 // - Pointer to the location in the rectangle that represents the start of the requested row.
 const OutputCell* OutputCellRect::_FindRowOffset(const size_t row) const
 {
-    return (_storage.data() + (row * _cols));
+    return &_storage.at(row * _cols);
 }
 
 // Routine Description:

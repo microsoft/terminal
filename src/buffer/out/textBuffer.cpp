@@ -1145,7 +1145,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                     {
                         // note: this should be escaped (for '<', '>', and '&'),
                         // however MS Word doesn't appear to support HTML entities
-                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row).data() + startOffset, col - startOffset + includeCurrent));
+                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
                         startOffset = col;
                     }
                 };
