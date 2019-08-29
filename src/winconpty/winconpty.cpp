@@ -1,12 +1,34 @@
 #include "precomp.h"
 
 #include "../server/DeviceHandle.h"
-#include "../server/WinNTControl.h"
 
 #include "winconpty.h"
 
+#ifndef __INSIDE_WINDOWS
+#include <filesystem>
+#endif
+
 #pragma warning(push)
-#pragma warning(disable : 4273) // inconsistent dll linkage
+#pragma warning(disable : 4273) // inconsistent dll linkage (we are exporting things kernel32 also exports)
+
+extern "C" __declspec(dllexport) wchar_t* _ConsoleHostPath()
+{
+    // Use the magic of magic statics to only calculate this once.
+    static wil::unique_process_heap_string consoleHostPath = []() {
+#ifdef __INSIDE_WINDOWS
+        wil::unique_process_heap_string systemDirectory;
+        wil::GetSystemDirectoryW<wil::unique_process_heap_string>(systemDirectory);
+        return wil::str_concat_failfast<wil::unique_process_heap_string>(L"\\\\?\\", systemDirectory, L"\\conhost.exe");
+#else
+        // Use the STL only if we're not building in Windows.
+        std::filesystem::path modulePath{ wil::GetModuleFileNameW<std::wstring>(wil::GetModuleInstanceHandle()) };
+        modulePath.replace_filename(L"OpenConsole.exe");
+        auto modulePathAsString{ modulePath.wstring() };
+        return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
+#endif
+    }();
+    return consoleHostPath.get();
+}
 
 static bool
 _HandleIsValid(HANDLE h) noexcept
@@ -45,17 +67,14 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(signalPipeConhostSide.addressof(), signalPipeOurSide.addressof(), &sa, 0));
     RETURN_IF_WIN32_BOOL_FALSE(SetHandleInformation(signalPipeConhostSide.get(), HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT));
 
-    wchar_t szSystemRoot[MAX_PATH];
-    THROW_LAST_ERROR_IF(0 == GetWindowsDirectoryW(&szSystemRoot[0], MAX_PATH));
-
-    const wchar_t* pwszFormat = L"\\\\?\\%s\\system32\\conhost.exe --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
+    const wchar_t* pwszFormat = L"%s --headless %s--width %hu --height %hu --signal 0x%x --server 0x%x";
     // This is plenty of space to hold the formatted string
     wchar_t cmd[MAX_PATH];
     const BOOL bInheritCursor = (dwFlags & PSEUDOCONSOLE_INHERIT_CURSOR) == PSEUDOCONSOLE_INHERIT_CURSOR;
     swprintf_s(cmd,
                MAX_PATH,
                pwszFormat,
-               szSystemRoot,
+               _ConsoleHostPath(),
                bInheritCursor ? L"--inheritcursor " : L"",
                size.X,
                size.Y,
