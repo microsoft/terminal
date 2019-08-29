@@ -212,12 +212,7 @@ namespace winrt::TerminalApp::implementation
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:
-    // - titleElement: the element to use as the title of this ContentDialog
-    // - contentElement: the element to use as the content of this ContentDialog
-    // - primaryButtonText: The string to use on the primary or close button
-    // - secondaryButtonText: The string to use on the secondary button, this is
-    //                        currently only used for closing the whole window
-    // - isClosingWindow: whether this dialog is for closing the whole app window
+    // - dialog: the content dialog object to be shown
     fire_and_forget App::_ShowDialog(Controls::ContentDialog dialog)
     {
         // DON'T release this lock in a wil::scope_exit. The scope_exit will get
