@@ -182,8 +182,13 @@ IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect
 
     pRect->left = rc.left;
     pRect->top = rc.top;
-    pRect->width = rc.right - rc.left;
-    pRect->height = rc.bottom - rc.top;
+
+    LONG longWidth = 0;
+    RETURN_IF_FAILED(LongSub(rc.right, rc.left, &longWidth));
+    pRect->width = longWidth;
+    LONG longHeight = 0;
+    RETURN_IF_FAILED(LongSub(rc.bottom, rc.top, &longHeight));
+    pRect->height = longHeight;
 
     return S_OK;
 }

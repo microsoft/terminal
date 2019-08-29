@@ -212,7 +212,7 @@ void TextBufferCellIterator::_SetPos(const COORD newPos)
 
     if (newPos.X != _pos.X)
     {
-        const ptrdiff_t diff = newPos.X - _pos.X;
+        const ptrdiff_t diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
         _attrIter += diff;
     }
 

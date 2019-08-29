@@ -569,7 +569,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
                     if (currentScreenInfoRow == endScreenInfoRow)
                     {
                         // prevent the end from going past the last non-whitespace char in the row
-                        endIndex = std::min(static_cast<size_t>(endColumn + 1), rowRight);
+                        endIndex = std::min(gsl::narrow_cast<size_t>(endColumn) + 1, rowRight);
                     }
 
                     // if startIndex >= endIndex then _start is
@@ -1457,11 +1457,11 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterForward(IUiaData
 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
-            currentColumn + 1 >= right)
+            gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
         {
             break;
         }
-        else if (currentColumn + 1 >= right)
+        else if (gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
         {
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;
@@ -1669,11 +1669,11 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(IUiaData* pData,
 
         // check if we're at the edge of the screen info buffer
         if (currentScreenInfoRow == moveState.LimitingRow &&
-            currentColumn + 1 >= right)
+            gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
         {
             break;
         }
-        else if (currentColumn + 1 >= right)
+        else if (gsl::narrow_cast<size_t>(currentColumn) + 1 >= right)
         {
             // we're at the edge of a row and need to go to the next one
             currentColumn = moveState.FirstColumnInRow;

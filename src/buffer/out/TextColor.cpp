@@ -102,8 +102,8 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
         if (brighten && _index < 8)
         {
             FAIL_FAST_IF(colorTable.size() < 16);
-            FAIL_FAST_IF((size_t)(_index + 8) > (size_t)(colorTable.size()));
-            return colorTable.at(_index + 8);
+            FAIL_FAST_IF(gsl::narrow_cast<size_t>(_index) + 8 > colorTable.size());
+            return colorTable.at(gsl::narrow_cast<size_t>(_index) + 8);
         }
         else
         {

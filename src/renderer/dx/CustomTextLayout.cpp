@@ -39,7 +39,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
     _width{ width }
 {
     // Fetch the locale name out once now from the format
-    _localeName.resize(format->GetLocaleNameLength() + 1); // +1 for null
+    _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
     for (const auto& cluster : clusters)
@@ -306,8 +306,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 
         // Get the placement of the all the glyphs.
 
-        _glyphAdvances.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphAdvances.size()));
-        _glyphOffsets.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphOffsets.size()));
+        _glyphAdvances.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphAdvances.size()));
+        _glyphOffsets.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphOffsets.size()));
 
         const auto fontSizeFormat = _format->GetFontSize();
         const auto fontSize = fontSizeFormat * run.fontScale;
@@ -799,7 +799,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         RETURN_IF_FAILED(format1->GetFontCollection(&collection));
 
         std::wstring familyName;
-        familyName.resize(format1->GetFontFamilyNameLength() + 1);
+        familyName.resize(gsl::narrow_cast<size_t>(format1->GetFontFamilyNameLength()) + 1);
         RETURN_IF_FAILED(format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
 
         const auto weight = format1->GetFontWeight();

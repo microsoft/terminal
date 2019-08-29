@@ -977,9 +977,9 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
         std::vector<COLORREF> selectionBkAttr;
 
         // preallocate to avoid reallocs
-        selectionText.reserve(highlight.Width() + 2); // + 2 for \r\n if we munged it
-        selectionFgAttr.reserve(highlight.Width() + 2);
-        selectionBkAttr.reserve(highlight.Width() + 2);
+        selectionText.reserve(gsl::narrow<size_t>(highlight.Width()) + 2); // + 2 for \r\n if we munged it
+        selectionFgAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
+        selectionBkAttr.reserve(gsl::narrow<size_t>(highlight.Width()) + 2);
 
         // copy char data into the string buffer, skipping trailing bytes
         while (it)
@@ -1109,7 +1109,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
         bool hasWrittenAnyText = false;
         std::optional<COLORREF> fgColor = std::nullopt;
         std::optional<COLORREF> bkColor = std::nullopt;
-        for (UINT row = 0; row < rows.text.size(); row++)
+        for (size_t row = 0; row < rows.text.size(); row++)
         {
             size_t startOffset = 0;
 
@@ -1118,7 +1118,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 htmlBuilder << "<BR>";
             }
 
-            for (UINT col = 0; col < rows.text.at(row).length(); col++)
+            for (size_t col = 0; col < rows.text.at(row).length(); col++)
             {
                 // do not include \r nor \n as they don't have attributes
                 // and are not HTML friendly. For line break use '<BR>' instead.
