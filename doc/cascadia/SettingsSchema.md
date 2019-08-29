@@ -146,10 +146,10 @@ The most useful URI schemes to remember when customizing background images and i
 > ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
 
 ### Background images
-You can apply a separate background image to each of your profiles, allowing you to configure/brand/style each of your profiles independenly from one another if you wish. To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image should stretch to fill the available space using `backgroundImageStretchMode`.
+You can apply a separate background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish. To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image should stretch to fill the available space using `backgroundImageStretchMode`.
 
 ### Icons
-Terminal displays icons for each of your shell/connection profiles. By default, Terminal will specify a default icon for profiles referencing PowerShell, Cmd, etc., and a 'Tux' penguin icon for Linux/WSL distros. Terminal ships these standard icons as part of its app package, referred to via the `ms-appx` URI Scheme.
+Terminal displays icons for each of your shell/connection profiles. By default, Terminal will specify a default icon for profiles referencing PowerShell, Cmd, etc., and a 'Tux' penguin icon for Linux/WSL distros. Terminal ships these standard icons as part of its app package and refers to them via the `ms-appx` URI Scheme.
 
 Icons should be sized to 48px x 48px, in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO).
 
@@ -159,7 +159,7 @@ Icons should be sized to 48px x 48px, in an appropriate raster image format (e.g
 To specify an image of your own, store your image(s) in your `...\LocalState\` folder for icons local to a single machine, or in your `...\RoamingState\` folder for icons you want on all your machines. 
 
 ### Referencing images
-Images can be referred-to from your `profiles.json` configuration using the URI Schemes above.
+Images can be referred to from your `profiles.json` configuration using the URI Schemes above.
 
 For example, you could
 1. Download & extract the [Ubuntu roundel logo](https://design.ubuntu.com/brand/ubuntu-logo/)
