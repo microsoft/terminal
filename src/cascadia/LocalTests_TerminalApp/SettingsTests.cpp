@@ -279,47 +279,76 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
+        Profile profile0{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}") };
+        profile0._name = L"profile0";
+        Profile profile1{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}") };
+        profile1._name = L"profile1";
+        Profile profile2{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}") };
+        profile2._name = L"profile2";
+        Profile profile3{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}") };
+        profile3._name = L"profile3";
+        Profile profile4{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-6666-49a3-80bd-e8fdd045185c}") };
+        profile4._name = L"profile4";
+        Profile profile5{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-5555-49a3-80bd-e8fdd045185c}") };
+        profile5._name = L"profile5";
+        Profile profile6{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-7777-49a3-80bd-e8fdd045185c}") };
+        profile6._name = L"profile6";
 
         {
             // Case 1: Good settings
             Log::Comment(NoThrowString().Format(
                 L"Testing a pair of profiles with unique guids"));
-            const auto settingsObject = VerifyParseSucceeded(goodProfiles);
-            auto settings = CascadiaSettings::FromJson(settingsObject);
-            settings->_ValidateNoDuplicateProfiles();
-            VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings->_warnings.size());
-            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
+
+            CascadiaSettings settings{};
+            settings._profiles.push_back(profile0);
+            settings._profiles.push_back(profile1);
+
+            settings._ValidateNoDuplicateProfiles();
+
+            VERIFY_ARE_EQUAL(static_cast<size_t>(0), settings._warnings.size());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings._profiles.size());
         }
         {
             // Case 2: Bad settings
             Log::Comment(NoThrowString().Format(
                 L"Testing a pair of profiles with the same guid"));
-            const auto settingsObject = VerifyParseSucceeded(badProfiles);
-            auto settings = CascadiaSettings::FromJson(settingsObject);
 
-            settings->_ValidateNoDuplicateProfiles();
+            CascadiaSettings settings{};
+            settings._profiles.push_back(profile2);
+            settings._profiles.push_back(profile3);
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
-            VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
+            settings._ValidateNoDuplicateProfiles();
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.at(0).GetName());
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings._warnings.size());
+            VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings._warnings.at(0));
+
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0).GetName());
         }
         {
             // Case 3: Very bad settings
             Log::Comment(NoThrowString().Format(
                 L"Testing a set of profiles, many of which with duplicated guids"));
-            const auto settingsObject = VerifyParseSucceeded(veryBadProfiles);
-            auto settings = CascadiaSettings::FromJson(settingsObject);
-            settings->_ValidateNoDuplicateProfiles();
-            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings->_warnings.size());
-            VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
 
-            VERIFY_ARE_EQUAL(static_cast<size_t>(4), settings->_profiles.size());
-            VERIFY_ARE_EQUAL(L"profile0", settings->_profiles.at(0).GetName());
-            VERIFY_ARE_EQUAL(L"profile1", settings->_profiles.at(1).GetName());
-            VERIFY_ARE_EQUAL(L"profile4", settings->_profiles.at(2).GetName());
-            VERIFY_ARE_EQUAL(L"profile6", settings->_profiles.at(3).GetName());
+            CascadiaSettings settings{};
+            settings._profiles.push_back(profile0);
+            settings._profiles.push_back(profile1);
+            settings._profiles.push_back(profile2);
+            settings._profiles.push_back(profile3);
+            settings._profiles.push_back(profile4);
+            settings._profiles.push_back(profile5);
+            settings._profiles.push_back(profile6);
+
+            settings._ValidateNoDuplicateProfiles();
+
+            VERIFY_ARE_EQUAL(static_cast<size_t>(1), settings._warnings.size());
+            VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings._warnings.at(0));
+
+            VERIFY_ARE_EQUAL(static_cast<size_t>(4), settings._profiles.size());
+            VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(0).GetName());
+            VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(1).GetName());
+            VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(2).GetName());
+            VERIFY_ARE_EQUAL(L"profile6", settings._profiles.at(3).GetName());
         }
     }
 
@@ -345,6 +374,10 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
+        Profile profile4{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}") };
+        profile4._name = L"profile4";
+        Profile profile5{ Microsoft::Console::Utils::GuidFromString(L"{6239a42c-4444-49a3-80bd-e8fdd045185c}") };
+        profile5._name = L"profile5";
 
         // Case 2: Bad settings
         Log::Comment(NoThrowString().Format(
@@ -352,14 +385,20 @@ namespace TerminalAppLocalTests
         const auto settingsObject = VerifyParseSucceeded(badProfiles);
         auto settings = CascadiaSettings::FromJson(settingsObject);
 
+        settings->_profiles.push_back(profile4);
+        settings->_profiles.push_back(profile5);
+
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_warnings.size());
+        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(1));
 
-        VERIFY_ARE_EQUAL(static_cast<size_t>(2), settings->_profiles.size());
+        VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
+        VERIFY_IS_TRUE(settings->_profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings->_profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings->_profiles.at(2)._guid.has_value());
     }
 
     void SettingsTests::LayerGlobalProperties()
