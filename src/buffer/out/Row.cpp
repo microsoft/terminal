@@ -30,12 +30,12 @@ size_t ROW::size() const noexcept
     return _rowWidth;
 }
 
-const CharRow& ROW::GetCharRow() const
+const CharRow& ROW::GetCharRow() const noexcept
 {
     return _charRow;
 }
 
-CharRow& ROW::GetCharRow()
+CharRow& ROW::GetCharRow() noexcept
 {
     return const_cast<CharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
 }
@@ -132,12 +132,12 @@ RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) con
     return RowCellIterator(*this, startIndex, count);
 }
 
-UnicodeStorage& ROW::GetUnicodeStorage()
+UnicodeStorage& ROW::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
 
-const UnicodeStorage& ROW::GetUnicodeStorage() const
+const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 {
     return _pParent->GetUnicodeStorage();
 }

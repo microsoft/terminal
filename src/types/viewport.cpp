@@ -194,7 +194,7 @@ void Viewport::Clamp(COORD& pos) const
 // - other - Viewport to clamp to the inside of this viewport
 // Return Value:
 // - Clamped viewport
-Viewport Viewport::Clamp(const Viewport& other) const
+Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
     auto clampMe = other.ToInclusive();
 

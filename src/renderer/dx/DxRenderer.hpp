@@ -45,7 +45,7 @@ namespace Microsoft::Console::Render
 
         void SetCallback(std::function<void()> pfn);
 
-        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain() noexcept;
+        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -84,7 +84,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() noexcept override;
+        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() override;
 
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
@@ -133,7 +133,7 @@ namespace Microsoft::Console::Render
         void _InvalidOr(SMALL_RECT sr) noexcept;
         void _InvalidOr(RECT rc) noexcept;
 
-        void _InvalidOffset(POINT pt) noexcept;
+        void _InvalidOffset(POINT pt);
 
         bool _presentReady;
         RECT _presentDirty;

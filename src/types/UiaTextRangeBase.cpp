@@ -47,7 +47,7 @@ UiaTextRangeBase::MoveState::MoveState(const ScreenInfoRow startScreenInfoRow,
                                        const Column firstColumnInRow,
                                        const Column lastColumnInRow,
                                        const MovementIncrement increment,
-                                       const MovementDirection direction) :
+                                       const MovementDirection direction) noexcept :
     StartScreenInfoRow{ startScreenInfoRow },
     StartColumn{ startColumn },
     EndScreenInfoRow{ endScreenInfoRow },
@@ -184,7 +184,7 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
     _degenerate = true;
 }
 
-UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) :
+UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) noexcept:
     _cRefs{ 1 },
     _pProvider{ a._pProvider },
     _start{ a._start },
@@ -201,17 +201,17 @@ UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) :
 #endif
 }
 
-const IdType UiaTextRangeBase::GetId() const
+const IdType UiaTextRangeBase::GetId() const noexcept
 {
     return _id;
 }
 
-const Endpoint UiaTextRangeBase::GetStart() const
+const Endpoint UiaTextRangeBase::GetStart() const noexcept
 {
     return _start;
 }
 
-const Endpoint UiaTextRangeBase::GetEnd() const
+const Endpoint UiaTextRangeBase::GetEnd() const noexcept
 {
     return _end;
 }
@@ -222,12 +222,12 @@ const Endpoint UiaTextRangeBase::GetEnd() const
 // - <none>
 // Return Value:
 // - true if range is degenerate, false otherwise.
-const bool UiaTextRangeBase::IsDegenerate() const
+const bool UiaTextRangeBase::IsDegenerate() const noexcept
 {
     return _degenerate;
 }
 
-void UiaTextRangeBase::SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate)
+void UiaTextRangeBase::SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate) noexcept
 {
     _start = start;
     _end = end;
@@ -288,10 +288,10 @@ IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_re
 
 #pragma region ITextRangeProvider
 
-IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal)
+IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept{
         _pData->UnlockConsole();
     });
 
@@ -317,7 +317,7 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
 IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                                   _In_ ITextRangeProvider* pTargetRange,
                                                   _In_ TextPatternRangeEndpoint targetEndpoint,
-                                                  _Out_ int* pRetVal)
+                                                  _Out_ int* pRetVal) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -369,7 +369,7 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
 IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -415,7 +415,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
 IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttributeId*/,
                                                _In_ VARIANT /*val*/,
                                                _In_ BOOL /*searchBackward*/,
-                                               _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/)
+                                               _Outptr_result_maybenull_ ITextRangeProvider** /*ppRetVal*/) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::FindAttribute, nullptr);
@@ -423,7 +423,7 @@ IFACEMETHODIMP UiaTextRangeBase::FindAttribute(_In_ TEXTATTRIBUTEID /*textAttrib
 }
 
 IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                                   _Out_ VARIANT* pRetVal)
+                                                   _Out_ VARIANT* pRetVal) noexcept
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
 
@@ -445,7 +445,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetAttributeValue(_In_ TEXTATTRIBUTEID textAttr
 IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -516,7 +516,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetEnclosingElement(_Outptr_result_maybenull_ I
 IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -619,7 +619,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _Out_ int* pRetVal)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -691,7 +691,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
                                                     _Out_ int* pRetVal)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -758,7 +758,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
                                                      _In_ TextPatternRangeEndpoint targetEndpoint)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -866,7 +866,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
 IFACEMETHODIMP UiaTextRangeBase::Select()
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -895,7 +895,7 @@ IFACEMETHODIMP UiaTextRangeBase::Select()
 }
 
 // we don't support this
-IFACEMETHODIMP UiaTextRangeBase::AddToSelection()
+IFACEMETHODIMP UiaTextRangeBase::AddToSelection() noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::AddToSelection, nullptr);
@@ -903,7 +903,7 @@ IFACEMETHODIMP UiaTextRangeBase::AddToSelection()
 }
 
 // we don't support this
-IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection()
+IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection() noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RemoveFromSelection, nullptr);
@@ -913,7 +913,7 @@ IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection()
 IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
 {
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
@@ -997,7 +997,7 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
     return S_OK;
 }
 
-IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
+IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetChildren, nullptr);
@@ -1037,7 +1037,7 @@ const COORD UiaTextRangeBase::_getScreenFontSize() const
 // - <none>
 // Return Value:
 // - The number of rows
-const unsigned int UiaTextRangeBase::_getTotalRows(IUiaData* pData)
+const unsigned int UiaTextRangeBase::_getTotalRows(IUiaData* pData) noexcept
 {
     return pData->GetTextBuffer().TotalRowCount();
 }
@@ -1109,7 +1109,7 @@ const unsigned int UiaTextRangeBase::_rowCountInRange(IUiaData* pData) const
 // Return Value:
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                    const TextBufferRow row)
+                                                                    const TextBufferRow row) noexcept
 {
     const int firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row - firstRowIndex);
@@ -1122,7 +1122,7 @@ const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(IUiaData* pD
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row)
+const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row) noexcept
 {
     const SMALL_RECT viewport = pData->GetViewport().ToInclusive();
     return _screenInfoRowToViewportRow(row, viewport);
@@ -1136,7 +1136,7 @@ const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData,
 // Return Value:
 // - the equivalent ViewportRow.
 const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                const SMALL_RECT viewport)
+                                                                const SMALL_RECT viewport) noexcept
 {
     return row - viewport.Top;
 }
@@ -1149,7 +1149,7 @@ const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfo
 // - the non-normalized row index
 // Return Value:
 // - the normalized row index
-const Row UiaTextRangeBase::_normalizeRow(IUiaData* pData, const Row row)
+const Row UiaTextRangeBase::_normalizeRow(IUiaData* pData, const Row row) noexcept
 {
     const unsigned int totalRows = _getTotalRows(pData);
     return ((row + totalRows) % totalRows);
@@ -1161,7 +1161,7 @@ const Row UiaTextRangeBase::_normalizeRow(IUiaData* pData, const Row row)
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport height
-const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewport)
+const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewport) noexcept
 {
     FAIL_FAST_IF(!(viewport.Bottom >= viewport.Top));
     // + 1 because COORD is inclusive on both sides so subtracting top
@@ -1175,7 +1175,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 // - viewport - The viewport to measure
 // Return Value:
 // - The viewport width
-const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport)
+const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport) noexcept
 {
     FAIL_FAST_IF(!(viewport.Right >= viewport.Left));
 
@@ -1192,8 +1192,8 @@ const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport
 // Return Value:
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRangeBase::_isScreenInfoRowInViewport(IUiaData* pData,
-                                                        const ScreenInfoRow row)
-{
+                                                        const ScreenInfoRow row) noexcept
+{ 
     return _isScreenInfoRowInViewport(row, pData->GetViewport().ToInclusive());
 }
 
@@ -1205,7 +1205,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(IUiaData* pData,
 // Return Value:
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                        const SMALL_RECT viewport)
+                                                        const SMALL_RECT viewport) noexcept
 {
     const ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
@@ -1219,7 +1219,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 // Return Value:
 // - the equivalent TextBufferRow.
 const TextBufferRow UiaTextRangeBase::_screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                    const ScreenInfoRow row)
+                                                                    const ScreenInfoRow row) noexcept
 {
     const TextBufferRow firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row + firstRowIndex);
@@ -1326,7 +1326,7 @@ void UiaTextRangeBase::_addScreenInfoRowBoundaries(IUiaData* pData,
 // - <none>
 // Return Value:
 // - the index of the first row (0-indexed) of the screen info
-const unsigned int UiaTextRangeBase::_getFirstScreenInfoRowIndex()
+const unsigned int UiaTextRangeBase::_getFirstScreenInfoRowIndex() noexcept
 {
     return 0;
 }
@@ -1337,7 +1337,7 @@ const unsigned int UiaTextRangeBase::_getFirstScreenInfoRowIndex()
 // - <none>
 // Return Value:
 // - the index of the last row (0-indexed) of the screen info
-const unsigned int UiaTextRangeBase::_getLastScreenInfoRowIndex(IUiaData* pData)
+const unsigned int UiaTextRangeBase::_getLastScreenInfoRowIndex(IUiaData* pData) noexcept
 {
     return _getTotalRows(pData) - 1;
 }
@@ -1348,7 +1348,7 @@ const unsigned int UiaTextRangeBase::_getLastScreenInfoRowIndex(IUiaData* pData)
 // - <none>
 // Return Value:
 // - the index of the first column (0-indexed) of the screen info rows
-const Column UiaTextRangeBase::_getFirstColumnIndex()
+const Column UiaTextRangeBase::_getFirstColumnIndex() noexcept
 {
     return 0;
 }

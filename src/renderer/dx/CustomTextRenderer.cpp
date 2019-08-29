@@ -21,7 +21,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext*/,
-                                                                  _Out_ BOOL* isDisabled)
+                                                                  _Out_ BOOL* isDisabled) noexcept
 {
     *isDisabled = false;
     return S_OK;
@@ -38,7 +38,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
-                                                          _Out_ FLOAT* pixelsPerDip)
+                                                          _Out_ FLOAT* pixelsPerDip) noexcept
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -58,7 +58,7 @@ using namespace Microsoft::Console::Render;
 // Return Value:
 // - S_OK
 [[nodiscard]] HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
-                                                              DWRITE_MATRIX* transform)
+                                                              DWRITE_MATRIX* transform) noexcept
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -88,7 +88,7 @@ using namespace Microsoft::Console::Render;
                                                         FLOAT baselineOriginX,
                                                         FLOAT baselineOriginY,
                                                         _In_ const DWRITE_UNDERLINE* underline,
-                                                        IUnknown* clientDrawingEffect)
+                                                        IUnknown* clientDrawingEffect) noexcept
 {
     _FillRectangle(clientDrawingContext,
                    clientDrawingEffect,
@@ -120,7 +120,7 @@ using namespace Microsoft::Console::Render;
                                                             FLOAT baselineOriginX,
                                                             FLOAT baselineOriginY,
                                                             _In_ const DWRITE_STRIKETHROUGH* strikethrough,
-                                                            IUnknown* clientDrawingEffect)
+                                                            IUnknown* clientDrawingEffect) noexcept
 {
     _FillRectangle(clientDrawingContext,
                    clientDrawingEffect,
@@ -153,7 +153,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                         float width,
                                         float thickness,
                                         DWRITE_READING_DIRECTION /*readingDirection*/,
-                                        DWRITE_FLOW_DIRECTION /*flowDirection*/)
+                                        DWRITE_FLOW_DIRECTION /*flowDirection*/) noexcept
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
@@ -189,7 +189,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                            IDWriteInlineObject* inlineObject,
                                                            BOOL isSideways,
                                                            BOOL isRightToLeft,
-                                                           IUnknown* clientDrawingEffect)
+                                                           IUnknown* clientDrawingEffect) noexcept
 {
     return inlineObject->Draw(clientDrawingContext,
                               this,
@@ -433,7 +433,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                                      D2D1_POINT_2F baselineOrigin,
                                                                      DWRITE_MEASURING_MODE /*measuringMode*/,
                                                                      _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                                     _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+                                                                     _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
     // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
@@ -473,7 +473,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                             D2D1_POINT_2F baselineOrigin,
                                                             DWRITE_MEASURING_MODE /*measuringMode*/,
                                                             _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                            _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/)
+                                                            _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
     // This is glow text manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;

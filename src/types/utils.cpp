@@ -13,7 +13,7 @@ using namespace Microsoft::Console;
 // - min: the minimum value to clamp to
 // Return Value:
 // - The clamped value as a short.
-short Utils::ClampToShortMax(const long value, const short min)
+short Utils::ClampToShortMax(const long value, const short min) noexcept
 {
     return static_cast<short>(std::clamp(value,
                                          static_cast<long>(min),
@@ -454,7 +454,7 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 // - newAlpha: the new value to use as the alpha for all the entries in that table.
 // Return Value:
 // - <none>
-void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha)
+void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha) noexcept
 {
     const auto shiftedAlpha = newAlpha << 24;
     for (auto& color : table)

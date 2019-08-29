@@ -49,7 +49,7 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
 // - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
+void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
 {
     GetCursor().CopyProperties(OtherBuffer.GetCursor());
 }
@@ -60,7 +60,7 @@ void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer)
 // - <none>
 // Return Value:
 // - Total number of rows in the buffer
-UINT TextBuffer::TotalRowCount() const
+UINT TextBuffer::TotalRowCount() const noexcept
 {
     return gsl::narrow<UINT>(_storage.size());
 }
@@ -640,7 +640,7 @@ COORD TextBuffer::_GetPreviousFromCursor() const
     return coordPosition;
 }
 
-const SHORT TextBuffer::GetFirstRowIndex() const
+const SHORT TextBuffer::GetFirstRowIndex() const noexcept
 {
     return _firstRow;
 }
@@ -649,7 +649,7 @@ const Viewport TextBuffer::GetSize() const
     return Viewport::FromDimensions({ 0, 0 }, { gsl::narrow<SHORT>(_storage.at(0).size()), gsl::narrow<SHORT>(_storage.size()) });
 }
 
-void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex)
+void TextBuffer::_SetFirstRowIndex(const SHORT FirstRowIndex) noexcept
 {
     _firstRow = FirstRowIndex;
 }
@@ -755,12 +755,12 @@ void TextBuffer::ScrollRows(const SHORT firstRow, const SHORT size, const SHORT 
     _RefreshRowIDs(std::nullopt);
 }
 
-Cursor& TextBuffer::GetCursor()
+Cursor& TextBuffer::GetCursor() noexcept
 {
     return _cursor;
 }
 
-const Cursor& TextBuffer::GetCursor() const
+const Cursor& TextBuffer::GetCursor() const noexcept
 {
     return _cursor;
 }
@@ -795,7 +795,7 @@ void TextBuffer::Reset()
 // - newSize - new size of screen.
 // Return Value:
 // - Success if successful. Invalid parameter if screen buffer size is unexpected. No memory if allocation failed.
-[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize) noexcept
+[[nodiscard]] NTSTATUS TextBuffer::ResizeTraditional(const COORD newSize)
 {
     RETURN_HR_IF(E_INVALIDARG, newSize.X < 0 || newSize.Y < 0);
 
@@ -843,12 +843,12 @@ void TextBuffer::Reset()
     return S_OK;
 }
 
-const UnicodeStorage& TextBuffer::GetUnicodeStorage() const
+const UnicodeStorage& TextBuffer::GetUnicodeStorage() const noexcept
 {
     return _unicodeStorage;
 }
 
-UnicodeStorage& TextBuffer::GetUnicodeStorage()
+UnicodeStorage& TextBuffer::GetUnicodeStorage() noexcept
 {
     return _unicodeStorage;
 }
@@ -932,7 +932,7 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
 // - <none>
 // Return Value:
 // - This buffer's current render target.
-Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget()
+Microsoft::Console::Render::IRenderTarget& TextBuffer::GetRenderTarget() noexcept
 {
     return _renderTarget;
 }

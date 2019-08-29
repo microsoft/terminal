@@ -15,7 +15,7 @@ namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;
 
-    short ClampToShortMax(const long value, const short min);
+    short ClampToShortMax(const long value, const short min) noexcept;
 
     std::wstring GuidToString(const GUID guid);
     GUID GuidFromString(const std::wstring wstr);
@@ -28,7 +28,7 @@ namespace Microsoft::Console::Utils
     void InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table);
     void SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table);
     void Initialize256ColorTable(gsl::span<COLORREF>& table);
-    void SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha);
+    void SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha) noexcept;
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {

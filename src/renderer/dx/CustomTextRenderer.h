@@ -15,7 +15,7 @@ namespace Microsoft::Console::Render
                        IDWriteFactory* dwriteFactory,
                        const DWRITE_LINE_SPACING spacing,
                        const D2D_SIZE_F cellSize,
-                       const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE)
+                       const D2D1_DRAW_TEXT_OPTIONS options = D2D1_DRAW_TEXT_OPTIONS_NONE) noexcept
         {
             this->renderTarget = renderTarget;
             this->foregroundBrush = foregroundBrush;
@@ -43,13 +43,13 @@ namespace Microsoft::Console::Render
 
         // IDWritePixelSnapping methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE IsPixelSnappingDisabled(void* clientDrawingContext,
-                                                                        _Out_ BOOL* isDisabled) override;
+                                                                        _Out_ BOOL* isDisabled) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetPixelsPerDip(void* clientDrawingContext,
-                                                                _Out_ FLOAT* pixelsPerDip) override;
+                                                                _Out_ FLOAT* pixelsPerDip) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetCurrentTransform(void* clientDrawingContext,
-                                                                    _Out_ DWRITE_MATRIX* transform) override;
+                                                                    _Out_ DWRITE_MATRIX* transform) noexcept override;
 
         // IDWriteTextRenderer methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE DrawGlyphRun(void* clientDrawingContext,
@@ -64,13 +64,13 @@ namespace Microsoft::Console::Render
                                                               FLOAT baselineOriginX,
                                                               FLOAT baselineOriginY,
                                                               _In_ const DWRITE_UNDERLINE* underline,
-                                                              IUnknown* clientDrawingEffect) override;
+                                                              IUnknown* clientDrawingEffect) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE DrawStrikethrough(void* clientDrawingContext,
                                                                   FLOAT baselineOriginX,
                                                                   FLOAT baselineOriginY,
                                                                   _In_ const DWRITE_STRIKETHROUGH* strikethrough,
-                                                                  IUnknown* clientDrawingEffect) override;
+                                                                  IUnknown* clientDrawingEffect) noexcept override;
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE DrawInlineObject(void* clientDrawingContext,
                                                                  FLOAT originX,
@@ -78,7 +78,7 @@ namespace Microsoft::Console::Render
                                                                  IDWriteInlineObject* inlineObject,
                                                                  BOOL isSideways,
                                                                  BOOL isRightToLeft,
-                                                                 IUnknown* clientDrawingEffect) override;
+                                                                 IUnknown* clientDrawingEffect) noexcept override;
 
     private:
         void _FillRectangle(void* clientDrawingContext,
@@ -88,7 +88,7 @@ namespace Microsoft::Console::Render
                             float width,
                             float thickness,
                             DWRITE_READING_DIRECTION readingDirection,
-                            DWRITE_FLOW_DIRECTION flowDirection);
+                            DWRITE_FLOW_DIRECTION flowDirection) noexcept;
 
         [[nodiscard]] HRESULT _DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                  D2D1_POINT_2F baselineOrigin,
@@ -101,12 +101,12 @@ namespace Microsoft::Console::Render
                                                          D2D1_POINT_2F baselineOrigin,
                                                          DWRITE_MEASURING_MODE measuringMode,
                                                          _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                         _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
+                                                         _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
 
         [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                 D2D1_POINT_2F baselineOrigin,
                                                 DWRITE_MEASURING_MODE measuringMode,
                                                 _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription);
+                                                _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
     };
 }

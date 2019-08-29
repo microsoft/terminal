@@ -15,7 +15,7 @@
 OutputCellView::OutputCellView(const std::wstring_view view,
                                const DbcsAttribute dbcsAttr,
                                const TextAttribute textAttr,
-                               const TextAttributeBehavior behavior) :
+                               const TextAttributeBehavior behavior) noexcept:
     _view(view),
     _dbcsAttr(dbcsAttr),
     _textAttr(textAttr),

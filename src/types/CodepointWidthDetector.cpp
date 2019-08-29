@@ -14,7 +14,7 @@ namespace
         CodepointWidth width;
     };
 
-    static bool operator<(const UnicodeRange& range, const unsigned int searchTerm)
+    static bool operator<(const UnicodeRange& range, const unsigned int searchTerm) noexcept
     {
         return range.upperBound < searchTerm;
     }
@@ -316,7 +316,7 @@ namespace
 // - glyph - the utf16 encoded codepoint to search for
 // Return Value:
 // - the width type of the codepoint
-CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) const noexcept
+CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) const
 {
     if (glyph.empty())
     {

@@ -129,7 +129,7 @@ namespace Microsoft::Console::Types
                       const Column firstColumnInRow,
                       const Column lastColumnInRow,
                       const MovementIncrement increment,
-                      const MovementDirection direction);
+                      const MovementDirection direction) noexcept;
 
 #ifdef UNIT_TESTING
             friend class ::UiaTextRangeTests;
@@ -139,14 +139,14 @@ namespace Microsoft::Console::Types
     public:
         virtual ~UiaTextRangeBase() = default;
 
-        const IdType GetId() const;
-        const Endpoint GetStart() const;
-        const Endpoint GetEnd() const;
-        const bool IsDegenerate() const;
+        const IdType GetId() const noexcept;
+        const Endpoint GetStart() const noexcept;
+        const Endpoint GetEnd() const noexcept;
+        const bool IsDegenerate() const noexcept;
 
         // TODO GitHub #605:
         // only used for UiaData::FindText. Remove after Search added properly
-        void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate);
+        void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate) noexcept;
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
@@ -158,22 +158,22 @@ namespace Microsoft::Console::Types
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
-        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) override;
+        IFACEMETHODIMP Compare(_In_opt_ ITextRangeProvider* pRange, _Out_ BOOL* pRetVal) noexcept override;
         IFACEMETHODIMP CompareEndpoints(_In_ TextPatternRangeEndpoint endpoint,
                                         _In_ ITextRangeProvider* pTargetRange,
                                         _In_ TextPatternRangeEndpoint targetEndpoint,
-                                        _Out_ int* pRetVal) override;
+                                        _Out_ int* pRetVal) noexcept override;
         IFACEMETHODIMP ExpandToEnclosingUnit(_In_ TextUnit unit) override;
         IFACEMETHODIMP FindAttribute(_In_ TEXTATTRIBUTEID textAttributeId,
                                      _In_ VARIANT val,
                                      _In_ BOOL searchBackward,
-                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+                                     _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) noexcept override;
         virtual IFACEMETHODIMP FindText(_In_ BSTR text,
                                         _In_ BOOL searchBackward,
                                         _In_ BOOL ignoreCase,
                                         _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;
         IFACEMETHODIMP GetAttributeValue(_In_ TEXTATTRIBUTEID textAttributeId,
-                                         _Out_ VARIANT* pRetVal) override;
+                                         _Out_ VARIANT* pRetVal) noexcept override;
         IFACEMETHODIMP GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
         IFACEMETHODIMP GetEnclosingElement(_Outptr_result_maybenull_ IRawElementProviderSimple** ppRetVal) override;
         IFACEMETHODIMP GetText(_In_ int maxLength,
@@ -189,10 +189,10 @@ namespace Microsoft::Console::Types
                                            _In_ ITextRangeProvider* pTargetRange,
                                            _In_ TextPatternRangeEndpoint targetEndpoint) override;
         IFACEMETHODIMP Select() override;
-        IFACEMETHODIMP AddToSelection() override;
-        IFACEMETHODIMP RemoveFromSelection() override;
+        IFACEMETHODIMP AddToSelection() noexcept override;
+        IFACEMETHODIMP RemoveFromSelection() noexcept override;
         IFACEMETHODIMP ScrollIntoView(_In_ BOOL alignToTop) override;
-        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) override;
+        IFACEMETHODIMP GetChildren(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept override;
 
     protected:
 #if _DEBUG
@@ -225,7 +225,7 @@ namespace Microsoft::Console::Types
 
         void Initialize(_In_ const UiaPoint point);
 
-        UiaTextRangeBase(const UiaTextRangeBase& a);
+        UiaTextRangeBase(const UiaTextRangeBase& a) noexcept;
 
         // used to debug objects passed back and forth
         // between the provider and the client
@@ -262,13 +262,13 @@ namespace Microsoft::Console::Types
         static const COORD _getScreenBufferCoords(IUiaData* pData);
         virtual const COORD _getScreenFontSize() const;
 
-        static const unsigned int _getTotalRows(IUiaData* pData);
+        static const unsigned int _getTotalRows(IUiaData* pData) noexcept;
         static const unsigned int _getRowWidth(IUiaData* pData);
 
-        static const unsigned int _getFirstScreenInfoRowIndex();
-        static const unsigned int _getLastScreenInfoRowIndex(IUiaData* pData);
+        static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
+        static const unsigned int _getLastScreenInfoRowIndex(IUiaData* pData) noexcept;
 
-        static const Column _getFirstColumnIndex();
+        static const Column _getFirstColumnIndex() noexcept;
         static const Column _getLastColumnIndex(IUiaData* pData);
 
         const unsigned int _rowCountInRange(IUiaData* pData) const;
@@ -276,10 +276,10 @@ namespace Microsoft::Console::Types
         static const TextBufferRow _endpointToTextBufferRow(IUiaData* pData,
                                                             const Endpoint endpoint);
         static const ScreenInfoRow _textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                 const TextBufferRow row);
+                                                                 const TextBufferRow row) noexcept;
 
         static const TextBufferRow _screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                 const ScreenInfoRow row);
+                                                                 const ScreenInfoRow row) noexcept;
         static const Endpoint _textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row);
 
         static const ScreenInfoRow _endpointToScreenInfoRow(IUiaData* pData,
@@ -295,20 +295,20 @@ namespace Microsoft::Console::Types
         static const Column _endpointToColumn(IUiaData* pData,
                                               const Endpoint endpoint);
 
-        static const Row _normalizeRow(IUiaData* pData, const Row row);
+        static const Row _normalizeRow(IUiaData* pData, const Row row) noexcept;
 
         static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
-                                                             const ScreenInfoRow row);
+                                                             const ScreenInfoRow row) noexcept;
         static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                             const SMALL_RECT viewport);
+                                                             const SMALL_RECT viewport) noexcept;
 
         static const bool _isScreenInfoRowInViewport(IUiaData* pData,
-                                                     const ScreenInfoRow row);
+                                                     const ScreenInfoRow row) noexcept;
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
-                                                     const SMALL_RECT viewport);
+                                                     const SMALL_RECT viewport) noexcept;
 
-        static const unsigned int _getViewportHeight(const SMALL_RECT viewport);
-        static const unsigned int _getViewportWidth(const SMALL_RECT viewport);
+        static const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
+        static const unsigned int _getViewportWidth(const SMALL_RECT viewport) noexcept;
 
         void _addScreenInfoRowBoundaries(IUiaData* pData,
                                          const ScreenInfoRow screenInfoRow,

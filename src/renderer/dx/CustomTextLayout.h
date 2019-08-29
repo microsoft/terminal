@@ -32,7 +32,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT STDMETHODCALLTYPE Draw(_In_opt_ void* clientDrawingContext,
                                                      _In_ IDWriteTextRenderer* renderer,
                                                      FLOAT originX,
-                                                     FLOAT originY);
+                                                     FLOAT originY) noexcept;
 
         // IDWriteTextAnalysisSource methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextAtPosition(UINT32 textPosition,
@@ -40,14 +40,14 @@ namespace Microsoft::Console::Render
                                                                   _Out_ UINT32* textLength) override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetTextBeforePosition(UINT32 textPosition,
                                                                       _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                      _Out_ UINT32* textLength) override;
-        [[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() override;
+                                                                      _Out_ UINT32* textLength) noexcept override;
+        [[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE GetParagraphReadingDirection() noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetLocaleName(UINT32 textPosition,
                                                               _Out_ UINT32* textLength,
-                                                              _Outptr_result_z_ WCHAR const** localeName) override;
+                                                              _Outptr_result_z_ WCHAR const** localeName) noexcept override;
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetNumberSubstitution(UINT32 textPosition,
                                                                       _Out_ UINT32* textLength,
-                                                                      _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) override;
+                                                                      _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept override;
 
         // IDWriteTextAnalysisSink methods
         [[nodiscard]] HRESULT STDMETHODCALLTYPE SetScriptAnalysis(UINT32 textPosition,
@@ -93,12 +93,12 @@ namespace Microsoft::Console::Render
             ::Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
             FLOAT fontScale;
 
-            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const
+            inline bool ContainsTextPosition(UINT32 desiredTextPosition) const noexcept
             {
                 return desiredTextPosition >= textStart && desiredTextPosition < textStart + textLength;
             }
 
-            inline bool operator==(UINT32 desiredTextPosition) const
+            inline bool operator==(UINT32 desiredTextPosition) const noexcept
             {
                 // Search by text position using std::find
                 return ContainsTextPosition(desiredTextPosition);

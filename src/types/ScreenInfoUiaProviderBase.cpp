@@ -10,7 +10,7 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
+SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length) noexcept
 {
     SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, length);
     if (psa != nullptr)
@@ -133,7 +133,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
 // Gets UI Automation provider options.
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
@@ -169,7 +169,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId,
-                                                           _Out_ VARIANT* pVariant)
+                                                           _Out_ VARIANT* pVariant) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
@@ -239,7 +239,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID prope
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
@@ -252,7 +252,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);
@@ -270,7 +270,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
@@ -298,7 +298,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     //ApiMsgGetSelection apiMsg;
 
     _LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
 
@@ -417,7 +417,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     //Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
 
     _LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
 
@@ -573,7 +573,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     return hr;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
@@ -589,12 +589,12 @@ const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const
     return _getTextBuffer().GetSize().Dimensions();
 }
 
-const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const
+const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const noexcept
 {
     return _pData->GetTextBuffer();
 }
 
-const Viewport ScreenInfoUiaProviderBase::_getViewport() const
+const Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
 {
     return _pData->GetViewport();
 }

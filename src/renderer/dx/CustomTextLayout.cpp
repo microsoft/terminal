@@ -88,7 +88,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
                                                                _In_ IDWriteTextRenderer* renderer,
                                                                FLOAT originX,
-                                                               FLOAT originY)
+                                                               FLOAT originY) noexcept
 {
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
@@ -585,7 +585,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPosition,
                                                                                 _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                                _Out_ UINT32* textLength)
+                                                                                _Out_ UINT32* textLength) noexcept
 {
     *textString = nullptr;
     *textLength = 0;
@@ -606,7 +606,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - <none>
 // Return Value:
 // - The reading direction held for this layout from construction
-[[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection()
+[[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection() noexcept
 {
     return _readingDirection;
 }
@@ -622,7 +622,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
                                                                         _Out_ UINT32* textLength,
-                                                                        _Outptr_result_z_ WCHAR const** localeName)
+                                                                        _Outptr_result_z_ WCHAR const** localeName) noexcept
 {
     *localeName = _localeName.data();
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
@@ -641,7 +641,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPosition,
                                                                                 _Out_ UINT32* textLength,
-                                                                                _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution)
+                                                                                _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept
 {
     *numberSubstitution = nullptr;
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;

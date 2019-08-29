@@ -84,7 +84,7 @@ size_t CharRow::size() const noexcept
 // - sRowWidth - The width of the row.
 // Return Value:
 // - <none>
-void CharRow::Reset()
+void CharRow::Reset() noexcept
 {
     for (auto& cell : _data)
     {
@@ -292,12 +292,12 @@ std::wstring CharRow::GetText() const
     return wstr;
 }
 
-UnicodeStorage& CharRow::GetUnicodeStorage()
+UnicodeStorage& CharRow::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
 
-const UnicodeStorage& CharRow::GetUnicodeStorage() const
+const UnicodeStorage& CharRow::GetUnicodeStorage() const noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
@@ -308,7 +308,7 @@ const UnicodeStorage& CharRow::GetUnicodeStorage() const
 // - column - the column to generate the key for
 // Return Value:
 // - the COORD key for data access from UnicodeStorage for the column
-COORD CharRow::GetStorageKey(const size_t column) const
+COORD CharRow::GetStorageKey(const size_t column) const noexcept
 {
     return { gsl::narrow<SHORT>(column), _pParent->GetId() };
 }

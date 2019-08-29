@@ -11,7 +11,7 @@
 // - rgbColor: the COLORREF containing the color information for this TextColor
 // Return Value:
 // - <none>
-void TextColor::SetColor(const COLORREF rgbColor)
+void TextColor::SetColor(const COLORREF rgbColor) noexcept
 {
     _meta = ColorType::IsRgb;
     _red = GetRValue(rgbColor);
@@ -25,7 +25,7 @@ void TextColor::SetColor(const COLORREF rgbColor)
 // - index: the index of the colortable we should use for this TextColor.
 // Return Value:
 // - <none>
-void TextColor::SetIndex(const BYTE index)
+void TextColor::SetIndex(const BYTE index) noexcept
 {
     _meta = ColorType::IsIndex;
     _index = index;
@@ -38,7 +38,7 @@ void TextColor::SetIndex(const BYTE index)
 // - <none>
 // Return Value:
 // - <none>
-void TextColor::SetDefault()
+void TextColor::SetDefault() noexcept
 {
     _meta = ColorType::IsDefault;
 }
@@ -63,7 +63,7 @@ void TextColor::SetDefault()
 // - a COLORREF containing the real value of this TextColor.
 COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
                              const COLORREF defaultColor,
-                             bool brighten) const
+                             bool brighten) const noexcept
 {
     if (IsDefault())
     {
@@ -119,7 +119,7 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
 // - <none>
 // Return Value:
 // - a COLORREF containing our stored value
-COLORREF TextColor::_GetRGB() const
+COLORREF TextColor::_GetRGB() const noexcept
 {
     return RGB(_red, _green, _blue);
 }

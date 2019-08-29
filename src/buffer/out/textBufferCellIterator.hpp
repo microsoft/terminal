@@ -32,8 +32,8 @@ public:
 
     operator bool() const noexcept;
 
-    bool operator==(const TextBufferCellIterator& it) const noexcept;
-    bool operator!=(const TextBufferCellIterator& it) const noexcept;
+    bool operator==(const TextBufferCellIterator& it) const;
+    bool operator!=(const TextBufferCellIterator& it) const;
 
     TextBufferCellIterator& operator+=(const ptrdiff_t& movement);
     TextBufferCellIterator& operator-=(const ptrdiff_t& movement);

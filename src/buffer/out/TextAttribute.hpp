@@ -90,10 +90,10 @@ public:
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const;
+                                    COLORREF defaultBgColor) const noexcept;
     COLORREF CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                     COLORREF defaultFgColor,
-                                    COLORREF defaultBgColor) const;
+                                    COLORREF defaultBgColor) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -110,7 +110,7 @@ public:
     void SetLegacyAttributes(const WORD attrs,
                              const bool setForeground,
                              const bool setBackground,
-                             const bool setMeta);
+                             const bool setMeta) noexcept;
 
     void SetIndexedAttributes(const std::optional<const BYTE> foreground,
                               const std::optional<const BYTE> background) noexcept;
@@ -133,9 +133,9 @@ public:
     bool IsLegacy() const noexcept;
     bool IsBold() const noexcept;
 
-    void SetForeground(const COLORREF rgbForeground);
-    void SetBackground(const COLORREF rgbBackground);
-    void SetColor(const COLORREF rgbColor, const bool fIsForeground);
+    void SetForeground(const COLORREF rgbForeground) noexcept;
+    void SetBackground(const COLORREF rgbBackground) noexcept;
+    void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;
 
     void SetDefaultForeground() noexcept;
     void SetDefaultBackground() noexcept;
@@ -150,9 +150,9 @@ public:
 
 private:
     COLORREF _GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const;
+                               COLORREF defaultColor) const noexcept;
     COLORREF _GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                               COLORREF defaultColor) const;
+                               COLORREF defaultColor) const noexcept;
     bool _IsReverseVideo() const noexcept;
     void _SetBoldness(const bool isBold) noexcept;
 
