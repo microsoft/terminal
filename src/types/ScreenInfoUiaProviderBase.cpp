@@ -388,14 +388,14 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         // fill the safe array
         for (LONG i = 0; i < static_cast<LONG>(ranges.size()); ++i)
         {
-            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges[i]));
+            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges.at(i)));
             if (FAILED(hr))
             {
                 SafeArrayDestroy(*ppRetVal);
                 *ppRetVal = nullptr;
                 while (!ranges.empty())
                 {
-                    UiaTextRangeBase* pRange = ranges[0];
+                    UiaTextRangeBase* pRange = ranges.at(0);
                     ranges.pop_front();
                     pRange->Release();
                 }

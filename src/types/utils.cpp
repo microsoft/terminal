@@ -92,11 +92,11 @@ std::string Utils::ColorToHexString(const COLORREF color)
 COLORREF Utils::ColorFromHexString(const std::string str)
 {
     THROW_HR_IF(E_INVALIDARG, str.size() < 7 || str.size() >= 8);
-    THROW_HR_IF(E_INVALIDARG, str[0] != '#');
+    THROW_HR_IF(E_INVALIDARG, str.at(0) != '#');
 
-    std::string rStr{ &str[1], 2 };
-    std::string gStr{ &str[3], 2 };
-    std::string bStr{ &str[5], 2 };
+    std::string rStr{ &str.at(1), 2 };
+    std::string gStr{ &str.at(3), 2 };
+    std::string bStr{ &str.at(5), 2 };
 
     BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
@@ -490,8 +490,8 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     std::array<uint8_t, 20> buffer;
     THROW_IF_NTSTATUS_FAILED(BCryptFinishHash(hash.get(), buffer.data(), gsl::narrow<ULONG>(buffer.size()), 0));
 
-    buffer[6] = (buffer[6] & 0x0F) | 0x50; // set the uuid version to 5
-    buffer[8] = (buffer[8] & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
+    buffer.at(6) = (buffer.at(6) & 0x0F) | 0x50; // set the uuid version to 5
+    buffer.at(8) = (buffer.at(8) & 0x3F) | 0x80; // set the variant to 2 (RFC4122)
 
     // We're using memcpy here pursuant to N4713 6.7.2/3 [basic.types],
     // "...the underlying bytes making up the object can be copied into an array

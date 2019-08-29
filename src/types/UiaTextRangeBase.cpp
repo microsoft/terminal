@@ -487,7 +487,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
         HRESULT hr;
         for (LONG i = 0; i < static_cast<LONG>(coords.size()); ++i)
         {
-            hr = SafeArrayPutElement(*ppRetVal, &i, &coords[i]);
+            hr = SafeArrayPutElement(*ppRetVal, &i, &coords.at(i));
             if (FAILED(hr))
             {
                 SafeArrayDestroy(*ppRetVal);

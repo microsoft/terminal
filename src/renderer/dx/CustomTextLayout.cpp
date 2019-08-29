@@ -268,7 +268,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         do
         {
             hr = _analyzer->GetGlyphs(
-                &_text[textStart],
+                &_text.at(textStart),
                 textLength,
                 run.fontFace.Get(),
                 run.isSideways, // isSideways,
@@ -280,10 +280,10 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                 nullptr, // featureLengths
                 0, // featureCount
                 maxGlyphCount, // maxGlyphCount
-                &_glyphClusters[textStart],
-                &textProps[0],
-                &_glyphIndices[glyphStart],
-                &glyphProps[0],
+                &_glyphClusters.at(textStart),
+                &textProps.at(0),
+                &_glyphIndices.at(glyphStart),
+                &glyphProps.at(0),
                 &actualGlyphCount);
             tries++;
 
@@ -313,12 +313,12 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         const auto fontSize = fontSizeFormat * run.fontScale;
 
         hr = _analyzer->GetGlyphPlacements(
-            &_text[textStart],
-            &_glyphClusters[textStart],
-            &textProps[0],
+            &_text.at(textStart),
+            &_glyphClusters.at(textStart),
+            &textProps.at(0),
             textLength,
-            &_glyphIndices[glyphStart],
-            &glyphProps[0],
+            &_glyphIndices.at(glyphStart),
+            &glyphProps.at(0),
             actualGlyphCount,
             run.fontFace.Get(),
             fontSize,
@@ -329,8 +329,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
             NULL, // features
             NULL, // featureRangeLengths
             0, // featureRanges
-            &_glyphAdvances[glyphStart],
-            &_glyphOffsets[glyphStart]);
+            &_glyphAdvances.at(glyphStart),
+            &_glyphOffsets.at(glyphStart));
 
         RETURN_IF_FAILED(hr);
 
@@ -391,13 +391,13 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
         for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
         {
             // Advance is how wide in pixels the glyph is
-            auto& advance = _glyphAdvances[i];
+            auto& advance = _glyphAdvances.at(i);
 
             // Offsets is how far to move the origin (in pixels) from where it is
-            auto& offset = _glyphOffsets[i];
+            auto& offset = _glyphOffsets.at(i);
 
             // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns[i];
+            const auto columns = _textClusterColumns.at(i);
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
@@ -419,7 +419,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                 // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
                 // height proportional to the width that we desire.
                 INT32 advanceInDesignUnits;
-                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices[i], &advanceInDesignUnits));
+                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
 
                 // When things are drawn, we want the font size (as specified in the base font in the original format)
                 // to be scaled by some factor.
@@ -940,7 +940,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - <none> - Updates internal state
 void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 {
-    if (_runIndex < _runs.size() && _runs[_runIndex].ContainsTextPosition(textPosition))
+    if (_runIndex < _runs.size() && _runs.at(_runIndex).ContainsTextPosition(textPosition))
     {
         return;
     }
@@ -974,7 +974,7 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
 
     // Copy the old run to the end.
-    LinkedRun& frontHalf = _runs[_runIndex];
+    LinkedRun& frontHalf = _runs.at(_runIndex);
     LinkedRun& backHalf = _runs.back();
     backHalf = frontHalf;
 

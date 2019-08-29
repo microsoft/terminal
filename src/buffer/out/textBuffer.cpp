@@ -78,7 +78,7 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 
     // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
     const size_t offsetIndex = (_firstRow + index) % totalRows;
-    return _storage[offsetIndex];
+    return _storage.at(offsetIndex);
 }
 
 // Routine Description:
@@ -812,7 +812,7 @@ void TextBuffer::Reset()
     // rotate rows until the top row is at index 0
     try
     {
-        const ROW& newTopRow = _storage[TopRowIndex];
+        const ROW& newTopRow = _storage.at(TopRowIndex);
         while (&newTopRow != &_storage.front())
         {
             _storage.push_back(std::move(_storage.front()));
@@ -923,7 +923,7 @@ ROW& TextBuffer::_GetPrevRowNoWrap(const ROW& Row)
     }
 
     THROW_HR_IF(E_FAIL, Row.GetId() == _firstRow);
-    return _storage[prevRowIndex];
+    return _storage.at(prevRowIndex);
 }
 
 // Method Description:
@@ -1118,25 +1118,25 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 htmlBuilder << "<BR>";
             }
 
-            for (UINT col = 0; col < rows.text[row].length(); col++)
+            for (UINT col = 0; col < rows.text.at(row).length(); col++)
             {
                 // do not include \r nor \n as they don't have attributes
                 // and are not HTML friendly. For line break use '<BR>' instead.
                 bool isLastCharInRow =
-                    col == rows.text[row].length() - 1 ||
-                    rows.text[row][col + 1] == '\r' ||
-                    rows.text[row][col + 1] == '\n';
+                    col == rows.text.at(row).length() - 1 ||
+                    rows.text.at(row).at(col + 1) == '\r' ||
+                    rows.text.at(row).at(col + 1) == '\n';
 
                 bool colorChanged = false;
-                if (!fgColor.has_value() || rows.FgAttr[row][col] != fgColor.value())
+                if (!fgColor.has_value() || rows.FgAttr.at(row).at(col) != fgColor.value())
                 {
-                    fgColor = rows.FgAttr[row][col];
+                    fgColor = rows.FgAttr.at(row).at(col);
                     colorChanged = true;
                 }
 
-                if (!bkColor.has_value() || rows.BkAttr[row][col] != bkColor.value())
+                if (!bkColor.has_value() || rows.BkAttr.at(row).at(col) != bkColor.value())
                 {
-                    bkColor = rows.BkAttr[row][col];
+                    bkColor = rows.BkAttr.at(row).at(col);
                     colorChanged = true;
                 }
 
@@ -1145,7 +1145,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                     {
                         // note: this should be escaped (for '<', '>', and '&'),
                         // however MS Word doesn't appear to support HTML entities
-                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text[row].data() + startOffset, col - startOffset + includeCurrent));
+                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row).data() + startOffset, col - startOffset + includeCurrent));
                         startOffset = col;
                     }
                 };

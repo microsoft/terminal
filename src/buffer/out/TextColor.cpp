@@ -81,9 +81,9 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
             // If we find a match, return instead the bright version of this color
             for (size_t i = 0; i < 8; i++)
             {
-                if (colorTable[i] == defaultColor)
+                if (colorTable.at(i) == defaultColor)
                 {
-                    return colorTable[i + 8];
+                    return colorTable.at(i + 8);
                 }
             }
         }
@@ -103,11 +103,11 @@ COLORREF TextColor::GetColor(std::basic_string_view<COLORREF> colorTable,
         {
             FAIL_FAST_IF(colorTable.size() < 16);
             FAIL_FAST_IF((size_t)(_index + 8) > (size_t)(colorTable.size()));
-            return colorTable[_index + 8];
+            return colorTable.at(_index + 8);
         }
         else
         {
-            return colorTable[_index];
+            return colorTable.at(_index);
         }
     }
 }

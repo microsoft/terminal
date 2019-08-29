@@ -284,7 +284,7 @@ std::deque<std::unique_ptr<KeyEvent>> SynthesizeNumpadEvents(const wchar_t wch, 
         // But it is absolutely valid as 0xFF or 255 unsigned as the correct CP437 character.
         // We need to treat it as unsigned because we're going to pretend it was a keypad entry
         // and you don't enter negative numbers on the keypad.
-        unsigned char const uch = static_cast<unsigned char>(convertedChars[0]);
+        unsigned char const uch = static_cast<unsigned char>(convertedChars.at(0));
 
         // unsigned char values are in the range [0, 255] so we need to be
         // able to store up to 4 chars from the conversion (including the end of string char)
