@@ -1076,9 +1076,9 @@ void Profile::GenerateGuidIfNecessary() noexcept
         // If we have a _source, then we can from a dynamic profile generator.
         // Use our source to build the naespace guid, instead of using the
         // default GUID.
-        GUID namespaceGuid = _source.has_value() ?
-                                 Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_source.value()))) :
-                                 RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
+        const GUID namespaceGuid = _source.has_value() ?
+                                       Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(_source.value()))) :
+                                       RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
 
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
@@ -1091,4 +1091,18 @@ void Profile::GenerateGuidIfNecessary() noexcept
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
     }
+}
+
+// Function Description:
+// - Returns true if the given JSON object represents a dynamic profile object.
+//   If it is a dynamic profile object, we should make sure to only layer the
+//   object on a matching profile from a dynamic source.
+// Arguments:
+// - json: the partial serialization of a profile object to check
+// Return Value:
+// - true iff the object has a non-null `source` property
+bool Profile::IsDynamicProfileObject(const Json::Value& json)
+{
+    const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+    return !source.isNull();
 }

@@ -44,6 +44,7 @@ static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 //      running as an unpackaged application, it will read it from the path
 //      we've set under localappdata.
 // - Loads both the settings from the defaults.json and the user's profiles.json
+// - Also runs and dynamic profile generators. If any of those generators create new profiles, we'll
 // Return Value:
 // - a unique_ptr containing a new CascadiaSettings object.
 std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
@@ -68,7 +69,6 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
         // For now, just parse our user settings template as their user settings.
         resultPtr->_ParseJsonString(UserSettingsJson, false);
         needToWriteFile = true;
-        // _WriteSettings(UserSettingsJson);
     }
 
     // Load profiles from dynamic profile generators. _userSettings should be
@@ -399,6 +399,10 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 // - Given a partial json serialization of a Profile object, either layers that
 //   json on a matching Profile we already have, or creates a new Profile
 //   object from those settings.
+// - For profiles that were created from a dynamic profile source, they'll have
+//   both a guid and source guid that must both match. If a user profile with a
+//   source set does not find a matching profile at load time, the profile
+//   should be ignored.
 // Arguments:
 // - json: an object which may be a partial serialization of a Profile object.
 // Return Value:
@@ -413,8 +417,14 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
     }
     else
     {
-        auto profile = Profile::FromJson(profileJson);
-        _profiles.emplace_back(profile);
+        // If this JSON represents a dynamic profile, we _shouldn't_ create the
+        // profile here. We only want to create profiles for profies without a
+        // `source`. Dynamic profiles _must_ be layered on an existing profile.
+        if (!Profile::IsDynamicProfileObject(profileJson))
+        {
+            auto profile = Profile::FromJson(profileJson);
+            _profiles.emplace_back(profile);
+        }
     }
 }
 

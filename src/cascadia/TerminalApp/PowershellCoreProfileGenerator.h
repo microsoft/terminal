@@ -31,9 +31,6 @@ public:
     std::vector<TerminalApp::Profile> GenerateProfiles() override;
 
 private:
-    // TODO: Do I still need this?
-    static constexpr std::wstring_view LegacyGuid{ L"{574e775e-4f2a-5b96-ac1e-a2962a402336}" };
-
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
 };

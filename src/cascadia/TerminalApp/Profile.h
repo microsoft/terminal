@@ -52,6 +52,7 @@ public:
     static Profile FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
+    static bool IsDynamicProfileObject(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
     void SetSource(std::wstring_view sourceNamespace) noexcept;

@@ -47,6 +47,12 @@ namespace TerminalAppUnitTests
 
         // Make sure profiles that are disabled in _userSettings don't get generated
         TEST_METHOD(TestLegacyProfilesMigrate);
+
+        // Both these do similar things:
+        // This makes sure that a profile with a `source` _only_ layers, it won't create a new profile
+        TEST_METHOD(UserProfilesWithInvalidSourcesAreIgnored);
+        // This does the same, but by disabling a profile source
+        TEST_METHOD(UserProfilesFromDisabledSourcesDontAppear);
     };
 
     void DynamicProfileTests::TestSimpleGenerate()
@@ -437,9 +443,127 @@ namespace TerminalAppUnitTests
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
         }
     }
+
     void DynamicProfileTests::TestLegacyProfilesMigrate()
     {
         VERIFY_IS_TRUE(false);
+    }
+
+    void DynamicProfileTests::UserProfilesWithInvalidSourcesAreIgnored()
+    {
+        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        const std::string settings0String{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0FromUserSettings", // this is _profiles.at(0)
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile2", // this shouldn't be in the profiles at all
+                    "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.1"
+                },
+                {
+                    "name" : "profile3", // this is _profiles.at(3)
+                    "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+        gen0->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 };
+            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            profiles.push_back(p0);
+            return profiles;
+        };
+        auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+        gen1->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 }, p1{ guid1 };
+            p0.SetName(L"profile0"); // this is _profiles.at(1)
+            p1.SetName(L"profile1"); // this is _profiles.at(2)
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        CascadiaSettings settings{ false };
+        settings._profileGenerators.emplace_back(std::move(gen0));
+        settings._profileGenerators.emplace_back(std::move(gen1));
+
+        settings._ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+
+        settings._LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(3u, settings._profiles.size());
+
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+    }
+
+    void DynamicProfileTests::UserProfilesFromDisabledSourcesDontAppear()
+    {
+        GUID guid0 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        GUID guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+
+        const std::string settings0String{ R"(
+        {
+            "disabledProfileSources": ["Terminal.App.UnitTest.1"],
+            "profiles": [
+                {
+                    "name" : "profile0FromUserSettings", // this is _profiles.at(0)
+                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile1FromUserSettings", // this shouldn't be in the profiles at all
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                    "source": "Terminal.App.UnitTest.1"
+                },
+                {
+                    "name" : "profile3", // this is _profiles.at(1)
+                    "guid": "{6239a42c-4444-49a3-80bd-e8fdd045185c}"
+                }
+            ]
+        })" };
+
+        auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
+        gen0->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 };
+            p0.SetName(L"profile0"); // this is _profiles.at(0)
+            profiles.push_back(p0);
+            return profiles;
+        };
+        auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
+        gen1->pfnGenerate = [guid0, guid1]() {
+            std::vector<Profile> profiles{};
+            Profile p0{ guid0 }, p1{ guid1 };
+            p0.SetName(L"profile0"); // this shouldn't be in the profiles at all
+            p1.SetName(L"profile1"); // this shouldn't be in the profiles at all
+            profiles.push_back(p0);
+            profiles.push_back(p1);
+            return profiles;
+        };
+
+        CascadiaSettings settings{ false };
+        settings._profileGenerators.emplace_back(std::move(gen0));
+        settings._profileGenerators.emplace_back(std::move(gen1));
+
+        settings._ParseJsonString(settings0String, false);
+        VERIFY_ARE_EQUAL(0u, settings._profiles.size());
+
+        settings._LoadDynamicProfiles();
+        VERIFY_ARE_EQUAL(1u, settings._profiles.size());
+
+        settings.LayerJson(settings._userSettings);
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
     }
 
 };

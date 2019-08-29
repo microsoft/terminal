@@ -23,6 +23,9 @@ Author(s):
 
 using namespace ::TerminalApp;
 
+// Legacy GUIDs:
+//   - PowerShell Core       574e775e-4f2a-5b96-ac1e-a2962a402336
+
 std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 {
     return PowershellCoreGeneratorNamespace;

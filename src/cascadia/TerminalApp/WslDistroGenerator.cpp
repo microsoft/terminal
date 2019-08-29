@@ -24,13 +24,13 @@ Author(s):
 #include <fcntl.h>
 #include "DefaultProfileUtils.h"
 
-// Legacy GUIDs
-// Debian 58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
-// Ubuntu 2c4de342-38b7-51cf-b940-2309a097f518
-// Alpine 1777cdf0-b2c4-5a63-a204-eb60f349ea7c
-// Ubuntu-18.04 c6eaf9f4-32a7-5fdc-b5cf-066e8a4b1e40
-
 using namespace ::TerminalApp;
+
+// Legacy GUIDs:
+//   - Debian       58ad8b0c-3ef8-5f4d-bc6f-13e4c00f2530
+//   - Ubuntu       2c4de342-38b7-51cf-b940-2309a097f518
+//   - Alpine       1777cdf0-b2c4-5a63-a204-eb60f349ea7c
+//   - Ubuntu-18.04 c6eaf9f4-32a7-5fdc-b5cf-066e8a4b1e40
 
 std::wstring_view WslDistroGenerator::GetNamespace()
 {
