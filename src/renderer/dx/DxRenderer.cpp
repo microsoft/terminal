@@ -158,28 +158,28 @@ DxEngine::~DxEngine()
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
     // for Windows 7 in a VM.
-    const auto hardwareResult = D3D11CreateDevice(NULL,
+    const auto hardwareResult = D3D11CreateDevice(nullptr,
                                                   D3D_DRIVER_TYPE_HARDWARE,
-                                                  NULL,
+                                                  nullptr,
                                                   DeviceFlags,
                                                   FeatureLevels,
                                                   ARRAYSIZE(FeatureLevels),
                                                   D3D11_SDK_VERSION,
                                                   &_d3dDevice,
-                                                  NULL,
+                                                  nullptr,
                                                   &_d3dDeviceContext);
 
     if (FAILED(hardwareResult))
     {
-        RETURN_IF_FAILED(D3D11CreateDevice(NULL,
+        RETURN_IF_FAILED(D3D11CreateDevice(nullptr,
                                            D3D_DRIVER_TYPE_WARP,
-                                           NULL,
+                                           nullptr,
                                            DeviceFlags,
                                            FeatureLevels,
                                            ARRAYSIZE(FeatureLevels),
                                            D3D11_SDK_VERSION,
                                            &_d3dDevice,
-                                           NULL,
+                                           nullptr,
                                            &_d3dDeviceContext));
     }
 

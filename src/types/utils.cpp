@@ -113,7 +113,7 @@ COLORREF Utils::ColorFromHexString(const std::string str)
 // - True if non zero and not set to invalid magic value. False otherwise.
 bool Utils::IsValidHandle(const HANDLE handle) noexcept
 {
-    return handle != 0 && handle != INVALID_HANDLE_VALUE;
+    return handle != nullptr && handle != INVALID_HANDLE_VALUE;
 }
 
 // Function Description:

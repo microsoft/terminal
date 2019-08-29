@@ -481,7 +481,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
-            DWRITE_GLYPH_RUN glyphRun = { 0 };
+            DWRITE_GLYPH_RUN glyphRun;
             glyphRun.bidiLevel = run.bidiLevel;
             glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
             glyphRun.fontFace = run.fontFace.Get();
@@ -491,7 +491,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
             glyphRun.glyphOffsets = _glyphOffsets.data() + run.glyphStart;
             glyphRun.isSideways = false;
 
-            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription = { 0 };
+            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
             glyphRunDescription.clusterMap = _glyphClusters.data();
             glyphRunDescription.localeName = _localeName.data();
             glyphRunDescription.string = _text.data();
