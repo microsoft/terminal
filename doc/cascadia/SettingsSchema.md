@@ -145,37 +145,36 @@ The most useful URI schemes to remember when customizing background images and i
 
 > ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
 
-### Background images
-You can apply a separate background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish. To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image should stretch to fill the available space using `backgroundImageStretchMode`.
-
 ### Icons
-Terminal displays icons for each of your shell/connection profiles. By default, Terminal will specify a default icon for profiles referencing PowerShell, Cmd, etc., and a 'Tux' penguin icon for Linux/WSL distros. Terminal ships these standard icons as part of its app package and refers to them via the `ms-appx` URI Scheme.
+Terminal displays icons for each of your profiles. When it is first run, Terminal generates profiles for any of your built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros, each referring to a stock icon. 
 
-Icons should be sized to 48px x 48px, in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO).
+> ⚠ Note: These stock icons are referred to via the `ms-appx` URI Scheme. Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future. 
 
-> ⚠ Note: Be sure to scale your images correctly. If you do not, Terminal will scale your icons when they're displayed, causing a noticeable delay and loss of quality.
+You can refer to you own icon files if you wish, e.g.:
 
-### Storing images
-To specify an image of your own, store your image(s) in your `...\LocalState\` folder for icons local to a single machine, or in your `...\RoamingState\` folder for icons you want on all your machines. 
+```json 
+    "icon" : "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\icon-ubuntu-32.png",
+```
 
-### Referencing images
-Images can be referred to from your `profiles.json` configuration using the URI Schemes above.
+> 👉 Tip: Icons should be sized to 32x32px, in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime, causing a noticeable delay and loss of quality.
 
-For example, you could
-1. Download & extract the [Ubuntu roundel logo](https://design.ubuntu.com/brand/ubuntu-logo/)
-1. Resize it to 48px AND 256px square
-1. Store the resized images files in your Terminal's `...\RoamingState` folder
-1. Set your Ubuntu profile's icon and background image accordingly:
+### Custom Background Images
+You can apply a background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish. 
 
-    ``` json
-        ...
-        "icon" : "ms-appdata:///roaming/icon-ubuntu-48.png",
-        "backgroundImage": "ms-appdata:///roaming/icon-ubuntu-256.png",
-        "backgroundImageAlignment": "bottomRight",
-        "backgroundImageOpacity": 0.05,
-        "backgroundImageStretchMode": "none"
-    ```
+To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image fill the available space using `backgroundImageStretchMode`. 
 
-    With these settings, your Terminal's Ubuntu profile would look similar to this:
+For example:
+```json
+    "backgroundImage": "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\bg-ubuntu-256.png",
+    "backgroundImageAlignment": "bottomRight",
+    "backgroundImageOpacity": 0.1,
+    "backgroundImageStretchMode": "none"
+```
 
-    ![Custom icon and background image](../images/custom-icon-and-background-image.jpg)
+> 👉 Tip: You can easily roam your collection of images and icons across all your machines by storing your icons and images in OneDrive (as shown above).
+
+With these settings, your Terminal's Ubuntu profile would look similar to this:
+
+![Custom icon and background image](../images/custom-icon-and-background-image.jpg)
+
+
