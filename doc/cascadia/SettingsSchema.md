@@ -151,7 +151,7 @@ You can apply a separate background image to each of your profiles, allowing you
 ### Icons
 Terminal displays icons for each of your shell/connection profiles. By default, Terminal will specify a default icon for profiles referencing PowerShell, Cmd, etc., and a 'Tux' penguin icon for Linux/WSL distros. Terminal ships these standard icons as part of its app package, referred to via the `ms-appx` URI Scheme.
 
-Icons should be sized to 48px x 48px, and can be stored as .PNG, .GIF, or .JPG files.
+Icons should be sized to 48px x 48px, in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO).
 
 > ⚠ Note: Be sure to scale your images correctly. If you do not, Terminal will scale your icons when they're displayed, causing a noticeable delay and loss of quality.
 
