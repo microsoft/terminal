@@ -20,12 +20,13 @@ LRESULT CALLBACK HwndTerminalWndProc(
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-HwndTerminal::HwndTerminal(HWND parentHwnd) :
-    _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, 14 }, CP_UTF8 },
-    _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, 14 }, CP_UTF8, false }
+bool RegisterTermClass(HINSTANCE hInstance)
 {
     WNDCLASSW wc;
-    HINSTANCE hInstance = wil::GetModuleInstanceHandle();
+    if (GetClassInfo(hInstance, term_window_class, &wc))
+    {
+        return true;
+    }
 
     wc.style = 0;
     wc.lpfnWndProc = HwndTerminalWndProc;
@@ -38,9 +39,16 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     wc.lpszMenuName = nullptr;
     wc.lpszClassName = term_window_class;
 
-    bool registered = RegisterClassW(&wc) != 0;
+    return RegisterClassW(&wc) != 0;
+}
 
-    if (registered)
+HwndTerminal::HwndTerminal(HWND parentHwnd) :
+    _desiredFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, 14 }, CP_UTF8 },
+    _actualFont{ DEFAULT_FONT_FACE.c_str(), 0, 10, { 0, 14 }, CP_UTF8, false }
+{
+    HINSTANCE hInstance = wil::GetModuleInstanceHandle();
+
+    if(RegisterTermClass(hInstance))
     {
         _hwnd = wil::unique_hwnd(CreateWindowExW(
             0,
