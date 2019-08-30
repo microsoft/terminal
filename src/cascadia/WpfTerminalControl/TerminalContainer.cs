@@ -41,8 +41,8 @@ namespace Microsoft.Terminal.Wpf
         private IntPtr terminal;
         private char? highSurrogate;
 
-        private static NativeMethods.ScrollCallback scrollCallback;
-        private static NativeMethods.WriteCallback writeCallback;
+        private NativeMethods.ScrollCallback scrollCallback;
+        private NativeMethods.WriteCallback writeCallback;
 
         public event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
 
@@ -200,8 +200,8 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
-            scrollCallback = this.OnScroll;
-            writeCallback = this.OnWrite;
+            this.scrollCallback = this.OnScroll;
+            this.writeCallback = this.OnWrite;
 
             NativeMethods.RegisterScrollCallback(this.terminal, scrollCallback);
             NativeMethods.RegisterWriteCallback(this.terminal, writeCallback);

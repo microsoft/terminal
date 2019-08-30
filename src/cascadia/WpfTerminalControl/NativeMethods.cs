@@ -5,8 +5,10 @@ namespace Microsoft.Terminal.Wpf
 {
     internal static class NativeMethods
     {
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void ScrollCallback(int viewTop, int viewHeight, int bufferSize);
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         public delegate void WriteCallback([In, MarshalAs(UnmanagedType.LPWStr)] string data);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
