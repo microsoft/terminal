@@ -56,8 +56,8 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
-        // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
-        /*
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
         case WM_GETOBJECT:
         {
             return HandleGetObject(_window.get(), wparam, lparam);
