@@ -418,7 +418,8 @@ Return Value:
 */
 [[nodiscard]] NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
                                                               const BOOL fEastAsianSystem,
-                                                              const BOOL fForceV2)
+                                                              const BOOL fForceV2,
+                                                              const bool writeTerminalSettings)
 {
     IShellLinkW* psl;
     IPersistFile* ppf;
@@ -488,12 +489,21 @@ Return Value:
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_CtrlKeyShortcutsDisabled, pStateInfo->fCtrlKeyShortcutsDisabled);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_LineSelection, pStateInfo->fLineSelection);
                     s_SetLinkPropertyByteValue(pps, PKEY_Console_WindowTransparency, pStateInfo->bWindowTransparency);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
                     s_SetLinkPropertyBoolValue(pps, PKEY_Console_InterceptCopyPaste, pStateInfo->InterceptCopyPaste);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
-                    s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
-                    s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+
+                    // Only save the "Terminal" settings if we launched as a v2
+                    // propsheet. The v1 console doesn't know anything about
+                    // these settings, and their value will be incorrectly
+                    // zero'd if we save in this state.
+                    // See microsoft/terminal#2319 for more details.
+                    if (writeTerminalSettings)
+                    {
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorType, pStateInfo->CursorType);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_CursorColor, pStateInfo->CursorColor);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultForeground, pStateInfo->DefaultForeground);
+                        s_SetLinkPropertyDwordValue(pps, PKEY_Console_DefaultBackground, pStateInfo->DefaultBackground);
+                        s_SetLinkPropertyBoolValue(pps, PKEY_Console_TerminalScrolling, pStateInfo->TerminalScrolling);
+                    }
                     hr = pps->Commit();
                     pps->Release();
                 }

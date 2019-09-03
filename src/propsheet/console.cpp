@@ -97,7 +97,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
         if (gpStateInfo->LinkTitle != NULL)
         {
             SetGlobalRegistryValues();
-            if (!NT_SUCCESS(ShortcutSerialization::s_SetLinkValues(gpStateInfo, g_fEastAsianSystem, g_fForceV2)))
+            if (!NT_SUCCESS(ShortcutSerialization::s_SetLinkValues(gpStateInfo, g_fEastAsianSystem, g_fForceV2, g_fLaunchedAsV2)))
             {
                 WCHAR szMessage[MAX_PATH + 100];
                 WCHAR awchBuffer[MAX_PATH] = { 0 };

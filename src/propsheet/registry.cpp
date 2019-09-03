@@ -950,6 +950,7 @@ VOID SetRegistryValues(
     // Only save the "Terminal" settings if we launched as a v2 propsheet. The
     // v1 console doesn't know anything about these settings, and their value
     // will be incorrectly zero'd if we save in this state.
+    // See microsoft/terminal#2319 for more details.
     if (g_fLaunchedAsV2)
     {
         // Save cursor type and color
