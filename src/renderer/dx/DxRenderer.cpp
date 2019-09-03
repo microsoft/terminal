@@ -147,13 +147,12 @@ DxEngine::~DxEngine()
                               // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-    const D3D_FEATURE_LEVEL FeatureLevels[] = {
-        D3D_FEATURE_LEVEL_11_1,
-        D3D_FEATURE_LEVEL_11_0,
-        D3D_FEATURE_LEVEL_10_1,
-        D3D_FEATURE_LEVEL_10_0,
-        D3D_FEATURE_LEVEL_9_1,
-    };
+    std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels;
+    FeatureLevels.at(0) = D3D_FEATURE_LEVEL_11_1;
+    FeatureLevels.at(1) = D3D_FEATURE_LEVEL_11_0;
+    FeatureLevels.at(2) = D3D_FEATURE_LEVEL_10_1;
+    FeatureLevels.at(3) = D3D_FEATURE_LEVEL_10_0;
+    FeatureLevels.at(4) = D3D_FEATURE_LEVEL_9_1;
 
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
@@ -162,8 +161,8 @@ DxEngine::~DxEngine()
                                                   D3D_DRIVER_TYPE_HARDWARE,
                                                   nullptr,
                                                   DeviceFlags,
-                                                  FeatureLevels,
-                                                  ARRAYSIZE(FeatureLevels),
+                                                  FeatureLevels.data(),
+                                                  gsl::narrow<UINT>(FeatureLevels.size()),
                                                   D3D11_SDK_VERSION,
                                                   &_d3dDevice,
                                                   nullptr,
@@ -175,8 +174,8 @@ DxEngine::~DxEngine()
                                            D3D_DRIVER_TYPE_WARP,
                                            nullptr,
                                            DeviceFlags,
-                                           FeatureLevels,
-                                           ARRAYSIZE(FeatureLevels),
+                                           FeatureLevels.data(),
+                                           gsl::narrow<UINT>(FeatureLevels.size()),
                                            D3D11_SDK_VERSION,
                                            &_d3dDevice,
                                            nullptr,

@@ -10,16 +10,14 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length) noexcept
+SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data) noexcept
 {
-    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, length);
+    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
     {
-        const auto dataSpan = gsl::make_span(data, length);
-
-        for (long i = 0; i < length; i++)
+        for (long i = 0; i < data.size(); i++)
         {
-            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(dataSpan.at(i)))))
+            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(data.at(i)))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
@@ -257,9 +255,13 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
-    const int rId[] = { UiaAppendRuntimeId, -1 };
+    std::array<int, 2> rId;
+    rId.at(0) = UiaAppendRuntimeId;
+    rId.at(1) = -1;
+
+    const auto span = std::basic_string_view<int>(rId.data(), rId.size());
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
-    *ppRuntimeId = BuildIntSafeArray(rId, 2);
+    *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);
 
     return S_OK;
