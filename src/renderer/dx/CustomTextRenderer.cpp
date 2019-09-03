@@ -174,6 +174,8 @@ using namespace Microsoft::Console::Render;
 
     const D2D1_RECT_F rect = D2D1::RectF(x, y, x + width, y + thickness);
     drawingContext->renderTarget->FillRectangle(&rect, brush);
+
+    return S_OK;
 }
 
 // Routine Description:
