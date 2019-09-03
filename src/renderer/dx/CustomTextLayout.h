@@ -68,7 +68,7 @@ namespace Microsoft::Console::Render
         // A single contiguous run of characters containing the same analysis results.
         struct Run
         {
-            Run() :
+            Run() noexcept :
                 textStart(),
                 textLength(),
                 glyphStart(),
@@ -108,7 +108,7 @@ namespace Microsoft::Console::Render
         // Single text analysis run, which points to the next run.
         struct LinkedRun : Run
         {
-            LinkedRun() :
+            LinkedRun() noexcept :
                 nextRunIndex(0)
             {
             }

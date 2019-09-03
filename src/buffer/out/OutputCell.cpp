@@ -11,7 +11,7 @@
 
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
 
-OutputCell::OutputCell() :
+OutputCell::OutputCell() noexcept :
     _text{},
     _dbcsAttribute{},
     _textAttribute{ InvalidTextAttribute },

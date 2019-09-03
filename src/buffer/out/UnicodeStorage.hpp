@@ -47,7 +47,7 @@ public:
     using key_type = typename COORD;
     using mapped_type = typename std::vector<wchar_t>;
 
-    UnicodeStorage();
+    UnicodeStorage() noexcept;
 
     const mapped_type& GetText(const key_type key) const;
 

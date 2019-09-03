@@ -7,7 +7,7 @@
 
 // Routine Description:
 // - Constucts an empty in-memory region for holding output buffer cell data.
-OutputCellRect::OutputCellRect() :
+OutputCellRect::OutputCellRect() noexcept :
     _rows(0),
     _cols(0)
 {

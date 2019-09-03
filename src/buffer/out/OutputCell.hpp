@@ -34,7 +34,7 @@ class InvalidCharInfoConversionException : public std::exception
 class OutputCell final
 {
 public:
-    OutputCell();
+    OutputCell() noexcept;
 
     OutputCell(const std::wstring_view charData,
                const DbcsAttribute dbcsAttribute,
