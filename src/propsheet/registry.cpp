@@ -169,6 +169,7 @@ DWORD GetRegistryValues(
 
     // initial values for global v2 settings
     g_fForceV2 = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2, TRUE);
+    g_fLaunchedAsV2 = g_fForceV2;
     g_fEditKeys = GetConsoleBoolValue(CONSOLE_REGISTRY_EXTENDEDEDITKEY, TRUE);
 
     //
@@ -946,52 +947,58 @@ VOID SetRegistryValues(
 
     SetGlobalRegistryValues();
 
-    // Save cursor type and color
-    dwValue = pStateInfo->CursorType;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORTYPE,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+    // Only save the "Terminal" settings if we launched as a v2 propsheet. The
+    // v1 console doesn't know anything about these settings, and their value
+    // will be incorrectly zero'd if we save in this state.
+    if (g_fLaunchedAsV2)
+    {
+        // Save cursor type and color
+        dwValue = pStateInfo->CursorType;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_CURSORTYPE,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->CursorColor;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_CURSORCOLOR,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->CursorColor;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_CURSORCOLOR,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->InterceptCopyPaste;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->InterceptCopyPaste;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
 
-    dwValue = pStateInfo->TerminalScrolling;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_TERMINALSCROLLING,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
-    dwValue = pStateInfo->DefaultForeground;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_DEFAULTFOREGROUND,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
-    dwValue = pStateInfo->DefaultBackground;
-    LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
-                                                       hTitleKey,
-                                                       CONSOLE_REGISTRY_DEFAULTBACKGROUND,
-                                                       REG_DWORD,
-                                                       (BYTE*)&dwValue,
-                                                       sizeof(dwValue)));
+        dwValue = pStateInfo->TerminalScrolling;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_TERMINALSCROLLING,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+        dwValue = pStateInfo->DefaultForeground;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_DEFAULTFOREGROUND,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+        dwValue = pStateInfo->DefaultBackground;
+        LOG_IF_FAILED(RegistrySerialization::s_UpdateValue(hConsoleKey,
+                                                           hTitleKey,
+                                                           CONSOLE_REGISTRY_DEFAULTBACKGROUND,
+                                                           REG_DWORD,
+                                                           (BYTE*)&dwValue,
+                                                           sizeof(dwValue)));
+    }
 
     //
     // Close the registry keys

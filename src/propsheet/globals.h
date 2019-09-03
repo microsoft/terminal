@@ -35,6 +35,7 @@ extern BOOL gbEnumerateFaces;
 extern LONG gcxScreen;
 extern LONG gcyScreen;
 extern BOOL g_fForceV2;
+extern BOOL g_fLaunchedAsV2;
 extern BOOL g_fEditKeys;
 extern BYTE g_bPreviewOpacity;
 extern BOOL g_fHostedInFileProperties;

@@ -22,4 +22,5 @@ set copy_dir=OpenConsole\%_r%
 (xcopy /Y %_last_build%\Nihilist.exe %TEMP%\%copy_dir%\Nihilist.exe*) > nul
 (xcopy /Y %_last_build%\console.dll %TEMP%\%copy_dir%\console.dll*) > nul
 
+echo Launching `%TEMP%\%copy_dir%\OpenConsole.exe %*`...
 start %TEMP%\%copy_dir%\OpenConsole.exe %*
