@@ -101,7 +101,7 @@ namespace TerminalAppLocalTests
             "name": "profile1",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#020202",
-            "colorScheme": "Campbell"
+            "startingDirectory": "C:/"
         })" };
         const std::string profile2String{ R"({
             "name": "profile2",
@@ -122,7 +122,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile0", profile0._name);
 
-        VERIFY_IS_FALSE(profile0._schemeName.has_value());
+        VERIFY_IS_FALSE(profile0._startingDirectory.has_value());
 
         Log::Comment(NoThrowString().Format(
             L"Layering profile1 on top of profile0"));
@@ -136,8 +136,8 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile1", profile0._name);
 
-        VERIFY_IS_TRUE(profile0._schemeName.has_value());
-        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+        VERIFY_IS_TRUE(profile0._startingDirectory.has_value());
+        VERIFY_ARE_EQUAL(L"C:/", profile0._startingDirectory.value());
 
         Log::Comment(NoThrowString().Format(
             L"Layering profile2 on top of (profile0+profile1)"));
@@ -151,8 +151,8 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile2", profile0._name);
 
-        VERIFY_IS_TRUE(profile0._schemeName.has_value());
-        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+        VERIFY_IS_TRUE(profile0._startingDirectory.has_value());
+        VERIFY_ARE_EQUAL(L"C:/", profile0._startingDirectory.value());
     }
 
     void ProfileTests::LayerProfileIcon()

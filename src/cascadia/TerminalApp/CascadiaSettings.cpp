@@ -523,28 +523,10 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
         {
             if (profileJson.isObject())
             {
-                if (profileJson.isMember("guid"))
+                auto guid = Profile::GetGuidOrGenerateForJson(profileJson);
+                if (uniqueGuids.insert(guid).second)
                 {
-                    auto guidJson{ profileJson["guid"] };
-                    auto guid = Utils::GuidFromString(GetWstringFromJson(guidJson));
-
-                    if (uniqueGuids.insert(guid).second)
-                    {
-                        guidOrder.push_back(guid);
-                    }
-                }
-                else
-                {
-                    // In this case, _we_ generated a GUID for that profile. We
-                    // should similarly generate that guid here, so we can order
-                    // it appropriately.
-                    auto name = GetWstringFromJson(profileJson["name"]);
-                    auto guid = Profile::GenerateGuidForProfile(name);
-
-                    if (uniqueGuids.insert(guid).second)
-                    {
-                        guidOrder.push_back(guid);
-                    }
+                    guidOrder.push_back(guid);
                 }
             }
         }
