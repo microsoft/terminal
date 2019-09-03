@@ -19,10 +19,10 @@ namespace Microsoft::Console::Render
     public:
         // Based on the Windows 7 SDK sample at https://github.com/pauldotknopf/WindowsSDK7-Samples/tree/master/multimedia/DirectWrite/CustomLayout
 
-        CustomTextLayout(IDWriteFactory1* const factory,
-                         IDWriteTextAnalyzer1* const analyzer,
-                         IDWriteTextFormat* const format,
-                         IDWriteFontFace1* const font,
+        CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
+                         gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
+                         gsl::not_null<IDWriteTextFormat*> const format,
+                         gsl::not_null<IDWriteFontFace1*> const font,
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width);
 

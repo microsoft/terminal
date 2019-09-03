@@ -20,16 +20,16 @@ using namespace Microsoft::Console::Render;
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
-CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
-                                   IDWriteTextAnalyzer1* const analyzer,
-                                   IDWriteTextFormat* const format,
-                                   IDWriteFontFace1* const font,
+CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
+                                   gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
+                                   gsl::not_null<IDWriteTextFormat*> const format,
+                                   gsl::not_null<IDWriteFontFace1*> const font,
                                    std::basic_string_view<Cluster> const clusters,
                                    size_t const width) :
-    _factory{ factory },
-    _analyzer{ analyzer },
-    _format{ format },
-    _font{ font },
+    _factory{ factory.get() },
+    _analyzer{ analyzer.get() },
+    _format{ format.get() },
+    _font{ font.get() },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
@@ -38,8 +38,6 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
     _runIndex{ 0 },
     _width{ width }
 {
-    THROW_HR_IF_NULL(E_INVALIDARG, format);
-
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
