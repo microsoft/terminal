@@ -5,7 +5,7 @@ last updated: 2019-09-03
 issue id: #1043
 ---
 
-# Spec Title
+# Set the initial position for terminal
 
 ## Abstract
 
