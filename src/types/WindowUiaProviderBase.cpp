@@ -214,10 +214,15 @@ IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_mayben
 
 HWND WindowUiaProviderBase::GetWindowHandle() const
 {
-    IUiaWindow* const pConsoleWindow = _baseWindow;
-    THROW_HR_IF_NULL(E_POINTER, pConsoleWindow);
-
-    return pConsoleWindow->GetWindowHandle();
+    const IUiaWindow* const pConsoleWindow = _baseWindow;
+    if (pConsoleWindow)
+    {
+        return pConsoleWindow->GetWindowHandle();
+    }
+    else
+    {
+        return nullptr;
+    }
 }
 
 [[nodiscard]] HRESULT WindowUiaProviderBase::_EnsureValidHwnd() const

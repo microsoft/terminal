@@ -197,7 +197,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] std::wstring _GetLocaleName() const;
 
-        [[nodiscard]] std::wstring _GetFontFamilyName(IDWriteFontFamily* const fontFamily,
+        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName) const;
 
         [[nodiscard]] HRESULT _GetProposedFont(const FontInfoDesired& desired,

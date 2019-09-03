@@ -1545,11 +1545,9 @@ float DxEngine::GetScaling() const noexcept
 //              - If fallback occurred, this is updated to what we retrieved instead.
 // Return Value:
 // - Localized string name of the font family
-[[nodiscard]] std::wstring DxEngine::_GetFontFamilyName(IDWriteFontFamily* const fontFamily,
+[[nodiscard]] std::wstring DxEngine::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                         std::wstring& localeName) const
 {
-    THROW_HR_IF_NULL(E_INVALIDARG, fontFamily);
-
     // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
     Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
     THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
