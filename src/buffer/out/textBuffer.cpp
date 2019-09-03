@@ -1002,6 +1002,8 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                     selectionBkAttr.push_back(CellBkAttr);
                 }
             }
+#pragma warning(suppress : 26444)
+            // TODO: figure out why there's custom construction/destruction happening here
             it++;
         }
 

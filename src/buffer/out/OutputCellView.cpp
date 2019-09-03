@@ -15,7 +15,7 @@
 OutputCellView::OutputCellView(const std::wstring_view view,
                                const DbcsAttribute dbcsAttr,
                                const TextAttribute textAttr,
-                               const TextAttributeBehavior behavior) noexcept:
+                               const TextAttributeBehavior behavior) noexcept :
     _view(view),
     _dbcsAttr(dbcsAttr),
     _textAttr(textAttr),
@@ -28,8 +28,7 @@ OutputCellView::OutputCellView(const std::wstring_view view,
 // Return Value:
 // - Reference to UTF-16 character data
 // C26445 - suppressed to enable the `TextBufferTextIterator::operator->` method which needs a non-temporary memory location holding the wstring_view.
-[[gsl::suppress(26445)]]
-const std::wstring_view& OutputCellView::Chars() const noexcept
+[[gsl::suppress(26445)]] const std::wstring_view& OutputCellView::Chars() const noexcept
 {
     return _view;
 }

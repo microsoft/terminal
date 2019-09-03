@@ -24,6 +24,8 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Constructs a DirectX-based renderer for console text
 //   which primarily uses DirectWrite on a Direct2D surface
+#pragma warning(suppress : 26455)
+// TODO: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
     _isInvalidUsed{ false },
@@ -268,7 +270,7 @@ DxEngine::~DxEngine()
     freeOnFail.release(); // don't need to release if we made it to the bottom and everything was good.
 
     // Notify that swap chain changed.
-    
+
     if (_pfn)
     {
         try
@@ -393,7 +395,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
                                             gsl::narrow<UINT32>(stringLength),
                                             _dwriteTextFormat.Get(),
                                             gsl::narrow<float>(_displaySizePixels.cx),
-                                            _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>( _displaySizePixels.cy),
+                                            _glyphCell.cy != 0 ? _glyphCell.cy : gsl::narrow<float>(_displaySizePixels.cy),
                                             ppTextLayout);
 }
 
@@ -749,7 +751,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                 // First, set up a complete clear of all device resources if something goes terribly wrong.
                 auto resetDeviceResourcesOnFailure = wil::scope_exit([&]() noexcept {
                     _ReleaseDeviceResources();
-                                                                     });
+                });
 
                 // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
                 _dxgiSurface.Reset();
@@ -1244,16 +1246,15 @@ enum class CursorPaintType
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
 {
     RETURN_IF_FAILED(_GetProposedFont(pfiFontInfoDesired,
-                                     fiFontInfo,
-                                     _dpi,
-                                     _dwriteTextFormat,
-                                     _dwriteTextAnalyzer,
-                                     _dwriteFontFace));
+                                      fiFontInfo,
+                                      _dpi,
+                                      _dwriteTextFormat,
+                                      _dwriteTextAnalyzer,
+                                      _dwriteFontFace));
 
     try
     {
         const auto size = fiFontInfo.GetSize();
-
 
         _glyphCell.cx = size.X;
         _glyphCell.cy = size.Y;

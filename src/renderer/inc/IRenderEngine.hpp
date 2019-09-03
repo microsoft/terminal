@@ -70,8 +70,8 @@ namespace Microsoft::Console::Render
         IRenderEngine(IRenderEngine&&) = default;
         IRenderEngine& operator=(const IRenderEngine&) = default;
         IRenderEngine& operator=(IRenderEngine&&) = default;
-    public:
 
+    public:
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;

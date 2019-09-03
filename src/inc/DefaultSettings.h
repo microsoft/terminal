@@ -28,7 +28,7 @@ constexpr COLORREF POWERSHELL_BLUE = RGB(1, 36, 86);
 constexpr short DEFAULT_HISTORY_SIZE = 9001;
 
 #pragma warning(push)
-#pragma warning(disable:26426)
+#pragma warning(disable : 26426)
 const std::wstring DEFAULT_FONT_FACE{ L"Consolas" };
 constexpr int DEFAULT_FONT_SIZE = 10;
 

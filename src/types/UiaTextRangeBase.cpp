@@ -290,7 +290,7 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = FALSE;
@@ -352,7 +352,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit)
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     ApiMsgExpandToEnclosingUnit apiMsg;
     apiMsg.Unit = unit;
@@ -428,7 +428,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
@@ -499,7 +499,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = nullptr;
@@ -602,7 +602,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -674,7 +674,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -741,7 +741,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
@@ -843,7 +843,7 @@ IFACEMETHODIMP UiaTextRangeBase::Select()
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     if (_degenerate)
     {
@@ -886,11 +886,10 @@ IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop)
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
-                                  });
+    });
 
     try
     {
-
         const auto oldViewport = _pData->GetViewport().ToInclusive();
         const auto viewportHeight = _getViewportHeight(oldViewport);
         // range rows
@@ -1168,7 +1167,7 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 {
     const ViewportRow viewportRow = _screenInfoRowToViewportRow(row, viewport);
     return viewportRow >= 0 &&
-        viewportRow < gsl::narrow<ViewportRow>(_getViewportHeight(viewport));
+           viewportRow < gsl::narrow<ViewportRow>(_getViewportHeight(viewport));
 }
 
 // Routine Description:
@@ -1513,8 +1512,8 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByLine(gsl::not_null<IUiaDa
     // we don't want to move the range if we're already in the
     // limiting row and trying to move off the end of the screen buffer
     const bool illegalMovement = (currentScreenInfoRow == moveState.LimitingRow &&
-        ((moveCount < 0 && moveState.Increment == MovementIncrement::Backward) ||
-                                  (moveCount > 0 && moveState.Increment == MovementIncrement::Forward)));
+                                  ((moveCount < 0 && moveState.Increment == MovementIncrement::Backward) ||
+                                   (moveCount > 0 && moveState.Increment == MovementIncrement::Forward)));
 
     if (moveCount != 0 && !illegalMovement)
     {

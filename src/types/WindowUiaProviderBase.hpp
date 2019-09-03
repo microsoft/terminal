@@ -33,12 +33,14 @@ namespace Microsoft::Console::Types
     {
     public:
         virtual ~WindowUiaProviderBase() = default;
+
     protected:
         WindowUiaProviderBase() = default;
         WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
         WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
         WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
         WindowUiaProviderBase& operator=(WindowUiaProviderBase&&) = default;
+
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;

@@ -16,7 +16,7 @@ using namespace Microsoft::Console::Types;
 // - Narrows the view of a cell iterator into a text only iterator.
 // Arguments:
 // - A cell iterator
-TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cellIt) noexcept:
+TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cellIt) noexcept :
     TextBufferCellIterator(cellIt)
 {
 }
@@ -25,8 +25,7 @@ TextBufferTextIterator::TextBufferTextIterator(const TextBufferCellIterator& cel
 // - Returns the text information from the text buffer position addressed by this iterator.
 // Return Value:
 // - Read only UTF-16 text data
-[[gsl::suppress(26434)]]
-const std::wstring_view TextBufferTextIterator::operator*() const noexcept
+[[gsl::suppress(26434)]] const std::wstring_view TextBufferTextIterator::operator*() const noexcept
 {
     return _view.Chars();
 }
@@ -35,8 +34,7 @@ const std::wstring_view TextBufferTextIterator::operator*() const noexcept
 // - Returns the text information from the text buffer position addressed by this iterator.
 // Return Value:
 // - Read only UTF-16 text data
-[[gsl::suppress(26434)]]
-const std::wstring_view* TextBufferTextIterator::operator->() const noexcept
+[[gsl::suppress(26434)]] const std::wstring_view* TextBufferTextIterator::operator->() const noexcept
 {
     return &_view.Chars();
 }

@@ -316,7 +316,6 @@ CodepointWidthDetector::CodepointWidthDetector() noexcept :
     _fallbackCache{},
     _pfnFallbackMethod{}
 {
-
 }
 
 // Routine Description:

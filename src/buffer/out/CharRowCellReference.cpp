@@ -92,7 +92,7 @@ CharRowCellReference::const_iterator CharRowCellReference::begin() const
 // Return Value:
 // - end iterator of the glyph data
 #pragma warning(push)
-#pragma warning(disable:26481)
+#pragma warning(disable : 26481)
 // TODO: eliminate using pointers raw as begin/end markers in this class
 CharRowCellReference::const_iterator CharRowCellReference::end() const
 {

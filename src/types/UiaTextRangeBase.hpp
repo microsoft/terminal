@@ -303,7 +303,7 @@ namespace Microsoft::Console::Types
         static const ViewportRow _screenInfoRowToViewportRow(gsl::not_null<IUiaData*> pData,
                                                              const ScreenInfoRow row) noexcept;
         static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                             const SMALL_RECT viewport) noexcept;
+                                                                       const SMALL_RECT viewport) noexcept;
 
         static const bool _isScreenInfoRowInViewport(gsl::not_null<IUiaData*> pData,
                                                      const ScreenInfoRow row) noexcept;
