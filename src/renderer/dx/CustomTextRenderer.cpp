@@ -366,7 +366,7 @@ using namespace Microsoft::Console::Render;
                     // This run is solid-color outlines, either from non-color
                     // glyphs or from COLR glyph layers. Use Direct2D to draw them.
 
-                    ID2D1Brush* layerBrush;
+                    ID2D1Brush* layerBrush = nullptr;
                     // The rule is "if 0xffff, use current brush." See:
                     // https://docs.microsoft.com/en-us/windows/desktop/api/dwrite_2/ns-dwrite_2-dwrite_color_glyph_run
                     if (colorRun->paletteIndex == 0xFFFF)
