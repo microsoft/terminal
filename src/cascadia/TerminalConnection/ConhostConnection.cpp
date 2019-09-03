@@ -108,7 +108,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          si,
                          extraEnvVars));
 
-        _startTime = std::chrono::system_clock::now();
+        _startTime = std::chrono::high_resolution_clock::now();
 
         // Create our own output handling thread
         // This must be done after the pipes are populated.
@@ -213,7 +213,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
             if (!_recievedFirstByte)
             {
-                auto now = std::chrono::system_clock::now();
+                auto now = std::chrono::high_resolution_clock::now();
                 std::chrono::duration<double> delta = now - _startTime;
 
                 TraceLoggingWrite(g_hTerminalConnectionProvider,

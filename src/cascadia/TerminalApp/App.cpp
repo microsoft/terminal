@@ -721,7 +721,7 @@ namespace winrt::TerminalApp::implementation
     //      happening during startup, it'll need to happen on a background thread.
     void App::LoadSettings()
     {
-        auto start = std::chrono::system_clock::now();
+        auto start = std::chrono::high_resolution_clock::now();
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -746,8 +746,8 @@ namespace winrt::TerminalApp::implementation
             _settings->CreateDefaults();
         }
 
-        auto end = std::chrono::system_clock::now();
-        std::chrono::duration<double> delta = end - start;
+        auto end = std::chrono::high_resolution_clock::now();
+        auto delta = end - start;
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
