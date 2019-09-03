@@ -321,12 +321,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
         IRawElementProviderSimple* pProvider;
         hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (SUCCEEDED(hr))
+        if (pProvider == nullptr)
         {
-            if (pProvider == nullptr)
-            {
-                hr = E_POINTER;
-            }
+            hr = E_POINTER;
         }
 
         if (FAILED(hr))
@@ -455,12 +452,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
         IRawElementProviderSimple* pProvider;
         HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (SUCCEEDED(hr))
+        if (pProvider == nullptr)
         {
-            if (pProvider == nullptr)
-            {
-                hr = E_POINTER;
-            }
+            hr = E_POINTER;
         }
 
         if (FAILED(hr))
