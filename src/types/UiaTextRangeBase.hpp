@@ -259,126 +259,126 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        static const COORD _getScreenBufferCoords(IUiaData* pData);
+        static const COORD _getScreenBufferCoords(gsl::not_null<IUiaData*> pData);
         virtual const COORD _getScreenFontSize() const;
 
-        static const unsigned int _getTotalRows(IUiaData* pData);
-        static const unsigned int _getRowWidth(IUiaData* pData);
+        static const unsigned int _getTotalRows(gsl::not_null<IUiaData*> pData) noexcept;
+        static const unsigned int _getRowWidth(gsl::not_null<IUiaData*> pData);
 
         static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
-        static const unsigned int _getLastScreenInfoRowIndex(IUiaData* pData) noexcept;
+        static const unsigned int _getLastScreenInfoRowIndex(gsl::not_null<IUiaData*> pData) noexcept;
 
         static const Column _getFirstColumnIndex() noexcept;
-        static const Column _getLastColumnIndex(IUiaData* pData);
+        static const Column _getLastColumnIndex(gsl::not_null<IUiaData*> pData);
 
-        const unsigned int _rowCountInRange(IUiaData* pData) const;
+        const unsigned int _rowCountInRange(gsl::not_null<IUiaData*> pData) const;
 
-        static const TextBufferRow _endpointToTextBufferRow(IUiaData* pData,
+        static const TextBufferRow _endpointToTextBufferRow(gsl::not_null<IUiaData*> pData,
                                                             const Endpoint endpoint);
-        static const ScreenInfoRow _textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                 const TextBufferRow row);
+        static const ScreenInfoRow _textBufferRowToScreenInfoRow(gsl::not_null<IUiaData*> pData,
+                                                                 const TextBufferRow row) noexcept;
 
-        static const TextBufferRow _screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                 const ScreenInfoRow row);
-        static const Endpoint _textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row);
+        static const TextBufferRow _screenInfoRowToTextBufferRow(gsl::not_null<IUiaData*> pData,
+                                                                 const ScreenInfoRow row) noexcept;
+        static const Endpoint _textBufferRowToEndpoint(gsl::not_null<IUiaData*> pData, const TextBufferRow row);
 
-        static const ScreenInfoRow _endpointToScreenInfoRow(IUiaData* pData,
+        static const ScreenInfoRow _endpointToScreenInfoRow(gsl::not_null<IUiaData*> pData,
                                                             const Endpoint endpoint);
-        static const Endpoint _screenInfoRowToEndpoint(IUiaData* pData,
+        static const Endpoint _screenInfoRowToEndpoint(gsl::not_null<IUiaData*> pData,
                                                        const ScreenInfoRow row);
 
-        static COORD _endpointToCoord(IUiaData* pData,
+        static COORD _endpointToCoord(gsl::not_null<IUiaData*> pData,
                                       const Endpoint endpoint);
-        static Endpoint _coordToEndpoint(IUiaData* pData,
+        static Endpoint _coordToEndpoint(gsl::not_null<IUiaData*> pData,
                                          const COORD coord);
 
-        static const Column _endpointToColumn(IUiaData* pData,
+        static const Column _endpointToColumn(gsl::not_null<IUiaData*> pData,
                                               const Endpoint endpoint);
 
-        static const Row _normalizeRow(IUiaData* pData, const Row row) noexcept;
+        static const Row _normalizeRow(gsl::not_null<IUiaData*> pData, const Row row) noexcept;
 
-        static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
-                                                             const ScreenInfoRow row);
+        static const ViewportRow _screenInfoRowToViewportRow(gsl::not_null<IUiaData*> pData,
+                                                             const ScreenInfoRow row) noexcept;
         static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
                                                              const SMALL_RECT viewport) noexcept;
 
-        static const bool _isScreenInfoRowInViewport(IUiaData* pData,
-                                                     const ScreenInfoRow row);
+        static const bool _isScreenInfoRowInViewport(gsl::not_null<IUiaData*> pData,
+                                                     const ScreenInfoRow row) noexcept;
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
                                                      const SMALL_RECT viewport) noexcept;
 
         static const unsigned int _getViewportHeight(const SMALL_RECT viewport) noexcept;
         static const unsigned int _getViewportWidth(const SMALL_RECT viewport) noexcept;
 
-        void _addScreenInfoRowBoundaries(IUiaData* pData,
+        void _addScreenInfoRowBoundaries(gsl::not_null<IUiaData*> pData,
                                          const ScreenInfoRow screenInfoRow,
                                          _Inout_ std::vector<double>& coords) const;
 
-        static const int _compareScreenCoords(IUiaData* pData,
+        static const int _compareScreenCoords(gsl::not_null<IUiaData*> pData,
                                               const ScreenInfoRow rowA,
                                               const Column colA,
                                               const ScreenInfoRow rowB,
                                               const Column colB);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacter(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacter(gsl::not_null<IUiaData*> pData,
                                                               const int moveCount,
                                                               const MoveState moveState,
-                                                              _Out_ int* const pAmountMoved);
+                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterForward(gsl::not_null<IUiaData*> pData,
                                                                      const int moveCount,
                                                                      const MoveState moveState,
-                                                                     _Out_ int* const pAmountMoved);
+                                                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByCharacterBackward(gsl::not_null<IUiaData*> pData,
                                                                       const int moveCount,
                                                                       const MoveState moveState,
-                                                                      _Out_ int* const pAmountMoved);
+                                                                      _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByLine(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByLine(gsl::not_null<IUiaData*> pData,
                                                          const int moveCount,
                                                          const MoveState moveState,
-                                                         _Out_ int* const pAmountMoved);
+                                                         _Out_ gsl::not_null<int*> const pAmountMoved);
 
-        static std::pair<Endpoint, Endpoint> _moveByDocument(IUiaData* pData,
+        static std::pair<Endpoint, Endpoint> _moveByDocument(gsl::not_null<IUiaData*> pData,
                                                              const int moveCount,
                                                              const MoveState moveState,
-                                                             _Out_ int* const pAmountMoved);
+                                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacter(IUiaData* pData,
+        _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
                                      const int moveCount,
                                      const TextPatternRangeEndpoint endpoint,
                                      const MoveState moveState,
-                                     _Out_ int* const pAmountMoved);
+                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterForward(IUiaData* pData,
+        _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
                                             const int moveCount,
                                             const TextPatternRangeEndpoint endpoint,
                                             const MoveState moveState,
-                                            _Out_ int* const pAmountMoved);
+                                            _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitCharacterBackward(IUiaData* pData,
+        _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
                                              const int moveCount,
                                              const TextPatternRangeEndpoint endpoint,
                                              const MoveState moveState,
-                                             _Out_ int* const pAmountMoved);
+                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitLine(IUiaData* pData,
+        _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
                                 const int moveCount,
                                 const TextPatternRangeEndpoint endpoint,
                                 const MoveState moveState,
-                                _Out_ int* const pAmountMoved);
+                                _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-        _moveEndpointByUnitDocument(IUiaData* pData,
+        _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
-                                    _Out_ int* const pAmountMoved);
+                                    _Out_ gsl::not_null<int*> const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
