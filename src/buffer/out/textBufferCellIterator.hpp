@@ -28,8 +28,6 @@ public:
     TextBufferCellIterator(const TextBuffer& buffer, COORD pos);
     TextBufferCellIterator(const TextBuffer& buffer, COORD pos, const Microsoft::Console::Types::Viewport limits);
 
-    ~TextBufferCellIterator() = default;
-
     operator bool() const noexcept;
 
     bool operator==(const TextBufferCellIterator& it) const;

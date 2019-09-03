@@ -24,6 +24,13 @@ namespace Microsoft::Console::Types
     {
     public:
         virtual ~IUiaData() = 0;
+    protected:
+        IUiaData() = default;
+        IUiaData(const IUiaData&) = default;
+        IUiaData(IUiaData&&) = default;
+        IUiaData& operator=(const IUiaData&) = default;
+        IUiaData& operator=(IUiaData&&) = default;
+    public:
 
         virtual const bool IsSelectionActive() const = 0;
         virtual void ClearSelection() = 0;

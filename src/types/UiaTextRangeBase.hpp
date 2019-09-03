@@ -137,6 +137,9 @@ namespace Microsoft::Console::Types
         };
 
     public:
+        UiaTextRangeBase(UiaTextRangeBase&&) = default;
+        UiaTextRangeBase& operator=(const UiaTextRangeBase&) = default;
+        UiaTextRangeBase& operator=(UiaTextRangeBase&&) = default;
         virtual ~UiaTextRangeBase() = default;
 
         const IdType GetId() const noexcept;

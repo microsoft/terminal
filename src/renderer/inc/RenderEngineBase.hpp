@@ -24,8 +24,14 @@ namespace Microsoft::Console::Render
     class RenderEngineBase : public IRenderEngine
     {
     public:
+        ~RenderEngineBase() = 0;
+    protected:
         RenderEngineBase();
-        virtual ~RenderEngineBase() = 0;
+        RenderEngineBase(const RenderEngineBase&) = default;
+        RenderEngineBase(RenderEngineBase&&) = default;
+        RenderEngineBase& operator=(const RenderEngineBase&) = default;
+        RenderEngineBase& operator=(RenderEngineBase&&) = default;
+    public:
 
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring& proposedTitle) noexcept override;
 

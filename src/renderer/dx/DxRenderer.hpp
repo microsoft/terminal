@@ -32,6 +32,10 @@ namespace Microsoft::Console::Render
     public:
         DxEngine();
         virtual ~DxEngine() override;
+        DxEngine(const DxEngine&) = default;
+        DxEngine(DxEngine&&) = default;
+        DxEngine& operator=(const DxEngine&) = default;
+        DxEngine& operator=(DxEngine&&) = default;
 
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX

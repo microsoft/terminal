@@ -38,7 +38,11 @@ namespace Microsoft::Console::Types
     {
     public:
         ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
-        virtual ~ScreenInfoUiaProviderBase();
+        ScreenInfoUiaProviderBase(const ScreenInfoUiaProviderBase&) = default;
+        ScreenInfoUiaProviderBase(ScreenInfoUiaProviderBase&&) = default;
+        ScreenInfoUiaProviderBase& operator=(const ScreenInfoUiaProviderBase&) = default;
+        ScreenInfoUiaProviderBase& operator=(ScreenInfoUiaProviderBase&&) = default;
+        virtual ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
 

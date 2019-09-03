@@ -38,10 +38,6 @@ ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
-ScreenInfoUiaProviderBase::~ScreenInfoUiaProviderBase()
-{
-}
-
 [[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;

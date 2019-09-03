@@ -28,6 +28,7 @@ public:
     CodepointWidthDetector(CodepointWidthDetector&&) = delete;
     ~CodepointWidthDetector() = default;
     CodepointWidthDetector& operator=(const CodepointWidthDetector&) = delete;
+    CodepointWidthDetector& operator=(CodepointWidthDetector&&) = delete;
 
     CodepointWidth GetWidth(const std::wstring_view glyph) const;
     bool IsWide(const std::wstring_view glyph) const;
