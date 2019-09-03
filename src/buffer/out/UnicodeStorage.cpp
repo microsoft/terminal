@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "UnicodeStorage.hpp"
 
-UnicodeStorage::UnicodeStorage() :
+UnicodeStorage::UnicodeStorage() noexcept :
     _map{}
 {
 }
