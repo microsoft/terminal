@@ -23,6 +23,8 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT CustomTextRenderer::IsPixelSnappingDisabled(void* /*clientDrawingContext*/,
                                                                   _Out_ BOOL* isDisabled) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, isDisabled);
+
     *isDisabled = false;
     return S_OK;
 }
@@ -40,7 +42,10 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT CustomTextRenderer::GetPixelsPerDip(void* clientDrawingContext,
                                                           _Out_ FLOAT* pixelsPerDip) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pixelsPerDip);
+
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     float dpiX, dpiY;
     drawingContext->renderTarget->GetDpi(&dpiX, &dpiY);
@@ -60,7 +65,10 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT CustomTextRenderer::GetCurrentTransform(void* clientDrawingContext,
                                                               DWRITE_MATRIX* transform) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, transform);
+
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     // Matrix structures are defined identically
     drawingContext->renderTarget->GetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(transform));
@@ -90,15 +98,14 @@ using namespace Microsoft::Console::Render;
                                                         _In_ const DWRITE_UNDERLINE* underline,
                                                         IUnknown* clientDrawingEffect) noexcept
 {
-    _FillRectangle(clientDrawingContext,
-                   clientDrawingEffect,
-                   baselineOriginX,
-                   baselineOriginY + underline->offset,
-                   underline->width,
-                   underline->thickness,
-                   underline->readingDirection,
-                   underline->flowDirection);
-    return S_OK;
+    return _FillRectangle(clientDrawingContext,
+                          clientDrawingEffect,
+                          baselineOriginX,
+                          baselineOriginY + underline->offset,
+                          underline->width,
+                          underline->thickness,
+                          underline->readingDirection,
+                          underline->flowDirection);
 }
 
 // Routine Description:
@@ -122,15 +129,14 @@ using namespace Microsoft::Console::Render;
                                                             _In_ const DWRITE_STRIKETHROUGH* strikethrough,
                                                             IUnknown* clientDrawingEffect) noexcept
 {
-    _FillRectangle(clientDrawingContext,
-                   clientDrawingEffect,
-                   baselineOriginX,
-                   baselineOriginY + strikethrough->offset,
-                   strikethrough->width,
-                   strikethrough->thickness,
-                   strikethrough->readingDirection,
-                   strikethrough->flowDirection);
-    return S_OK;
+    return _FillRectangle(clientDrawingContext,
+                          clientDrawingEffect,
+                          baselineOriginX,
+                          baselineOriginY + strikethrough->offset,
+                          strikethrough->width,
+                          strikethrough->thickness,
+                          strikethrough->readingDirection,
+                          strikethrough->flowDirection);
 }
 
 // Routine Description:
@@ -146,16 +152,17 @@ using namespace Microsoft::Console::Render;
 // - flowDirection - textual flow information that could affect the rectangle
 // Return Value:
 // - S_OK
-void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
-                                        IUnknown* clientDrawingEffect,
-                                        float x,
-                                        float y,
-                                        float width,
-                                        float thickness,
-                                        DWRITE_READING_DIRECTION /*readingDirection*/,
-                                        DWRITE_FLOW_DIRECTION /*flowDirection*/) noexcept
+[[nodiscard]] HRESULT CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
+                                                         IUnknown* clientDrawingEffect,
+                                                         float x,
+                                                         float y,
+                                                         float width,
+                                                         float thickness,
+                                                         DWRITE_READING_DIRECTION /*readingDirection*/,
+                                                         DWRITE_FLOW_DIRECTION /*flowDirection*/) noexcept
 {
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     // Get brush
     ID2D1Brush* brush = drawingContext->foregroundBrush;
@@ -191,6 +198,8 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                            BOOL isRightToLeft,
                                                            IUnknown* clientDrawingEffect) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, inlineObject);
+
     return inlineObject->Draw(clientDrawingContext,
                               this,
                               originX,
@@ -254,7 +263,7 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
     {
         rect.right += advance;
     }
-        
+
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
     // Now go onto drawing the text.
@@ -284,13 +293,13 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
         // there are, glyphRunEnumerator can be used to iterate through them.
         ::Microsoft::WRL::ComPtr<IDWriteColorGlyphRunEnumerator1> glyphRunEnumerator;
         const HRESULT hr = dwriteFactory4->TranslateColorGlyphRun(baselineOrigin,
-                                                            glyphRun,
-                                                            glyphRunDescription,
-                                                            supportedFormats,
-                                                            measuringMode,
-                                                            nullptr,
-                                                            0,
-                                                            &glyphRunEnumerator);
+                                                                  glyphRun,
+                                                                  glyphRunDescription,
+                                                                  supportedFormats,
+                                                                  measuringMode,
+                                                                  nullptr,
+                                                                  0,
+                                                                  &glyphRunEnumerator);
 
         // If the analysis found no color glyphs in the run, just draw normally.
         if (hr == DWRITE_E_NOCOLOR)
@@ -414,6 +423,11 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                              _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
                                                              ID2D1Brush* brush)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
+    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRunDescription);
+    RETURN_HR_IF_NULL(E_INVALIDARG, brush);
+
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(clientDrawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
 
@@ -435,6 +449,9 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                                      _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                                      _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
+
     // This is regular text but manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
     clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());
@@ -475,6 +492,9 @@ void CustomTextRenderer::_FillRectangle(void* clientDrawingContext,
                                                             _In_ const DWRITE_GLYPH_RUN* glyphRun,
                                                             _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
+    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
+
     // This is glow text manually
     ::Microsoft::WRL::ComPtr<ID2D1Factory> d2dFactory;
     clientDrawingContext->renderTarget->GetFactory(d2dFactory.GetAddressOf());

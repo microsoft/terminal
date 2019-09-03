@@ -444,6 +444,8 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, psrRegion);
+
     _InvalidOr(*psrRegion);
     return S_OK;
 }
@@ -456,6 +458,8 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pcoordCursor);
+
     const SMALL_RECT sr = Microsoft::Console::Types::Viewport::FromCoord(*pcoordCursor).ToInclusive();
     return Invalidate(&sr);
 }
@@ -468,6 +472,8 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, prcDirtyClient);
+
     _InvalidOr(*prcDirtyClient);
 
     return S_OK;
@@ -564,6 +570,8 @@ Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
 // - S_FALSE because we don't use this.
 [[nodiscard]] HRESULT DxEngine::InvalidateCircling(_Out_ bool* const pForcePaint) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
+
     *pForcePaint = false;
     return S_FALSE;
 }
@@ -709,6 +717,8 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_FALSE because this is unused.
 [[nodiscard]] HRESULT DxEngine::PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pForcePaint);
+
     *pForcePaint = false;
     return S_FALSE;
 }
@@ -1382,6 +1392,8 @@ float DxEngine::GetScaling() const noexcept
 // - S_OK or relevant DirectWrite error.
 [[nodiscard]] HRESULT DxEngine::IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pResult);
+
     try
     {
         const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
@@ -1532,6 +1544,8 @@ float DxEngine::GetScaling() const noexcept
 [[nodiscard]] std::wstring DxEngine::_GetFontFamilyName(IDWriteFontFamily* const fontFamily,
                                                         std::wstring& localeName) const
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, fontFamily);
+
     // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
     Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
     THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));

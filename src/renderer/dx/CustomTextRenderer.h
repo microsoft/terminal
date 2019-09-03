@@ -81,14 +81,14 @@ namespace Microsoft::Console::Render
                                                                  IUnknown* clientDrawingEffect) noexcept override;
 
     private:
-        void _FillRectangle(void* clientDrawingContext,
-                            IUnknown* clientDrawingEffect,
-                            float x,
-                            float y,
-                            float width,
-                            float thickness,
-                            DWRITE_READING_DIRECTION readingDirection,
-                            DWRITE_FLOW_DIRECTION flowDirection) noexcept;
+        [[nodiscard]] HRESULT _FillRectangle(void* clientDrawingContext,
+                                             IUnknown* clientDrawingEffect,
+                                             float x,
+                                             float y,
+                                             float width,
+                                             float thickness,
+                                             DWRITE_READING_DIRECTION readingDirection,
+                                             DWRITE_FLOW_DIRECTION flowDirection) noexcept;
 
         [[nodiscard]] HRESULT _DrawBasicGlyphRun(DrawingContext* clientDrawingContext,
                                                  D2D1_POINT_2F baselineOrigin,

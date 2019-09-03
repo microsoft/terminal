@@ -262,7 +262,7 @@ namespace Microsoft::Console::Types
         static const COORD _getScreenBufferCoords(IUiaData* pData);
         virtual const COORD _getScreenFontSize() const;
 
-        static const unsigned int _getTotalRows(IUiaData* pData) noexcept;
+        static const unsigned int _getTotalRows(IUiaData* pData);
         static const unsigned int _getRowWidth(IUiaData* pData);
 
         static const unsigned int _getFirstScreenInfoRowIndex() noexcept;
@@ -276,10 +276,10 @@ namespace Microsoft::Console::Types
         static const TextBufferRow _endpointToTextBufferRow(IUiaData* pData,
                                                             const Endpoint endpoint);
         static const ScreenInfoRow _textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                 const TextBufferRow row) noexcept;
+                                                                 const TextBufferRow row);
 
         static const TextBufferRow _screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                 const ScreenInfoRow row) noexcept;
+                                                                 const ScreenInfoRow row);
         static const Endpoint _textBufferRowToEndpoint(IUiaData* pData, const TextBufferRow row);
 
         static const ScreenInfoRow _endpointToScreenInfoRow(IUiaData* pData,
@@ -298,12 +298,12 @@ namespace Microsoft::Console::Types
         static const Row _normalizeRow(IUiaData* pData, const Row row) noexcept;
 
         static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
-                                                             const ScreenInfoRow row) noexcept;
+                                                             const ScreenInfoRow row);
         static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
                                                              const SMALL_RECT viewport) noexcept;
 
         static const bool _isScreenInfoRowInViewport(IUiaData* pData,
-                                                     const ScreenInfoRow row) noexcept;
+                                                     const ScreenInfoRow row);
         static const bool _isScreenInfoRowInViewport(const ScreenInfoRow row,
                                                      const SMALL_RECT viewport) noexcept;
 

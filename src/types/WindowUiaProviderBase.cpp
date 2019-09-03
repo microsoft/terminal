@@ -36,6 +36,7 @@ WindowUiaProviderBase::Release()
 
 IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
     if (riid == __uuidof(IUnknown))
     {
         *ppInterface = static_cast<IRawElementProviderSimple*>(this);
@@ -71,6 +72,7 @@ IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outp
 // Gets UI Automation provider options.
 IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *pOptions = ProviderOptions_ServerSideProvider;
@@ -82,6 +84,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions*
 IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patternId*/,
                                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
     *ppInterface = nullptr;
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -92,6 +95,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPatternProvider(_In_ PATTERNID /*patter
 // Gets custom properties.
 IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId, _Out_ VARIANT* pVariant)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pVariant);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     pVariant->vt = VT_EMPTY;
@@ -148,6 +152,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyI
 // supplies many properties.
 IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     try
     {
         const HWND hwnd = GetWindowHandle();
@@ -164,6 +169,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_res
 
 IFACEMETHODIMP WindowUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRuntimeId);
     RETURN_IF_FAILED(_EnsureValidHwnd());
     // Root defers this to host, others must implement it...
     *ppRuntimeId = nullptr;
@@ -173,6 +179,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAF
 
 IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRect);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     const IUiaWindow* const pConsoleWindow = _baseWindow;
@@ -195,6 +202,7 @@ IFACEMETHODIMP WindowUiaProviderBase::get_BoundingRectangle(_Out_ UiaRect* pRect
 
 IFACEMETHODIMP WindowUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRoots);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *ppRoots = nullptr;
@@ -203,6 +211,7 @@ IFACEMETHODIMP WindowUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_ma
 
 IFACEMETHODIMP WindowUiaProviderBase::get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
     *ppProvider = this;

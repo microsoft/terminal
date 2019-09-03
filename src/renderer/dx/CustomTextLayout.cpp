@@ -38,6 +38,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
     _runIndex{ 0 },
     _width{ width }
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, format);
+
     // Fetch the locale name out once now from the format
     _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
@@ -58,6 +60,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetColumns(_Out_ UINT32* columns)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
     RETURN_IF_FAILED(_AnalyzeRuns());
@@ -467,6 +470,8 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                                        IDWriteTextRenderer* renderer,
                                                        const D2D_POINT_2F origin) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, renderer);
+
     try
     {
         // We're going to start from the origin given and walk to the right for each
@@ -561,6 +566,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                                                             _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                             _Out_ UINT32* textLength)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textString);
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+
     *textString = nullptr;
     *textLength = 0;
 
@@ -587,6 +595,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                                                                 _Outptr_result_buffer_(*textLength) WCHAR const** textString,
                                                                                 _Out_ UINT32* textLength) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textString);
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+
     *textString = nullptr;
     *textLength = 0;
 
@@ -624,6 +635,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                                                         _Out_ UINT32* textLength,
                                                                         _Outptr_result_z_ WCHAR const** localeName) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+    RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
+
     *localeName = _localeName.data();
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
 
@@ -643,6 +657,9 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
                                                                                 _Out_ UINT32* textLength,
                                                                                 _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+    RETURN_HR_IF_NULL(E_INVALIDARG, numberSubstitution);
+
     *numberSubstitution = nullptr;
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
 

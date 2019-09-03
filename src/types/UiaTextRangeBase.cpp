@@ -1017,6 +1017,7 @@ IFACEMETHODIMP UiaTextRangeBase::GetChildren(_Outptr_result_maybenull_ SAFEARRAY
 
 const COORD UiaTextRangeBase::_getScreenBufferCoords(IUiaData* pData)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     return pData->GetTextBuffer().GetSize().Dimensions();
 }
 
@@ -1037,8 +1038,9 @@ const COORD UiaTextRangeBase::_getScreenFontSize() const
 // - <none>
 // Return Value:
 // - The number of rows
-const unsigned int UiaTextRangeBase::_getTotalRows(IUiaData* pData) noexcept
+const unsigned int UiaTextRangeBase::_getTotalRows(IUiaData* pData)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     return pData->GetTextBuffer().TotalRowCount();
 }
 
@@ -1109,8 +1111,9 @@ const unsigned int UiaTextRangeBase::_rowCountInRange(IUiaData* pData) const
 // Return Value:
 // - the equivalent ScreenInfoRow.
 const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(IUiaData* pData,
-                                                                    const TextBufferRow row) noexcept
+                                                                    const TextBufferRow row)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     const int firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row - firstRowIndex);
 }
@@ -1122,8 +1125,9 @@ const ScreenInfoRow UiaTextRangeBase::_textBufferRowToScreenInfoRow(IUiaData* pD
 // - row - the ScreenInfoRow to convert
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row) noexcept
+const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData, const ScreenInfoRow row)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     const SMALL_RECT viewport = pData->GetViewport().ToInclusive();
     return _screenInfoRowToViewportRow(row, viewport);
 }
@@ -1192,8 +1196,9 @@ const unsigned int UiaTextRangeBase::_getViewportWidth(const SMALL_RECT viewport
 // Return Value:
 // - true if the row is within the bounds of the viewport
 const bool UiaTextRangeBase::_isScreenInfoRowInViewport(IUiaData* pData,
-                                                        const ScreenInfoRow row) noexcept
-{ 
+                                                        const ScreenInfoRow row)
+{
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     return _isScreenInfoRowInViewport(row, pData->GetViewport().ToInclusive());
 }
 
@@ -1219,8 +1224,9 @@ const bool UiaTextRangeBase::_isScreenInfoRowInViewport(const ScreenInfoRow row,
 // Return Value:
 // - the equivalent TextBufferRow.
 const TextBufferRow UiaTextRangeBase::_screenInfoRowToTextBufferRow(IUiaData* pData,
-                                                                    const ScreenInfoRow row) noexcept
+                                                                    const ScreenInfoRow row)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
     const TextBufferRow firstRowIndex = pData->GetTextBuffer().GetFirstRowIndex();
     return _normalizeRow(pData, row + firstRowIndex);
 }
@@ -1444,6 +1450,8 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterForward(IUiaData
                                                                         const MoveState moveState,
                                                                         _Out_ int* const pAmountMoved)
 {
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pAmountMoved);
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
@@ -1490,7 +1498,8 @@ std::pair<Endpoint, Endpoint> UiaTextRangeBase::_moveByCharacterBackward(IUiaDat
                                                                          const MoveState moveState,
                                                                          _Out_ int* const pAmountMoved)
 {
-    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pAmountMoved);
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow = moveState.StartScreenInfoRow;
@@ -1643,7 +1652,8 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterForward(IUiaData* pData,
                                                       const MoveState moveState,
                                                       _Out_ int* const pAmountMoved)
 {
-    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pAmountMoved);
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
@@ -1733,7 +1743,8 @@ UiaTextRangeBase::_moveEndpointByUnitCharacterBackward(IUiaData* pData,
                                                        const MoveState moveState,
                                                        _Out_ int* const pAmountMoved)
 {
-    THROW_HR_IF(E_INVALIDARG, pAmountMoved == nullptr);
+    THROW_HR_IF_NULL(E_INVALIDARG, pData);
+    THROW_HR_IF_NULL(E_INVALIDARG, pAmountMoved);
     *pAmountMoved = 0;
     const int count = moveCount;
     ScreenInfoRow currentScreenInfoRow;
@@ -2073,6 +2084,7 @@ RECT UiaTextRangeBase::_getTerminalRect() const
 
     IRawElementProviderFragment* pRawElementProviderFragment;
     THROW_IF_FAILED(_pProvider->QueryInterface<IRawElementProviderFragment>(&pRawElementProviderFragment));
+    THROW_HR_IF_NULL(E_POINTER, pRawElementProviderFragment);
     pRawElementProviderFragment->get_BoundingRectangle(&result);
 
     return {
