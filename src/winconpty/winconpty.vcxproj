@@ -8,6 +8,7 @@
     </ClCompile>
     <ClCompile Include="../server/DeviceHandle.cpp" />
     <ClCompile Include="../server/WinNTControl.cpp" />
+    <None Include="winconpty.def" />
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -24,4 +25,13 @@
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.dll.props" />
   <Import Project="$(SolutionDir)src\common.build.post.props" />
+
+  <ItemDefinitionGroup>
+    <Link>
+      <ModuleDefinitionFile>winconpty.def</ModuleDefinitionFile>
+
+      <!-- Force APISet to the beginning of the link line; GH#922 -->
+      <AdditionalDependencies>onecoreuap_apiset.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
 </Project>

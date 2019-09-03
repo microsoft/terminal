@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "precomp.h"
 
 #ifdef __cplusplus
@@ -27,6 +30,13 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
 HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const COORD size);
 void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty);
 VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty);
+
+HRESULT CreatePseudoConsoleAsUser(_In_ HANDLE hToken,
+                                  _In_ COORD size,
+                                  _In_ HANDLE hInput,
+                                  _In_ HANDLE hOutput,
+                                  _In_ DWORD dwFlags,
+                                  _Out_ HPCON* phPC);
 
 #ifdef __cplusplus
 }

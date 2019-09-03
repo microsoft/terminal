@@ -1,17 +1,33 @@
-#include "precomp.h"
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 
-#include "../server/DeviceHandle.h"
+#include "precomp.h"
 
 #include "winconpty.h"
 
-#ifndef __INSIDE_WINDOWS
+#ifdef __INSIDE_WINDOWS
+#include <strsafe.h>
+#include <consoleinternal.h>
+// You need kernelbasestaging.h to be able to use wil in libraries consumed by kernelbase.dll
+#include <kernelbasestaging.h>
+#define RESOURCE_SUPPRESS_STL
+#define WIL_SUPPORT_BITOPERATION_PASCAL_NAMES
+#include <wil/resource.h>
+#else
+#include "device.h"
+#include "../server/DeviceHandle.h"
 #include <filesystem>
-#endif
+#endif // __INSIDE_WINDOWS
 
 #pragma warning(push)
 #pragma warning(disable : 4273) // inconsistent dll linkage (we are exporting things kernel32 also exports)
 
-extern "C" __declspec(dllexport) wchar_t* _ConsoleHostPath()
+// Function Description:
+// - Returns the path to either conhost.exe or the side-by-side OpenConsole, depending on whether this
+//   module is building with Windows.
+// Return Value:
+// - A pointer to permanent storage containing the path to the console host.
+static wchar_t* _ConsoleHostPath()
 {
     // Use the magic of magic statics to only calculate this once.
     static wil::unique_process_heap_string consoleHostPath = []() {
@@ -25,13 +41,12 @@ extern "C" __declspec(dllexport) wchar_t* _ConsoleHostPath()
         modulePath.replace_filename(L"OpenConsole.exe");
         auto modulePathAsString{ modulePath.wstring() };
         return wil::make_process_heap_string_nothrow(modulePathAsString.data(), modulePathAsString.size());
-#endif
+#endif // __INSIDE_WINDOWS
     }();
     return consoleHostPath.get();
 }
 
-static bool
-_HandleIsValid(HANDLE h) noexcept
+static bool _HandleIsValid(HANDLE h) noexcept
 {
     return (h != INVALID_HANDLE_VALUE) && (h != nullptr);
 }
@@ -53,7 +68,7 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     }
 
     wil::unique_handle serverHandle;
-    RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateServerHandle(serverHandle.addressof(), TRUE));
+    RETURN_IF_NTSTATUS_FAILED(CreateServerHandle(serverHandle.addressof(), TRUE));
 
     wil::unique_handle signalPipeConhostSide;
     wil::unique_handle signalPipeOurSide;
@@ -166,10 +181,10 @@ HRESULT _CreatePseudoConsole(const HANDLE hToken,
     pPty->hConPtyProcess = pi.hProcess;
     pi.hProcess = NULL;
 
-    RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(&pPty->hPtyReference,
-                                                               serverHandle.get(),
-                                                               L"\\Reference",
-                                                               FALSE));
+    RETURN_IF_NTSTATUS_FAILED(CreateClientHandle(&pPty->hPtyReference,
+                                                 serverHandle.get(),
+                                                 L"\\Reference",
+                                                 FALSE));
 
     pPty->hSignal = signalPipeOurSide.release();
 
@@ -269,6 +284,38 @@ VOID _ClosePseudoConsole(_In_ PseudoConsole* pPty)
 // These functions are defined in the console l1 apiset, which is generated from
 //      the consoleapi.apx file in minkernel\apiset\libs\Console.
 
+// Function Description:
+// Creates a "Pseudo-console" (conpty) with dimensions (in characters)
+//      provided by the `size` parameter. The caller should provide two handles:
+// - `hInput` is used for writing input to the pty, encoded as UTF-8 and VT sequences.
+// - `hOutput` is used for reading the output of the pty, encoded as UTF-8 and VT sequences.
+// Once the call completes, `phPty` will receive a token value to identify this
+//      conpty object. This value should be used in conjunction with the other
+//      Pseudoconsole API's.
+// `dwFlags` is used to specify optional behavior to the created pseudoconsole.
+// The flags can be combinations of the following values:
+//  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the
+//      cursor position of the parent terminal application. This can be useful
+//      for applications like `ssh`, where ssh (currently running in a terminal)
+//      might want to create a pseudoterminal session for an child application
+//      and the child inherit the cursor position of ssh.
+//      The creted conpty will immediately emit a "Device Status Request" VT
+//      sequence to hOutput, that should be replied to on hInput in the format
+//      "\x1b[<r>;<c>R", where `<r>` is the row and `<c>` is the column of the
+//      cursor position.
+//      This requires a cooperating terminal application - if a caller does not
+//      reply to this message, the conpty will not process any input until it
+//      does. Most *nix terminals and the Windows Console (after Windows 10
+//      Anniversary Update) will be able to handle such a message.
+HRESULT WINAPI CreatePseudoConsole(_In_ COORD size,
+                                   _In_ HANDLE hInput,
+                                   _In_ HANDLE hOutput,
+                                   _In_ DWORD dwFlags,
+                                   _Out_ HPCON* phPC)
+{
+    return CreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
+}
+
 HRESULT CreatePseudoConsoleAsUser(_In_ HANDLE hToken,
                                   _In_ COORD size,
                                   _In_ HANDLE hInput,
@@ -306,40 +353,8 @@ HRESULT CreatePseudoConsoleAsUser(_In_ HANDLE hToken,
 }
 
 // Function Description:
-// Creates a "Pseudo-console" (conpty) with dimensions (in characters)
-//      provided by the `size` parameter. The caller should provide two handles:
-// - `hInput` is used for writing input to the pty, encoded as UTF-8 and VT sequences.
-// - `hOutput` is used for reading the output of the pty, encoded as UTF-8 and VT sequences.
-// Once the call completes, `phPty` will receive a token value to identify this
-//      conpty object. This value should be used in conjunction with the other
-//      Pseudoconsole API's.
-// `dwFlags` is used to specify optional behavior to the created pseudoconsole.
-// The flags can be combinations of the following values:
-//  INHERIT_CURSOR: This will cause the created conpty to attempt to inherit the
-//      cursor position of the parent terminal application. This can be useful
-//      for applications like `ssh`, where ssh (currently running in a terminal)
-//      might want to create a pseudoterminal session for an child application
-//      and the child inherit the cursor position of ssh.
-//      The creted conpty will immediately emit a "Device Status Request" VT
-//      sequence to hOutput, that should be replied to on hInput in the format
-//      "\x1b[<r>;<c>R", where `<r>` is the row and `<c>` is the column of the
-//      cursor position.
-//      This requires a cooperating terminal application - if a caller does not
-//      reply to this message, the conpty will not process any input until it
-//      does. Most *nix terminals and the Windows Console (after Windows 10
-//      Anniversary Update) will be able to handle such a message.
-__declspec(dllexport) HRESULT WINAPI CreatePseudoConsole(_In_ COORD size,
-                                                         _In_ HANDLE hInput,
-                                                         _In_ HANDLE hOutput,
-                                                         _In_ DWORD dwFlags,
-                                                         _Out_ HPCON* phPC)
-{
-    return CreatePseudoConsoleAsUser(INVALID_HANDLE_VALUE, size, hInput, hOutput, dwFlags, phPC);
-}
-
-// Function Description:
 // Resizes the given conpty to the specified size, in characters.
-__declspec(dllexport) HRESULT WINAPI ResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
+HRESULT WINAPI ResizePseudoConsole(_In_ HPCON hPC, _In_ COORD size)
 {
     PseudoConsole* const pPty = (PseudoConsole*)hPC;
     HRESULT hr = pPty == NULL ? E_INVALIDARG : S_OK;
@@ -356,7 +371,7 @@ __declspec(dllexport) HRESULT WINAPI ResizePseudoConsole(_In_ HPCON hPC, _In_ CO
 //      console window they were running in was closed.
 // This can fail if the conhost hosting the pseudoconsole failed to be
 //      terminated, or if the pseudoconsole was already terminated.
-__declspec(dllexport) VOID WINAPI ClosePseudoConsole(_In_ HPCON hPC)
+VOID WINAPI ClosePseudoConsole(_In_ HPCON hPC)
 {
     PseudoConsole* const pPty = (PseudoConsole*)hPC;
     if (pPty != NULL)
