@@ -250,29 +250,6 @@ CharRow::reference CharRow::GlyphAt(const size_t column)
     return { *this, column };
 }
 
-// Routine Description:
-// - returns string containing text data exactly how it's stored internally, including doubling of
-// leading/trailing cells.
-// Arguments:
-// - none
-// Return Value:
-// - text stored in char row
-// - Note: will throw exception if out of memory
-std::wstring CharRow::GetTextRaw() const
-{
-    std::wstring wstr;
-    wstr.reserve(_data.size());
-    for (size_t i = 0; i < _data.size(); ++i)
-    {
-        const auto glyph = GlyphAt(i);
-        for (auto it = glyph.begin(); it != glyph.end(); ++it)
-        {
-            wstr.push_back(*it);
-        }
-    }
-    return wstr;
-}
-
 std::wstring CharRow::GetText() const
 {
     std::wstring wstr;
@@ -283,9 +260,9 @@ std::wstring CharRow::GetText() const
         const auto glyph = GlyphAt(i);
         if (!DbcsAttrAt(i).IsTrailing())
         {
-            for (auto it = glyph.begin(); it != glyph.end(); ++it)
+            for (const auto wch : glyph)
             {
-                wstr.push_back(*it);
+                wstr.push_back(wch);
             }
         }
     }

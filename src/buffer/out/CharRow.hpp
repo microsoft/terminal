@@ -64,9 +64,6 @@ public:
     void ClearGlyph(const size_t column);
     std::wstring GetText() const;
 
-    // other functions implemented at the template class level
-    std::wstring GetTextRaw() const;
-
     // working with glyphs
     const reference GlyphAt(const size_t column) const;
     reference GlyphAt(const size_t column);
