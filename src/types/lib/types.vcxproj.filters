@@ -63,10 +63,10 @@
     <ClCompile Include="..\WindowUiaProvider.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\ScreenInfoUiaProvider.cpp">
+    <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\UiaTextRange.cpp">
+    <ClCompile Include="..\UiaTextRangeBase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\WindowUiaProviderBase.cpp">
@@ -110,7 +110,7 @@
     <ClInclude Include="..\ScreenInfoUiaProvider.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\UiaTextRange.hpp">
+    <ClInclude Include="..\UiaTextRangeBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\WindowUiaProviderBase.hpp">
@@ -143,10 +143,7 @@
     <ClInclude Include="..\precomp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\ScreenInfoUiaProvider.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\UiaTextRange.hpp">
+    <ClInclude Include="..\ScreenInfoUiaProviderBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\utils.hpp">
@@ -156,6 +153,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\IUiaWindow.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IUiaData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\IBaseData.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

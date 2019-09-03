@@ -15,13 +15,25 @@ Author(s):
 #pragma once
 
 #include "..\renderer\inc\IRenderData.hpp"
+#include "..\types\IUiaData.h"
 
-class RenderData final : public Microsoft::Console::Render::IRenderData
+class RenderData final :
+    public Microsoft::Console::Render::IRenderData,
+    public Microsoft::Console::Types::IUiaData
 {
 public:
+#pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+
+    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
+#pragma endregion
+
+#pragma region IRenderData
     const TextAttribute GetDefaultBrushColors() noexcept override;
 
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
@@ -40,26 +52,12 @@ public:
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    bool IsAreaSelected() const override;
+    const std::wstring GetConsoleTitle() const noexcept override;
+#pragma endregion
+
+#pragma region IUiaData
+    const bool IsSelectionActive() const override;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-
-    // TODO GitHub #605: Search functionality
-    // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
-    // We should actually abstract this out better once Windows Terminal has Search
-    HRESULT SearchForText(_In_ BSTR text,
-                          _In_ BOOL searchBackward,
-                          _In_ BOOL ignoreCase,
-                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
-                          unsigned int _start,
-                          unsigned int _end,
-                          std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
-                          std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
-                          std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone);
-
-    const std::wstring GetConsoleTitle() const noexcept override;
-
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
+#pragma endregion
 };

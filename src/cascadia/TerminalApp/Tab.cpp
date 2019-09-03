@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Tab.h"
+#include "Utils.h"
 
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
@@ -142,6 +143,21 @@ void Tab::UpdateFocus()
     _rootPane->UpdateFocus();
 }
 
+void Tab::UpdateIcon(const winrt::hstring iconPath)
+{
+    // Don't reload our icon if it hasn't changed.
+    if (iconPath == _lastIconPath)
+    {
+        return;
+    }
+
+    _lastIconPath = iconPath;
+
+    _tabViewItem.Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [this]() {
+        _tabViewItem.Icon(GetColoredIcon(_lastIconPath));
+    });
+}
+
 // Method Description:
 // - Gets the title string of the last focused terminal control in our tree.
 //   Returns the empty string if there is no such control.
@@ -188,29 +204,28 @@ void Tab::Scroll(const int delta)
 }
 
 // Method Description:
-// - Vertically split the focused pane in our tree of panes, and place the
-//   given TermControl into the newly created pane.
+// - Determines whether the focused pane has sufficient space to be split.
 // Arguments:
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitType: The type of split we want to create.
 // Return Value:
-// - <none>
-void Tab::AddVerticalSplit(const GUID& profile, TermControl& control)
+// - True if the focused pane can be split. False otherwise.
+bool Tab::CanSplitPane(Pane::SplitState splitType)
 {
-    _rootPane->SplitVertical(profile, control);
+    return _rootPane->CanSplit(splitType);
 }
 
 // Method Description:
-// - Horizontally split the focused pane in our tree of panes, and place the
+// - Split the focused pane in our tree of panes, and place the
 //   given TermControl into the newly created pane.
 // Arguments:
+// - splitType: The type of split we want to create.
 // - profile: The profile GUID to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - <none>
-void Tab::AddHorizontalSplit(const GUID& profile, TermControl& control)
+void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl& control)
 {
-    _rootPane->SplitHorizontal(profile, control);
+    _rootPane->Split(splitType, profile, control);
 }
 
 // Method Description:

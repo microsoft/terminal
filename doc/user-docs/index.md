@@ -45,7 +45,7 @@ To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
 
 ## Starting a new PowerShell tab with admin privilege
 
-There is no current plan to support this feature for security reaons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
+There is no current plan to support this feature for security reasons. See issue [#623](https://github.com/microsoft/terminal/issues/632)
 
 ## Using cut and paste in the Terminal window
 
@@ -72,7 +72,7 @@ From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`
 Your default json editor will open up the Terminal settings file. The file can be found
 at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
 
-An introduction to the the various settings can be found [here](UsingJsonSettings.md).
+An introduction to the various settings can be found [here](UsingJsonSettings.md).
 
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
 

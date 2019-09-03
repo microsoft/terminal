@@ -16,6 +16,10 @@ Author(s):
 #pragma once
 #include "ColorScheme.h"
 
+// GUID used for generating GUIDs at runtime, for profiles that did not have a
+// GUID specified manually.
+constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 0x4499, { 0x8a, 0x50, 0x40, 0x31, 0x3c, 0xaf, 0x51, 0x0a } };
+
 namespace TerminalApp
 {
     class Profile;
@@ -36,8 +40,6 @@ public:
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
-    bool HasTabTitle() const noexcept;
-    std::wstring_view GetTabTitle() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
@@ -55,7 +57,7 @@ public:
     void SetConnectionType(GUID connectionType) noexcept;
 
     bool HasIcon() const noexcept;
-    std::wstring_view GetIconPath() const noexcept;
+    winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;

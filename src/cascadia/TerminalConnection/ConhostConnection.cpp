@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     ConhostConnection::ConhostConnection(const hstring& commandline,
                                          const hstring& startingDirectory,
+                                         const hstring& startingTitle,
                                          const uint32_t initialRows,
                                          const uint32_t initialCols,
                                          const guid& initialGuid) :
@@ -25,6 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _initialCols{ initialCols },
         _commandline{ commandline },
         _startingDirectory{ startingDirectory },
+        _startingTitle{ startingTitle },
         _guid{ initialGuid }
     {
         if (_guid == guid{})
@@ -79,16 +81,19 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             extraEnvVars.emplace(L"WT_SESSION", pwszGuid);
         }
 
-        // Create our own output handling thread
-        // Each connection needs to make sure to drain the output from its backing host.
-        _hOutputThread.reset(CreateThread(nullptr,
-                                          0,
-                                          StaticOutputThreadProc,
-                                          this,
-                                          0,
-                                          nullptr));
+        STARTUPINFO si = { 0 };
+        si.cb = sizeof(STARTUPINFOW);
 
-        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
+        // If we have a startingTitle, create a mutable character buffer to add
+        // it to the STARTUPINFO.
+        std::unique_ptr<wchar_t[]> mutableTitle{ nullptr };
+        if (!_startingTitle.empty())
+        {
+            mutableTitle = std::make_unique<wchar_t[]>(_startingTitle.size() + 1);
+            THROW_IF_NULL_ALLOC(mutableTitle);
+            THROW_IF_FAILED(StringCchCopy(mutableTitle.get(), _startingTitle.size() + 1, _startingTitle.c_str()));
+            si.lpTitle = mutableTitle.get();
+        }
 
         THROW_IF_FAILED(
             CreateConPty(cmdline,
@@ -100,7 +105,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          &_signalPipe,
                          &_piConhost,
                          0,
+                         si,
                          extraEnvVars));
+
+        // Create our own output handling thread
+        // This must be done after the pipes are populated.
+        // Each connection needs to make sure to drain the output from its backing host.
+        _hOutputThread.reset(CreateThread(nullptr,
+                                          0,
+                                          StaticOutputThreadProc,
+                                          this,
+                                          0,
+                                          nullptr));
+
+        THROW_LAST_ERROR_IF_NULL(_hOutputThread);
 
         _connected = true;
     }

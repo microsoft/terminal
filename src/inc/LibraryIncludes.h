@@ -43,6 +43,7 @@
 #include <iomanip>
 #include <filesystem>
 #include <functional>
+#include <set>
 
 // WIL
 #include <wil/Common.h>
