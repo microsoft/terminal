@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2019-08-01
+last updated: 2019-09-03
 issue id: 2046
 ---
 
@@ -74,7 +74,7 @@ corresponding to that `ShortcutAction`. `AppKeyBindings` already does a great
 job of dispatching `ShortcutActions`, so we'll re-use that. We'll pull the basic
 parts of dispatching `ShortcutAction` callbacks into another class,
 `ShortcutActionDispatch`, with a single `PerformAction(ShortcutAction)` method
-(and events for each action). `AppKeybindings` will be initialized with a
+(and events for each action). `AppKeyBindings` will be initialized with a
 reference to the `ShortcutActionDispatch` object, so that it can call
 `PerformAction` on it. Additionally, by having a singular
 `ShortcutActionDispatch` instance, we won't need to re-hook up the
@@ -90,14 +90,16 @@ same as pressing the keybinding.
 We'll add another action that can be used to toggle the visibility of the
 command palette. Pressing that keybinding will bring up the command palette.
 
-**OPEN QUESTION**: Do we want the palette to appear over a single pane, or over
-the entire tab content? In [#Future-considerations], I mention having
-profile-scoped commands. Maybe it makes more sense in that scenario to have the
-palette appear in a particular pane, to help identify that the palette has
-commands for _that_ terminal. It could however clutter the UI quickly, and might
-not be as usable for smaller pane sizes. We could just have the per-profile
-commands added when the palette is opened. The way I have it now is as an
-overlay over the entire tab.
+When the command palette appears, we'll want it to appear as a single overlay
+over all of the panes of the Terminal. The drop-down will be centered
+horizontally, dropping down from the top (from the tab row). When commands are
+entered, it will be implied that they are delivered to the focused terminal
+pane. This will help avoid two problematic scenarios that could arise from
+having the command palette attache to a single pane:
+  * When attached to a single pane, it might be very easy for the UI to quickly
+    become cluttered, especially at smaller pane sizes.
+  * This avoids the "find the overlay problem" which is common in editors like
+    VS where the dialog appears attached to the active editor pane.
 
 The palette will consist of two main UI elements: a text box for searching for
 commands, and a list of commands.
@@ -200,6 +202,11 @@ heavily lean on the "focused" element to determine which terminal is "active".
 However, when the command plaette is opened, focus will move out of the terminal
 control into the command palette, which leads to some hard to debug crashes.
 
+Additionally, we'll need to ensure that the "fuzzy search" algorithim proposed
+above will work for non-english languages, where a single charater might be
+multiple `char`s long. As we'll be using a standard XAML text box for input, we
+won't need to worry about handling the input ourselves.
+
 ## Future considerations
 
 * Once [#1142] is also complete, we'll also add a `executeCommand` action. It
@@ -208,7 +215,7 @@ control into the command palette, which leads to some hard to debug crashes.
   keybinding. This could allow the user to bind a specific pairing of `action`
   and `args` that they've set up in a command as a keybinding, without having to
   repeat the entry in both the `commands` and `keybindings`.
-* Commands will provide an easy point for allowing an extension to add it's
+* Commands will provide an easy point for allowing an extension to add its
   actions to the UI, without forcing the user to bind the extension's actions to
   a keybinding
 * Also discussed in [#2046] was the potential for adding a command that inputs a
