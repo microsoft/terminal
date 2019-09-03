@@ -112,6 +112,6 @@ void OutputCell::_setFromOutputCellView(const OutputCellView& cell)
     _textAttribute = cell.TextAttr();
     _behavior = cell.TextAttrBehavior();
 
-    const auto& view = cell.Chars();
+    const auto view = cell.Chars();
     _text = view;
 }
