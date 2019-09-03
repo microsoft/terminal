@@ -132,7 +132,7 @@ namespace Microsoft::Console::Render
                                              IDWriteTextRenderer* renderer,
                                              const D2D_POINT_2F origin) noexcept;
 
-        [[nodiscard]] static UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
+        [[nodiscard]] static constexpr UINT32 _EstimateGlyphCount(const UINT32 textLength) noexcept;
 
     private:
         const ::Microsoft::WRL::ComPtr<IDWriteFactory1> _factory;

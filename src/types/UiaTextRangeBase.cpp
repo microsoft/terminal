@@ -1098,8 +1098,8 @@ const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(IUiaData* pData,
 // - viewport - the viewport to use for the conversion
 // Return Value:
 // - the equivalent ViewportRow.
-const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                const SMALL_RECT viewport) noexcept
+constexpr const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                                          const SMALL_RECT viewport) noexcept
 {
     return row - viewport.Top;
 }

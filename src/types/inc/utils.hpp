@@ -15,7 +15,7 @@ namespace Microsoft::Console::Utils
 {
     bool IsValidHandle(const HANDLE handle) noexcept;
 
-    short ClampToShortMax(const long value, const short min) noexcept;
+    constexpr short ClampToShortMax(const long value, const short min) noexcept;
 
     std::wstring GuidToString(const GUID guid);
     GUID GuidFromString(const std::wstring wstr);

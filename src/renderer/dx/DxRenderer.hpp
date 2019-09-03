@@ -209,6 +209,6 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
-        [[nodiscard]] static DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;
+        [[nodiscard]] static constexpr DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;
     };
 }

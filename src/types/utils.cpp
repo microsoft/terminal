@@ -13,7 +13,7 @@ using namespace Microsoft::Console;
 // - min: the minimum value to clamp to
 // Return Value:
 // - The clamped value as a short.
-short Utils::ClampToShortMax(const long value, const short min) noexcept
+constexpr short Utils::ClampToShortMax(const long value, const short min) noexcept
 {
     return static_cast<short>(std::clamp(value,
                                          static_cast<long>(min),

@@ -544,7 +544,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory1* const factory,
 // Return Value:
 // - An estimate of how many glyph spaces may be required in the shaping arrays
 //   to hold the data from a string of the given length.
-[[nodiscard]] UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
+[[nodiscard]] constexpr UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 {
     // This formula is from https://docs.microsoft.com/en-us/windows/desktop/api/dwrite/nf-dwrite-idwritetextanalyzer-getglyphs
     // and is the recommended formula for estimating buffer size for glyph count.

@@ -299,7 +299,7 @@ namespace Microsoft::Console::Types
 
         static const ViewportRow _screenInfoRowToViewportRow(IUiaData* pData,
                                                              const ScreenInfoRow row);
-        static const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
+        static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
                                                              const SMALL_RECT viewport) noexcept;
 
         static const bool _isScreenInfoRowInViewport(IUiaData* pData,

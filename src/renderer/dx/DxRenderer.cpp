@@ -1797,12 +1797,7 @@ float DxEngine::GetScaling() const noexcept
 // - color - Direct2D Color F
 // Return Value:
 // - DXGI RGBA
-[[nodiscard]] DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
+[[nodiscard]] constexpr DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
 {
-    DXGI_RGBA rgba;
-    rgba.a = color.a;
-    rgba.b = color.b;
-    rgba.g = color.g;
-    rgba.r = color.r;
-    return rgba;
+    return { color.r, color.g, color.b, color.a };
 }
