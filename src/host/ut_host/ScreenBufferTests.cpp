@@ -170,6 +170,8 @@ class ScreenBufferTests
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
+
+    TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -3580,4 +3582,41 @@ void ScreenBufferTests::HardResetBuffer()
     VERIFY_IS_TRUE(isBufferClear());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), viewport.Origin());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
+{
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTerminalScrolling(true);
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& siMain = gci.GetActiveOutputBuffer();
+    siMain._virtualBottom = siMain._viewport.BottomInclusive();
+
+    auto originalView = siMain._viewport;
+
+    VERIFY_IS_NULL(siMain._psiMainBuffer);
+    VERIFY_IS_NULL(siMain._psiAlternateBuffer);
+
+    Log::Comment(L"Create an alternate buffer");
+    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    {
+        VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
+        auto& altBuffer = *siMain._psiAlternateBuffer;
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+
+        COORD originalSize = originalView.Dimensions();
+        COORD doubledSize = { originalSize.X * 2, originalSize.Y * 2 };
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a maximize"));
+        altBuffer._InternalSetViewportSize(&doubledSize, false, false);
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a restore down"));
+        altBuffer._InternalSetViewportSize(&originalSize, false, false);
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+    }
 }
