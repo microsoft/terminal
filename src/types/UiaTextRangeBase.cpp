@@ -266,13 +266,10 @@ IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_re
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
 
-    if (riid == __uuidof(IUnknown))
+    if (riid == __uuidof(IUnknown) ||
+        riid == __uuidof(ITextRangeProvider))
     {
-        *ppInterface = static_cast<ITextRangeProvider*>(this);
-    }
-    else if (riid == __uuidof(ITextRangeProvider))
-    {
-        *ppInterface = static_cast<ITextRangeProvider*>(this);
+        *ppInterface = this;
     }
     else
     {
@@ -280,7 +277,7 @@ IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_re
         return E_NOINTERFACE;
     }
 
-    (static_cast<IUnknown*>(*ppInterface))->AddRef();
+    AddRef();
     return S_OK;
 }
 

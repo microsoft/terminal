@@ -37,21 +37,12 @@ WindowUiaProviderBase::Release()
 IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
-    if (riid == __uuidof(IUnknown))
+    if (riid == __uuidof(IUnknown) ||
+        riid == __uuidof(IRawElementProviderSimple) ||
+        riid == __uuidof(IRawElementProviderFragment) ||
+        riid == __uuidof(IRawElementProviderFragmentRoot))
     {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderSimple))
-    {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragment))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragment*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragmentRoot))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragmentRoot*>(this);
+        *ppInterface = this;
     }
     else
     {
@@ -59,7 +50,7 @@ IFACEMETHODIMP WindowUiaProviderBase::QueryInterface(_In_ REFIID riid, _COM_Outp
         return E_NOINTERFACE;
     }
 
-    (static_cast<IUnknown*>(*ppInterface))->AddRef();
+    AddRef();
 
     return S_OK;
 }

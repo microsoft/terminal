@@ -60,7 +60,7 @@ ScreenInfoUiaProviderBase::~ScreenInfoUiaProviderBase()
     }
     CATCH_RETURN();
 
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    IRawElementProviderSimple* pProvider = this;
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalFiringMapping[id] = false;
 
@@ -102,21 +102,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
 
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-    if (riid == __uuidof(IUnknown))
+    if (riid == __uuidof(IUnknown) ||
+        riid == __uuidof(IRawElementProviderSimple) ||
+        riid == __uuidof(IRawElementProviderFragment) ||
+        riid == __uuidof(ITextProvider))
     {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderSimple))
-    {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragment))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragment*>(this);
-    }
-    else if (riid == __uuidof(ITextProvider))
-    {
-        *ppInterface = static_cast<ITextProvider*>(this);
+        *ppInterface = this;
     }
     else
     {
@@ -124,7 +115,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
         return E_NOINTERFACE;
     }
 
-    (static_cast<IUnknown*>(*ppInterface))->AddRef();
+    AddRef();
 
     return S_OK;
 }
@@ -161,7 +152,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 
     if (patternId == UIA_TextPatternId)
     {
-        hr = this->QueryInterface(__uuidof(ITextProvider), reinterpret_cast<void**>(ppInterface));
+        hr = this->QueryInterface(IID_PPV_ARGS(ppInterface));
         if (FAILED(hr))
         {
             *ppInterface = nullptr;
@@ -354,7 +345,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        (static_cast<IUnknown*>(pProvider))->Release();
+        pProvider->Release();
         if (range == nullptr)
         {
             SafeArrayDestroy(*ppRetVal);
@@ -363,7 +354,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         }
 
         LONG currentIndex = 0;
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -403,7 +394,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         // fill the safe array
         for (LONG i = 0; i < gsl::narrow<LONG>(ranges.size()); ++i)
         {
-            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges.at(i)));
+            hr = SafeArrayPutElement(*ppRetVal, &i, ranges.at(i));
             if (FAILED(hr))
             {
                 SafeArrayDestroy(*ppRetVal);
@@ -490,7 +481,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        (static_cast<IUnknown*>(pProvider))->Release();
+        pProvider->Release();
 
         if (range == nullptr)
         {
@@ -500,7 +491,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         }
 
         LONG currentIndex = gsl::narrow<LONG>(i);
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -534,7 +525,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     return hr;
 }
@@ -563,7 +554,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     return hr;
 }
@@ -590,7 +581,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     if (*ppRetVal)
     {
