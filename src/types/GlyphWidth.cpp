@@ -5,6 +5,7 @@
 #include "inc/CodepointWidthDetector.hpp"
 #include "inc/GlyphWidth.hpp"
 
+#pragma warning(suppress: 26426)
 static CodepointWidthDetector widthDetector;
 
 // Function Description:
