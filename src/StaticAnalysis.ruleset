@@ -3,4 +3,13 @@
 
   <Include Path="cppcorecheckrules.ruleset" Action="Error" />
 
+  <Rules AnalyzerId="Microsoft.Analyzers.NativeCodeAnalysis" RuleNamespace="Microsoft.Rules.Native">	
+    <Rule Id="C6001" Action="Error" />	
+    <Rule Id="C6011" Action="Error" />	
+    <!-- We can't do dynamic cast because RTTI is off. -->
+    <!-- RTTI is off because Windows OS policies believe RTTI has too much binary size impact for the value and is less portable than RTTI-off modules. -->
+    <Rule Id="C26466" Action="None" />
+  </Rules>
+  
+
 </RuleSet>
