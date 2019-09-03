@@ -62,7 +62,7 @@ private:
     };
 
     HANDLE _outPipe; // non-owning reference to a pipe.
-    std::array<BYTE, 4096> _buffer; // buffer for the chunk read.
-    std::array<BYTE, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
+    std::array<char, 4096> _buffer; // buffer for the chunk read.
+    std::array<char, 4> _utf8Partials; // buffer for code units of a partial UTF-8 code point that have to be cached
     DWORD _dwPartialsLen{}; // number of cached UTF-8 code units
 };

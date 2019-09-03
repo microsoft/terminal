@@ -7,10 +7,10 @@
 #include <utility>
 
 UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
-    _outPipe{ outPipe }
+    _outPipe{ outPipe },
+    _buffer{ 0 },
+    _utf8Partials{ 0 }
 {
-    _buffer.fill(0);
-    _utf8Partials.fill(0);
 }
 
 // Method Description:
@@ -33,7 +33,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
 
     // in case of early escaping
     _buffer.at(0) = 0;
-    strView = std::string_view{ reinterpret_cast<char*>(_buffer.at(0)), 0 };
+    strView = std::string_view{ &_buffer.at(0), 0 };
 
     // copy UTF-8 code units that were remaining from the previously read chunk (if any)
     if (_dwPartialsLen != 0)
@@ -95,6 +95,6 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
     }
 
     // give back a view of the part of the buffer that contains complete code points only
-    strView = std::string_view{ reinterpret_cast<char*>(_buffer.at(0)), dwRead };
+    strView = std::string_view{ &_buffer.at(0), dwRead };
     return S_OK;
 }
