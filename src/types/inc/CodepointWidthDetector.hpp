@@ -23,7 +23,7 @@ static_assert(sizeof(unsigned int) == sizeof(wchar_t) * 2,
 class CodepointWidthDetector final
 {
 public:
-    CodepointWidthDetector() noexcept = default;
+    CodepointWidthDetector() noexcept;
     CodepointWidthDetector(const CodepointWidthDetector&) = delete;
     CodepointWidthDetector(CodepointWidthDetector&&) = delete;
     ~CodepointWidthDetector() = default;

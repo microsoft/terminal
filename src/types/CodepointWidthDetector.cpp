@@ -311,6 +311,15 @@ namespace
 }
 
 // Routine Description:
+// - Constructs an instance of the CodepointWidthDetector class
+CodepointWidthDetector::CodepointWidthDetector() noexcept :
+    _fallbackCache{},
+    _pfnFallbackMethod{}
+{
+
+}
+
+// Routine Description:
 // - returns the width type of codepoint by searching the map generated from the unicode spec
 // Arguments:
 // - glyph - the utf16 encoded codepoint to search for
