@@ -209,7 +209,7 @@ const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 // Note: will throw exception if column is out of bounds
 DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 {
-    return const_cast<DbcsAttribute&>(static_cast<const CharRow* const>(this)->DbcsAttrAt(column));
+    return _data.at(column).DbcsAttr();
 }
 
 // Routine Description:

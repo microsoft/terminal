@@ -90,7 +90,11 @@ const ROW& TextBuffer::GetRowByOffset(const size_t index) const
 // - reference to the requested row. Asserts if out of bounds.
 ROW& TextBuffer::GetRowByOffset(const size_t index)
 {
-    return const_cast<ROW&>(static_cast<const TextBuffer*>(this)->GetRowByOffset(index));
+    const size_t totalRows = TotalRowCount();
+
+    // Rows are stored circularly, so the index you ask for is offset by the start position and mod the total of rows.
+    const size_t offsetIndex = (_firstRow + index) % totalRows;
+    return _storage.at(offsetIndex);
 }
 
 // Routine Description:

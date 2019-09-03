@@ -37,7 +37,7 @@ const CharRow& ROW::GetCharRow() const noexcept
 
 CharRow& ROW::GetCharRow() noexcept
 {
-    return const_cast<CharRow&>(static_cast<const ROW* const>(this)->GetCharRow());
+    return _charRow;
 }
 
 const ATTR_ROW& ROW::GetAttrRow() const noexcept
@@ -47,7 +47,7 @@ const ATTR_ROW& ROW::GetAttrRow() const noexcept
 
 ATTR_ROW& ROW::GetAttrRow() noexcept
 {
-    return const_cast<ATTR_ROW&>(static_cast<const ROW* const>(this)->GetAttrRow());
+    return _attrRow;
 }
 
 SHORT ROW::GetId() const noexcept
