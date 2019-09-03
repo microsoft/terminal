@@ -15,7 +15,7 @@
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
-static std::wstring FALLBACK_FONT_FACE = L"Consolas";
+static std::wstring_view FALLBACK_FONT_FACE = L"Consolas";
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 
 using namespace Microsoft::Console::Render;
