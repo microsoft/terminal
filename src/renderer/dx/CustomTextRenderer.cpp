@@ -44,7 +44,7 @@ using namespace Microsoft::Console::Render;
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, pixelsPerDip);
 
-    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    const DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     float dpiX, dpiY;
@@ -67,7 +67,7 @@ using namespace Microsoft::Console::Render;
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, transform);
 
-    DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
+    const DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
     // Matrix structures are defined identically

@@ -294,7 +294,7 @@ IFACEMETHODIMP UiaTextRangeBase::Compare(_In_opt_ ITextRangeProvider* pRange, _O
 
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = FALSE;
-    UiaTextRangeBase* other = static_cast<UiaTextRangeBase*>(pRange);
+    const UiaTextRangeBase* other = static_cast<UiaTextRangeBase*>(pRange);
     if (other)
     {
         *pRetVal = !!(_start == other->GetStart() &&
@@ -320,7 +320,7 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
     *pRetVal = 0;
 
     // get the text range that we're comparing to
-    UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
+    const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
@@ -743,7 +743,7 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByRange(_In_ TextPatternRangeEndpoi
         _pData->UnlockConsole();
                                   });
 
-    UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
+    const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
     {
         return E_INVALIDARG;
