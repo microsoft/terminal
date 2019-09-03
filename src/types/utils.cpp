@@ -123,7 +123,7 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
 // - table: a color table with at least 16 entries
 // Return Value:
 // - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
+void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
 
@@ -154,7 +154,7 @@ void Utils::InitializeCampbellColorTable(gsl::span<COLORREF>& table)
 // - table: a color table with at least 16 entries
 // Return Value:
 // - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table)
+void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
     InitializeCampbellColorTable(table);
@@ -167,7 +167,7 @@ void Utils::InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table)
 // - table: a color table with at least 16 entries
 // Return Value:
 // - <none>, throws if the table has less that 16 entries
-void Utils::SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table)
+void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 16);
     std::swap(table[1], table[4]);
@@ -183,7 +183,7 @@ void Utils::SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table)
 // - table: a color table with at least 256 entries
 // Return Value:
 // - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
+void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 {
     THROW_HR_IF(E_INVALIDARG, table.size() < 256);
 
@@ -454,7 +454,7 @@ void Utils::Initialize256ColorTable(gsl::span<COLORREF>& table)
 // - newAlpha: the new value to use as the alpha for all the entries in that table.
 // Return Value:
 // - <none>
-void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha) noexcept
+void Utils::SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
 {
     const auto shiftedAlpha = newAlpha << 24;
     for (auto& color : table)
@@ -473,7 +473,7 @@ void Utils::SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha) 
 // - name: Bytes comprising the name (in a namespace-specific format)
 // Return Value:
 // - a new stable v5 UUID
-GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name)
+GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name)
 {
     // v5 uuid generation happens over values in network byte order, so let's enforce that
     auto correctEndianNamespaceGuid{ EndianSwap(namespaceGuid) };

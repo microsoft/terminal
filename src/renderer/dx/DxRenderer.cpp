@@ -1503,6 +1503,11 @@ float DxEngine::GetScaling() const noexcept
 
         THROW_IF_FAILED(fontFace0.As(&fontFace));
 
+        // Retrieve metrics in case the font we created was different than what was requested.
+        weight = font->GetWeight();
+        stretch = font->GetStretch();
+        style = font->GetStyle();
+
         // Dig the family name out at the end to return it.
         familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
     }

@@ -24,11 +24,11 @@ namespace Microsoft::Console::Utils
     std::string ColorToHexString(const COLORREF color);
     COLORREF ColorFromHexString(const std::string wstr);
 
-    void InitializeCampbellColorTable(gsl::span<COLORREF>& table);
-    void InitializeCampbellColorTableForConhost(gsl::span<COLORREF>& table);
-    void SwapANSIColorOrderForConhost(gsl::span<COLORREF>& table);
-    void Initialize256ColorTable(gsl::span<COLORREF>& table);
-    void SetColorTableAlpha(gsl::span<COLORREF>& table, const BYTE newAlpha) noexcept;
+    void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
+    void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
+    void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
+    void Initialize256ColorTable(const gsl::span<COLORREF> table);
+    void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept;
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {
@@ -57,5 +57,5 @@ namespace Microsoft::Console::Utils
         return value;
     }
 
-    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte>& name);
+    GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
 }
