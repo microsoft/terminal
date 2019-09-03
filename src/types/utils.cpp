@@ -454,7 +454,7 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
 // - newAlpha: the new value to use as the alpha for all the entries in that table.
 // Return Value:
 // - <none>
-void Utils::SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
+constexpr void Utils::SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
 {
     const auto shiftedAlpha = newAlpha << 24;
     for (auto& color : table)

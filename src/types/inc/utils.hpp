@@ -28,7 +28,7 @@ namespace Microsoft::Console::Utils
     void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
     void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
     void Initialize256ColorTable(const gsl::span<COLORREF> table);
-    void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept;
+    constexpr void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept;
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {
