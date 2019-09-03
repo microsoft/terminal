@@ -70,8 +70,17 @@ using namespace Microsoft::Console::Render;
     const DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, drawingContext);
 
-    // Matrix structures are defined identically
-    drawingContext->renderTarget->GetTransform(reinterpret_cast<D2D1_MATRIX_3X2_F*>(transform));
+    // Retrieve as D2D1 matrix then copy into DWRITE matrix.
+    D2D1_MATRIX_3X2_F d2d1Matrix{ 0 };
+    drawingContext->renderTarget->GetTransform(&d2d1Matrix);
+
+    transform->dx = d2d1Matrix.dx;
+    transform->dy = d2d1Matrix.dy;
+    transform->m11 = d2d1Matrix.m11;
+    transform->m12 = d2d1Matrix.m12;
+    transform->m21 = d2d1Matrix.m21;
+    transform->m22 = d2d1Matrix.m22;
+
     return S_OK;
 }
 #pragma endregion
