@@ -45,14 +45,14 @@ static const WORD leftShiftScanCode = 0x2A;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
     // Allocate ourselves space in a smart pointer.
-    std::unique_ptr<wchar_t[]> pwsOut = std::make_unique<wchar_t[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(pwsOut);
+    std::wstring out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
-    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, pwsOut.get(), iTarget));
+    THROW_LAST_ERROR_IF(0 == MultiByteToWideChar(codePage, 0, source.data(), iSource, out.data(), iTarget));
 
     // Return as a string
-    return std::wstring(pwsOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
@@ -86,17 +86,17 @@ static const WORD leftShiftScanCode = 0x2A;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
     // Allocate ourselves space in a smart pointer
-    std::unique_ptr<char[]> psOut = std::make_unique<char[]>(cchNeeded);
-    THROW_IF_NULL_ALLOC(psOut.get());
+    std::string out;
+    out.resize(cchNeeded);
 
     // Attempt conversion for real.
     // clang-format off
 #pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
     // clang-format on
-    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, psOut.get(), iTarget, nullptr, nullptr));
+    THROW_LAST_ERROR_IF(0 == WideCharToMultiByte(codepage, 0, source.data(), iSource, out.data(), iTarget, nullptr, nullptr));
 
     // Return as a string
-    return std::string(psOut.get(), cchNeeded);
+    return out;
 }
 
 // Routine Description:
