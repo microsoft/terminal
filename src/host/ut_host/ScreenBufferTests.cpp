@@ -3586,6 +3586,9 @@ void ScreenBufferTests::HardResetBuffer()
 
 void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
 {
+    // This is a test for microsoft/terminal#1206. Refer to that issue for more
+    // context
+
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     gci.SetTerminalScrolling(true);
     gci.LockConsole(); // Lock must be taken to manipulate buffer.
