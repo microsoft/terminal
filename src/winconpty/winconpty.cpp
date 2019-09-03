@@ -15,7 +15,6 @@
 #include <wil/resource.h>
 #else
 #include "device.h"
-#include "../server/DeviceHandle.h"
 #include <filesystem>
 #endif // __INSIDE_WINDOWS
 
@@ -256,6 +255,8 @@ void _ClosePseudoConsoleMembers(_In_ PseudoConsole* pPty)
             pPty->hConPtyProcess = 0;
         }
         // Then take care of the reference handle.
+        // TODO GH#1810: Closing the reference handle late leaves conhost thinking
+        // that we have an outstanding connected client.
         if (_HandleIsValid(pPty->hPtyReference))
         {
             CloseHandle(pPty->hPtyReference);

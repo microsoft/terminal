@@ -8,6 +8,8 @@ Module Name:
 Abstract:
 - This header exists to reduce the differences in winconpty
   from the in-box windows source.
+- Relies on components from Server to reach into ntdll for NtOpenFile
+  to get at the NT namespace, which is required to open the console device.
 --*/
 
 #pragma once
