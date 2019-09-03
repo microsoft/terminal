@@ -27,7 +27,7 @@ Author(s):
 class UTF8OutPipeReader final
 {
 public:
-    UTF8OutPipeReader(HANDLE outPipe);
+    UTF8OutPipeReader(HANDLE outPipe) noexcept;
     [[nodiscard]] HRESULT Read(_Out_ std::string_view& strView);
 
 private:

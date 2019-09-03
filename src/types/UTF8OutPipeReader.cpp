@@ -6,7 +6,7 @@
 #include <type_traits>
 #include <utility>
 
-UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) :
+UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) noexcept :
     _outPipe{ outPipe },
     _buffer{ 0 },
     _utf8Partials{ 0 }
