@@ -1063,6 +1063,10 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 {
     try
     {
+        // TODO: the font name needs to be passed and stored around as an actual bounded type, not an implicit bounds on LF_FACESIZE
+        const auto faceLength = wcsnlen_s(fontFaceName, LF_FACESIZE);
+        const std::wstring_view faceNameView{ fontFaceName, faceLength };
+
         std::ostringstream htmlBuilder;
 
         // First we have to add some standard
@@ -1088,12 +1092,9 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             htmlBuilder << ";";
 
             htmlBuilder << "font-family:";
-            if (fontFaceName[0] != '\0')
-            {
-                htmlBuilder << "'";
-                htmlBuilder << ConvertToA(CP_UTF8, fontFaceName);
-                htmlBuilder << "',";
-            }
+            htmlBuilder << "'";
+            htmlBuilder << ConvertToA(CP_UTF8, faceNameView);
+            htmlBuilder << "',";
             // even with different font, add monospace as fallback
             htmlBuilder << "monospace;";
 
