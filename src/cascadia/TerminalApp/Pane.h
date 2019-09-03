@@ -49,11 +49,8 @@ public:
     bool ResizePane(const winrt::TerminalApp::Direction& direction);
     bool NavigateFocus(const winrt::TerminalApp::Direction& direction);
 
-    bool CanSplitHorizontal();
-    void SplitHorizontal(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-
-    bool CanSplitVertical();
-    void SplitVertical(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    bool CanSplit(SplitState splitType);
+    void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
 

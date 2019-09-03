@@ -72,7 +72,7 @@ From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`
 Your default json editor will open up the Terminal settings file. The file can be found
 at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
 
-An introduction to the the various settings can be found [here](UsingJsonSettings.md).
+An introduction to the various settings can be found [here](UsingJsonSettings.md).
 
 The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
 
