@@ -116,6 +116,10 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 //             razzle cannot distinguish between a std::wstring_view and a std::basic_string_view<WORD>
 // NOTE: This one internally casts to wchar_t because Razzle sees WORD and wchar_t as the same type
 //       despite that Visual Studio build can tell the difference.
+#pragma warning(push)
+#pragma warning(suppress:26490)
+// Suppresses reinterpret_cast. We're only doing this because Windows doesn't understand the type difference between wchar_t and DWORD.
+// It is not worth trying to separate that out further or risking performance over this particular warning here.
 OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs, const bool /*unused*/) noexcept :
     _mode(Mode::LegacyAttr),
     _currentView(s_GenerateViewLegacyAttr(legacyAttrs.at(0))),
@@ -126,6 +130,7 @@ OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacy
     _fillLimit(0)
 {
 }
+#pragma warning(pop)
 
 // Routine Description:
 // - This is an iterator over legacy cell data. We will use the unicode text and the legacy color attribute.
