@@ -23,7 +23,7 @@ namespace Microsoft::Console::Types
     class IUiaData : public IBaseData
     {
     public:
-        virtual ~IUiaData() = 0;
+        ~IUiaData() = 0;
     protected:
         IUiaData() = default;
         IUiaData(const IUiaData&) = default;

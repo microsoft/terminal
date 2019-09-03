@@ -31,7 +31,7 @@ namespace Microsoft::Console::Render
     {
     public:
         DxEngine();
-        virtual ~DxEngine() override;
+        ~DxEngine();
         DxEngine(const DxEngine&) = default;
         DxEngine(DxEngine&&) = default;
         DxEngine& operator=(const DxEngine&) = default;
