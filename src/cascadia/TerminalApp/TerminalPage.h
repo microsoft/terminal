@@ -24,9 +24,9 @@ namespace winrt::TerminalApp::implementation
     public:
         TerminalPage();
 
-        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
+        TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader);
 
-        void SetResourceLoader(std::shared_ptr<ScopedResourceLoader> resourceLoader);
+        void SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI);
 
         void Create();
 
@@ -119,7 +119,7 @@ namespace winrt::TerminalApp::implementation
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
 
-        void RefreshUIForSettingsReload();
+        void _RefreshUIForSettingsReload();
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp

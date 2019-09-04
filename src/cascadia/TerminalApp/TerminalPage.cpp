@@ -28,10 +28,14 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalPage::TerminalPage() :
+    TerminalPage::TerminalPage() {}
+
+    TerminalPage::TerminalPage(std::shared_ptr<ScopedResourceLoader> resourceLoader) :
         _tabs{}
     {
         InitializeComponent();
+
+        _resourceLoader = resourceLoader;
     }
 
     void TerminalPage::SetSettings(std::shared_ptr<::TerminalApp::CascadiaSettings> settings, bool needRefreshUI)
@@ -39,13 +43,8 @@ namespace winrt::TerminalApp::implementation
         _settings = settings;
         if (needRefreshUI)
         {
-            RefreshUIForSettingsReload();
+            _RefreshUIForSettingsReload();
         }
-    }
-
-    void TerminalPage::SetResourceLoader(std::shared_ptr<ScopedResourceLoader> resourceLoader)
-    {
-        _resourceLoader = resourceLoader;
     }
 
     void TerminalPage::Create()
@@ -1198,7 +1197,7 @@ namespace winrt::TerminalApp::implementation
     //   This includes update the settings of all the tabs according
     //   to their profiles, update the title and icon of each tab, and
     //   finally create the tab flyout
-    void TerminalPage::RefreshUIForSettingsReload()
+    void TerminalPage::_RefreshUIForSettingsReload()
     {
         // Re-wire the keybindings to their handlers, as we'll have created a
         // new AppKeyBindings object.
