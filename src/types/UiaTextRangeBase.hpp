@@ -302,8 +302,18 @@ namespace Microsoft::Console::Types
 
         static const ViewportRow _screenInfoRowToViewportRow(gsl::not_null<IUiaData*> pData,
                                                              const ScreenInfoRow row) noexcept;
-        static constexpr const ViewportRow _screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                       const SMALL_RECT viewport) noexcept;
+        // Routine Description:
+        // - Converts a ScreenInfoRow to a ViewportRow.
+        // Arguments:
+        // - row - the ScreenInfoRow to convert
+        // - viewport - the viewport to use for the conversion
+        // Return Value:
+        // - the equivalent ViewportRow.
+        static constexpr const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
+                                                                                         const SMALL_RECT viewport) noexcept
+        {
+            return row - viewport.Top;
+        }
 
         static const bool _isScreenInfoRowInViewport(gsl::not_null<IUiaData*> pData,
                                                      const ScreenInfoRow row) noexcept;

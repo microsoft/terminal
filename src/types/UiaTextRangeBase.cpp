@@ -1087,19 +1087,6 @@ const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(gsl::not_null<IU
 }
 
 // Routine Description:
-// - Converts a ScreenInfoRow to a ViewportRow.
-// Arguments:
-// - row - the ScreenInfoRow to convert
-// - viewport - the viewport to use for the conversion
-// Return Value:
-// - the equivalent ViewportRow.
-constexpr const ViewportRow UiaTextRangeBase::_screenInfoRowToViewportRow(const ScreenInfoRow row,
-                                                                          const SMALL_RECT viewport) noexcept
-{
-    return row - viewport.Top;
-}
-
-// Routine Description:
 // - normalizes the row index to within the bounds of the output
 // buffer. The output buffer stores the text in a circular buffer so
 // this method makes sure that we circle around gracefully.

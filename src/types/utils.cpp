@@ -7,20 +7,6 @@
 using namespace Microsoft::Console;
 
 // Function Description:
-// - Clamps a long in between `min` and `SHRT_MAX`
-// Arguments:
-// - value: the value to clamp
-// - min: the minimum value to clamp to
-// Return Value:
-// - The clamped value as a short.
-constexpr short Utils::ClampToShortMax(const long value, const short min) noexcept
-{
-    return static_cast<short>(std::clamp(value,
-                                         static_cast<long>(min),
-                                         static_cast<long>(SHRT_MAX)));
-}
-
-// Function Description:
 // - Creates a String representation of a guid, in the format
 //      "{12345678-ABCD-EF12-3456-7890ABCDEF12}"
 // Arguments:
@@ -445,22 +431,6 @@ void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
     table[254] = RGB(0xe4, 0xe4, 0xe4);
     table[255] = RGB(0xee, 0xee, 0xee);
     // clang-format on
-}
-
-// Function Description:
-// - Fill the alpha byte of the colors in a given color table with the given value.
-// Arguments:
-// - table: a color table
-// - newAlpha: the new value to use as the alpha for all the entries in that table.
-// Return Value:
-// - <none>
-constexpr void Utils::SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
-{
-    const auto shiftedAlpha = newAlpha << 24;
-    for (auto& color : table)
-    {
-        WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-    }
 }
 
 // Function Description:
