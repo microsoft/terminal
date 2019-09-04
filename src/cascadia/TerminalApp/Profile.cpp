@@ -357,7 +357,10 @@ Profile Profile::FromJson(const Json::Value& json)
     }
     else
     {
-        result._guid = Utils::CreateGuid();
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        const std::wstring_view name = result._name;
+        result._guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,

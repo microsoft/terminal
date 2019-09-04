@@ -3426,30 +3426,33 @@ public:
         // The cursor will be moved to the same relative location in the new viewport with origin @ 0, 0
         const COORD coordRelativeCursor = { _testGetSet->_coordCursorPos.X - _testGetSet->_srViewport.Left,
                                             _testGetSet->_coordCursorPos.Y - _testGetSet->_srViewport.Top };
-
-        // Cursor to 1,1
-        _testGetSet->_coordExpectedCursorPos = { 0, 0 };
-        _testGetSet->_fSetConsoleCursorPositionResult = true;
-        _testGetSet->_fPrivateSetLegacyAttributesResult = true;
-        _testGetSet->_fPrivateSetDefaultAttributesResult = true;
-        _testGetSet->_fPrivateBoldTextResult = true;
-        _testGetSet->_fExpectedForeground = true;
-        _testGetSet->_fExpectedBackground = true;
-        _testGetSet->_fExpectedMeta = true;
-        _testGetSet->_fExpectedIsBold = false;
-        _testGetSet->_expectedShowCursor = true;
-        _testGetSet->_privateShowCursorResult = true;
         const COORD coordExpectedCursorPos = { 0, 0 };
 
-        // We're expecting _SetDefaultColorHelper to call
-        //      PrivateSetLegacyAttributes with 0 as the wAttr param.
-        _testGetSet->_wExpectedAttribute = 0;
+        auto prepExpectedParameters = [&]() {
+            // Cursor to 1,1
+            _testGetSet->_coordExpectedCursorPos = { 0, 0 };
+            _testGetSet->_fSetConsoleCursorPositionResult = true;
+            _testGetSet->_fPrivateSetLegacyAttributesResult = true;
+            _testGetSet->_fPrivateSetDefaultAttributesResult = true;
+            _testGetSet->_fPrivateBoldTextResult = true;
+            _testGetSet->_fExpectedForeground = true;
+            _testGetSet->_fExpectedBackground = true;
+            _testGetSet->_fExpectedMeta = true;
+            _testGetSet->_fExpectedIsBold = false;
+            _testGetSet->_expectedShowCursor = true;
+            _testGetSet->_privateShowCursorResult = true;
 
-        // Prepare the results of SoftReset api calls
-        _testGetSet->_fPrivateSetCursorKeysModeResult = true;
-        _testGetSet->_fPrivateSetKeypadModeResult = true;
-        _testGetSet->_fGetConsoleScreenBufferInfoExResult = true;
-        _testGetSet->_fPrivateSetScrollingRegionResult = true;
+            // We're expecting _SetDefaultColorHelper to call
+            //      PrivateSetLegacyAttributes with 0 as the wAttr param.
+            _testGetSet->_wExpectedAttribute = 0;
+
+            // Prepare the results of SoftReset api calls
+            _testGetSet->_fPrivateSetCursorKeysModeResult = true;
+            _testGetSet->_fPrivateSetKeypadModeResult = true;
+            _testGetSet->_fGetConsoleScreenBufferInfoExResult = true;
+            _testGetSet->_fPrivateSetScrollingRegionResult = true;
+        };
+        prepExpectedParameters();
 
         VERIFY_IS_TRUE(_pDispatch->HardReset());
         VERIFY_ARE_EQUAL(_testGetSet->_coordCursorPos, coordExpectedCursorPos);
@@ -3457,18 +3460,21 @@ public:
 
         Log::Comment(L"Test 2: Gracefully fail when getting console information fails.");
         _testGetSet->PrepData();
+        prepExpectedParameters();
         _testGetSet->_fGetConsoleScreenBufferInfoExResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
 
         Log::Comment(L"Test 3: Gracefully fail when filling the rectangle fails.");
         _testGetSet->PrepData();
+        prepExpectedParameters();
         _testGetSet->_fFillConsoleOutputCharacterWResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());
 
         Log::Comment(L"Test 4: Gracefully fail when setting the window fails.");
         _testGetSet->PrepData();
+        prepExpectedParameters();
         _testGetSet->_fSetConsoleWindowInfoResult = false;
 
         VERIFY_IS_FALSE(_pDispatch->HardReset());

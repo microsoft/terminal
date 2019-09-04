@@ -352,6 +352,16 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return _terminal.get();
     }
 
+    const FontInfo TermControl::GetActualFont() const
+    {
+        return _actualFont;
+    }
+
+    const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
+    {
+        return _swapChainPanel.Margin();
+    }
+
     void TermControl::SwapChainChanged()
     {
         if (!_initializedTerminal)
@@ -612,7 +622,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing ||
             e.OriginalKey() == VirtualKey::Control ||
             e.OriginalKey() == VirtualKey::Shift ||
-            e.OriginalKey() == VirtualKey::Menu)
+            e.OriginalKey() == VirtualKey::Menu ||
+            e.OriginalKey() == VirtualKey::LeftWindows ||
+            e.OriginalKey() == VirtualKey::RightWindows)
+
         {
             e.Handled(true);
             return;
