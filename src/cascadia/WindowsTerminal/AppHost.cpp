@@ -97,7 +97,7 @@ void AppHost::Initialize()
 // - newTitle: the string to use as the new window title
 // Return Value:
 // - <none>
-void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle)
+void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
     _window->UpdateTitle(newTitle.c_str());
 }
@@ -109,7 +109,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& se
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     _window->Close();
 }
