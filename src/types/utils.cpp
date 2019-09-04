@@ -93,7 +93,6 @@ COLORREF Utils::ColorFromHexString(const std::string str)
 {
     THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str[0] != '#');
-    
 
     std::string rStr;
     std::string gStr;
@@ -104,11 +103,12 @@ COLORREF Utils::ColorFromHexString(const std::string str)
         rStr = std::string(2, str[1]);
         gStr = std::string(2, str[2]);
         bStr = std::string(2, str[3]);
-    } else
+    }
+    else
     {
-        rStr = std::string( &str[1],2);
-        gStr = std::string( &str[3],2);
-        bStr = std::string( &str[5],2);
+        rStr = std::string(&str[1], 2);
+        gStr = std::string(&str[3], 2);
+        bStr = std::string(&str[5], 2);
     }
 
     BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
