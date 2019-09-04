@@ -10,14 +10,16 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data) noexcept
+SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 {
     SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
     {
-        for (long i = 0; i < data.size(); i++)
+        for (size_t i = 0; i < data.size(); i++)
         {
-            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(data.at(i)))))
+            LONG lIndex = 0;
+            if (FAILED(SizeTToLong(i, &lIndex) ||
+                       FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i))))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
@@ -241,7 +243,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) noexcept
+IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId)
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetRuntimeId, nullptr);

@@ -65,7 +65,7 @@ namespace Microsoft::Console::Types
         // IRawElementProviderFragment methods
         virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) noexcept override;
+        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
         virtual IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) = 0;
         IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept override;
         IFACEMETHODIMP SetFocus() override;
