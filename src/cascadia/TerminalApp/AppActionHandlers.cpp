@@ -26,112 +26,112 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    void App::_HandleNewTab(const IInspectable& /*sender*/,
-                            const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleNewTab(const IInspectable& /*sender*/,
+                                     const TerminalApp::ActionEventArgs& args)
     {
         _OpenNewTab(std::nullopt);
         args.Handled(true);
     }
-    void App::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
-                                        const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleOpenNewTabDropdown(const IInspectable& /*sender*/,
+                                                 const TerminalApp::ActionEventArgs& args)
     {
         _OpenNewTabDropdown();
         args.Handled(true);
     }
 
-    void App::_HandleDuplicateTab(const IInspectable& /*sender*/,
-                                  const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleDuplicateTab(const IInspectable& /*sender*/,
+                                           const TerminalApp::ActionEventArgs& args)
     {
         _DuplicateTabViewItem();
         args.Handled(true);
     }
 
-    void App::_HandleCloseTab(const IInspectable& /*sender*/,
-                              const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleCloseTab(const IInspectable& /*sender*/,
+                                       const TerminalApp::ActionEventArgs& args)
     {
         _CloseFocusedTab();
         args.Handled(true);
     }
 
-    void App::_HandleClosePane(const IInspectable& /*sender*/,
-                               const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleClosePane(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
     {
         _CloseFocusedPane();
         args.Handled(true);
     }
 
-    void App::_HandleScrollUp(const IInspectable& /*sender*/,
-                              const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
+                                       const TerminalApp::ActionEventArgs& args)
     {
         _Scroll(-1);
         args.Handled(true);
     }
 
-    void App::_HandleScrollDown(const IInspectable& /*sender*/,
-                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleScrollDown(const IInspectable& /*sender*/,
+                                         const TerminalApp::ActionEventArgs& args)
     {
         _Scroll(1);
         args.Handled(true);
     }
 
-    void App::_HandleNextTab(const IInspectable& /*sender*/,
-                             const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleNextTab(const IInspectable& /*sender*/,
+                                      const TerminalApp::ActionEventArgs& args)
     {
         _SelectNextTab(true);
         args.Handled(true);
     }
 
-    void App::_HandlePrevTab(const IInspectable& /*sender*/,
-                             const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandlePrevTab(const IInspectable& /*sender*/,
+                                      const TerminalApp::ActionEventArgs& args)
     {
         _SelectNextTab(false);
         args.Handled(true);
     }
 
-    void App::_HandleSplitVertical(const IInspectable& /*sender*/,
-                                   const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleSplitVertical(const IInspectable& /*sender*/,
+                                            const TerminalApp::ActionEventArgs& args)
     {
         _SplitVertical(std::nullopt);
         args.Handled(true);
     }
 
-    void App::_HandleSplitHorizontal(const IInspectable& /*sender*/,
-                                     const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleSplitHorizontal(const IInspectable& /*sender*/,
+                                              const TerminalApp::ActionEventArgs& args)
     {
         _SplitHorizontal(std::nullopt);
         args.Handled(true);
     }
 
-    void App::_HandleScrollUpPage(const IInspectable& /*sender*/,
-                                  const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleScrollUpPage(const IInspectable& /*sender*/,
+                                           const TerminalApp::ActionEventArgs& args)
     {
         _ScrollPage(-1);
         args.Handled(true);
     }
 
-    void App::_HandleScrollDownPage(const IInspectable& /*sender*/,
-                                    const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleScrollDownPage(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
     {
         _ScrollPage(1);
         args.Handled(true);
     }
 
-    void App::_HandleOpenSettings(const IInspectable& /*sender*/,
-                                  const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleOpenSettings(const IInspectable& /*sender*/,
+                                           const TerminalApp::ActionEventArgs& args)
     {
         _OpenSettings();
         args.Handled(true);
     }
 
-    void App::_HandlePasteText(const IInspectable& /*sender*/,
-                               const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandlePasteText(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
     {
         _PasteText();
         args.Handled(true);
     }
 
-    void App::_HandleNewTabWithProfile(const IInspectable& /*sender*/,
-                                       const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleNewTabWithProfile(const IInspectable& /*sender*/,
+                                                const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::NewTabWithProfileArgs>())
         {
@@ -140,8 +140,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void App::_HandleSwitchToTab(const IInspectable& /*sender*/,
-                                 const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleSwitchToTab(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::SwitchToTabArgs>())
         {
@@ -150,8 +150,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void App::_HandleResizePane(const IInspectable& /*sender*/,
-                                const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleResizePane(const IInspectable& /*sender*/,
+                                         const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::ResizePaneArgs>())
         {
@@ -160,8 +160,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void App::_HandleMoveFocus(const IInspectable& /*sender*/,
-                               const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleMoveFocus(const IInspectable& /*sender*/,
+                                        const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::MoveFocusArgs>())
         {
@@ -170,8 +170,8 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void App::_HandleCopyText(const IInspectable& /*sender*/,
-                              const TerminalApp::ActionEventArgs& args)
+    void TerminalPage::_HandleCopyText(const IInspectable& /*sender*/,
+                                       const TerminalApp::ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::CopyTextArgs>())
         {
