@@ -1547,8 +1547,12 @@ namespace winrt::TerminalApp::implementation
                 dataPack.SetHtmlFormat(htmlData);
             }
 
-            Clipboard::SetContent(dataPack);
-            Clipboard::Flush();
+            try
+            {
+                Clipboard::SetContent(dataPack);
+                Clipboard::Flush();
+            }
+            CATCH_LOG();
         });
     }
 

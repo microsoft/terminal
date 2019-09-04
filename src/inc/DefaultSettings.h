@@ -30,12 +30,12 @@ constexpr short DEFAULT_HISTORY_SIZE = 9001;
 #pragma warning(push)
 #pragma warning(disable : 26426)
 const std::wstring DEFAULT_FONT_FACE{ L"Consolas" };
-constexpr int DEFAULT_FONT_SIZE = 10;
+constexpr int DEFAULT_FONT_SIZE = 12;
 
 constexpr int DEFAULT_ROWS = 30;
 constexpr int DEFAULT_COLS = 120;
 
-const std::wstring DEFAULT_PADDING{ L"0, 0, 0, 0" };
+const std::wstring DEFAULT_PADDING{ L"8, 8, 8, 8" };
 const std::wstring DEFAULT_STARTING_DIRECTORY{ L"%USERPROFILE%" };
 
 constexpr COLORREF DEFAULT_CURSOR_COLOR = COLOR_WHITE;
