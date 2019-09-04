@@ -156,7 +156,7 @@ You can refer to you own icon files if you wish, e.g.:
     "icon" : "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\icon-ubuntu-32.png",
 ```
 
-> 👉 Tip: Icons should be sized to 32x32px, in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime, causing a noticeable delay and loss of quality.
+> 👉 Tip: Icons should be sized to 32x32px in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime (causing a noticeable delay and loss of quality.)
 
 ### Custom Background Images
 You can apply a background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish. 
