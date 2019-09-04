@@ -83,7 +83,7 @@ std::string Utils::ColorToHexString(const COLORREF color)
 }
 
 // Function Description:
-// - Parses a color from a string. The string should be in the format "#RRGGBB"
+// - Parses a color from a string. The string should be in the format "#RRGGBB" or "#RGB"
 // Arguments:
 // - str: a string representation of the COLORREF to parse
 // Return Value:
@@ -91,12 +91,25 @@ std::string Utils::ColorToHexString(const COLORREF color)
 //      the correct format, throws E_INVALIDARG
 COLORREF Utils::ColorFromHexString(const std::string str)
 {
-    THROW_HR_IF(E_INVALIDARG, str.size() < 7 || str.size() >= 8);
+    THROW_HR_IF(E_INVALIDARG, str.size() != 7 && str.size() != 4);
     THROW_HR_IF(E_INVALIDARG, str[0] != '#');
+    
 
-    std::string rStr{ &str[1], 2 };
-    std::string gStr{ &str[3], 2 };
-    std::string bStr{ &str[5], 2 };
+    std::string rStr;
+    std::string gStr;
+    std::string bStr;
+
+    if (str.size() == 4)
+    {
+        rStr = std::string(2, str[1]);
+        gStr = std::string(2, str[2]);
+        bStr = std::string(2, str[3]);
+    } else
+    {
+        rStr = std::string( &str[1],2);
+        gStr = std::string( &str[3],2);
+        bStr = std::string( &str[5],2);
+    }
 
     BYTE r = static_cast<BYTE>(std::stoul(rStr, nullptr, 16));
     BYTE g = static_cast<BYTE>(std::stoul(gStr, nullptr, 16));
