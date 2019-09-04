@@ -47,6 +47,11 @@ public:
     virtual void PrintString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
     {
     }
+
+    bool PassThroughString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
+    {
+        return false;
+    }
 };
 
 class Microsoft::Console::VirtualTerminal::OutputEngineTest final
@@ -610,6 +615,11 @@ public:
 
     virtual void PrintString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
     {
+    }
+
+    virtual bool PassThroughString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) override
+    {
+        return false;
     }
 
     StatefulDispatch() :

@@ -12,6 +12,7 @@ public:
     virtual void Execute(const wchar_t wchControl) override;
     virtual void Print(const wchar_t wchPrintable) override;
     virtual void PrintString(const wchar_t* const rgwch, const size_t cch) override;
+    bool PassThroughString(const wchar_t* const rgwch, const size_t cch) override;
 
     bool SetGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions* const rgOptions,
                               const size_t cOptions) override;

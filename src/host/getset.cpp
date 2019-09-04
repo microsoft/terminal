@@ -2181,6 +2181,21 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
     CATCH_RETURN();
 }
 
+// Method Description:
+// - Attempts to pass the given string through to the connected terminal.
+// - If we're in conpty mode, the string will be written to the terminal,
+//   _AFTER_ first calling PaintFrame to render our current state. We do this
+//   because the string we're about to pass through to the terminal might be
+//   dependent upon state that's currently buffered in this frame. This way, we
+//   can flush the buffered state to the terminal, before writing the string to
+//   the terminal.
+// - If we're not in conpty mode, we'll eat the string, doing nothing with it.
+// - See microsoft/terminal#2011 for more context.
+// Arguments:
+// - rgwch: The start of the string of characters to write to the terminal
+// - cch: The number of characters to write
+// Return Value:
+// - <none>
 void DoSrvPrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) noexcept
 {
     Globals& g = ServiceLocator::LocateGlobals();

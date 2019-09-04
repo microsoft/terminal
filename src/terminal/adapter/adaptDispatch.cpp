@@ -79,6 +79,16 @@ void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
     CATCH_LOG();
 }
 
+// Method Description:
+// - Called when the ITermDispatch or output parser was unable to handle a
+//   particular VT sequence. This string should be forwarded along to the
+//   terminal, if there is one, so the terminal has a chance to process the
+//   string.
+// Arguments:
+// - rgwch: The start of the string of characters to write to the terminal
+// - cch: The number of characters to write
+// Return Value:
+// - true if the console was able to handle (or eat) the provided string
 bool AdaptDispatch::PassThroughString(const wchar_t* const rgwch, const size_t cch)
 {
     return !!_conApi->PrivatePassThroughString(rgwch, cch);

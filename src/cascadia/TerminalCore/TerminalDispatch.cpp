@@ -30,6 +30,23 @@ void TerminalDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
     _terminalApi.PrintString({ rgwch, cch });
 }
 
+// Method Description:
+// - Called when the ITermDispatch or output parser was unable to handle a
+//   particular VT sequence. This string should be forwarded along to the
+//   terminal, if there is one, so the terminal has a chance to process the
+//   string.
+// - This function is only ever implemented in the console codebase. The
+//   Terminal doesn't need to pass anything along to anyone.
+// Arguments:
+// - <unused>
+// Return Value:
+// - true always.
+bool TerminalDispatch::PassThroughString(const wchar_t* const /*rgwch*/, const size_t /*cch*/)
+{
+    // Do nothing.
+    return true;
+}
+
 bool TerminalDispatch::CursorPosition(const unsigned int uiLine,
                                       const unsigned int uiColumn)
 {

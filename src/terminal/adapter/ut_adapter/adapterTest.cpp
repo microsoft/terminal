@@ -809,6 +809,12 @@ public:
         return _fPrivateSetDefaultBackgroundResult;
     }
 
+    BOOL PrivatePassThroughString(const wchar_t* const /*rgwch*/, const size_t /*cch*/) const noexcept override
+    {
+        Log::Comment(L"PrivatePassThroughString MOCK called...");
+        return TRUE;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;

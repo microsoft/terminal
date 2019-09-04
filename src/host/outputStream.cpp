@@ -787,6 +787,14 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) co
     return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
 }
 
+// Method Description:
+// - Connects the PrivatePassThroughString call directly into our Driver Message servicing
+//      call inside Conhost.exe. See DoSrvPrivatePassThroughString for details.
+// Arguments:
+// - rgwch: The start of the string of characters to write to the terminal
+// - cch: The number of characters to write
+// Return Value:
+// - TRUE always.
 BOOL ConhostInternalGetSet::PrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) const noexcept
 {
     // return SUCCEEDED(DoSrvPrivatePassThroughString(rgwch, cch));

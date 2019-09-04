@@ -21,3 +21,9 @@ void EchoDispatch::Execute(const wchar_t wchControl)
 {
     wprintf(L"Execute: 0x%x\r\n", wchControl);
 }
+
+bool EchoDispatch::PassThroughString(const wchar_t* const rgwch, const size_t cch)
+{
+    wprintf(L"PassThroughString: \"%s\" (%zd chars)\r\n", rgwch, cch);
+    return true;
+}

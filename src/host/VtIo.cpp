@@ -345,16 +345,24 @@ bool VtIo::IsUsingVt() const
     return hr;
 }
 
+// Method Description:
+// - Used to write a string straight to the terminal, via the attached VT renderer.
+// - When used for passing-through VT sequences we didn't understand, the caller
+//   should make sure to call Renderer::PaintFrame before calling this, to
+//   ensure the buffered state of the current frame is flushed before we write
+//   this sequence. If you don't do that, this string will appear out-of-order
+//   from the buffered state (see microsoft/terminal#2011)
+// Arguments:
+// - rgwch: The start of the string of characters to write to the terminal
+// - cch: The number of characters to write
+// Return Value:
+// - <none>
 void VtIo::PassThroughString(const wchar_t* const rgwch, const size_t cch)
 {
     if (_pVtRenderEngine)
     {
         std::wstring wstr{ rgwch, cch };
-        // This
         LOG_IF_FAILED(_pVtRenderEngine->WriteTerminalW(wstr));
-        // TODO: if this happens and then for the following frame, we decide
-        // _nothing_ should happen, then we'll wait until an actual frame
-        // triggers to write this string out. we probably don't want that.
     }
 }
 
