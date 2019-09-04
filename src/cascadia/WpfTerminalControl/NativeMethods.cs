@@ -21,6 +21,9 @@ namespace Microsoft.Terminal.Wpf
         public static extern uint TriggerResize(IntPtr terminal, double width, double height, out int columns, out int rows);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern uint Resize(IntPtr terminal, uint rows, uint columns);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void DpiChanged(IntPtr terminal, int newDpi);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]

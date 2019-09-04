@@ -19,7 +19,8 @@ extern "C"
 	__declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 	__declspec(dllexport) void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data);
 	__declspec(dllexport) void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-	__declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
+    __declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
+    __declspec(dllexport) HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns);
 	__declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
 	__declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
 	__declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
@@ -55,6 +56,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
+    friend HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns);
     friend void _stdcall DpiChanged(void* terminal, int newDpi);
     friend void _stdcall UserScroll(void* terminal, int viewTop);
     friend HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);

@@ -39,7 +39,6 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-        private char? highSurrogate;
 
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
@@ -180,6 +179,11 @@ namespace Microsoft.Terminal.Wpf
         public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
         {
             NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+        }
+
+        public void Resize(uint rows, uint columns)
+        {
+            NativeMethods.Resize(this.terminal, rows, columns);
         }
 
         private void Connection_TerminalDisconnected(object sender, EventArgs e)
