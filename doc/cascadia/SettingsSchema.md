@@ -146,11 +146,11 @@ The most useful URI schemes to remember when customizing background images and i
 > ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
 
 ### Icons
-Terminal displays icons for each of your profiles. When it is first run, Terminal generates profiles for any of your built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros, each referring to a stock icon. 
+Terminal displays icons for each of your profiles which Terminal generates for any built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros. Each profile refers to a stock icon via the `ms-appx` URI Scheme.
 
-> ⚠ Note: These stock icons are referred to via the `ms-appx` URI Scheme. Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future. 
+> ⚠ Note: Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future. 
 
-You can refer to you own icon files if you wish, e.g.:
+You can refer to you own icons if you wish, e.g.:
 
 ```json 
     "icon" : "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\icon-ubuntu-32.png",
