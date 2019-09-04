@@ -834,9 +834,8 @@ namespace winrt::TerminalApp::implementation
         const int focusedTabIndex = _GetFocusedTabIndex();
         auto focusedTab = _tabs[focusedTabIndex];
 
-        const auto canSplit = splitType == Pane::SplitState::Horizontal ? focusedTab->CanAddHorizontalSplit() :
-
-                                                                          focusedTab->CanAddVerticalSplit();
+        const auto canSplit = focusedTab->CanSplitPane(splitType);
+        
         if (!canSplit)
         {
             return;
@@ -847,8 +846,7 @@ namespace winrt::TerminalApp::implementation
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(newControl, focusedTab);
 
-        return splitType == Pane::SplitState::Horizontal ? focusedTab->AddHorizontalSplit(realGuid, newControl) :
-                                                           focusedTab->AddVerticalSplit(realGuid, newControl);
+        focusedTab->SplitPane(splitType, realGuid, newControl);
     }
 
     // Method Description:
@@ -1014,8 +1012,12 @@ namespace winrt::TerminalApp::implementation
                 dataPack.SetHtmlFormat(htmlData);
             }
 
-            Clipboard::SetContent(dataPack);
-            Clipboard::Flush();
+            try
+            {
+                Clipboard::SetContent(dataPack);
+                Clipboard::Flush();
+            }
+            CATCH_LOG();
         });
     }
 
@@ -1060,6 +1062,8 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - trimTrailingWhitespace: enable removing any whitespace from copied selection
     //    and get text to appear on separate lines.
+    // Return Value:
+    // - true iff we we able to copy text (if a selection was active)
     bool TerminalPage::_CopyText(const bool trimTrailingWhitespace)
     {
         const auto control = _GetFocusedControl();
