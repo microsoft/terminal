@@ -458,6 +458,19 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
+    COORD App::GetLaunchInitialPositions()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
+
+        return { gsl::narrow<short>(0), gsl::narrow<short>(0) };
+    }
+
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)

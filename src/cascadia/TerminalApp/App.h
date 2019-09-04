@@ -32,6 +32,7 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
+        COORD GetLaunchInitialPositions();
         bool GetShowTabsInTitlebar();
 
         ~App() = default;

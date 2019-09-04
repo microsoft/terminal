@@ -181,8 +181,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     const auto adjustedWidth = nonClient.right - nonClient.left;
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
+    /*const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };*/
+    const COORD origin{ gsl::narrow<short>(2500),
+                        gsl::narrow<short>(100) };
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
