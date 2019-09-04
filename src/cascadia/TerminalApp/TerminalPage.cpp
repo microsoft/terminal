@@ -835,7 +835,7 @@ namespace winrt::TerminalApp::implementation
         auto focusedTab = _tabs[focusedTabIndex];
 
         const auto canSplit = focusedTab->CanSplitPane(splitType);
-        
+
         if (!canSplit)
         {
             return;
