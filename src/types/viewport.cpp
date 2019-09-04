@@ -909,7 +909,8 @@ Viewport Viewport::ToOrigin() const noexcept
         // Just put the original rectangle into the results and return early.
         result.viewports.at(result.used++) = original;
     }
-    else
+    // If the original rectangle matches the intersection, there is nothing to return.
+    else if (original != intersection)
     {
         // Generate our potential four viewports that represent the region of the original that falls outside of the remove area.
         // We will bias toward generating wide rectangles over tall rectangles (if possible) so that optimizations that apply
@@ -922,8 +923,8 @@ Viewport Viewport::ToOrigin() const noexcept
         // |                          |             |                          |
         // |                          |             |                          |
         // |                          |             |                          |
-        // |                          |    ======>  |        intersect         |  ======>  early return of 0x0 Viewport
-        // |                          |             |                          |           at Original's origin
+        // |                          |    ======>  |        intersect         |  ======>  early return of nothing
+        // |                          |             |                          |
         // |                          |             |                          |
         // |                          |             |                          |
         // |---------removeMe---------|             |--------------------------|
@@ -992,39 +993,32 @@ Viewport Viewport::ToOrigin() const noexcept
         //         | removeMe      |
         //         |---------------|
 
-        if (original == intersection)
+        // We generate these rectangles by the original and intersection points, but some of them might be empty when the intersection
+        // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
+        // We will filter those out below when adding them to the result.
+        const auto top = Viewport({ original.Left(), original.Top(), original.RightInclusive(), intersection.Top() - 1 });
+        const auto bottom = Viewport({ original.Left(), intersection.BottomExclusive(), original.RightInclusive(), original.BottomInclusive() });
+        const auto left = Viewport({ original.Left(), intersection.Top(), intersection.Left() - 1, intersection.BottomInclusive() });
+        const auto right = Viewport({ intersection.RightExclusive(), intersection.Top(), original.RightInclusive(), intersection.BottomInclusive() });
+
+        if (top.IsValid())
         {
-            result.viewports.at(result.used++) = Viewport::FromDimensions(original.Origin(), { 0, 0 });
+            result.viewports.at(result.used++) = top;
         }
-        else
+
+        if (bottom.IsValid())
         {
-            // We generate these rectangles by the original and intersection points, but some of them might be empty when the intersection
-            // lines up with the edge of the original. That's OK. That just means that the subtraction didn't leave anything behind.
-            // We will filter those out below when adding them to the result.
-            const auto top = Viewport({ original.Left(), original.Top(), original.RightInclusive(), intersection.Top() - 1 });
-            const auto bottom = Viewport({ original.Left(), intersection.BottomExclusive(), original.RightInclusive(), original.BottomInclusive() });
-            const auto left = Viewport({ original.Left(), intersection.Top(), intersection.Left() - 1, intersection.BottomInclusive() });
-            const auto right = Viewport({ intersection.RightExclusive(), intersection.Top(), original.RightInclusive(), intersection.BottomInclusive() });
+            result.viewports.at(result.used++) = bottom;
+        }
 
-            if (top.IsValid())
-            {
-                result.viewports.at(result.used++) = top;
-            }
+        if (left.IsValid())
+        {
+            result.viewports.at(result.used++) = left;
+        }
 
-            if (bottom.IsValid())
-            {
-                result.viewports.at(result.used++) = bottom;
-            }
-
-            if (left.IsValid())
-            {
-                result.viewports.at(result.used++) = left;
-            }
-
-            if (right.IsValid())
-            {
-                result.viewports.at(result.used++) = right;
-            }
+        if (right.IsValid())
+        {
+            result.viewports.at(result.used++) = right;
         }
     }
 

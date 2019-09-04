@@ -162,7 +162,7 @@ Options:
     -s, --schemes  : Displays all available schemes
     -l, --location : Displays the full path to the schemes directory
     -v, --version  : Display the version number
-    -o, --output &lt;filename&gt; : output the current color table to an file (in .ini format)
+    -o, --output &lt;filename&gt; : output the current color table to a file (in .ini format)
 
 Available importers:
   {0}</value>
