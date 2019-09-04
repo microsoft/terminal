@@ -167,7 +167,11 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         CreateAndAssociateToolTipToControl(IDD_INTERCEPT_COPY_PASTE, hDlg, IDS_TOOLTIP_INTERCEPT_COPY_PASTE);
 
         // initialize cursor radio buttons
-        if (gpStateInfo->CursorSize <= 25)
+        if (gpStateInfo->CursorType != 0)
+        {
+            Item = IDD_CURSOR_ADVANCED;
+        }
+        else if (gpStateInfo->CursorSize <= 25)
         {
             Item = IDD_CURSOR_SMALL;
         }
@@ -179,7 +183,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         {
             Item = IDD_CURSOR_LARGE;
         }
-        CheckRadioButton(hDlg, IDD_CURSOR_SMALL, IDD_CURSOR_LARGE, Item);
+        CheckRadioButton(hDlg, IDD_CURSOR_SMALL, IDD_CURSOR_ADVANCED, Item);
 
         SetDlgItemInt(hDlg, IDD_HISTORY_SIZE, gpStateInfo->HistoryBufferSize, FALSE);
         SendDlgItemMessage(hDlg, IDD_HISTORY_SIZE, EM_LIMITTEXT, 3, 0);
