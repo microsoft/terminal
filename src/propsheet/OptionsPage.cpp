@@ -147,6 +147,9 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
     switch (wMsg)
     {
     case WM_INITDIALOG:
+        // Initialize the global handle to this dialog
+        g_hOptionsDlg = hDlg;
+
         CheckDlgButton(hDlg, IDD_HISTORY_NODUP, gpStateInfo->HistoryNoDup);
         CheckDlgButton(hDlg, IDD_QUICKEDIT, gpStateInfo->QuickEdit);
         CheckDlgButton(hDlg, IDD_INSERT, gpStateInfo->InsertMode);
@@ -169,6 +172,8 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         // initialize cursor radio buttons
         if (gpStateInfo->CursorType != 0)
         {
+            // IDD_CURSOR_ADVANCED is used as a placeholder for when a
+            // non-legacy shape is selected.
             Item = IDD_CURSOR_ADVANCED;
         }
         else if (gpStateInfo->CursorSize <= 25)

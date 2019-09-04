@@ -323,10 +323,41 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
     case IDD_TERMINAL_UNDERSCORE:
     case IDD_TERMINAL_EMPTYBOX:
     case IDD_TERMINAL_SOLIDBOX:
+    {
         gpStateInfo->CursorType = item - IDD_TERMINAL_LEGACY_CURSOR;
         UpdateApplyButton(hDlg);
+
+        // See GH#1219 - When the cursor state is something other than legacy,
+        // we need to manually check the "IDD_CURSOR_ADVANCED" radio button on
+        // the Options page. This will prevent the Options page from manually
+        // resetting the cursor to legacy.
+        if (g_hOptionsDlg != INVALID_HANDLE_VALUE)
+        {
+            unsigned int newRadioValue = IDD_CURSOR_ADVANCED;
+            // Check the radio button that would be checked for the current
+            // CursorType/CursorSize
+            if (gpStateInfo->CursorType != 0)
+            {
+                newRadioValue = IDD_CURSOR_ADVANCED;
+            }
+            else if (gpStateInfo->CursorSize <= 25)
+            {
+                newRadioValue = IDD_CURSOR_SMALL;
+            }
+            else if (gpStateInfo->CursorSize <= 50)
+            {
+                newRadioValue = IDD_CURSOR_MEDIUM;
+            }
+            else
+            {
+                newRadioValue = IDD_CURSOR_LARGE;
+            }
+            CheckRadioButton(g_hOptionsDlg, IDD_CURSOR_SMALL, IDD_CURSOR_ADVANCED, newRadioValue);
+        }
+
         handled = true;
         break;
+    }
     case IDD_DISABLE_SCROLLFORWARD:
         gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
         UpdateApplyButton(hDlg);
