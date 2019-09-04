@@ -589,7 +589,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             std::unique_lock<std::mutex> tenantNumberLock{ _commonMutex };
             _canProceed.wait(tenantNumberLock, [=]() {
                 return (_tenantNumber >= 0 && _tenantNumber < _maxSize) || _closing.load();
-                             });
+            });
             // User might have closed the tab while we waited for input
             if (_closing.load())
             {
