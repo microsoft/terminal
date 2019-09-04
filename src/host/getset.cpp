@@ -2180,3 +2180,22 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
     }
     CATCH_RETURN();
 }
+
+void DoSrvPrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) noexcept
+{
+    Globals& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+
+    // If we're in conpty mode, pass this string through to the connected
+    // terminal. Do this by first painting the frame, then writing the string we
+    // didn't understand to the terminal. This will ensure that any effects from
+    // sequences we _did_ understand are sent to the terminal _before_ the
+    // sequence we didn't understand. See GH#2011.
+    if (g.pRender && gci.IsInVtIoMode())
+    {
+        if (SUCCEEDED(g.pRender->PaintFrame()))
+        {
+            gci.GetVtIo()->PassThroughString(rgwch, cch);
+        }
+    }
+}

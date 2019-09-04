@@ -124,17 +124,18 @@ bool OutputStateMachineEngine::ActionPrintString(const wchar_t* const rgwch, con
 bool OutputStateMachineEngine::ActionPassThroughString(const wchar_t* const rgwch,
                                                        _In_ size_t const cch)
 {
-    bool fSuccess = true;
-    if (_pTtyConnection != nullptr)
-    {
-        std::wstring wstr = std::wstring(rgwch, cch);
-        auto hr = _pTtyConnection->WriteTerminalW(wstr);
-        LOG_IF_FAILED(hr);
-        fSuccess = SUCCEEDED(hr);
-    }
-    // If there's not a TTY connection, our previous behavior was to eat the string.
-
-    return fSuccess;
+    // bool fSuccess = true;
+    // if (_pTtyConnection != nullptr)
+    // {
+    //     std::wstring wstr = std::wstring(rgwch, cch);
+    //     auto hr = _pTtyConnection->WriteTerminalW(wstr);
+    //     LOG_IF_FAILED(hr);
+    //     fSuccess = SUCCEEDED(hr);
+    // }
+    // // If there's not a TTY connection, our previous behavior was to eat the string.
+    // return fSuccess;
+    // DebugBreak();
+    return _dispatch->PassThroughString(rgwch, cch);
 }
 
 // Routine Description:

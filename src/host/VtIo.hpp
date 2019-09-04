@@ -32,6 +32,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
+        void PassThroughString(const wchar_t* const rgwch, const size_t cch);
 
         void CloseInput() override;
         void CloseOutput() override;

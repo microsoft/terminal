@@ -79,6 +79,11 @@ void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
     CATCH_LOG();
 }
 
+bool AdaptDispatch::PassThroughString(const wchar_t* const rgwch, const size_t cch)
+{
+    return !!_conApi->PrivatePassThroughString(rgwch, cch);
+}
+
 // Routine Description:
 // - Generalizes cursor movement for up/down/left/right and next/previous line.
 // Arguments:

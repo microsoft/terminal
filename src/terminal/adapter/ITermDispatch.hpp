@@ -27,6 +27,8 @@ public:
     virtual void Print(const wchar_t wchPrintable) = 0;
     virtual void PrintString(const wchar_t* const rgwch, const size_t cch) = 0;
 
+    virtual bool PassThroughString(const wchar_t* const rgwch, const size_t cch) = 0;
+
     virtual bool CursorUp(const unsigned int uiDistance) = 0; // CUU
     virtual bool CursorDown(const unsigned int uiDistance) = 0; // CUD
     virtual bool CursorForward(const unsigned int uiDistance) = 0; // CUF

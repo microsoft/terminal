@@ -786,3 +786,10 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) co
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
 }
+
+BOOL ConhostInternalGetSet::PrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) const noexcept
+{
+    // return SUCCEEDED(DoSrvPrivatePassThroughString(rgwch, cch));
+    DoSrvPrivatePassThroughString(rgwch, cch);
+    return TRUE;
+}

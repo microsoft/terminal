@@ -39,6 +39,9 @@ namespace Microsoft::Console::VirtualTerminal
         void PrintString(const wchar_t* const rgwch, const size_t cch) override;
         void Print(const wchar_t wchPrintable) override;
 
+        // This is used by conpty to pass sequences it doesn't understand through to the terminal
+        bool PassThroughString(const wchar_t* const rgwch, const size_t cch);
+
         bool CursorUp(_In_ unsigned int const uiDistance) override; // CUU
         bool CursorDown(_In_ unsigned int const uiDistance) override; // CUD
         bool CursorForward(_In_ unsigned int const uiDistance) override; // CUF

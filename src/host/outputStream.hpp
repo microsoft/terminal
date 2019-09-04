@@ -161,6 +161,8 @@ public:
 
     BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
 
+    BOOL PrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) const noexcept override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

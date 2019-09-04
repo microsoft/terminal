@@ -345,6 +345,19 @@ bool VtIo::IsUsingVt() const
     return hr;
 }
 
+void VtIo::PassThroughString(const wchar_t* const rgwch, const size_t cch)
+{
+    if (_pVtRenderEngine)
+    {
+        std::wstring wstr{ rgwch, cch };
+        // This
+        LOG_IF_FAILED(_pVtRenderEngine->WriteTerminalW(wstr));
+        // TODO: if this happens and then for the following frame, we decide
+        // _nothing_ should happen, then we'll wait until an actual frame
+        // triggers to write this string out. we probably don't want that.
+    }
+}
+
 void VtIo::CloseInput()
 {
     // This will release the lock when it goes out of scope

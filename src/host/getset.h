@@ -89,3 +89,5 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept;
 
 [[nodiscard]] HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept;
+
+void DoSrvPrivatePassThroughString(const wchar_t* const rgwch, const size_t cch) noexcept;
