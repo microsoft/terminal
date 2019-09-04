@@ -153,9 +153,9 @@ namespace Microsoft::Console::Types
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
-            AddRef() override;
+        AddRef() override;
         IFACEMETHODIMP_(ULONG)
-            Release() override;
+        Release() override;
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
                                       _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
@@ -359,39 +359,39 @@ namespace Microsoft::Console::Types
                                                              _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
-                                         const int moveCount,
-                                         const TextPatternRangeEndpoint endpoint,
-                                         const MoveState moveState,
-                                         _Out_ gsl::not_null<int*> const pAmountMoved);
+        _moveEndpointByUnitCharacter(gsl::not_null<IUiaData*> pData,
+                                     const int moveCount,
+                                     const TextPatternRangeEndpoint endpoint,
+                                     const MoveState moveState,
+                                     _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
-                                                const int moveCount,
-                                                const TextPatternRangeEndpoint endpoint,
-                                                const MoveState moveState,
-                                                _Out_ gsl::not_null<int*> const pAmountMoved);
+        _moveEndpointByUnitCharacterForward(gsl::not_null<IUiaData*> pData,
+                                            const int moveCount,
+                                            const TextPatternRangeEndpoint endpoint,
+                                            const MoveState moveState,
+                                            _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
-                                                 const int moveCount,
-                                                 const TextPatternRangeEndpoint endpoint,
-                                                 const MoveState moveState,
-                                                 _Out_ gsl::not_null<int*> const pAmountMoved);
+        _moveEndpointByUnitCharacterBackward(gsl::not_null<IUiaData*> pData,
+                                             const int moveCount,
+                                             const TextPatternRangeEndpoint endpoint,
+                                             const MoveState moveState,
+                                             _Out_ gsl::not_null<int*> const pAmountMoved);
 
         static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
+        _moveEndpointByUnitLine(gsl::not_null<IUiaData*> pData,
+                                const int moveCount,
+                                const TextPatternRangeEndpoint endpoint,
+                                const MoveState moveState,
+                                _Out_ gsl::not_null<int*> const pAmountMoved);
+
+        static std::tuple<Endpoint, Endpoint, bool>
+        _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
                                     const int moveCount,
                                     const TextPatternRangeEndpoint endpoint,
                                     const MoveState moveState,
                                     _Out_ gsl::not_null<int*> const pAmountMoved);
-
-        static std::tuple<Endpoint, Endpoint, bool>
-            _moveEndpointByUnitDocument(gsl::not_null<IUiaData*> pData,
-                                        const int moveCount,
-                                        const TextPatternRangeEndpoint endpoint,
-                                        const MoveState moveState,
-                                        _Out_ gsl::not_null<int*> const pAmountMoved);
 
 #ifdef UNIT_TESTING
         friend class ::UiaTextRangeTests;
