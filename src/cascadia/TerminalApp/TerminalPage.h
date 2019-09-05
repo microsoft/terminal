@@ -72,6 +72,7 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
@@ -93,6 +94,7 @@ namespace winrt::TerminalApp::implementation
         void _CloseFocusedTab();
         void _CloseFocusedPane();
         void _CloseWindow();
+        void _CloseAllTabs();
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
@@ -120,7 +122,6 @@ namespace winrt::TerminalApp::implementation
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
         void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
-        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _RefreshUIForSettingsReload();
 

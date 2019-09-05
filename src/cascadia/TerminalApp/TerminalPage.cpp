@@ -189,21 +189,21 @@ namespace winrt::TerminalApp::implementation
     // - all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
-    void App::_ShowCloseWarningDialog()
+    void TerminalPage::_ShowCloseWarningDialog()
     {
         // To do: change these strings to localized strings in resource loader
-        auto title = _resourceLoader.GetLocalizedString(L"CloseWindowWarningTitle");
-        auto primaryButtonText = _resourceLoader.GetLocalizedString(L"Close all");
-        auto closeButtonText = _resourceLoader.GetLocalizedString(L"Cancel");
+        auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
+        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"Close all");
+        auto closeButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
 
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
 
         dialog.PrimaryButtonText(primaryButtonText);
         dialog.CloseButtonText(closeButtonText);
-        auto token = dialog.PrimaryButtonClick({ this, &App::_CloseWarningPrimaryButtonOnClick });
+        auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
 
-        _ShowDialog(dialog);
+        _showDialogHandlers(*this, dialog);
     }
 
     // Method Description:
@@ -524,7 +524,7 @@ namespace winrt::TerminalApp::implementation
         bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
         bindings.ClosePane({ this, &TerminalPage::_HandleClosePane });
-        bindings.CloseWindow({ this, &App::_HandleCloseWindow });
+        bindings.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
         bindings.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
         bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
@@ -817,7 +817,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close all the tabs opened and this will finally terminate
     // - the terminal
-    void App::_CloseAllTabs()
+    void TerminalPage::_CloseAllTabs()
     {
         int tabCount = _tabs.size();
         for (int i = tabCount - 1; i >= 0; i--)
@@ -1250,7 +1250,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender,
-                                                Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs)
+                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs)
     {
         _CloseAllTabs();
     }
