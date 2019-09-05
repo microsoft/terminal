@@ -5,7 +5,7 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "AppKeyBindingsSerialization.h"
+// #include "AppKeyBindingsSerialization.h"
 #include "Utils.h"
 #include "JsonUtils.h"
 
@@ -32,7 +32,7 @@ static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{},
+    _keybindings{ nullptr },
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
@@ -44,6 +44,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false }
 {
+    _keybindings = winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>();
 }
 
 GlobalAppSettings::~GlobalAppSettings()
@@ -72,13 +73,13 @@ GUID GlobalAppSettings::GetDefaultProfile() const noexcept
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
-    return _keybindings;
+    return *_keybindings;
 }
 
-void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
-{
-    _keybindings = newBindings;
-}
+// void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
+// {
+//     _keybindings = newBindings;
+// }
 
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
 {
@@ -176,7 +177,8 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
+    // jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
+    jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
 
     return jsonObject;
 }
@@ -242,7 +244,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        AppKeyBindingsSerialization::LayerJson(_keybindings, keybindings);
+        _keybindings->LayerJson(keybindings);
+        // AppKeyBindingsSerialization::LayerJson(_keybindings, keybindings);
     }
 }
 

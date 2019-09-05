@@ -40,7 +40,7 @@ public:
     GUID GetDefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
-    void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
+    // void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
@@ -69,7 +69,7 @@ public:
 
 private:
     GUID _defaultProfile;
-    winrt::TerminalApp::AppKeyBindings _keybindings;
+    winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
 
     std::vector<ColorScheme> _colorSchemes;
 
