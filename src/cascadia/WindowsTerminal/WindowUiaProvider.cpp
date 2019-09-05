@@ -107,7 +107,7 @@ WindowUiaProvider* WindowUiaProvider::Create(Microsoft::Console::Types::IUiaWind
 
 #pragma region IRawElementProviderFragment
 
-IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection /*direction*/, _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     *ppProvider = nullptr;
@@ -139,7 +139,7 @@ IFACEMETHODIMP WindowUiaProvider::SetFocus()
 
 IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
                                                            _In_ double /*y*/,
-                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+                                                           _COM_Outptr_result_maybenull_ IRawElementProviderFragment** /*ppProvider*/)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
@@ -151,7 +151,7 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
     return S_OK;
 }
 
-IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider)
+IFACEMETHODIMP WindowUiaProvider::GetFocus(_COM_Outptr_result_maybenull_ IRawElementProviderFragment** /*ppProvider*/)
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
     // TODO GitHub #2447: Hook up ScreenInfoUiaProvider to WindowUiaProvider
