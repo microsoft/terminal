@@ -11,6 +11,15 @@ using namespace Windows::UI::Composition;
 using namespace Windows::UI::Xaml::Hosting;
 using namespace Windows::Foundation::Numerics;
 
+// Note: Generate GUID using TlgGuid.exe tool - seriously, it won't work if you
+// just generate an arbitrary GUID
+TRACELOGGING_DEFINE_PROVIDER(
+    g_hWindowsTerminalProvider,
+    "Microsoft.Windows.Terminal.Win32Host",
+    // {56c06166-2e2e-5f4d-7ff3-74f4b78c87d6}
+    (0x56c06166, 0x2e2e, 0x5f4d, 0x7f, 0xf3, 0x74, 0xf4, 0xb7, 0x8c, 0x87, 0xd6),
+    TraceLoggingOptionMicrosoftTelemetry());
+
 // Routine Description:
 // - Retrieves the string resource from the current module with the given ID
 //   from the resources files. See resource.h and the .rc definitions for valid IDs.
@@ -94,6 +103,14 @@ static void EnsureNativeArchitecture()
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
+    TraceLoggingRegister(g_hWindowsTerminalProvider);
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "ExecutableStarted",
+        TraceLoggingDescription("Event emitted immediately on startup"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
     // Block the user from starting if they launched the incorrect architecture version of the project.
     // This should only be applicable to developer versions. The package installation process
     // should choose and install the correct one from the bundle.
