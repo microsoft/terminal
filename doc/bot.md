@@ -76,10 +76,9 @@ We'll be using tags, primarily, to help us understand what needs attention, what
 - Then close the issue automatically informing the opener that they can resolve the problem and reopen the issue. (See Bug/Feature templates for example situations.)
 
 #### Help ask for Feedback Hub
-- If an issue is tagged `Needs-Feedback-Hub`
-- Then reply to the issue with a bit of text on asking the author to send us data with Feedback Hub and give us the link.
-- And remove the `Needs-Feedback-Hub` tag
-- And add the `Needs-Author-Feedback` tag
+- When a comment on the thread says `/feedback`...
+1. Then reply to the issue with a bit of text on asking the author to send us data with Feedback Hub and give us the link.
+1. And add the `Needs-Author-Feedback` tag
 
 #### Remove Help Wanted from In PR issues
 - If an issue gets the `In-PR` tag when a new PR is created, we will remove the `Help-Wanted` tag to avoid someone trying to work on an issue where another person has already submitted a proposed fix.
