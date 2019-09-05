@@ -29,6 +29,7 @@ constexpr short DEFAULT_HISTORY_SIZE = 9001;
 
 #pragma warning(push)
 #pragma warning(disable : 26426)
+// TODO GH 2674, don't disable this warning, move to std::wstring_view or something like that.
 const std::wstring DEFAULT_FONT_FACE{ L"Consolas" };
 constexpr int DEFAULT_FONT_SIZE = 12;
 

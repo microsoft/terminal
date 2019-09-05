@@ -120,6 +120,7 @@ OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text, const 
 #pragma warning(suppress : 26490)
 // Suppresses reinterpret_cast. We're only doing this because Windows doesn't understand the type difference between wchar_t and DWORD.
 // It is not worth trying to separate that out further or risking performance over this particular warning here.
+// TODO GH 2673 - Investigate real wchar_t flag in Windows and resolve this audit issue
 OutputCellIterator::OutputCellIterator(const std::basic_string_view<WORD> legacyAttrs, const bool /*unused*/) noexcept :
     _mode(Mode::LegacyAttr),
     _currentView(s_GenerateViewLegacyAttr(legacyAttrs.at(0))),

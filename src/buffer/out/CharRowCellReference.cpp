@@ -93,7 +93,7 @@ CharRowCellReference::const_iterator CharRowCellReference::begin() const
 // - end iterator of the glyph data
 #pragma warning(push)
 #pragma warning(disable : 26481)
-// TODO: eliminate using pointers raw as begin/end markers in this class
+// TODO GH 2672: eliminate using pointers raw as begin/end markers in this class
 CharRowCellReference::const_iterator CharRowCellReference::end() const
 {
     if (_cellData().DbcsAttr().IsGlyphStored())

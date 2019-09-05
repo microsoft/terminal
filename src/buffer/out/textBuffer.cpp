@@ -1003,7 +1003,7 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                 }
             }
 #pragma warning(suppress : 26444)
-            // TODO: figure out why there's custom construction/destruction happening here
+            // TODO GH 2675: figure out why there's custom construction/destruction happening here
             it++;
         }
 
