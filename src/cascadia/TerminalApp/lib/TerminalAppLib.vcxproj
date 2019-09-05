@@ -65,7 +65,6 @@
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
-    <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />

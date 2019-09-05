@@ -5,7 +5,6 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
-// #include "AppKeyBindingsSerialization.h"
 #include "Utils.h"
 #include "JsonUtils.h"
 
@@ -75,11 +74,6 @@ AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
     return *_keybindings;
 }
-
-// void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
-// {
-//     _keybindings = newBindings;
-// }
 
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
 {
@@ -177,7 +171,6 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    // jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
 
     return jsonObject;
@@ -245,7 +238,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
         _keybindings->LayerJson(keybindings);
-        // AppKeyBindingsSerialization::LayerJson(_keybindings, keybindings);
     }
 }
 

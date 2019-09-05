@@ -4,7 +4,6 @@
 #include "pch.h"
 #include <argb.h>
 #include "CascadiaSettings.h"
-#include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include "utils.h"
 #include "JsonUtils.h"
