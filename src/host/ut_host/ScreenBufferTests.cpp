@@ -170,6 +170,8 @@ class ScreenBufferTests
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
+
+    TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -3580,4 +3582,68 @@ void ScreenBufferTests::HardResetBuffer()
     VERIFY_IS_TRUE(isBufferClear());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), viewport.Origin());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
+{
+    // This is a test for microsoft/terminal#1206. Refer to that issue for more
+    // context
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTerminalScrolling(true);
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& siMain = gci.GetActiveOutputBuffer();
+    COORD const coordFontSize = siMain.GetScreenFontSize();
+    siMain._virtualBottom = siMain._viewport.BottomInclusive();
+
+    auto originalView = siMain._viewport;
+
+    VERIFY_IS_NULL(siMain._psiMainBuffer);
+    VERIFY_IS_NULL(siMain._psiAlternateBuffer);
+
+    Log::Comment(L"Create an alternate buffer");
+    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    {
+        VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
+        auto& altBuffer = *siMain._psiAlternateBuffer;
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+
+        const COORD originalSize = originalView.Dimensions();
+        const COORD doubledSize = { originalSize.X * 2, originalSize.Y * 2 };
+
+        // Create some RECTs, which are dimensions in pixels, because
+        // ProcessResizeWindow needs to work on rects in screen _pixel_
+        // dimensions, not character sizes.
+        RECT originalClientRect{ 0 }, maximizedClientRect{ 0 };
+
+        originalClientRect.right = originalSize.X * coordFontSize.X;
+        originalClientRect.bottom = originalSize.Y * coordFontSize.Y;
+
+        maximizedClientRect.right = doubledSize.X * coordFontSize.X;
+        maximizedClientRect.bottom = doubledSize.Y * coordFontSize.Y;
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a maximize"));
+        // Note that just calling _InternalSetViewportSize does not hit the
+        // exceptional case here. There's other logic farther down the stack
+        // that triggers it.
+        altBuffer.ProcessResizeWindow(&maximizedClientRect, &originalClientRect);
+
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a restore down"));
+
+        altBuffer.ProcessResizeWindow(&originalClientRect, &maximizedClientRect);
+
+        // Before the bugfix, this would fail, with the top being roughly 80,
+        // halfway into the buffer, with the bottom being anchored to the old
+        // size.
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+    }
 }
