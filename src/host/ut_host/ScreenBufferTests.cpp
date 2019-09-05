@@ -167,7 +167,10 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
-    TEST_METHOD(DeleteLines256Colors);
+    TEST_METHOD(InsertDeleteLines256Colors);
+    // TEST_METHOD(InsertDeleteLines256ColorsFrom16Table);
+    // TEST_METHOD(InsertDeleteLines256ColorsFrom256Table);
+    // TEST_METHOD(InsertDeleteLinesRGBColors);
 
     TEST_METHOD(SetOriginMode);
 
@@ -3455,8 +3458,24 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     }
 }
 
-void ScreenBufferTests::DeleteLines256Colors()
+void ScreenBufferTests::InsertDeleteLines256Colors()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:insert", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:colorStyle", L"{0, 1, 2}")
+    END_TEST_METHOD_PROPERTIES();
+
+    // colorStyle will be used to control whether we use a color from the 16
+    // color table, a color from the 256 color table, or a pure RGB color.
+    const int Use16Color = 0;
+    const int Use256Color = 1;
+    const int UseRGBColor = 2;
+
+    bool insert;
+    int colorStyle;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"insert", insert), L"whether to insert(true) or delete(false) lines");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
+
     // This test is largely taken from repro code from
     // https://github.com/microsoft/terminal/issues/832#issuecomment-507447272
     Log::Comment(
@@ -3470,21 +3489,35 @@ void ScreenBufferTests::DeleteLines256Colors()
     auto& cursor = si.GetTextBuffer().GetCursor();
 
     TextAttribute expectedAttr{ si.GetAttributes() };
-    expectedAttr.SetBackground(gci.GetColorTableEntry(2));
+    std::wstring sgrSeq = L"\x1b[48;5;2m";
+    if (colorStyle == Use16Color)
+    {
+        expectedAttr.SetBackground(gci.GetColorTableEntry(2));
+    }
+    else if (colorStyle == Use256Color)
+    {
+        expectedAttr.SetBackground(gci.GetColorTableEntry(20));
+        sgrSeq = L"\x1b[48;5;20m";
+    }
+    else if (colorStyle == UseRGBColor)
+    {
+        expectedAttr.SetBackground(RGB(1, 2, 3));
+        sgrSeq = L"\x1b[48;2;1;2;3m";
+    }
 
     // Set some scrolling margins
     stateMachine.ProcessString(L"\x1b[1;3r");
 
     // Set the BG color to the table index 2, as a 256-color sequence
-    stateMachine.ProcessString(L"\x1b[48;5;2m");
+    stateMachine.ProcessString(sgrSeq);
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
 
     // Move to home
     stateMachine.ProcessString(L"\x1b[H");
 
-    // Delete 10 lines
-    stateMachine.ProcessString(L"\x1b[10M");
+    // Insert/Delete 10 lines
+    stateMachine.ProcessString(insert ? L"\x1b[10L" : L"\x1b[10M");
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
