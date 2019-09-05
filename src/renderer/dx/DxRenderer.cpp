@@ -1266,8 +1266,8 @@ enum class CursorPaintType
 
 [[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
 {
-    const short widthInChars = gsl::narrow<short>(viewInPixels.Width() / _glyphCell.cx);
-    const short heightInChars = gsl::narrow<short>(viewInPixels.Height() / _glyphCell.cy);
+    const short widthInChars = gsl::narrow_cast<short>(viewInPixels.Width() / _glyphCell.cx);
+    const short heightInChars = gsl::narrow_cast<short>(viewInPixels.Height() / _glyphCell.cy);
 
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }

@@ -46,7 +46,7 @@ private:
     };
 
     // array of bitmasks
-    constexpr const static std::array<BYTE, 4> _cmpMasks{
+    constexpr static std::array<BYTE, 4> _cmpMasks{
         0, // unused
         _Utf8BitMasks::MaskContinuationByte,
         _Utf8BitMasks::MaskLeadByteTwoByteSequence,
@@ -54,7 +54,7 @@ private:
     };
 
     // array of values for the comparisons
-    constexpr const static std::array<BYTE, 4> _cmpOperands{
+    constexpr static std::array<BYTE, 4> _cmpOperands{
         0, // unused
         _Utf8BitMasks::IsAsciiByte, // intentionally conflicts with MaskContinuationByte
         _Utf8BitMasks::IsLeadByteTwoByteSequence,
