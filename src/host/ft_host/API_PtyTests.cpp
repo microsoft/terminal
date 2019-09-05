@@ -3,14 +3,16 @@
 
 #include "precomp.h"
 
+using WEX::Logging::Log;
 using WEX::TestExecution::TestData;
+using namespace WEX::Common;
 
 class PtyTests
 {
     BEGIN_TEST_CLASS(PtyTests)
     END_TEST_CLASS()
 
-    HRESULT SpawnClient(HPCON hPC)
+    HRESULT SpawnClient(HPCON hPC, wil::unique_process_information& pi)
     {
         HRESULT hr = E_FAIL;
         STARTUPINFOEXW startupInfo{};
@@ -19,7 +21,6 @@ class PtyTests
             // Launch ping to emit some text back via the pipe
             auto szCommand = _wcsdup(L"cmd.exe");
 
-            PROCESS_INFORMATION piClient{};
             hr = CreateProcessW(
                      NULL,
                      szCommand,
@@ -30,7 +31,7 @@ class PtyTests
                      NULL,
                      NULL,
                      &startupInfo.StartupInfo,
-                     &piClient) ?
+                     &pi) ?
                      S_OK :
                      GetLastError();
 
@@ -95,7 +96,9 @@ class PtyTests
             const auto glewrite = GetLastError();
         }
 
-        hr = SpawnClient(hPC);
+        wil::unique_process_information pi;
+
+        hr = SpawnClient(hPC, pi);
 
         if (read)
         {
@@ -150,20 +153,19 @@ class PtyTests
         switch (r)
         {
         case WAIT_OBJECT_0:
-            fprintf(stderr, "Hey look you fixed it.\n");
+            Log::Comment(L"Hey look it works.");
             break;
         case WAIT_TIMEOUT:
-            fprintf(stderr, "\x1b[4;1;31mYOU DEADLOCKED IT\x1b[m\n");
-            break;
+            Log::Comment(L"\x1b[4;1;31mYOU DEADLOCKED IT\x1b[m\n");
+            return HRESULT_FROM_WIN32(WAIT_TIMEOUT);
         case WAIT_FAILED:
         {
             auto gle = GetLastError();
-            fprintf(stderr, "You somehow broke it even worse (GLE=%d)\n", gle);
-            break;
+            Log::Comment(String().Format(L"You somehow broke it even worse (GLE=%d)", gle));
+            return HRESULT_FROM_WIN32(gle);
         }
         }
-
-        return 0;
+        return S_OK;
     }
 
     // Initializes the specified startup info struct with the required properties and
