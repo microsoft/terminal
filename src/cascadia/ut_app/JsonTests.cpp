@@ -78,7 +78,7 @@ namespace TerminalAppUnitTests
                                           "\"name\" : \"Campbell\","
                                           "\"purple\" : \"#881798\","
                                           "\"red\" : \"#C50F1F\","
-                                          "\"white\" : \"#CCCCCC\","
+                                          "\"white\" : \"#CCC\","
                                           "\"yellow\" : \"#C19C00\""
                                           "}" };
 

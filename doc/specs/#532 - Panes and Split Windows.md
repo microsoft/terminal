@@ -1,6 +1,8 @@
 ---
 author: "Mike Griese @zadjii-msft"
-created on: 2019-May-16
+created on: 2019-05-16
+last updated: 2019-07-07
+issue id: 523
 ---
 
 # Panes in the Windows Terminal
