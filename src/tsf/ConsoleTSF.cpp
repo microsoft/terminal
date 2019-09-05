@@ -39,7 +39,7 @@ const GUID GUID_APPLICATION = { 0x626761ad, 0x78d2, 0x44d2, { 0xbe, 0x8b, 0x75, 
     hr = ::CoCreateInstance(CLSID_TF_ThreadMgr, nullptr, CLSCTX_ALL, IID_PPV_ARGS(&_spITfThreadMgr));
     Init_CheckResult();
 
-    hr = _spITfThreadMgr->Activate(&_tid);
+    hr = _spITfThreadMgr->ActivateEx(&_tid, TF_TMAE_CONSOLE);
     Init_CheckResult();
 
     // Create Cicero document manager and input context.

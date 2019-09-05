@@ -756,7 +756,7 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
-    for (int i = 0; i < _profiles.size(); i++)
+    for (size_t i = 0; i < _profiles.size(); i++)
     {
         if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
