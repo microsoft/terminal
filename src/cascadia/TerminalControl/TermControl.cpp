@@ -622,7 +622,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         if (_closing ||
             e.OriginalKey() == VirtualKey::Control ||
             e.OriginalKey() == VirtualKey::Shift ||
-            e.OriginalKey() == VirtualKey::Menu)
+            e.OriginalKey() == VirtualKey::Menu ||
+            e.OriginalKey() == VirtualKey::LeftWindows ||
+            e.OriginalKey() == VirtualKey::RightWindows)
+
         {
             e.Handled(true);
             return;

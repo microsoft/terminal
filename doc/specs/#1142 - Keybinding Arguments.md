@@ -83,9 +83,9 @@ singular `newTabProfile` action, and that action requires a `profileIndex` in
 the `args` object.
 
 Also, pay attention to the last set of keybindings, the `splitProfile` ones.
-This is a function that requires two arguments, both a `orientation` and a
+This is a function that requires two arguments, both an `orientation` and a
 `profileIndex`. Before this change we would have needed to create 20 separate
-actions (10 profile indicies * 2 directions) to handle these cases. Now it can
+actions (10 profile indices * 2 directions) to handle these cases. Now it can
 be done with a single action that can be much more flexible in its
 implementation.
 
@@ -102,7 +102,7 @@ build `IActionEventArgs` using the `IActionArgs` to set all the parameter values
 
 All current keybinding events will be changed from their current types to
 `TypedEventHandler`s. These `TypedEventHandler`s second param will always be an
-instance of `IActionEventArgs`. So for example:
+instance of `IActionEventArgs`. So, for example:
 
 ```csharp
 
@@ -202,7 +202,7 @@ the event handlers with the `IActionArgs` we've stored in the map with the
 
 Then, in `App`, we'll handle each of these events. We set up lambdas as event
 handlers for each event in `App::_HookupKeyBindings`. In each of those
-functions, We'll inspect the `IActionArgs` parameter, and use args from its
+functions, we'll inspect the `IActionArgs` parameter, and use args from its
 implementation to call callbacks in the `App` class. We will update `App` to
 have methods defined with the actual keybinding function signatures.
 
@@ -235,7 +235,7 @@ The code will look like:
 
 ### Handling Keybinding Events
 
-Commmon to all implementations of `IActionArgs` is the `Handled` property. This
+Common to all implementations of `IActionArgs` is the `Handled` property. This
 will let the app indicate if it was able to actually process a keybinding event
 or not. While in the large majority of cases, the events will all be marked
 handled, there are some scenarios where the Terminal will need to know if the
@@ -291,7 +291,7 @@ We'll need to make sure that invalid keybindings are ignored. Currently, we
 already gracefully ignore keybindings that have invalid `keys` or invalid
 `commands`. We'll need to add additional validation on invalid sets of `args`.
 When we're parsing the args from a Json blob, we'll make sure to only ever look
-for keys we're expecting, and ignore everything else.
+for keys we're expecting and ignore everything else.
 
 If a keybinding requires certain args, but those args are not provided, we'll
 need to make sure those args each have reasonable default values to use. If for
@@ -353,7 +353,7 @@ N/A
   them quickly.
   - [1] We probably won't be able to use the `ActionAndArgs` class directly,
     since that class is specific to the actions we define. We'll need another
-    way for extenstions to be able to uniquely identify their own actions.
+    way for extensions to be able to uniquely identify their own actions.
 
 ## Resources
 
