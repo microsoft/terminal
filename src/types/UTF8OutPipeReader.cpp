@@ -33,7 +33,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) noexcept :
 
     // in case of early escaping
     _buffer.at(0) = 0;
-    strView = std::string_view{ &_buffer.at(0), 0 };
+    strView = std::string_view{ _buffer.data(), 0 };
 
     // copy UTF-8 code units that were remaining from the previously read chunk (if any)
     if (_dwPartialsLen != 0)
@@ -42,7 +42,7 @@ UTF8OutPipeReader::UTF8OutPipeReader(HANDLE outPipe) noexcept :
     }
 
     // try to read data
-    fSuccess = !!ReadFile(_outPipe, &_buffer.at(_dwPartialsLen), std::extent<decltype(_buffer)>::value - _dwPartialsLen, &dwRead, nullptr);
+    fSuccess = !!ReadFile(_outPipe, &_buffer.at(_dwPartialsLen), gsl::narrow<DWORD>(_buffer.size()) - _dwPartialsLen, &dwRead, nullptr);
 
     dwRead += _dwPartialsLen;
     _dwPartialsLen = 0;
