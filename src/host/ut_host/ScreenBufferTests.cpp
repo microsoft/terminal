@@ -167,6 +167,8 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
+    TEST_METHOD(DeleteLines256Colors);
+
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
@@ -3448,6 +3450,73 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
         VERIFY_ARE_EQUAL(L"6", iter3->Chars());
         VERIFY_ARE_EQUAL(L"7", iter4->Chars());
         VERIFY_ARE_EQUAL(L"B", iter5->Chars());
+    }
+}
+
+void ScreenBufferTests::DeleteLines256Colors()
+{
+    // This test is largely taken from repro code from
+    // https://github.com/microsoft/terminal/issues/832#issuecomment-507447272
+    Log::Comment(
+        L"Sets the attributes to a 256/RGB color, then scrolls some lines with"
+        L" DL. Verifies the rows are cleared with the attributes we'd expect.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    TextAttribute expectedAttr{ si.GetAttributes() };
+    expectedAttr.SetBackground(gci.GetColorTableEntry(2));
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[1;3r");
+
+    // Set the BG color to the table index 2, as a 256-color sequence
+    stateMachine.ProcessString(L"\x1b[48;5;2m");
+
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
+
+    // Move to home
+    stateMachine.ProcessString(L"\x1b[H");
+
+    // Delete 10 lines
+    stateMachine.ProcessString(L"\x1b[10M");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"foo");
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+    {
+        auto iter00 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter10 = tbi.GetCellDataAt({ 1, 0 });
+        auto iter20 = tbi.GetCellDataAt({ 2, 0 });
+        auto iter30 = tbi.GetCellDataAt({ 3, 0 });
+        auto iter01 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter02 = tbi.GetCellDataAt({ 0, 2 });
+        VERIFY_ARE_EQUAL(L"f", iter00->Chars());
+        VERIFY_ARE_EQUAL(L"o", iter10->Chars());
+        VERIFY_ARE_EQUAL(L"o", iter20->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter30->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter01->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter02->Chars());
+
+        VERIFY_ARE_EQUAL(expectedAttr, iter00->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter10->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter20->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter30->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
     }
 }
 
