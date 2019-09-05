@@ -21,25 +21,26 @@ class PtyTests
 
             PROCESS_INFORMATION piClient{};
             hr = CreateProcessW(
-                NULL,
-                szCommand,
-                NULL,
-                NULL,
-                FALSE,
-                EXTENDED_STARTUPINFO_PRESENT,
-                NULL,
-                NULL,
-                &startupInfo.StartupInfo,
-                &piClient)
-                ? S_OK
-                : GetLastError();
+                     NULL,
+                     szCommand,
+                     NULL,
+                     NULL,
+                     FALSE,
+                     EXTENDED_STARTUPINFO_PRESENT,
+                     NULL,
+                     NULL,
+                     &startupInfo.StartupInfo,
+                     &piClient) ?
+                     S_OK :
+                     GetLastError();
 
             free(szCommand);
         }
         return hr;
     }
 
-    struct Baton {
+    struct Baton
+    {
         HPCON hPC;
         HANDLE ev;
         DWORD closeMethod;
@@ -55,12 +56,14 @@ class PtyTests
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode);
         HANDLE h1i, h1o, h2i, h2o;
         auto f = !!CreatePipe(&h1o, &h1i, nullptr, 0);
-        if (!f) {
+        if (!f)
+        {
             fprintf(stderr, "Beefed it at pipe 1\n");
             return 1;
         }
         f = !!CreatePipe(&h2o, &h2i, nullptr, 0);
-        if (!f) {
+        if (!f)
+        {
             fprintf(stderr, "Beefed it at pipe 2\n");
             return 1;
         }
@@ -73,7 +76,8 @@ class PtyTests
 
         HPCON hPC;
         auto hr = CreatePseudoConsole({ 80, 25 }, h1o, h2i, dwFlags, &hPC);
-        if (hr != S_OK) {
+        if (hr != S_OK)
+        {
             fprintf(stderr, "Failed: %8.08x\n", hr);
             return 1;
         }
@@ -82,13 +86,13 @@ class PtyTests
 
         if (write)
         {
-        	const char* buffer = "\x1b[0;0R";
+            const char* buffer = "\x1b[0;0R";
 
-        	DWORD dwWritten = 0;
+            DWORD dwWritten = 0;
 
-        	WriteFile(h1i, buffer, 6, &dwWritten, nullptr);
+            WriteFile(h1i, buffer, 6, &dwWritten, nullptr);
 
-        	const auto glewrite = GetLastError();
+            const auto glewrite = GetLastError();
         }
 
         hr = SpawnClient(hPC);
@@ -102,7 +106,8 @@ class PtyTests
             const auto gleread = GetLastError();
         }
 
-        if (hr != S_OK) {
+        if (hr != S_OK)
+        {
             fprintf(stderr, "Spawn took a trip to beeftown: %8.08x\n", hr);
             return 1;
         }
@@ -116,36 +121,42 @@ class PtyTests
         b.inputWriter = h1i;
         b.outputReader = h2o;
 
-        CreateThread(nullptr, 0, [](LPVOID c) -> DWORD {
-            Baton& b = *reinterpret_cast<Baton*>(c);
-            fprintf(stderr, "Closing?\n");
+        CreateThread(
+            nullptr, 0, [](LPVOID c) -> DWORD {
+                Baton& b = *reinterpret_cast<Baton*>(c);
+                fprintf(stderr, "Closing?\n");
 
-            switch (b.closeMethod)
-            {
-            case 0:
-                ClosePseudoConsole(b.hPC);
-                break;
-            case 1:
-                CloseHandle(b.inputWriter);
-                break;
-            case 2:
-                CloseHandle(b.outputReader);
-                break;
-            }
+                switch (b.closeMethod)
+                {
+                case 0:
+                    ClosePseudoConsole(b.hPC);
+                    break;
+                case 1:
+                    CloseHandle(b.inputWriter);
+                    break;
+                case 2:
+                    CloseHandle(b.outputReader);
+                    break;
+                }
 
-            SetEvent(b.ev);
-            return 0;
-                     }, (LPVOID)& b, 0, nullptr);
+                SetEvent(b.ev);
+                return 0;
+            },
+            (LPVOID)&b,
+            0,
+            nullptr);
 
         auto r = WaitForSingleObject(b.ev, 5000);
-        switch (r) {
+        switch (r)
+        {
         case WAIT_OBJECT_0:
             fprintf(stderr, "Hey look you fixed it.\n");
             break;
         case WAIT_TIMEOUT:
             fprintf(stderr, "\x1b[4;1;31mYOU DEADLOCKED IT\x1b[m\n");
             break;
-        case WAIT_FAILED: {
+        case WAIT_FAILED:
+        {
             auto gle = GetLastError();
             fprintf(stderr, "You somehow broke it even worse (GLE=%d)\n", gle);
             break;
@@ -175,20 +186,19 @@ class PtyTests
                 reinterpret_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(malloc(attrListSize));
 
             // Initialize thread attribute list
-            if (pStartupInfo->lpAttributeList
-                && InitializeProcThreadAttributeList(pStartupInfo->lpAttributeList, 1, 0, &attrListSize))
+            if (pStartupInfo->lpAttributeList && InitializeProcThreadAttributeList(pStartupInfo->lpAttributeList, 1, 0, &attrListSize))
             {
                 // Set Pseudo Console attribute
                 hr = UpdateProcThreadAttribute(
-                    pStartupInfo->lpAttributeList,
-                    0,
-                    PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
-                    hPC,
-                    sizeof(HPCON),
-                    NULL,
-                    NULL)
-                    ? S_OK
-                    : HRESULT_FROM_WIN32(GetLastError());
+                         pStartupInfo->lpAttributeList,
+                         0,
+                         PROC_THREAD_ATTRIBUTE_PSEUDOCONSOLE,
+                         hPC,
+                         sizeof(HPCON),
+                         NULL,
+                         NULL) ?
+                         S_OK :
+                         HRESULT_FROM_WIN32(GetLastError());
             }
             else
             {
@@ -197,7 +207,6 @@ class PtyTests
         }
         return hr;
     }
-
 
     TEST_METHOD(PtyInitAndShutdown)
     {
