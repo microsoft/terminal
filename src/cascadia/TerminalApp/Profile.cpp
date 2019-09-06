@@ -460,6 +460,14 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
             return false;
         }
     }
+    else
+    {
+        // If the other json object didn't have a GUID, we definitely don't want
+        // to layer. We technically might have the same name, and would
+        // auto-generate the same guid, but they should be treated as different
+        // profiles.
+        return false;
+    }
 
     const auto& otherSource = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
 
