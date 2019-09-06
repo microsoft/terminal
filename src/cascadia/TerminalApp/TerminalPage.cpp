@@ -184,9 +184,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
-    // - key binding with multiple tabs opened. Display messages to warn user
-    // - that more than 1 tabs are opend, and once the user click the OK button, remove
-    // - all the tabs and shut down and app. If cancel is clicked, the dialog will close
+    //   key binding with multiple tabs opened. Display messages to warn user
+    //   that more than 1 tabs are opend, and once the user click the OK button, remove
+    //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
@@ -194,13 +194,13 @@ namespace winrt::TerminalApp::implementation
         // To do: change these strings to localized strings in resource loader
         auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
         auto primaryButtonText = _resourceLoader->GetLocalizedString(L"Close all");
-        auto closeButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
+        auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
 
         Controls::ContentDialog dialog;
         dialog.Title(winrt::box_value(title));
 
         dialog.PrimaryButtonText(primaryButtonText);
-        dialog.CloseButtonText(closeButtonText);
+        dialog.SecondaryButtonText(secondaryButtonText);
         auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
 
         _showDialogHandlers(*this, dialog);
@@ -801,7 +801,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Close the terminal app with keys. If there are more
-    // - than one tab opened, show a warning dialog.
+    //   than one tab opened, show a warning dialog.
     void TerminalPage::_CloseWindow()
     {
         if (_tabs.size() > 1)
@@ -815,8 +815,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close all the tabs opened and this will finally terminate
-    // - the terminal
+    // - Remove all the tabs opened and the terminal will terminate
+    //   on its own when the last tab is closed
     void TerminalPage::_CloseAllTabs()
     {
         int tabCount = _tabs.size();
@@ -1249,8 +1249,16 @@ namespace winrt::TerminalApp::implementation
         eventArgs.Cancel(true);
     }
 
-    void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender,
-                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs)
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseAllTabs(), which close all the tabs currently
+    //   opened and then the Terminal app. This methos will be called if
+    //   the user confirms to close all the tabs. 
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog /* sender */,
+                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/ )
     {
         _CloseAllTabs();
     }
