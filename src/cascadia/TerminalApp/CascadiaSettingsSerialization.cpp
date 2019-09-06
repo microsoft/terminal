@@ -82,7 +82,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
 
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.
-    needToWriteFile |= resultPtr->_AppendDynamicProfilesToUserSettings();
+    needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
 
     // TODO: If powershell core is installed, we need to set that to the default
     // profile, but only when the settings file was newly created. We'll
@@ -137,22 +137,22 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 // - <none>
 void CascadiaSettings::_LoadDynamicProfiles()
 {
-    std::vector<std::wstring> ignoredNamespaces;
+    std::unordered_set<std::wstring> ignoredNamespaces;
     const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
     if (disabledProfileSources.isArray())
     {
         for (const auto& ns : disabledProfileSources)
         {
-            ignoredNamespaces.emplace_back(GetWstringFromJson(ns));
+            ignoredNamespaces.emplace(GetWstringFromJson(ns));
         }
     }
 
     GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
-        auto generatorNamespace = generator->GetNamespace();
+        const std::wstring generatorNamespace{ generator->GetNamespace() };
 
-        if (std::find(ignoredNamespaces.begin(), ignoredNamespaces.end(), generatorNamespace) != ignoredNamespaces.end())
+        if (ignoredNamespaces.find(generatorNamespace) != ignoredNamespaces.end())
         {
             // namespace should be ignored
         }
@@ -216,8 +216,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     // re-serializing their settings.
     if (!isDefaultSettings)
     {
-        size_t cch = actualDataEnd - actualDataStart;
-        _userSettingsString = std::string(actualDataStart, cch);
+        _userSettingsString = fileData;
     }
 }
 
@@ -729,7 +728,7 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
 }
 
 // Function Description:
-// - Gets the object in the given JSON obejct under the "profiles" key. Returns
+// - Gets the object in the given JSON object under the "profiles" key. Returns
 //   null if there's no "profiles" key.
 // Arguments:
 // - json: the json object to get the profiles from.
@@ -741,7 +740,7 @@ const Json::Value& CascadiaSettings::_GetProfilesJsonObject(const Json::Value& j
 }
 
 // Function Description:
-// - Gets the object in the given JSON obejct under the "disabledProfileSources"
+// - Gets the object in the given JSON object under the "disabledProfileSources"
 //   key. Returns null if there's no "disabledProfileSources" key.
 // Arguments:
 // - json: the json object to get the disabled profile sources from.

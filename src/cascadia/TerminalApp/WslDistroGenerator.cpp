@@ -3,7 +3,6 @@
 
 #include "pch.h"
 
-#pragma once
 #include "WslDistroGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
 

@@ -3,8 +3,6 @@
 
 #include "pch.h"
 
-#pragma once
-
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 
 #include "AzureCloudShellGenerator.h"
@@ -13,8 +11,6 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
-#include <io.h>
-#include <fcntl.h>
 #include "DefaultProfileUtils.h"
 
 using namespace ::TerminalApp;

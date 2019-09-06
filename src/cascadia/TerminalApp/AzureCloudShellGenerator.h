@@ -7,7 +7,7 @@ Module Name:
 
 Abstract:
 - This is the dynamic profile generator for the azure cloud shell connector.
-  Checks if the Azure Cloud shell is available on this playform, and if it is,
+  Checks if the Azure Cloud shell is available on this platform, and if it is,
   creates a profile to be able to launch it.
 
 Author(s):
