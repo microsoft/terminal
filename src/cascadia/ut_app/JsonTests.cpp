@@ -165,8 +165,8 @@ namespace TerminalAppUnitTests
 
     void JsonTests::DiffProfile()
     {
-        Profile profile0{};
-        Profile profile1{};
+        Profile profile0;
+        Profile profile1;
 
         Log::Comment(NoThrowString().Format(
             L"Both these profiles are the same, their diff should have _no_ values"));
@@ -185,8 +185,8 @@ namespace TerminalAppUnitTests
 
     void JsonTests::DiffProfileWithNull()
     {
-        Profile profile0{};
-        Profile profile1{};
+        Profile profile0;
+        Profile profile1;
 
         profile0._icon = L"foo";
 

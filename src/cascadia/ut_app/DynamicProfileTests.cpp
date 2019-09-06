@@ -61,8 +61,8 @@ namespace TerminalAppUnitTests
     {
         TestDynamicProfileGenerator gen{ L"Terminal.App.UnitTest" };
         gen.pfnGenerate = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{};
+            std::vector<Profile> profiles;
+            Profile p0;
             p0.SetName(L"profile0");
             profiles.push_back(p0);
             return profiles;
@@ -79,16 +79,16 @@ namespace TerminalAppUnitTests
     {
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{};
+            std::vector<Profile> profiles;
+            Profile p0;
             p0.SetName(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{};
+            std::vector<Profile> profiles;
+            Profile p0;
             p0.SetName(L"profile1");
             profiles.push_back(p0);
             return profiles;
@@ -117,16 +117,16 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{};
+            std::vector<Profile> profiles;
+            Profile p0;
             p0.SetName(L"profile0"); // this is _profiles.at(2)
             profiles.push_back(p0);
             return profiles;
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{}, p1{};
+            std::vector<Profile> profiles;
+            Profile p0, p1;
             p0.SetName(L"profile0"); // this is _profiles.at(3)
             p1.SetName(L"profile1"); // this is _profiles.at(4)
             profiles.push_back(p0);
@@ -138,7 +138,7 @@ namespace TerminalAppUnitTests
         settings._profileGenerators.emplace_back(std::move(gen0));
         settings._profileGenerators.emplace_back(std::move(gen1));
 
-        Profile p0{}, p1{};
+        Profile p0, p1;
         p0.SetName(L"profile0"); // this is _profiles.at(0)
         p1.SetName(L"profile1"); // this is _profiles.at(1)
         settings._profiles.push_back(p0);
@@ -210,7 +210,7 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 };
             p0.SetName(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
@@ -218,7 +218,7 @@ namespace TerminalAppUnitTests
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 }, p1{ guid1 };
             p0.SetName(L"profile0"); // this is _profiles.at(1)
             p1.SetName(L"profile1"); // this is _profiles.at(2)
@@ -289,7 +289,7 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 };
             p0.SetName(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
@@ -297,7 +297,7 @@ namespace TerminalAppUnitTests
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 }, p1{ guid1 };
             p0.SetName(L"profile0"); // this is _profiles.at(1)
             p1.SetName(L"profile1"); // this is _profiles.at(2)
@@ -357,16 +357,16 @@ namespace TerminalAppUnitTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         auto gen0GenerateFn = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{};
+            std::vector<Profile> profiles;
+            Profile p0;
             p0.SetName(L"profile0");
             profiles.push_back(p0);
             return profiles;
         };
 
         auto gen1GenerateFn = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{}, p1{};
+            std::vector<Profile> profiles;
+            Profile p0, p1;
             p0.SetName(L"profile1");
             p1.SetName(L"profile2");
             profiles.push_back(p0);
@@ -375,8 +375,8 @@ namespace TerminalAppUnitTests
         };
 
         auto gen2GenerateFn = []() {
-            std::vector<Profile> profiles{};
-            Profile p0{}, p1{};
+            std::vector<Profile> profiles;
+            Profile p0, p1;
             p0.SetName(L"profile3");
             p1.SetName(L"profile4");
             profiles.push_back(p0);
@@ -488,7 +488,7 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.PowershellCore");
         gen0->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 };
             p0.SetName(L"profile0");
             profiles.push_back(p0);
@@ -496,7 +496,7 @@ namespace TerminalAppUnitTests
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Wsl");
         gen1->pfnGenerate = [guid2, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid1 }, p1{ guid2 };
             p0.SetName(L"profile1");
             p1.SetName(L"profile2");
@@ -506,7 +506,7 @@ namespace TerminalAppUnitTests
         };
         auto gen2 = std::make_unique<TestDynamicProfileGenerator>(L"Windows.Terminal.Azure");
         gen2->pfnGenerate = [guid3]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid3 };
             p0.SetName(L"profile3");
             profiles.push_back(p0);
@@ -584,7 +584,7 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 };
             p0.SetName(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
@@ -592,7 +592,7 @@ namespace TerminalAppUnitTests
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 }, p1{ guid1 };
             p0.SetName(L"profile0"); // this is _profiles.at(1)
             p1.SetName(L"profile1"); // this is _profiles.at(2)
@@ -643,7 +643,7 @@ namespace TerminalAppUnitTests
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 };
             p0.SetName(L"profile0"); // this is _profiles.at(0)
             profiles.push_back(p0);
@@ -651,7 +651,7 @@ namespace TerminalAppUnitTests
         };
         auto gen1 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.1");
         gen1->pfnGenerate = [guid0, guid1]() {
-            std::vector<Profile> profiles{};
+            std::vector<Profile> profiles;
             Profile p0{ guid0 }, p1{ guid1 };
             p0.SetName(L"profile0"); // this shouldn't be in the profiles at all
             p1.SetName(L"profile1"); // this shouldn't be in the profiles at all

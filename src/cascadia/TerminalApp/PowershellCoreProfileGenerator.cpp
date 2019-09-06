@@ -28,9 +28,9 @@ std::wstring_view PowershellCoreProfileGenerator::GetNamespace()
 // - a vector with the PowerShell Core profile, if available.
 std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfiles()
 {
-    std::vector<TerminalApp::Profile> profiles{};
+    std::vector<TerminalApp::Profile> profiles;
 
-    std::filesystem::path psCoreCmdline{};
+    std::filesystem::path psCoreCmdline;
     if (_isPowerShellCoreInstalled(psCoreCmdline))
     {
         auto pwshProfile{ CreateDefaultProfile(L"PowerShell Core") };

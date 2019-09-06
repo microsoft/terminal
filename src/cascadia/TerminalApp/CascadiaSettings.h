@@ -75,7 +75,7 @@ private:
     std::vector<Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
-    std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators{};
+    std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
 
     std::string _userSettingsString;
     Json::Value _userSettings;

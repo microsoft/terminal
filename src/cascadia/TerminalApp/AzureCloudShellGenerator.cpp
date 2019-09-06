@@ -33,7 +33,7 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace()
 // - a vector with the Azure Cloud Shell connection profile, if available.
 std::vector<TerminalApp::Profile> AzureCloudShellGenerator::GenerateProfiles()
 {
-    std::vector<TerminalApp::Profile> profiles{};
+    std::vector<TerminalApp::Profile> profiles;
 
     if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
     {

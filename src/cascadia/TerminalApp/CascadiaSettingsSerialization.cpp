@@ -137,7 +137,7 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadDefaults()
 // - <none>
 void CascadiaSettings::_LoadDynamicProfiles()
 {
-    std::vector<std::wstring> ignoredNamespaces{};
+    std::vector<std::wstring> ignoredNamespaces;
     const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
     if (disabledProfileSources.isArray())
     {
@@ -265,7 +265,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     //   * Serialize that diff
     //   * Insert that diff to the end of the list of profiles.
 
-    const Profile defaultProfile{};
+    const Profile defaultProfile;
 
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t

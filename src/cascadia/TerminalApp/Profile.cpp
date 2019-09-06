@@ -376,7 +376,7 @@ Json::Value Profile::DiffToJson(const Profile& other) const
 {
     auto otherJson = other.ToJson();
     auto myJson = ToJson();
-    Json::Value diff{};
+    Json::Value diff;
 
     // Iterate in two steps:
     // - first over all the keys in the 'other' object's serialization.

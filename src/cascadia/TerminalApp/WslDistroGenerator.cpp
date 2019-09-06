@@ -35,18 +35,18 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - a vector with all distros for all the installed WSL distros
 std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
 {
-    std::vector<TerminalApp::Profile> profiles{};
+    std::vector<TerminalApp::Profile> profiles;
 
     wil::unique_handle readPipe;
     wil::unique_handle writePipe;
     SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
-    STARTUPINFO si{};
+    STARTUPINFO si;
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdOutput = writePipe.get();
     si.hStdError = writePipe.get();
-    wil::unique_process_information pi{};
+    wil::unique_process_information pi;
     wil::unique_cotaskmem_string systemPath;
     THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
     std::wstring command(systemPath.get());
