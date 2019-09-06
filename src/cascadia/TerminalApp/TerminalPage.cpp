@@ -1253,12 +1253,12 @@ namespace winrt::TerminalApp::implementation
     // - Called when the primary button of the content dialog is clicked.
     //   This calls _CloseAllTabs(), which close all the tabs currently
     //   opened and then the Terminal app. This methos will be called if
-    //   the user confirms to close all the tabs. 
+    //   the user confirms to close all the tabs.
     // Arguments:
     // - sender: unused
     // - ContentDialogButtonClickEventArgs: unused
     void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog /* sender */,
-                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/ )
+                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
     {
         _CloseAllTabs();
     }
