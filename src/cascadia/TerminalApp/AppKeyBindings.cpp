@@ -377,6 +377,18 @@ namespace winrt::TerminalApp::implementation
             _MoveFocusHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
+        case ShortcutAction::IncreaseFontSize:
+        {
+            auto eventArgs = winrt::make_self<ActionEventArgs>();
+            _IncreaseFontSizeHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
+        case ShortcutAction::DecreaseFontSize:
+        {
+            auto eventArgs = winrt::make_self<ActionEventArgs>();
+            _DecreaseFontSizeHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
         default:
             return false;
         }

@@ -981,10 +981,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_MouseZoomHandler(const double mouseDelta)
     {
         const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+        AdjustFontSize(fontDelta);
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal control.
+    // Arguments:
+    // - fontSizeDelta: The amount to increase or decrease the font size by.
+    void TermControl::AdjustFontSize(int fontSizeDelta)
+    {
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
             const auto* fontFace = _settings.FontFace().c_str();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };

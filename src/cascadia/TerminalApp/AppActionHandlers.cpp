@@ -180,4 +180,19 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleIncreaseFontSize(const IInspectable& /*sender*/,
+                                               const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetFocusedControl();
+        termControl.AdjustFontSize(1);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleDecreaseFontSize(const IInspectable& /*sender*/,
+                                               const TerminalApp::ActionEventArgs& args)
+    {
+        const auto termControl = _GetFocusedControl();
+        termControl.AdjustFontSize(-1);
+        args.Handled(true);
+    }
 }

@@ -398,6 +398,13 @@ void CascadiaSettings::_CreateDefaultKeybindings()
     keyBindings.SetKeyBinding(ShortcutAction::SwitchToTab8,
                               KeyChord{ KeyModifiers::Alt | KeyModifiers::Ctrl,
                                         static_cast<int>('9') });
+
+    keyBindings.SetKeyBinding(ShortcutAction::IncreaseFontSize,
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_OEM_PLUS });
+    keyBindings.SetKeyBinding(ShortcutAction::DecreaseFontSize,
+                              KeyChord{ KeyModifiers::Ctrl,
+                                        VK_OEM_MINUS });
 }
 
 // Method Description:
