@@ -353,7 +353,7 @@ Json::Value Profile::ToJson() const
 // - a new Profile instance created from the values in `json`
 Profile Profile::FromJson(const Json::Value& json)
 {
-    Profile result{};
+    Profile result;
 
     result.LayerJson(json);
 
@@ -368,7 +368,7 @@ Profile Profile::FromJson(const Json::Value& json)
 // - json: The json object to query to see if it's the same
 // Return Value:
 // - true iff the json object has the same `GUID` as we do.
-bool Profile::ShouldBeLayered(const Json::Value& json)
+bool Profile::ShouldBeLayered(const Json::Value& json) const
 {
     if (!_guid.has_value())
     {
@@ -377,8 +377,8 @@ bool Profile::ShouldBeLayered(const Json::Value& json)
 
     if (json.isMember(JsonKey(GuidKey)))
     {
-        auto guid{ json[JsonKey(GuidKey)] };
-        auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
+        const auto guid{ json[JsonKey(GuidKey)] };
+        const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
         return _guid.value() == otherGuid;
     }
 

@@ -48,7 +48,7 @@ public:
 
     Json::Value ToJson() const;
     static Profile FromJson(const Json::Value& json);
-    bool ShouldBeLayered(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;

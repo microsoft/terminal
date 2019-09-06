@@ -106,7 +106,7 @@ Json::Value ColorScheme::ToJson() const
 // - a new ColorScheme instance created from the values in `json`
 ColorScheme ColorScheme::FromJson(const Json::Value& json)
 {
-    ColorScheme result{};
+    ColorScheme result;
     result.LayerJson(json);
     return result;
 }
@@ -119,11 +119,11 @@ ColorScheme ColorScheme::FromJson(const Json::Value& json)
 // - json: The json object to query to see if it's the same
 // Return Value:
 // - true iff the json object has the same `name` as we do.
-bool ColorScheme::ShouldBeLayered(const Json::Value& json)
+bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 {
-    if (auto name{ json[JsonKey(NameKey)] })
+    if (const auto name{ json[JsonKey(NameKey)] })
     {
-        auto nameFromJson = GetWstringFromJson(name);
+        const auto nameFromJson = GetWstringFromJson(name);
         return nameFromJson == _schemeName;
     }
     return false;

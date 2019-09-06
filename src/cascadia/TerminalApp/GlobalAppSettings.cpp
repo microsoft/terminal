@@ -184,7 +184,7 @@ Json::Value GlobalAppSettings::ToJson() const
 // - a new GlobalAppSettings instance created from the values in `json`
 GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
-    GlobalAppSettings result{};
+    GlobalAppSettings result;
     result.LayerJson(json);
     return result;
 }
