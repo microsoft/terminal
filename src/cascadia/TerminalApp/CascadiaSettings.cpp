@@ -262,13 +262,13 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 {
     bool foundDupe = false;
 
-    std::vector<size_t> indiciesToDelete{};
+    std::vector<size_t> indiciesToDelete;
 
-    std::set<GUID> uniqueGuids{};
+    std::set<GUID> uniqueGuids;
 
     // Try collecting all the unique guids. If we ever encounter a guid that's
     // already in the set, then we need to delete that profile.
-    for (int i = 0; i < _profiles.size(); i++)
+    for (size_t i = 0; i < _profiles.size(); i++)
     {
         if (!uniqueGuids.insert(_profiles.at(i).GetGuid()).second)
         {
@@ -301,36 +301,18 @@ void CascadiaSettings::_ValidateNoDuplicateProfiles()
 // - <none>
 void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 {
-    std::set<GUID> uniqueGuids{};
-    std::deque<GUID> guidOrder{};
+    std::set<GUID> uniqueGuids;
+    std::deque<GUID> guidOrder;
 
     auto collectGuids = [&](const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
         {
             if (profileJson.isObject())
             {
-                if (profileJson.isMember("guid"))
+                auto guid = Profile::GetGuidOrGenerateForJson(profileJson);
+                if (uniqueGuids.insert(guid).second)
                 {
-                    auto guidJson{ profileJson["guid"] };
-                    auto guid = Utils::GuidFromString(GetWstringFromJson(guidJson));
-
-                    if (uniqueGuids.insert(guid).second)
-                    {
-                        guidOrder.push_back(guid);
-                    }
-                }
-                else
-                {
-                    // In this case, _we_ generated a GUID for that profile. We
-                    // should similarly generate that guid here, so we can order
-                    // it appropriately.
-                    auto name = GetWstringFromJson(profileJson["name"]);
-                    auto guid = Profile::GenerateGuidForProfile(name);
-
-                    if (uniqueGuids.insert(guid).second)
-                    {
-                        guidOrder.push_back(guid);
-                    }
+                    guidOrder.push_back(guid);
                 }
             }
         }
@@ -341,7 +323,7 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 
     // Push all the defaultSettings profiles' GUIDS into the set
     collectGuids(_defaultSettings);
-    std::equal_to<GUID> equals{};
+    std::equal_to<GUID> equals;
     // Re-order the list of _profiles to match that ordering
     // for (gIndex=0 -> uniqueGuids.size)
     //   pIndex = the pIndex of the profile with guid==guids[gIndex]
@@ -371,6 +353,11 @@ void CascadiaSettings::_ReorderProfilesToMatchUserSettingsOrder()
 // - <none>
 void CascadiaSettings::_RemoveHiddenProfiles()
 {
+    // remove_if will move all the profiles where the lambda is true to the end
+    // of the list, then return a iterator to the point in the list where those
+    // profiles start. The erase call will then remove all of those profiles
+    // from the list. This is the [erase-remove
+    // idiom](https://en.wikipedia.org/wiki/Erase%E2%80%93remove_idiom)
     _profiles.erase(std::remove_if(_profiles.begin(),
                                    _profiles.end(),
                                    [](auto&& profile) { return profile.IsHidden(); }),

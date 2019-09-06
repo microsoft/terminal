@@ -47,6 +47,10 @@ namespace winrt::TerminalApp::implementation
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
 
+        // Defined in AppKeyBindingsSerialization.cpp
+        void LayerJson(const Json::Value& json);
+        Json::Value ToJson();
+
         // clang-format off
         TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
         TYPED_EVENT(PasteText,         TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);

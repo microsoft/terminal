@@ -1,8 +1,13 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+// - A couple helper functions for serializing/deserializing an AppKeyBindings
+//   to/from json.
+//
+// Author(s):
+// - Mike Griese - May 2019
 
 #include "pch.h"
-#include "AppKeyBindingsSerialization.h"
+#include "AppKeyBindings.h"
 #include "KeyChordSerialization.h"
 #include "Utils.h"
 #include "JsonUtils.h"
@@ -162,7 +167,7 @@ static Json::Value _ShortcutAsJsonObject(const KeyChord& chord,
 //   ShortcutAction.
 // Return Value:
 // - a Json::Value which is an equivalent serialization of this object.
-Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKeyBindings& bindings)
+Json::Value winrt::TerminalApp::implementation::AppKeyBindings::ToJson()
 {
     Json::Value bindingsArray;
 
@@ -173,7 +178,7 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
         const auto searchedForName = actionName.first;
         const auto searchedForAction = actionName.second;
 
-        if (const auto chord{ bindings.GetKeyBinding(searchedForAction) })
+        if (const auto chord{ GetKeyBinding(searchedForAction) })
         {
             if (const auto serialization{ _ShortcutAsJsonObject(chord, searchedForName) })
             {
@@ -192,32 +197,13 @@ Json::Value AppKeyBindingsSerialization::ToJson(const winrt::TerminalApp::AppKey
 //   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
 //   the array should contain a single string, which can be deserialized into a
 //   KeyChord.
-// Arguments:
-// - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-// Return Value:
-// - the newly constructed AppKeyBindings object.
-winrt::TerminalApp::AppKeyBindings AppKeyBindingsSerialization::FromJson(const Json::Value& json)
-{
-    winrt::TerminalApp::AppKeyBindings newBindings{};
-    LayerJson(newBindings, json);
-    return newBindings;
-}
-
-// Method Description:
-// - Deserialize an AppKeyBindings from the key mappings that are in the array
-//   `json`. The json array should contain an array of objects with both a
-//   `command` string and a `keys` array, where `command` is one of the names
-//   listed in `commandNames`, and `keys` is an array of keypresses. Currently,
-//   the array should contain a single string, which can be deserialized into a
-//   KeyChord.
 // - Applies the deserialized keybindings to the provided `bindings` object. If
 //   a key chord in `json` is already bound to an action, that chord will be
 //   overwritten with the new action. If a chord is bound to `null` or
 //   `"unbound"`, then we'll clear the keybinding from the existing keybindings.
 // Arguments:
-// - bindings: An AppKeyBindings object to layer the new bindings onto.
 // - json: and array of JsonObject's to deserialize into our _keyShortcuts mapping.
-void AppKeyBindingsSerialization::LayerJson(const winrt::TerminalApp::AppKeyBindings& bindings, const Json::Value& json)
+void winrt::TerminalApp::implementation::AppKeyBindings::LayerJson(const Json::Value& json)
 {
     for (const auto& value : json)
     {
@@ -265,11 +251,11 @@ void AppKeyBindingsSerialization::LayerJson(const winrt::TerminalApp::AppKeyBind
                 // found.
                 if (action != ShortcutAction::Invalid)
                 {
-                    bindings.SetKeyBinding(action, chord);
+                    SetKeyBinding(action, chord);
                 }
                 else
                 {
-                    bindings.ClearKeyBinding(chord);
+                    ClearKeyBinding(chord);
                 }
             }
             catch (...)

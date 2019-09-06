@@ -25,7 +25,7 @@ namespace TerminalAppLocalTests
         // sxs manifest during this test class. It includes all the cppwinrt
         // types we've defined, so if your test is crashing for an unknown
         // reason, make sure it's included in that file.
-        // If you want to do anything XAML-y, you'll need to run yor test in a
+        // If you want to do anything XAML-y, you'll need to run your test in a
         // packaged context. See TabTests.cpp for more details on that.
         BEGIN_TEST_CLASS(ProfileTests)
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
@@ -66,13 +66,13 @@ namespace TerminalAppLocalTests
         const auto profile2Json = VerifyParseSucceeded(profile2String);
         const auto profile3Json = VerifyParseSucceeded(profile3String);
 
-        auto profile0 = Profile::FromJson(profile0Json);
+        const auto profile0 = Profile::FromJson(profile0Json);
 
         VERIFY_IS_FALSE(profile0.ShouldBeLayered(profile1Json));
         VERIFY_IS_TRUE(profile0.ShouldBeLayered(profile2Json));
         VERIFY_IS_FALSE(profile0.ShouldBeLayered(profile3Json));
 
-        auto profile1 = Profile::FromJson(profile1Json);
+        const auto profile1 = Profile::FromJson(profile1Json);
 
         VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile0Json));
         // A profile _can_ be layered with itself, though what's the point?
@@ -80,7 +80,7 @@ namespace TerminalAppLocalTests
         VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile2Json));
         VERIFY_IS_FALSE(profile1.ShouldBeLayered(profile3Json));
 
-        auto profile3 = Profile::FromJson(profile3Json);
+        const auto profile3 = Profile::FromJson(profile3Json);
 
         VERIFY_IS_FALSE(profile3.ShouldBeLayered(profile0Json));
         // A profile _can_ be layered with itself, though what's the point?
@@ -101,7 +101,7 @@ namespace TerminalAppLocalTests
             "name": "profile1",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#020202",
-            "colorScheme": "Campbell"
+            "startingDirectory": "C:/"
         })" };
         const std::string profile2String{ R"({
             "name": "profile2",
@@ -122,7 +122,7 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile0", profile0._name);
 
-        VERIFY_IS_FALSE(profile0._schemeName.has_value());
+        VERIFY_IS_FALSE(profile0._startingDirectory.has_value());
 
         Log::Comment(NoThrowString().Format(
             L"Layering profile1 on top of profile0"));
@@ -136,8 +136,8 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile1", profile0._name);
 
-        VERIFY_IS_TRUE(profile0._schemeName.has_value());
-        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+        VERIFY_IS_TRUE(profile0._startingDirectory.has_value());
+        VERIFY_ARE_EQUAL(L"C:/", profile0._startingDirectory.value());
 
         Log::Comment(NoThrowString().Format(
             L"Layering profile2 on top of (profile0+profile1)"));
@@ -151,8 +151,8 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(L"profile2", profile0._name);
 
-        VERIFY_IS_TRUE(profile0._schemeName.has_value());
-        VERIFY_ARE_EQUAL(L"Campbell", profile0._schemeName.value());
+        VERIFY_IS_TRUE(profile0._startingDirectory.has_value());
+        VERIFY_ARE_EQUAL(L"C:/", profile0._startingDirectory.value());
     }
 
     void ProfileTests::LayerProfileIcon()
@@ -240,7 +240,7 @@ namespace TerminalAppLocalTests
         const auto profile3Json = VerifyParseSucceeded(profile3String);
         const auto profile4Json = VerifyParseSucceeded(profile4String);
 
-        CascadiaSettings settings{};
+        CascadiaSettings settings;
 
         VERIFY_ARE_EQUAL(0u, settings._profiles.size());
         VERIFY_IS_NULL(settings._FindMatchingProfile(profile0Json));

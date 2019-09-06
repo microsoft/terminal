@@ -25,7 +25,7 @@ namespace TerminalAppLocalTests
         // sxs manifest during this test class. It includes all the cppwinrt
         // types we've defined, so if your test is crashing for an unknown
         // reason, make sure it's included in that file.
-        // If you want to do anything XAML-y, you'll need to run yor test in a
+        // If you want to do anything XAML-y, you'll need to run your test in a
         // packaged context. See TabTests.cpp for more details on that.
         BEGIN_TEST_CLASS(ColorSchemeTests)
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
@@ -70,21 +70,21 @@ namespace TerminalAppLocalTests
         const auto scheme2Json = VerifyParseSucceeded(scheme2String);
         const auto scheme3Json = VerifyParseSucceeded(scheme3String);
 
-        auto scheme0 = ColorScheme::FromJson(scheme0Json);
+        const auto scheme0 = ColorScheme::FromJson(scheme0Json);
 
         VERIFY_IS_TRUE(scheme0.ShouldBeLayered(scheme0Json));
         VERIFY_IS_FALSE(scheme0.ShouldBeLayered(scheme1Json));
         VERIFY_IS_TRUE(scheme0.ShouldBeLayered(scheme2Json));
         VERIFY_IS_FALSE(scheme0.ShouldBeLayered(scheme3Json));
 
-        auto scheme1 = ColorScheme::FromJson(scheme1Json);
+        const auto scheme1 = ColorScheme::FromJson(scheme1Json);
 
         VERIFY_IS_FALSE(scheme1.ShouldBeLayered(scheme0Json));
         VERIFY_IS_TRUE(scheme1.ShouldBeLayered(scheme1Json));
         VERIFY_IS_FALSE(scheme1.ShouldBeLayered(scheme2Json));
         VERIFY_IS_FALSE(scheme1.ShouldBeLayered(scheme3Json));
 
-        auto scheme3 = ColorScheme::FromJson(scheme3Json);
+        const auto scheme3 = ColorScheme::FromJson(scheme3Json);
 
         VERIFY_IS_FALSE(scheme3.ShouldBeLayered(scheme0Json));
         VERIFY_IS_FALSE(scheme3.ShouldBeLayered(scheme1Json));
@@ -179,7 +179,7 @@ namespace TerminalAppLocalTests
         const auto scheme2Json = VerifyParseSucceeded(scheme2String);
         const auto scheme3Json = VerifyParseSucceeded(scheme3String);
 
-        CascadiaSettings settings{};
+        CascadiaSettings settings;
 
         VERIFY_ARE_EQUAL(0u, settings._globals.GetColorSchemes().size());
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme0Json));

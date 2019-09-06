@@ -5,7 +5,6 @@
 
 #include "../TerminalApp/ColorScheme.h"
 #include "../TerminalApp/CascadiaSettings.h"
-#include "../TerminalApp/AppKeyBindingsSerialization.h"
 #include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
@@ -26,7 +25,7 @@ namespace TerminalAppLocalTests
         // sxs manifest during this test class. It includes all the cppwinrt
         // types we've defined, so if your test is crashing for an unknown
         // reason, make sure it's included in that file.
-        // If you want to do anything XAML-y, you'll need to run yor test in a
+        // If you want to do anything XAML-y, you'll need to run your test in a
         // packaged context. See TabTests.cpp for more details on that.
         BEGIN_TEST_CLASS(KeyBindingsTests)
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.LocalTests.manifest")
@@ -60,13 +59,13 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings1Json);
+        appKeyBindings->LayerJson(bindings1Json);
         VERIFY_ARE_EQUAL(2u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings2Json);
+        appKeyBindings->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(4u, appKeyBindings->_keyShortcuts.size());
     }
 
@@ -84,13 +83,13 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings1Json);
+        appKeyBindings->LayerJson(bindings1Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings2Json);
+        appKeyBindings->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(2u, appKeyBindings->_keyShortcuts.size());
     }
 
@@ -114,47 +113,47 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NOT_NULL(appKeyBindings);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
 
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings1Json);
+        appKeyBindings->LayerJson(bindings1Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `\"unbound\"` to unbind the key"));
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings2Json);
+        appKeyBindings->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using `null` to unbind the key"));
         // First add back a good binding
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
         // Then try layering in the bad setting
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings3Json);
+        appKeyBindings->LayerJson(bindings3Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using an unrecognized command to unbind the key"));
         // First add back a good binding
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
         // Then try layering in the bad setting
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings4Json);
+        appKeyBindings->LayerJson(bindings4Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key using a straight up invalid value to unbind the key"));
         // First add back a good binding
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings0Json);
+        appKeyBindings->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, appKeyBindings->_keyShortcuts.size());
         // Then try layering in the bad setting
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings5Json);
+        appKeyBindings->LayerJson(bindings5Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
 
         Log::Comment(NoThrowString().Format(
             L"Try unbinding a key that wasn't bound at all"));
-        AppKeyBindingsSerialization::LayerJson(*appKeyBindings, bindings2Json);
+        appKeyBindings->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(0u, appKeyBindings->_keyShortcuts.size());
     }
 }

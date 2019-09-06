@@ -42,7 +42,7 @@ public:
 
     Json::Value ToJson() const;
     static ColorScheme FromJson(const Json::Value& json);
-    bool ShouldBeLayered(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
 
     std::wstring_view GetName() const noexcept;

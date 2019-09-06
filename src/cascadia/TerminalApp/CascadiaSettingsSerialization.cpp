@@ -4,7 +4,6 @@
 #include "pch.h"
 #include <argb.h>
 #include "CascadiaSettings.h"
-#include "AppKeyBindingsSerialization.h"
 #include "../../types/inc/utils.hpp"
 #include "utils.h"
 #include "JsonUtils.h"
@@ -556,19 +555,18 @@ void CascadiaSettings::_WriteSettings(const std::string_view content)
 {
     auto pathToSettingsFile{ CascadiaSettings::GetSettingsPath() };
 
-    auto hOut = CreateFileW(pathToSettingsFile.c_str(),
-                            GENERIC_WRITE,
-                            FILE_SHARE_READ | FILE_SHARE_WRITE,
-                            NULL,
-                            CREATE_ALWAYS,
-                            FILE_ATTRIBUTE_NORMAL,
-                            NULL);
-    if (hOut == INVALID_HANDLE_VALUE)
+    wil::unique_hfile hOut{ CreateFileW(pathToSettingsFile.c_str(),
+                                        GENERIC_WRITE,
+                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                        NULL,
+                                        CREATE_ALWAYS,
+                                        FILE_ATTRIBUTE_NORMAL,
+                                        NULL) };
+    if (!hOut)
     {
         THROW_LAST_ERROR();
     }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut, content.data(), gsl::narrow<DWORD>(content.size()), 0, 0));
-    CloseHandle(hOut);
+    THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), 0, 0));
 }
 
 // Method Description:
@@ -722,11 +720,11 @@ std::wstring CascadiaSettings::GetDefaultSettingsPath()
     HMODULE hModule = GetModuleHandle(nullptr);
     THROW_LAST_ERROR_IF(hModule == nullptr);
 
-    std::wstring exePathString{};
+    std::wstring exePathString;
     THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
 
-    std::filesystem::path exePath{ exePathString };
-    std::filesystem::path rootDir = exePath.parent_path();
+    const std::filesystem::path exePath{ exePathString };
+    const std::filesystem::path rootDir = exePath.parent_path();
     return rootDir / DefaultsFilename;
 }
 

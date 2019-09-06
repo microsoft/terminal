@@ -427,7 +427,7 @@ Json::Value Profile::DiffToJson(const Profile& other) const
 // - a new Profile instance created from the values in `json`
 Profile Profile::FromJson(const Json::Value& json)
 {
-    Profile result{};
+    Profile result;
 
     result.LayerJson(json);
 
@@ -453,8 +453,8 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     // should _definitely_ not layer.
     if (json.isMember(JsonKey(GuidKey)))
     {
-        auto guid{ json[JsonKey(GuidKey)] };
-        auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
+        const auto guid{ json[JsonKey(GuidKey)] };
+        const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
         if (_guid.value() != otherGuid)
         {
             return false;
@@ -1073,7 +1073,9 @@ void Profile::GenerateGuidIfNecessary() noexcept
 {
     if (!_guid.has_value())
     {
-        _guid = Profile::GenerateGuidForProfile(_name, _source);
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        _guid = Profile::_GenerateGuidForProfile(_name, _source);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -1098,7 +1100,13 @@ bool Profile::IsDynamicProfileObject(const Json::Value& json)
     return !source.isNull();
 }
 
-GUID Profile::GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
+// Function Description:
+// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// Arguments:
+// - name: The name to generate a unique GUID from
+// Return Value:
+// - a uuidv5 GUID generated from the given name.
+GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
 {
     // If we have a _source, then we can from a dynamic profile generator. Use
     // our source to build the naespace guid, instead of using the default GUID.
@@ -1110,4 +1118,29 @@ GUID Profile::GenerateGuidForProfile(const std::wstring& name, const std::option
     // Always use the name to generate the temporary GUID. That way, across
     // reloads, we'll generate the same static GUID.
     return Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name)));
+}
+
+// Function Description:
+// - Parses the given JSON object to get its GUID. If the json object does not
+//   have a `guid` set, we'll generate one, using the `name` field.
+// Arguments:
+// - json: the JSON object to get a GUID from, or generate a unique GUID for
+//   (given the `name`)
+// Return Value:
+// - The json's `guid`, or a guid synthesized for it.
+GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
+{
+    std::optional<GUID> guid{ std::nullopt };
+
+    JsonUtils::GetOptionalGuid(json, GuidKey, guid);
+    if (guid)
+    {
+        return guid.value();
+    }
+
+    const auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
+    std::optional<std::wstring> source{ std::nullopt };
+    JsonUtils::GetOptionalString(json, SourceKey, source);
+
+    return Profile::_GenerateGuidForProfile(name, source);
 }

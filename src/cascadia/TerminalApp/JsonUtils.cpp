@@ -10,7 +10,7 @@ void TerminalApp::JsonUtils::GetOptionalColor(const Json::Value& json,
                                               std::string_view key,
                                               std::optional<uint32_t>& target)
 {
-    auto conversionFn = [](const Json::Value& value) -> uint32_t {
+    const auto conversionFn = [](const Json::Value& value) -> uint32_t {
         return ::Microsoft::Console::Utils::ColorFromHexString(value.asString());
     };
     GetOptionalValue(json,
@@ -23,7 +23,7 @@ void TerminalApp::JsonUtils::GetOptionalString(const Json::Value& json,
                                                std::string_view key,
                                                std::optional<std::wstring>& target)
 {
-    auto conversionFn = [](const Json::Value& value) -> std::wstring {
+    const auto conversionFn = [](const Json::Value& value) -> std::wstring {
         return GetWstringFromJson(value);
     };
     GetOptionalValue(json,
@@ -36,7 +36,7 @@ void TerminalApp::JsonUtils::GetOptionalGuid(const Json::Value& json,
                                              std::string_view key,
                                              std::optional<GUID>& target)
 {
-    auto conversionFn = [](const Json::Value& value) -> GUID {
+    const auto conversionFn = [](const Json::Value& value) -> GUID {
         return ::Microsoft::Console::Utils::GuidFromString(GetWstringFromJson(value));
     };
     GetOptionalValue(json,
@@ -49,7 +49,7 @@ void TerminalApp::JsonUtils::GetOptionalDouble(const Json::Value& json,
                                                std::string_view key,
                                                std::optional<double>& target)
 {
-    auto conversionFn = [](const Json::Value& value) -> double {
+    const auto conversionFn = [](const Json::Value& value) -> double {
         return value.asFloat();
     };
     GetOptionalValue(json,

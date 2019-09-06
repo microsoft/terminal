@@ -73,7 +73,7 @@ public:
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
-    std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
+    std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
     std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators{};
 

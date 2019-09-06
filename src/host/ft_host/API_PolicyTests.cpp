@@ -15,6 +15,7 @@ class PolicyTests
 #ifdef __INSIDE_WINDOWS
     BEGIN_TEST_METHOD(WrongWayVerbsUAP)
         TEST_METHOD_PROPERTY(L"RunAs", L"UAP")
+        TEST_METHOD_PROPERTY(L"UAP:AppxManifest", L"MUA")
     END_TEST_METHOD();
 #endif
 

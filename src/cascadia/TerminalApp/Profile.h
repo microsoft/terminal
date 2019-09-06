@@ -81,7 +81,8 @@ public:
     bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
-    static GUID GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
+
+    static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
@@ -96,6 +97,8 @@ private:
     static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
+
+    static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
     std::optional<GUID> _guid{ std::nullopt };
     std::optional<std::wstring> _source{ std::nullopt };
