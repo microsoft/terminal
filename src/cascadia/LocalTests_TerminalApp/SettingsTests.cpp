@@ -498,7 +498,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
             settings._ParseJsonString(userProfiles0String, false);
-            settings.LayerJson(settings._userSettingsString);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
@@ -521,7 +521,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
             settings._ParseJsonString(userProfiles1String, false);
-            settings.LayerJson(settings._userSettingsString);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
@@ -601,7 +601,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
             settings._ParseJsonString(userProfiles0String, false);
-            settings.LayerJson(settings._userSettingsString);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
@@ -626,7 +626,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
             settings._ParseJsonString(userProfiles1String, false);
-            settings.LayerJson(settings._userSettingsString);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(4u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
@@ -797,7 +797,7 @@ namespace TerminalAppLocalTests
 
         CascadiaSettings settings;
         settings._ParseJsonString(settings0String, false);
-        settings.LayerJson(settings._userSettingsString);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
@@ -842,7 +842,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
 
         settings._ParseJsonString(settings0String, false);
-        settings.LayerJson(settings._userSettingsString);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
@@ -943,7 +943,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
 
         settings._ParseJsonString(settings0String, false);
-        settings.LayerJson(settings._userSettingsString);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
