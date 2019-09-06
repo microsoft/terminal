@@ -21,19 +21,24 @@ For now, the Terminal window is put on a default initial position. The program u
 
 Four new properties should be added in the json settings file:
 
-**useDefaultInitialPos**: true or false. Determine if we use CW_USEDEFAULT as the initial position of the Terminal window. If true, we ignore initialX and initially. Default is true;
+**initialX**: int. This set the initial horizontal position of the top-left corner of the window. This property is optional. If not provided, system default position will be used. 
 
-**initialX**: int. If useDefaultInitialPos is false, this set the initial horizontal position of the top-left corner of the window. Default is 0.
+**initialY**: int. This set the initial vertical position of the top-left corner of the window. This property is optional. If not provided, system default position will be used.
 
-**initiallY**: int. If useDefaultInitialPos is false, this set the initial vertical position of the top-left corner of the window. Default is 0.
+**launchMode**: string. Determine the launch mode. There are two modes for now
+                         1. maximize: the window will be maximized when launch.
+                         2. default: the window will be initialized with system default size. 
 
-**maximizeWhenLaunch**: true or false. Determine if the window should be maximized upon launch. If true, we ignore initialCols and initialRows. Default is false.
+The steps of this process:
 
-The flow chart of this process:
+1. Set the top-left origin, width and height to CW_USEDEFAULT.
+2. Get the dpi of the nearest monitor; Load settings.
+3. From settings, find the user-defined initial position and launch mode. 
+4. If the user sets custom initial position, calculate the new position considering the current dpi and monitor. If not, use system default value.
+5. If the user set launch mode as "maximize", calculate the new height and width. If the user choose "default", use system default size.
+6. SetWindowPos with the new position and dimension of the window. 
 
-![Sol Design](images/FlowChart.png)
-
-Step 2 to 6 should be done in AppHost::_HandleCreateWindow, which is consistent to the current code.
+Step 2 to 6 should be done in `AppHost::_HandleCreateWindow`, which is consistent to the current code.
 
 In step 4, we may need to consider the dpi of the current monitor and multi-monitor scenario when calculating the initial position of the window.
 
@@ -57,7 +62,7 @@ This should not introduce any new security issues.
 
 ### Reliability
 
-This new feathre allows the users to set custom initial position of the Terminal App window, which helps them to avoid embarassing window launch situation such as launching outside the screen bounds. Thus, it improves the reliability.
+This new feature allows the users to set custom initial position of the Terminal App window, which helps them to avoid embarassing window launch situation such as launching outside the screen bounds. Thus, it improves the reliability.
 
 ### Compatibility
 
@@ -80,6 +85,10 @@ For now, this feature only allows the user to set initial positon and choose whe
 1. Save the position of the Terminal on exit, and restore the position on the next launch. This could be a true/false feature that users could choose to set.
 
 2. We may need to consider multiple Terminal windows scenario. If the user opens multiple Terminal windows, then we need to consider how to save and restore the position. 
+
+3. We may also consider more launch modes. Like full screen mode and minimize mode. 
+
+Github issue for future follow-ups: https://github.com/microsoft/terminal/issues/766
 
 ## Resources
 
