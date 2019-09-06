@@ -1065,7 +1065,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
 {
     try
     {
-        // TODO: the font name needs to be passed and stored around as an actual bounded type, not an implicit bounds on LF_FACESIZE
+        // TODO: GH 602 the font name needs to be passed and stored around as an actual bounded type, not an implicit bounds on LF_FACESIZE
         const auto faceLength = wcsnlen_s(fontFaceName, LF_FACESIZE);
         const std::wstring_view faceNameView{ fontFaceName, faceLength };
 

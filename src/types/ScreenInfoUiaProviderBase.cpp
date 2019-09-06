@@ -253,11 +253,9 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
-    std::array<int, 2> rId;
-    rId.at(0) = UiaAppendRuntimeId;
-    rId.at(1) = -1;
+    const std::array<int, 2> rId{ UiaAppendRuntimeId, -1 };
 
-    const auto span = std::basic_string_view<int>(rId.data(), rId.size());
+    const std::basic_string_view<int> span{ rId.data(), rId.size() };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
     *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);

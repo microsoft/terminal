@@ -25,7 +25,7 @@ using namespace Microsoft::Console::Types;
 // - Constructs a DirectX-based renderer for console text
 //   which primarily uses DirectWrite on a Direct2D surface
 #pragma warning(suppress : 26455)
-// TODO: The default constructor should not throw.
+// TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
     _isInvalidUsed{ false },
@@ -149,12 +149,11 @@ DxEngine::~DxEngine()
                               // D3D11_CREATE_DEVICE_DEBUG |
                               D3D11_CREATE_DEVICE_SINGLETHREADED;
 
-    std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels;
-    FeatureLevels.at(0) = D3D_FEATURE_LEVEL_11_1;
-    FeatureLevels.at(1) = D3D_FEATURE_LEVEL_11_0;
-    FeatureLevels.at(2) = D3D_FEATURE_LEVEL_10_1;
-    FeatureLevels.at(3) = D3D_FEATURE_LEVEL_10_0;
-    FeatureLevels.at(4) = D3D_FEATURE_LEVEL_9_1;
+    const std::array<D3D_FEATURE_LEVEL, 5> FeatureLevels{ D3D_FEATURE_LEVEL_11_1,
+                                                          D3D_FEATURE_LEVEL_11_0,
+                                                          D3D_FEATURE_LEVEL_10_1,
+                                                          D3D_FEATURE_LEVEL_10_0,
+                                                          D3D_FEATURE_LEVEL_9_1 };
 
     // Trying hardware first for maximum performance, then trying WARP (software) renderer second
     // in case we're running inside a downlevel VM where hardware passthrough isn't enabled like
@@ -164,7 +163,7 @@ DxEngine::~DxEngine()
                                                   nullptr,
                                                   DeviceFlags,
                                                   FeatureLevels.data(),
-                                                  gsl::narrow<UINT>(FeatureLevels.size()),
+                                                  gsl::narrow_cast<UINT>(FeatureLevels.size()),
                                                   D3D11_SDK_VERSION,
                                                   &_d3dDevice,
                                                   nullptr,
@@ -177,7 +176,7 @@ DxEngine::~DxEngine()
                                            nullptr,
                                            DeviceFlags,
                                            FeatureLevels.data(),
-                                           gsl::narrow<UINT>(FeatureLevels.size()),
+                                           gsl::narrow_cast<UINT>(FeatureLevels.size()),
                                            D3D11_SDK_VERSION,
                                            &_d3dDevice,
                                            nullptr,
@@ -1132,6 +1131,7 @@ enum class CursorPaintType
     {
         // Enforce min/max cursor height
         ULONG ulHeight = std::clamp(options.ulCursorHeightPercent, s_ulMinCursorHeightPercent, s_ulMaxCursorHeightPercent);
+
         ulHeight = gsl::narrow<ULONG>((_glyphCell.cy * ulHeight) / 100);
         rect.top = rect.bottom - ulHeight;
         break;
@@ -1793,15 +1793,4 @@ float DxEngine::GetScaling() const noexcept
     default:
         FAIL_FAST_HR(E_NOTIMPL);
     }
-}
-
-// Routine Description:
-// - Helps convert a Direct2D ColorF into a DXGI RGBA
-// Arguments:
-// - color - Direct2D Color F
-// Return Value:
-// - DXGI RGBA
-[[nodiscard]] constexpr DXGI_RGBA DxEngine::s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
-{
-    return { color.r, color.g, color.b, color.a };
 }

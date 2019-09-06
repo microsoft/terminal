@@ -213,6 +213,15 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] D2D1_COLOR_F _ColorFFromColorRef(const COLORREF color) noexcept;
 
-        [[nodiscard]] static constexpr DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept;
+        // Routine Description:
+        // - Helps convert a Direct2D ColorF into a DXGI RGBA
+        // Arguments:
+        // - color - Direct2D Color F
+        // Return Value:
+        // - DXGI RGBA
+        [[nodiscard]] constexpr DXGI_RGBA s_RgbaFromColorF(const D2D1_COLOR_F color) noexcept
+        {
+            return { color.r, color.g, color.b, color.a };
+        }
     };
 }

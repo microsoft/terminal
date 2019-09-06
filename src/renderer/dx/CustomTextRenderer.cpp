@@ -257,7 +257,7 @@ using namespace Microsoft::Console::Render;
 
     // Then make a copy for the baseline origin (which is part way down the left side of the text, not the top or bottom).
     // We'll use this baseline Origin for drawing the actual text.
-    const D2D1_POINT_2F baselineOrigin = { origin.x, origin.y + drawingContext->spacing.baseline };
+    const D2D1_POINT_2F baselineOrigin{ origin.x, origin.y + drawingContext->spacing.baseline };
 
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
     RETURN_IF_FAILED(drawingContext->renderTarget->QueryInterface(d2dContext.GetAddressOf()));
@@ -270,10 +270,7 @@ using namespace Microsoft::Console::Render;
     rect.right = rect.left;
     const auto advancesSpan = gsl::make_span(glyphRun->glyphAdvances, glyphRun->glyphCount);
 
-    for (const auto& advance : advancesSpan)
-    {
-        rect.right += advance;
-    }
+    rect.right = std::accumulate(advancesSpan.cbegin(), advancesSpan.cend(), rect.right);
 
     d2dContext->FillRectangle(rect, drawingContext->backgroundBrush);
 
@@ -377,7 +374,7 @@ using namespace Microsoft::Console::Render;
                     // This run is solid-color outlines, either from non-color
                     // glyphs or from COLR glyph layers. Use Direct2D to draw them.
 
-                    ID2D1Brush* layerBrush = nullptr;
+                    ID2D1Brush* layerBrush{ nullptr };
                     // The rule is "if 0xffff, use current brush." See:
                     // https://docs.microsoft.com/en-us/windows/desktop/api/dwrite_2/ns-dwrite_2-dwrite_color_glyph_run
                     if (colorRun->paletteIndex == 0xFFFF)
