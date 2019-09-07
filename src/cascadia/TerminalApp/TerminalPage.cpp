@@ -819,7 +819,7 @@ namespace winrt::TerminalApp::implementation
     //   on its own when the last tab is closed
     void TerminalPage::_CloseAllTabs()
     {
-        int tabCount = _tabs.size();
+        int tabCount = static_cast<int>(_tabs.size());
         for (int i = tabCount - 1; i >= 0; i--)
         {
             std::shared_ptr<Tab> curTab{ _tabs[i] };
