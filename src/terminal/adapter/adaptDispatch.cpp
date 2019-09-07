@@ -515,7 +515,8 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
-    // Rectangle to cut out of the existing buffer
+    // Rectangle to cut out of the existing buffer. This is inclusive.
+    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
     srScroll.Right = SHORT_MAX;
@@ -955,11 +956,13 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
 
         if (fSuccess)
         {
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
             SMALL_RECT srScreen;
             srScreen.Left = 0;
             srScreen.Right = SHORT_MAX;
             srScreen.Top = csbiex.srWindow.Top;
-            srScreen.Bottom = csbiex.srWindow.Bottom - 1;
+            srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
 
             // Paste coordinate for cut text above
             COORD coordDestination;

@@ -1356,7 +1356,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
         if (screenInfo.IsCursorInMargins(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
-            // Rectangle to cut out of the existing buffer
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
             SMALL_RECT srScroll;
             srScroll.Left = 0;
             srScroll.Right = SHORT_MAX;
@@ -2030,7 +2031,8 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
     if (screenInfo.IsCursorInMargins(cursorPosition))
     {
-        // Rectangle to cut out of the existing buffer
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
         SMALL_RECT srScroll;
         srScroll.Left = 0;
         srScroll.Right = SHORT_MAX;

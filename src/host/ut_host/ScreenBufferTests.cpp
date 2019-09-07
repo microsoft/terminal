@@ -3073,7 +3073,7 @@ void _FillLine(COORD position, T fillContent, TextAttribute fillAttr)
 template<class T>
 void _FillLine(int line, T fillContent, TextAttribute fillAttr)
 {
-    _FillLine({ 0, SHORT(line) }, fillContent, fillAttr);
+    _FillLine({ 0, gsl::narrow<SHORT>(line) }, fillContent, fillAttr);
 }
 
 template<class T>
@@ -3107,7 +3107,7 @@ bool _ValidateLineContains(COORD position, T expectedContent, TextAttribute expe
 template<class T>
 bool _ValidateLineContains(int line, T expectedContent, TextAttribute expectedAttr)
 {
-    return _ValidateLineContains({ 0, SHORT(line) }, expectedContent, expectedAttr);
+    return _ValidateLineContains({ 0, gsl::narrow<SHORT>(line) }, expectedContent, expectedAttr);
 }
 
 template<class T>
@@ -3255,8 +3255,8 @@ void ScreenBufferTests::ScrollOperations()
     }
 
     Log::Comment(L"Scrolled area should have moved up/down by given magnitude.");
-    viewportChar += wchar_t(deletedLines); // Characters dropped when deleting
-    viewportLine += SHORT(insertedLines); // Lines skipped when inserting
+    viewportChar += gsl::narrow<wchar_t>(deletedLines); // Characters dropped when deleting
+    viewportLine += gsl::narrow<SHORT>(insertedLines); // Lines skipped when inserting
     while (viewportLine < viewportEnd - deletedLines)
     {
         VERIFY_IS_TRUE(_ValidateLineContains(viewportLine++, viewportChar++, viewportAttr));
