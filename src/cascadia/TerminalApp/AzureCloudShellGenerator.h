@@ -22,15 +22,13 @@ static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83
 
 namespace TerminalApp
 {
-    class AzureCloudShellGenerator;
-};
+    class AzureCloudShellGenerator : public TerminalApp::IDynamicProfileGenerator
+    {
+    public:
+        AzureCloudShellGenerator() = default;
+        ~AzureCloudShellGenerator() = default;
+        std::wstring_view GetNamespace() override;
 
-class TerminalApp::AzureCloudShellGenerator : public TerminalApp::IDynamicProfileGenerator
-{
-public:
-    AzureCloudShellGenerator() = default;
-    ~AzureCloudShellGenerator() = default;
-    std::wstring_view GetNamespace() override;
-
-    std::vector<TerminalApp::Profile> GenerateProfiles() override;
+        std::vector<TerminalApp::Profile> GenerateProfiles() override;
+    };
 };

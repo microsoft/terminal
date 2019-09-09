@@ -5,6 +5,9 @@
 #include "DefaultProfileUtils.h"
 #include "../../types/inc/utils.hpp"
 
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
+static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
+
 // Method Description:
 // - Helper function for creating a skeleton default profile with a pre-populated
 //   guid and name.

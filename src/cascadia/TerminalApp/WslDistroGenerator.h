@@ -19,14 +19,12 @@ Author(s):
 
 namespace TerminalApp
 {
-    class WslDistroGenerator;
-};
-
-class TerminalApp::WslDistroGenerator : public TerminalApp::IDynamicProfileGenerator
-{
-public:
-    WslDistroGenerator() = default;
-    ~WslDistroGenerator() = default;
-    std::wstring_view GetNamespace() override;
-    std::vector<TerminalApp::Profile> GenerateProfiles() override;
+    class WslDistroGenerator : public TerminalApp::IDynamicProfileGenerator
+    {
+    public:
+        WslDistroGenerator() = default;
+        ~WslDistroGenerator() = default;
+        std::wstring_view GetNamespace() override;
+        std::vector<TerminalApp::Profile> GenerateProfiles() override;
+    };
 };

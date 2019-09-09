@@ -20,7 +20,4 @@ Author(s):
 // uuidv5 properties: name format is UTF-16LE bytes
 static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
-static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
-static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
-
 TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name);

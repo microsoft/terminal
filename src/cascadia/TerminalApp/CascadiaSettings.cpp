@@ -37,10 +37,7 @@ CascadiaSettings::CascadiaSettings() :
 //   generators. Set this to `false` for unit testing.
 // Arguments:
 // - addDynamicProfiles: if true, we'll add the built-in DPGs.
-CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
-    _globals{},
-    _profiles{},
-    _profileGenerators{}
+CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 {
     if (addDynamicProfiles)
     {
@@ -48,10 +45,6 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
         _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
         _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
     }
-}
-
-CascadiaSettings::~CascadiaSettings()
-{
 }
 
 // Method Description:

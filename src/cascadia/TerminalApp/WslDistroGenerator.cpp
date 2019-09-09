@@ -40,7 +40,7 @@ std::vector<TerminalApp::Profile> WslDistroGenerator::GenerateProfiles()
     wil::unique_handle writePipe;
     SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
-    STARTUPINFO si;
+    STARTUPINFO si{ 0 };
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdOutput = writePipe.get();
