@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2019-08-01
-last updated: 2019-09-03
+last updated: 2019-09-09
 issue id: 2046
 ---
 
@@ -40,7 +40,8 @@ following schema:
 {
     "name": string,
     "action": string,
-    "iconPath": string
+    "icon": string
+    "args": object?,
 }
 ```
 
@@ -54,8 +55,8 @@ The command will be parsed into a new class, `Command`:
 class Command
 {
     winrt::hstring Name();
-    winrt::TerminalApp::ShortcutAction Action();
-    winrt::hstring IconPath();
+    winrt::TerminalApp::ActionAndArgs ActionAndArgs();
+    winrt::hstring IconSource();
 }
 ```
 
@@ -71,17 +72,18 @@ element to the winrt type.
 
 When an element is clicked on in the list of commands, we'll raise the event
 corresponding to that `ShortcutAction`. `AppKeyBindings` already does a great
-job of dispatching `ShortcutActions`, so we'll re-use that. We'll pull the basic
-parts of dispatching `ShortcutAction` callbacks into another class,
-`ShortcutActionDispatch`, with a single `PerformAction(ShortcutAction)` method
-(and events for each action). `AppKeyBindings` will be initialized with a
-reference to the `ShortcutActionDispatch` object, so that it can call
-`PerformAction` on it. Additionally, by having a singular
-`ShortcutActionDispatch` instance, we won't need to re-hook up the
-ShortcutAction keybindings each time we re-load the settings.
+job of dispatching `ShortcutActions` (and their associated arguments), so we'll
+re-use that. We'll pull the basic parts of dispatching `ActionAndArgs`
+callbacks into another class, `ShortcutActionDispatch`, with a single
+`PerformAction(ActionAndArgs)` method (and events for each action).
+`AppKeyBindings` will be initialized with a reference to the
+`ShortcutActionDispatch` object, so that it can call `PerformAction` on it.
+Additionally, by having a singular `ShortcutActionDispatch` instance, we won't
+need to re-hook up the ShortcutAction keybindings each time we re-load the
+settings.
 
 In `App`, when someone clicks on an item in the list, we'll get the
-`ShortcutAction` associated with that list element, and call PerformAction on
+`ActionAndArgs` associated with that list element, and call PerformAction on
 the app's `ShortcutActionDispatch`. This will trigger the event handler just the
 same as pressing the keybinding.
 
@@ -207,14 +209,38 @@ above will work for non-english languages, where a single charater might be
 multiple `char`s long. As we'll be using a standard XAML text box for input, we
 won't need to worry about handling the input ourselves.
 
+### Localization
+
+Because we'll be shipping a set of default commands with the terminal, we should
+make sure that list of commands can be localizable. Each of the names we'll give
+to the commands should be locale-specific. This would require a change to the
+generation of the `defaults.json` file.
+
+1. Should we ship one defaults.json per locale (that we support), and use the
+   system locale at runtime to load the one we want? This would mean that when
+   the user opens the `defaults.json` file, they'll open a file like
+   `defaults.en-us.json`.
+2. Should we somehow build the Terminal for each locale separately? This doesn't
+   seem like a feasible choice.
+
+Option 1 seems more similar to how XAML resources work today, where all of the
+resources are compiled into the app, but only the appropriate one is used at
+runtime. We would need to be able to generate a variety of `defaults.LANG.json`
+files based upon entries in another file, with a list of locales we support, and
+a map of ShortcutAction->name pairings for each language. This set of json files
+should be generated at build time.
+
+We'll need to modify `GenerateHeaderForJson.ps1` to generate headers for _all_
+these files, and we'll additionally need to create a mechanism by which all
+these generated headers are included, not just the singular `defaults.json`. We
+could combine all the per-language defaults strings into globals within a single
+header, so that we don't need to worry about including lots of files.
+
+If at runtime we _don't_ find a `defaults.json` for the current locale, we'll
+fall back to the en-us variant.
+
 ## Future considerations
 
-* Once [#1142] is also complete, we'll also add a `executeCommand` action. It
-  will take a single parameter `command`, which will be the name of a command
-  from the list of commands. This will enable a user to bind a command to a
-  keybinding. This could allow the user to bind a specific pairing of `action`
-  and `args` that they've set up in a command as a keybinding, without having to
-  repeat the entry in both the `commands` and `keybindings`.
 * Commands will provide an easy point for allowing an extension to add its
   actions to the UI, without forcing the user to bind the extension's actions to
   a keybinding
@@ -267,6 +293,9 @@ won't need to worry about handling the input ourselves.
     command palette. This was the idea initially proposed in [#2046].
   - For both these options, we may want a global setting to hide that button, to
     keep the UI as minimal as possible.
+* [#1571] is a request for customizing the "new tab dropdown" menu. When we get
+  to discussing that design, we should consider also enabling users to add
+  commands from their list of commands to that menu as well.
 
 ## Resources
 Initial post that inspired this spec: #[2046](https://github.com/microsoft/terminal/issues/2046)
@@ -277,8 +306,11 @@ Cascading User & Default Settings: #[754](https://github.com/microsoft/terminal/
 
 Untie "active control" from "currently XAML-focused control" #[1205](https://github.com/microsoft/terminal/issues/1205)
 
+Allow dropdown menu customization in profiles.json [#1571](https://github.com/microsoft/terminal/issues/1571)
+
 <!-- Footnotes -->
 [#754]: https://github.com/microsoft/terminal/issues/754
 [#1205]: https://github.com/microsoft/terminal/issues/1205
 [#1142]: https://github.com/microsoft/terminal/pull/1349
 [#2046]: https://github.com/microsoft/terminal/issues/2046
+[#1571]: https://github.com/microsoft/terminal/issues/1571
