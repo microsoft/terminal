@@ -379,14 +379,18 @@ namespace winrt::TerminalApp::implementation
         }
         case ShortcutAction::IncreaseFontSize:
         {
-            auto eventArgs = winrt::make_self<ActionEventArgs>();
-            _IncreaseFontSizeHandlers(*this, *eventArgs);
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            args->Delta(1);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         case ShortcutAction::DecreaseFontSize:
         {
-            auto eventArgs = winrt::make_self<ActionEventArgs>();
-            _DecreaseFontSizeHandlers(*this, *eventArgs);
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            args->Delta(-1);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         default:

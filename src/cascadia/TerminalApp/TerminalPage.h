@@ -143,8 +143,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleIncreaseFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
-        void _HandleDecreaseFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

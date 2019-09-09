@@ -520,8 +520,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
-        bindings.IncreaseFontSize({ this, &TerminalPage::_HandleIncreaseFontSize });
-        bindings.DecreaseFontSize({ this, &TerminalPage::_HandleDecreaseFontSize });
+        bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
     }
 
     // Method Description:
