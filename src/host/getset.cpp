@@ -2055,12 +2055,25 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         SMALL_RECT srClip = screenEdges;
         srClip.Top = cursorPosition.Y;
 
-        LOG_IF_FAILED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
-                                                                                         srScroll,
-                                                                                         coordDestination,
-                                                                                         srClip,
-                                                                                         UNICODE_SPACE,
-                                                                                         screenInfo.GetAttributes().GetLegacyAttributes()));
+        // Here we previously called to ScrollConsoleScreenBufferWImpl to
+        // perform the scrolling operation. However, that function only accepts
+        // a WORD for the fill attributes. That means we'd lose 256/RGB fidelity
+        // for fill attributes. So instead, we'll just call ScrollRegion
+        // ourselves, with the same params that ScrollConsoleScreenBufferWImpl
+        // would have.
+        // See microsoft/terminal#832 for more context.
+        try
+        {
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+            ScrollRegion(screenInfo,
+                         srScroll,
+                         srClip,
+                         coordDestination,
+                         UNICODE_SPACE,
+                         screenInfo.GetAttributes());
+        }
+        CATCH_LOG();
     }
 }
 
