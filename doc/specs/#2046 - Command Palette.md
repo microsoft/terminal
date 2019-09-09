@@ -199,10 +199,10 @@ increase our load times (though this will likely be negligible).
 
 This will first require the work in [#1205] to work properly. Right now we
 heavily lean on the "focused" element to determine which terminal is "active".
-However, when the command plaette is opened, focus will move out of the terminal
+However, when the command palette is opened, focus will move out of the terminal
 control into the command palette, which leads to some hard to debug crashes.
 
-Additionally, we'll need to ensure that the "fuzzy search" algorithim proposed
+Additionally, we'll need to ensure that the "fuzzy search" algorithm proposed
 above will work for non-english languages, where a single charater might be
 multiple `char`s long. As we'll be using a standard XAML text box for input, we
 won't need to worry about handling the input ourselves.
