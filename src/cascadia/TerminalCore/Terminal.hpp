@@ -160,13 +160,13 @@ private:
     bool _snapOnInput;
 
 #pragma region Text Selection
-    enum SelectionExpansionMode
+    enum class SelectionExpansionMode
     {
         Cell,
         Word,
         Line
     };
-    enum DelimiterClass
+    enum class DelimiterClass
     {
         ControlChar,
         DelimiterChar,
@@ -221,13 +221,13 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<SMALL_RECT> _GetSelectionRects() const;
-    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
-    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    const COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
-    const COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
-    const DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
-    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
+    SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
+    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
+    COORD _ConvertToBufferCell(const COORD viewportPos) const;
     const bool _IsSingleCellSelection() const noexcept;
     std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
     SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;

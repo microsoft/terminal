@@ -11,9 +11,9 @@ using namespace Microsoft::Terminal::Core;
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
+std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 {
-    std::vector<SMALL_RECT> result = {};
+    std::vector<SMALL_RECT> result;
 
     if (!IsSelectionActive())
     {
@@ -25,13 +25,13 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
         // NOTE: (0,0) is the top-left of the screen
         // the physically "higher" coordinate is closer to the top-left
         // the physically "lower" coordinate is closer to the bottom-right
-        auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
+        const auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
 
         SHORT selectionRectSize;
         THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
         THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
 
-        std::vector<SMALL_RECT> selectionArea = {};
+        std::vector<SMALL_RECT> selectionArea;
         selectionArea.reserve(selectionRectSize);
         for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
         {
@@ -141,7 +141,7 @@ void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
+SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
     const auto bufferSize = _buffer->GetSize();
@@ -167,7 +167,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
+SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
     const auto bufferSize = _buffer->GetSize();
@@ -347,7 +347,7 @@ const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool tri
 // - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
-const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
+COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
     const auto bufferViewport = _buffer->GetSize();
 
@@ -385,7 +385,7 @@ const COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) cons
 // - position: buffer coordinate for selection
 // Return Value:
 // - updated copy of "position" to new expanded location (with vertical offset)
-const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
+COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
     const auto bufferViewport = _buffer->GetSize();
 
@@ -423,7 +423,7 @@ const COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) con
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
 // - the delimiter class for the given char
-const Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view cellChar) const noexcept
+Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view cellChar) const noexcept
 {
     if (cellChar[0] <= UNICODE_SPACE)
     {
@@ -445,7 +445,7 @@ const Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_v
 // - viewportPos: a coordinate on the viewport
 // Return Value:
 // - the corresponding location on the buffer
-const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
+COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
     // Force position to be valid
     COORD positionWithOffsets = viewportPos;
