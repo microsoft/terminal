@@ -42,6 +42,11 @@ ITermDispatch& OutputStateMachineEngine::Dispatch() noexcept
 // - true iff we successfully dispatched the sequence.
 bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 {
+    if (wch == AsciiChars::NUL)
+    {
+        return true;
+    }
+
     _dispatch->Execute(wch);
     _ClearLastChar();
     return true;
