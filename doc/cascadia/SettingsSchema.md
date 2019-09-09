@@ -43,7 +43,7 @@ Properties listed below are specific to each unique profile.
 | `colorTable` | Optional | Array[String] | | Array of colors used in the profile if `colorscheme` is not set. Colors use hex color format: `"#rrggbb"`. Ordering is as follows: `[black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]` |
 | `cursorHeight` | Optional | Integer | | Sets the percentage height of the cursor starting from the bottom. Only works when `cursorShape` is set to `"vintage"`. Accepts values from 25-100. |
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
-| `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. |
+| `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. See [Images and Icons](./#images_and_icons) below for help on specifying your own icons |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 
@@ -132,4 +132,49 @@ Bindings listed below are per the implementation in `src/cascadia/TerminalApp/Ap
 - moveFocusRight
 - moveFocusUp
 - moveFocusDown
+
+## Background Images and Icons
+Some Terminal settings allow you to specify custom background images and icons. It is recommended that custom images and icons are stored in system-provided folders and are referred to using the correct [URI Schemes](https://docs.microsoft.com/en-us/windows/uwp/app-resources/uri-schemes). URI Schemes provide a way to reference files independent of their physical paths (which may change in the future).
+
+The most useful URI schemes to remember when customizing background images and icons are:
+
+| URI Scheme | Corresponding Physical Path | Use / description |
+| --- | --- | ---|
+| `ms-appdata:///Local/` | `%localappdata%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\` | Per-machine files |
+| `ms-appdata:///Roaming/` | `%localappdata%\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\RoamingState\` | Common files |
+
+> ⚠ Note: Do not rely on file references using the `ms-appx` URI Scheme (i.e. icons). These files are considered an internal implementation detail and may change name/location or may be omitted in the future.
+
+### Icons
+Terminal displays icons for each of your profiles which Terminal generates for any built-in shells - PowerShell Core, PowerShell, and any installed Linux/WSL distros. Each profile refers to a stock icon via the `ms-appx` URI Scheme.
+
+> ⚠ Note: Do not rely on the files referenced by the `ms-appx` URI Scheme - they are considered an internal implementation detail and may change name/location or may be omitted in the future. 
+
+You can refer to you own icons if you wish, e.g.:
+
+```json 
+    "icon" : "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\icon-ubuntu-32.png",
+```
+
+> 👉 Tip: Icons should be sized to 32x32px in an appropriate raster image format (e.g. .PNG, .GIF, or .ICO) to avoid having to scale your icons during runtime (causing a noticeable delay and loss of quality.)
+
+### Custom Background Images
+You can apply a background image to each of your profiles, allowing you to configure/brand/style each of your profiles independently from one another if you wish. 
+
+To do so, specify your preferred `backgroundImage`, position it using `backgroundImageAlignment`, set its opacity with `backgroundImageOpacity`, and/or specify how your image fill the available space using `backgroundImageStretchMode`. 
+
+For example:
+```json
+    "backgroundImage": "C:\\Users\\richturn\\OneDrive\\WindowsTerminal\\bg-ubuntu-256.png",
+    "backgroundImageAlignment": "bottomRight",
+    "backgroundImageOpacity": 0.1,
+    "backgroundImageStretchMode": "none"
+```
+
+> 👉 Tip: You can easily roam your collection of images and icons across all your machines by storing your icons and images in OneDrive (as shown above).
+
+With these settings, your Terminal's Ubuntu profile would look similar to this:
+
+![Custom icon and background image](../images/custom-icon-and-background-image.jpg)
+
 

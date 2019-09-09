@@ -167,9 +167,13 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
+    TEST_METHOD(InsertDeleteLines256Colors);
+
     TEST_METHOD(SetOriginMode);
 
     TEST_METHOD(HardResetBuffer);
+
+    TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -3451,6 +3455,103 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     }
 }
 
+void ScreenBufferTests::InsertDeleteLines256Colors()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:insert", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:colorStyle", L"{0, 1, 2}")
+    END_TEST_METHOD_PROPERTIES();
+
+    // colorStyle will be used to control whether we use a color from the 16
+    // color table, a color from the 256 color table, or a pure RGB color.
+    const int Use16Color = 0;
+    const int Use256Color = 1;
+    const int UseRGBColor = 2;
+
+    bool insert;
+    int colorStyle;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"insert", insert), L"whether to insert(true) or delete(false) lines");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
+
+    // This test is largely taken from repro code from
+    // https://github.com/microsoft/terminal/issues/832#issuecomment-507447272
+    Log::Comment(
+        L"Sets the attributes to a 256/RGB color, then scrolls some lines with"
+        L" DL. Verifies the rows are cleared with the attributes we'd expect.");
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    TextAttribute expectedAttr{ si.GetAttributes() };
+    std::wstring sgrSeq = L"\x1b[48;5;2m";
+    if (colorStyle == Use16Color)
+    {
+        expectedAttr.SetBackground(gci.GetColorTableEntry(2));
+    }
+    else if (colorStyle == Use256Color)
+    {
+        expectedAttr.SetBackground(gci.GetColorTableEntry(20));
+        sgrSeq = L"\x1b[48;5;20m";
+    }
+    else if (colorStyle == UseRGBColor)
+    {
+        expectedAttr.SetBackground(RGB(1, 2, 3));
+        sgrSeq = L"\x1b[48;2;1;2;3m";
+    }
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[1;3r");
+
+    // Set the BG color to the table index 2, as a 256-color sequence
+    stateMachine.ProcessString(sgrSeq);
+
+    VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
+
+    // Move to home
+    stateMachine.ProcessString(L"\x1b[H");
+
+    // Insert/Delete 10 lines
+    stateMachine.ProcessString(insert ? L"\x1b[10L" : L"\x1b[10M");
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"foo");
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+    {
+        auto iter00 = tbi.GetCellDataAt({ 0, 0 });
+        auto iter10 = tbi.GetCellDataAt({ 1, 0 });
+        auto iter20 = tbi.GetCellDataAt({ 2, 0 });
+        auto iter30 = tbi.GetCellDataAt({ 3, 0 });
+        auto iter01 = tbi.GetCellDataAt({ 0, 1 });
+        auto iter02 = tbi.GetCellDataAt({ 0, 2 });
+        VERIFY_ARE_EQUAL(L"f", iter00->Chars());
+        VERIFY_ARE_EQUAL(L"o", iter10->Chars());
+        VERIFY_ARE_EQUAL(L"o", iter20->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter30->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter01->Chars());
+        VERIFY_ARE_EQUAL(L"\x20", iter02->Chars());
+
+        VERIFY_ARE_EQUAL(expectedAttr, iter00->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter10->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter20->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter30->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter01->TextAttr());
+        VERIFY_ARE_EQUAL(expectedAttr, iter02->TextAttr());
+    }
+}
+
 void ScreenBufferTests::SetOriginMode()
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -3580,4 +3681,68 @@ void ScreenBufferTests::HardResetBuffer()
     VERIFY_IS_TRUE(isBufferClear());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), viewport.Origin());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+}
+
+void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
+{
+    // This is a test for microsoft/terminal#1206. Refer to that issue for more
+    // context
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.SetTerminalScrolling(true);
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& siMain = gci.GetActiveOutputBuffer();
+    COORD const coordFontSize = siMain.GetScreenFontSize();
+    siMain._virtualBottom = siMain._viewport.BottomInclusive();
+
+    auto originalView = siMain._viewport;
+
+    VERIFY_IS_NULL(siMain._psiMainBuffer);
+    VERIFY_IS_NULL(siMain._psiAlternateBuffer);
+
+    Log::Comment(L"Create an alternate buffer");
+    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    {
+        VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
+        auto& altBuffer = *siMain._psiAlternateBuffer;
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+
+        const COORD originalSize = originalView.Dimensions();
+        const COORD doubledSize = { originalSize.X * 2, originalSize.Y * 2 };
+
+        // Create some RECTs, which are dimensions in pixels, because
+        // ProcessResizeWindow needs to work on rects in screen _pixel_
+        // dimensions, not character sizes.
+        RECT originalClientRect{ 0 }, maximizedClientRect{ 0 };
+
+        originalClientRect.right = originalSize.X * coordFontSize.X;
+        originalClientRect.bottom = originalSize.Y * coordFontSize.Y;
+
+        maximizedClientRect.right = doubledSize.X * coordFontSize.X;
+        maximizedClientRect.bottom = doubledSize.Y * coordFontSize.Y;
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a maximize"));
+        // Note that just calling _InternalSetViewportSize does not hit the
+        // exceptional case here. There's other logic farther down the stack
+        // that triggers it.
+        altBuffer.ProcessResizeWindow(&maximizedClientRect, &originalClientRect);
+
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+
+        Log::Comment(NoThrowString().Format(
+            L"Emulate a restore down"));
+
+        altBuffer.ProcessResizeWindow(&originalClientRect, &maximizedClientRect);
+
+        // Before the bugfix, this would fail, with the top being roughly 80,
+        // halfway into the buffer, with the bottom being anchored to the old
+        // size.
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+    }
 }

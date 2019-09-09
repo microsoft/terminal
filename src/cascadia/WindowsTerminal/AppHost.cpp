@@ -81,7 +81,7 @@ void AppHost::Initialize()
     _app.TitleChanged({ this, &AppHost::AppTitleChanged });
     _app.LastTabClosed({ this, &AppHost::LastTabClosed });
 
-    AppTitleChanged(_app.GetTitle());
+    _window->UpdateTitle(_app.Title());
 
     // Set up the content of the application. If the app has a custom titlebar,
     // set that content as well.
@@ -93,10 +93,11 @@ void AppHost::Initialize()
 // - Called when the app's title changes. Fires off a window message so we can
 //   update the window's title on the main thread.
 // Arguments:
+// - sender: unused
 // - newTitle: the string to use as the new window title
 // Return Value:
 // - <none>
-void AppHost::AppTitleChanged(winrt::hstring newTitle)
+void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
     _window->UpdateTitle(newTitle.c_str());
 }
@@ -104,10 +105,11 @@ void AppHost::AppTitleChanged(winrt::hstring newTitle)
 // Method Description:
 // - Called when no tab is remaining to close the window.
 // Arguments:
-// - <none>
+// - sender: unused
+// - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed()
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     _window->Close();
 }
@@ -199,6 +201,13 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "WindowCreated",
+        TraceLoggingDescription("Event emitted upon creating the application window"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 }
 
 // Method Description:
@@ -209,7 +218,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 // - arg: the UIElement to use as the new Titlebar content.
 // Return Value:
 // - <none>
-void AppHost::_UpdateTitleBarContent(const winrt::TerminalApp::App&, const winrt::Windows::UI::Xaml::UIElement& arg)
+void AppHost::_UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable&, const winrt::Windows::UI::Xaml::UIElement& arg)
 {
     if (_useNonClientArea)
     {

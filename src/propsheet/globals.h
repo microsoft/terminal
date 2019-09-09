@@ -54,3 +54,4 @@ extern COLORREF g_fakeBackgroundColor;
 extern COLORREF g_fakeCursorColor;
 
 extern HWND g_hTerminalDlg;
+extern HWND g_hOptionsDlg;
