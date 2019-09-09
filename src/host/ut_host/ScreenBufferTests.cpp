@@ -168,9 +168,6 @@ class ScreenBufferTests
     TEST_METHOD(ReverseLineFeedInMargins);
 
     TEST_METHOD(InsertDeleteLines256Colors);
-    // TEST_METHOD(InsertDeleteLines256ColorsFrom16Table);
-    // TEST_METHOD(InsertDeleteLines256ColorsFrom256Table);
-    // TEST_METHOD(InsertDeleteLinesRGBColors);
 
     TEST_METHOD(SetOriginMode);
 
