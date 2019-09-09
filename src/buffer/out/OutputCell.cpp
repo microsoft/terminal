@@ -111,7 +111,5 @@ void OutputCell::_setFromOutputCellView(const OutputCellView& cell)
     _dbcsAttribute = cell.DbcsAttr();
     _textAttribute = cell.TextAttr();
     _behavior = cell.TextAttrBehavior();
-
-    const auto view = cell.Chars();
-    _text = view;
+    _text = cell.Chars();
 }

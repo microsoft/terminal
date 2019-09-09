@@ -44,7 +44,7 @@ static const WORD leftShiftScanCode = 0x2A;
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer.
+    // Allocate ourselves some space
     std::wstring out;
     out.resize(cchNeeded);
 
@@ -85,7 +85,7 @@ static const WORD leftShiftScanCode = 0x2A;
     size_t cchNeeded;
     THROW_IF_FAILED(IntToSizeT(iTarget, &cchNeeded));
 
-    // Allocate ourselves space in a smart pointer
+    // Allocate ourselves some space
     std::string out;
     out.resize(cchNeeded);
 
