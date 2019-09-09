@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include "TerminalPage.h"
+#include "OptionsPage.h" // For InitializeCursorSize
 #include "ColorControl.h"
 #include <functional>
 
@@ -333,26 +334,7 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
         // resetting the cursor to legacy.
         if (g_hOptionsDlg != INVALID_HANDLE_VALUE)
         {
-            unsigned int newRadioValue = IDD_CURSOR_ADVANCED;
-            // Check the radio button that would be checked for the current
-            // CursorType/CursorSize
-            if (gpStateInfo->CursorType != 0)
-            {
-                newRadioValue = IDD_CURSOR_ADVANCED;
-            }
-            else if (gpStateInfo->CursorSize <= 25)
-            {
-                newRadioValue = IDD_CURSOR_SMALL;
-            }
-            else if (gpStateInfo->CursorSize <= 50)
-            {
-                newRadioValue = IDD_CURSOR_MEDIUM;
-            }
-            else
-            {
-                newRadioValue = IDD_CURSOR_LARGE;
-            }
-            CheckRadioButton(g_hOptionsDlg, IDD_CURSOR_SMALL, IDD_CURSOR_ADVANCED, newRadioValue);
+            InitializeCursorSize(g_hOptionsDlg);
         }
 
         handled = true;
