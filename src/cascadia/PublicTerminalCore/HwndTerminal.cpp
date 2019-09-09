@@ -389,13 +389,7 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
 HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns)
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
-    COORD newSize = { 0, 0 };
+    COORD newSize = { rows, columns };
 
-    HRESULT result = publicTerminal->_renderEngine->GetFontSize(&newSize);
-    newSize.Y *= (short) rows;
-    newSize.X *= (short) columns;
-
-    result = publicTerminal->_terminal->UserResize(newSize);
-
-    return result;
+    return publicTerminal->_terminal->UserResize(newSize);
 }
