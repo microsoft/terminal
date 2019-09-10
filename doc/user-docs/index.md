@@ -73,10 +73,9 @@ To open the settings file from Windows Terminal:
 
 1. Click the `⌵` button in the top bar.
 2. From the dropdown list, click `Settings`. You can also use a shortcut: `Ctrl+,`.
-3. Your default `json` editor will open up the Windows Terminal settings file.
+3. Your default `json` editor will open the settings file.
 
-For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md).
-The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
+For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
 
 ## Tips and Tricks:
 
