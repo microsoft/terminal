@@ -14,7 +14,7 @@ namespace
         CodepointWidth width;
     };
 
-    static bool operator<(const UnicodeRange& range, const unsigned int searchTerm)
+    static bool operator<(const UnicodeRange& range, const unsigned int searchTerm) noexcept
     {
         return range.upperBound < searchTerm;
     }
@@ -311,12 +311,20 @@ namespace
 }
 
 // Routine Description:
+// - Constructs an instance of the CodepointWidthDetector class
+CodepointWidthDetector::CodepointWidthDetector() noexcept :
+    _fallbackCache{},
+    _pfnFallbackMethod{}
+{
+}
+
+// Routine Description:
 // - returns the width type of codepoint by searching the map generated from the unicode spec
 // Arguments:
 // - glyph - the utf16 encoded codepoint to search for
 // Return Value:
 // - the width type of the codepoint
-CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) const noexcept
+CodepointWidth CodepointWidthDetector::GetWidth(const std::wstring_view glyph) const
 {
     if (glyph.empty())
     {
@@ -443,7 +451,7 @@ bool CodepointWidthDetector::_checkFallbackViaCache(const std::wstring_view glyp
     const std::wstring findMe{ glyph };
 
     // TODO: Cache needs to be emptied when font changes.
-    auto it = _fallbackCache.find(findMe);
+    const auto it = _fallbackCache.find(findMe);
     if (it == _fallbackCache.end())
     {
         auto result = _pfnFallbackMethod(glyph);

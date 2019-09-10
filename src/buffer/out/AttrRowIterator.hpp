@@ -29,11 +29,11 @@ public:
     using pointer = TextAttribute*;
     using reference = TextAttribute&;
 
-    static AttrRowIterator CreateEndIterator(const ATTR_ROW* const attrRow);
+    static AttrRowIterator CreateEndIterator(const ATTR_ROW* const attrRow) noexcept;
 
-    AttrRowIterator(const ATTR_ROW* const attrRow);
+    AttrRowIterator(const ATTR_ROW* const attrRow) noexcept;
 
-    operator bool() const noexcept;
+    operator bool() const;
 
     bool operator==(const AttrRowIterator& it) const;
     bool operator!=(const AttrRowIterator& it) const;
@@ -57,5 +57,5 @@ private:
 
     void _increment(size_t count);
     void _decrement(size_t count);
-    void _setToEnd();
+    void _setToEnd() noexcept;
 };
