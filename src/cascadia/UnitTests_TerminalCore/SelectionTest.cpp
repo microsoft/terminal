@@ -475,7 +475,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 15, 10, 15, 10 }));
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 15, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
