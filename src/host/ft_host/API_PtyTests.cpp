@@ -52,41 +52,50 @@ class PtyTests
     HRESULT RunTest(bool inherit, bool read, bool write, DWORD endSessionBy)
     {
         DWORD mode;
+        Log::Comment(L"Setting virtual terminal processing mode to on.");
         GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode);
         mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
         SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode);
+
+        Log::Comment(L"Creating communication pipes.");
         HANDLE h1i, h1o, h2i, h2o;
         auto f = !!CreatePipe(&h1o, &h1i, nullptr, 0);
         if (!f)
         {
-            fprintf(stderr, "Beefed it at pipe 1\n");
+            Log::Comment(L"Beefed it at pipe 1");
             return 1;
         }
         f = !!CreatePipe(&h2o, &h2i, nullptr, 0);
         if (!f)
         {
-            fprintf(stderr, "Beefed it at pipe 2\n");
+            Log::Comment(L"Beefed it at pipe 2");
             return 1;
         }
 
         DWORD dwFlags = 0;
         if (inherit)
         {
+            Log::Comment(L"Setting inherit flag...");
             dwFlags = PSEUDOCONSOLE_INHERIT_CURSOR;
         }
 
+        Log::Comment(L"Calling CreatePseudoConsole");
         HPCON hPC;
         auto hr = CreatePseudoConsole({ 80, 25 }, h1o, h2i, dwFlags, &hPC);
         if (hr != S_OK)
         {
-            fprintf(stderr, "Failed: %8.08x\n", hr);
+            Log::Comment(String().Format(L"Failed: %8.08x", hr));
             return 1;
         }
+
+        Log::Comment(L"Closing my half of the communication pipes.");
         CloseHandle(h1o);
         CloseHandle(h2i);
 
         if (write)
         {
+            // We do this out of order (writing the answer before we are asked) because we're doing it single threaded.
+            Log::Comment(L"Writing cursor response into buffer before we're asked.");
             const char* buffer = "\x1b[0;0R";
 
             DWORD dwWritten = 0;
@@ -98,10 +107,12 @@ class PtyTests
 
         wil::unique_process_information pi;
 
+        Log::Comment(L"Spawning client application.");
         hr = SpawnClient(hPC, pi);
 
         if (read)
         {
+            Log::Comment(L"Reading the cursor request from the buffer so it will be drained.");
             byte bufferOut[256];
             DWORD dwRead = 0;
             ReadFile(h2o, &bufferOut, ARRAYSIZE(bufferOut), &dwRead, nullptr);
@@ -111,11 +122,11 @@ class PtyTests
 
         if (hr != S_OK)
         {
-            fprintf(stderr, "Spawn took a trip to beeftown: %8.08x\n", hr);
+            Log::Comment(String().Format(L"Spawn took a trip to beeftown: %8.08x", hr));
             return 1;
         }
 
-        fprintf(stderr, "Letting CMD actually spawn?\n");
+        Log::Comment(L"Letting CMD actually spawn?");
         Sleep(1000); // Let it settle?
 
         Baton b{ hPC, nullptr };
@@ -127,17 +138,20 @@ class PtyTests
         CreateThread(
             nullptr, 0, [](LPVOID c) -> DWORD {
                 Baton& b = *reinterpret_cast<Baton*>(c);
-                fprintf(stderr, "Closing?\n");
+                Log::Comment(L"Closing?");
 
                 switch (b.closeMethod)
                 {
                 case 0:
+                    Log::Comment(L"Closing with the API (breaks signal handle)");
                     ClosePseudoConsole(b.hPC);
                     break;
                 case 1:
+                    Log::Comment(L"Closing by breaking input handle.");
                     CloseHandle(b.inputWriter);
                     break;
                 case 2:
+                    Log::Comment(L"Closing by breaking output handle.");
                     CloseHandle(b.outputReader);
                     break;
                 }
@@ -149,6 +163,7 @@ class PtyTests
             0,
             nullptr);
 
+        Log::Comment(L"Waiting to let the environment teardown.");
         auto r = WaitForSingleObject(b.ev, 5000);
         switch (r)
         {
