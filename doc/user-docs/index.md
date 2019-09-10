@@ -67,7 +67,7 @@ Not currently supported "out of the box". See issue [#1060](https://github.com/m
 
 ## Configuring Windows Terminal
 
-All Windows Terminal settings are currently managed using the `profiles.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`.
+All Windows Terminal settings are currently managed using the `profiles.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/RoamingState`.
 
 To open the settings file from Windows Terminal:
 
