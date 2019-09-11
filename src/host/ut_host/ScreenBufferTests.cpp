@@ -174,6 +174,8 @@ class ScreenBufferTests
     TEST_METHOD(HardResetBuffer);
 
     TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
+
+    TEST_METHOD(ClearAlternateBuffer);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -3710,6 +3712,8 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
         VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
         VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
 
+        auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
         const COORD originalSize = originalView.Dimensions();
         const COORD doubledSize = { originalSize.X * 2, originalSize.Y * 2 };
 
@@ -3745,4 +3749,92 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
         VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
         VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
     }
+}
+
+void ScreenBufferTests::ClearAlternateBuffer()
+{
+    // This is a test for microsoft/terminal#1189. Refer to that issue for more
+    // context
+
+    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& g = ServiceLocator::LocateGlobals();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& siMain = gci.GetActiveOutputBuffer();
+    auto WriteText = [&](TextBuffer& tbi) {
+        // Write text to buffer
+        auto& stateMachine = siMain.GetStateMachine();
+        auto& cursor = tbi.GetCursor();
+        stateMachine.ProcessString(L"foo\nfoo");
+        VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+        VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
+    };
+
+    auto VerifyText = [&](TextBuffer& tbi) {
+        // Verify written text in buffer
+        {
+            auto iter00 = tbi.GetCellDataAt({ 0, 0 });
+            auto iter10 = tbi.GetCellDataAt({ 1, 0 });
+            auto iter20 = tbi.GetCellDataAt({ 2, 0 });
+            auto iter30 = tbi.GetCellDataAt({ 3, 0 });
+            auto iter01 = tbi.GetCellDataAt({ 0, 1 });
+            auto iter02 = tbi.GetCellDataAt({ 1, 1 });
+            auto iter03 = tbi.GetCellDataAt({ 2, 1 });
+            VERIFY_ARE_EQUAL(L"f", iter00->Chars());
+            VERIFY_ARE_EQUAL(L"o", iter10->Chars());
+            VERIFY_ARE_EQUAL(L"o", iter20->Chars());
+            VERIFY_ARE_EQUAL(L"\x20", iter30->Chars());
+            VERIFY_ARE_EQUAL(L"f", iter01->Chars());
+            VERIFY_ARE_EQUAL(L"o", iter02->Chars());
+            VERIFY_ARE_EQUAL(L"o", iter03->Chars());
+        }
+    };
+
+    WriteText(siMain.GetTextBuffer());
+    VerifyText(siMain.GetTextBuffer());
+
+    Log::Comment(L"Create an alternate buffer");
+    if (VERIFY_IS_TRUE(NT_SUCCESS(siMain.UseAlternateScreenBuffer())))
+    {
+        VERIFY_IS_NOT_NULL(siMain._psiAlternateBuffer);
+        auto& altBuffer = *siMain._psiAlternateBuffer;
+        VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
+        VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
+
+        auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
+        WriteText(altBuffer.GetTextBuffer());
+        VerifyText(altBuffer.GetTextBuffer());
+
+#pragma region Test ScrollConsoleScreenBufferWImpl()
+        // Clear text of alt buffer (same params as in CMD)
+        VERIFY_SUCCEEDED(g.api.ScrollConsoleScreenBufferWImpl(siMain,
+                                                              { 0, 0, 120, 9001 },
+                                                              { 0, -9001 },
+                                                              std::nullopt,
+                                                              L' ',
+                                                              7));
+
+        // Verify text is now gone
+        VERIFY_ARE_EQUAL(L" ", altBuffer.GetTextBuffer().GetCellDataAt({ 0, 0 })->Chars());
+#pragma endregion
+
+#pragma region Test SetConsoleCursorPositionImpl()
+        // Reset cursor position as we do with CLS command (same params as in CMD)
+        VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(siMain, { 0 }));
+
+        // Verify state of alt buffer
+        auto& altBufferCursor = altBuffer.GetTextBuffer().GetCursor();
+        VERIFY_ARE_EQUAL(altBufferCursor.GetPosition().X, 0);
+        VERIFY_ARE_EQUAL(altBufferCursor.GetPosition().Y, 0);
+#pragma endregion
+    }
+
+    // Verify state of main buffer is untouched
+    auto& cursor = siMain.GetTextBuffer().GetCursor();
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 3);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
+
+    VerifyText(siMain.GetTextBuffer());
 }
