@@ -1,14 +1,14 @@
 {
-  "$id": "https://github.com/microsoft/terminal/terminal.profile.schema.json",
+  "$id": "https://github.com/microsoft/terminal/blob/master/doc/cascadia/profiles.schema.json",
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Microsoft Terminal Profile Settings",
+  "title": "Microsoft's Windows Terminal Settings Profile Schema'",
   "definitions": {
     "Color": {
       "default": "#",
-      "pattern": "^#[A-Fa-f0-9]{6}$",
+      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
       "type": "string"
     },
-    "ProfileKey": {
+    "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
