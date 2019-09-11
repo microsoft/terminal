@@ -42,6 +42,8 @@ BEGIN
                     WS_TABSTOP | WS_GROUP
     AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
     AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+    // IDD_CURSOR_ADVANCED is a hidden control, see GH#1219
+    AUTORADIOBUTTON "", IDD_CURSOR_ADVANCED, 14, 53, 0, 0,
 
     GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
     LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9
@@ -106,6 +108,8 @@ BEGIN
                     WS_TABSTOP | WS_GROUP
     AUTORADIOBUTTON "&Medium", IDD_CURSOR_MEDIUM, 14, 33, 84, 10,
     AUTORADIOBUTTON "&Large", IDD_CURSOR_LARGE, 14, 43, 84, 10,
+    // IDD_CURSOR_ADVANCED is a hidden control, see GH#1219
+    AUTORADIOBUTTON "", IDD_CURSOR_ADVANCED, 14, 53, 0, 0,
 
     GROUPBOX        "Command History", -1, 115, 11, 120, 56, WS_GROUP
     LTEXT           "&Buffer Size:", -1, 119, 25, 78, 9

@@ -194,7 +194,7 @@ void Viewport::Clamp(COORD& pos) const
 // - other - Viewport to clamp to the inside of this viewport
 // Return Value:
 // - Clamped viewport
-Viewport Viewport::Clamp(const Viewport& other) const
+Viewport Viewport::Clamp(const Viewport& other) const noexcept
 {
     auto clampMe = other.ToInclusive();
 
@@ -450,7 +450,7 @@ bool Viewport::WalkInBoundsCircular(COORD& pos, const WalkDir dir) const noexcep
 //   if using this same viewport with the `WalkInBounds` methods.
 COORD Viewport::GetWalkOrigin(const WalkDir dir) const noexcept
 {
-    COORD origin;
+    COORD origin{ 0 };
     origin.X = dir.x == XWalk::LeftToRight ? Left() : RightInclusive();
     origin.Y = dir.y == YWalk::TopToBottom ? Top() : BottomInclusive();
     return origin;

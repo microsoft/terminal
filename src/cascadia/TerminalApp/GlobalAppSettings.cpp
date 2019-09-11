@@ -31,7 +31,7 @@ static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{ nullptr },
+    _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
@@ -43,7 +43,6 @@ GlobalAppSettings::GlobalAppSettings() :
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false }
 {
-    _keybindings = winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>();
 }
 
 GlobalAppSettings::~GlobalAppSettings()

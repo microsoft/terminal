@@ -36,12 +36,14 @@ default shell is displayed (default shortcut `Ctrl+Shift+1`).
 
 ## Running a Different Shell
 
-Note: The following text assumes you have WSL installed.
+Note: This section assumes you already have _Windows Subsystem for Linux_ (WSL) installed. For more information, see [the installation guide](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
 
-To choose a different shell (e.g. `cmd.exe` or WSL `bash`) then
+Windows Terminal uses PowerShell as its default shell. You can also use Windows Terminal to launch other shells, such as `cmd.exe` or WSL's `bash`:
 
-1. Select the `down` button next to the `+` in the tab bar
-2. Choose your new shell from the list (more on how to extend the list in the config section)
+1. In the tab bar, click the `⌵` button to view the available shells.
+2. Choose your shell from the dropdown list. The new shell session will open in a new tab.
+
+To customize the shell list, see the _Configuring Windows Terminal_ section below.
 
 ## Starting a new PowerShell tab with admin privilege
 
@@ -65,16 +67,15 @@ Not currently supported "out of the box". See issue [#1060](https://github.com/m
 
 ## Configuring Windows Terminal
 
-At the time of writing all Windows Terminal settings are managed via a json file.
+All Windows Terminal settings are currently managed using the `profiles.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/RoamingState`.
 
-From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`).
+To open the settings file from Windows Terminal:
 
-Your default json editor will open up the Terminal settings file. The file can be found
-at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
+1. Click the `⌵` button in the top bar.
+2. From the dropdown list, click `Settings`. You can also use a shortcut: `Ctrl+,`.
+3. Your default `json` editor will open the settings file.
 
-An introduction to the various settings can be found [here](UsingJsonSettings.md).
-
-The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
+For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
 
 ## Tips and Tricks:
 

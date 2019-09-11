@@ -10,14 +10,16 @@ using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Types::ScreenInfoUiaProviderTracing;
 
 // A helper function to create a SafeArray Version of an int array of a specified length
-SAFEARRAY* BuildIntSafeArray(_In_reads_(length) const int* const data, const int length)
+SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 {
-    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, length);
+    SAFEARRAY* psa = SafeArrayCreateVector(VT_I4, 0, gsl::narrow<ULONG>(data.size()));
     if (psa != nullptr)
     {
-        for (long i = 0; i < length; i++)
+        for (size_t i = 0; i < data.size(); i++)
         {
-            if (FAILED(SafeArrayPutElement(psa, &i, (void*)&(data[i]))))
+            LONG lIndex = 0;
+            if (FAILED(SizeTToLong(i, &lIndex) ||
+                       FAILED(SafeArrayPutElement(psa, &lIndex, (void*)&(data.at(i))))))
             {
                 SafeArrayDestroy(psa);
                 psa = nullptr;
@@ -38,10 +40,6 @@ ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
 }
 
-ScreenInfoUiaProviderBase::~ScreenInfoUiaProviderBase()
-{
-}
-
 [[nodiscard]] HRESULT ScreenInfoUiaProviderBase::Signal(_In_ EVENTID id)
 {
     HRESULT hr = S_OK;
@@ -58,7 +56,7 @@ ScreenInfoUiaProviderBase::~ScreenInfoUiaProviderBase()
     }
     CATCH_RETURN();
 
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
+    IRawElementProviderSimple* pProvider = this;
     hr = UiaRaiseAutomationEvent(pProvider, id);
     _signalFiringMapping[id] = false;
 
@@ -85,7 +83,7 @@ ScreenInfoUiaProviderBase::Release()
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-    long val = InterlockedDecrement(&_cRefs);
+    const long val = InterlockedDecrement(&_cRefs);
     if (val == 0)
     {
         delete this;
@@ -96,23 +94,16 @@ ScreenInfoUiaProviderBase::Release()
 IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
                                                          _COM_Outptr_result_maybenull_ void** ppInterface)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-    if (riid == __uuidof(IUnknown))
+    if (riid == __uuidof(IUnknown) ||
+        riid == __uuidof(IRawElementProviderSimple) ||
+        riid == __uuidof(IRawElementProviderFragment) ||
+        riid == __uuidof(ITextProvider))
     {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderSimple))
-    {
-        *ppInterface = static_cast<IRawElementProviderSimple*>(this);
-    }
-    else if (riid == __uuidof(IRawElementProviderFragment))
-    {
-        *ppInterface = static_cast<IRawElementProviderFragment*>(this);
-    }
-    else if (riid == __uuidof(ITextProvider))
-    {
-        *ppInterface = static_cast<ITextProvider*>(this);
+        *ppInterface = this;
     }
     else
     {
@@ -120,7 +111,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
         return E_NOINTERFACE;
     }
 
-    (static_cast<IUnknown*>(*ppInterface))->AddRef();
+    AddRef();
 
     return S_OK;
 }
@@ -131,8 +122,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
 // Gets UI Automation provider options.
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pOptions);
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetProviderOptions, nullptr);
     *pOptions = ProviderOptions_ServerSideProvider;
@@ -155,7 +148,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 
     if (patternId == UIA_TextPatternId)
     {
-        hr = this->QueryInterface(__uuidof(ITextProvider), reinterpret_cast<void**>(ppInterface));
+        hr = this->QueryInterface(IID_PPV_ARGS(ppInterface));
         if (FAILED(hr))
         {
             *ppInterface = nullptr;
@@ -167,7 +160,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 // Implementation of IRawElementProviderSimple::get_PropertyValue.
 // Gets custom properties.
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID propertyId,
-                                                           _Out_ VARIANT* pVariant)
+                                                           _Out_ VARIANT* pVariant) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetPropertyValue, nullptr);
@@ -237,7 +230,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPropertyValue(_In_ PROPERTYID prope
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetHostRawElementProvider, nullptr);
@@ -260,15 +253,17 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetRuntimeId(_Outptr_result_maybenull_
     *ppRuntimeId = nullptr;
 
     // AppendRuntimeId is a magic Number that tells UIAutomation to Append its own Runtime ID(From the HWND)
-    int rId[] = { UiaAppendRuntimeId, -1 };
+    const std::array<int, 2> rId{ UiaAppendRuntimeId, -1 };
+
+    const std::basic_string_view<int> span{ rId.data(), rId.size() };
     // BuildIntSafeArray is a custom function to hide the SafeArray creation
-    *ppRuntimeId = BuildIntSafeArray(rId, 2);
+    *ppRuntimeId = BuildIntSafeArray(span);
     RETURN_IF_NULL_ALLOC(*ppRuntimeId);
 
     return S_OK;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetEmbeddedFragmentRoots, nullptr);
@@ -296,11 +291,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     //ApiMsgGetSelection apiMsg;
 
     _LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
 
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
     HRESULT hr = S_OK;
 
@@ -322,6 +317,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
         IRawElementProviderSimple* pProvider;
         hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (pProvider == nullptr)
+        {
+            hr = E_POINTER;
+        }
+
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -340,7 +340,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        (static_cast<IUnknown*>(pProvider))->Release();
+        pProvider->Release();
         if (range == nullptr)
         {
             SafeArrayDestroy(*ppRetVal);
@@ -349,7 +349,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         }
 
         LONG currentIndex = 0;
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -363,6 +363,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         std::deque<UiaTextRangeBase*> ranges;
         IRawElementProviderSimple* pProvider;
         RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(&pProvider)));
+        RETURN_HR_IF_NULL(E_POINTER, pProvider);
         try
         {
             ranges = GetSelectionRanges(pProvider);
@@ -379,25 +380,28 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         //apiMsg.SelectionRowCount = static_cast<unsigned int>(ranges.size());
 
         // make a safe array
-        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(ranges.size()));
+        *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(ranges.size()));
         if (*ppRetVal == nullptr)
         {
             return E_OUTOFMEMORY;
         }
 
         // fill the safe array
-        for (LONG i = 0; i < static_cast<LONG>(ranges.size()); ++i)
+        for (LONG i = 0; i < gsl::narrow<LONG>(ranges.size()); ++i)
         {
-            hr = SafeArrayPutElement(*ppRetVal, &i, reinterpret_cast<void*>(ranges[i]));
+            hr = SafeArrayPutElement(*ppRetVal, &i, ranges.at(i));
             if (FAILED(hr))
             {
                 SafeArrayDestroy(*ppRetVal);
                 *ppRetVal = nullptr;
                 while (!ranges.empty())
                 {
-                    UiaTextRangeBase* pRange = ranges[0];
+                    UiaTextRangeBase* pRange = ranges.at(0);
                     ranges.pop_front();
-                    pRange->Release();
+                    if (pRange)
+                    {
+                        pRange->Release();
+                    }
                 }
                 return hr;
             }
@@ -415,11 +419,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
     //Tracing::s_TraceUia(this, ApiCall::GetVisibleRanges, nullptr);
 
     _LockConsole();
-    auto Unlock = wil::scope_exit([&] {
+    auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
 
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
     const auto viewport = _getViewport();
@@ -428,7 +432,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
     // make a safe array
     const size_t rowCount = viewport.Height();
-    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, static_cast<ULONG>(rowCount));
+    *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, gsl::narrow<ULONG>(rowCount));
     if (*ppRetVal == nullptr)
     {
         return E_OUTOFMEMORY;
@@ -444,6 +448,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
 
         IRawElementProviderSimple* pProvider;
         HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
+        if (pProvider == nullptr)
+        {
+            hr = E_POINTER;
+        }
+
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -464,7 +473,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        (static_cast<IUnknown*>(pProvider))->Release();
+        pProvider->Release();
 
         if (range == nullptr)
         {
@@ -473,8 +482,8 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             return hr;
         }
 
-        LONG currentIndex = static_cast<LONG>(i);
-        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, reinterpret_cast<void*>(range));
+        LONG currentIndex = gsl::narrow<LONG>(i);
+        hr = SafeArrayPutElement(*ppRetVal, &currentIndex, range);
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -491,11 +500,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RangeFromChild, nullptr);
 
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
+    RETURN_HR_IF_NULL(E_POINTER, pProvider);
 
     HRESULT hr = S_OK;
     try
@@ -507,7 +517,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     return hr;
 }
@@ -518,11 +528,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::RangeFromPoint, nullptr);
 
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
+    RETURN_HR_IF_NULL(E_POINTER, pProvider);
 
     HRESULT hr = S_OK;
     try
@@ -535,7 +546,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     return hr;
 }
@@ -545,11 +556,12 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetDocumentRange, nullptr);
 
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
     IRawElementProviderSimple* pProvider;
     RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
+    RETURN_HR_IF_NULL(E_POINTER, pProvider);
 
     HRESULT hr = S_OK;
     try
@@ -561,7 +573,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    (static_cast<IUnknown*>(pProvider))->Release();
+    pProvider->Release();
 
     if (*ppRetVal)
     {
@@ -571,8 +583,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     return hr;
 }
 
-IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal)
+IFACEMETHODIMP ScreenInfoUiaProviderBase::get_SupportedTextSelection(_Out_ SupportedTextSelection* pRetVal) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
+
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetSupportedTextSelection, nullptr);
 
@@ -587,12 +601,12 @@ const COORD ScreenInfoUiaProviderBase::_getScreenBufferCoords() const
     return _getTextBuffer().GetSize().Dimensions();
 }
 
-const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const
+const TextBuffer& ScreenInfoUiaProviderBase::_getTextBuffer() const noexcept
 {
     return _pData->GetTextBuffer();
 }
 
-const Viewport ScreenInfoUiaProviderBase::_getViewport() const
+const Viewport ScreenInfoUiaProviderBase::_getViewport() const noexcept
 {
     return _pData->GetViewport();
 }

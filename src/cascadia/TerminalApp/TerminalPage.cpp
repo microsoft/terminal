@@ -413,6 +413,7 @@ namespace winrt::TerminalApp::implementation
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         GUID connectionType{ 0 };
+        GUID sessionGuid{ 0 };
 
         if (profile->HasConnectionType())
         {
@@ -429,12 +430,14 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            connection = TerminalConnection::ConhostConnection(settings.Commandline(),
-                                                               settings.StartingDirectory(),
-                                                               settings.StartingTitle(),
-                                                               settings.InitialRows(),
-                                                               settings.InitialCols(),
-                                                               winrt::guid());
+            auto conhostConn = TerminalConnection::ConhostConnection(settings.Commandline(),
+                                                                     settings.StartingDirectory(),
+                                                                     settings.StartingTitle(),
+                                                                     settings.InitialRows(),
+                                                                     settings.InitialCols(),
+                                                                     winrt::guid());
+            sessionGuid = conhostConn.Guid();
+            connection = conhostConn;
         }
 
         TraceLoggingWrite(
@@ -442,6 +445,8 @@ namespace winrt::TerminalApp::implementation
             "ConnectionCreated",
             TraceLoggingDescription("Event emitted upon the creation of a connection"),
             TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+            TraceLoggingGuid(profileGuid, "ProfileGuid", "The profile's GUID"),
+            TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
