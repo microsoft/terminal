@@ -392,6 +392,15 @@ namespace winrt::TerminalApp::implementation
     //      happening during startup, it'll need to happen on a background thread.
     void App::LoadSettings()
     {
+        auto start = std::chrono::high_resolution_clock::now();
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SettingsLoadStarted",
+            TraceLoggingDescription("Event emitted before loading the settings"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
         // Attempt to load the settings.
         // If it fails,
         //  - use Default settings,
@@ -407,6 +416,17 @@ namespace winrt::TerminalApp::implementation
             _settings = std::make_unique<CascadiaSettings>();
             _settings->LoadDefaults();
         }
+
+        auto end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> delta = end - start;
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SettingsLoadComplete",
+            TraceLoggingDescription("Event emitted when loading the settings is finished"),
+            TraceLoggingFloat64(delta.count(), "Duration"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         _loadedInitialSettings = true;
 

@@ -35,6 +35,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="init.cpp"/>
     <ClCompile Include="AzureConnection.cpp" Condition="'$(Platform)'!='ARM64'" />
     <ClCompile Include="AzureConnection-ARM64.cpp" Condition="'$(Platform)'=='ARM64'" />
     <ClCompile Include="pch.cpp">
