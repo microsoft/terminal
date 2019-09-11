@@ -67,16 +67,15 @@ Not currently supported "out of the box". See issue [#1060](https://github.com/m
 
 ## Configuring Windows Terminal
 
-At the time of writing all Windows Terminal settings are managed via a json file.
+All Windows Terminal settings are currently managed using the `profiles.json` file, located within `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe/RoamingState`.
 
-From the `down` button in the top bar select Settings (default shortcut `Ctrl+,`).
+To open the settings file from Windows Terminal:
 
-Your default json editor will open up the Terminal settings file. The file can be found
-at `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>/RoamingState`
+1. Click the `⌵` button in the top bar.
+2. From the dropdown list, click `Settings`. You can also use a shortcut: `Ctrl+,`.
+3. Your default `json` editor will open the settings file.
 
-An introduction to the various settings can be found [here](UsingJsonSettings.md).
-
-The list of valid settings can be found in the [Profiles.json Documentation](../cascadia/SettingsSchema.md) doc.
+For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
 
 ## Tips and Tricks:
 
