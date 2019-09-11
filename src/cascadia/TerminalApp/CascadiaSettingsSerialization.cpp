@@ -278,6 +278,10 @@ Profile* CascadiaSettings::_FindMatchingProfile(const Json::Value& profileJson)
     {
         if (profile.ShouldBeLayered(profileJson))
         {
+            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+            // maybe not the _safest_ thing, but we have a mind to make Profile
+            // and ColorScheme winrt types in the future, so this will be safer
+            // then.
             return &profile;
         }
     }
@@ -324,6 +328,10 @@ ColorScheme* CascadiaSettings::_FindMatchingColorScheme(const Json::Value& schem
     {
         if (scheme.ShouldBeLayered(schemeJson))
         {
+            // HERE BE DRAGONS: Returning a pointer to a type in the vector is
+            // maybe not the _safest_ thing, but we have a mind to make Profile
+            // and ColorScheme winrt types in the future, so this will be safer
+            // then.
             return &scheme;
         }
     }
