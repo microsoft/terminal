@@ -17,8 +17,8 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 // - A Profile, ready to be filled in
 TerminalApp::Profile CreateDefaultProfile(const std::wstring_view name)
 {
-    auto profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
-                                                              gsl::as_bytes(gsl::make_span(name))) };
+    const auto profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
+                                                                    gsl::as_bytes(gsl::make_span(name))) };
     TerminalApp::Profile newProfile{ profileGuid };
 
     newProfile.SetName(static_cast<std::wstring>(name));

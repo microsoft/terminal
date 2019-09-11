@@ -411,7 +411,7 @@ Json::Value Profile::DiffToJson(const Profile& other) const
         }
         else
         {
-            // We ahve a key the other object did not. Add our value.
+            // We have a key the other object did not. Add our value.
             diff[key] = myJson[key];
         }
     }

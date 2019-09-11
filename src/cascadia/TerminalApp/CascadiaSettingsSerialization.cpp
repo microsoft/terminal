@@ -35,6 +35,7 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
+static constexpr std::string_view DefaultProfilesIndentaition{ "        " };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -84,18 +85,19 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // that need to be inserted into their user settings file.
     needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
 
-    // TODO: If powershell core is installed, we need to set that to the default
-    // profile, but only when the settings file was newly created. We'll
+    // TODO:GH#2721 If powershell core is installed, we need to set that to the
+    // default profile, but only when the settings file was newly created. We'll
     // re-write the segment of the
-
-    // TODO: If AppendDynamicProfilesToUserSettings (or the pwsh check above)
-    // changed the file, then our local settings JSON is no longer accurate. We
-    // should re-parse, but not re-layer
 
     // If we created the file, or found new dynamic profiles, write the user
     // settings string back to the file.
     if (needToWriteFile)
     {
+        // If AppendDynamicProfilesToUserSettings (or the pwsh check above)
+        // changed the file, then our local settings JSON is no longer accurate.
+        // We should re-parse, but not re-layer
+        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+
         _WriteSettings(resultPtr->_userSettingsString);
     }
 
@@ -147,7 +149,7 @@ void CascadiaSettings::_LoadDynamicProfiles()
         }
     }
 
-    GUID nullGuid{ 0 };
+    const GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
         const std::wstring generatorNamespace{ generator->GetNamespace() };
@@ -190,7 +192,7 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
 {
     // Ignore UTF-8 BOM
     auto actualDataStart = fileData.data();
-    auto actualDataEnd = fileData.data() + fileData.size();
+    const auto actualDataEnd = fileData.data() + fileData.size();
     if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
     {
         actualDataStart += Utf8Bom.size();
@@ -258,7 +260,7 @@ void CascadiaSettings::SaveAll() const
 bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 {
     // - Find the set of profiles that weren't either in the default profiles or
-    //   in the user profiles. TODO: Do this in not O(N^2)
+    //   in the user profiles. TODO:GH#2723 Do this in not O(N^2)
     // - For each of those profiles,
     //   * Diff them from the default profile
     //   * Serialize that diff
@@ -307,15 +309,14 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add 8 spaces to the start of each line
-        profileSerialization.insert(0, "        ");
+        profileSerialization.insert(0, DefaultProfilesIndentaition);
         // Get the first newline
         size_t pos = profileSerialization.find("\n");
         // for each newline...
         while (pos != std::string::npos)
         {
-            // Replace the current newline with a newline followed by 8
-            // additional spaces at the start of the line
-            profileSerialization.replace(pos, 1, "\n        ");
+            // Insert 8 spaces immediately following the current newline
+            profileSerialization.insert(pos + 1, DefaultProfilesIndentaition);
             // Get the next newline
             pos = profileSerialization.find("\n", pos + 9);
         }

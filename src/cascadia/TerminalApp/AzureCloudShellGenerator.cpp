@@ -21,7 +21,7 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace()
 }
 
 // Method Description:
-// - Checks if the Azure Cloud shell is available on this playform, and if it
+// - Checks if the Azure Cloud shell is available on this platform, and if it
 //   is, creates a profile to be able to launch it.
 // Arguments:
 // - <none>
