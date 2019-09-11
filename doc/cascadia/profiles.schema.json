@@ -17,11 +17,11 @@
   "properties": {
     "globals": {
       "additionalProperties": false,
-      "description": "Properties affect the entire window, regardless of the profile settings.",
+      "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
         "alwaysShowTabs": {
           "default": true,
-          "description": "When set to true, tabs are always displayed. When set to false and showTabsInTitlebar is set to false, tabs only appear after typing Ctrl + T.",
+          "description": "When set to true, tabs are always displayed. When set to false and showTabsInTitlebar is set to false, tabs only appear after opening a new tab.",
           "type": "boolean"
         },
         "copyOnSelect": {
@@ -30,8 +30,8 @@
           "type": "boolean"
         },
         "defaultProfile": {
-          "$ref": "#/definitions/ProfileKey",
-          "description": "Sets the default profile. Opens by typing Ctrl + T or by clicking the '+' icon. The guid of the desired default profile is used as the value."
+          "$ref": "#/definitions/ProfileGuid",
+          "description": "Sets the default profile. Opens by clicking the '+' icon or typing the key binding assigned to 'newTab'. The guid of the desired default profile is used as the value."
         },
         "initialCols": {
           "default": 120,
@@ -126,7 +126,7 @@
         },
         "requestedTheme": {
           "default": "system",
-          "description": "Sets the theme of the application. Possible values: 'light', 'dark', 'system'",
+          "description": "Sets the theme of the application.",
           "enum": [
             "light",
             "dark",
@@ -151,12 +151,7 @@
         }
       },
       "required": [
-        "alwaysShowTabs",
-        "defaultProfile",
-        "initialCols",
-        "initialRows",
-        "requestedTheme",
-        "showTerminalTitleInTitlebar"
+        "defaultProfile"
       ],
       "type": "object"
     },
@@ -177,7 +172,7 @@
             "description": "Sets the background color of the profile. Overrides background set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#000000\" (black)."
           },
           "backgroundImage": {
-            "description": "(Not in SettingsSchema.md)",
+            "description": "Sets the file location of the Image to draw over the window background.",
             "type": "string"
           },
           "backgroundImageAlignment": {
@@ -202,7 +197,8 @@
             "type": "number"
           },
           "backgroundImageStretchMode": {
-            "description": "(Not in SettingsSchema.md) Possible values: \"none\", \"fill\", \"uniform\", \"uniformToFill\" (default)",
+            "default": "uniformToFill",
+            "description": "Sets how the background image is resized to fill the window.",
             "enum": [
               "fill",
               "none",
@@ -213,12 +209,12 @@
           },
           "closeOnExit": {
             "default": true,
-            "description": "When set to true (default), the selected tab closes when exit is typed. When set to false, the tab will remain open when exit is typed.",
+            "description": "When set to true (default), the selected tab closes when the connected application exits. When set to false, the tab will remain open when the connected application exits.",
             "type": "boolean"
           },
           "colorScheme": {
             "default": "Campbell",
-            "description": "Name of the terminal color scheme to use. Color schemes are defined under schemes.",
+            "description": "Name of the terminal color scheme to use. Color schemes are defined under \"schemes\".",
             "type": "string"
           },
           "colorTable": {
@@ -231,13 +227,11 @@
             "type": "array"
           },
           "commandline": {
-            "default": "powershell.exe",
             "description": "Executable used in the profile.",
             "type": "string"
           },
           "connectionType": {
-            "$ref": "#/definitions/ProfileKey",
-            "default": "{d9fcfdfa-a479-412c-83b7-c5640e61cd62}",
+            "$ref": "#/definitions/ProfileGuid",
             "description": "A GUID reference to a connection type. Currently undocumented as of 0.3, this is used for Azure Cloud Shell"
           },
           "cursorColor": {
@@ -279,7 +273,7 @@
             "description": "Sets the foreground color of the profile. Overrides foreground set in color scheme if colorscheme is set. Uses hex color format: \"#rrggbb\". Default \"#ffffff\" (white)."
           },
           "guid": {
-            "$ref": "#/definitions/ProfileKey",
+            "$ref": "#/definitions/ProfileGuid",
             "description": "Unique identifier of the profile. Written in registry format: \"{00000000-0000-0000-0000-000000000000}\"."
           },
           "historySize": {
@@ -293,7 +287,6 @@
             "type": "string"
           },
           "name": {
-            "default": "PowerShell Core",
             "description": "Name of the profile. Displays in the dropdown menu.",
             "minLength": 1,
             "type": "string"
@@ -305,7 +298,8 @@
             "type": "string"
           },
           "scrollbarState": {
-            "description": "Defines the visibility of the scrollbar. Possible values: \"visible\", \"hidden\"",
+            "default": "visible",
+            "description": "Defines the visibility of the scrollbar.",
             "enum": [
               "visible",
               "hidden"
@@ -318,7 +312,6 @@
             "type": "boolean"
           },
           "startingDirectory": {
-            "default": "%USERPROFILE%",
             "description": "The directory the shell starts in when it is loaded.",
             "type": "string"
           },
@@ -333,20 +326,10 @@
           }
         },
         "required": [
-          "acrylicOpacity",
-          "closeOnExit",
           "colorScheme",
           "commandline",
-          "cursorColor",
-          "cursorShape",
-          "fontFace",
-          "fontSize",
           "guid",
-          "historySize",
-          "name",
-          "padding",
-          "snapOnInput",
-          "useAcrylic"
+          "name"
         ],
         "type": "object"
       },
@@ -357,6 +340,11 @@
       "items": {
         "additionalProperties": false,
         "properties": {
+          "name": {
+            "description": "Name of the color scheme.",
+            "minLength": 1,
+            "type": "string"
+          },
           "background": {
             "$ref": "#/definitions/Color",
             "description": "Sets the background color of the color scheme."
@@ -412,11 +400,6 @@
           "green": {
             "$ref": "#/definitions/Color",
             "description": "Sets the color used as ANSI green."
-          },
-          "name": {
-            "description": "Name of the color scheme.",
-            "minLength": 1,
-            "type": "string"
           },
           "purple": {
             "$ref": "#/definitions/Color",
