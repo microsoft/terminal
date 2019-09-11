@@ -3230,8 +3230,16 @@ void ScreenBufferTests::ScrollOperations()
     VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
     stateMachine.ProcessString(escapeSequence.str());
 
-    Log::Comment(L"Verify cursor didn't move.");
-    VERIFY_ARE_EQUAL(cursorPos, cursor.GetPosition());
+    // The cursor shouldn't move.
+    auto expectedCursorPos = cursorPos;
+    // Unless this is an IL or DL control, which moves the cursor to the left margin.
+    if (scrollType == InsertLine || scrollType == DeleteLine)
+    {
+        expectedCursorPos.X = 0;
+    }
+
+    Log::Comment(L"Verify expected cursor position.");
+    VERIFY_ARE_EQUAL(expectedCursorPos, cursor.GetPosition());
 
     Log::Comment(L"Field of Zs outside viewport should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLinesContain(0, viewportStart, bufferChar, bufferAttr));
@@ -3749,7 +3757,8 @@ void ScreenBufferTests::InsertLinesInMargins()
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
 
-    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
     {
         auto iter0 = tbi.GetCellDataAt({ 0, 0 });
@@ -3783,7 +3792,8 @@ void ScreenBufferTests::InsertLinesInMargins()
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
 
-    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
     {
         auto iter0 = tbi.GetCellDataAt({ 0, 0 });
@@ -3824,7 +3834,8 @@ void ScreenBufferTests::DeleteLinesInMargins()
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
 
-    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(2, cursor.GetPosition().Y);
     {
         auto iter0 = tbi.GetCellDataAt({ 0, 0 });
@@ -3858,7 +3869,8 @@ void ScreenBufferTests::DeleteLinesInMargins()
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
 
-    VERIFY_ARE_EQUAL(4, cursor.GetPosition().X);
+    // Verify cursor moved to left margin.
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
     VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
     {
         auto iter0 = tbi.GetCellDataAt({ 0, 0 });
