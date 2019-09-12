@@ -333,19 +333,30 @@ namespace winrt::TerminalApp::implementation
             profileGuid = globalSettings.GetDefaultProfile();
         }
 
-        TerminalSettings settings = _settings->MakeSettings(profileGuid);
-        _CreateNewTabFromSettings(profileGuid, settings);
+        try
+        {
+            // MakeSettings might throw and E_INVALIDARG if the profile guid
+            // doesn't exist. In that case, silently do nothing.
+            TerminalSettings settings = _settings->MakeSettings(profileGuid);
+            _CreateNewTabFromSettings(profileGuid, settings);
 
-        const int tabCount = static_cast<int>(_tabs.size());
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",
-            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
-            TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-            TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            const int tabCount = static_cast<int>(_tabs.size());
+            TraceLoggingWrite(
+                g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+                "TabInformation",
+                TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+                TraceLoggingInt32(tabCount, "TabCount", "Count of tabs curently opened in TerminalApp"),
+                TraceLoggingBool(profileIndex.has_value(), "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+                TraceLoggingGuid(profileGuid, "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        }
+        CATCH_LOG();
+        // TODO: Should we display a dialog when we do nothing because we
+        // couldn't find the associated profile? This can only really happen in
+        // the duplicate tab scenario currently, but maybe in the future of
+        // keybindings with args, someone could manually open a tab/pane with
+        // specific a GUID.
     }
 
     // Method Description:
@@ -355,17 +366,28 @@ namespace winrt::TerminalApp::implementation
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     void TerminalPage::_CreateNewTabFromSettings(GUID profileGuid, TerminalSettings settings)
     {
-        // Initialize the new tab
+        // First, ensure that a profile exists with the provided GUID. If it
+        // doesn't then we're not going to be able to create a connection for
+        // it.
+        const auto* const profile = _settings->FindProfile(profileGuid);
+        if (profile == nullptr)
+        {
+            return;
+        }
+        // Initialize the new tab.
 
         // Create a connection based on the values in our settings object.
         const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+        if (!connection)
+        {
+            // If we weren't able to create a connection, then lets just bail. This should only happen if profile is nullptr, but we'll
+            return;
+        }
 
         TermControl term{ settings, connection };
 
         // Add the new tab to the list of our tabs.
         auto newTab = _tabs.emplace_back(std::make_shared<Tab>(profileGuid, term));
-
-        const auto* const profile = _settings->FindProfile(profileGuid);
 
         // Hookup our event handlers to the new terminal
         _RegisterTerminalEvents(term, newTab);
@@ -407,6 +429,10 @@ namespace winrt::TerminalApp::implementation
                                                                                         winrt::Microsoft::Terminal::Settings::TerminalSettings settings)
     {
         const auto* const profile = _settings->FindProfile(profileGuid);
+        if (profile == nullptr)
+        {
+            return { nullptr };
+        }
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -589,9 +615,16 @@ namespace winrt::TerminalApp::implementation
         const auto& _tab = _tabs.at(focusedTabIndex);
 
         const auto& profileGuid = _tab->GetFocusedProfile();
-        const auto& settings = _settings->MakeSettings(profileGuid);
+        try
+        {
+            // MakeSettings might throw and E_INVALIDARG if the profile guid
+            // doesn't exist in our list of profiles. In that case, silently do
+            // nothing.
+            const auto& settings = _settings->MakeSettings(profileGuid);
 
-        _CreateNewTabFromSettings(profileGuid.value(), settings);
+            _CreateNewTabFromSettings(profileGuid.value(), settings);
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -832,26 +865,33 @@ namespace winrt::TerminalApp::implementation
 
         const auto realGuid = profileGuid ? profileGuid.value() :
                                             _settings->GlobalSettings().GetDefaultProfile();
-        const auto controlSettings = _settings->MakeSettings(realGuid);
-
-        const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
-
-        const int focusedTabIndex = _GetFocusedTabIndex();
-        auto focusedTab = _tabs[focusedTabIndex];
-
-        const auto canSplit = focusedTab->CanSplitPane(splitType);
-
-        if (!canSplit)
+        try
         {
-            return;
+            // MakeSettings might throw and E_INVALIDARG if the profile guid
+            // doesn't exist in our list of profiles. In that case, silently do
+            // nothing.
+            const auto controlSettings = _settings->MakeSettings(realGuid);
+
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings);
+
+            const int focusedTabIndex = _GetFocusedTabIndex();
+            auto focusedTab = _tabs[focusedTabIndex];
+
+            const auto canSplit = focusedTab->CanSplitPane(splitType);
+
+            if (!canSplit)
+            {
+                return;
+            }
+
+            TermControl newControl{ controlSettings, controlConnection };
+
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl, focusedTab);
+
+            focusedTab->SplitPane(splitType, realGuid, newControl);
         }
-
-        TermControl newControl{ controlSettings, controlConnection };
-
-        // Hookup our event handlers to the new terminal
-        _RegisterTerminalEvents(newControl, focusedTab);
-
-        focusedTab->SplitPane(splitType, realGuid, newControl);
+        CATCH_LOG();
     }
 
     // Method Description:
@@ -1217,13 +1257,20 @@ namespace winrt::TerminalApp::implementation
         for (auto& profile : profiles)
         {
             const GUID profileGuid = profile.GetGuid();
-            TerminalSettings settings = _settings->MakeSettings(profileGuid);
-
-            for (auto& tab : _tabs)
+            try
             {
-                // Attempt to reload the settings of any panes with this profile
-                tab->UpdateSettings(settings, profileGuid);
+                // MakeSettings might throw and E_INVALIDARG if the profile guid
+                // doesn't exist in our list of profiles. In that case, silently
+                // do nothing.
+                TerminalSettings settings = _settings->MakeSettings(profileGuid);
+
+                for (auto& tab : _tabs)
+                {
+                    // Attempt to reload the settings of any panes with this profile
+                    tab->UpdateSettings(settings, profileGuid);
+                }
             }
+            CATCH_LOG();
         }
 
         // Update the icon of the tab for the currently focused profile in that tab.

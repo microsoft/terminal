@@ -451,7 +451,7 @@ TerminalSettings CascadiaSettings::MakeSettings(std::optional<GUID> profileGuidA
     const Profile* const profile = FindProfile(profileGuid);
     if (profile == nullptr)
     {
-        throw E_INVALIDARG;
+        THROW_HR(E_INVALIDARG);
     }
 
     TerminalSettings result = profile->CreateTerminalSettings(_globals.GetColorSchemes());
