@@ -2021,6 +2021,7 @@ void DoSrvPrivateSetDefaultTabStops()
 
 // Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
+//   this also moves the cursor to the left margin, which is expected behaviour for IL and DL
 // Parameters:
 // - count - the number of lines to modify
 // - insert - true if inserting lines, false if deleting lines
@@ -2069,6 +2070,10 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
                          screenInfo.GetAttributes());
         }
         CATCH_LOG();
+
+        // The IL and DL controls are also expected to move the cursor to the left margin.
+        // For now this is just column 0, since we don't yet support DECSLRM.
+        LOG_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
     }
 }
 
