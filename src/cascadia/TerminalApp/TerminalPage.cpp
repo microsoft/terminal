@@ -825,7 +825,9 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Remove all the tabs opened and the terminal will terminate
-    //   on its own when the last tab is closed
+    //   on its own when the last tab is closed. Note that tabs
+    //   should be removed from tabs vector, thus we remove
+    //   in revese order to reduce time complexity
     void TerminalPage::_CloseAllTabs()
     {
         while (!_tabs.empty())
