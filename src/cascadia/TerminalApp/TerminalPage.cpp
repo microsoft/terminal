@@ -192,7 +192,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_ShowCloseWarningDialog()
     {
         auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
-        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"Close all");
+        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"CloseAll");
         auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
 
         Controls::ContentDialog dialog;
@@ -614,25 +614,36 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
+    // - Look for the index of the input tabView in the tabs vector,
+    //   and call _RemoveTabViewItemByIndex
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void TerminalPage::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    {
+        uint32_t tabIndexFromControl = 0;
+        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+
+        _RemoveTabViewItemByIndex(tabIndexFromControl);
+    }
+
+    // Method Description:
+    // - Removes the tab (both TerminalControl and XAML)
+    // Arguments:
+    // - tabIndex: the index of the tab to be removed
+    void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
         // To close the window here, we need to close the hosting window.
         if (_tabs.size() == 1)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-        uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-        auto focusedTabIndex = _GetFocusedTabIndex();
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndexFromControl);
-        _tabView.Items().RemoveAt(tabIndexFromControl);
+        _tabs.erase(_tabs.begin() + tabIndex);
+        _tabView.Items().RemoveAt(tabIndex);
 
-        if (tabIndexFromControl == focusedTabIndex)
+        auto focusedTabIndex = _GetFocusedTabIndex();
+        if (tabIndex == focusedTabIndex)
         {
             auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
             if (focusedTabIndex >= tabCount)
@@ -783,8 +794,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CloseFocusedTab()
     {
         int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-        _RemoveTabViewItem(focusedTab->GetTabViewItem());
+        _RemoveTabViewItemByIndex(focusedTabIndex);
     }
 
     // Method Description:
@@ -818,11 +828,9 @@ namespace winrt::TerminalApp::implementation
     //   on its own when the last tab is closed
     void TerminalPage::_CloseAllTabs()
     {
-        int tabCount = static_cast<int>(_tabs.size());
-        for (int i = tabCount - 1; i >= 0; i--)
+        while (!_tabs.empty())
         {
-            std::shared_ptr<Tab> curTab{ _tabs[i] };
-            _RemoveTabViewItem(curTab->GetTabViewItem());
+            _RemoveTabViewItemByIndex(_tabs.size() - 1);
         }
     }
 

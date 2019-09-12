@@ -81,6 +81,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
+        void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 
