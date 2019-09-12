@@ -793,7 +793,7 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void TerminalPage::_CloseFocusedTab()
     {
-        int focusedTabIndex = _GetFocusedTabIndex();
+        uint32_t focusedTabIndex = _GetFocusedTabIndex();
         _RemoveTabViewItemByIndex(focusedTabIndex);
     }
 
@@ -825,14 +825,12 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Remove all the tabs opened and the terminal will terminate
-    //   on its own when the last tab is closed. Note that tabs
-    //   should be removed from tabs vector, thus we remove
-    //   in revese order to reduce time complexity
+    //   on its own when the last tab is closed.
     void TerminalPage::_CloseAllTabs()
     {
         while (!_tabs.empty())
         {
-            _RemoveTabViewItemByIndex(_tabs.size() - 1);
+            _RemoveTabViewItemByIndex(0);
         }
     }
 
