@@ -134,8 +134,24 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
     proposedRect.left = (long)initialPosition.X;
     proposedRect.right = (long)initialPosition.Y;
 
+    std::wstring launchMode = _app.GetLaunchMode();
+
     // Find nearest montitor.
     HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+
+    if (launchMode == L"maximize")
+    {
+        MONITORINFO monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        if (GetMonitorInfoA(hmon, &monitorInfo))
+        {
+
+        }
+        else
+        {
+
+        }
+    }
 
     // This API guarantees that dpix and dpiy will be equal, but neither is an
     // optional parameter so give two UINTs.

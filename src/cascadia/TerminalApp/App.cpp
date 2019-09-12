@@ -338,6 +338,29 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
+    // Method Description:
+    // -
+    // Arguments:
+    // -
+    // Return Value:
+    // - 
+    std::wstring App::GetLaunchMode()
+    {
+        if (!_loadedInitialSettings)
+        {
+            // Load settings if we haven't already
+            LoadSettings();
+        }
+
+        return _settings->GlobalSettings().GetLaunchMode();
+    }
+
+    // Method Description:
+    // -
+    // Arguments:
+    // -
+    // Return Value:
+    // - a point containing the requested initial position in pixels.
     winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(const uint64_t defaultInitialX, const uint64_t defaultInitialY)
     {
         if (!_loadedInitialSettings)
