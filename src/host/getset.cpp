@@ -840,8 +840,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         //      on their behalf.
         // see MSFT:19853701
 
-        // use context (not buffer) here because alternate buffer may not be aware of VT mode
-        if (context.InVTMode())
+        if (buffer.InVTMode())
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
             const auto currentAttributes = buffer.GetAttributes();
