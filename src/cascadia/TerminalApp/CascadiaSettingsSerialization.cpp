@@ -35,7 +35,7 @@ static constexpr std::string_view SchemesKey{ "schemes" };
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
-static constexpr std::string_view DefaultProfilesIndentaition{ "        " };
+static constexpr std::string_view DefaultProfilesIndentation{ "        " };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -309,14 +309,14 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add 8 spaces to the start of each line
-        profileSerialization.insert(0, DefaultProfilesIndentaition);
+        profileSerialization.insert(0, DefaultProfilesIndentation);
         // Get the first newline
         size_t pos = profileSerialization.find("\n");
         // for each newline...
         while (pos != std::string::npos)
         {
             // Insert 8 spaces immediately following the current newline
-            profileSerialization.insert(pos + 1, DefaultProfilesIndentaition);
+            profileSerialization.insert(pos + 1, DefaultProfilesIndentation);
             // Get the next newline
             pos = profileSerialization.find("\n", pos + 9);
         }
