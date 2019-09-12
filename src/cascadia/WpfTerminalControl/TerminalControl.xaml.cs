@@ -20,6 +20,30 @@ namespace Microsoft.Terminal.Wpf
             this.scrollbar.MouseWheel += Scrollbar_MouseWheel;
         }
 
+
+        /// <summary>
+        /// Character rows available to the terminal.
+        /// </summary>
+        public uint Rows
+        {
+            get
+            {
+                return this.termContainer.Rows;
+            }
+        }
+
+
+        /// <summary>
+        /// Character columns available to the terminal.
+        /// </summary>
+        public uint Columns
+        {
+            get
+            {
+                return this.termContainer.Columns;
+            }
+        }
+
         private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             this.TermControl_UserScrolled(sender, e.Delta);
