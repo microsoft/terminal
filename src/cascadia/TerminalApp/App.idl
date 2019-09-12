@@ -24,7 +24,7 @@ namespace TerminalApp
         String Title { get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
-        Windows.Foundation.Point GetLaunchInitialPositions();
+        Windows.Foundation.Point GetLaunchInitialPositions(UInt64 defaultInitialX, UInt64 defaultInitialY);
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
 

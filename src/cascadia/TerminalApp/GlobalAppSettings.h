@@ -53,6 +53,17 @@ public:
     bool GetCopyOnSelect() const noexcept;
     void SetCopyOnSelect(const bool copyOnSelect) noexcept;
 
+    int32_t GetInitialX() const noexcept;
+    void SetInitialX(const int32_t initialX) noexcept;
+    bool GetUseDefaultInitialX() const noexcept;
+
+    int32_t GetInitialY() const noexcept;
+    void SetInitialY(const int32_t initialY) noexcept;
+    bool GetUseDefaultInitialY() const noexcept;
+
+    std::wstring GetLaunchMode() const noexcept;
+    void SetLaunchMode(const std::wstring launchMode);
+
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
     Json::Value ToJson() const;
@@ -69,6 +80,11 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
+    int32_t _initialX;
+    int32_t _initialY;
+    bool _useDefaultInitialX;
+    bool _useDefaultInitialY;
+
     bool _showStatusline;
     bool _alwaysShowTabs;
     bool _showTitleInTitlebar;
@@ -77,6 +93,8 @@ private:
     std::wstring _wordDelimiters;
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
+
+    std::wstring _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;

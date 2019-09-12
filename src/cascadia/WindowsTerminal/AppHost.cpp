@@ -127,8 +127,13 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& send
 //   to appear on.
 // Return Value:
 // - <none>
-void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
 {
+    // Acquire the actual intial position
+    winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
+    proposedRect.left = (long)initialPosition.X;
+    proposedRect.right = (long)initialPosition.Y;
+
     // Find nearest montitor.
     HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
@@ -140,9 +145,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
     auto initialSize = _app.GetLaunchDimensions(dpix);
-
-    bool useDefaultInitialPos = false;
-    winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions();
 
     const short _currentWidth = Utils::ClampToShortMax(
         static_cast<long>(ceil(initialSize.X)), 1);
@@ -186,8 +188,8 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
     const auto adjustedHeight = nonClient.bottom - nonClient.top;
     const auto adjustedWidth = nonClient.right - nonClient.left;
 
-    const COORD origin{ gsl::narrow<short>(useDefaultInitialPos ? proposedRect.left : initialPosition.X),
-                        gsl::narrow<short>(useDefaultInitialPos ? proposedRect.top : initialPosition.Y) };
+    const COORD origin{ gsl::narrow<short>(initialPosition.X),
+                        gsl::narrow<short>(initialPosition.Y) };
 
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };

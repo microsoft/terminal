@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+#include <WinUser.h>
 #include "pch.h"
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
@@ -20,11 +21,17 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
+
+static constexpr std::string_view InitialXKey{ "initialX" };
+static constexpr std::string_view InitialYKey{ "initialY" };
+
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
+
+static constexpr std::string_view LaunchModeKey{ "launchMode" };
 
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
@@ -37,11 +44,18 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
+
+    _initialX{ 0 },
+    _initialY{ 0 },
+    _useDefaultInitialX{ true },
+    _useDefaultInitialY{ true },
+
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
-    _copyOnSelect{ false }
+    _copyOnSelect{ false },
+    _launchMode{ L"default" }
 {
 }
 
@@ -129,6 +143,15 @@ void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
     _copyOnSelect = copyOnSelect;
 }
 
+std::wstring GlobalAppSettings::GetLaunchMode() const noexcept
+{
+    return _launchMode;
+}
+void GlobalAppSettings::SetLaunchMode(const std::wstring launchMode)
+{
+    _launchMode = launchMode;
+}
+
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
 {
@@ -139,6 +162,32 @@ void GlobalAppSettings::SetShowTabsInTitlebar(const bool showTabsInTitlebar) noe
 {
     _showTabsInTitlebar = showTabsInTitlebar;
 }
+
+int32_t GlobalAppSettings::GetInitialX() const noexcept
+{
+    return _initialX;
+}
+void GlobalAppSettings::SetInitialX(const int32_t initialX) noexcept
+{
+    _initialX = initialX;
+}
+bool GlobalAppSettings::GetUseDefaultInitialX() const noexcept
+{
+    return _useDefaultInitialX;
+}
+int32_t GlobalAppSettings::GetInitialY() const noexcept
+{
+    return _initialY;
+}
+void GlobalAppSettings::SetInitialY(const int32_t initialY) noexcept
+{
+    _initialY = initialY;
+}
+bool GlobalAppSettings::GetUseDefaultInitialY() const noexcept
+{
+    return _useDefaultInitialY;
+}
+
 #pragma endregion
 
 // Method Description:
@@ -152,6 +201,7 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
+
     settings.WordDelimiters(_wordDelimiters);
     settings.CopyOnSelect(_copyOnSelect);
 }
@@ -169,11 +219,16 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+
+    jsonObject[JsonKey(InitialXKey)] = _initialX;
+    jsonObject[JsonKey(InitialYKey)] = _initialY;
+
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
+    jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_launchMode);
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
 
@@ -209,6 +264,17 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
         result._initialCols = initialCols.asInt();
     }
 
+    if (auto initialX{ json[JsonKey(InitialXKey)] })
+    {
+        result._useDefaultInitialX = false;
+        result._initialX = initialX.asInt();
+    }
+    if (auto initialY{ json[JsonKey(InitialYKey)] })
+    {
+        result._useDefaultInitialY = false;
+        result._initialY = initialY.asInt();
+    }
+
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
         result._showTitleInTitlebar = showTitleInTitlebar.asBool();
@@ -227,6 +293,11 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
     if (auto copyOnSelect{ json[JsonKey(CopyOnSelectKey)] })
     {
         result._copyOnSelect = copyOnSelect.asBool();
+    }
+
+    if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
+    {
+        result._launchMode = GetWstringFromJson(launchMode);
     }
 
     if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })

@@ -338,7 +338,7 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
-    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions()
+    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(const uint64_t defaultInitialX, const uint64_t defaultInitialY)
     {
         if (!_loadedInitialSettings)
         {
@@ -346,12 +346,11 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
-
         winrt::Windows::Foundation::Point point;
-        point.X = 1000;
-        point.Y = 800;
-
+        point.X = gsl::narrow_cast<float>(_settings->GlobalSettings().GetUseDefaultInitialX() ? defaultInitialX :
+                                                                                                _settings->GlobalSettings().GetInitialX());
+        point.Y = gsl::narrow_cast<float>(_settings->GlobalSettings().GetUseDefaultInitialY() ? defaultInitialY :
+                                                                                                _settings->GlobalSettings().GetInitialY());
         return point;
     }
 

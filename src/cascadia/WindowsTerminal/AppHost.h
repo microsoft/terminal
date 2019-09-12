@@ -24,7 +24,7 @@ private:
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::App _app;
 
-    void _HandleCreateWindow(const HWND hwnd, const RECT proposedRect);
+    void _HandleCreateWindow(const HWND hwnd, RECT proposedRect);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::UI::Xaml::UIElement& arg);
     void _UpdateTheme(const winrt::TerminalApp::App&,
