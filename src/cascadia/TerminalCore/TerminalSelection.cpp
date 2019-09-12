@@ -361,15 +361,15 @@ COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
         return positionWithOffsets;
     }
 
-    auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
-    const auto startedOnDelimiter = _GetDelimiterClass(cellChar);
-    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
+    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
+    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
+        bufferIterator--;
     }
 
-    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
@@ -399,15 +399,15 @@ COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
         return positionWithOffsets;
     }
 
-    auto cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
-    const auto startedOnDelimiter = _GetDelimiterClass(cellChar);
-    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(cellChar) == startedOnDelimiter))
+    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
+    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetTextDataAt(positionWithOffsets)->data();
+        bufferIterator++;
     }
 
-    if (_GetDelimiterClass(cellChar) != startedOnDelimiter)
+    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);

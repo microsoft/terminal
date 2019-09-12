@@ -94,8 +94,61 @@ namespace TerminalCoreUnitTests
             }
         }
 
+        TEST_METHOD(SelectFromOutofBounds)
+        {
+            /*  NOTE:
+                ensuring that the selection anchors are clamped to be valid permits us to make the following assumption:
+                    - All selection expansion functions will operate as if they were performed at the boundary
+            */
+
+            Terminal term;
+            DummyRenderTarget emptyRT;
+            term.Create({ 10, 10 }, 0, emptyRT);
+
+            auto viewport = term.GetViewport();
+            const SHORT leftBoundary = viewport.Left();
+            const SHORT rightBoundary = viewport.RightInclusive();
+            const SHORT topBoundary = viewport.Top();
+            const SHORT bottomBoundary = viewport.BottomInclusive();
+
+            auto ValidateSelection = [&](SMALL_RECT expected) {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
+
+                VERIFY_ARE_EQUAL(selection, expected);
+            };
+
+            // Case 1: Simulate click past right (x,y) = (20,5)
+            // should clamp to right boundary
+            term.SetSelectionAnchor({ 20, 5 });
+            ValidateSelection({ rightBoundary, 5, rightBoundary, 5 });
+
+            // Case 2: Simulate click past left (x,y) = (-20,5)
+            // should clamp to left boundary
+            term.SetSelectionAnchor({ -20, 5 });
+            ValidateSelection({ leftBoundary, 5, leftBoundary, 5 });
+
+            // Case 3: Simulate click past top (x,y) = (5,-20)
+            // should clamp to top boundary
+            term.SetSelectionAnchor({ 5, -20 });
+            ValidateSelection({ 5, topBoundary, 5, topBoundary });
+
+            // Case 4: Simulate click past bottom (x,y) = (5,20)
+            // should clamp to bottom boundary
+            term.SetSelectionAnchor({ 5, 20 });
+            ValidateSelection({ 5, bottomBoundary, 5, bottomBoundary });
+        }
+
         TEST_METHOD(SelectToOutOfBounds)
         {
+            /*  NOTE:
+                ensuring that the selection anchors are clamped to be valid permits us to make the following assumption:
+                    - All selection expansion functions will operate as if they were performed at the boundary
+            */
+
             Terminal term;
             DummyRenderTarget emptyRT;
             term.Create({ 10, 10 }, 0, emptyRT);
@@ -475,7 +528,7 @@ namespace TerminalCoreUnitTests
             VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
 
             auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 15, 10 }));
+            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 15, 10, 15, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
