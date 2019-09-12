@@ -43,6 +43,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TryCreateXamlObjects);
         TEST_METHOD(TryCreateTab);
 
+        TEST_METHOD(TryDuplicateBadTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -105,6 +107,18 @@ namespace TerminalAppLocalTests
         auto newTab = std::make_shared<Tab>(profileGuid, term);
 
         VERIFY_IS_NOT_NULL(newTab);
+    }
+
+    void TabTests::TryDuplicateBadTab()
+    {
+        // Create a tab with a profile with GUID A
+        // Reload the settings so that GUID A is no longer in the list of profiles
+        // Try calling _DuplicateTabViewItem on tab A
+        // No new tab should be created (and more importantly, the app should not crash)
+
+        // This is a tests that was inspired by GH#2455, but at the time,
+        // GH#2472 was still not solved, so this test was not possible to be
+        // authored.
     }
 
 }
