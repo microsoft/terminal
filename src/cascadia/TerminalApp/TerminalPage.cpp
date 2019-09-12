@@ -185,13 +185,12 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
-    //   that more than 1 tabs are opend, and once the user click the OK button, remove
+    //   that more than 1 tab is opend, and once the user clicks the OK button, remove
     //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens. See _ShowDialog for details
     void TerminalPage::_ShowCloseWarningDialog()
     {
-        // To do: change these strings to localized strings in resource loader
         auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
         auto primaryButtonText = _resourceLoader->GetLocalizedString(L"Close all");
         auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
@@ -800,7 +799,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app with keys. If there are more
+    // - Close the terminal app with keys. If there is more
     //   than one tab opened, show a warning dialog.
     void TerminalPage::_CloseWindow()
     {
@@ -1251,8 +1250,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Called when the primary button of the content dialog is clicked.
-    //   This calls _CloseAllTabs(), which close all the tabs currently
-    //   opened and then the Terminal app. This methos will be called if
+    //   This calls _CloseAllTabs(), which closes all the tabs currently
+    //   opened and then the Terminal app. This method will be called if
     //   the user confirms to close all the tabs.
     // Arguments:
     // - sender: unused
