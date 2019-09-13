@@ -31,7 +31,8 @@ namespace TerminalAppLocalTests
         // deploying the appx takes a bit, so use sparingly (though it will
         // deploy once per class when used like this.)
         BEGIN_TEST_CLASS(TabTests)
-            TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
+            TEST_METHOD_PROPERTY(L"RunAs", L"UAP")
+            TEST_METHOD_PROPERTY(L"UAP:Host", L"PackagedCwa")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TerminalApp.LocalTests.AppxManifest.xml")
         END_TEST_CLASS()
 
