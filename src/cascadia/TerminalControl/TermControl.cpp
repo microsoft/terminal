@@ -342,7 +342,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        Windows::UI::Xaml::Automation::Peers::AutomationPeer autoPeer = nullptr;
+        Windows::UI::Xaml::Automation::Peers::AutomationPeer autoPeer{ nullptr };
         try
         {
             // create a custom automation peer with this code pattern:
