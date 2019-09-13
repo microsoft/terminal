@@ -24,5 +24,5 @@ $fullPath = Resolve-Path -Path $JsonFile
 Write-Output $fullPath.Path | Out-File -FilePath $OutPath -Encoding ASCII -Append
 Write-Output "constexpr std::string_view $($VariableName){ R`"(" | Out-File -FilePath $OutPath -Encoding ASCII -Append
 Write-Output $jsonData | Out-File -FilePath $OutPath -Encoding ASCII -Append
-Write-Output "})`" };" | Out-File -FilePath $OutPath -Encoding ASCII -Append
+Write-Output ")`" };" | Out-File -FilePath $OutPath -Encoding ASCII -Append
 

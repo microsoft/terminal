@@ -466,7 +466,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 //   given settings upon.
 // - Returns nullptr if no such match exists.
 // Arguments:
-// - <none>
+// - json: an object which may be a partial serialization of a Profile object.
 // Return Value:
 // - a Profile that can be layered with the given json object, iff such a
 //   profile exists.
@@ -516,7 +516,7 @@ void CascadiaSettings::_LayerOrCreateColorScheme(const Json::Value& schemeJson)
 //   scheme to layer the given settings upon.
 // - Returns nullptr if no such match exists.
 // Arguments:
-// - <none>
+// - json: an object which should be a partial serialization of a ColorScheme object.
 // Return Value:
 // - a ColorScheme that can be layered with the given json object, iff such a
 //   color scheme exists.
