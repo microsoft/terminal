@@ -384,3 +384,12 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
     publicTerminal->_desiredFont = { fontFamily, 0, 10, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
 }
+
+// Resizes the terminal to the specified rows and columns.
+HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns)
+{
+    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    COORD newSize = { (short)rows, (short)columns };
+
+    return publicTerminal->_terminal->UserResize(newSize);
+}

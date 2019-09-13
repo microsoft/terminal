@@ -79,6 +79,20 @@ namespace Microsoft.Terminal.Wpf
             this.termContainer.SetTheme(theme, fontFamily, fontSize, dpiX);
         }
 
+        /// <summary>
+        /// Resizes the terminal to the specified rows and columns.
+        /// </summary>
+        /// <param name="rows">Number of rows to display.</param>
+        /// <param name="columns">Number of columns to display.</param>
+        public void Resize(uint rows, uint columns)
+        {
+            this.termContainer.Resize(rows, columns);
+        }
+
+        /// <summary>
+        /// Resizes the terminal to the specified size.
+        /// </summary>
+        /// <param name="Rendersize">Rendering size for the terminal.</param>
         public void TriggerResize(Size Rendersize)
         {
             this.termContainer.TriggerResize(Rendersize);

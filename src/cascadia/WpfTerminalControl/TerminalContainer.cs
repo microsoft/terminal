@@ -39,7 +39,6 @@ namespace Microsoft.Terminal.Wpf
         private ITerminalConnection connection;
         private IntPtr hwnd;
         private IntPtr terminal;
-        private char? highSurrogate;
 
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
@@ -212,6 +211,16 @@ namespace Microsoft.Terminal.Wpf
             this.Columns = columns;
 
             return (rows, columns);
+        }
+
+        /// <summary>
+        /// Resizes the terminal
+        /// </summary>
+        /// <param name="rows">Number of rows to show</param>
+        /// <param name="columns">Number of columns to show</param>
+        public void Resize(uint rows, uint columns)
+        {
+            NativeMethods.Resize(this.terminal, rows, columns);
         }
 
         private void Connection_TerminalDisconnected(object sender, EventArgs e)
