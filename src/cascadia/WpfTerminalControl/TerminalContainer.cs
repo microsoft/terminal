@@ -55,6 +55,18 @@ namespace Microsoft.Terminal.Wpf
             this.Focusable = true;
         }
 
+        /// <summary>
+        /// Character rows available to the terminal.
+        /// </summary>
+        public uint Rows { get; private set; }
+
+
+        /// <summary>
+        /// Character columns available to the terminal.
+        /// </summary>
+        public uint Columns { get; private set; }
+
+
         public void UserScroll(int viewTop)
         {
             NativeMethods.UserScroll(this.terminal, viewTop);
@@ -111,7 +123,11 @@ namespace Microsoft.Terminal.Wpf
                         }
 
                         NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out int columns, out int rows);
+
                         this.connection?.Resize((uint)rows, (uint)columns);
+                        this.Columns = (uint)columns;
+                        this.Rows = (uint)rows;
+
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
                         var delta = (((int)wParam) >> 16);
