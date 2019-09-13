@@ -530,6 +530,57 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get the icon of the currently focused terminal control, and set its
+    //   tab's icon to that icon.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void App::_UpdateTabIcon(std::shared_ptr<Tab> tab)
+    {
+        const auto lastFocusedProfileOpt = tab->GetFocusedProfile();
+        if (lastFocusedProfileOpt.has_value())
+        {
+            const auto lastFocusedProfile = lastFocusedProfileOpt.value();
+            const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+            if (matchingProfile)
+            {
+                tab->UpdateIcon(matchingProfile->GetExpandedIconPath());
+            }
+            else
+            {
+                tab->UpdateIcon({});
+            }
+        }
+    }
+
+    // Method Description:
+    // - Get the title of the currently focused terminal control, and set it's
+    //   tab's text to that text. If this tab is the focused tab, then also
+    //   bubble this title to any listeners of our TitleChanged event.
+    // Arguments:
+    // - tab: the Tab to update the title for.
+    void App::_UpdateTitle(std::shared_ptr<Tab> tab)
+    {
+        auto newTabTitle = tab->GetFocusedTitle();
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
+        const auto* const matchingProfile = _settings->FindProfile(lastFocusedProfile);
+
+        const auto suppressApplicationTitle = matchingProfile->GetSuppressApplicationTitle();
+
+        // Checks if suppressApplicationTitle has been set in the profile settings
+        // and updates accordingly.
+
+        const auto newActualTitle = suppressApplicationTitle.empty() ? newTabTitle : suppressApplicationTitle;
+
+        tab->SetTabText(winrt::to_hstring(newActualTitle.data()));
+
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
+        {
+            _titleChangeHandlers(newActualTitle);
+        }
+    }
+
+    // Method Description:
     // - Update the current theme of the application. This will trigger our
     //   RequestedThemeChanged event, to have our host change the theme of the
     //   root of the application.

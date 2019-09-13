@@ -20,6 +20,7 @@ static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -84,6 +85,7 @@ Profile::Profile(const winrt::guid& guid) :
     _defaultBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -308,6 +310,11 @@ Json::Value Profile::ToJson() const
         root[JsonKey(TabTitleKey)] = winrt::to_string(_tabTitle.value());
     }
 
+    if (_suppressApplicationTitle)
+    {
+        root[JsonKey(SuppressApplicationTitleKey)] = winrt::to_string(_suppressApplicationTitle.value());
+    }
+
     if (_startingDirectory)
     {
         root[JsonKey(StartingDirectoryKey)] = winrt::to_string(_startingDirectory.value());
@@ -428,6 +435,10 @@ Profile Profile::FromJson(const Json::Value& json)
     if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
     {
         result._tabTitle = GetWstringFromJson(tabTitle);
+    }
+    if (auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] })
+    {
+        result._suppressApplicationTitle = GetWstringFromJson(suppressApplicationTitle);
     }
 
     // Control Settings
@@ -564,6 +575,15 @@ void Profile::SetTabTitle(std::wstring tabTitle) noexcept
     _tabTitle = std::move(tabTitle);
 }
 
+// Method Description
+// - Suppresses this profile's application title.
+// Arguments:
+// - suppressApplicationTitle: the suppressing tab title
+void Profile::SetSuppressApplicationTitle(std::wstring suppressApplicationTitle) noexcept
+{
+    _suppressApplicationTitle = suppressApplicationTitle;
+}
+
 // Method Description:
 // - Sets this profile's icon path.
 // Arguments:
@@ -599,6 +619,26 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+// Method Description:
+// - Returns true if profile's suppressing tab title is set. Otherwise returns false.
+// Return Value:
+// - true if this profile's suppressing tab title is set. Otherwise returns false.
+bool Profile::HasSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle.has_value();
+}
+
+// Method Description:
+// - Returns the suppressing tab title, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's suppressing tab title, if one is set. Otherwise returns the empty string.
+std::wstring_view Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return HasSuppressApplicationTitle() ?
+               std::wstring_view{ _suppressApplicationTitle.value().c_str(), _suppressApplicationTitle.value().size() } :
+               std::wstring_view{ L"", 0 };
 }
 
 bool Profile::HasConnectionType() const noexcept
