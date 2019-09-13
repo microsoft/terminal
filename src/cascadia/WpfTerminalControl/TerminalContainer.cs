@@ -59,13 +59,13 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Character rows available to the terminal.
         /// </summary>
-        public uint Rows { get; private set; }
+        public int Rows { get; private set; }
 
 
         /// <summary>
         /// Character columns available to the terminal.
         /// </summary>
-        public uint Columns { get; private set; }
+        public int Columns { get; private set; }
 
 
         public void UserScroll(int viewTop)
@@ -126,8 +126,8 @@ namespace Microsoft.Terminal.Wpf
                         NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out int columns, out int rows);
 
                         this.connection?.Resize((uint)rows, (uint)columns);
-                        this.Columns = (uint)columns;
-                        this.Rows = (uint)rows;
+                        this.Columns = columns;
+                        this.Rows = rows;
 
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
@@ -196,6 +196,22 @@ namespace Microsoft.Terminal.Wpf
         public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
         {
             NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+        }
+
+        /// <summary>
+        /// Triggers a refresh of the terminal with the given size.
+        /// </summary>
+        /// <param name="renderSize">Size of the rendering window</param>
+        /// <returns>Tuple with rows and columns.</returns>
+        public (int rows, int columns) TriggerResize(Size renderSize)
+        {
+            int columns, rows;
+            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out columns, out rows);
+
+            this.Rows = rows;
+            this.Columns = columns;
+
+            return (rows, columns);
         }
 
         private void Connection_TerminalDisconnected(object sender, EventArgs e)
