@@ -45,6 +45,7 @@ Properties listed below are specific to each unique profile.
 | `foreground` | Optional | String | | Sets the foreground color of the profile. Overrides `foreground` set in color scheme if `colorscheme` is set. Uses hex color format: `"#rrggbb"`. |
 | `icon` | Optional | String | | Image file location of the icon used in the profile. Displays within the tab and the dropdown menu. See [Background Images and Icons](./SettingsSchema.md#background-images-and-icons) below for help on specifying your own icons |
 | `scrollbarState` | Optional | String | | Defines the visibility of the scrollbar. Possible values: `"visible"`, `"hidden"` |
+| `suppressApplicationTitle` | Optional | String | | Overrides `tabTitle` and default title of the tab. | 
 | `tabTitle` | Optional | String | | If set, will replace the `name` as the title to pass to the shell on startup. Some shells (like `bash`) may choose to ignore this initial value, while others (`cmd`, `powershell`) may use this value over the lifetime of the application.  |
 
 ## Schemes
