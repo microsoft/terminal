@@ -1013,7 +1013,7 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
             const ROW& Row = GetRowByOffset(iRow);
 
             // FOR LINE SELECTION ONLY: if the row was wrapped, don't remove the spaces at the end.
-            if (!lineSelection || !Row.GetCharRow().WasWrapForced())
+            if (lineSelection || !Row.GetCharRow().WasWrapForced())
             {
                 while (!selectionText.empty() && selectionText.back() == UNICODE_SPACE)
                 {
@@ -1030,7 +1030,7 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
                 // FOR LINE SELECTION ONLY: if the row was wrapped, do not apply CR/LF.
                 // a.k.a. if the row was NOT wrapped, then we can assume a CR/LF is proper
                 // always apply \r\n for box selection
-                if (!lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
+                if (lineSelection || !GetRowByOffset(iRow).GetCharRow().WasWrapForced())
                 {
                     COLORREF const Blackness = RGB(0x00, 0x00, 0x00); // cant see CR/LF so just use black FG & BK
 
