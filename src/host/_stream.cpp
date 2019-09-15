@@ -182,8 +182,8 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         SMALL_RECT scrollRect = { 0 };
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
-        scrollRect.Left = screenInfo.GetViewport().Left(); // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = screenInfo.GetViewport().RightInclusive();
+        scrollRect.Left = 0; // NOTE: Left/Right Scroll margins don't do anything currently.
+        scrollRect.Right = bufferSize.X - 1; // -1, otherwise this would be an exclusive rect.
 
         COORD dest;
         dest.X = scrollRect.Left;
