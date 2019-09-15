@@ -140,15 +140,11 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         const COORD newPostMarginsOrigin = { 0, moveToYPosition };
         const COORD newViewOrigin = { 0, newViewTop };
 
-        // Unset the margins to scroll the content below the margins,
-        //      then restore them after.
-        screenInfo.SetScrollMargins(Viewport::FromInclusive({ 0 }));
         try
         {
             ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
-        screenInfo.SetScrollMargins(relativeMargins);
 
         // Move the viewport down
         auto hr = screenInfo.SetViewportOrigin(true, newViewOrigin, true);
@@ -193,32 +189,12 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
-        SMALL_RECT clipRect = scrollRect;
-        // Typically ScrollRegion() clips by the scroll margins. However, if
-        //      we're scrolling down at the top of the viewport, we'll need to
-        //      not clip at the margins, instead move the contents of the margins
-        //      up above the viewport. So we'll clear out the current margins, and
-        //      set them to the viewport+(#diff rows above the viewport).
-        if (scrollDownAtTop)
-        {
-            clipRect.Top -= diff;
-            auto fakeMargins = srMargins;
-            fakeMargins.Top -= diff;
-            auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
-            screenInfo.SetScrollMargins(fakeRelative);
-        }
-
         try
         {
-            ScrollRegion(screenInfo, scrollRect, clipRect, dest, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
 
-        if (scrollDownAtTop)
-        {
-            // Undo the fake margins we set above
-            screenInfo.SetScrollMargins(relativeMargins);
-        }
         coordCursor.Y -= diff;
     }
 
