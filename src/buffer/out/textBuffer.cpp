@@ -1056,12 +1056,13 @@ const TextBuffer::TextAndColor TextBuffer::GetTextForClipboard(const bool lineSe
 // - Generates a CF_HTML compliant structure based on the passed in text and color data
 // Arguments:
 // - rows - the text and color data we will format & encapsulate
+// - backgroundColor - default background color for characters, also used in padding
 // - fontHeightPoints - the unscaled font height
 // - fontFaceName - the name of the font used
 // - htmlTitle - value used in title tag of html header. Used to name the application
 // Return Value:
 // - string containing the generated HTML
-std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, const std::string& htmlTitle)
+std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPoints, const PCWCHAR fontFaceName, COLORREF backgroundColor, const std::string& htmlTitle)
 {
     try
     {
@@ -1086,11 +1087,8 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
             htmlBuilder << "display:inline-block;";
             htmlBuilder << "white-space:pre;";
 
-            // fixme: this is only walkaround for filling background after last char of row.
-            // It is based on first char of first row, not the actual char at correct position.
             htmlBuilder << "background-color:";
-            const COLORREF globalBgColor = rows.BkAttr.at(0).at(0);
-            htmlBuilder << Utils::ColorToHexString(globalBgColor);
+            htmlBuilder << Utils::ColorToHexString(backgroundColor);
             htmlBuilder << ";";
 
             htmlBuilder << "font-family:";
