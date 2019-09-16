@@ -96,7 +96,7 @@ namespace TerminalCoreUnitTests
 
         TEST_METHOD(OverflowTests)
         {
-            const COORD maxCoord = { SHORT_MAX, SHORT_MAX };
+            const COORD maxCoord = { SHRT_MAX, SHRT_MAX };
 
             auto ValidateSelection = [&](Terminal& term, SMALL_RECT expected) {
                 auto selectionRects = term.GetSelectionRects();
@@ -150,10 +150,10 @@ namespace TerminalCoreUnitTests
             ValidateTripleClickSelection(0, { 0, 9, 9, 9 });
 
             // Test with max scrollback
-            const SHORT expected_row = MAXSHORT - 1;
-            ValidateSingleClickSelection(MAXSHORT, { 9, expected_row, 9, expected_row });
-            ValidateDoubleClickSelection(MAXSHORT, { 0, expected_row, 9, expected_row });
-            ValidateTripleClickSelection(MAXSHORT, { 0, expected_row, 9, expected_row });
+            const SHORT expected_row = SHRT_MAX - 1;
+            ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row, 9, expected_row });
+            ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
+            ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
         }
 
         TEST_METHOD(SelectFromOutofBounds)
