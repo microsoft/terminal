@@ -303,13 +303,35 @@
        important reasons), that doesn't work for us.
   -->
   <PropertyGroup>
-    <_GenerateProjectPriFileDependsOn>OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
+    <!-- Only for MSBuild versions < 16.3.0 -->
+    <_GenerateProjectPriFileDependsOn Condition="$(MSBuildVersion) &lt; '16.3.0'">OpenConsoleLiftDesktopBridgePriFiles;$(_GenerateProjectPriFileDependsOn)</_GenerateProjectPriFileDependsOn>
   </PropertyGroup>
   <Target Name="OpenConsoleLiftDesktopBridgePriFiles" DependsOnTargets="_ConvertItems">
     <ItemGroup>
       <_PriFile Include="@(_NonWapProjProjectOutput)" Condition="'%(Extension)' == '.pri'" />
       <!-- Remove all other .pri files from the appx payload. -->
       <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri'" />
+    </ItemGroup>
+  </Target>
+
+  <!-- VS 16.3.0 added a rule to the WAP packaging project that removes all non-WAP payload, which we were relying on to
+       roll up our subproject resources. We have to suppress that rule but keep part of its logic, because that rule is
+       where the AppxPackagePayload items are created. -->
+  <PropertyGroup>
+    <!-- Only for MSBuild versions <= 16.4.0 -->
+    <!-- TODO: Change this to hard less than once the 16.4.0 previews fix the bug. -->
+    <WapProjBeforeGenerateAppxManifestDependsOn
+      Condition="$(MSBuildVersion) &lt;= '16.4.0'">
+        $([MSBuild]::Unescape('$(WapProjBeforeGenerateAppxManifestDependsOn.Replace('_RemoveAllNonWapUWPItems', '_OpenConsoleRemoveAllNonWapUWPItems'))'))
+    </WapProjBeforeGenerateAppxManifestDependsOn>
+  </PropertyGroup>
+  <Target Name="_OpenConsoleRemoveAllNonWapUWPItems">
+    <ItemGroup>
+      <AppxPackagePayload Include="@(WapProjPackageFile)" />
+      <AppxUploadPackagePayload Include="@(UploadWapProjPackageFile)" />
+      <!-- 16.3.0 - remove non-resources.pri PRI files since we just forced them back in. -->
+      <AppxPackagePayload Remove="@(AppxPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
+      <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
     </ItemGroup>
   </Target>
 
