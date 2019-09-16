@@ -1436,10 +1436,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         // convert text to HTML format
         const auto htmlData = TextBuffer::GenHTML(bufferData,
-            _actualFont.GetUnscaledSize().Y,
-            _actualFont.GetFaceName(),
-            _settings.DefaultBackground(),
-            "Windows Terminal");
+                                                  _actualFont.GetUnscaledSize().Y,
+                                                  _actualFont.GetFaceName(),
+                                                  _settings.DefaultBackground(),
+                                                  "Windows Terminal");
 
         if (!_terminal->IsCopyOnSelectActive())
         {
