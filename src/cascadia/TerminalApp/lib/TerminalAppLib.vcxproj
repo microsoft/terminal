@@ -68,7 +68,12 @@
     <ClInclude Include="../KeyChordSerialization.h" />
     <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../DefaultProfileUtils.h" />
     <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IDynamicProfileGenerator.h" />
+    <ClInclude Include="../PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="../WslDistroGenerator.h" />
+    <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="../ActionArgs.h"  >
       <DependentUpon>../ActionArgs.idl</DependentUpon>
@@ -108,7 +113,11 @@
     <ClCompile Include="../KeyChordSerialization.cpp" />
     <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../ScopedResourceLoader.cpp" />
+    <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="../WslDistroGenerator.cpp" />
+    <ClCompile Include="../AzureCloudShellGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

@@ -491,12 +491,14 @@ namespace TerminalAppLocalTests
                 L"default profiles in the opposite order of the default ordering."));
 
             CascadiaSettings settings;
-            settings._LayerJsonString(defaultProfilesString, true);
+            settings._ParseJsonString(defaultProfilesString, true);
+            settings.LayerJson(settings._defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
-            settings._LayerJsonString(userProfiles0String, false);
+            settings._ParseJsonString(userProfiles0String, false);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
@@ -512,12 +514,14 @@ namespace TerminalAppLocalTests
                 L"Case 2: Make sure all the user's profiles appear before the defaults."));
 
             CascadiaSettings settings;
-            settings._LayerJsonString(defaultProfilesString, true);
+            settings._ParseJsonString(defaultProfilesString, true);
+            settings.LayerJson(settings._defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
 
-            settings._LayerJsonString(userProfiles1String, false);
+            settings._ParseJsonString(userProfiles1String, false);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(3u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
@@ -588,14 +592,16 @@ namespace TerminalAppLocalTests
 
         {
             CascadiaSettings settings;
-            settings._LayerJsonString(defaultProfilesString, true);
+            settings._ParseJsonString(defaultProfilesString, true);
+            settings.LayerJson(settings._defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
-            settings._LayerJsonString(userProfiles0String, false);
+            settings._ParseJsonString(userProfiles0String, false);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile1", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile0", settings._profiles.at(1)._name);
@@ -611,14 +617,16 @@ namespace TerminalAppLocalTests
 
         {
             CascadiaSettings settings;
-            settings._LayerJsonString(defaultProfilesString, true);
+            settings._ParseJsonString(defaultProfilesString, true);
+            settings.LayerJson(settings._defaultSettings);
             VERIFY_ARE_EQUAL(2u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile3", settings._profiles.at(1)._name);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(0)._hidden);
             VERIFY_ARE_EQUAL(false, settings._profiles.at(1)._hidden);
 
-            settings._LayerJsonString(userProfiles1String, false);
+            settings._ParseJsonString(userProfiles1String, false);
+            settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(4u, settings._profiles.size());
             VERIFY_ARE_EQUAL(L"profile2", settings._profiles.at(0)._name);
             VERIFY_ARE_EQUAL(L"profile4", settings._profiles.at(1)._name);
@@ -788,7 +796,8 @@ namespace TerminalAppLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         CascadiaSettings settings;
-        settings._LayerJsonString(settings0String, false);
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
@@ -824,14 +833,16 @@ namespace TerminalAppLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         CascadiaSettings settings;
-        settings._LayerJsonString(DefaultJson, true);
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
         VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
 
-        settings._LayerJsonString(settings0String, false);
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
@@ -923,14 +934,16 @@ namespace TerminalAppLocalTests
         const auto settings0Json = VerifyParseSucceeded(settings0String);
 
         CascadiaSettings settings;
-        settings._LayerJsonString(DefaultJson, true);
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
         VERIFY_ARE_EQUAL(2u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
         VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
         VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
 
-        settings._LayerJsonString(settings0String, false);
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
 
         VERIFY_ARE_EQUAL(4u, settings._profiles.size());
         VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());

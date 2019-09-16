@@ -25,6 +25,7 @@ namespace TerminalAppLocalTests
 namespace TerminalAppUnitTests
 {
     class JsonTests;
+    class DynamicProfileTests;
 };
 
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
@@ -47,11 +48,15 @@ public:
     winrt::Microsoft::Terminal::Settings::TerminalSettings CreateTerminalSettings(const std::vector<::TerminalApp::ColorScheme>& schemes) const;
 
     Json::Value ToJson() const;
+    Json::Value DiffToJson(const Profile& other) const;
+    Json::Value GenerateStub() const;
     static Profile FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
+    static bool IsDynamicProfileObject(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
+    void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
@@ -77,6 +82,7 @@ public:
     bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
+
     static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
 private:
@@ -93,9 +99,10 @@ private:
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
-    static GUID _GenerateGuidForProfile(const std::wstring& name) noexcept;
+    static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
     std::optional<GUID> _guid{ std::nullopt };
+    std::optional<std::wstring> _source{ std::nullopt };
     std::wstring _name;
     std::optional<GUID> _connectionType;
     bool _hidden;
@@ -134,4 +141,5 @@ private:
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppUnitTests::JsonTests;
+    friend class TerminalAppUnitTests::DynamicProfileTests;
 };

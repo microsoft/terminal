@@ -8,6 +8,8 @@
 #include "TerminalPage.g.cpp"
 #include <winrt/Microsoft.UI.Xaml.XamlTypeInfo.h>
 
+#include "AzureCloudShellGenerator.h" // For AzureConnectionType
+
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;

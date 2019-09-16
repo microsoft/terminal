@@ -8,12 +8,16 @@
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
+#include "LegacyProfileGeneratorNamespaces.h"
+
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
+using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
+static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
 static constexpr std::string_view HiddenKey{ "hidden" };
@@ -122,6 +126,11 @@ GUID Profile::GetGuid() const noexcept
     return _guid.value();
 }
 
+void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
+{
+    _source = sourceNamespace;
+}
+
 // Function Description:
 // - Searches a list of color schemes to find one matching the given name. Will
 //return the first match in the list, if the list has multiple schemes with the same name.
@@ -227,8 +236,8 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     if (_backgroundImageAlignment)
     {
-        const auto imageHorizontalAlignment = std::get<winrt::Windows::UI::Xaml::HorizontalAlignment>(_backgroundImageAlignment.value());
-        const auto imageVerticalAlignment = std::get<winrt::Windows::UI::Xaml::VerticalAlignment>(_backgroundImageAlignment.value());
+        const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(_backgroundImageAlignment.value());
+        const auto imageVerticalAlignment = std::get<VerticalAlignment>(_backgroundImageAlignment.value());
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
     }
@@ -244,14 +253,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 // - a JsonObject which is an equivalent serialization of this object.
 Json::Value Profile::ToJson() const
 {
-    Json::Value root;
+    Json::Value root = GenerateStub();
 
     ///// Profile-specific settings /////
-    if (_guid.has_value())
-    {
-        root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
-    }
-    root[JsonKey(NameKey)] = winrt::to_string(_name);
     root[JsonKey(HiddenKey)] = _hidden;
 
     ///// Core Settings /////
@@ -346,6 +350,98 @@ Json::Value Profile::ToJson() const
 }
 
 // Method Description:
+// - This generates a json object `diff` s.t.
+//      this = other.LayerJson(diff)
+// So if:
+// - this has a nullopt for an optional, diff will have null for that member
+// - this has a value for an optional, diff will have our value. If the other
+//   did _not_ have a value, and we did, diff will have our value.
+// Arguments:
+// - other: the other profile object to use as the "base" for this diff. The
+//   result could be layered upon that json object to re-create this object's
+//   serialization.
+// Return Value:
+// - a diff between this and the other object, such that this could be recreated
+//   from the diff and the other object.
+Json::Value Profile::DiffToJson(const Profile& other) const
+{
+    auto otherJson = other.ToJson();
+    auto myJson = ToJson();
+    Json::Value diff;
+
+    // Iterate in two steps:
+    // - first over all the keys in the 'other' object's serialization.
+    // - then over all the keys in our serialization.
+    // In this way, we ensure all keys from both objects are present in the
+    // final object.
+    for (const auto& key : otherJson.getMemberNames())
+    {
+        if (myJson.isMember(key))
+        {
+            // Both objects have the key
+            auto otherVal = otherJson[key];
+            auto myVal = myJson[key];
+            if (otherVal != myVal)
+            {
+                diff[key] = myVal;
+            }
+        }
+        else
+        {
+            // key is not in this json object. Set to null, so that when the
+            // diff is layered upon the original object, we'll properly set
+            // nullopt for any optionals that weren't present in this object.
+            diff[key] = Json::Value::null;
+        }
+    }
+    for (const auto& key : myJson.getMemberNames())
+    {
+        if (otherJson.isMember(key))
+        {
+            // both objects have this key. Do nothing, this is handled above
+        }
+        else
+        {
+            // We have a key the other object did not. Add our value.
+            diff[key] = myJson[key];
+        }
+    }
+
+    return diff;
+}
+
+// Method Description:
+// - Generates a Json::Value which is a "stub" of this profile. This stub will
+//   have enough information that it could be layered with this profile.
+// - This method is used during dynamic profile generation - if a profile is
+//   ever generated that didn't already exist in the user's settings, we'll add
+//   this stub to the user's settings file, so the user has an easy point to
+//   modify the generated profile.
+// Arguments:
+// - <none>
+// Return Value:
+// - A json::Value with a guid, name and source (if applicable).
+Json::Value Profile::GenerateStub() const
+{
+    Json::Value stub;
+
+    ///// Profile-specific settings /////
+    if (_guid.has_value())
+    {
+        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+    }
+
+    stub[JsonKey(NameKey)] = winrt::to_string(_name);
+
+    if (_source.has_value())
+    {
+        stub[JsonKey(SourceKey)] = winrt::to_string(_source.value());
+    }
+
+    return stub;
+}
+
+// Method Description:
 // - Create a new instance of this class from a serialized JsonObject.
 // Arguments:
 // - json: an object which should be a serialization of a Profile object.
@@ -375,16 +471,61 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
         return false;
     }
 
+    // First, check that GUIDs match. This is easy. If they don't match, they
+    // should _definitely_ not layer.
     if (json.isMember(JsonKey(GuidKey)))
     {
         const auto guid{ json[JsonKey(GuidKey)] };
         const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
-        return _guid.value() == otherGuid;
+        if (_guid.value() != otherGuid)
+        {
+            return false;
+        }
+    }
+    else
+    {
+        // If the other json object didn't have a GUID, we definitely don't want
+        // to layer. We technically might have the same name, and would
+        // auto-generate the same guid, but they should be treated as different
+        // profiles.
+        return false;
     }
 
-    // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
+    const auto& otherSource = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
 
-    return false;
+    // For profiles with a `source`, also check the `source` property.
+    bool sourceMatches = false;
+    if (_source.has_value())
+    {
+        if (json.isMember(JsonKey(SourceKey)))
+        {
+            const auto otherSourceString = GetWstringFromJson(otherSource);
+            sourceMatches = otherSourceString == _source.value();
+        }
+        else
+        {
+            // Special case the legacy dynamic profiles here. In this case,
+            // `this` is a dynamic profile with a source, and our _source is one
+            // of the legacy DPG namespaces. We're looking to see if the other
+            // json object has the same guid, but _no_ "source"
+            if (_source.value() == WslGeneratorNamespace ||
+                _source.value() == AzureGeneratorNamespace ||
+                _source.value() == PowershellCoreGeneratorNamespace)
+            {
+                sourceMatches = true;
+            }
+        }
+    }
+    else
+    {
+        // We do not have a source. The only way we match is if source is set to null or "".
+        if (otherSource.isNull() || (otherSource.isString() && otherSource == ""))
+        {
+            sourceMatches = true;
+        }
+    }
+
+    return sourceMatches;
 }
 
 // Method Description:
@@ -394,7 +535,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // - json: the Json::Value object to parse.
 // Return Value:
 // - An appropriate value from Windows.UI.Xaml.Media.Stretch
-winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
+Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
 {
     return Profile::ParseImageStretchMode(json.asString());
 }
@@ -406,7 +547,7 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(cons
 // - json: the Json::Value object to parse.
 // Return Value:
 // - A pair of HorizontalAlignment and VerticalAlignment
-std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
+std::tuple<HorizontalAlignment, VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
 {
     return Profile::ParseImageAlignment(json.asString());
 }
@@ -745,23 +886,23 @@ ScrollbarState Profile::ParseScrollbarState(const std::wstring& scrollbarState)
 // - The value from the profiles.json file
 // Return Value:
 // - The corresponding enum value which maps to the string provided by the user
-winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
+Media::Stretch Profile::ParseImageStretchMode(const std::string_view imageStretchMode)
 {
     if (imageStretchMode == ImageStretchModeNone)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::None;
+        return Media::Stretch::None;
     }
     else if (imageStretchMode == ImageStretchModeFill)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::Fill;
+        return Media::Stretch::Fill;
     }
     else if (imageStretchMode == ImageStretchModeUniform)
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::Uniform;
+        return Media::Stretch::Uniform;
     }
     else // Fall through to default behavior
     {
-        return winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill;
+        return Media::Stretch::UniformToFill;
     }
 }
 
@@ -772,18 +913,18 @@ winrt::Windows::UI::Xaml::Media::Stretch Profile::ParseImageStretchMode(const st
 // - imageStretchMode: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given ImageStretchMode
-std::string_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode)
+std::string_view Profile::SerializeImageStretchMode(const Media::Stretch imageStretchMode)
 {
     switch (imageStretchMode)
     {
-    case winrt::Windows::UI::Xaml::Media::Stretch::None:
+    case Media::Stretch::None:
         return ImageStretchModeNone;
-    case winrt::Windows::UI::Xaml::Media::Stretch::Fill:
+    case Media::Stretch::Fill:
         return ImageStretchModeFill;
-    case winrt::Windows::UI::Xaml::Media::Stretch::Uniform:
+    case Media::Stretch::Uniform:
         return ImageStretchModeUniform;
     default:
-    case winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill:
+    case Media::Stretch::UniformToFill:
         return ImageStretchModeUniformTofill;
     }
 }
@@ -795,52 +936,52 @@ std::string_view Profile::SerializeImageStretchMode(const winrt::Windows::UI::Xa
 // - The value from the profiles.json file
 // Return Value:
 // - The corresponding enum values tuple which maps to the string provided by the user
-std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)
+std::tuple<HorizontalAlignment, VerticalAlignment> Profile::ParseImageAlignment(const std::string_view imageAlignment)
 {
     if (imageAlignment == ImageAlignmentTopLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottomLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Bottom);
     }
     else if (imageAlignment == ImageAlignmentLeft)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Left,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Left,
+                               VerticalAlignment::Center);
     }
     else if (imageAlignment == ImageAlignmentTopRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottomRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Bottom);
     }
     else if (imageAlignment == ImageAlignmentRight)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Right,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Right,
+                               VerticalAlignment::Center);
     }
     else if (imageAlignment == ImageAlignmentTop)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Top);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Top);
     }
     else if (imageAlignment == ImageAlignmentBottom)
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Bottom);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Bottom);
     }
     else // Fall through to default alignment
     {
-        return std::make_tuple(winrt::Windows::UI::Xaml::HorizontalAlignment::Center,
-                               winrt::Windows::UI::Xaml::VerticalAlignment::Center);
+        return std::make_tuple(HorizontalAlignment::Center,
+                               VerticalAlignment::Center);
     }
 }
 
@@ -851,46 +992,46 @@ std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xa
 // - imageAlignment: The enum values tuple to convert to a string.
 // Return Value:
 // - The string value for the given ImageAlignment
-std::string_view Profile::SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment)
+std::string_view Profile::SerializeImageAlignment(const std::tuple<HorizontalAlignment, VerticalAlignment> imageAlignment)
 {
-    const auto imageHorizontalAlignment = std::get<winrt::Windows::UI::Xaml::HorizontalAlignment>(imageAlignment);
-    const auto imageVerticalAlignment = std::get<winrt::Windows::UI::Xaml::VerticalAlignment>(imageAlignment);
+    const auto imageHorizontalAlignment = std::get<HorizontalAlignment>(imageAlignment);
+    const auto imageVerticalAlignment = std::get<VerticalAlignment>(imageAlignment);
     switch (imageHorizontalAlignment)
     {
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Left:
+    case HorizontalAlignment::Left:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTopLeft;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottomLeft;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentLeft;
         }
 
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Right:
+    case HorizontalAlignment::Right:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTopRight;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottomRight;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentRight;
         }
 
     default:
-    case winrt::Windows::UI::Xaml::HorizontalAlignment::Center:
+    case HorizontalAlignment::Center:
         switch (imageVerticalAlignment)
         {
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Top:
+        case VerticalAlignment::Top:
             return ImageAlignmentTop;
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Bottom:
+        case VerticalAlignment::Bottom:
             return ImageAlignmentBottom;
         default:
-        case winrt::Windows::UI::Xaml::VerticalAlignment::Center:
+        case VerticalAlignment::Center:
             return ImageAlignmentCenter;
         }
     }
@@ -964,7 +1105,7 @@ void Profile::GenerateGuidIfNecessary() noexcept
     {
         // Always use the name to generate the temporary GUID. That way, across
         // reloads, we'll generate the same static GUID.
-        _guid = Profile::_GenerateGuidForProfile(_name);
+        _guid = Profile::_GenerateGuidForProfile(_name, _source);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -976,14 +1117,37 @@ void Profile::GenerateGuidIfNecessary() noexcept
 }
 
 // Function Description:
+// - Returns true if the given JSON object represents a dynamic profile object.
+//   If it is a dynamic profile object, we should make sure to only layer the
+//   object on a matching profile from a dynamic source.
+// Arguments:
+// - json: the partial serialization of a profile object to check
+// Return Value:
+// - true iff the object has a non-null `source` property
+bool Profile::IsDynamicProfileObject(const Json::Value& json)
+{
+    const auto& source = json.isMember(JsonKey(SourceKey)) ? json[JsonKey(SourceKey)] : Json::Value::null;
+    return !source.isNull();
+}
+
+// Function Description:
 // - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
 // Arguments:
 // - name: The name to generate a unique GUID from
 // Return Value:
 // - a uuidv5 GUID generated from the given name.
-GUID Profile::_GenerateGuidForProfile(const std::wstring& name) noexcept
+GUID Profile::_GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept
 {
-    return Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+    // If we have a _source, then we can from a dynamic profile generator. Use
+    // our source to build the naespace guid, instead of using the default GUID.
+
+    const GUID namespaceGuid = source.has_value() ?
+                                   Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(source.value()))) :
+                                   RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID;
+
+    // Always use the name to generate the temporary GUID. That way, across
+    // reloads, we'll generate the same static GUID.
+    return Utils::CreateV5Uuid(namespaceGuid, gsl::as_bytes(gsl::make_span(name)));
 }
 
 // Function Description:
@@ -1004,6 +1168,9 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
         return guid.value();
     }
 
-    auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
-    return Profile::_GenerateGuidForProfile(name);
+    const auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
+    std::optional<std::wstring> source{ std::nullopt };
+    JsonUtils::GetOptionalString(json, SourceKey, source);
+
+    return Profile::_GenerateGuidForProfile(name, source);
 }

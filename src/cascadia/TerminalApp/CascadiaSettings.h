@@ -20,8 +20,7 @@ Author(s):
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
-
-static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83, 0xb7, 0xc5, 0x64, 0xe, 0x61, 0xcd, 0x62 } };
+#include "IDynamicProfileGenerator.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -30,7 +29,11 @@ namespace TerminalAppLocalTests
     class ProfileTests;
     class ColorSchemeTests;
     class KeyBindingsTests;
-}
+};
+namespace TerminalAppUnitTests
+{
+    class DynamicProfileTests;
+};
 
 namespace TerminalApp
 {
@@ -41,7 +44,7 @@ class TerminalApp::CascadiaSettings final
 {
 public:
     CascadiaSettings();
-    ~CascadiaSettings();
+    CascadiaSettings(const bool addDynamicProfiles);
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
@@ -64,8 +67,6 @@ public:
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
-    void CreateDefaults();
-
     std::vector<TerminalApp::SettingsLoadWarnings>& GetWarnings();
 
 private:
@@ -73,17 +74,22 @@ private:
     std::vector<Profile> _profiles;
     std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
+    std::vector<std::unique_ptr<TerminalApp::IDynamicProfileGenerator>> _profileGenerators;
+
+    std::string _userSettingsString;
     Json::Value _userSettings;
     Json::Value _defaultSettings;
-
-    void _CreateDefaultProfiles();
 
     void _LayerOrCreateProfile(const Json::Value& profileJson);
     Profile* _FindMatchingProfile(const Json::Value& profileJson);
     void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
     ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
-    void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
+    void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
+    static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
+    bool _AppendDynamicProfilesToUserSettings();
+
+    void _LoadDynamicProfiles();
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
@@ -98,13 +104,9 @@ private:
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
 
-    static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
-    static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
-    static void _AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage);
-    static Profile _CreateDefaultProfile(const std::wstring_view name);
-
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;
     friend class TerminalAppLocalTests::ColorSchemeTests;
     friend class TerminalAppLocalTests::KeyBindingsTests;
+    friend class TerminalAppUnitTests::DynamicProfileTests;
 };

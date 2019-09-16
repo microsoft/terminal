@@ -11,15 +11,15 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 
+#include "PowershellCoreProfileGenerator.h"
+#include "WslDistroGenerator.h"
+#include "AzureCloudShellGenerator.h"
+
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace ::TerminalApp;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 using namespace Microsoft::Console;
-
-// {2bde4a90-d05f-401c-9492-e40884ead1d8}
-// uuidv5 properties: name format is UTF-16LE bytes
-static constexpr GUID TERMINAL_PROFILE_NAMESPACE_GUID = { 0x2bde4a90, 0xd05f, 0x401c, { 0x94, 0x92, 0xe4, 0x8, 0x84, 0xea, 0xd1, 0xd8 } };
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };
 
@@ -27,91 +27,24 @@ static constexpr std::wstring_view PACKAGED_PROFILE_ICON_EXTENSION{ L".png" };
 static constexpr std::wstring_view DEFAULT_LINUX_ICON_GUID{ L"{9acb9455-ca41-5af7-950f-6bca1bc9722f}" };
 
 CascadiaSettings::CascadiaSettings() :
-    _globals{},
-    _profiles{}
+    CascadiaSettings(true)
 {
 }
 
-CascadiaSettings::~CascadiaSettings()
-{
-}
-
-// Method Description:
-// - Create a set of profiles to use as the "default" profiles when initializing
-//   the terminal. Currently, we create two or three profiles:
-//    * one for cmd.exe
-//    * one for powershell.exe (inbox Windows Powershell)
-//    * if Powershell Core (pwsh.exe) is installed, we'll create another for
-//      Powershell Core.
-void CascadiaSettings::_CreateDefaultProfiles()
-{
-    auto cmdProfile{ _CreateDefaultProfile(L"cmd") };
-    cmdProfile.SetFontFace(L"Consolas");
-    cmdProfile.SetCommandline(L"cmd.exe");
-    cmdProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-    cmdProfile.SetColorScheme({ L"Campbell" });
-    cmdProfile.SetAcrylicOpacity(0.75);
-    cmdProfile.SetUseAcrylic(true);
-
-    auto powershellProfile{ _CreateDefaultProfile(L"Windows PowerShell") };
-    powershellProfile.SetCommandline(L"powershell.exe");
-    powershellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-    powershellProfile.SetColorScheme({ L"Campbell" });
-    powershellProfile.SetDefaultBackground(POWERSHELL_BLUE);
-    powershellProfile.SetUseAcrylic(false);
-
-    // If the user has installed PowerShell Core, we add PowerShell Core as a default.
-    // PowerShell Core default folder is "%PROGRAMFILES%\PowerShell\[Version]\".
-    std::filesystem::path psCoreCmdline{};
-    if (_isPowerShellCoreInstalled(psCoreCmdline))
-    {
-        auto pwshProfile{ _CreateDefaultProfile(L"PowerShell Core") };
-        pwshProfile.SetCommandline(std::move(psCoreCmdline));
-        pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        pwshProfile.SetColorScheme({ L"Campbell" });
-
-        // If powershell core is installed, we'll use that as the default.
-        // Otherwise, we'll use normal Windows Powershell as the default.
-        _profiles.emplace_back(pwshProfile);
-        _globals.SetDefaultProfile(pwshProfile.GetGuid());
-    }
-    else
-    {
-        _globals.SetDefaultProfile(powershellProfile.GetGuid());
-    }
-
-    _profiles.emplace_back(powershellProfile);
-    _profiles.emplace_back(cmdProfile);
-
-    if (winrt::Microsoft::Terminal::TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
-    {
-        auto azureCloudShellProfile{ _CreateDefaultProfile(L"Azure Cloud Shell") };
-        azureCloudShellProfile.SetCommandline(L"Azure");
-        azureCloudShellProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        azureCloudShellProfile.SetColorScheme({ L"Vintage" });
-        azureCloudShellProfile.SetAcrylicOpacity(0.6);
-        azureCloudShellProfile.SetUseAcrylic(true);
-        azureCloudShellProfile.SetCloseOnExit(false);
-        azureCloudShellProfile.SetConnectionType(AzureConnectionType);
-        _profiles.emplace_back(azureCloudShellProfile);
-    }
-
-    try
-    {
-        _AppendWslProfiles(_profiles);
-    }
-    CATCH_LOG()
-}
-
-// Method Description:
-// - Initialize this object with default color schemes, profiles, and keybindings.
+// Constructor Description:
+// - Creates a new settings object. If addDynamicProfiles is true, we'll
+//   automatically add the built-in profile generators to our list of profile
+//   generators. Set this to `false` for unit testing.
 // Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void CascadiaSettings::CreateDefaults()
+// - addDynamicProfiles: if true, we'll add the built-in DPGs.
+CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles)
 {
-    _CreateDefaultProfiles();
+    if (addDynamicProfiles)
+    {
+        _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+    }
 }
 
 // Method Description:
@@ -194,160 +127,6 @@ AppKeyBindings CascadiaSettings::GetKeybindings() const noexcept
 GlobalAppSettings& CascadiaSettings::GlobalSettings()
 {
     return _globals;
-}
-
-// Function Description:
-// - Returns true if the user has installed PowerShell Core. This will check
-//   both %ProgramFiles% and %ProgramFiles(x86)%, and will return true if
-//   powershell core was installed in either location.
-// Arguments:
-// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
-// Return Value:
-// - true iff powershell core (pwsh.exe) is present.
-bool CascadiaSettings::_isPowerShellCoreInstalled(std::filesystem::path& cmdline)
-{
-    return _isPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ||
-           _isPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
-}
-
-// Function Description:
-// - Returns true if the user has installed PowerShell Core.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
-// Return Value:
-// - true iff powershell core (pwsh.exe) is present in the given path
-bool CascadiaSettings::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
-{
-    std::wstring programFileEnvNulTerm{ programFileEnv };
-    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
-    psCorePath /= L"PowerShell";
-    if (std::filesystem::exists(psCorePath))
-    {
-        for (auto& p : std::filesystem::directory_iterator(psCorePath))
-        {
-            psCorePath = p.path();
-            psCorePath /= L"pwsh.exe";
-            if (std::filesystem::exists(psCorePath))
-            {
-                cmdline = psCorePath;
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// Function Description:
-// - Adds all of the WSL profiles to the provided container.
-// Arguments:
-// - A ref to the profiles container where the WSL profiles are to be added
-// Return Value:
-// - <none>
-void CascadiaSettings::_AppendWslProfiles(std::vector<TerminalApp::Profile>& profileStorage)
-{
-    wil::unique_handle readPipe;
-    wil::unique_handle writePipe;
-    SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
-    THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
-    STARTUPINFO si{};
-    si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESTDHANDLES;
-    si.hStdOutput = writePipe.get();
-    si.hStdError = writePipe.get();
-    wil::unique_process_information pi{};
-    wil::unique_cotaskmem_string systemPath;
-    THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
-    std::wstring command(systemPath.get());
-    command += L"\\wsl.exe --list";
-
-    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                             const_cast<LPWSTR>(command.c_str()),
-                                             nullptr,
-                                             nullptr,
-                                             TRUE,
-                                             CREATE_NO_WINDOW,
-                                             nullptr,
-                                             nullptr,
-                                             &si,
-                                             &pi));
-    switch (WaitForSingleObject(pi.hProcess, INFINITE))
-    {
-    case WAIT_OBJECT_0:
-        break;
-    case WAIT_ABANDONED:
-    case WAIT_TIMEOUT:
-        THROW_HR(ERROR_CHILD_NOT_COMPLETE);
-    case WAIT_FAILED:
-        THROW_LAST_ERROR();
-    default:
-        THROW_HR(ERROR_UNHANDLED_EXCEPTION);
-    }
-    DWORD exitCode;
-    if (GetExitCodeProcess(pi.hProcess, &exitCode) == false)
-    {
-        THROW_HR(E_INVALIDARG);
-    }
-    else if (exitCode != 0)
-    {
-        return;
-    }
-    DWORD bytesAvailable;
-    THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
-    std::wfstream pipe{ _wfdopen(_open_osfhandle((intptr_t)readPipe.get(), _O_WTEXT | _O_RDONLY), L"r") };
-    // don't worry about the handle returned from wfdOpen, readPipe handle is already managed by wil
-    // and closing the file handle will cause an error.
-    std::wstring wline;
-    std::getline(pipe, wline); // remove the header from the output.
-    while (pipe.tellp() < bytesAvailable)
-    {
-        std::getline(pipe, wline);
-        std::wstringstream wlinestream(wline);
-        if (wlinestream)
-        {
-            std::wstring distName;
-            std::getline(wlinestream, distName, L'\r');
-            size_t firstChar = distName.find_first_of(L"( ");
-            // Some localizations don't have a space between the name and "(Default)"
-            // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
-            if (firstChar < distName.size())
-            {
-                distName.resize(firstChar);
-            }
-            auto WSLDistro{ _CreateDefaultProfile(distName) };
-            WSLDistro.SetCommandline(L"wsl.exe -d " + distName);
-            WSLDistro.SetColorScheme({ L"Campbell" });
-            WSLDistro.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
-            iconPath.append(DEFAULT_LINUX_ICON_GUID);
-            iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
-            WSLDistro.SetIconPath(iconPath);
-            profileStorage.emplace_back(WSLDistro);
-        }
-    }
-}
-
-// Method Description:
-// - Helper function for creating a skeleton default profile with a pre-populated
-//   guid and name.
-// Arguments:
-// - name: the name of the new profile.
-// Return Value:
-// - A Profile, ready to be filled in
-Profile CascadiaSettings::_CreateDefaultProfile(const std::wstring_view name)
-{
-    auto profileGuid{ Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name))) };
-    Profile newProfile{ profileGuid };
-
-    newProfile.SetName(static_cast<std::wstring>(name));
-
-    std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
-    iconPath.append(Utils::GuidToString(profileGuid));
-    iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
-
-    newProfile.SetIconPath(iconPath);
-
-    return newProfile;
 }
 
 // Method Description:
