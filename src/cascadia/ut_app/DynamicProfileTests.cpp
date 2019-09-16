@@ -113,7 +113,7 @@ namespace TerminalAppUnitTests
         // We'll generate GUIDs during
         // CascadiaSettings::_ValidateProfilesHaveGuid. We should make sure that
         // the GUID generated for a dynamic profile (with a source) is different
-        // then that of a profile without a source.
+        // than that of a profile without a source.
 
         auto gen0 = std::make_unique<TestDynamicProfileGenerator>(L"Terminal.App.UnitTest.0");
         gen0->pfnGenerate = []() {
@@ -233,7 +233,7 @@ namespace TerminalAppUnitTests
 
         Log::Comment(NoThrowString().Format(
             L"All profiles with the same name have the same GUID. However, they"
-            L" will not be layered, because they have different source's"));
+            L" will not be layered, because they have different sources"));
 
         // parse userProfiles as the user settings
         settings._ParseJsonString(userProfiles, false);
