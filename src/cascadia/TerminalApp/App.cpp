@@ -413,8 +413,7 @@ namespace winrt::TerminalApp::implementation
 
         if (FAILED(_settingsLoadedResult))
         {
-            _settings = std::make_unique<CascadiaSettings>();
-            _settings->CreateDefaults();
+            _settings = CascadiaSettings::LoadDefaults();
         }
 
         auto end = std::chrono::high_resolution_clock::now();

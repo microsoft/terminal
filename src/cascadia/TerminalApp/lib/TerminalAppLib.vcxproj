@@ -65,8 +65,8 @@
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
-    <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
     <ClInclude Include="../TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
@@ -106,6 +106,7 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
     <ClCompile Include="../ScopedResourceLoader.cpp" />
     <ClCompile Include="pch.cpp">
@@ -319,4 +320,22 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
+
+  <!-- This target will take our defaults.json and stamp it into a .h file that
+  we can include in the code directly. This way, we don't need to worry about
+  failing to load the default settings at runtime. -->
+  <Target Name="_TerminalAppGenerateDefaultsH"
+          Inputs="..\defaults.json"
+          Outputs="Generated Files\defaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
+  </Target>
+  <!-- Same as above, but for the default profiles.json template -->
+  <Target Name="_TerminalAppGenerateUserSettingsH"
+          Inputs="..\userDefaults.json"
+          Outputs="Generated Files\userDefaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
+  </Target>
+
 </Project>

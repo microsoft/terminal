@@ -6,11 +6,15 @@
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="precomp.h" />
+    <ClInclude Include="JsonTestClass.h" />
   </ItemGroup>
 
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="SettingsTests.cpp" />
+    <ClCompile Include="ProfileTests.cpp" />
+    <ClCompile Include="ColorSchemeTests.cpp" />
+    <ClCompile Include="KeyBindingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -127,7 +131,7 @@
           Outputs="$(OutDir)$(TargetName).AppxManifest.xml"
           DependsOnTargets="_LocalTestsGenerateCombinedManifests">
 
-    <Exec Command="powershell.exe –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 -SxSManifest $(OutDir)$(TargetName).manifest -AppxManifestPrototype $(TargetName).AppxManifest.prototype.xml -OutPath $(OutDir)$(TargetName).AppxManifest.xml" />
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateAppxFromManifest.ps1 -SxSManifest $(OutDir)$(TargetName).manifest -AppxManifestPrototype $(TargetName).AppxManifest.prototype.xml -OutPath $(OutDir)$(TargetName).AppxManifest.xml" />
 
   </Target>
 

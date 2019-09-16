@@ -110,8 +110,7 @@ namespace winrt::TerminalApp::implementation
         void _PasteText();
         static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
-        void _OpenSettings();
-        fire_and_forget LaunchSettings();
+        fire_and_forget _LaunchSettings(const bool openDefaults);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);

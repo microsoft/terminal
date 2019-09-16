@@ -16,7 +16,7 @@ Author(s):
 
 --*/
 #pragma once
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "GlobalAppSettings.h"
 #include "TerminalWarnings.h"
 #include "Profile.h"
@@ -27,6 +27,9 @@ static constexpr GUID AzureConnectionType = { 0xd9fcfdfa, 0xa479, 0x412c, { 0x83
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
+    class ProfileTests;
+    class ColorSchemeTests;
+    class KeyBindingsTests;
 }
 
 namespace TerminalApp
@@ -40,6 +43,7 @@ public:
     CascadiaSettings();
     ~CascadiaSettings();
 
+    static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
     void SaveAll() const;
 
@@ -53,8 +57,10 @@ public:
 
     Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
+    void LayerJson(const Json::Value& json);
 
     static std::wstring GetSettingsPath(const bool useRoamingPath = false);
+    static std::wstring GetDefaultSettingsPath();
 
     const Profile* FindProfile(GUID profileGuid) const noexcept;
 
@@ -65,20 +71,32 @@ public:
 private:
     GlobalAppSettings _globals;
     std::vector<Profile> _profiles;
-    std::vector<TerminalApp::SettingsLoadWarnings> _warnings{};
+    std::vector<TerminalApp::SettingsLoadWarnings> _warnings;
 
-    void _CreateDefaultKeybindings();
-    void _CreateDefaultSchemes();
+    Json::Value _userSettings;
+    Json::Value _defaultSettings;
+
     void _CreateDefaultProfiles();
+
+    void _LayerOrCreateProfile(const Json::Value& profileJson);
+    Profile* _FindMatchingProfile(const Json::Value& profileJson);
+    void _LayerOrCreateColorScheme(const Json::Value& schemeJson);
+    ColorScheme* _FindMatchingColorScheme(const Json::Value& schemeJson);
+    void _LayerJsonString(std::string_view fileData, const bool isDefaultSettings);
+    static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
 
     static bool _IsPackaged();
     static void _WriteSettings(const std::string_view content);
-    static std::optional<std::string> _ReadSettings();
+    static std::optional<std::string> _ReadUserSettings();
+    static std::optional<std::string> _ReadFile(HANDLE hFile);
 
     void _ValidateSettings();
     void _ValidateProfilesExist();
+    void _ValidateProfilesHaveGuid();
     void _ValidateDefaultProfileExists();
     void _ValidateNoDuplicateProfiles();
+    void _ReorderProfilesToMatchUserSettingsOrder();
+    void _RemoveHiddenProfiles();
 
     static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
@@ -86,4 +104,7 @@ private:
     static Profile _CreateDefaultProfile(const std::wstring_view name);
 
     friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ProfileTests;
+    friend class TerminalAppLocalTests::ColorSchemeTests;
+    friend class TerminalAppLocalTests::KeyBindingsTests;
 };

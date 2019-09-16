@@ -22,7 +22,6 @@ namespace TerminalAppUnitTests
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(ProfileGeneratesGuid);
-        TEST_METHOD(GeneratedGuidRoundtrips);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -103,9 +102,16 @@ namespace TerminalAppUnitTests
 
     void JsonTests::ProfileGeneratesGuid()
     {
-        // Parse some profiles without guids. We should generate new guids for
-        // them. The null guid _is_ a valid guid, so we won't re-generate that
-        // guid. null is _not_ a valid guid, so we'll regenerate that.
+        // Parse some profiles without guids. We should NOT generate new guids
+        // for them. If a profile doesn't have a GUID, we'll leave its _guid
+        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // ensure all profiles have a GUID that's actually set.
+        // The null guid _is_ a valid guid, so we won't re-generate that
+        // guid. null is _not_ a valid guid, so we'll leave that nullopt
+
+        // See SettingsTests::ValidateProfilesGenerateGuids for a version of
+        // this test that includes synthesizing GUIDS for profiles without GUIDs
+        // set
 
         const std::string profileWithoutGuid{ R"({
                                               "name" : "profile0"
@@ -140,42 +146,14 @@ namespace TerminalAppUnitTests
         const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
         const GUID nullGuid{ 0 };
 
-        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+        VERIFY_IS_FALSE(profile1._guid.has_value());
+        VERIFY_IS_FALSE(profile2._guid.has_value());
+        VERIFY_IS_TRUE(profile3._guid.has_value());
+        VERIFY_IS_TRUE(profile4._guid.has_value());
 
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), nullGuid);
         VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
-
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), cmdGuid);
-
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), profile1.GetGuid());
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), profile1.GetGuid());
-    }
-
-    void JsonTests::GeneratedGuidRoundtrips()
-    {
-        // Parse a profile without a guid.
-        // We should automatically generate a GUID for that profile.
-        // When that profile is serialized and deserialized again, the GUID we
-        // generated for it should persist.
-        const std::string profileWithoutGuid{ R"({
-                                              "name" : "profile0"
-                                              })" };
-        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
-
-        const auto profile0 = Profile::FromJson(profile0Json);
-        const GUID nullGuid{ 0 };
-
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
-
-        const auto serializedProfile = profile0.ToJson();
-
-        const auto profile1 = Profile::FromJson(serializedProfile);
-
-        VERIFY_ARE_EQUAL(profile1.GetGuid(), profile0.GetGuid());
+        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
     }
 
 }

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "Profile.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 #include "../../types/inc/Utils.hpp"
 #include <DefaultSettings.h>
 
@@ -15,6 +16,7 @@ static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view ColorSchemeKeyOld{ "colorscheme" };
+static constexpr std::string_view HiddenKey{ "hidden" };
 
 static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
@@ -71,14 +73,15 @@ static constexpr std::string_view ImageAlignmentBottomLeft{ "bottomLeft" };
 static constexpr std::string_view ImageAlignmentBottomRight{ "bottomRight" };
 
 Profile::Profile() :
-    Profile(Utils::CreateGuid())
+    Profile(std::nullopt)
 {
 }
 
-Profile::Profile(const winrt::guid& guid) :
+Profile::Profile(const std::optional<GUID>& guid) :
     _guid(guid),
     _name{ L"Default" },
-    _schemeName{},
+    _schemeName{ L"Campbell" },
+    _hidden{ false },
 
     _defaultForeground{},
     _defaultBackground{},
@@ -114,7 +117,9 @@ Profile::~Profile()
 
 GUID Profile::GetGuid() const noexcept
 {
-    return _guid;
+    // This can throw if we never had our guid set to a legitimate value.
+    THROW_HR_IF_MSG(E_FAIL, !_guid.has_value(), "Profile._guid always expected to have a value");
+    return _guid.value();
 }
 
 // Function Description:
@@ -242,8 +247,12 @@ Json::Value Profile::ToJson() const
     Json::Value root;
 
     ///// Profile-specific settings /////
-    root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid));
+    if (_guid.has_value())
+    {
+        root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+    }
     root[JsonKey(NameKey)] = winrt::to_string(_name);
+    root[JsonKey(HiddenKey)] = _hidden;
 
     ///// Core Settings /////
     if (_defaultForeground)
@@ -344,155 +353,200 @@ Json::Value Profile::ToJson() const
 // - a new Profile instance created from the values in `json`
 Profile Profile::FromJson(const Json::Value& json)
 {
-    Profile result{};
+    Profile result;
 
+    result.LayerJson(json);
+
+    return result;
+}
+
+// Method Description:
+// - Returns true if we think the provided json object represents an instance of
+//   the same object as this object. If true, we should layer that json object
+//   on us, instead of creating a new object.
+// Arguments:
+// - json: The json object to query to see if it's the same
+// Return Value:
+// - true iff the json object has the same `GUID` as we do.
+bool Profile::ShouldBeLayered(const Json::Value& json) const
+{
+    if (!_guid.has_value())
+    {
+        return false;
+    }
+
+    if (json.isMember(JsonKey(GuidKey)))
+    {
+        const auto guid{ json[JsonKey(GuidKey)] };
+        const auto otherGuid = Utils::GuidFromString(GetWstringFromJson(guid));
+        return _guid.value() == otherGuid;
+    }
+
+    // TODO: GH#754 - for profiles with a `source`, also check the `source` property.
+
+    return false;
+}
+
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageStretchMode. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - An appropriate value from Windows.UI.Xaml.Media.Stretch
+winrt::Windows::UI::Xaml::Media::Stretch Profile::_ConvertJsonToStretchMode(const Json::Value& json)
+{
+    return Profile::ParseImageStretchMode(json.asString());
+}
+
+// Method Description:
+// - Helper function to convert a json value into a value of the Stretch enum.
+//   Calls into ParseImageAlignment. Used with JsonUtils::GetOptionalValue.
+// Arguments:
+// - json: the Json::Value object to parse.
+// Return Value:
+// - A pair of HorizontalAlignment and VerticalAlignment
+std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> Profile::_ConvertJsonToAlignment(const Json::Value& json)
+{
+    return Profile::ParseImageAlignment(json.asString());
+}
+
+// Method Description:
+// - Layer values from the given json object on top of the existing properties
+//   of this object. For any keys we're expecting to be able to parse in the
+//   given object, we'll parse them and replace our settings with values from
+//   the new json object. Properties that _aren't_ in the json object will _not_
+//   be replaced.
+// - Optional values in the profile that are set to `null` in the json object
+//   will be set to nullopt.
+// Arguments:
+// - json: an object which should be a partial serialization of a Profile object.
+// Return Value:
+// <none>
+void Profile::LayerJson(const Json::Value& json)
+{
     // Profile-specific Settings
-    if (auto name{ json[JsonKey(NameKey)] })
+    if (json.isMember(JsonKey(NameKey)))
     {
-        result._name = GetWstringFromJson(name);
+        auto name{ json[JsonKey(NameKey)] };
+        _name = GetWstringFromJson(name);
     }
-    if (auto guid{ json[JsonKey(GuidKey)] })
-    {
-        result._guid = Utils::GuidFromString(GetWstringFromJson(guid));
-    }
-    else
-    {
-        // Always use the name to generate the temporary GUID. That way, across
-        // reloads, we'll generate the same static GUID.
-        const std::wstring_view name = result._name;
-        result._guid = Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider,
-            "SynthesizedGuidForProfile",
-            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    JsonUtils::GetOptionalGuid(json, GuidKey, _guid);
+
+    if (json.isMember(JsonKey(HiddenKey)))
+    {
+        auto hidden{ json[JsonKey(HiddenKey)] };
+        _hidden = hidden.asBool();
     }
 
     // Core Settings
-    if (auto foreground{ json[JsonKey(ForegroundKey)] })
+    JsonUtils::GetOptionalColor(json, ForegroundKey, _defaultForeground);
+
+    JsonUtils::GetOptionalColor(json, BackgroundKey, _defaultBackground);
+
+    JsonUtils::GetOptionalString(json, ColorSchemeKey, _schemeName);
+    // TODO:GH#1069 deprecate old settings key
+    JsonUtils::GetOptionalString(json, ColorSchemeKeyOld, _schemeName);
+
+    // Only look for the "table" if there's no "schemeName"
+    if (!(json.isMember(JsonKey(ColorSchemeKey))) &&
+        !(json.isMember(JsonKey(ColorSchemeKeyOld))) &&
+        json.isMember(JsonKey(ColorTableKey)))
     {
-        const auto color = Utils::ColorFromHexString(foreground.asString());
-        result._defaultForeground = color;
-    }
-    if (auto background{ json[JsonKey(BackgroundKey)] })
-    {
-        const auto color = Utils::ColorFromHexString(background.asString());
-        result._defaultBackground = color;
-    }
-    if (auto colorScheme{ json[JsonKey(ColorSchemeKey)] })
-    {
-        result._schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colorScheme{ json[JsonKey(ColorSchemeKeyOld)] })
-    {
-        // TODO:GH#1069 deprecate old settings key
-        result._schemeName = GetWstringFromJson(colorScheme);
-    }
-    else if (auto colortable{ json[JsonKey(ColorTableKey)] })
-    {
+        auto colortable{ json[JsonKey(ColorTableKey)] };
         int i = 0;
         for (const auto& tableEntry : colortable)
         {
             if (tableEntry.isString())
             {
                 const auto color = Utils::ColorFromHexString(tableEntry.asString());
-                result._colorTable[i] = color;
+                _colorTable[i] = color;
             }
             i++;
         }
     }
-    if (auto historySize{ json[JsonKey(HistorySizeKey)] })
+    if (json.isMember(JsonKey(HistorySizeKey)))
     {
+        auto historySize{ json[JsonKey(HistorySizeKey)] };
         // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-        result._historySize = historySize.asInt();
+        _historySize = historySize.asInt();
     }
-    if (auto snapOnInput{ json[JsonKey(SnapOnInputKey)] })
+    if (json.isMember(JsonKey(SnapOnInputKey)))
     {
-        result._snapOnInput = snapOnInput.asBool();
+        auto snapOnInput{ json[JsonKey(SnapOnInputKey)] };
+        _snapOnInput = snapOnInput.asBool();
     }
-    if (auto cursorColor{ json[JsonKey(CursorColorKey)] })
+    if (json.isMember(JsonKey(CursorColorKey)))
     {
+        auto cursorColor{ json[JsonKey(CursorColorKey)] };
         const auto color = Utils::ColorFromHexString(cursorColor.asString());
-        result._cursorColor = color;
+        _cursorColor = color;
     }
-    if (auto cursorHeight{ json[JsonKey(CursorHeightKey)] })
+    if (json.isMember(JsonKey(CursorHeightKey)))
     {
-        result._cursorHeight = cursorHeight.asUInt();
+        auto cursorHeight{ json[JsonKey(CursorHeightKey)] };
+        _cursorHeight = cursorHeight.asUInt();
     }
-    if (auto cursorShape{ json[JsonKey(CursorShapeKey)] })
+    if (json.isMember(JsonKey(CursorShapeKey)))
     {
-        result._cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
+        auto cursorShape{ json[JsonKey(CursorShapeKey)] };
+        _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
-    if (auto tabTitle{ json[JsonKey(TabTitleKey)] })
-    {
-        result._tabTitle = GetWstringFromJson(tabTitle);
-    }
+    JsonUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
 
     // Control Settings
-    if (auto connectionType{ json[JsonKey(ConnectionTypeKey)] })
+    JsonUtils::GetOptionalGuid(json, ConnectionTypeKey, _connectionType);
+
+    if (json.isMember(JsonKey(CommandlineKey)))
     {
-        result._connectionType = Utils::GuidFromString(GetWstringFromJson(connectionType));
+        auto commandline{ json[JsonKey(CommandlineKey)] };
+        _commandline = GetWstringFromJson(commandline);
     }
-    if (auto commandline{ json[JsonKey(CommandlineKey)] })
+    if (json.isMember(JsonKey(FontFaceKey)))
     {
-        result._commandline = GetWstringFromJson(commandline);
+        auto fontFace{ json[JsonKey(FontFaceKey)] };
+        _fontFace = GetWstringFromJson(fontFace);
     }
-    if (auto fontFace{ json[JsonKey(FontFaceKey)] })
+    if (json.isMember(JsonKey(FontSizeKey)))
     {
-        result._fontFace = GetWstringFromJson(fontFace);
+        auto fontSize{ json[JsonKey(FontSizeKey)] };
+        _fontSize = fontSize.asInt();
     }
-    if (auto fontSize{ json[JsonKey(FontSizeKey)] })
+    if (json.isMember(JsonKey(AcrylicTransparencyKey)))
     {
-        result._fontSize = fontSize.asInt();
+        auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] };
+        _acrylicTransparency = acrylicTransparency.asFloat();
     }
-    if (auto acrylicTransparency{ json[JsonKey(AcrylicTransparencyKey)] })
+    if (json.isMember(JsonKey(UseAcrylicKey)))
     {
-        result._acrylicTransparency = acrylicTransparency.asFloat();
+        auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
+        _useAcrylic = useAcrylic.asBool();
     }
-    if (auto useAcrylic{ json[JsonKey(UseAcrylicKey)] })
+    if (json.isMember(JsonKey(CloseOnExitKey)))
     {
-        result._useAcrylic = useAcrylic.asBool();
+        auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
+        _closeOnExit = closeOnExit.asBool();
     }
-    if (auto closeOnExit{ json[JsonKey(CloseOnExitKey)] })
+    if (json.isMember(JsonKey(PaddingKey)))
     {
-        result._closeOnExit = closeOnExit.asBool();
-    }
-    if (auto padding{ json[JsonKey(PaddingKey)] })
-    {
-        result._padding = GetWstringFromJson(padding);
-    }
-    if (auto scrollbarState{ json[JsonKey(ScrollbarStateKey)] })
-    {
-        result._scrollbarState = GetWstringFromJson(scrollbarState);
-    }
-    if (auto startingDirectory{ json[JsonKey(StartingDirectoryKey)] })
-    {
-        result._startingDirectory = GetWstringFromJson(startingDirectory);
-    }
-    if (auto icon{ json[JsonKey(IconKey)] })
-    {
-        result._icon = GetWstringFromJson(icon);
-    }
-    if (auto backgroundImage{ json[JsonKey(BackgroundImageKey)] })
-    {
-        result._backgroundImage = GetWstringFromJson(backgroundImage);
-    }
-    if (auto backgroundImageOpacity{ json[JsonKey(BackgroundImageOpacityKey)] })
-    {
-        result._backgroundImageOpacity = backgroundImageOpacity.asFloat();
-    }
-    if (auto backgroundImageStretchMode{ json[JsonKey(BackgroundImageStretchModeKey)] })
-    {
-        result._backgroundImageStretchMode = ParseImageStretchMode(backgroundImageStretchMode.asString());
-    }
-    if (auto backgroundImageAlignment{ json[JsonKey(BackgroundImageAlignmentKey)] })
-    {
-        result._backgroundImageAlignment = ParseImageAlignment(backgroundImageAlignment.asString());
+        auto padding{ json[JsonKey(PaddingKey)] };
+        _padding = GetWstringFromJson(padding);
     }
 
-    return result;
+    JsonUtils::GetOptionalString(json, ScrollbarStateKey, _scrollbarState);
+
+    JsonUtils::GetOptionalString(json, StartingDirectoryKey, _startingDirectory);
+
+    JsonUtils::GetOptionalString(json, IconKey, _icon);
+
+    JsonUtils::GetOptionalString(json, BackgroundImageKey, _backgroundImage);
+
+    JsonUtils::GetOptionalDouble(json, BackgroundImageOpacityKey, _backgroundImageOpacity);
+
+    JsonUtils::GetOptionalValue(json, BackgroundImageStretchModeKey, _backgroundImageStretchMode, &Profile::_ConvertJsonToStretchMode);
+
+    JsonUtils::GetOptionalValue(json, BackgroundImageAlignmentKey, _backgroundImageAlignment, &Profile::_ConvertJsonToAlignment);
 }
 
 void Profile::SetFontFace(std::wstring fontFace) noexcept
@@ -616,6 +670,19 @@ GUID Profile::GetConnectionType() const noexcept
 bool Profile::GetCloseOnExit() const noexcept
 {
     return _closeOnExit;
+}
+
+// Method Description:
+// - If a profile is marked hidden, it should not appear in the dropdown list of
+//   profiles. This setting is used to "remove" default and dynamic profiles
+//   from the list of profiles.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff the profile chould be hidden from the list of profiles.
+bool Profile::IsHidden() const noexcept
+{
+    return _hidden;
 }
 
 // Method Description:
@@ -885,4 +952,58 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     case CursorStyle::Bar:
         return CursorShapeBar;
     }
+}
+
+// Method Description:
+// - If this profile never had a GUID set for it, generate a runtime GUID for
+//   the profile. If a profile had their guid manually set to {0}, this method
+//   will _not_ change the profile's GUID.
+void Profile::GenerateGuidIfNecessary() noexcept
+{
+    if (!_guid.has_value())
+    {
+        // Always use the name to generate the temporary GUID. That way, across
+        // reloads, we'll generate the same static GUID.
+        _guid = Profile::_GenerateGuidForProfile(_name);
+
+        TraceLoggingWrite(
+            g_hTerminalAppProvider,
+            "SynthesizedGuidForProfile",
+            TraceLoggingDescription("Event emitted when a profile is deserialized without a GUID"),
+            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+}
+
+// Function Description:
+// - Generates a unique guid for a profile, given the name. For an given name, will always return the same GUID.
+// Arguments:
+// - name: The name to generate a unique GUID from
+// Return Value:
+// - a uuidv5 GUID generated from the given name.
+GUID Profile::_GenerateGuidForProfile(const std::wstring& name) noexcept
+{
+    return Utils::CreateV5Uuid(RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(name)));
+}
+
+// Function Description:
+// - Parses the given JSON object to get its GUID. If the json object does not
+//   have a `guid` set, we'll generate one, using the `name` field.
+// Arguments:
+// - json: the JSON object to get a GUID from, or generate a unique GUID for
+//   (given the `name`)
+// Return Value:
+// - The json's `guid`, or a guid synthesized for it.
+GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
+{
+    std::optional<GUID> guid{ std::nullopt };
+
+    JsonUtils::GetOptionalGuid(json, GuidKey, guid);
+    if (guid)
+    {
+        return guid.value();
+    }
+
+    auto name = GetWstringFromJson(json[JsonKey(NameKey)]);
+    return Profile::_GenerateGuidForProfile(name);
 }

@@ -16,6 +16,17 @@ Author(s):
 #pragma once
 #include "ColorScheme.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class ProfileTests;
+};
+namespace TerminalAppUnitTests
+{
+    class JsonTests;
+};
+
 // GUID used for generating GUIDs at runtime, for profiles that did not have a
 // GUID specified manually.
 constexpr GUID RUNTIME_GENERATED_PROFILE_NAMESPACE_GUID = { 0xf65ddb7e, 0x706b, 0x4499, { 0x8a, 0x50, 0x40, 0x31, 0x3c, 0xaf, 0x51, 0x0a } };
@@ -28,8 +39,8 @@ namespace TerminalApp
 class TerminalApp::Profile final
 {
 public:
-    Profile(const winrt::guid& guid);
     Profile();
+    Profile(const std::optional<GUID>& guid);
 
     ~Profile();
 
@@ -37,6 +48,8 @@ public:
 
     Json::Value ToJson() const;
     static Profile FromJson(const Json::Value& json);
+    bool ShouldBeLayered(const Json::Value& json) const;
+    void LayerJson(const Json::Value& json);
 
     GUID GetGuid() const noexcept;
     std::wstring_view GetName() const noexcept;
@@ -61,21 +74,31 @@ public:
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;
+    bool IsHidden() const noexcept;
+
+    void GenerateGuidIfNecessary() noexcept;
+    static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
 private:
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
     static winrt::Windows::UI::Xaml::Media::Stretch ParseImageStretchMode(const std::string_view imageStretchMode);
+    static winrt::Windows::UI::Xaml::Media::Stretch _ConvertJsonToStretchMode(const Json::Value& json);
     static std::string_view SerializeImageStretchMode(const winrt::Windows::UI::Xaml::Media::Stretch imageStretchMode);
     static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> ParseImageAlignment(const std::string_view imageAlignment);
+    static std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> _ConvertJsonToAlignment(const Json::Value& json);
+
     static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
 
-    GUID _guid;
+    static GUID _GenerateGuidForProfile(const std::wstring& name) noexcept;
+
+    std::optional<GUID> _guid{ std::nullopt };
     std::wstring _name;
     std::optional<GUID> _connectionType;
+    bool _hidden;
 
     // If this is set, then our colors should come from the associated color scheme
     std::optional<std::wstring> _schemeName;
@@ -107,4 +130,8 @@ private:
     std::wstring _padding;
 
     std::optional<std::wstring> _icon;
+
+    friend class TerminalAppLocalTests::SettingsTests;
+    friend class TerminalAppLocalTests::ProfileTests;
+    friend class TerminalAppUnitTests::JsonTests;
 };
