@@ -1150,7 +1150,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col > startOffset)
                     {
-                        const auto unescapedText = std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent);
+                        const auto unescapedText = ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
                         for (const auto c : unescapedText)
                         {
                             switch (c)
@@ -1165,7 +1165,7 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                                 htmlBuilder << "&amp;";
                                 break;
                             default:
-                                htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(&c, 1));
+                                htmlBuilder << c;
                             }
                         }
 
