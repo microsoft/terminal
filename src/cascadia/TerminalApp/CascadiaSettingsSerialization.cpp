@@ -449,7 +449,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
     else
     {
         // If this JSON represents a dynamic profile, we _shouldn't_ create the
-        // profile here. We only want to create profiles for profies without a
+        // profile here. We only want to create profiles for profiles without a
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {

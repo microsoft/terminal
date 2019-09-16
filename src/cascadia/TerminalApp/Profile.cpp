@@ -496,7 +496,7 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
     }
     else
     {
-        // We do not have a source. the only way we match is if source is set to null or "".
+        // We do not have a source. The only way we match is if source is set to null or "".
         if (otherSource.isNull() || (otherSource.isString() && otherSource == ""))
         {
             sourceMatches = true;
