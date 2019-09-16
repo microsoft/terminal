@@ -1150,9 +1150,25 @@ std::string TextBuffer::GenHTML(const TextAndColor& rows, const int fontHeightPo
                 const auto writeAccumulatedChars = [&](bool includeCurrent) {
                     if (col > startOffset)
                     {
-                        // note: this should be escaped (for '<', '>', and '&'),
-                        // however MS Word doesn't appear to support HTML entities
-                        htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent));
+                        const auto unescapedText = std::wstring_view(rows.text.at(row)).substr(startOffset, col - startOffset + includeCurrent);
+                        for (const auto c : unescapedText)
+                        {
+                            switch (c)
+                            {
+                            case '<':
+                                htmlBuilder << "&lt;";
+                                break;
+                            case '>':
+                                htmlBuilder << "&gt;";
+                                break;
+                            case '&':
+                                htmlBuilder << "&amp;";
+                                break;
+                            default:
+                                htmlBuilder << ConvertToA(CP_UTF8, std::wstring_view(&c, 1));
+                            }
+                        }
+
                         startOffset = col;
                     }
                 };
