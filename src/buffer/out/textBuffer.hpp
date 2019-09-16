@@ -148,6 +148,7 @@ public:
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
                                const PCWCHAR fontFaceName,
+                               const COLORREF backgroundColor,
                                const std::string& htmlTitle);
 
 private:
