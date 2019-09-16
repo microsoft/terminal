@@ -94,6 +94,68 @@ namespace TerminalCoreUnitTests
             }
         }
 
+        TEST_METHOD(OverflowTests)
+        {
+            const COORD maxCoord = { SHORT_MAX, SHORT_MAX };
+
+            auto ValidateSelection = [&](Terminal& term, SMALL_RECT expected) {
+                auto selectionRects = term.GetSelectionRects();
+
+                // Validate selection area
+                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+                auto selection = term.GetViewport().ConvertToOrigin(selectionRects[0]).ToInclusive();
+
+                VERIFY_ARE_EQUAL(selection, expected);
+            };
+
+            // Test SetSelectionAnchor(COORD) and SetEndSelectionPosition(COORD)
+            // Behavior: clamp coord to viewport.
+            auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+                Terminal term;
+                DummyRenderTarget emptyRT;
+                term.Create({ 10, 10 }, scrollback, emptyRT);
+
+                // NOTE: SetEndSelectionPosition(COORD) is called within SetSelectionAnchor(COORD)
+                term.SetSelectionAnchor(maxCoord);
+                ValidateSelection(term, expected);
+            };
+
+            // Test DoubleClickSelection(COORD)
+            // Behavior: clamp coord to viewport.
+            //           Then, do double click selection.
+            auto ValidateDoubleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+                Terminal term;
+                DummyRenderTarget emptyRT;
+                term.Create({ 10, 10 }, scrollback, emptyRT);
+
+                term.DoubleClickSelection(maxCoord);
+                ValidateSelection(term, expected);
+            };
+
+            // Test TripleClickSelection(COORD)
+            // Behavior: clamp coord to viewport.
+            //           Then, do triple click selection.
+            auto ValidateTripleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
+                Terminal term;
+                DummyRenderTarget emptyRT;
+                term.Create({ 10, 10 }, scrollback, emptyRT);
+
+                term.TripleClickSelection(maxCoord);
+                ValidateSelection(term, expected);
+            };
+
+            // Test with no scrollback
+            ValidateSingleClickSelection(0, { 9, 9, 9, 9 });
+            ValidateDoubleClickSelection(0, { 0, 9, 9, 9 });
+            ValidateTripleClickSelection(0, { 0, 9, 9, 9 });
+
+            // Test with max scrollback
+            const SHORT expected_row = MAXSHORT - 1;
+            ValidateSingleClickSelection(MAXSHORT, { 9, expected_row, 9, expected_row });
+            ValidateDoubleClickSelection(MAXSHORT, { 0, expected_row, 9, expected_row });
+            ValidateTripleClickSelection(MAXSHORT, { 0, expected_row, 9, expected_row });
+        }
+
         TEST_METHOD(SelectFromOutofBounds)
         {
             /*  NOTE:
