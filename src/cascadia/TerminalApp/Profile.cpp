@@ -253,19 +253,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 // - a JsonObject which is an equivalent serialization of this object.
 Json::Value Profile::ToJson() const
 {
-    Json::Value root;
+    Json::Value root = GenerateStub();
 
     ///// Profile-specific settings /////
-    if (_guid.has_value())
-    {
-        root[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
-    }
-    root[JsonKey(NameKey)] = winrt::to_string(_name);
     root[JsonKey(HiddenKey)] = _hidden;
-    if (_source.has_value())
-    {
-        root[JsonKey(SourceKey)] = winrt::to_string(_source.value());
-    }
 
     ///// Core Settings /////
     if (_defaultForeground)
@@ -417,6 +408,37 @@ Json::Value Profile::DiffToJson(const Profile& other) const
     }
 
     return diff;
+}
+
+// Method Description:
+// - Generates a Json::Value which is a "stub" of this profile. This stub will
+//   have enough information that it could be layered with this profile.
+// - This method is used during dynamic profile generation - if a profile is
+//   ever generated that didn't already exist in the user's settings, we'll add
+//   this stub to the user's settings file, so the user has an easy point to
+//   modify the generated profile.
+// Arguments:
+// - <none>
+// Return Value:
+// - A json::Value with a guid, name and source (if applicable).
+Json::Value Profile::GenerateStub() const
+{
+    Json::Value stub;
+
+    ///// Profile-specific settings /////
+    if (_guid.has_value())
+    {
+        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
+    }
+
+    stub[JsonKey(NameKey)] = winrt::to_string(_name);
+
+    if (_source.has_value())
+    {
+        stub[JsonKey(SourceKey)] = winrt::to_string(_source.value());
+    }
+
+    return stub;
 }
 
 // Method Description:

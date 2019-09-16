@@ -49,6 +49,7 @@ public:
 
     Json::Value ToJson() const;
     Json::Value DiffToJson(const Profile& other) const;
+    Json::Value GenerateStub() const;
     static Profile FromJson(const Json::Value& json);
     bool ShouldBeLayered(const Json::Value& json) const;
     void LayerJson(const Json::Value& json);
