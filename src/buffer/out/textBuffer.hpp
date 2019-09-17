@@ -72,7 +72,7 @@ public:
     ~TextBuffer() = default;
 
     // Used for duplicating properties to another text buffer
-    void CopyProperties(const TextBuffer& OtherBuffer);
+    void CopyProperties(const TextBuffer& OtherBuffer) noexcept;
 
     // row manipulation
     const ROW& GetRowByOffset(const size_t index) const;
@@ -107,16 +107,16 @@ public:
     COORD GetLastNonSpaceCharacter() const;
     COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
 
-    Cursor& GetCursor();
-    const Cursor& GetCursor() const;
+    Cursor& GetCursor() noexcept;
+    const Cursor& GetCursor() const noexcept;
 
-    const SHORT GetFirstRowIndex() const;
+    const SHORT GetFirstRowIndex() const noexcept;
 
     const Microsoft::Console::Types::Viewport GetSize() const;
 
     void ScrollRows(const SHORT firstRow, const SHORT size, const SHORT delta);
 
-    UINT TotalRowCount() const;
+    UINT TotalRowCount() const noexcept;
 
     [[nodiscard]] TextAttribute GetCurrentAttributes() const noexcept;
 
@@ -124,12 +124,12 @@ public:
 
     void Reset();
 
-    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
+    [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize);
 
-    const UnicodeStorage& GetUnicodeStorage() const;
-    UnicodeStorage& GetUnicodeStorage();
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
 
-    Microsoft::Console::Render::IRenderTarget& GetRenderTarget();
+    Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
     class TextAndColor
     {
@@ -148,6 +148,7 @@ public:
     static std::string GenHTML(const TextAndColor& rows,
                                const int fontHeightPoints,
                                const PCWCHAR fontFaceName,
+                               const COLORREF backgroundColor,
                                const std::string& htmlTitle);
 
 private:
@@ -165,7 +166,7 @@ private:
 
     Microsoft::Console::Render::IRenderTarget& _renderTarget;
 
-    void _SetFirstRowIndex(const SHORT FirstRowIndex);
+    void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
     COORD _GetPreviousFromCursor() const;
 

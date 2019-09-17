@@ -44,6 +44,7 @@
 #include <filesystem>
 #include <functional>
 #include <set>
+#include <unordered_set>
 
 // WIL
 #include <wil/Common.h>
