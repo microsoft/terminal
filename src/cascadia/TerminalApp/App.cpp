@@ -167,9 +167,12 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Show a ContentDialog with a single button to dismiss. Uses the
+    // - Show a ContentDialog with buttons to take further action. Uses the
     //   FrameworkElements provided as the title and content of this dialog, and
-    //   displays a single button to dismiss.
+    //   displays buttons (or a single button). Two buttons (primary and secondary)
+    //   will be displayed if this is an warning dialog for closing the termimal,
+    //   this allows the users to abondon the closing action. Otherwise, a single
+    //   close button will be displayed.
     // - Only one dialog can be visible at a time. If another dialog is visible
     //   when this is called, nothing happens.
     // Arguments:

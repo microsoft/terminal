@@ -60,6 +60,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
+                                          const TerminalApp::ActionEventArgs& args)
+    {
+        _CloseWindow();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
                                        const TerminalApp::ActionEventArgs& args)
     {

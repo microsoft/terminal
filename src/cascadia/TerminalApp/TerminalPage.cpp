@@ -185,6 +185,29 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog for warnings found while closing the terminal app using
+    //   key binding with multiple tabs opened. Display messages to warn user
+    //   that more than 1 tab is opend, and once the user clicks the OK button, remove
+    //   all the tabs and shut down and app. If cancel is clicked, the dialog will close
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    void TerminalPage::_ShowCloseWarningDialog()
+    {
+        auto title = _resourceLoader->GetLocalizedString(L"CloseWindowWarningTitle");
+        auto primaryButtonText = _resourceLoader->GetLocalizedString(L"CloseAll");
+        auto secondaryButtonText = _resourceLoader->GetLocalizedString(L"Cancel");
+
+        Controls::ContentDialog dialog;
+        dialog.Title(winrt::box_value(title));
+
+        dialog.PrimaryButtonText(primaryButtonText);
+        dialog.SecondaryButtonText(secondaryButtonText);
+        auto token = dialog.PrimaryButtonClick({ this, &TerminalPage::_CloseWarningPrimaryButtonOnClick });
+
+        _showDialogHandlers(*this, dialog);
+    }
+
+    // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per
     //   Profile, displaying the profile's name. Clicking each flyout item will
@@ -513,6 +536,7 @@ namespace winrt::TerminalApp::implementation
         bindings.DuplicateTab({ this, &TerminalPage::_HandleDuplicateTab });
         bindings.CloseTab({ this, &TerminalPage::_HandleCloseTab });
         bindings.ClosePane({ this, &TerminalPage::_HandleClosePane });
+        bindings.CloseWindow({ this, &TerminalPage::_HandleCloseWindow });
         bindings.ScrollUp({ this, &TerminalPage::_HandleScrollUp });
         bindings.ScrollDown({ this, &TerminalPage::_HandleScrollDown });
         bindings.NextTab({ this, &TerminalPage::_HandleNextTab });
@@ -603,25 +627,36 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Removes the tab (both TerminalControl and XAML)
+    // - Look for the index of the input tabView in the tabs vector,
+    //   and call _RemoveTabViewItemByIndex
     // Arguments:
     // - tabViewItem: the TabViewItem in the TabView that is being removed.
     void TerminalPage::_RemoveTabViewItem(const IInspectable& tabViewItem)
+    {
+        uint32_t tabIndexFromControl = 0;
+        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
+
+        _RemoveTabViewItemByIndex(tabIndexFromControl);
+    }
+
+    // Method Description:
+    // - Removes the tab (both TerminalControl and XAML)
+    // Arguments:
+    // - tabIndex: the index of the tab to be removed
+    void TerminalPage::_RemoveTabViewItemByIndex(uint32_t tabIndex)
     {
         // To close the window here, we need to close the hosting window.
         if (_tabs.size() == 1)
         {
             _lastTabClosedHandlers(*this, nullptr);
         }
-        uint32_t tabIndexFromControl = 0;
-        _tabView.Items().IndexOf(tabViewItem, tabIndexFromControl);
-        auto focusedTabIndex = _GetFocusedTabIndex();
 
         // Removing the tab from the collection will destroy its control and disconnect its connection.
-        _tabs.erase(_tabs.begin() + tabIndexFromControl);
-        _tabView.Items().RemoveAt(tabIndexFromControl);
+        _tabs.erase(_tabs.begin() + tabIndex);
+        _tabView.Items().RemoveAt(tabIndex);
 
-        if (tabIndexFromControl == focusedTabIndex)
+        auto focusedTabIndex = _GetFocusedTabIndex();
+        if (tabIndex == focusedTabIndex)
         {
             auto const tabCount = gsl::narrow_cast<decltype(focusedTabIndex)>(_tabs.size());
             if (focusedTabIndex >= tabCount)
@@ -771,9 +806,8 @@ namespace winrt::TerminalApp::implementation
     // - Close the currently focused tab. Focus will move to the left, if possible.
     void TerminalPage::_CloseFocusedTab()
     {
-        int focusedTabIndex = _GetFocusedTabIndex();
-        std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
-        _RemoveTabViewItem(focusedTab->GetTabViewItem());
+        uint32_t focusedTabIndex = _GetFocusedTabIndex();
+        _RemoveTabViewItemByIndex(focusedTabIndex);
     }
 
     // Method Description:
@@ -785,6 +819,32 @@ namespace winrt::TerminalApp::implementation
         int focusedTabIndex = _GetFocusedTabIndex();
         std::shared_ptr<Tab> focusedTab{ _tabs[focusedTabIndex] };
         focusedTab->ClosePane();
+    }
+
+    // Method Description:
+    // - Close the terminal app with keys. If there is more
+    //   than one tab opened, show a warning dialog.
+    void TerminalPage::_CloseWindow()
+    {
+        if (_tabs.size() > 1)
+        {
+            _ShowCloseWarningDialog();
+        }
+        else
+        {
+            _CloseAllTabs();
+        }
+    }
+
+    // Method Description:
+    // - Remove all the tabs opened and the terminal will terminate
+    //   on its own when the last tab is closed.
+    void TerminalPage::_CloseAllTabs()
+    {
+        while (!_tabs.empty())
+        {
+            _RemoveTabViewItemByIndex(0);
+        }
     }
 
     // Method Description:
@@ -1203,6 +1263,20 @@ namespace winrt::TerminalApp::implementation
 
         // If we don't cancel the event, the TabView will remove the item itself.
         eventArgs.Cancel(true);
+    }
+
+    // Method Description:
+    // - Called when the primary button of the content dialog is clicked.
+    //   This calls _CloseAllTabs(), which closes all the tabs currently
+    //   opened and then the Terminal app. This method will be called if
+    //   the user confirms to close all the tabs.
+    // Arguments:
+    // - sender: unused
+    // - ContentDialogButtonClickEventArgs: unused
+    void TerminalPage::_CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog /* sender */,
+                                                         Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs /* eventArgs*/)
+    {
+        _CloseAllTabs();
     }
 
     // Method Description:
