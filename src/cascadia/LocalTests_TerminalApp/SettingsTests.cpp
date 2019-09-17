@@ -45,6 +45,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestAllValidationsWithNullGuids);
         TEST_METHOD(TestReorderWithNullGuids);
         TEST_METHOD(TestReorderingWithoutGuid);
+        TEST_METHOD(TestExplodingNameOnlyProfiles);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -966,5 +967,97 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"ThisProfileShouldNotCrash", settings._profiles.at(1)._name);
         VERIFY_ARE_EQUAL(L"Ubuntu", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
+    }
+
+    void SettingsTests::TestExplodingNameOnlyProfiles()
+    {
+        // This is a test for GH#2782. When we add a name-only profile, we'll
+        // generate a GUID for it. We should make sure that we don't re-append
+        // that profile to the list of profiles.
+
+        const std::string settings0String{ R"(
+        {
+            "defaultProfile" : "{00000000-0000-5f56-a8ff-afceeeaa6101}",
+            "profiles": [
+                {
+                    "guid" : "{00000000-0000-5f56-a8ff-afceeeaa6101}",
+                    "name" : "ThisProfileIsGood"
+
+                },
+                {
+                    "name" : "ThisProfileShouldNotDuplicate"
+                }
+            ]
+        })" };
+
+        const auto settings0Json = VerifyParseSucceeded(settings0String);
+
+        CascadiaSettings settings;
+        settings._ParseJsonString(DefaultJson, true);
+        settings.LayerJson(settings._defaultSettings);
+        VERIFY_ARE_EQUAL(2u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+
+        Log::Comment(NoThrowString().Format(
+            L"Parse the user settings"));
+        settings._ParseJsonString(settings0String, false);
+        settings.LayerJson(settings._userSettings);
+
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_FALSE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings._profiles.at(3)._name);
+
+        Log::Comment(NoThrowString().Format(
+            L"Pretend like we're checking to append dynamic profiles to the "
+            L"user's settings file. We absolutely _shouldn't_ be adding anything here."));
+        bool const needToWriteFile = settings._AppendDynamicProfilesToUserSettings();
+        VERIFY_IS_FALSE(needToWriteFile);
+        VERIFY_ARE_EQUAL(settings0String.size(), settings._userSettingsString.size());
+
+        Log::Comment(NoThrowString().Format(
+            L"Re-parse the settings file. We should have the _same_ settings as before."));
+        Log::Comment(NoThrowString().Format(
+            L"Do this to a _new_ settings object, to make sure it turns out the same."));
+        {
+            CascadiaSettings settings2;
+            settings2._ParseJsonString(DefaultJson, true);
+            settings2.LayerJson(settings2._defaultSettings);
+            VERIFY_ARE_EQUAL(2u, settings2._profiles.size());
+            // Initialize the second settings object from the first settings
+            // object's settings string, the one that we synthesized.
+            settings2._ParseJsonString(settings._userSettingsString, false);
+            VERIFY_ARE_EQUAL(4u, settings2._profiles.size());
+            VERIFY_IS_TRUE(settings2._profiles.at(0)._guid.has_value());
+            VERIFY_IS_TRUE(settings2._profiles.at(1)._guid.has_value());
+            VERIFY_IS_TRUE(settings2._profiles.at(2)._guid.has_value());
+            VERIFY_IS_FALSE(settings2._profiles.at(3)._guid.has_value());
+            VERIFY_ARE_EQUAL(L"Windows PowerShell", settings2._profiles.at(0)._name);
+            VERIFY_ARE_EQUAL(L"cmd", settings2._profiles.at(1)._name);
+            VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings2._profiles.at(2)._name);
+            VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings2._profiles.at(3)._name);
+        }
+
+        Log::Comment(NoThrowString().Format(
+            L"Validate the settings. All the profiles we have should be valid."));
+        settings._ValidateSettings();
+
+        VERIFY_ARE_EQUAL(4u, settings._profiles.size());
+        VERIFY_IS_TRUE(settings._profiles.at(0)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(1)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(2)._guid.has_value());
+        VERIFY_IS_TRUE(settings._profiles.at(3)._guid.has_value());
+        VERIFY_ARE_EQUAL(L"ThisProfileIsGood", settings._profiles.at(0)._name);
+        VERIFY_ARE_EQUAL(L"ThisProfileShouldNotDuplicate", settings._profiles.at(1)._name);
+        VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(2)._name);
+        VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(3)._name);
     }
 }
