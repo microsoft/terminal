@@ -429,7 +429,13 @@ Json::Value Profile::GenerateStub() const
 // - Generates a Json::Value which is a "stub" of this profile. This stub will
 //   have enough information that it could be layered with this profile.
 // - This generated stub might include a GUID. If generateGuid is true, and this
-//   profile doesn't have a GUID, the guid will be auto-generated.
+//   profile doesn't have a GUID, the guid will be auto-generated. Setting this
+//   to true is especially helpful for dynamic profiles, where they may only be
+//   generated with a source and name, but we'll want them to be written to the
+//   file with their generated GUID
+//      OH WAIT. This deosn't matter. If a DPG generates a profile w/o a GUID,
+//      then it'll be impossible to be layered correctly. The DPG profile will
+//      _never_ match another profile, since we MUST have a guid to layer.
 // - This method is used during dynamic profile generation - if a profile is
 //   ever generated that didn't already exist in the user's settings, we'll add
 //   this stub to the user's settings file, so the user has an easy point to
