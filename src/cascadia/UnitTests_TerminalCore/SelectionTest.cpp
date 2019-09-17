@@ -25,6 +25,25 @@ namespace TerminalCoreUnitTests
     {
         TEST_CLASS(SelectionTest);
 
+        // Method Description:
+        // - Validate a selection that spans only one row
+        // Arguments:
+        // - term: the terminal that is contains the selection
+        // - expected: the expected value of the selection rect
+        // Return Value:
+        // - N/A
+        void ValidateSingleRowSelection(Terminal& term, SMALL_RECT expected)
+        {
+            // Simulate renderer calling TriggerSelection and acquiring selection area
+            auto selectionRects = term.GetSelectionRects();
+
+            // Validate selection area
+            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
+            auto selection = term.GetViewport().ConvertToOrigin(selectionRects[0]).ToInclusive();
+
+            VERIFY_ARE_EQUAL(selection, expected);
+        }
+
         TEST_METHOD(SelectUnit)
         {
             Terminal term;
@@ -35,14 +54,7 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 5, 10 };
             term.SetSelectionAnchor(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
-            // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 5, 10 }));
+            ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
         }
 
         TEST_METHOD(SelectArea)
@@ -98,16 +110,6 @@ namespace TerminalCoreUnitTests
         {
             const COORD maxCoord = { SHRT_MAX, SHRT_MAX };
 
-            auto ValidateSelection = [&](Terminal& term, SMALL_RECT expected) {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = term.GetViewport().ConvertToOrigin(selectionRects[0]).ToInclusive();
-
-                VERIFY_ARE_EQUAL(selection, expected);
-            };
-
             // Test SetSelectionAnchor(COORD) and SetEndSelectionPosition(COORD)
             // Behavior: clamp coord to viewport.
             auto ValidateSingleClickSelection = [&](SHORT scrollback, SMALL_RECT expected) {
@@ -117,7 +119,7 @@ namespace TerminalCoreUnitTests
 
                 // NOTE: SetEndSelectionPosition(COORD) is called within SetSelectionAnchor(COORD)
                 term.SetSelectionAnchor(maxCoord);
-                ValidateSelection(term, expected);
+                ValidateSingleRowSelection(term, expected);
             };
 
             // Test DoubleClickSelection(COORD)
@@ -129,7 +131,7 @@ namespace TerminalCoreUnitTests
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
                 term.DoubleClickSelection(maxCoord);
-                ValidateSelection(term, expected);
+                ValidateSingleRowSelection(term, expected);
             };
 
             // Test TripleClickSelection(COORD)
@@ -141,18 +143,24 @@ namespace TerminalCoreUnitTests
                 term.Create({ 10, 10 }, scrollback, emptyRT);
 
                 term.TripleClickSelection(maxCoord);
-                ValidateSelection(term, expected);
+                ValidateSingleRowSelection(term, expected);
             };
 
             // Test with no scrollback
+            Log::Comment(L"Single click selection with NO scrollback value");
             ValidateSingleClickSelection(0, { 9, 9, 9, 9 });
+            Log::Comment(L"Double click selection with NO scrollback value");
             ValidateDoubleClickSelection(0, { 0, 9, 9, 9 });
+            Log::Comment(L"Triple click selection with NO scrollback value");
             ValidateTripleClickSelection(0, { 0, 9, 9, 9 });
 
             // Test with max scrollback
             const SHORT expected_row = SHRT_MAX - 1;
+            Log::Comment(L"Single click selection with MAXIMUM scrollback value");
             ValidateSingleClickSelection(SHRT_MAX, { 9, expected_row, 9, expected_row });
+            Log::Comment(L"Double click selection with MAXIMUM scrollback value");
             ValidateDoubleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
+            Log::Comment(L"Triple click selection with MAXIMUM scrollback value");
             ValidateTripleClickSelection(SHRT_MAX, { 0, expected_row, 9, expected_row });
         }
 
@@ -173,35 +181,29 @@ namespace TerminalCoreUnitTests
             const SHORT topBoundary = viewport.Top();
             const SHORT bottomBoundary = viewport.BottomInclusive();
 
-            auto ValidateSelection = [&](SMALL_RECT expected) {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
-
-                VERIFY_ARE_EQUAL(selection, expected);
-            };
-
             // Case 1: Simulate click past right (x,y) = (20,5)
             // should clamp to right boundary
             term.SetSelectionAnchor({ 20, 5 });
-            ValidateSelection({ rightBoundary, 5, rightBoundary, 5 });
+            Log::Comment(L"Out of bounds: X-value too large");
+            ValidateSingleRowSelection(term, { rightBoundary, 5, rightBoundary, 5 });
 
             // Case 2: Simulate click past left (x,y) = (-20,5)
             // should clamp to left boundary
             term.SetSelectionAnchor({ -20, 5 });
-            ValidateSelection({ leftBoundary, 5, leftBoundary, 5 });
+            Log::Comment(L"Out of bounds: X-value too negative");
+            ValidateSingleRowSelection(term, { leftBoundary, 5, leftBoundary, 5 });
 
             // Case 3: Simulate click past top (x,y) = (5,-20)
             // should clamp to top boundary
             term.SetSelectionAnchor({ 5, -20 });
-            ValidateSelection({ 5, topBoundary, 5, topBoundary });
+            Log::Comment(L"Out of bounds: Y-value too negative");
+            ValidateSingleRowSelection(term, { 5, topBoundary, 5, topBoundary });
 
             // Case 4: Simulate click past bottom (x,y) = (5,20)
             // should clamp to bottom boundary
             term.SetSelectionAnchor({ 5, 20 });
-            ValidateSelection({ 5, bottomBoundary, 5, bottomBoundary });
+            Log::Comment(L"Out of bounds: Y-value too large");
+            ValidateSingleRowSelection(term, { 5, bottomBoundary, 5, bottomBoundary });
         }
 
         TEST_METHOD(SelectToOutOfBounds)
@@ -223,30 +225,17 @@ namespace TerminalCoreUnitTests
             term.SetSelectionAnchor({ 5, 5 });
 
             // Case 1: Move out of right boundary
+            Log::Comment(L"Out of bounds: X-value too large");
             term.SetEndSelectionPosition({ 20, 5 });
-            {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
-
-                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
-            }
+            ValidateSingleRowSelection(term, SMALL_RECT({ 5, 5, rightBoundary, 5 }));
 
             // Case 2: Move out of left boundary
+            Log::Comment(L"Out of bounds: X-value negative");
             term.SetEndSelectionPosition({ -20, 5 });
-            {
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = viewport.ConvertToOrigin(selectionRects[0]).ToInclusive();
-
-                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ leftBoundary, 5, 5, 5 }));
-            }
+            ValidateSingleRowSelection(term, { leftBoundary, 5, 5, 5 });
 
             // Case 3: Move out of top boundary
+            Log::Comment(L"Out of bounds: Y-value negative");
             term.SetEndSelectionPosition({ 5, -20 });
             {
                 auto selectionRects = term.GetSelectionRects();
@@ -277,6 +266,7 @@ namespace TerminalCoreUnitTests
             }
 
             // Case 4: Move out of bottom boundary
+            Log::Comment(L"Out of bounds: Y-value too large");
             term.SetEndSelectionPosition({ 5, 20 });
             {
                 auto selectionRects = term.GetSelectionRects();
@@ -411,15 +401,9 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 5, 10 };
             term.SetSelectionAnchor(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
             // Selection should expand one to the left to get the leading half of the wide glyph
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
+            ValidateSingleRowSelection(term, { 4, 10, 5, 10 });
         }
 
         TEST_METHOD(SelectWideGlyph_Leading)
@@ -440,15 +424,9 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 4, 10 };
             term.SetSelectionAnchor(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
             // Selection should expand one to the left to get the leading half of the wide glyph
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 5, 10 }));
+            ValidateSingleRowSelection(term, { 4, 10, 5, 10 });
         }
 
         TEST_METHOD(SelectWideGlyphsInBoxSelection)
@@ -525,14 +503,8 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 5, 10 };
             term.DoubleClickSelection(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, (4 + gsl::narrow<SHORT>(text.size()) - 1), 10 }));
         }
 
         TEST_METHOD(DoubleClick_Delimiter)
@@ -553,10 +525,7 @@ namespace TerminalCoreUnitTests
             auto selectionRects = term.GetSelectionRects();
 
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(DoubleClick_DelimiterClass)
@@ -579,18 +548,12 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 15, 10 };
             term.DoubleClickSelection(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // ---Validate selection area---
             // "Terminal" is in class 2
             // ">" is in class 1
             // the white space to the right of the ">" is in class 0
             // Double-clicking the ">" should only highlight that cell
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 15, 10, 15, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 15, 10, 15, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Right)
@@ -618,14 +581,8 @@ namespace TerminalCoreUnitTests
             //       start            finish
             term.SetEndSelectionPosition({ 21, 10 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 32, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
         }
 
         TEST_METHOD(DoubleClickDrag_Left)
@@ -653,14 +610,8 @@ namespace TerminalCoreUnitTests
             //       finish            start
             term.SetEndSelectionPosition({ 5, 10 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 4, 10, 32, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 32, 10 }));
         }
 
         TEST_METHOD(TripleClick_GeneralCase)
@@ -673,14 +624,8 @@ namespace TerminalCoreUnitTests
             auto clickPos = COORD{ 5, 10 };
             term.TripleClickSelection(clickPos);
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(TripleClickDrag_Horizontal)
@@ -696,14 +641,8 @@ namespace TerminalCoreUnitTests
             // Simulate move to (x,y) = (7,10)
             term.SetEndSelectionPosition({ 7, 10 });
 
-            // Simulate renderer calling TriggerSelection and acquiring selection area
-            auto selectionRects = term.GetSelectionRects();
-
             // Validate selection area
-            VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-
-            auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-            VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 0, 10, 99, 10 }));
+            ValidateSingleRowSelection(term, SMALL_RECT({ 0, 10, 99, 10 }));
         }
 
         TEST_METHOD(TripleClickDrag_Vertical)
@@ -767,29 +706,15 @@ namespace TerminalCoreUnitTests
 
             // Case 2: move off of single cell
             term.SetEndSelectionPosition({ 6, 10 });
-            { // Simulate renderer calling TriggerSelection and acquiring selection area
-                auto selectionRects = term.GetSelectionRects();
-
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 6, 10 }));
-                VERIFY_IS_TRUE(term.IsSelectionActive());
-            }
+            ValidateSingleRowSelection(term, { 5, 10, 6, 10 });
+            VERIFY_IS_TRUE(term.IsSelectionActive());
 
             // Case 3: move back onto single cell (now allowed)
             term.SetEndSelectionPosition({ 5, 10 });
-            { // Simulate renderer calling TriggerSelection and acquiring selection area
-                auto selectionRects = term.GetSelectionRects();
+            ValidateSingleRowSelection(term, { 5, 10, 5, 10 });
 
-                // Validate selection area
-                VERIFY_ARE_EQUAL(selectionRects.size(), static_cast<size_t>(1));
-                auto selection = term.GetViewport().ConvertToOrigin(selectionRects.at(0)).ToInclusive();
-                VERIFY_ARE_EQUAL(selection, SMALL_RECT({ 5, 10, 5, 10 }));
-
-                // single cell selection should now be allowed
-                VERIFY_IS_TRUE(term.IsSelectionActive());
-            }
+            // single cell selection should now be allowed
+            VERIFY_IS_TRUE(term.IsSelectionActive());
         }
     };
 }
