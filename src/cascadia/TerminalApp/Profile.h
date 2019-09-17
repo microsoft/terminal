@@ -86,6 +86,8 @@ public:
     static GUID GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
 private:
+    Json::Value _GenerateStub(const bool generateGuid) const;
+
     static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
     static winrt::Microsoft::Terminal::Settings::ScrollbarState ParseScrollbarState(const std::wstring& scrollbarState);
