@@ -309,7 +309,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
             // profiles.
             // If a dynamic profile was generated _without_ a GUID, we also
             // don't want it serialized here. The first check in
-            // Profile::ShouldBeLayered checks that the profile hasa guid. For a
+            // Profile::ShouldBeLayered checks that the profile has a guid. For a
             // dynamic profile without a GUID, that'll _never_ be true, so it
             // would be impossible to be layered.
             continue;
