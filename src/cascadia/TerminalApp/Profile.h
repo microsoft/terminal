@@ -55,6 +55,8 @@ public:
     void LayerJson(const Json::Value& json);
     static bool IsDynamicProfileObject(const Json::Value& json);
 
+    bool HasGuid() const noexcept;
+    bool HasSource() const noexcept;
     GUID GetGuid() const noexcept;
     void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
