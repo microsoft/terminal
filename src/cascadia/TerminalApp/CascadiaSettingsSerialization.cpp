@@ -161,15 +161,19 @@ void CascadiaSettings::_LoadDynamicProfiles()
         }
         else
         {
-            auto profiles = generator->GenerateProfiles();
-            for (auto& profile : profiles)
+            try
             {
-                // If the profile did not have a GUID when it was generated,
-                // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
-                profile.SetSource(generatorNamespace);
+                auto profiles = generator->GenerateProfiles();
+                for (auto& profile : profiles)
+                {
+                    // If the profile did not have a GUID when it was generated,
+                    // we'll synthesize a GUID for it in _ValidateProfilesHaveGuid
+                    profile.SetSource(generatorNamespace);
 
-                _profiles.emplace_back(profile);
+                    _profiles.emplace_back(profile);
+                }
             }
+            CATCH_LOG_MSG("Dynamic Profile Namespace: \"%ls\"", generatorNamespace.data());
         }
     }
 }
