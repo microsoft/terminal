@@ -276,7 +276,7 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
     }
 
     auto eraseIter = OutputCellIterator(UNICODE_SPACE, _buffer->GetCurrentAttributes(), nlength);
-    _buffer->Write(eraseIter, startPos);
+    _buffer->WriteLine(eraseIter, startPos, false);
     return true;
 }
 
