@@ -1093,7 +1093,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(2u, settings2._profiles.size());
             // Initialize the second settings object from the first settings
             // object's settings string, the one that we synthesized.
-            settings2._ParseJsonString(settings._userSettingsString, false);
+            const auto firstSettingsString = settings._userSettingsString;
+            settings2._ParseJsonString(firstSettingsString, false);
+            settings2.LayerJson(settings2._userSettings);
             VERIFY_ARE_EQUAL(5u, settings2._profiles.size());
             VERIFY_IS_TRUE(settings2._profiles.at(0)._guid.has_value());
             VERIFY_IS_TRUE(settings2._profiles.at(1)._guid.has_value());
