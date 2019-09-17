@@ -93,9 +93,9 @@ namespace Microsoft.Terminal.Wpf
         /// Resizes the terminal to the specified size.
         /// </summary>
         /// <param name="Rendersize">Rendering size for the terminal.</param>
-        public void TriggerResize(Size Rendersize)
+        public (int rows, int columns) TriggerResize(Size Rendersize)
         {
-            this.termContainer.TriggerResize(Rendersize);
+            return this.termContainer.TriggerResize(Rendersize);
         }
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)
