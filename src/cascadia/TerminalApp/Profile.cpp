@@ -263,7 +263,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 // - a JsonObject which is an equivalent serialization of this object.
 Json::Value Profile::ToJson() const
 {
-    Json::Value root = _GenerateStub(false);
+    Json::Value root = GenerateStub();
 
     ///// Profile-specific settings /////
     root[JsonKey(HiddenKey)] = _hidden;
@@ -423,23 +423,6 @@ Json::Value Profile::DiffToJson(const Profile& other) const
 // Method Description:
 // - Generates a Json::Value which is a "stub" of this profile. This stub will
 //   have enough information that it could be layered with this profile.
-// - This generated stub will _always_ include a GUID. If this profile doesn't
-//   have a GUID, the guid will be auto-generated.
-// - See _GenerateStub for more details.
-// Arguments:
-// - <none>
-// Return Value:
-// - A json::Value with a guid, name and source (if applicable).
-Json::Value Profile::GenerateStub() const
-{
-    return _GenerateStub(true);
-}
-
-// Method Description:
-// - Generates a Json::Value which is a "stub" of this profile. This stub will
-//   have enough information that it could be layered with this profile.
-// - This generated stub might include a GUID. If generateGuid is true, and this
-//   profile doesn't have a GUID, the guid will be auto-generated.
 // - This method is used during dynamic profile generation - if a profile is
 //   ever generated that didn't already exist in the user's settings, we'll add
 //   this stub to the user's settings file, so the user has an easy point to
@@ -448,7 +431,7 @@ Json::Value Profile::GenerateStub() const
 // - <none>
 // Return Value:
 // - A json::Value with a guid, name and source (if applicable).
-Json::Value Profile::_GenerateStub(const bool generateGuid) const
+Json::Value Profile::GenerateStub() const
 {
     Json::Value stub;
 
@@ -456,11 +439,6 @@ Json::Value Profile::_GenerateStub(const bool generateGuid) const
     if (_guid.has_value())
     {
         stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(_guid.value()));
-    }
-    else if (generateGuid)
-    {
-        const auto guid = _GenerateGuidForProfile(_name, _source);
-        stub[JsonKey(GuidKey)] = winrt::to_string(Utils::GuidToString(guid));
     }
 
     stub[JsonKey(NameKey)] = winrt::to_string(_name);
