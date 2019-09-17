@@ -428,12 +428,11 @@ using namespace Microsoft::Console::Render;
                                                              D2D1_POINT_2F baselineOrigin,
                                                              DWRITE_MEASURING_MODE measuringMode,
                                                              _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                             _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                             _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
                                                              ID2D1Brush* brush)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
-    RETURN_HR_IF_NULL(E_INVALIDARG, glyphRunDescription);
     RETURN_HR_IF_NULL(E_INVALIDARG, brush);
 
     ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> d2dContext;
@@ -455,7 +454,7 @@ using namespace Microsoft::Console::Render;
                                                                      D2D1_POINT_2F baselineOrigin,
                                                                      DWRITE_MEASURING_MODE /*measuringMode*/,
                                                                      _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                                     _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
+                                                                     _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);
@@ -498,7 +497,7 @@ using namespace Microsoft::Console::Render;
                                                             D2D1_POINT_2F baselineOrigin,
                                                             DWRITE_MEASURING_MODE /*measuringMode*/,
                                                             _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                            _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
+                                                            _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* /*glyphRunDescription*/) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, clientDrawingContext);
     RETURN_HR_IF_NULL(E_INVALIDARG, glyphRun);

@@ -94,19 +94,19 @@ namespace Microsoft::Console::Render
                                                  D2D1_POINT_2F baselineOrigin,
                                                  DWRITE_MEASURING_MODE measuringMode,
                                                  _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                 _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
+                                                 _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription,
                                                  ID2D1Brush* brush);
 
         [[nodiscard]] HRESULT _DrawBasicGlyphRunManually(DrawingContext* clientDrawingContext,
                                                          D2D1_POINT_2F baselineOrigin,
                                                          DWRITE_MEASURING_MODE measuringMode,
                                                          _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                         _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
+                                                         _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
 
         [[nodiscard]] HRESULT _DrawGlowGlyphRun(DrawingContext* clientDrawingContext,
                                                 D2D1_POINT_2F baselineOrigin,
                                                 DWRITE_MEASURING_MODE measuringMode,
                                                 _In_ const DWRITE_GLYPH_RUN* glyphRun,
-                                                _In_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
+                                                _In_opt_ const DWRITE_GLYPH_RUN_DESCRIPTION* glyphRunDescription) noexcept;
     };
 }
