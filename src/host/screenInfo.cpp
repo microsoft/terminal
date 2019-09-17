@@ -1231,10 +1231,13 @@ void SCREEN_INFORMATION::_InternalSetViewportSize(const COORD* const pcoordSize,
 
     // See MSFT:19917443
     // If we're in terminal scrolling mode, and we've changed the height of the
-    //      viewport, the new viewport's bottom to the _virtualBottom
+    //      viewport, the new viewport's bottom to the _virtualBottom.
+    // GH#1206 - Only do this if the viewport is _growing_ in height. This can
+    // cause unexpected behavior if we try to anchor the _virtualBottom to a
+    // position that will be greater than the height of the buffer.
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto newViewport = Viewport::FromInclusive(srNewViewport);
-    if (gci.IsTerminalScrolling() && newViewport.Height() != _viewport.Height())
+    if (gci.IsTerminalScrolling() && newViewport.Height() >= _viewport.Height())
     {
         const short newTop = static_cast<short>(std::max(0, _virtualBottom - (newViewport.Height() - 1)));
 

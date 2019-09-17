@@ -108,6 +108,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          si,
                          extraEnvVars));
 
+        _startTime = std::chrono::high_resolution_clock::now();
+
         // Create our own output handling thread
         // This must be done after the pipes are populated.
         // Each connection needs to make sure to drain the output from its backing host.
@@ -207,6 +209,21 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             if (strView.empty())
             {
                 return 0;
+            }
+
+            if (!_recievedFirstByte)
+            {
+                auto now = std::chrono::high_resolution_clock::now();
+                std::chrono::duration<double> delta = now - _startTime;
+
+                TraceLoggingWrite(g_hTerminalConnectionProvider,
+                                  "RecievedFirstByte",
+                                  TraceLoggingDescription("An event emitted when the connection recieves the first byte"),
+                                  TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                                  TraceLoggingFloat64(delta.count(), "Duration"),
+                                  TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                                  TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+                _recievedFirstByte = true;
             }
 
             // Convert buffer to hstring
