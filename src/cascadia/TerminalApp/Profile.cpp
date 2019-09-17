@@ -119,6 +119,16 @@ Profile::~Profile()
 {
 }
 
+bool Profile::HasGuid() const noexcept
+{
+    return _guid.has_value();
+}
+
+bool Profile::HasSource() const noexcept
+{
+    return _source.has_value();
+}
+
 GUID Profile::GetGuid() const noexcept
 {
     // This can throw if we never had our guid set to a legitimate value.
