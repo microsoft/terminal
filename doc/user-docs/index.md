@@ -7,14 +7,14 @@ change. If you notice an error in the docs, please raise an issue. Or better yet
 
 ### From Source Code
 
-Follow the instructions in this repo's [README](/README.md#developer-guidance).
+To compile Windows Terminal yourself using the source code, follow the instructions in the [README](/README.md#developer-guidance).
 
 ### From the Microsoft Store
 
-1. Make sure you have upgraded to the current Windows 10 release (at least 1903)
-2. Search for Windows Terminal in the Store
-3. Review the minimum system settings to ensure you can successfully install Windows Terminal
-4. Install in the normal fashion
+1. Make sure you have upgraded to the current Windows 10 release (at least build `1903`). To determine your build number, see [winver](https://docs.microsoft.com/en-us/windows/client-management/windows-version-search).
+2. Open the Windows Terminal listing in the [Microsoft Store](https://aka.ms/install-terminal).
+3. Review the minimum system requirements to confirm you can successfully install Windows Terminal.
+4. Click `Get` to begin the installation process.
 
 ## Starting Windows Terminal
 
