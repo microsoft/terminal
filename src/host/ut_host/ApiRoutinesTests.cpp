@@ -612,6 +612,8 @@ class ApiRoutinesTests
         // the results, since ScrollConsoleScreenBuffer should not be affected by VT margins.
         auto& stateMachine = si.GetStateMachine();
         stateMachine.ProcessString(setMargins ? L"\x1b[2;4r" : L"\x1b[r");
+        // Make sure we clear the margins on exit so they can't break other tests.
+        auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
         gci.LockConsole();
         auto Unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
