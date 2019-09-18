@@ -294,14 +294,37 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         return false;
     };
 
+    bool changedFile = false;
+
     // Get the index in the user settings string of the _last_ profile.
     // We want to start inserting profiles immediately following the last profile.
     const auto userProfilesObj = _GetProfilesJsonObject(_userSettings);
-    const auto numProfiles = userProfilesObj.size();
-    const auto lastProfile = userProfilesObj[numProfiles - 1];
-    size_t currentInsertIndex = lastProfile.getOffsetLimit();
-
-    bool changedFile = false;
+    auto numProfiles = userProfilesObj.size();
+    size_t currentInsertIndex = 0;
+    if (userProfilesObj && numProfiles == 0)
+    {
+        // There's a profiles object, but there's no profiles in it.
+        currentInsertIndex = userProfilesObj.getOffsetStart() + 1;
+    }
+    else if (!userProfilesObj)
+    {
+        // There's no profiles object. Insert one right before the parent's closing }.
+        currentInsertIndex = _userSettings.getOffsetLimit() - 1;
+        std::string profileObjectSerialization = R"(    "profiles": [)";
+        if (_userSettings.size() > 0)
+        {
+            profileObjectSerialization.insert(0, ",\n");
+        }
+        _userSettingsString.insert(currentInsertIndex, profileObjectSerialization);
+        currentInsertIndex += profileObjectSerialization.size();
+        _userSettingsString.insert(currentInsertIndex, R"(])");
+        changedFile = true;
+    }
+    else
+    {
+        const auto lastProfile = userProfilesObj[numProfiles - 1];
+        currentInsertIndex = lastProfile.getOffsetLimit();
+    }
 
     for (const auto& profile : _profiles)
     {
@@ -345,14 +368,18 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
         // Write a comma, newline to the file
         changedFile = true;
-        _userSettingsString.insert(currentInsertIndex, ",");
-        currentInsertIndex++;
+        if (numProfiles > 0)
+        {
+            _userSettingsString.insert(currentInsertIndex, ",");
+            currentInsertIndex++;
+        }
         _userSettingsString.insert(currentInsertIndex, "\n");
         currentInsertIndex++;
 
         // Write the profile's serialization to the file
         _userSettingsString.insert(currentInsertIndex, profileSerialization);
         currentInsertIndex += profileSerialization.size();
+        ++numProfiles;
     }
 
     return changedFile;
