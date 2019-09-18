@@ -87,6 +87,7 @@ private:
     void _ParseJsonString(std::string_view fileData, const bool isDefaultSettings);
     static const Json::Value& _GetProfilesJsonObject(const Json::Value& json);
     static const Json::Value& _GetDisabledProfileSourcesJsonObject(const Json::Value& json);
+    bool _PrependSchemaDirective();
     bool _AppendDynamicProfilesToUserSettings();
 
     void _LoadDynamicProfiles();

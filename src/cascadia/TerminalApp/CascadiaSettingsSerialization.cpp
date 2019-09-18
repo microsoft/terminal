@@ -27,6 +27,7 @@ static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Wi
 
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
+static constexpr std::string_view SchemaKey{ "$schema" };
 static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view KeybindingsKey{ "keybindings" };
 static constexpr std::string_view GlobalsKey{ "globals" };
@@ -36,6 +37,8 @@ static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSou
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view DefaultProfilesIndentation{ "        " };
+static constexpr std::string_view SettingsSchemaFragment{ "\n"
+                                                          R"(    "$schema": "https://aka.ms/terminal-profiles-schema",)" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -84,6 +87,16 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::LoadAll()
     // After layering the user settings, check if there are any new profiles
     // that need to be inserted into their user settings file.
     needToWriteFile = resultPtr->_AppendDynamicProfilesToUserSettings() || needToWriteFile;
+
+    if (needToWriteFile)
+    {
+        // For safety's sake, we need to re-parse the JSON document to ensure that
+        // all future patches are applied with updated object offsets.
+        resultPtr->_ParseJsonString(resultPtr->_userSettingsString, false);
+    }
+
+    // Make sure there's a $schema at the top of the file.
+    needToWriteFile = resultPtr->_PrependSchemaDirective() || needToWriteFile;
 
     // TODO:GH#2721 If powershell core is installed, we need to set that to the
     // default profile, but only when the settings file was newly created. We'll
@@ -241,9 +254,34 @@ void CascadiaSettings::SaveAll() const
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
     const auto serializedString = Json::writeString(wbuilder, json);
 
     _WriteSettings(serializedString);
+}
+
+// Method Description:
+// - Determines whether the user's settings file is missing a schema directive
+//   and, if so, inserts one.
+// - Assumes that the body of the root object is at an indentation of 4 spaces, and
+//   therefore each member should be indented 4 spaces. If the user's settings
+//   have a different indentation, we'll still insert valid json, it'll just be
+//   indented incorrectly.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff we've made changes to the _userSettingsString that should be persisted.
+bool CascadiaSettings::_PrependSchemaDirective()
+{
+    if (_userSettings.isMember(JsonKey(SchemaKey)))
+    {
+        return false;
+    }
+
+    // start points at the opening { for the root object.
+    auto start = _userSettings.getOffsetStart();
+    _userSettingsString.insert(start + 1, SettingsSchemaFragment);
+    return true;
 }
 
 // Method Description:
@@ -276,6 +314,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     Json::StreamWriterBuilder wbuilder;
     // Use 4 spaces to indent instead of \t
     wbuilder.settings_["indentation"] = "    ";
+    wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
     auto isInJsonObj = [](const auto& profile, const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
