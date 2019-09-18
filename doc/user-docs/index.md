@@ -57,7 +57,7 @@ To copy the text to your clipboard, you can right-click the terminal when a sele
 
 If there is not an active selection, a right-click will paste the text content from your clipboard to the terminal.
 
-Copy and paste operations can also be keybound. For more information on how to bind keys, see [Using Json Settings](UsingJsonSettings.md).
+Copy and paste operations can also be keybound. For more information on how to bind keys, see [Using Json Settings](UsingJsonSettings.md#adding-copy-and-paste-keybindings).
 
 ## Add a "Open Windows Terminal Here" to File Explorer
 
