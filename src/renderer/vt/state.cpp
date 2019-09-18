@@ -65,15 +65,25 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
     _usingTestCallback = false;
 #endif
 
+    // Set up a background thread to wait until the shared shutdown event is called and then execute cleanup tasks.
     _shutdownWatchdog = std::async(std::launch::async, [&] {
         _shutdownEvent.wait();
+
+        // When someone calls the _Flush method, they will go into a potentially blocking WriteFile operation.
+        // Before they do that, they'll store their thread ID here so we can get them unstuck should we be shutting down.
         const auto threadId = _blockedThreadId.load();
         if (threadId)
         {
+            // If we indeed had a valid thread ID meaning someone is blocked on a WriteFile operation,
+            // then let's open a handle to their thread. We need the standard read/write privileges to see
+            // what their thread is up to (it will not work without these) and also the Terminate privilege to
+            // unstick them.
             wil::unique_handle threadHandle(OpenThread(STANDARD_RIGHTS_ALL | THREAD_TERMINATE, FALSE, threadId));
             LOG_LAST_ERROR_IF_NULL(threadHandle.get());
             if (threadHandle)
             {
+                // Presuming we got all the way to acquiring the blocked thread's handle, call the OS function that
+                // will unstick any thread that is otherwise permanently blocked on a synchronous operation.
                 LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(threadHandle.get()));
             }
         }
@@ -128,9 +138,12 @@ VtEngine::~VtEngine()
 
     if (!_shutdownEvent.is_signaled())
     {
+        // Stash the current thread ID before we go into the potentially blocking synchronous write file operation.
+        // This will let the shutdown watchdog thread break us out of the stuck state should a shutdown event
+        // occur while we're still waiting for the WriteFile to complete.
         _blockedThreadId.store(GetCurrentThreadId());
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
-        _blockedThreadId.store(0);
+        _blockedThreadId.store(0); // When done, clear the thread ID.
 
         _buffer.clear();
         if (!fSuccess)

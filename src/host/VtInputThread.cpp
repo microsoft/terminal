@@ -118,6 +118,20 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
     return pInstance->_InputThread();
 }
 
+// Routine Description:
+// - A public way of pumping a single input message through the VT input channel
+// - Reading input can be a blocking operation. This function will capture
+//   the thread ID of whomever calls it so it can be unblocked on shutdown events
+//   by a watchdog thread.
+// - This function cannot be called by two public methods simultaneously.
+//   If another is already waiting in a blocked read on the VT input thread,
+//   an invalid state error will be returned.
+// - This function is only valid during startup. Once the real VtInputThread starts
+//   to process the input, it will fill the thread ID field permanently until shutdown.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK, a ReadFile error, an error processing input, or an invalid state error if another thread is already waiting.
 [[nodiscard]] HRESULT VtInputThread::DoReadInput()
 {
     // If there's already a thread pumping VT input, it's not valid to read this from the outside.
@@ -144,8 +158,6 @@ DWORD WINAPI VtInputThread::StaticVtInputThreadProc(_In_ LPVOID lpParameter)
 // - S_OK or relevant error
 [[nodiscard]] HRESULT VtInputThread::_ReadInput()
 {
-    // TODO: Make it so my only public call can be during initialization.
-
     byte buffer[256];
     DWORD dwRead = 0;
 
@@ -171,6 +183,9 @@ DWORD VtInputThread::_InputThread()
 
     while (true)
     {
+        // NOTE: From inside the thread itself, we don't need to stash the thread handle each call
+        // because it was done permanently for us when the thread was created. No one else is allowed
+        // in through the public method while the actual VtInputThread is running. Only during startup.
         RETURN_IF_FAILED(_ReadInput());
     }
 
@@ -196,6 +211,9 @@ DWORD VtInputThread::_InputThread()
 
     RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
+
+    // This will permanently shut the door on the public read method until shutdown.
+    // Once the thread is servicing messages, we don't want any other threads getting in here.
     _dwThreadId = dwThreadId;
 
     return S_OK;
