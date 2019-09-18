@@ -80,8 +80,8 @@ using namespace Microsoft::Console::Types;
     // So under these conditions where we are assured the I/O thread is holding the lock on our behalf and waiting for us...
     // skip the lock/unlock behavior down this entire procedure and perform the messages needed to get things set up
     // knowing we have exclusive reign over the console variables.
-    if (g.hConsoleInputSetupEvent && g.hConsoleInputSetupEvent.is_signaled() &&
-        g.hConsoleInputInitializedEvent && !g.hConsoleInputInitializedEvent.is_signaled())
+    if (g.consoleInputSetupEvent && g.consoleInputSetupEvent.is_signaled() &&
+        g.consoleInputInitializedEvent && !g.consoleInputInitializedEvent.is_signaled())
     {
         Unlock = FALSE;
     }

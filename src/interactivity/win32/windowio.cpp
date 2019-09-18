@@ -995,7 +995,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 
     // When the setup event is triggered, the I/O thread has told us that it is
     // officially holding the global lock on our behalf and we're free to setup.
-    ServiceLocator::LocateGlobals().hConsoleInputSetupEvent.wait();
+    ServiceLocator::LocateGlobals().consoleInputSetupEvent.wait();
 
     HHOOK hhook = nullptr;
     NTSTATUS Status = STATUS_SUCCESS;
@@ -1018,7 +1018,7 @@ DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
     // Now we must pass back virtual ownership of the global lock by telling the I/O
     // thread that we're done and what our status is.
     ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
-    ServiceLocator::LocateGlobals().hConsoleInputInitializedEvent.SetEvent();
+    ServiceLocator::LocateGlobals().consoleInputInitializedEvent.SetEvent();
 
     // If not successful, end the thread by returning the status.
     // If successful, proceed down below to the message pump loop.
