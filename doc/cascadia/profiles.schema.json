@@ -109,7 +109,7 @@
               "keys": {
                 "description": "Defines the key combinations used to call the command.",
                 "items": {
-                  "pattern": "^(ctrl\\+|alt\\+|shift\\+){0,3}([0-9a-zA-Z]|backspace|tab|enter|esc|space|pgup|pgdn|end|home|left|up|right|down|insert|delete|numpad_([0-9]|multiply|plus|minus|period|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus|,|-|\\.)$",
+                  "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>\\w+?)?(?<=\\w)$",
                   "type": "string"
                 },
                 "minItems": 1,
@@ -220,10 +220,83 @@
           "colorTable": {
             "description": "Array of colors used in the profile if colorscheme is not set. Colors use hex color format: \"#rrggbb\". Ordering is as follows: [black, red, green, yellow, blue, magenta, cyan, white, bright black, bright red, bright green, bright yellow, bright blue, bright magenta, bright cyan, bright white]",
             "items": {
-              "$ref": "#/definitions/Color"
+              "additionalProperties": false,
+              "properties": {
+                "background": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the background color of the color table."
+                },
+                "black": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI black."
+                },
+                "blue": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI blue."
+                },
+                "brightBlack": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright black."
+                },
+                "brightBlue": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright blue."
+                },
+                "brightCyan": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright cyan."
+                },
+                "brightGreen": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright green."
+                },
+                "brightPurple": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright purple."
+                },
+                "brightRed": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright red."
+                },
+                "brightWhite": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright white."
+                },
+                "brightYellow": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI bright yellow."
+                },
+                "cyan": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI cyan."
+                },
+                "foreground": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the foreground color of the color table."
+                },
+                "green": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI green."
+                },
+                "purple": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI purple."
+                },
+                "red": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI red."
+                },
+                "white": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI white."
+                },
+                "yellow": {
+                  "$ref": "#/definitions/Color",
+                  "description": "Sets the color used as ANSI yellow."
+                }
+              },
+              "type": "object"
             },
-            "maxItems": 16,
-            "minItems": 16,
             "type": "array"
           },
           "commandline": {
