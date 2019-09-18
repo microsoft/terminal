@@ -12,6 +12,177 @@
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>
 
+#include <DirectXMath.h>
+#include <d3dcompiler.h>
+#include <DirectXColors.h>
+
+#pragma comment(lib, "d3dcompiler.lib")
+using namespace DirectX;
+
+
+// Quad where we draw the terminal.
+// pos is world space coordinates where origin is at the center of screen.
+// tex is texel coordinates where origin is top left.
+// Layout the quad as a triangle strip where the _screenQuadVertices are place like so.
+// 2 0
+// 3 1
+struct ShaderInput
+{
+    XMFLOAT3 pos;
+    XMFLOAT2 tex;
+} const _screenQuadVertices[] =
+{
+    { XMFLOAT3(1.f, 1.f, 0.f), XMFLOAT2(1.f, 0.f) },
+    { XMFLOAT3(1.f, -1.f, 0.f), XMFLOAT2(1.f, 1.f) },
+    { XMFLOAT3(-1.f, 1.f, 0.f), XMFLOAT2(0.f, 0.f) },
+    { XMFLOAT3(-1.f, -1.f, 0.f), XMFLOAT2(0.f, 1.f) },
+};
+
+D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] =
+{
+    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
+};
+
+const char _vertexShaderString[] = R"(
+struct VS_OUTPUT
+{
+    float4 pos : SV_POSITION;
+    float2 tex : TEXCOORD;
+};
+VS_OUTPUT main(float4 pos : POSITION, float2 tex : TEXCOORD)
+{
+    VS_OUTPUT output;
+    output.pos = pos;
+    output.tex = tex;
+    return output;
+}
+)";
+
+const char _pixelShaderString[] = R"(
+Texture2D shaderTexture;
+SamplerState samplerState;
+
+#define SCANLINE_FACTOR 0.5
+#define SCANLINE_PERIOD 1
+
+static const float M_PI = 3.14159265f;
+
+// https://en.wikipedia.org/wiki/Gaussian_blur
+static float gaussianKernel[7][7] =
+{
+    { 0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067 },
+    { 0.00002292, 0.00078633, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292 },
+    { 0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117 },
+    { 0.00038771, 0.01330373, 0.11098164, 0.22508352, 0.11098164, 0.01330373, 0.00038771 },
+    { 0.00019117, 0.00655965, 0.05472157, 0.11098164, 0.05472157, 0.00655965, 0.00019117 },
+    { 0.00002292, 0.00078633, 0.00655965, 0.01330373, 0.00655965, 0.00078633, 0.00002292 },
+    { 0.00000067, 0.00002292, 0.00019117, 0.00038771, 0.00019117, 0.00002292, 0.00000067 }
+};
+
+float4 Blur(Texture2D input, float2 tex_coord)
+{
+    uint width, height;
+    shaderTexture.GetDimensions(width, height);
+
+    float textureWidth = 1.0f/width;
+    float textureHeight = 1.0f/height;
+
+    float4 color = { 0, 0, 0, 0 };
+    float factor = 1;
+
+    int start = 0, end = 7; // sizeof(gaussianKernel[0])
+    for (int x = start; x < end; x++) 
+    {
+        float2 samplePos = { 0, 0 };
+
+        samplePos.x = tex_coord.x + (x - 7/2) * textureWidth;
+        for (int y = start; y < end; y++)
+        {
+            samplePos.y = tex_coord.y + (y - 7/2) * textureHeight;
+            color += input.Sample(samplerState, samplePos) * gaussianKernel[x][y] * factor;
+        }
+    }
+
+    return color;
+}
+
+float Gaussian2D(float x, float y, float sigma)
+{
+    return 1/(sigma*sqrt(2*M_PI)) * exp(-0.5*(x*x + y*y)/sigma/sigma);
+}
+
+float4 Blur2(Texture2D input, float2 tex_coord, float sigma)
+{
+    uint width, height;
+    shaderTexture.GetDimensions(width, height);
+
+    float texelWidth = 1.0f/width;
+    float texelHeight = 1.0f/height;
+
+    float4 color = { 0, 0, 0, 0 };
+    float factor = 1;
+
+    int sampleCount = 21;
+
+    for (int x = 0; x < sampleCount; x++) 
+    {
+        float2 samplePos = { 0, 0 };
+
+        samplePos.x = tex_coord.x + (x - sampleCount/2) * texelWidth;
+        for (int y = 0; y < sampleCount; y++)
+        {
+            samplePos.y = tex_coord.y + (y - sampleCount/2) * texelHeight;
+            if (samplePos.x <= 0 || samplePos.y <= 0 || samplePos.x >= width || samplePos.y >= height) continue;
+
+            color += input.Sample(samplerState, samplePos) * Gaussian2D((x - sampleCount/2), (y - sampleCount/2), sigma);
+        }
+    }
+
+    return color;
+
+}
+
+float SquareWave(float y)
+{
+    // Square wave gogogo.
+    // return 1.0 - SCANLINE_FACTOR * (1 - fmod(pos.y, 2.0));
+    // return sin(pos.y / SCANLINE_PERIOD * 2.0 * M_PI) >= 0.0 ? 1: SCANLINE_FACTOR;
+    return 1 - (floor(y / SCANLINE_PERIOD) % 2) * SCANLINE_FACTOR;
+}
+
+float4 Scanline(float4 color, float4 pos)
+{
+    float wave = SquareWave(pos.y);
+
+    if (length(color.rgb) < 0.2 && false)
+    {
+        return color + wave*0.1;
+    }
+    else
+    {
+        return color * wave;
+    }
+}
+
+float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
+{
+    // return float4(0, 0.5f, 0.5f, 1);
+    // return shaderTexture.Sample(SampleType, tex) * float4(1.0, 0.5, 0.5, 1.0);
+    // return float4( 1.0f, 1.0f, 0.0f, 1.0f );    // Yellow, with Alpha = 1
+    // return color;
+    float4 greener = float4(0.5, 2, 0.5, 1);
+    Texture2D input = shaderTexture;
+
+    float4 color = input.Sample(samplerState, tex);
+    color += Blur2(input, tex, 2)*0.5;
+    color = Scanline(color, pos);
+    // color *= greener;
+
+    return color;
+}
+)";
+
 #pragma hdrstop
 
 static constexpr float POINTS_PER_INCH = 72.0f;
@@ -113,6 +284,134 @@ DxEngine::~DxEngine()
     {
         _ReleaseDeviceResources();
     }
+
+    return S_OK;
+}
+
+int DbgPrint(const char* format, ...)
+{
+    static char s_printf_buf[1024];
+    va_list args;
+    va_start(args, format);
+    _vsnprintf_s(s_printf_buf, sizeof(s_printf_buf), format, args);
+    va_end(args);
+    OutputDebugStringA(s_printf_buf);
+    return 0;
+}
+
+Microsoft::WRL::ComPtr<ID3DBlob>
+_CompileShader(
+    std::string source,
+    std::string target,
+    std::string entry = "main")
+{
+    Microsoft::WRL::ComPtr<ID3DBlob> code{};
+    Microsoft::WRL::ComPtr<ID3DBlob> error{};
+
+    HRESULT hr = D3DCompile(
+        source.c_str(),
+        source.size(),
+        nullptr,
+        nullptr,
+        nullptr,
+        entry.c_str(),
+        target.c_str(),
+        0,
+        0,
+        &code,
+        &error);
+
+    if (FAILED(hr))
+    {
+        DbgPrint("D3DCompile failed with %x\n", hr);
+        if (error)
+        {
+            DbgPrint("D3DCompile error: %*s\n", (int)error->GetBufferSize(), (char *)error->GetBufferPointer());
+        }
+
+        THROW_HR(hr);
+    }
+
+    return code;
+}
+
+HRESULT DxEngine::_SetupTerminalEffects()
+{
+    ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+
+    // Setup render target.
+    RETURN_IF_FAILED(_d3dDevice->CreateRenderTargetView(swapBuffer.Get(), nullptr, &_renderTargetView));
+
+    // Setup _framebufferCapture, to where we'll copy current frame when rendering effects.
+    D3D11_TEXTURE2D_DESC framebufferCaptureDesc{};
+    swapBuffer->GetDesc(&framebufferCaptureDesc);
+    framebufferCaptureDesc.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+    RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferCaptureDesc, NULL, &_framebufferCapture));
+
+    // Setup the viewport.
+    D3D11_VIEWPORT vp;
+    vp.Width = (FLOAT)_displaySizePixels.cx;
+    vp.Height = (FLOAT)_displaySizePixels.cy;
+    vp.MinDepth = 0.0f;
+    vp.MaxDepth = 1.0f;
+    vp.TopLeftX = 0;
+    vp.TopLeftY = 0;
+    _d3dDeviceContext->RSSetViewports(1, &vp);
+
+    // Prepare shaders.
+    auto vertexBlob = _CompileShader(_vertexShaderString, "vs_5_0");
+    auto pixelBlob = _CompileShader(_pixelShaderString, "ps_5_0");
+
+    RETURN_IF_FAILED(_d3dDevice->CreateVertexShader(
+        vertexBlob->GetBufferPointer(),
+        vertexBlob->GetBufferSize(),
+        nullptr,
+        &_vertexShader));
+
+    RETURN_IF_FAILED(_d3dDevice->CreatePixelShader(
+        pixelBlob->GetBufferPointer(),
+        pixelBlob->GetBufferSize(),
+        nullptr,
+        &_pixelShader));
+
+    RETURN_IF_FAILED(_d3dDevice->CreateInputLayout(
+        _shaderInputLayout,
+        ARRAYSIZE(_shaderInputLayout),
+        vertexBlob->GetBufferPointer(),
+        vertexBlob->GetBufferSize(),
+        &_vertexLayout));
+
+    // Create vertex buffer for screen quad.
+    D3D11_BUFFER_DESC bd{};
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(ShaderInput) * ARRAYSIZE(_screenQuadVertices);
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+
+    D3D11_SUBRESOURCE_DATA InitData{};
+    InitData.pSysMem = _screenQuadVertices;
+
+    RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&bd, &InitData, &_screenQuadVertexBuffer));
+
+    // Sampler state is needed to use texture as input to shader.
+    D3D11_SAMPLER_DESC samplerDesc{};
+    samplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    samplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    samplerDesc.MipLODBias = 0.0f;
+    samplerDesc.MaxAnisotropy = 1;
+    samplerDesc.ComparisonFunc = D3D11_COMPARISON_ALWAYS;
+    samplerDesc.BorderColor[0] = 0;
+    samplerDesc.BorderColor[1] = 0;
+    samplerDesc.BorderColor[2] = 0;
+    samplerDesc.BorderColor[3] = 0;
+    samplerDesc.MinLOD = 0;
+    samplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
+
+    // Create the texture sampler state.
+    RETURN_IF_FAILED(_d3dDevice->CreateSamplerState(&samplerDesc, &_samplerState));
 
     return S_OK;
 }
@@ -255,6 +554,8 @@ DxEngine::~DxEngine()
             default:
                 THROW_HR(E_NOTIMPL);
             }
+
+            RETURN_IF_FAILED(_SetupTerminalEffects());
         }
         CATCH_RETURN();
 
@@ -382,14 +683,14 @@ void DxEngine::_ReleaseDeviceResources() noexcept
 }
 
 // Routine Description:
-// - Helper to create a DirectWrite text layout object
+// - Helper to create a DirectWrite text _shaderInputLayout object
 //   out of a string.
 // Arguments:
-// - string - The text to attempt to layout
+// - string - The text to attempt to _shaderInputLayout
 // - stringLength - Length of string above in characters
-// - ppTextLayout - Location to receive new layout object
+// - ppTextLayout - Location to receive new _shaderInputLayout object
 // Return Value:
-// - S_OK if layout created successfully, otherwise a DirectWrite error
+// - S_OK if _shaderInputLayout created successfully, otherwise a DirectWrite error
 [[nodiscard]] HRESULT DxEngine::_CreateTextLayout(
     _In_reads_(stringLength) PCWCHAR string,
     _In_ size_t stringLength,
@@ -968,7 +1269,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         origin.x = static_cast<float>(coord.X * _glyphCell.cx);
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
-        // Create the text layout
+        // Create the text _shaderInputLayout
         CustomTextLayout layout(_dwriteFactory.Get(),
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),
@@ -1219,6 +1520,51 @@ enum class CursorPaintType
 }
 
 // Routine Description:
+// - Paint terminal effects.
+// Arguments:
+// Return Value:
+// - S_OK or relevant DirectX error.
+[[nodiscard]] HRESULT DxEngine::PaintTerminalEffects() noexcept
+{
+    assert(_framebufferCapture && "You should have initialized this");
+
+    // Capture current frame in swap chain to a texture.
+    ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
+    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+    _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
+
+    // Prepare captured texture as input resource to shader program.
+    D3D11_TEXTURE2D_DESC desc;
+    _framebufferCapture->GetDesc(&desc);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Format = desc.Format;
+
+    ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
+    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
+
+
+    // Render the screen quad with shader effects.
+    UINT stride = sizeof(ShaderInput);
+    UINT offset = 0;
+
+    _d3dDeviceContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), nullptr);
+    _d3dDeviceContext->IASetVertexBuffers(0, 1, _screenQuadVertexBuffer.GetAddressOf(), &stride, &offset);
+    _d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    _d3dDeviceContext->IASetInputLayout(_vertexLayout.Get());
+    _d3dDeviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
+    _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
+    _d3dDeviceContext->Draw(4, 0);
+
+    return S_OK;
+}
+
+// Routine Description:
 // - Updates the default brush colors used for drawing
 // Arguments:
 // - colorForeground - Foreground brush color
@@ -1418,9 +1764,9 @@ float DxEngine::GetScaling() const noexcept
 
     try
     {
-        const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not layout.
+        const Cluster cluster(glyph, 0); // columns don't matter, we're doing analysis not _shaderInputLayout.
 
-        // Create the text layout
+        // Create the text _shaderInputLayout
         CustomTextLayout layout(_dwriteFactory.Get(),
                                 _dwriteTextAnalyzer.Get(),
                                 _dwriteTextFormat.Get(),

@@ -111,6 +111,8 @@ namespace Microsoft::Console::Render
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
 
+        [[nodiscard]] HRESULT _PaintTerminalEffects(_In_ IRenderEngine* const pEngine);
+
         [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
