@@ -50,6 +50,8 @@ namespace Microsoft.Terminal.Wpf
                 var lines = -this.accumulatedDelta / lineDelta;
                 this.scrollbar.Value += lines;
                 this.accumulatedDelta = 0;
+
+                this.termContainer.UserScroll((int)this.scrollbar.Value);
             });
         }
 
@@ -110,9 +112,9 @@ namespace Microsoft.Terminal.Wpf
             });
         }
 
-        private void Scrollbar_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void Scrollbar_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
         {
-            var viewTop = (int)this.scrollbar.Value;
+            var viewTop = (int)e.NewValue;
             this.termContainer.UserScroll(viewTop);
         }
     }
