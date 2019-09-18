@@ -210,7 +210,7 @@
         { "command": "switchToTab6", "keys": ["ctrl+alt+7"] },
         { "command": "switchToTab7", "keys": ["ctrl+alt+8"] },
         { "command": "switchToTab8", "keys": ["ctrl+alt+9"] },
-		{ "command": "decreaseFontSize", "keys": ["ctrl+-"] },
-		{ "command": "increaseFontSize", "keys": ["ctrl+="] }
+        { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
+        { "command": "increaseFontSize", "keys": ["ctrl+="] }
     ]
 }
