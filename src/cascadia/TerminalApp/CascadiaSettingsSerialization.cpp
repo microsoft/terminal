@@ -38,7 +38,7 @@ static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSou
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view DefaultProfilesIndentation{ "        " };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
-                                                          R"(    "$schema": "https://aka.ms/terminal-profiles-schema",)" };
+                                                          R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
@@ -279,8 +279,13 @@ bool CascadiaSettings::_PrependSchemaDirective()
     }
 
     // start points at the opening { for the root object.
-    auto start = _userSettings.getOffsetStart();
-    _userSettingsString.insert(start + 1, SettingsSchemaFragment);
+    auto offset = _userSettings.getOffsetStart() + 1;
+    _userSettingsString.insert(offset, SettingsSchemaFragment);
+    offset += SettingsSchemaFragment.size();
+    if (_userSettings.size() > 0)
+    {
+        _userSettingsString.insert(offset, ",");
+    }
     return true;
 }
 
