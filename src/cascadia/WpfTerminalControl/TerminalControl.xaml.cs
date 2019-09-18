@@ -23,12 +23,12 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Character rows available to the terminal.
         /// </summary>
-        public uint Rows => this.termContainer.Rows;
+        public int Rows => this.termContainer.Rows;
 
         /// <summary>
         /// Character columns available to the terminal.
         /// </summary>
-        public uint Columns => this.termContainer.Columns;
+        public int Columns => this.termContainer.Columns;
 
         private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
         {
@@ -87,6 +87,15 @@ namespace Microsoft.Terminal.Wpf
         public void Resize(uint rows, uint columns)
         {
             this.termContainer.Resize(rows, columns);
+        }
+
+        /// <summary>
+        /// Resizes the terminal to the specified size.
+        /// </summary>
+        /// <param name="Rendersize">Rendering size for the terminal.</param>
+        public (int rows, int columns) TriggerResize(Size Rendersize)
+        {
+            return this.termContainer.TriggerResize(Rendersize);
         }
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)
