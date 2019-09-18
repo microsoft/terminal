@@ -51,7 +51,7 @@ There is no current plan to support this feature for security reasons. See issue
 
 ## Selecting and Copying Text in Windows Terminal
 
-As in ConHost, a selection can be made by left-clicking and dragging the mouse across the terminal. This is a line selection by default, meaning that the selection will wrap to the end of the line and the beginning of the next one. You can select in block mode by holding down the ALT key when starting a selection.
+As in ConHost, a selection can be made by left-clicking and dragging the mouse across the terminal. This is a line selection by default, meaning that the selection will wrap to the end of the line and the beginning of the next one. You can select in block mode by holding down the <kbd>Alt</kbd> key when starting a selection.
 
 To copy the text to your clipboard, you can right-click the terminal when a selection is active. As of [#1224](https://github.com/microsoft/terminal/pull/1224) (first available in Windows Terminal v0.4), the Windows Terminal now supports HTML copy. The HTML is automatically copied to your clipboard along with the regular text in any copy operation.
 
