@@ -26,6 +26,7 @@ static constexpr std::string_view ForegroundKey{ "foreground" };
 static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view ColorTableKey{ "colorTable" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
+static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
@@ -91,6 +92,7 @@ Profile::Profile(const std::optional<GUID>& guid) :
     _defaultBackground{},
     _colorTable{},
     _tabTitle{},
+    _suppressApplicationTitle{},
     _historySize{ DEFAULT_HISTORY_SIZE },
     _snapOnInput{ true },
     _cursorColor{ DEFAULT_CURSOR_COLOR },
@@ -250,6 +252,11 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         const auto imageVerticalAlignment = std::get<VerticalAlignment>(_backgroundImageAlignment.value());
         terminalSettings.BackgroundImageHorizontalAlignment(imageHorizontalAlignment);
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
+    }
+
+    if (_suppressApplicationTitle == true && _tabTitle)
+    {
+        terminalSettings.StartingTitle(_tabTitle.value());
     }
 
     return terminalSettings;
@@ -674,6 +681,11 @@ void Profile::LayerJson(const Json::Value& json)
         auto useAcrylic{ json[JsonKey(UseAcrylicKey)] };
         _useAcrylic = useAcrylic.asBool();
     }
+    if (json.isMember(JsonKey(SuppressApplicationTitleKey)))
+    {
+        auto suppressApplicationTitle{ json[JsonKey(SuppressApplicationTitleKey)] };
+        _suppressApplicationTitle = suppressApplicationTitle.asBool();
+    }
     if (json.isMember(JsonKey(CloseOnExitKey)))
     {
         auto closeOnExit{ json[JsonKey(CloseOnExitKey)] };
@@ -804,6 +816,30 @@ winrt::hstring Profile::GetExpandedIconPath() const
 std::wstring_view Profile::GetName() const noexcept
 {
     return _name;
+}
+
+// Method Description:
+// - Returns true if profile's tab title is set. Otherwise returns false.
+// Return Value:
+// - true if this profile's tab title is set. Otherwise returns false.
+bool Profile::HasTabTitle() const noexcept
+{
+    return _tabTitle.has_value();
+}
+
+// Method Description:
+// - Returns the tab title, if one is set. Otherwise returns the empty string.
+// Return Value:
+// - this profile's tab title, if one is set. Otherwise returns the empty string.
+std::wstring_view Profile::GetTabTitle() const noexcept
+{
+    return HasTabTitle() ? std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
+                           std::wstring_view{ L"", 0 };
+}
+
+bool Profile::GetSuppressApplicationTitle() const noexcept
+{
+    return _suppressApplicationTitle;
 }
 
 bool Profile::HasConnectionType() const noexcept

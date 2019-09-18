@@ -563,10 +563,19 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_UpdateTitle(std::shared_ptr<Tab> tab)
     {
         auto newTabTitle = tab->GetFocusedTitle();
-        tab->SetTabText(newTabTitle);
+        const auto lastFocusedProfile = tab->GetFocusedProfile().value();
+        bool matchingProfileSAT = _settings->FindProfile(lastFocusedProfile)->GetSuppressApplicationTitle();
+        const auto matchingProfileGTT = _settings->FindProfile(lastFocusedProfile)->GetTabTitle();
 
-        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-            tab->IsFocused())
+        if (matchingProfileSAT && !matchingProfileGTT.empty())
+        {
+            newTabTitle = matchingProfileGTT;
+        }
+
+        tab->SetTabText(winrt::to_hstring(newTabTitle));
+
+            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+                tab->IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }

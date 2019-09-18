@@ -58,6 +58,8 @@ public:
     bool HasGuid() const noexcept;
     bool HasSource() const noexcept;
     GUID GetGuid() const noexcept;
+    bool HasTabTitle() const noexcept;
+    std::wstring_view GetTabTitle() const noexcept;
     void SetSource(std::wstring_view sourceNamespace) noexcept;
     std::wstring_view GetName() const noexcept;
     bool HasConnectionType() const noexcept;
@@ -81,6 +83,7 @@ public:
     void SetIconPath(std::wstring_view path);
 
     bool GetCloseOnExit() const noexcept;
+    bool GetSuppressApplicationTitle() const noexcept;
     bool IsHidden() const noexcept;
 
     void GenerateGuidIfNecessary() noexcept;
@@ -116,6 +119,7 @@ private:
     std::optional<uint32_t> _defaultBackground;
     std::array<uint32_t, COLOR_TABLE_SIZE> _colorTable;
     std::optional<std::wstring> _tabTitle;
+    bool _suppressApplicationTitle;
     int32_t _historySize;
     bool _snapOnInput;
     uint32_t _cursorColor;
