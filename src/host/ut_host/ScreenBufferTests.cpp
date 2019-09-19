@@ -4355,6 +4355,12 @@ void ScreenBufferTests::InitializeTabStopsInVTMode()
     // This is a test for microsoft/terminal#411. Refer to that issue for more
     // context.
 
+    // Run this test in isolation - Let's not pollute the VT level for other
+    // tests, or go blowing away other test's buffers
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
 
