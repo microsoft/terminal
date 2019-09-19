@@ -30,8 +30,9 @@ static const std::array<std::wstring_view, 2> settingsLoadWarningsLabels {
    L"MissingDefaultProfileText",
    L"DuplicateProfileText"
 };
-static const std::array<std::wstring_view, 1> settingsLoadErrorsLabels {
-    L"NoProfilesText"
+static const std::array<std::wstring_view, 2> settingsLoadErrorsLabels {
+    L"NoProfilesText",
+    L"AllProfilesHiddenText"
 };
 // clang-format on
 
