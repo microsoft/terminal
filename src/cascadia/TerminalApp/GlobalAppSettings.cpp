@@ -21,18 +21,14 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
-
 static constexpr std::string_view InitialXKey{ "initialX" };
 static constexpr std::string_view InitialYKey{ "initialY" };
-
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
-
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
-
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
@@ -44,12 +40,10 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
-
     _initialX{ 0 },
     _initialY{ 0 },
     _useDefaultInitialX{ true },
     _useDefaultInitialY{ true },
-
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default },
