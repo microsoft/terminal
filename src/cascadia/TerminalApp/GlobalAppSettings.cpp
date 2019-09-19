@@ -213,10 +213,8 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-
     jsonObject[JsonKey(InitialXKey)] = _initialX;
     jsonObject[JsonKey(InitialYKey)] = _initialY;
-
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
@@ -257,7 +255,6 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
     {
         result._initialCols = initialCols.asInt();
     }
-
     if (auto initialX{ json[JsonKey(InitialXKey)] })
     {
         result._useDefaultInitialX = false;
@@ -268,7 +265,6 @@ GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
         result._useDefaultInitialY = false;
         result._initialY = initialY.asInt();
     }
-
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
         result._showTitleInTitlebar = showTitleInTitlebar.asBool();
