@@ -127,86 +127,102 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& send
 //   to appear on.
 // Return Value:
 // - <none>
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
+winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
 {
+    winrt::hstring launchMode = _app.GetLaunchMode();
+
     // Acquire the actual intial position
     winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
     proposedRect.left = (long)initialPosition.X;
-    proposedRect.right = (long)initialPosition.Y;
+    proposedRect.top = (long)initialPosition.Y;
 
-    std::wstring launchMode = _app.GetLaunchMode();
-
-    // Find nearest montitor.
-    HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
-
-    if (launchMode == L"maximize")
+    long adjustedHeight = 0;
+    long adjustedWidth = 0;
+    if (launchMode == L"default")
     {
-        MONITORINFO monitorInfo;
-        monitorInfo.cbSize = sizeof(MONITORINFO);
-        if (GetMonitorInfoA(hmon, &monitorInfo))
-        {
+        // Find nearest montitor.
+        HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
+        // This API guarantees that dpix and dpiy will be equal, but neither is an
+        // optional parameter so give two UINTs.
+        UINT dpix = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+        // If this fails, we'll use the default of 96.
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+        auto initialSize = _app.GetLaunchDimensions(dpix);
+
+        const short _currentWidth = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.X)), 1);
+        const short _currentHeight = Utils::ClampToShortMax(
+            static_cast<long>(ceil(initialSize.Y)), 1);
+
+        // Create a RECT from our requested client size
+        auto nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                    _currentHeight })
+                             .ToRect();
+
+        // Get the size of a window we'd need to host that client rect. This will
+        // add the titlebar space.
+        if (_useNonClientArea)
+        {
+            // If we're in NC tabs mode, do the math ourselves. Get the margins
+            // we're using for the window - this will include the size of the
+            // titlebar content.
+            auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+            const MARGINS margins = pNcWindow->GetFrameMargins();
+            nonClient.left = 0;
+            nonClient.top = 0;
+            nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
+            nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
         }
         else
         {
-
+            bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+            if (!succeeded)
+            {
+                // If we failed to get the correct window size for whatever reason, log
+                // the error and go on. We'll use whatever the control proposed as the
+                // size of our window, which will be at least close.
+                LOG_LAST_ERROR();
+                nonClient = Viewport::FromDimensions({ _currentWidth,
+                                                       _currentHeight })
+                                .ToRect();
+            }
         }
-    }
 
-    // This API guarantees that dpix and dpiy will be equal, but neither is an
-    // optional parameter so give two UINTs.
-    UINT dpix = USER_DEFAULT_SCREEN_DPI;
-    UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-    // If this fails, we'll use the default of 96.
-    GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+        adjustedHeight = nonClient.bottom - nonClient.top;
+        adjustedWidth = nonClient.right - nonClient.left;
 
-    auto initialSize = _app.GetLaunchDimensions(dpix);
+        // We need to check if the top line of the titlebar of the window is winthin any screen
+        RECT offScreenTestRect;
+        offScreenTestRect.left = proposedRect.left;
+        offScreenTestRect.top = proposedRect.top;
+        offScreenTestRect.right = offScreenTestRect.left + adjustedWidth;
+        offScreenTestRect.bottom = offScreenTestRect.top + 1;
 
-    const short _currentWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
-    const short _currentHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        bool isTitlebarIntersectWithMonitors = false;
+        EnumDisplayMonitors(nullptr, &offScreenTestRect, [](HMONITOR hMon, HDC hdc, LPRECT lpr, LPARAM lParam) -> BOOL {
+            auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+            *intersectWithMonitor = true;
+            // Continue the enumeration
+            return TRUE;
+        }, reinterpret_cast<LPARAM> (&isTitlebarIntersectWithMonitors));
 
-    // Create a RECT from our requested client size
-    auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                _currentHeight })
-                         .ToRect();
-
-    // Get the size of a window we'd need to host that client rect. This will
-    // add the titlebar space.
-    if (_useNonClientArea)
-    {
-        // If we're in NC tabs mode, do the math ourselves. Get the margins
-        // we're using for the window - this will include the size of the
-        // titlebar content.
-        auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-        const MARGINS margins = pNcWindow->GetFrameMargins();
-        nonClient.left = 0;
-        nonClient.top = 0;
-        nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
-        nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
-    }
-    else
-    {
-        bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-        if (!succeeded)
+        if (!isTitlebarIntersectWithMonitors)
         {
-            // If we failed to get the correct window size for whatever reason, log
-            // the error and go on. We'll use whatever the control proposed as the
-            // size of our window, which will be at least close.
-            LOG_LAST_ERROR();
-            nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                   _currentHeight })
-                            .ToRect();
+            // If the title bar is out-of-screen, we set the initial position to
+            // the top left corner of the nearest monitor
+            MONITORINFO monitorInfo;
+            monitorInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfoA(hmon, &monitorInfo);
+            proposedRect.left = monitorInfo.rcWork.left;
+            proposedRect.top = monitorInfo.rcWork.top;
         }
     }
 
-    const auto adjustedHeight = nonClient.bottom - nonClient.top;
-    const auto adjustedWidth = nonClient.right - nonClient.left;
-
-    const COORD origin{ gsl::narrow<short>(initialPosition.X),
-                        gsl::narrow<short>(initialPosition.Y) };
-
+    const COORD origin{ gsl::narrow<short>(proposedRect.left),
+                        gsl::narrow<short>(proposedRect.top) };
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
@@ -220,9 +236,15 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
                                   newPos.Height(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
+    // Refresh the dpi of HWND becuase the dpi where the window will launch may be different
+    // at this time
+    _window->RefreshCurrentDPI();
+
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+
+    return _app.GetLaunchMode();
 }
 
 // Method Description:

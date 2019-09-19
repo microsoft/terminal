@@ -339,12 +339,15 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // -
+    // - Get the launch mode in json settings file. Now there
+    //   two launch mode: default, maximize. Default means the window
+    //   will launch according to the launch dimensions provided. Maximize
+    //   means the window will launch as a maximized window
     // Arguments:
-    // -
+    // - <none>
     // Return Value:
-    // - 
-    std::wstring App::GetLaunchMode()
+    // - a string representing launch mode: "default" or "maximize"
+    hstring App::GetLaunchMode()
     {
         if (!_loadedInitialSettings)
         {
@@ -356,9 +359,13 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // -
+    // - Get the user defined initial position from Json settings file.
+    //   This position represents the top left corner of the Terminal window.
+    //   This setting is optional, if not provided, we will use the system
+    //   default size, which is provided in IslandWindow::MakeWindow. 
     // Arguments:
-    // -
+    // - defaultInitialX: the system default x coordinate value
+    // - defaultInitialY: the system defualt y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
     winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(const uint64_t defaultInitialX, const uint64_t defaultInitialY)
@@ -369,11 +376,17 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        winrt::Windows::Foundation::Point point;
-        point.X = gsl::narrow_cast<float>(_settings->GlobalSettings().GetUseDefaultInitialX() ? defaultInitialX :
-                                                                                                _settings->GlobalSettings().GetInitialX());
-        point.Y = gsl::narrow_cast<float>(_settings->GlobalSettings().GetUseDefaultInitialY() ? defaultInitialY :
-                                                                                                _settings->GlobalSettings().GetInitialY());
+        winrt::Windows::Foundation::Point point(defaultInitialX, defaultInitialY);
+
+        if (!_settings->GlobalSettings().GetUseDefaultInitialX())
+        {
+            point.X = _settings->GlobalSettings().GetInitialX();
+        }
+        if (!_settings->GlobalSettings().GetUseDefaultInitialY())
+        {
+            point.Y = _settings->GlobalSettings().GetInitialY();
+        }
+
         return point;
     }
 

@@ -31,7 +31,7 @@ public:
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
+    void SetCreateCallback(std::function<winrt::hstring(const HWND, const RECT)> pfn) noexcept;
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
@@ -84,7 +84,7 @@ protected:
 
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-    std::function<void(const HWND, const RECT)> _pfnCreateCallback;
+    std::function<winrt::hstring(const HWND, const RECT)> _pfnCreateCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

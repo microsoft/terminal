@@ -61,7 +61,7 @@ public:
     void SetInitialY(const int32_t initialY) noexcept;
     bool GetUseDefaultInitialY() const noexcept;
 
-    std::wstring GetLaunchMode() const noexcept;
+    winrt::hstring GetLaunchMode() const noexcept;
     void SetLaunchMode(const std::wstring launchMode);
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
@@ -80,7 +80,7 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
-    int32_t _initialX;
+    int _initialX;
     int32_t _initialY;
     bool _useDefaultInitialX;
     bool _useDefaultInitialY;
@@ -94,7 +94,7 @@ private:
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
-    std::wstring _launchMode;
+    winrt::hstring _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;

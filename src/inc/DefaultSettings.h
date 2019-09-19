@@ -39,3 +39,4 @@ constexpr COLORREF DEFAULT_CURSOR_COLOR = COLOR_WHITE;
 constexpr COLORREF DEFAULT_CURSOR_HEIGHT = 25;
 
 const std::wstring DEFAULT_WORD_DELIMITERS{ L" ./\\()\"'-:,.;<>~!@#$%^&*|+=[]{}~?\u2502" };
+const std::wstring DEFAULT_LAUNCH_MODE{ L"default" };

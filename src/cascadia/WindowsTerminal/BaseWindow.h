@@ -215,6 +215,15 @@ public:
         PostMessageW(_window.get(), CM_UPDATE_TITLE, 0, reinterpret_cast<LPARAM>(nullptr));
     }
 
+    // Method Description:
+    // Reset the current dpi of the window. This method is only called after we change the
+    // initial launch position. This makes sure the dpi is consistent with the monitor on which
+    // the window will launch
+    void RefreshCurrentDPI()
+    {
+        _currentDpi = GetDpiForWindow(this->_window.get());
+    }
+
 protected:
     using base_type = BaseWindow<T>;
     wil::unique_hwnd _window;

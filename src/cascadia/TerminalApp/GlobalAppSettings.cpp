@@ -55,7 +55,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _requestedTheme{ ElementTheme::Default },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
-    _launchMode{ L"default" }
+    _launchMode{ DEFAULT_LAUNCH_MODE }
 {
 }
 
@@ -143,7 +143,7 @@ void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
     _copyOnSelect = copyOnSelect;
 }
 
-std::wstring GlobalAppSettings::GetLaunchMode() const noexcept
+winrt::hstring GlobalAppSettings::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }

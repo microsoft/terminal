@@ -42,6 +42,12 @@ Step 2 to 6 should be done in `AppHost::_HandleCreateWindow`, which is consisten
 
 In step 4, we may need to consider the dpi of the current monitor and multi-monitor scenario when calculating the initial position of the window.
 
+Edge cases:
+
+1. Multiple monitors. The user should be able to set the initial position to any monitors attached. For the monitors on the left side of the major monitor, the initial position values are negative. 
+2. If the initial position is larger than the screen resolution and the window is off-screen, we should at least let user be able to see and drag the window back on screen. One solution is to set the initial position to the top left corner of the nearest monitor if the titlebar is off-screen.  
+3. If the user wants to launch maximized and provides an initial position, we should launch the maximized window on the monitor where the position is located. 
+
 ## UI/UX Design
 
 Upon successful implementation, the user is able to add new properties to the json profile file, which is illustrated in the picture below:
@@ -86,7 +92,7 @@ For now, this feature only allows the user to set initial positon and choose whe
 
 2. We may need to consider multiple Terminal windows scenario. If the user opens multiple Terminal windows, then we need to consider how to save and restore the position. 
 
-3. We may also consider more launch modes. Like full screen mode and minimize mode. 
+3. We may also consider more launch modes. Like full screen mode and minimized mode. 
 
 Github issue for future follow-ups: https://github.com/microsoft/terminal/issues/766
 
