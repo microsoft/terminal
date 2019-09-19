@@ -249,6 +249,10 @@
     <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-400.png">
       <Link>Images\Wide310x150Logo.scale-400.png</Link>
     </Content>
+    <!-- Fonts -->
+    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+      <Link>Cascadia.ttf</Link>
+    </Content>
     <!-- Profile Icons -->
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png" />
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-200.png" />
