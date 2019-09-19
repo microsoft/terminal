@@ -254,11 +254,6 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.BackgroundImageVerticalAlignment(imageVerticalAlignment);
     }
 
-    if (_suppressApplicationTitle == true && _tabTitle)
-    {
-        terminalSettings.StartingTitle(_tabTitle.value());
-    }
-
     return terminalSettings;
 }
 
@@ -819,22 +814,13 @@ std::wstring_view Profile::GetName() const noexcept
 }
 
 // Method Description:
-// - Returns true if profile's tab title is set. Otherwise returns false.
-// Return Value:
-// - true if this profile's tab title is set. Otherwise returns false.
-bool Profile::HasTabTitle() const noexcept
-{
-    return _tabTitle.has_value();
-}
-
-// Method Description:
 // - Returns the tab title, if one is set. Otherwise returns the empty string.
 // Return Value:
 // - this profile's tab title, if one is set. Otherwise returns the empty string.
 std::wstring_view Profile::GetTabTitle() const noexcept
 {
-    return HasTabTitle() ? std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
-                           std::wstring_view{ L"", 0 };
+    return _tabTitle.has_value() ? std::wstring_view{ _tabTitle.value().c_str(), _tabTitle.value().size() } :
+                                   std::wstring_view{ L"", 0 };
 }
 
 bool Profile::GetSuppressApplicationTitle() const noexcept

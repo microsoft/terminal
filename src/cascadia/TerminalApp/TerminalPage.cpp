@@ -564,18 +564,21 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab->GetFocusedTitle();
         const auto lastFocusedProfile = tab->GetFocusedProfile().value();
-        bool matchingProfileSAT = _settings->FindProfile(lastFocusedProfile)->GetSuppressApplicationTitle();
-        const auto matchingProfileGTT = _settings->FindProfile(lastFocusedProfile)->GetTabTitle();
 
-        if (matchingProfileSAT && !matchingProfileGTT.empty())
+        auto matchingProfile = _settings->FindProfile(lastFocusedProfile);
+        if (matchingProfile)
         {
-            newTabTitle = matchingProfileGTT;
+            if (matchingProfile->GetSuppressApplicationTitle())
+            {
+                auto profileTabTitle = matchingProfile->GetTabTitle();
+                newTabTitle = profileTabTitle.empty() ? matchingProfile->GetName() : profileTabTitle;
+            }
         }
 
         tab->SetTabText(winrt::to_hstring(newTabTitle));
 
-            if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
-                tab->IsFocused())
+        if (_settings->GlobalSettings().GetShowTitleInTitlebar() &&
+            tab->IsFocused())
         {
             _titleChangeHandlers(*this, newTabTitle);
         }
