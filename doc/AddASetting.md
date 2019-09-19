@@ -2,7 +2,7 @@
 
 ### 1. Add to wincon.w
 * THIS IS NOT IN OPENCONSOLE. Make sure you update
-      `.../console/published/wincon.w` in the Open Source repository when you submit the Pull Request.
+      `.../console/published/wincon.w` in the OS (Operating System) repository when you submit the Pull Request.
       The branch won't build without it.
 * For now, you can update winconp.h with your consumable changes.
 * Define the registry name (e.g. `CONSOLE_REGISTRY_CURSORCOLOR`)
