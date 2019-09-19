@@ -14,3 +14,8 @@ of the Windows Terminal code.
 
 Please consult the [license](https://raw.githubusercontent.com/microsoft/cascadia-code/master/LICENSE) in the
 [microsoft/cascadia-code](https://github.com/microsoft/cascadia-code) repository for terms applicable to the fonts in this directory.
+
+### Fonts Included
+
+* Cascadia Code
+   * from microsoft/cascadia-code@5f91b87e12c9af709fa406c22a79145879edc3d2
