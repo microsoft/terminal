@@ -16,7 +16,9 @@ Add getters, setters, the whole drill.
 We need to add it to *reading and writing* the registry from the propsheet, and *reading* the link from the propsheet.
 
 
-Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization. <br>
+Yes, that's weird, but the propsheet is smart enough to re-use ShortcutSerialization::s_SetLinkValues, but not smart enough to do the same with RegistrySerialization.
+
+
 - `src/propsheet/registry.cpp`
    -  `propsheet/registry.cpp@InitRegistryValues` should initialize the default value for the property.
    -  `propsheet/registry.cpp@GetRegistryValues` should make sure to read the property from the registry
