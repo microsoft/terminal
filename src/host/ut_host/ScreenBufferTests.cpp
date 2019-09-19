@@ -4352,8 +4352,8 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 void ScreenBufferTests::InitializeTabStopsInVTMode()
 {
-    // This is a test for microsoft/terminal#1189. Refer to that issue for more
-    // context
+    // This is a test for microsoft/terminal#411. Refer to that issue for more
+    // context.
 
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
