@@ -180,6 +180,8 @@ class ScreenBufferTests
     TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
 
     TEST_METHOD(ClearAlternateBuffer);
+
+    TEST_METHOD(InitializeTabStopsInVTMode);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4346,4 +4348,32 @@ void ScreenBufferTests::ClearAlternateBuffer()
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 1);
 
     VerifyText(siMain.GetTextBuffer());
+}
+
+void ScreenBufferTests::InitializeTabStopsInVTMode()
+{
+    // This is a test for microsoft/terminal#411. Refer to that issue for more
+    // context.
+
+    // Run this test in isolation - Let's not pollute the VT level for other
+    // tests, or go blowing away other test's buffers
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+    END_TEST_METHOD_PROPERTIES()
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    VERIFY_IS_FALSE(gci.GetActiveOutputBuffer().AreTabsSet());
+
+    // Enable VT mode before we construct the buffer. This emulates setting the
+    // VirtualTerminalLevel reg key before launching the console.
+    gci.SetVirtTermLevel(1);
+
+    // Clean up the old buffer, and re-create it. This new buffer will be
+    // created as if the VT mode was always on.
+    m_state->CleanupGlobalScreenBuffer();
+    m_state->PrepareGlobalScreenBuffer();
+
+    VERIFY_IS_TRUE(gci.GetActiveOutputBuffer().AreTabsSet());
 }
