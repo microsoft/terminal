@@ -6,8 +6,8 @@ trigger:
   paths:
     include:
       - doc/*
-      - *.md
-      - LICENSE
+      - '*.md'
+      - 'LICENSE'
 
 pr:
   branches:
@@ -17,8 +17,8 @@ pr:
   paths:
     include:
       - doc/*
-      - *.md
-      - LICENSE
+      - '*.md'
+      - 'LICENSE'
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
