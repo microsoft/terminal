@@ -13,6 +13,7 @@ pr:
   branches:
     include:
       - master
+      - dev/miniksa/doc_build
   paths:
     include:
       - doc/*
