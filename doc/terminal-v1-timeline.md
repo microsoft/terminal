@@ -30,7 +30,7 @@ Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, a
 | Winter Vacation | N/A | None planned |
 | 2020-01-28 | Beta 1 | Pri 0/1/2 Bug fixes & polish |
 | 2020-02-25 | Beta 2 | Pri 0/1 Bug fixes & polish |
-| 2020-03-24 | RC | Pri 0 bug fizes |
+| 2020-03-24 | RC | Pri 0 bug fixes |
 | 2020-04-01 ? | v1.0 | Terminal v1.0 Released |
 
 ## GitHub Milestones
