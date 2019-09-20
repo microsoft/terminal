@@ -43,6 +43,10 @@ Project|Build Status
 Terminal|[![Build Status](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)](https://dev.azure.com/ms/Terminal/_build?definitionId=136)
 ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
 
+# Windows Terminal Project's Timeline
+
+The plan for delivering Windows Terminal v1.0 [is described here](/doc/terminal-v1-timeline.md), and will be updated as the project proceeds.
+
 # Terminal & Console Overview
 
 Please take a few minutes to review the overview below before diving into the code:
@@ -81,9 +85,7 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## Where can I download Windows Terminal?
 
-### The Windows Terminal preview can be downloaded from the Microsoft Store.
-
-[https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
+The latest release of Windows Terminal can be downloaded from [this repo's Releases](/releases) page or [from the Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
