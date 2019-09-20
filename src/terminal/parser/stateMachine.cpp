@@ -1436,7 +1436,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
                 break;
             }
             // microsoft/terminal#2746: Make sure to return to the ground state
-            // after dispating the characters
+            // after dispatching the characters
             _EnterGround();
         }
     }
