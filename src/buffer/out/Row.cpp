@@ -147,11 +147,11 @@ const UnicodeStorage& ROW::GetUnicodeStorage() const noexcept
 // Arguments:
 // - it - custom console iterator to use for seeking input data. bool() false when it becomes invalid while seeking.
 // - index - column in row to start writing at
-// - setWrap - set the wrap flags if we hit the end of the row while writing and there's still more data in the iterator.
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data in the iterator.
 // - limitRight - right inclusive column ID for the last write in this row. (optional, will just write to the end of row if nullopt)
 // Return Value:
 // - iterator to first cell that was not written to this row.
-OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const bool setWrap, std::optional<size_t> limitRight)
+OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
@@ -202,10 +202,15 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
                 ++it;
             }
 
-            // If we're asked to set the wrap status and we just filled the last column with some text, set wrap status on the row.
-            if (setWrap && fillingLastColumn)
+            // If we're asked to (un)set the wrap status and we just filled the last column with some text...
+            // NOTE:
+            //  - wrap = std::nullopt    --> we don't care about changing the value
+            //  - wrap = true            --> we're filling cells as a steam, consider this a wrap
+            //  - wrap = false           --> we're filling cells as a block, unwrap
+            if (wrap.has_value() && fillingLastColumn)
             {
-                _charRow.SetWrapForced(true);
+                // set wrap status on the row to parameter's value.
+                _charRow.SetWrapForced(wrap.value());
             }
         }
         else

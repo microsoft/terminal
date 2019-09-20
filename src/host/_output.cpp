@@ -290,7 +290,10 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     try
     {
         const OutputCellIterator it(character, lengthToWrite);
-        const auto done = screenInfo.Write(it, startingCoordinate);
+
+        // when writing to the buffer, specifically unset wrap if we get to the last line.
+        // a fill operation should UNSET wrap in that scenario. See GH #1126 for more details.
+        const auto done = screenInfo.Write(it, startingCoordinate, false);
         cellsModified = done.GetInputDistance(it);
 
         // Notify accessibility

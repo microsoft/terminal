@@ -2586,14 +2586,17 @@ OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it)
 // Arguments:
 // - it - Iterator representing output cell data to write.
 // - target - The position to start writing at
+// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
 // Return Value:
 // - the iterator at its final position
 // Note:
 // - will throw exception on error.
 OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it,
-                                             const COORD target)
+                                             const COORD target,
+                                             const std::optional<bool> wrap)
 {
-    return _textBuffer->Write(it, target);
+    // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+    return _textBuffer->Write(it, target, wrap);
 }
 
 // Routine Description:
