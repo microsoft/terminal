@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document outlines the path to deliverin Winodows Terminal v1.0 by spring 2020.
+This document outlines the path to delivering Windows Terminal v1.0 by spring 2020.
 
 ## Milestones
 
