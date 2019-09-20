@@ -224,6 +224,7 @@ class PtyTests
             TEST_METHOD_PROPERTY(L"Data:readOutput", L"{true, false}")
             TEST_METHOD_PROPERTY(L"Data:writeInput", L"{true, false}")
             TEST_METHOD_PROPERTY(L"Data:endSessionBy", L"{0, 1, 2}")
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
         bool inheritCursor;
