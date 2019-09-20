@@ -68,7 +68,7 @@ VtInputThread::~VtInputThread()
         _shutdownEvent.SetEvent();
 
         // Wait for watchdog future to get the memo or we might try to destroy it before it gets to work.
-        _shutdownWatchdog.wait(); 
+        _shutdownWatchdog.wait();
     }
 }
 
