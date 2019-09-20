@@ -38,6 +38,8 @@ VtIo::~VtIo()
     if (_shutdownEvent)
     {
         _shutdownEvent.SetEvent();
+        // Wait for watchdog future to get the memo or we might try to destroy it before it gets to work.
+        _shutdownWatchdog.wait();
     }
 }
 
@@ -133,7 +135,7 @@ VtIo::~VtIo()
     // required to tear everything apart correctly at the end of a PTY session.
     _shutdownEvent.create(wil::EventOptions::ManualReset);
 
-    _shutdownWatchdog = std::async(std::launch::async, [&] {
+    _shutdownWatchdog = std::async(std::launch::async, [=] {
         _shutdownEvent.wait();
 
         LockConsole();

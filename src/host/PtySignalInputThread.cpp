@@ -26,6 +26,8 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
+// - shutdownEvent - An event that will be signaled when the entire console is going down
+//                   We can use this to know when to cancel what we're doing and cleanup.
 PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe,
                                            wil::shared_event shutdownEvent) :
     _hFile{ std::move(hPipe) },

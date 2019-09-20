@@ -18,7 +18,7 @@ class PtyTests
         STARTUPINFOEXW startupInfo{};
         if (S_OK == (hr = InitializeStartupInfoAttachedToPseudoConsole(&startupInfo, hPC)))
         {
-            // Launch ping to emit some text back via the pipe
+            // Launch cmd to emit some text back via the pipe
             auto szCommand = _wcsdup(L"cmd.exe");
 
             hr = CreateProcessW(
@@ -51,12 +51,6 @@ class PtyTests
 
     HRESULT RunTest(bool inherit, bool read, bool write, DWORD endSessionBy)
     {
-        DWORD mode;
-        Log::Comment(L"Setting virtual terminal processing mode to on.");
-        GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), &mode);
-        mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-        SetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), mode);
-
         Log::Comment(L"Creating communication pipes.");
         HANDLE h1i, h1o, h2i, h2o;
         auto f = !!CreatePipe(&h1o, &h1i, nullptr, 0);
@@ -116,8 +110,6 @@ class PtyTests
             byte bufferOut[256];
             DWORD dwRead = 0;
             ReadFile(h2o, &bufferOut, ARRAYSIZE(bufferOut), &dwRead, nullptr);
-
-            const auto gleread = GetLastError();
         }
 
         if (hr != S_OK)
@@ -232,7 +224,6 @@ class PtyTests
             TEST_METHOD_PROPERTY(L"Data:readOutput", L"{true, false}")
             TEST_METHOD_PROPERTY(L"Data:writeInput", L"{true, false}")
             TEST_METHOD_PROPERTY(L"Data:endSessionBy", L"{0, 1, 2}")
-            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
         END_TEST_METHOD_PROPERTIES()
 
         bool inheritCursor;

@@ -499,6 +499,14 @@ void SetActiveScreenBuffer(SCREEN_INFORMATION& screenInfo)
     WriteToScreen(screenInfo, screenInfo.GetViewport());
 }
 
+// Routine Description:
+// - Dispatches final close event to connected clients or will run down and exit (and never return) if all clients
+//   are already gone.
+// - NOTE: MUST BE CALLED UNDER LOCK. We don't want clients joining or leaving while we're telling them to close and running down.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 // TODO: MSFT 9450717 This should join the ProcessList class when CtrlEvents become moved into the server. https://osgvsowi/9450717
 void CloseConsoleProcessState()
 {

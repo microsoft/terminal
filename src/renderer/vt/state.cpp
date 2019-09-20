@@ -66,13 +66,12 @@ VtEngine::VtEngine(wil::unique_hfile pipe,
 #endif
 
     // Set up a background thread to wait until the shared shutdown event is called and then execute cleanup tasks.
-    _shutdownWatchdog = std::async(std::launch::async, [&] {
+    _shutdownWatchdog = std::async(std::launch::async, [=] {
         _shutdownEvent.wait();
 
         // When someone calls the _Flush method, they will go into a potentially blocking WriteFile operation.
         // Before they do that, they'll store their thread ID here so we can get them unstuck should we be shutting down.
-        const auto threadId = _blockedThreadId.load();
-        if (threadId)
+        if (const auto threadId = _blockedThreadId.load())
         {
             // If we indeed had a valid thread ID meaning someone is blocked on a WriteFile operation,
             // then let's open a handle to their thread. We need the standard read/write privileges to see
