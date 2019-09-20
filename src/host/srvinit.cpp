@@ -139,6 +139,17 @@ static bool s_IsOnDesktop()
             reg.LoadFromRegistry(Title);
         }
     }
+    else
+    {
+        // microsoft/terminal#1965 - Let's just always enable VT processing by
+        // default for conpty clients. This prevents peculiar differences in
+        // behavior between conhost and terminal applications when the user has
+        // VirtualTerminalLevel=1 in their registry.
+        // We want everone to be using VT by default anyways, so this is a
+        // strong nudge in that direction. If an application _doesn't_ want VT
+        // processing, it's free to disable this setting, even in conpty mode.
+        settings.SetVirtTermLevel(1);
+    }
 
     // 1. The settings we were passed contains STARTUPINFO structure settings to be applied last.
     settings.ApplyStartupInfo(pStartupSettings);
