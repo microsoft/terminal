@@ -1413,25 +1413,31 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             switch (_state)
             {
             case VTStates::Ground:
-                return _ActionExecute(*pwch);
+                _ActionExecute(*pwch);
+                break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                return _ActionEscDispatch(*pwch);
+                _ActionEscDispatch(*pwch);
+                break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                return _ActionCsiDispatch(*pwch);
+                _ActionCsiDispatch(*pwch);
+                break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                return _ActionOscDispatch(*pwch);
+                _ActionOscDispatch(*pwch);
+                break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                return _ActionSs3Dispatch(*pwch);
-            default:
-                return;
+                _ActionSs3Dispatch(*pwch);
+                break;
             }
+            // microsoft/terminal#2746: Make sure to return to the ground state
+            // after dispating the characters
+            _EnterGround();
         }
     }
 }
