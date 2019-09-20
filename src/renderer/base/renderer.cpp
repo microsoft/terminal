@@ -62,7 +62,22 @@ Renderer::~Renderer()
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+        constexpr auto maxTries = 3;
+        int tries = maxTries;
+        while (tries > 0)
+        {
+            HRESULT hr = _PaintFrameForEngine(pEngine);
+            if (E_PENDING == hr)
+            {
+                if (--tries == 0)
+                {
+                    FAIL_FAST_HR_MSG(E_UNEXPECTED, "A rendering engine required too many retries.");
+                }
+                continue;
+            }
+            LOG_IF_FAILED(hr);
+            break;
+        }
     }
 
     return S_OK;
