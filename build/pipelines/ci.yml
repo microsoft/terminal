@@ -8,6 +8,8 @@ trigger:
       - doc/*
       - samples/*
       - tools/*
+      - *.md
+      - LICENSE
 
 pr:
   branches:
@@ -18,6 +20,8 @@ pr:
       - doc/*
       - samples/*
       - tools/*
+      - *.md
+      - LICENSE
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
