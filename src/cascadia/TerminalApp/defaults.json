@@ -182,6 +182,7 @@
     "keybindings":
     [
         { "command": "closePane", "keys": ["ctrl+shift+w"] },
+        { "command": "closeWindow", "keys": ["alt+f4"] },
         { "command": "copy", "keys": ["ctrl+shift+c"] },
         { "command": "duplicateTab", "keys": ["ctrl+shift+d"] },
         { "command": "newTab", "keys": ["ctrl+shift+t"] },
