@@ -97,7 +97,7 @@ Renderer::~Renderer()
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
-    HRESULT hr = pEngine->StartPaint();
+    HRESULT const hr = pEngine->StartPaint();
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
@@ -143,10 +143,10 @@ Renderer::~Renderer()
     unlock.reset();
 
     // Trigger out-of-lock presentation for renderers that can support it
-    RETURN_IF_FAILED(hr = pEngine->Present());
+    RETURN_IF_FAILED(pEngine->Present());
 
     // As we leave the scope, EndPaint will be called (declared above)
-    return hr;
+    return S_OK;
 }
 
 void Renderer::_NotifyPaintFrame()
