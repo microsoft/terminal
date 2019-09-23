@@ -45,8 +45,9 @@ In step 4, we may need to consider the dpi of the current monitor and multi-moni
 Edge cases:
 
 1. Multiple monitors. The user should be able to set the initial position to any monitors attached. For the monitors on the left side of the major monitor, the initial position values are negative. 
-2. If the initial position is larger than the screen resolution and the window is off-screen, we should at least let user be able to see and drag the window back on screen. One solution is to set the initial position to the top left corner of the nearest monitor if the titlebar is off-screen.  
-3. If the user wants to launch maximized and provides an initial position, we should launch the maximized window on the monitor where the position is located. 
+2. If the initial position is larger than the screen resolution and the window left corner is off-screen, we should at least let user be able to see and drag the window back on screen. One solution is to set the initial position to the top left corner of the nearest monitor if the top left is off-screen.
+3. If the window hangs off the screen, the windows's dimensions should be reduced to ensure that the Terminal fits on screen. 
+3. If the user wants to launch maximized and provides an initial position, we should launch the maximized window on the top left corner of the monitor where the position is located. 
 
 ## UI/UX Design
 

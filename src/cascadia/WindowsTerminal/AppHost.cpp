@@ -143,12 +143,40 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         // Find nearest montitor.
         HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
+        // Get nearest monitor information
+        MONITORINFO monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFO);
+        GetMonitorInfoA(hmon, &monitorInfo);
+
         // This API guarantees that dpix and dpiy will be equal, but neither is an
         // optional parameter so give two UINTs.
         UINT dpix = USER_DEFAULT_SCREEN_DPI;
         UINT dpiy = USER_DEFAULT_SCREEN_DPI;
         // If this fails, we'll use the default of 96.
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+        // We need to check if the top left point of the titlebar of the window is winthin any screen
+        RECT offScreenTestRect;
+        offScreenTestRect.left = proposedRect.left;
+        offScreenTestRect.top = proposedRect.top;
+        offScreenTestRect.right = offScreenTestRect.left + 1;
+        offScreenTestRect.bottom = offScreenTestRect.top + 1;
+
+        bool isTitlebarIntersectWithMonitors = false;
+        EnumDisplayMonitors(nullptr, &offScreenTestRect, [](HMONITOR hMon, HDC hdc, LPRECT lpr, LPARAM lParam) -> BOOL {
+            auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+            *intersectWithMonitor = true;
+            // Continue the enumeration
+            return TRUE;
+        }, reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+
+        if (!isTitlebarIntersectWithMonitors)
+        {
+            // If the title bar is out-of-screen, we set the initial position to
+            // the top left corner of the nearest monitor
+            proposedRect.left = monitorInfo.rcWork.left;
+            proposedRect.top = monitorInfo.rcWork.top;
+        }
 
         auto initialSize = _app.GetLaunchDimensions(dpix);
 
@@ -191,34 +219,12 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
             }
         }
 
-        adjustedHeight = nonClient.bottom - nonClient.top;
-        adjustedWidth = nonClient.right - nonClient.left;
+        // Calculate the maximum size the window could have without hangs-off
+        long horizontalMaxLength = std::abs(proposedRect.left - monitorInfo.rcWork.right);
+        long verticalMaxLength = std::abs(proposedRect.top - monitorInfo.rcWork.bottom);
 
-        // We need to check if the top line of the titlebar of the window is winthin any screen
-        RECT offScreenTestRect;
-        offScreenTestRect.left = proposedRect.left;
-        offScreenTestRect.top = proposedRect.top;
-        offScreenTestRect.right = offScreenTestRect.left + adjustedWidth;
-        offScreenTestRect.bottom = offScreenTestRect.top + 1;
-
-        bool isTitlebarIntersectWithMonitors = false;
-        EnumDisplayMonitors(nullptr, &offScreenTestRect, [](HMONITOR hMon, HDC hdc, LPRECT lpr, LPARAM lParam) -> BOOL {
-            auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
-            *intersectWithMonitor = true;
-            // Continue the enumeration
-            return TRUE;
-        }, reinterpret_cast<LPARAM> (&isTitlebarIntersectWithMonitors));
-
-        if (!isTitlebarIntersectWithMonitors)
-        {
-            // If the title bar is out-of-screen, we set the initial position to
-            // the top left corner of the nearest monitor
-            MONITORINFO monitorInfo;
-            monitorInfo.cbSize = sizeof(MONITORINFO);
-            GetMonitorInfoA(hmon, &monitorInfo);
-            proposedRect.left = monitorInfo.rcWork.left;
-            proposedRect.top = monitorInfo.rcWork.top;
-        }
+        adjustedHeight = std::min(nonClient.bottom - nonClient.top, verticalMaxLength);
+        adjustedWidth = std::min(nonClient.right - nonClient.left, horizontalMaxLength);
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
@@ -227,7 +233,6 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
     const auto newPos = Viewport::FromDimensions(origin, dimensions);
-
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
                                   newPos.Left(),
