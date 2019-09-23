@@ -6,7 +6,7 @@
 ## Abstract
 It should be possible to configure the terminal so that it doesn't send certain keystrokes as input to the terminal, and instead triggers certain actions. Examples of these actions could be copy/pasting text, opening a new tab, or changing the font size.
 
-This spec describes a mechanism by which we could provide a common implementation of handling keyboard shortcuts like these. This common implementation could then be leveraged and extended by the UX implementation as to handle certain callbacks in the UX layer. For example, The TerminalCore doesn't have a concept of what a tab is, but the keymap abstraction could raise an event such that a WPF app could implement creating a new tab in it's idomatic way, and UWP could implement them in their own way.
+This spec describes a mechanism by which we could provide a common implementation of handling keyboard shortcuts like these. This common implementation could then be leveraged and extended by the UX implementation as to handle certain callbacks in the UX layer. For example, The TerminalCore doesn't have a concept of what a tab is, but the keymap abstraction could raise an event such that a WPF app could implement creating a new tab in it's idiomatic way, and UWP could implement them in their own way.
 
 ## Terminology
 * **Key Chord**: This is any possible keystroke that a user can input

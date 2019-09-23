@@ -29,4 +29,4 @@ Openconsole has three configuration types:
 - Release
 - AuditMode
 
-AuditMode is an experimental mode that enables some additional static analyis from CppCoreCheck.
+AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.
