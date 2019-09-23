@@ -101,3 +101,11 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/appx'
     ArtifactName: 'appx-$(BuildConfiguration)'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  
+ - task: powershell@2
+  displayName: 'Source Index PDBs'
+  inputs:
+    targetType: filePath
+    filePath: build\SourceIndexing\IndexPdbs.ps1
+    arguments: -SearchDir '${{ parameters.buildOutputDir }}\$(buildConfiguration)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    errorActionPreference: silentlyContinue
