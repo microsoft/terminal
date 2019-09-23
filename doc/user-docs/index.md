@@ -59,6 +59,8 @@ If there is not an active selection, a right-click will paste the text content f
 
 Copy and paste operations can also be keybound. For more information on how to bind keys, see [Using Json Settings](UsingJsonSettings.md#adding-copy-and-paste-keybindings).
 
+> 👉 **Note**: If you have the `copyOnSelect` global setting enabled, a selection will persist and immediately copy the selected text to your clipboard. Right-clicking will always paste your clipboard data.
+
 ## Add a "Open Windows Terminal Here" to File Explorer
 
 Not currently supported "out of the box". See issue [#1060](https://github.com/microsoft/terminal/issues/1060)
