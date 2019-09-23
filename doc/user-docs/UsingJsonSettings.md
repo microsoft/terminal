@@ -4,7 +4,7 @@ One way (currently the only way) to configure Windows Terminal is by editing the
 `profiles.json` settings file. At the time of writing you can open the settings
 file in your default editor by selecting `Settings` from the WT pull down menu.
 
-The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\profiles.json`.
+The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\profiles.json`.
 
 As of [#2515](https://github.com/microsoft/terminal/pull/2515), the settings are
 split into _two_ files: a hardcoded `defaults.json`, and `profiles.json`, which
@@ -200,14 +200,14 @@ like to hide all the WSL profiles, you could add the following setting:
 
 1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
 2. Put the image in the
- `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\`
+ `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\`
  directory (same directory as your `profiles.json` file).
 
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
 ```json
-    "backgroundImage": "ms-appdata:///Roaming/openlogo-100.jpg",
+    "backgroundImage": "ms-appdata:///Local/openlogo-100.jpg",
     "backgroundImageOpacity": 1,
     "backgroundImageStretchMode" : "none",
     "backgroundImageAlignment" : "topRight",
