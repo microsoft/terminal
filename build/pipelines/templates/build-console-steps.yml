@@ -106,6 +106,6 @@ steps:
   displayName: 'Source Index PDBs'
   inputs:
     targetType: filePath
-    filePath: build\SourceIndexing\IndexPdbs.ps1
+    filePath: build\scripts\Index-Pdbs.ps1
     arguments: -SearchDir '${{ parameters.buildOutputDir }}\$(buildConfiguration)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
     errorActionPreference: silentlyContinue
