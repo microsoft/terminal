@@ -10,6 +10,8 @@
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+static constexpr auto maxRetriesForRenderEngine = 3;
+
 // Routine Description:
 // - Creates a new renderer controller for a console.
 // Arguments:
@@ -62,11 +64,10 @@ Renderer::~Renderer()
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        constexpr auto maxTries = 3;
-        int tries = maxTries;
+        auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
         {
-            HRESULT hr = _PaintFrameForEngine(pEngine);
+            const auto hr = _PaintFrameForEngine(pEngine);
             if (E_PENDING == hr)
             {
                 if (--tries == 0)
@@ -96,7 +97,7 @@ Renderer::~Renderer()
     _CheckViewportAndScroll();
 
     // Try to start painting a frame
-    HRESULT const hr = pEngine->StartPaint();
+    HRESULT hr = pEngine->StartPaint();
     RETURN_IF_FAILED(hr);
 
     // Return early if there's nothing to paint.
@@ -142,10 +143,10 @@ Renderer::~Renderer()
     unlock.reset();
 
     // Trigger out-of-lock presentation for renderers that can support it
-    RETURN_IF_FAILED(pEngine->Present());
+    RETURN_IF_FAILED(hr = pEngine->Present());
 
     // As we leave the scope, EndPaint will be called (declared above)
-    return S_OK;
+    return hr;
 }
 
 void Renderer::_NotifyPaintFrame()
