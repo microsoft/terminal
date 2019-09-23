@@ -102,7 +102,7 @@ steps:
     ArtifactName: 'appx-$(BuildConfiguration)'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   
- - task: powershell@2
+- task: powershell@2
   displayName: 'Source Index PDBs'
   inputs:
     targetType: filePath
