@@ -204,7 +204,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
             // If we're asked to (un)set the wrap status and we just filled the last column with some text...
             // NOTE:
-            //  - wrap = std::nullopt    --> we don't care about changing the value
+            //  - wrap = std::nullopt    --> don't change the wrap value
             //  - wrap = true            --> we're filling cells as a steam, consider this a wrap
             //  - wrap = false           --> we're filling cells as a block, unwrap
             if (wrap.has_value() && fillingLastColumn)
