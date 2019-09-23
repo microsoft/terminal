@@ -18,7 +18,7 @@ The Windows Terminal project is engineered and delivered as a set of 4-week mile
 Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, and to declare v1.0 by April 2020:
 
 | Milestone end date | Phase | Key features |
-| --- | --- | --- | --- |
+| --- | --- | --- |
 | 2019-05-07 | [Announcement](https://devblogs.microsoft.com/commandline/introducing-windows-terminal/) | Terminal announced & open-sourced ([Build 2019 Terminal session](https://www.youtube.com/watch?v=KMudkRcwjCw), ["Sizzle" video](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)) | 
 | 2019-07-09 | [v0.2 (update)](https://github.com/microsoft/terminal/releases/tag/v0.2.1831.0) | First version of the Terminal released via the Microsoft Store, fundamental features in place, basic tab control, basic UI layout, config & settings via JSON file | 
 | 2019-08-02 | [v0.3](https://github.com/microsoft/terminal/releases/tag/v0.3.2142.0) | Major UI improvements, improved tab bar layout & color, basic a11y support, Azure Cloud Shell connection |
