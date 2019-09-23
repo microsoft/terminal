@@ -3282,6 +3282,13 @@ void ScreenBufferTests::ScrollOperations()
 
 void ScreenBufferTests::InsertChars()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:setMargins", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool setMargins;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setMargins", setMargins));
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -3294,6 +3301,12 @@ void ScreenBufferTests::InsertChars()
     const auto viewportEnd = viewportStart + 20;
     VERIFY_SUCCEEDED(si.ResizeScreenBuffer({ bufferWidth, bufferHeight }, false));
     si.SetViewport(Viewport::FromExclusive({ viewportStart, 0, viewportEnd, 25 }), true);
+
+    // Tests are run both with and without the DECSTBM margins set. This should not alter
+    // the results, since the ICH operation is not affected by vertical margins.
+    stateMachine.ProcessString(setMargins ? L"\x1b[15;20r" : L"\x1b[r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
     Log::Comment(
         L"Test 1: Fill the line with Qs. Write some text within the viewport boundaries. "
@@ -3425,6 +3438,13 @@ void ScreenBufferTests::InsertChars()
 
 void ScreenBufferTests::DeleteChars()
 {
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:setMargins", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES();
+
+    bool setMargins;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setMargins", setMargins));
+
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto& stateMachine = si.GetStateMachine();
@@ -3437,6 +3457,12 @@ void ScreenBufferTests::DeleteChars()
     const auto viewportEnd = viewportStart + 20;
     VERIFY_SUCCEEDED(si.ResizeScreenBuffer({ bufferWidth, bufferHeight }, false));
     si.SetViewport(Viewport::FromExclusive({ viewportStart, 0, viewportEnd, 25 }), true);
+
+    // Tests are run both with and without the DECSTBM margins set. This should not alter
+    // the results, since the DCH operation is not affected by vertical margins.
+    stateMachine.ProcessString(setMargins ? L"\x1b[15;20r" : L"\x1b[r");
+    // Make sure we clear the margins on exit so they can't break other tests.
+    auto clearMargins = wil::scope_exit([&] { stateMachine.ProcessString(L"\x1b[r"); });
 
     Log::Comment(
         L"Test 1: Fill the line with Qs. Write some text within the viewport boundaries. "

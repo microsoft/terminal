@@ -1368,6 +1368,11 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             srScroll.Right = SHORT_MAX;
             srScroll.Top = viewport.Top;
             srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = 0;
@@ -2044,6 +2049,11 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         srScroll.Right = SHORT_MAX;
         srScroll.Top = cursorPosition.Y;
         srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;
