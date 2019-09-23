@@ -334,10 +334,12 @@ void Settings::Validate()
 
     if (_DefaultForeground != INVALID_COLOR && _DefaultForeground == _DefaultBackground)
     {
+        // INVALID_COLOR is used as an "unset" sentinel in future attribute functions.
         _DefaultForeground = _DefaultBackground = INVALID_COLOR;
         // If the damaged settings _further_ propagated to the default fill attribute, fix it.
         if (_wFillAttribute == 0)
         {
+            // These attributes were taken from the Settings ctor and equal "gray on black"
             _wFillAttribute = FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE;
         }
     }
