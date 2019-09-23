@@ -145,7 +145,7 @@ static bool s_IsOnDesktop()
         // default for conpty clients. This prevents peculiar differences in
         // behavior between conhost and terminal applications when the user has
         // VirtualTerminalLevel=1 in their registry.
-        // We want everone to be using VT by default anyways, so this is a
+        // We want everyone to be using VT by default anyways, so this is a
         // strong nudge in that direction. If an application _doesn't_ want VT
         // processing, it's free to disable this setting, even in conpty mode.
         settings.SetVirtTermLevel(1);
