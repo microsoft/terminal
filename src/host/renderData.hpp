@@ -15,15 +15,25 @@ Author(s):
 #pragma once
 
 #include "..\renderer\inc\IRenderData.hpp"
+#include "..\types\IUiaData.h"
 
-using namespace Microsoft::Console::Render;
-
-class RenderData final : public IRenderData
+class RenderData final :
+    public Microsoft::Console::Render::IRenderData,
+    public Microsoft::Console::Types::IUiaData
 {
 public:
+#pragma region BaseData
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+
+    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
+#pragma endregion
+
+#pragma region IRenderData
     const TextAttribute GetDefaultBrushColors() noexcept override;
 
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
@@ -38,15 +48,16 @@ public:
     COLORREF GetCursorColor() const noexcept override;
     bool IsCursorDoubleWidth() const noexcept override;
 
-    const std::vector<RenderOverlay> GetOverlays() const noexcept override;
+    const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-
     const std::wstring GetConsoleTitle() const noexcept override;
+#pragma endregion
 
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
-
+#pragma region IUiaData
+    const bool IsSelectionActive() const override;
+    void ClearSelection() override;
+    void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
+#pragma endregion
 };

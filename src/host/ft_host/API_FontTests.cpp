@@ -3,19 +3,17 @@
 
 #include "precomp.h"
 
-static const COORD c_coordZero = {0,0};
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
+
+static const COORD c_coordZero = { 0, 0 };
 
 static const PCWSTR pwszLongFontPath = L"%WINDIR%\\Fonts\\ltype.ttf";
 
 class FontTests
 {
     BEGIN_TEST_CLASS(FontTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl3.h")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -74,7 +72,7 @@ void FontTests::TestCurrentFontAPIsInvalid()
 
     if (strOperation == L"Get")
     {
-        CONSOLE_FONT_INFO cfi = {0};
+        CONSOLE_FONT_INFO cfi = { 0 };
 
         if (bUseValidOutputHandle)
         {
@@ -87,12 +85,12 @@ void FontTests::TestCurrentFontAPIsInvalid()
     }
     else if (strOperation == L"GetEx")
     {
-        CONSOLE_FONT_INFOEX cfie = {0};
+        CONSOLE_FONT_INFOEX cfie = { 0 };
         VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
     }
     else if (strOperation == L"SetEx")
     {
-        CONSOLE_FONT_INFOEX cfie = {0};
+        CONSOLE_FONT_INFOEX cfie = { 0 };
         VERIFY_WIN32_BOOL_FAILED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, (BOOL)bMaximumWindow, &cfie));
     }
     else
@@ -125,7 +123,7 @@ void FontTests::TestGetFontSizeLargeIndexInvalid()
 void FontTests::TestSetConsoleFontNegativeSize()
 {
     const HANDLE hConsoleOutput = GetStdOutputHandle();
-    CONSOLE_FONT_INFOEX cfie = {0};
+    CONSOLE_FONT_INFOEX cfie = { 0 };
     cfie.cbSize = sizeof(cfie);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
     cfie.dwFontSize.X = -4;
@@ -143,11 +141,11 @@ void FontTests::TestFontScenario()
     const HANDLE hConsoleOutput = GetStdOutputHandle();
 
     Log::Comment(L"1. Ensure that the various GET APIs for font information align with each other.");
-    CONSOLE_FONT_INFOEX cfie = {0};
+    CONSOLE_FONT_INFOEX cfie = { 0 };
     cfie.cbSize = sizeof(cfie);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfie));
 
-    CONSOLE_FONT_INFO cfi = {0};
+    CONSOLE_FONT_INFO cfi = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFont(hConsoleOutput, FALSE, &cfi));
 
     VERIFY_ARE_EQUAL(cfi.nFont, cfie.nFont, L"Ensure regular and Ex APIs return same nFont");
@@ -160,14 +158,14 @@ void FontTests::TestFontScenario()
     // ---------------------
 
     Log::Comment(L"2. Ensure that our font settings round-trip appropriately through the Ex APIs");
-    CONSOLE_FONT_INFOEX cfieSet = {0};
+    CONSOLE_FONT_INFOEX cfieSet = { 0 };
     cfieSet.cbSize = sizeof(cfieSet);
     cfieSet.dwFontSize.Y = 12;
     VERIFY_SUCCEEDED(StringCchCopy(cfieSet.FaceName, ARRAYSIZE(cfieSet.FaceName), L"Lucida Console"));
 
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::SetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfieSet));
 
-    CONSOLE_FONT_INFOEX cfiePost = {0};
+    CONSOLE_FONT_INFOEX cfiePost = { 0 };
     cfiePost.cbSize = sizeof(cfiePost);
     VERIFY_WIN32_BOOL_SUCCEEDED(OneCoreDelay::GetCurrentConsoleFontEx(hConsoleOutput, FALSE, &cfiePost));
 

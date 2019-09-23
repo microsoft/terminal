@@ -9,11 +9,23 @@
 
 #include "../host/tracing.hpp"
 
-#define CONSOLE_API_STRUCT(Routine, Struct, TraceName) { Routine, sizeof(Struct), TraceName }
-#define CONSOLE_API_NO_PARAMETER(Routine, TraceName) { Routine, 0, TraceName }
+#define CONSOLE_API_STRUCT(Routine, Struct, TraceName) \
+    {                                                  \
+        Routine, sizeof(Struct), TraceName             \
+    }
+#define CONSOLE_API_NO_PARAMETER(Routine, TraceName) \
+    {                                                \
+        Routine, 0, TraceName                        \
+    }
 
-#define CONSOLE_API_DEPRECATED(Struct) { ApiDispatchers::ServerDeprecatedApi, sizeof(Struct), "Deprecated"}
-#define CONSOLE_API_DEPRECATED_NO_PARAM() {ApiDispatchers::ServerDeprecatedApi, 0, "Deprecated"}
+#define CONSOLE_API_DEPRECATED(Struct)                                    \
+    {                                                                     \
+        ApiDispatchers::ServerDeprecatedApi, sizeof(Struct), "Deprecated" \
+    }
+#define CONSOLE_API_DEPRECATED_NO_PARAM()                    \
+    {                                                        \
+        ApiDispatchers::ServerDeprecatedApi, 0, "Deprecated" \
+    }
 
 typedef struct _CONSOLE_API_DESCRIPTOR
 {
@@ -24,7 +36,7 @@ typedef struct _CONSOLE_API_DESCRIPTOR
 
 typedef struct _CONSOLE_API_LAYER_DESCRIPTOR
 {
-    const CONSOLE_API_DESCRIPTOR *Descriptor;
+    const CONSOLE_API_DESCRIPTOR* Descriptor;
     ULONG Count;
 } CONSOLE_API_LAYER_DESCRIPTOR, *PCONSOLE_API_LAYER_DESCRIPTOR;
 
@@ -139,7 +151,7 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         goto Complete;
     }
 
-    CONSOLE_API_DESCRIPTOR const *Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
+    CONSOLE_API_DESCRIPTOR const* Descriptor = &ConsoleApiLayerTable[LayerNumber].Descriptor[ApiNumber];
 
     // Validate the argument size and call the API.
     if ((Message->Descriptor.InputSize < sizeof(CONSOLE_MSG_HEADER)) ||
@@ -165,10 +177,10 @@ PCONSOLE_API_MSG ApiSorter::ConsoleDispatchRequest(_Inout_ PCONSOLE_API_MSG Mess
         const auto trace = Tracing::s_TraceApiCall(Status, Descriptor->TraceName);
         Status = (*Descriptor->Routine)(Message, &ReplyPending);
     }
-	if (Status != STATUS_BUFFER_TOO_SMALL)
-	{
+    if (Status != STATUS_BUFFER_TOO_SMALL)
+    {
         Status = NTSTATUS_FROM_HRESULT(Status);
-	}
+    }
 
     if (!ReplyPending)
     {

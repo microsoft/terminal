@@ -40,7 +40,6 @@ RAW_READ_DATA::RAW_READ_DATA(_In_ InputBuffer* const pInputBuffer,
 // - Decrements count of readers waiting on the given handle.
 RAW_READ_DATA::~RAW_READ_DATA()
 {
-
 }
 
 // Routine Description:
@@ -79,11 +78,10 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     // on the same console as we're reading from.
     FAIL_FAST_IF(_pInputReadHandleData->GetReadCount() == 0);
 
-    FAIL_FAST_IF(!ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
+    FAIL_FAST_IF(!Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked());
 
     *pReplyStatus = STATUS_SUCCESS;
     *pControlKeyState = 0;
-
 
     *pNumBytes = 0;
     size_t NumBytes = 0;

@@ -12,10 +12,10 @@
 
 #include "../CopyFromCharPopup.hpp"
 
-
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 static constexpr size_t BUFFER_SIZE = 256;
 
@@ -59,8 +59,7 @@ class CopyFromCharPopupTests
     TEST_METHOD(CanDismiss)
     {
         // function to simulate user pressing escape key
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = true;
             wch = VK_ESCAPE;
             modifiers = 0;
@@ -93,8 +92,7 @@ class CopyFromCharPopupTests
 
     TEST_METHOD(DeleteAllWhenCharNotFound)
     {
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = false;
             wch = L'x';
             modifiers = 0;
@@ -124,8 +122,7 @@ class CopyFromCharPopupTests
 
     TEST_METHOD(CanDeletePartialLine)
     {
-        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch)
-        {
+        Popup::UserInputFunction fn = [](COOKED_READ_DATA& /*cookedReadData*/, bool& popupKey, DWORD& modifiers, wchar_t& wch) {
             popupKey = false;
             wch = L'f';
             modifiers = 0;

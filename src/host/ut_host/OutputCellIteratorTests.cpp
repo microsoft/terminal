@@ -413,9 +413,9 @@ class OutputCellIteratorTests
 
         for (const auto& ci : charInfos)
         {
-            auto expected = OutputCellView({&ci.Char.UnicodeChar, 1},
+            auto expected = OutputCellView({ &ci.Char.UnicodeChar, 1 },
                                            {},
-                                           { ci.Attributes},
+                                           { ci.Attributes },
                                            TextAttributeBehavior::Stored);
 
             VERIFY_IS_TRUE(it);

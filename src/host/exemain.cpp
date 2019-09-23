@@ -16,7 +16,7 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x770aa552, 0x671a, 0x5e97, 0x57, 0x9b, 0x15, 0x17, 0x09, 0xec, 0x0d, 0xbd),
     TraceLoggingOptionMicrosoftTelemetry());
 
-static bool ShouldUseConhostV2()
+static bool ConhostV2ForcedInRegistry()
 {
     // If the registry value doesn't exist, or exists and is non-zero, we should default to using the v2 console.
     // Otherwise, in the case of an explicit value of 0, we should use the legacy console.
@@ -40,10 +40,9 @@ static bool ShouldUseConhostV2()
                                    (PBYTE)&dwValue,
                                    &cbValue);
 
-
         if (ERROR_SUCCESS == lStatus &&
-            dwType == REG_DWORD &&                     // response is a DWORD
-            cbValue == sizeof(dwValue))                // response data exists
+            dwType == REG_DWORD && // response is a DWORD
+            cbValue == sizeof(dwValue)) // response data exists
         {
             // Value exists. If non-zero use v2 console.
             fShouldUseConhostV2 = dwValue != 0;
@@ -64,8 +63,7 @@ static bool ShouldUseConhostV2()
     return fShouldUseConhostV2;
 }
 
-[[nodiscard]]
-static HRESULT ValidateServerHandle(const HANDLE handle)
+[[nodiscard]] static HRESULT ValidateServerHandle(const HANDLE handle)
 {
     // Make sure this is a console file.
     FILE_FS_DEVICE_INFORMATION DeviceInformation;
@@ -85,13 +83,24 @@ static HRESULT ValidateServerHandle(const HANDLE handle)
     }
 }
 
-static bool ShouldUseLegacyConhost(const bool fForceV1)
+static bool ShouldUseLegacyConhost(const ConsoleArguments& args)
 {
-    return fForceV1 || !ShouldUseConhostV2();
+    if (args.InConptyMode())
+    {
+        return false;
+    }
+
+    if (args.GetForceV1())
+    {
+        return true;
+    }
+
+    // Per the documentation in ConhostV2ForcedInRegistry, it checks the value
+    // of HKCU\Console:ForceV2. If it's *not found* or nonzero, "v2" is forced.
+    return !ConhostV2ForcedInRegistry();
 }
 
-[[nodiscard]]
-static HRESULT ActivateLegacyConhost(const HANDLE handle)
+[[nodiscard]] static HRESULT ActivateLegacyConhost(const HANDLE handle)
 {
     HRESULT hr = S_OK;
 
@@ -99,9 +108,7 @@ static HRESULT ActivateLegacyConhost(const HANDLE handle)
     // because there's already a count of how many total processes were launched.
     // Total - legacy = new console.
     // We expect legacy launches to be infrequent enough to not cause an issue.
-    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded",
-                      TraceLoggingBool(true, "ConsoleLegacy"),
-                      TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
+    TraceLoggingWrite(g_ConhostLauncherProvider, "IsLegacyLoaded", TraceLoggingBool(true, "ConsoleLegacy"), TraceLoggingKeyword(MICROSOFT_KEYWORD_TELEMETRY));
 
     PCWSTR pszConhostDllName = L"ConhostV1.dll";
 
@@ -109,7 +116,7 @@ static HRESULT ActivateLegacyConhost(const HANDLE handle)
     wil::unique_hmodule hConhostBin(LoadLibraryExW(pszConhostDllName, NULL, LOAD_LIBRARY_SEARCH_SYSTEM32));
     if (hConhostBin.get() != nullptr)
     {
-        typedef NTSTATUS(*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
+        typedef NTSTATUS (*PFNCONSOLECREATEIOTHREAD)(__in HANDLE Server);
 
         PFNCONSOLECREATEIOTHREAD pfnConsoleCreateIoThread = (PFNCONSOLECREATEIOTHREAD)GetProcAddress(hConhostBin.get(), "ConsoleCreateIoThread");
         if (pfnConsoleCreateIoThread != nullptr)
@@ -152,7 +159,7 @@ int CALLBACK wWinMain(
     _In_ PWSTR /*pwszCmdLine*/,
     _In_ int /*nCmdShow*/)
 {
-    ServiceLocator::LocateGlobals().hInstance = hInstance;
+    Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().hInstance = hInstance;
 
     ConsoleCheckDebug();
 
@@ -168,7 +175,7 @@ int CALLBACK wWinMain(
     HRESULT hr = args.ParseCommandline();
     if (SUCCEEDED(hr))
     {
-        if (ShouldUseLegacyConhost(args.GetForceV1()))
+        if (ShouldUseLegacyConhost(args))
         {
             if (args.ShouldCreateServerHandle())
             {

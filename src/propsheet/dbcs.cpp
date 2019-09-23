@@ -23,29 +23,26 @@ Revision History:
 #include <strsafe.h>
 #pragma hdrstop
 
-NTSTATUS
-MakeAltRasterFont(
+void MakeAltRasterFont(
     __in UINT CodePage,
-    __out COORD *AltFontSize,
-    __out BYTE *AltFontFamily,
-    __out ULONG *AltFontIndex,
-    __out_ecount(LF_FACESIZE) LPTSTR AltFaceName
-    )
+    __out COORD* AltFontSize,
+    __out BYTE* AltFontFamily,
+    __out ULONG* AltFontIndex,
+    __out_ecount(LF_FACESIZE) LPTSTR AltFaceName)
 {
     DWORD i;
     DWORD Find;
     ULONG FontIndex;
     COORD FontSize = FontInfo[DefaultFontIndex].Size;
     COORD FontDelta;
-    BOOL  fDbcsCharSet = IS_ANY_DBCS_CHARSET( CodePageToCharSet( CodePage ) );
+    BOOL fDbcsCharSet = IS_ANY_DBCS_CHARSET(CodePageToCharSet(CodePage));
 
     FontIndex = 0;
     Find = (DWORD)-1;
-    for (i=0; i < NumberOfFonts; i++)
+    for (i = 0; i < NumberOfFonts; i++)
     {
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
-            IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet) == fDbcsCharSet
-           )
+            IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet) == fDbcsCharSet)
         {
             FontDelta.X = (SHORT)abs(FontSize.X - FontInfo[i].Size.X);
             FontDelta.Y = (SHORT)abs(FontSize.Y - FontInfo[i].Size.Y);
@@ -63,24 +60,22 @@ MakeAltRasterFont(
     *AltFontFamily = FontInfo[*AltFontIndex].Family;
 
     DBGFONTS(("MakeAltRasterFont : AltFontIndex = %ld\n", *AltFontIndex));
-
-    return STATUS_SUCCESS;
 }
 
-NTSTATUS
-InitializeDbcsMisc(
-    VOID)
+[[nodiscard]] NTSTATUS
+    InitializeDbcsMisc(
+        VOID)
 {
     return TrueTypeFontList::s_Initialize();
 }
 
-BYTE
-CodePageToCharSet(
+BYTE CodePageToCharSet(
     UINT CodePage)
 {
     CHARSETINFO csi;
 
-    if (!TranslateCharsetInfo((DWORD *)IntToPtr(CodePage), &csi, TCI_SRCCODEPAGE)) {
+    if (!TranslateCharsetInfo((DWORD*)IntToPtr(CodePage), &csi, TCI_SRCCODEPAGE))
+    {
         csi.ciCharset = OEM_CHARSET;
     }
 
@@ -90,46 +85,51 @@ CodePageToCharSet(
 LPTTFONTLIST
 SearchTTFont(
     __in_opt LPCTSTR ptszFace,
-    BOOL   fCodePage,
-    UINT   CodePage
-    )
+    BOOL fCodePage,
+    UINT CodePage)
 {
     return TrueTypeFontList::s_SearchByName(ptszFace, fCodePage, CodePage);
 }
 
-BOOL
-IsAvailableTTFont(
+BOOL IsAvailableTTFont(
     LPCTSTR ptszFace)
 {
-    if (SearchTTFont(ptszFace, FALSE, 0)) {
+    if (SearchTTFont(ptszFace, FALSE, 0))
+    {
         return TRUE;
-    } else {
+    }
+    else
+    {
         return FALSE;
     }
 }
 
-BOOL
-IsAvailableTTFontCP(
+BOOL IsAvailableTTFontCP(
     LPCTSTR ptszFace,
     UINT CodePage)
 {
-    if (SearchTTFont(ptszFace, TRUE, CodePage)) {
+    if (SearchTTFont(ptszFace, TRUE, CodePage))
+    {
         return TRUE;
-    } else {
+    }
+    else
+    {
         return FALSE;
     }
 }
 
-BOOL
-IsDisableBoldTTFont(
+BOOL IsDisableBoldTTFont(
     LPCTSTR ptszFace)
 {
     LPTTFONTLIST pTTFontList;
 
     pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL) {
+    if (pTTFontList != NULL)
+    {
         return pTTFontList->fDisableBold;
-    } else {
+    }
+    else
+    {
         return FALSE;
     }
 }
@@ -141,12 +141,15 @@ GetAltFaceName(
     LPTTFONTLIST pTTFontList;
 
     pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL) {
-        if (wcscmp(ptszFace, pTTFontList->FaceName1) == 0) {
+    if (pTTFontList != NULL)
+    {
+        if (wcscmp(ptszFace, pTTFontList->FaceName1) == 0)
+        {
             return pTTFontList->FaceName2;
         }
 
-        if (wcscmp(ptszFace, pTTFontList->FaceName2) == 0) {
+        if (wcscmp(ptszFace, pTTFontList->FaceName2) == 0)
+        {
             return pTTFontList->FaceName1;
         }
     }
@@ -154,18 +157,16 @@ GetAltFaceName(
     return NULL;
 }
 
-NTSTATUS
-DestroyDbcsMisc(
-    VOID)
+[[nodiscard]] NTSTATUS
+    DestroyDbcsMisc(
+        VOID)
 {
     return TrueTypeFontList::s_Destroy();
 }
 
-int
-LanguageListCreate(
+int LanguageListCreate(
     HWND hDlg,
-    UINT CodePage
-    )
+    UINT CodePage)
 
 /*++
 
@@ -229,7 +230,6 @@ LanguageListCreate(
     return iRet;
 }
 
-
 int LanguageDisplay(HWND hDlg, UINT CodePage)
 {
     CPINFOEX cpinfo;
@@ -243,10 +243,9 @@ int LanguageDisplay(HWND hDlg, UINT CodePage)
 }
 
 // For a given codepage, determine what the default truetype font should be
-NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage,                  // the codepage to examine (note: not charset)
-                                  _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
-                                  const size_t cchFaceName)               // space available in pszFaceName
+[[nodiscard]] NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage, // the codepage to examine (note: not charset)
+                                                _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
+                                                const size_t cchFaceName) // space available in pszFaceName
 {
     return TrueTypeFontList::s_SearchByCodePage(uiCodePage, pszFaceName, cchFaceName);
 }
-

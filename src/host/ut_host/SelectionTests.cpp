@@ -17,6 +17,7 @@
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class SelectionTests
 {
@@ -413,6 +414,7 @@ class SelectionInputTests
 
         m_state->PrepareGlobalFont();
         m_state->PrepareGlobalScreenBuffer();
+        m_state->PrepareGlobalInputBuffer();
 
         return true;
     }
@@ -421,6 +423,7 @@ class SelectionInputTests
     {
         m_state->CleanupGlobalScreenBuffer();
         m_state->CleanupGlobalFont();
+        m_state->CleanupGlobalInputBuffer();
 
         delete m_state;
 
@@ -612,5 +615,4 @@ class SelectionInputTests
 
         } while (point.Y < bufferSize.BottomInclusive()); // stop once we've advanced to a point on the bottom row of the buffer.
     }
-
 };

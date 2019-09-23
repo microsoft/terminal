@@ -14,14 +14,15 @@
 
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
-std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
+static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
     std::wstring wstr = L"";
-    for(auto& ev : inEventsToWrite)
+    for (auto& ev : inEventsToWrite)
     {
         if (ev->EventType() == InputEventType::KeyEvent)
         {
@@ -34,7 +35,7 @@ std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEvents
 }
 
 Terminal::Terminal() :
-    _mutableViewport{Viewport::Empty()},
+    _mutableViewport{ Viewport::Empty() },
     _title{ L"" },
     _colorTable{},
     _defaultFg{ RGB(255, 255, 255) },
@@ -44,14 +45,18 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _boxSelection{ false },
     _selectionActive{ false },
+    _allowSingleCharSelection{ true },
+    _copyOnSelect{ false },
     _selectionAnchor{ 0, 0 },
-    _endSelectionPosition { 0, 0 }
+    _endSelectionPosition{ 0, 0 }
 {
     _stateMachine = std::make_unique<StateMachine>(new OutputStateMachineEngine(new TerminalDispatch(*this)));
 
-    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
-    {
-        if(!_pfnWriteInput) return;
+    auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
+        if (!_pfnWriteInput)
+        {
+            return;
+        }
         std::wstring wstr = _KeyEventsToText(inEventsToWrite);
         _pfnWriteInput(wstr);
     };
@@ -63,25 +68,27 @@ Terminal::Terminal() :
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
 {
-    _mutableViewport = Viewport::FromDimensions({ 0,0 }, viewportSize);
+    _mutableViewport = Viewport::FromDimensions({ 0, 0 }, viewportSize);
     _scrollbackLines = scrollbackLines;
-    COORD bufferSize { viewportSize.X, viewportSize.Y + scrollbackLines };
-    TextAttribute attr{};
-    UINT cursorSize = 12;
+    const COORD bufferSize{ viewportSize.X,
+                            Utils::ClampToShortMax(viewportSize.Y + scrollbackLines, 1) };
+    const TextAttribute attr{};
+    const UINT cursorSize = 12;
     _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, renderTarget);
 }
 
 // Method Description:
-// - Initializes the Temrinal from the given set of settings.
+// - Initializes the Terminal from the given set of settings.
 // Arguments:
 // - settings: the set of CoreSettings we need to use to initialize the terminal
 // - renderTarget: A render target the terminal can use for paint invalidation.
 void Terminal::CreateFromSettings(winrt::Microsoft::Terminal::Settings::ICoreSettings settings,
-            Microsoft::Console::Render::IRenderTarget& renderTarget)
+                                  Microsoft::Console::Render::IRenderTarget& renderTarget)
 {
-    const COORD viewportSize{ static_cast<short>(settings.InitialCols()), static_cast<short>(settings.InitialRows()) };
+    const COORD viewportSize{ Utils::ClampToShortMax(settings.InitialCols(), 1),
+                              Utils::ClampToShortMax(settings.InitialRows(), 1) };
     // TODO:MSFT:20642297 - Support infinite scrollback here, if HistorySize is -1
-    Create(viewportSize, static_cast<short>(settings.HistorySize()), renderTarget);
+    Create(viewportSize, Utils::ClampToShortMax(settings.HistorySize(), 0), renderTarget);
 
     UpdateSettings(settings);
 }
@@ -99,22 +106,22 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     CursorType cursorShape = CursorType::VerticalBar;
     switch (settings.CursorShape())
     {
-        case CursorStyle::Underscore:
-            cursorShape = CursorType::Underscore;
-            break;
-        case CursorStyle::FilledBox:
-            cursorShape = CursorType::FullBox;
-            break;
-        case CursorStyle::EmptyBox:
-            cursorShape = CursorType::EmptyBox;
-            break;
-        case CursorStyle::Vintage:
-            cursorShape = CursorType::Legacy;
-            break;
-        default:
-        case CursorStyle::Bar:
-            cursorShape = CursorType::VerticalBar;
-            break;
+    case CursorStyle::Underscore:
+        cursorShape = CursorType::Underscore;
+        break;
+    case CursorStyle::FilledBox:
+        cursorShape = CursorType::FullBox;
+        break;
+    case CursorStyle::EmptyBox:
+        cursorShape = CursorType::EmptyBox;
+        break;
+    case CursorStyle::Vintage:
+        cursorShape = CursorType::Legacy;
+        break;
+    default:
+    case CursorStyle::Bar:
+        cursorShape = CursorType::VerticalBar;
+        break;
     }
 
     _buffer->GetCursor().SetStyle(settings.CursorHeight(),
@@ -127,6 +134,10 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
     }
 
     _snapOnInput = settings.SnapOnInput();
+
+    _wordDelimiters = settings.WordDelimiters();
+
+    _copyOnSelect = settings.CopyOnSelect();
 
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
@@ -143,8 +154,7 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 // - S_OK if we successfully resized the terminal, S_FALSE if there was
 //      nothing to do (the viewportSize is the same as our current size), or an
 //      appropriate HRESULT for failing to resize.
-[[nodiscard]]
-HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
+[[nodiscard]] HRESULT Terminal::UserResize(const COORD viewportSize) noexcept
 {
     const auto oldDimensions = _mutableViewport.Dimensions();
     if (viewportSize == oldDimensions)
@@ -186,21 +196,16 @@ void Terminal::Write(std::wstring_view stringView)
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that
 //   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT br processed any further. If we return false, the event
+//   event should NOT be processed any further. If we return false, the event
 //   was NOT translated, and we should instead use the event to try and get the
 //   real character out of the event.
 // Arguments:
 // - vkey: The vkey of the key pressed.
-// - ctrlPressed: true iff either ctrl key is pressed.
-// - altPressed: true iff either alt key is pressed.
-// - shiftPressed: true iff either shift key is pressed.
+// - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey,
-                            const bool ctrlPressed,
-                            const bool altPressed,
-                            const bool shiftPressed)
+bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
@@ -209,36 +214,53 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         _NotifyScrollEvent();
     }
 
-    DWORD modifiers = 0
-                      | (ctrlPressed? LEFT_CTRL_PRESSED : 0)
-                      | (altPressed? LEFT_ALT_PRESSED : 0)
-                      | (shiftPressed? SHIFT_PRESSED : 0)
-                      ;
-
     // Alt key sequences _require_ the char to be in the keyevent. If alt is
     // pressed, manually get the character that's being typed, and put it in the
     // KeyEvent.
     // DON'T manually handle Alt+Space - the system will use this to bring up
     // the system menu for restore, min/maximimize, size, move, close
-    wchar_t ch = altPressed && vkey != VK_SPACE ? static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR))) : UNICODE_NULL;
-
-    // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
-    // correctly, the keyEvents's char needs to be set to Backspace.
-    // 0x48 is the VKEY for 'H', which isn't named
-    if (ctrlPressed && vkey == 0x48)
+    wchar_t ch = UNICODE_NULL;
+    if (states.IsAltPressed() && vkey != VK_SPACE)
     {
-        ch = UNICODE_BACKSPACE;
+        ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
+        // MapVirtualKey will give us the capitalized version of the char.
+        // However, if shift isn't pressed, we want to send the lowercase version.
+        // (See GH#637)
+        if (!states.IsShiftPressed())
+        {
+            ch = towlower(ch);
+        }
     }
-    // Manually handle Ctrl+Space here. The terminalInput translator requires
-    // the char to be set to Space for space handling to work correctly.
-    if (ctrlPressed && vkey == VK_SPACE)
+
+    if (states.IsCtrlPressed())
     {
-        ch = UNICODE_SPACE;
+        switch (vkey)
+        {
+        case 0x48:
+            // Manually handle Ctrl+H. Ctrl+H should be handled as Backspace. To do this
+            // correctly, the keyEvents's char needs to be set to Backspace.
+            // 0x48 is the VKEY for 'H', which isn't named
+            ch = UNICODE_BACKSPACE;
+            break;
+        case VK_SPACE:
+            // Manually handle Ctrl+Space here. The terminalInput translator requires
+            // the char to be set to Space for space handling to work correctly.
+            ch = UNICODE_SPACE;
+            break;
+        }
+    }
+
+    // Manually handle Escape here. If we let it fall through, it'll come
+    // back up through the character handler. It's registered as a translation
+    // in TerminalInput, so we'll let TerminalInput control it.
+    if (vkey == VK_ESCAPE)
+    {
+        ch = UNICODE_ESC;
     }
 
     const bool manuallyHandled = ch != UNICODE_NULL;
 
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, modifiers};
+    KeyEvent keyEv{ true, 0, vkey, 0, ch, states.Value() };
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;
@@ -249,8 +271,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]]
-std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
 {
     return std::shared_lock<std::shared_mutex>(_readWriteLock);
 }
@@ -260,12 +281,10 @@ std::shared_lock<std::shared_mutex> Terminal::LockForReading()
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]]
-std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
 {
     return std::unique_lock<std::shared_mutex>(_readWriteLock);
 }
-
 
 Viewport Terminal::_GetMutableViewport() const noexcept
 {
@@ -336,13 +355,18 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 proposedCursorPosition.X--;
             }
         }
+        else if (wch == UNICODE_BEL)
+        {
+            // TODO: GitHub #1883
+            // For now its empty just so we don't try to write the BEL character
+        }
         else
         {
             // TODO: MSFT 21006766
             // This is not great but I need it demoable. Fix by making a buffer stream writer.
             if (wch >= 0xD800 && wch <= 0xDFFF)
             {
-                OutputCellIterator it{ stringView.substr(i, 2) , _buffer->GetCurrentAttributes() };
+                OutputCellIterator it{ stringView.substr(i, 2), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 i += cellDistance - 1;
@@ -350,7 +374,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             }
             else
             {
-                OutputCellIterator it{ stringView.substr(i, 1) , _buffer->GetCurrentAttributes() };
+                OutputCellIterator it{ stringView.substr(i, 1), _buffer->GetCurrentAttributes() };
                 const auto end = _buffer->Write(it);
                 const auto cellDistance = end.GetCellDistance(it);
                 proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
@@ -361,7 +385,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         const auto newRows = proposedCursorPosition.Y - bufferSize.Height() + 1;
         if (newRows > 0)
         {
-            for(auto dy = 0; dy < newRows; dy++)
+            for (auto dy = 0; dy < newRows; dy++)
             {
                 _buffer->IncrementCircularBuffer();
                 proposedCursorPosition.Y--;
@@ -381,7 +405,7 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
             const auto newViewTop = std::max(0, cursorPosAfter.Y - (_mutableViewport.Height() - 1));
             if (newViewTop != _mutableViewport.Top())
             {
-                _mutableViewport = Viewport::FromDimensions({0, gsl::narrow<short>(newViewTop)}, _mutableViewport.Dimensions());
+                _mutableViewport = Viewport::FromDimensions({ 0, gsl::narrow<short>(newViewTop) }, _mutableViewport.Dimensions());
                 notifyScroll = true;
             }
         }
@@ -438,153 +462,37 @@ void Terminal::SetScrollPositionChangedCallback(std::function<void(const int, co
 }
 
 // Method Description:
-// - Checks if selection is active
-// Return Value:
-// - bool representing if selection is active. Used to decide copy/paste on right click
-const bool Terminal::IsSelectionActive() const noexcept
-{
-    return _selectionActive;
-}
-
-// Method Description:
-// - Record the position of the beginning of a selection
+// - Allows setting a callback for when the background color is changed
 // Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-void Terminal::SetSelectionAnchor(const COORD position)
+// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
+void Terminal::SetBackgroundCallback(std::function<void(const uint32_t)> pfn) noexcept
 {
-    _selectionAnchor = position;
-
-    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_scrollOffset), &_selectionAnchor.Y));
-
-    // copy value of ViewStartIndex to support scrolling
-    // and update on new buffer output (used in _GetSelectionRects())
-    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
-
-    _selectionActive = true;
-    SetEndSelectionPosition(position);
-}
-
-// Method Description:
-// - Record the position of the end of a selection
-// Arguments:
-// - position: the (x,y) coordinate on the visible viewport
-void Terminal::SetEndSelectionPosition(const COORD position)
-{
-    _endSelectionPosition = position;
-
-    // include _scrollOffset here to ensure this maps to the right spot of the original viewport
-    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_scrollOffset), &_endSelectionPosition.Y));
-
-    // copy value of ViewStartIndex to support scrolling
-    // and update on new buffer output (used in _GetSelectionRects())
-    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _pfnBackgroundColorChanged = pfn;
 }
 
 void Terminal::_InitializeColorTable()
 {
     gsl::span<COLORREF> tableView = { &_colorTable[0], gsl::narrow<ptrdiff_t>(_colorTable.size()) };
     // First set up the basic 256 colors
-    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
+    Utils::Initialize256ColorTable(tableView);
     // Then use fill the first 16 values with the Campbell scheme
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    Utils::InitializeCampbellColorTable(tableView);
     // Then make sure all the values have an alpha of 255
-    ::Microsoft::Console::Utils::SetColorTableAlpha(tableView, 0xff);
+    Utils::SetColorTableAlpha(tableView, 0xff);
 }
 
 // Method Description:
-// - Helper to determine the selected region of the buffer. Used for rendering.
-// Return Value:
-// - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
-{
-    std::vector<SMALL_RECT> selectionArea;
-
-    if (!_selectionActive)
-    {
-        return selectionArea;
-    }
-
-    // Add anchor offset here to update properly on new buffer output
-    SHORT temp1, temp2;
-    THROW_IF_FAILED(ShortAdd(_selectionAnchor.Y, _selectionAnchor_YOffset, &temp1));
-    THROW_IF_FAILED(ShortAdd(_endSelectionPosition.Y, _endSelectionPosition_YOffset, &temp2));
-
-    // create these new anchors for comparison and rendering
-    const COORD selectionAnchorWithOffset = { _selectionAnchor.X, temp1 };
-    const COORD endSelectionPositionWithOffset = { _endSelectionPosition.X, temp2 };
-
-    // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD &higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
-    const COORD &lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ? selectionAnchorWithOffset : endSelectionPositionWithOffset;
-
-    selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
-    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
-    {
-        SMALL_RECT selectionRow;
-
-        selectionRow.Top = row;
-        selectionRow.Bottom = row;
-
-        if (_boxSelection || higherCoord.Y == lowerCoord.Y)
-        {
-            selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
-            selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
-        }
-        else
-        {
-            selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
-            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
-        }
-
-        selectionArea.emplace_back(selectionRow);
-    }
-    return selectionArea;
-}
-
-// Method Description:
-// - enable/disable box selection (ALT + selection)
+// - Sets the visibility of the text cursor.
 // Arguments:
-// - isEnabled: new value for _boxSelection
-void Terminal::SetBoxSelection(const bool isEnabled) noexcept
+// - isVisible: whether the cursor should be visible
+void Terminal::SetCursorVisible(const bool isVisible) noexcept
 {
-    _boxSelection = isEnabled;
+    auto& cursor = _buffer->GetCursor();
+    cursor.SetIsVisible(isVisible);
 }
 
-// Method Description:
-// - clear selection data and disable rendering it
-void Terminal::ClearSelection() noexcept
+bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
-    _selectionActive = false;
-    _selectionAnchor = {0, 0};
-    _endSelectionPosition = {0, 0};
-    _selectionAnchor_YOffset = 0;
-    _endSelectionPosition_YOffset = 0;
-}
-
-// Method Description:
-// - get wstring text from highlighted portion of text buffer
-// Arguments:
-// - trimTrailingWhitespace: enable removing any whitespace from copied selection
-//    and get text to appear on separate lines.
-// Return Value:
-// - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
-{
-    std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
-    std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
-
-    auto data = _buffer->GetTextForClipboard(!_boxSelection,
-                                             trimTrailingWhitespace,
-                                             _GetSelectionRects(),
-                                             GetForegroundColor,
-                                             GetBackgroundColor);
-
-    std::wstring result;
-    for (const auto& text : data.text)
-    {
-        result += text;
-    }
-
-    return result;
+    const auto& cursor = _buffer->GetCursor();
+    return cursor.IsBlinkingAllowed();
 }

@@ -25,14 +25,14 @@ Author(s):
 short CalcWindowSizeX(const SMALL_RECT& rect) noexcept;
 short CalcWindowSizeY(const SMALL_RECT& rect) noexcept;
 short CalcCursorYOffsetInPixels(const short sFontSizeY, const ULONG ulSize) noexcept;
-WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR * const ppwchEnd) noexcept;
+WORD ConvertStringToDec(_In_ PCWSTR pwchToConvert, _Out_opt_ PCWSTR* const ppwchEnd) noexcept;
 
 std::wstring _LoadString(const UINT id);
 static UINT s_LoadStringEx(_In_ HINSTANCE hModule,
-    _In_ UINT wID,
-    _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
-    _In_ UINT cchBufferMax,
-    _In_ WORD wLangId);
+                           _In_ UINT wID,
+                           _Out_writes_(cchBufferMax) LPWSTR lpBuffer,
+                           _In_ UINT cchBufferMax,
+                           _In_ WORD wLangId);
 
 class Utils
 {

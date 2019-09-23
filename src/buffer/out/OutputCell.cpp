@@ -11,13 +11,12 @@
 
 static constexpr TextAttribute InvalidTextAttribute{ INVALID_COLOR, INVALID_COLOR };
 
-OutputCell::OutputCell() :
+OutputCell::OutputCell() noexcept :
     _text{},
     _dbcsAttribute{},
     _textAttribute{ InvalidTextAttribute },
     _behavior{ TextAttributeBehavior::Stored }
 {
-
 }
 
 OutputCell::OutputCell(const std::wstring_view charData,
@@ -112,7 +111,5 @@ void OutputCell::_setFromOutputCellView(const OutputCellView& cell)
     _dbcsAttribute = cell.DbcsAttr();
     _textAttribute = cell.TextAttr();
     _behavior = cell.TextAttrBehavior();
-
-    const auto& view = cell.Chars();
-    _text = view;
+    _text = cell.Chars();
 }

@@ -10,6 +10,7 @@
 #include "..\types\inc\IInputEvent.hpp"
 
 using namespace WEX::Logging;
+using Microsoft::Console::Interactivity::ServiceLocator;
 
 class InputBufferTests
 {
@@ -647,5 +648,4 @@ class InputBufferTests
         VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*inputBuffer._storage.front()).GetRepeatCount(), repeatCount);
         VERIFY_ARE_EQUAL(static_cast<const KeyEvent&>(*outEvents.front()).GetRepeatCount(), 1u);
     }
-
 };

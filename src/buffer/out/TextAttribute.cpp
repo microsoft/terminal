@@ -16,7 +16,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - color that should be displayed as the foreground color
 COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const
+                                               COLORREF defaultBgColor) const noexcept
 {
     return _IsReverseVideo() ? _GetRgbBackground(colorTable, defaultBgColor) : _GetRgbForeground(colorTable, defaultFgColor);
 }
@@ -29,7 +29,7 @@ COLORREF TextAttribute::CalculateRgbForeground(std::basic_string_view<COLORREF> 
 // - color that should be displayed as the background color
 COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> colorTable,
                                                COLORREF defaultFgColor,
-                                               COLORREF defaultBgColor) const
+                                               COLORREF defaultBgColor) const noexcept
 {
     return _IsReverseVideo() ? _GetRgbForeground(colorTable, defaultFgColor) : _GetRgbBackground(colorTable, defaultBgColor);
 }
@@ -42,7 +42,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 // Return Value:
 // - color that is stored as the foreground color
 COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const
+                                          COLORREF defaultColor) const noexcept
 {
     return _foreground.GetColor(colorTable, defaultColor, _isBold);
 }
@@ -55,7 +55,7 @@ COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> color
 // Return Value:
 // - color that is stored as the background color
 COLORREF TextAttribute::_GetRgbBackground(std::basic_string_view<COLORREF> colorTable,
-                                          COLORREF defaultColor) const
+                                          COLORREF defaultColor) const noexcept
 {
     return _background.GetColor(colorTable, defaultColor, false);
 }
@@ -75,22 +75,22 @@ WORD TextAttribute::GetMetaAttributes() const noexcept
     return wMeta;
 }
 
-void TextAttribute::SetForeground(const COLORREF rgbForeground)
+void TextAttribute::SetForeground(const COLORREF rgbForeground) noexcept
 {
     _foreground = TextColor(rgbForeground);
 }
 
-void TextAttribute::SetBackground(const COLORREF rgbBackground)
+void TextAttribute::SetBackground(const COLORREF rgbBackground) noexcept
 {
     _background = TextColor(rgbBackground);
 }
 
 void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 {
-    _wAttrLegacy = static_cast<WORD>(wLegacy & META_ATTRS);
+    _wAttrLegacy = gsl::narrow_cast<WORD>(wLegacy & META_ATTRS);
     WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
-    BYTE fgIndex = static_cast<BYTE>(wLegacy & FG_ATTRS);
-    BYTE bgIndex = static_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
+    const BYTE fgIndex = gsl::narrow_cast<BYTE>(wLegacy & FG_ATTRS);
+    const BYTE bgIndex = gsl::narrow_cast<BYTE>(wLegacy & BG_ATTRS) >> 4;
     _foreground = TextColor(fgIndex);
     _background = TextColor(bgIndex);
 }
@@ -98,16 +98,16 @@ void TextAttribute::SetFromLegacy(const WORD wLegacy) noexcept
 void TextAttribute::SetLegacyAttributes(const WORD attrs,
                                         const bool setForeground,
                                         const bool setBackground,
-                                        const bool setMeta)
+                                        const bool setMeta) noexcept
 {
     if (setForeground)
     {
-        BYTE fgIndex = (BYTE)(attrs & FG_ATTRS);
+        const BYTE fgIndex = gsl::narrow_cast<BYTE>(attrs & FG_ATTRS);
         _foreground = TextColor(fgIndex);
     }
     if (setBackground)
     {
-        BYTE bgIndex = (BYTE)(attrs & BG_ATTRS) >> 4;
+        const BYTE bgIndex = gsl::narrow_cast<BYTE>(attrs & BG_ATTRS) >> 4;
         _background = TextColor(bgIndex);
     }
     if (setMeta)
@@ -133,17 +133,17 @@ void TextAttribute::SetIndexedAttributes(const std::optional<const BYTE> foregro
 {
     if (foreground)
     {
-        BYTE fgIndex = (*foreground) & 0xFF;
+        const BYTE fgIndex = (*foreground) & 0xFF;
         _foreground = TextColor(fgIndex);
     }
     if (background)
     {
-        BYTE bgIndex = (*background) & 0xFF;
+        const BYTE bgIndex = (*background) & 0xFF;
         _background = TextColor(bgIndex);
     }
 }
 
-void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground)
+void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept
 {
     if (fIsForeground)
     {
@@ -238,8 +238,8 @@ void TextAttribute::SetDefaultBackground() noexcept
 }
 
 // Method Description:
-// - Returns true if this attribute indicates it's foreground is the "default"
-//      foreground. It's _rgbForeground will contain the actual value of the
+// - Returns true if this attribute indicates its foreground is the "default"
+//      foreground. Its _rgbForeground will contain the actual value of the
 //      default foreground. If the default colors are ever changed, this method
 //      should be used to identify attributes with the default fg value, and
 //      update them accordingly.
@@ -253,8 +253,8 @@ bool TextAttribute::ForegroundIsDefault() const noexcept
 }
 
 // Method Description:
-// - Returns true if this attribute indicates it's background is the "default"
-//      background. It's _rgbBackground will contain the actual value of the
+// - Returns true if this attribute indicates its background is the "default"
+//      background. Its _rgbBackground will contain the actual value of the
 //      default background. If the default colors are ever changed, this method
 //      should be used to identify attributes with the default bg value, and
 //      update them accordingly.

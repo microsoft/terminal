@@ -18,7 +18,6 @@
     <ClInclude Include="debug.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="precomp.h" />
-    <ClInclude Include="StructureArray.h" />
     <ClInclude Include="TfCatUtil.h" />
     <ClInclude Include="TfConvArea.h" />
     <ClInclude Include="TfCtxtComp.h" />

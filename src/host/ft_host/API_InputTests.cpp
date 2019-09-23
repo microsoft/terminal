@@ -11,6 +11,9 @@
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
 
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to test:
 // FlushConsoleInputBuffer
 // PeekConsoleInput
@@ -21,20 +24,14 @@
 class InputTests
 {
     BEGIN_TEST_CLASS(InputTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-l2-2-0.lib")
     END_TEST_CLASS()
 
     TEST_CLASS_SETUP(TestSetup);
     TEST_CLASS_CLEANUP(TestCleanup);
 
-    TEST_METHOD(TestGetMouseButtonsValid); // note: GetNumberOfConsoleMouseButtons crashes with nullptr, so there's no
-                                           // negative test
+    // note: GetNumberOfConsoleMouseButtons crashes with nullptr, so there's no negative test
+    TEST_METHOD(TestGetMouseButtonsValid);
+
     TEST_METHOD(TestInputScenario);
     TEST_METHOD(TestFlushValid);
     TEST_METHOD(TestFlushInvalid);
@@ -52,7 +49,7 @@ class InputTests
     TEST_METHOD(TestMouseHorizWheelReadConsoleNoMouseInput);
     TEST_METHOD(TestMouseWheelReadConsoleInputQuickEdit);
     TEST_METHOD(TestMouseHorizWheelReadConsoleInputQuickEdit);
-    TEST_METHOD(RawReadUnpacksCoalsescedInputRecords);
+    TEST_METHOD(RawReadUnpacksCoalescedInputRecords);
 
     BEGIN_TEST_METHOD(TestVtInputGeneration)
         TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
@@ -61,7 +58,7 @@ class InputTests
 
 void VerifyNumberOfInputRecords(const HANDLE hConsoleInput, _In_ DWORD nInputs)
 {
-    SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
+    WEX::TestExecution::SetVerifyOutput verifySettings(WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures);
     DWORD nInputEvents = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEvents));
     VERIFY_ARE_EQUAL(nInputEvents,
@@ -105,7 +102,7 @@ void InputTests::TestGetMouseButtonsValid()
 
 void GenerateAndWriteInputRecords(const HANDLE hConsoleInput,
                                   const UINT cRecordsToGenerate,
-                                  _Out_writes_(cRecs) INPUT_RECORD *prgRecs,
+                                  _Out_writes_(cRecs) INPUT_RECORD* prgRecs,
                                   const DWORD cRecs,
                                   _Out_ PDWORD pdwWritten)
 {
@@ -131,13 +128,13 @@ void InputTests::TestInputScenario()
     HANDLE hConsoleInput = GetStdInputHandle();
 
     DWORD nWrittenEvents = (DWORD)-1;
-    INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = {0};
+    INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, NUMBER_OF_SCENARIO_INPUTS, rgInputRecords, ARRAYSIZE(rgInputRecords), &nWrittenEvents);
 
     VerifyNumberOfInputRecords(hConsoleInput, ARRAYSIZE(rgInputRecords));
 
     Log::Comment(L"Peeking events");
-    INPUT_RECORD rgPeekedRecords[NUMBER_OF_SCENARIO_INPUTS] = {0};
+    INPUT_RECORD rgPeekedRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
     DWORD nPeekedEvents = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(PeekConsoleInput(hConsoleInput, rgPeekedRecords, ARRAYSIZE(rgPeekedRecords), &nPeekedEvents));
     VERIFY_ARE_EQUAL(nPeekedEvents, nWrittenEvents, L"We should be able to peek at all of the records we've written");
@@ -155,11 +152,11 @@ void InputTests::TestInputScenario()
     {
         const bool fIsLastIteration = (iIteration + 1) > (NUMBER_OF_SCENARIO_INPUTS / READ_BATCH);
         Log::Comment(String().Format(L"Reading inputs (iteration %d/%d)%s",
-                                     iIteration+1,
+                                     iIteration + 1,
                                      cIterations,
                                      fIsLastIteration ? L" (last one)" : L""));
 
-        INPUT_RECORD rgReadRecords[READ_BATCH] = {0};
+        INPUT_RECORD rgReadRecords[READ_BATCH] = { 0 };
         DWORD nReadEvents = (DWORD)-1;
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, rgReadRecords, ARRAYSIZE(rgReadRecords), &nReadEvents));
 
@@ -173,7 +170,7 @@ void InputTests::TestInputScenario()
         VERIFY_ARE_EQUAL(nReadEvents, dwExpectedEventsRead);
         for (UINT iReadRecord = 0; iReadRecord < nReadEvents; iReadRecord++)
         {
-            const UINT iInputRecord = iReadRecord+(iIteration*READ_BATCH);
+            const UINT iInputRecord = iReadRecord + (iIteration * READ_BATCH);
             VERIFY_ARE_EQUAL(rgReadRecords[iReadRecord],
                              rgInputRecords[iInputRecord],
                              String().Format(L"verify record %d", iInputRecord));
@@ -182,7 +179,7 @@ void InputTests::TestInputScenario()
         DWORD nInputEventsAfterRead = (DWORD)-1;
         VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &nInputEventsAfterRead));
 
-        DWORD dwExpectedEventsAfterRead = (NUMBER_OF_SCENARIO_INPUTS - (READ_BATCH*(iIteration+1)));
+        DWORD dwExpectedEventsAfterRead = (NUMBER_OF_SCENARIO_INPUTS - (READ_BATCH * (iIteration + 1)));
         if (fIsLastIteration)
         {
             dwExpectedEventsAfterRead = 0;
@@ -199,7 +196,7 @@ void InputTests::TestFlushValid()
     HANDLE hConsoleInput = GetStdInputHandle();
 
     DWORD nWrittenEvents = (DWORD)-1;
-    INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = {0};
+    INPUT_RECORD rgInputRecords[NUMBER_OF_SCENARIO_INPUTS] = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, NUMBER_OF_SCENARIO_INPUTS, rgInputRecords, ARRAYSIZE(rgInputRecords), &nWrittenEvents);
 
     VerifyNumberOfInputRecords(hConsoleInput, ARRAYSIZE(rgInputRecords));
@@ -228,13 +225,13 @@ void InputTests::TestPeekConsoleInvalid()
     VERIFY_ARE_EQUAL(nPeeked, (DWORD)0);
 
     DWORD nWritten = (DWORD)-1;
-    INPUT_RECORD ir = {0};
+    INPUT_RECORD ir = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, 1, &ir, 1, &nWritten);
 
     VerifyNumberOfInputRecords(hConsoleInput, 1);
 
     nPeeked = (DWORD)-1;
-    INPUT_RECORD irPeeked = {0};
+    INPUT_RECORD irPeeked = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(PeekConsoleInput(hConsoleInput, &irPeeked, 0, &nPeeked));
     VERIFY_ARE_EQUAL(nPeeked, (DWORD)0, L"Verify that an empty array doesn't cause peeks to get written");
 
@@ -259,7 +256,7 @@ void InputTests::TestReadConsoleInvalid()
     HANDLE hConsoleInput = GetStdInputHandle();
 
     DWORD nWritten = (DWORD)-1;
-    INPUT_RECORD irWrite = {0};
+    INPUT_RECORD irWrite = { 0 };
     GenerateAndWriteInputRecords(hConsoleInput, 1, &irWrite, 1, &nWritten);
     VerifyNumberOfInputRecords(hConsoleInput, 1);
 
@@ -267,7 +264,7 @@ void InputTests::TestReadConsoleInvalid()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, nullptr, 0, &nRead));
     VERIFY_ARE_EQUAL(nRead, (DWORD)0);
 
-    INPUT_RECORD irRead = {0};
+    INPUT_RECORD irRead = { 0 };
     nRead = (DWORD)-1;
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleInput(hConsoleInput, &irRead, 0, &nRead));
     VERIFY_ARE_EQUAL(nRead, (DWORD)0);
@@ -293,7 +290,7 @@ void InputTests::TestWriteConsoleInvalid()
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
 
     nWrite = (DWORD)-1;
-    INPUT_RECORD irWrite = {0};
+    INPUT_RECORD irWrite = { 0 };
     VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleInput(hConsoleInput, &irWrite, 0, &nWrite));
     VERIFY_ARE_EQUAL(nWrite, (DWORD)0);
 }
@@ -345,7 +342,6 @@ void InputTests::TestReadConsolePasswordScenario()
     DWORD dwWritten;
     FlushConsoleInputBuffer(hIn);
     WriteConsoleInputW(hIn, irBuffer.get(), cBuffer, &dwWritten);
-
 
     // Press "enter" key on the window to signify the user pressing enter at the end of the password.
 
@@ -437,9 +433,10 @@ void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFla
     WPARAM wParam = 0;
     short sKeyState = 0;
     short sWheelDelta = -WHEEL_DELTA; // scroll down is negative, up is positive.
-    wParam = ((sWheelDelta << 16) | sKeyState) & 0xFFFFFFFF; // we only use the lower 32-bits (in case of 64-bit system)
+    // we only use the lower 32-bits (in case of 64-bit system)
+    wParam = ((sWheelDelta << 16) | sKeyState) & 0xFFFFFFFF;
 
-                                                             // LPARAM is positioning information. We don't care so we'll leave it 0x0
+    // LPARAM is positioning information. We don't care so we'll leave it 0x0
     LPARAM lParam = 0;
 
     Log::Comment(L"Send scroll down message into console window queue.");
@@ -449,8 +446,7 @@ void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFla
 
     DWORD dwAvailable = 0;
     VERIFY_WIN32_BOOL_SUCCEEDED(GetNumberOfConsoleInputEvents(hConsoleInput, &dwAvailable), L"Retrieve number of events in queue.");
-    VERIFY_ARE_EQUAL(dwExpectedEvents, dwAvailable,
-        NoThrowString().Format(L"We expected %i event from our scroll message.", dwExpectedEvents));
+    VERIFY_ARE_EQUAL(dwExpectedEvents, dwAvailable, NoThrowString().Format(L"We expected %i event from our scroll message.", dwExpectedEvents));
 
     INPUT_RECORD ir;
     DWORD dwRead = 0;
@@ -461,8 +457,9 @@ void TestMouseWheelReadConsoleInputHelper(const UINT msg, const DWORD dwEventFla
 
         Log::Comment(L"Verify the event is what we expected. We only verify the fields relevant to this test.");
         VERIFY_ARE_EQUAL(MOUSE_EVENT, ir.EventType);
-        VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState); // hard cast OK. only using lower 32-bits (see above)
-                                                                            // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
+        // hard cast OK. only using lower 32-bits (see above)
+        VERIFY_ARE_EQUAL((DWORD)wParam, ir.Event.MouseEvent.dwButtonState);
+        // Don't care about ctrl key state. Can be messed with by caps lock/numlock state. Not checking this.
         VERIFY_ARE_EQUAL(dwEventFlagsExpected, ir.Event.MouseEvent.dwEventFlags);
         // Don't care about mouse position for ensuring scroll message went through.
     }
@@ -604,7 +601,7 @@ void InputTests::TestVtInputGeneration()
 
     DWORD dwWritten = (DWORD)-1;
     DWORD dwRead = (DWORD)-1;
-    INPUT_RECORD rgInputRecords[64] = {0};
+    INPUT_RECORD rgInputRecords[64] = { 0 };
 
     Log::Comment(L"First make sure that an arrow keydown is not translated in not-VT mode");
 
@@ -628,7 +625,6 @@ void InputTests::TestVtInputGeneration()
     VERIFY_ARE_EQUAL(rgInputRecords[0].EventType, KEY_EVENT);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.bKeyDown, TRUE);
     VERIFY_ARE_EQUAL(rgInputRecords[0].Event.KeyEvent.wVirtualKeyCode, VK_UP);
-
 
     Log::Comment(L"Now, enable VT Input and make sure that a vt sequence comes out the other side.");
 
@@ -668,7 +664,7 @@ void InputTests::TestVtInputGeneration()
     VERIFY_ARE_EQUAL(rgInputRecords[2].Event.KeyEvent.uChar.UnicodeChar, L'A');
 }
 
-void InputTests::RawReadUnpacksCoalsescedInputRecords()
+void InputTests::RawReadUnpacksCoalescedInputRecords()
 {
     DWORD mode = 0;
     HANDLE hIn = GetStdInputHandle();
@@ -679,6 +675,10 @@ void InputTests::RawReadUnpacksCoalsescedInputRecords()
     GetConsoleMode(hIn, &mode);
     WI_ClearFlag(mode, ENABLE_LINE_INPUT);
     SetConsoleMode(hIn, mode);
+
+    // flush input queue before attempting to add new events and check
+    // in case any are leftover from previous tests
+    VERIFY_WIN32_BOOL_SUCCEEDED(FlushConsoleInputBuffer(hIn));
 
     INPUT_RECORD record;
     record.EventType = KEY_EVENT;

@@ -3,16 +3,14 @@
 
 #include "precomp.h"
 
+using namespace WEX::Logging;
+
 // This class is intended to test:
 // GetConsoleMode
 // SetConsoleMode
 class ModeTests
 {
     BEGIN_TEST_CLASS(ModeTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -44,7 +42,7 @@ void ModeTests::TestGetConsoleModeInvalid()
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"IsPerfTest", L"true")
     END_TEST_METHOD_PROPERTIES()
-    
+
     DWORD dwConsoleMode = (DWORD)-1;
     VERIFY_WIN32_BOOL_FAILED(GetConsoleMode(INVALID_HANDLE_VALUE, &dwConsoleMode));
     VERIFY_ARE_EQUAL(dwConsoleMode, (DWORD)-1);

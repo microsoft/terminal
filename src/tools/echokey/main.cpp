@@ -33,7 +33,10 @@ static const char CTRL_D = 0x4;
 
 void csi(string seq)
 {
-    if (!gVtOutput) return;
+    if (!gVtOutput)
+    {
+        return;
+    }
     string fullSeq = "\x1b[";
     fullSeq += seq;
     printf(fullSeq.c_str());
@@ -58,7 +61,8 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         printBuffer[2] = '\0';
         *printCch = 2;
     }
-    else if (c == '\x03') {
+    else if (c == '\x03')
+    {
         printBuffer[0] = '^';
         printBuffer[1] = 'C';
         printBuffer[2] = '\0';
@@ -106,7 +110,6 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         printBuffer[2] = '\0';
         *printCch = 2;
     }
-
 }
 
 void handleKeyEvent(KEY_EVENT_RECORD keyEvent)
@@ -158,14 +161,18 @@ void handleWindowEvent(WINDOW_BUFFER_SIZE_RECORD windowEvent)
         unsigned short viewWidth = srViewport.Right - srViewport.Left + 1;
         unsigned short viewHeight = srViewport.Bottom - srViewport.Top + 1;
         wprintf(L"BufferSize: (%d,%d) Viewport:(x, y, w, h)=(%d,%d,%d,%d)\r\n",
-                bufferWidth, bufferHeight, viewX, viewY, viewWidth, viewHeight);
+                bufferWidth,
+                bufferHeight,
+                viewX,
+                viewY,
+                viewWidth,
+                viewHeight);
     }
-
 }
 
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
-    switch( fdwCtrlType )
+    switch (fdwCtrlType)
     {
     // Handle the CTRL-C signal.
     case CTRL_C_EVENT:
@@ -195,7 +202,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     gUseAltBuffer = false;
     gExitRequested = false;
 
-    for(int i = 1; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         wstring arg = wstring(argv[i]);
         wprintf(L"arg=%s\n", arg.c_str());
@@ -239,7 +246,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     DWORD dwInMode = 0;
     GetConsoleMode(g_hOut, &dwOutMode);
     GetConsoleMode(g_hIn, &dwInMode);
-    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
     const DWORD initialInMode = dwInMode;
     const DWORD initialOutMode = dwOutMode;
 
@@ -277,7 +284,7 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     wprintf(L"New Mode   (i/o):(0x%4x, 0x%4x)\n", dwInMode, dwOutMode);
     wprintf(L"Press ^D to exit\n");
 
-    while(!gExitRequested)
+    while (!gExitRequested)
     {
         INPUT_RECORD rc;
         DWORD dwRead = 0;
@@ -295,7 +302,6 @@ int __cdecl wmain(int argc, wchar_t* argv[])
             handleWindowEvent(rc.Event.WindowBufferSizeEvent);
             break;
         }
-
         }
     }
 
@@ -306,6 +312,5 @@ int __cdecl wmain(int argc, wchar_t* argv[])
     SetConsoleMode(g_hOut, initialOutMode);
     SetConsoleMode(g_hIn, initialInMode);
 
-    exit (EXIT_FAILURE);
-
+    exit(EXIT_FAILURE);
 }

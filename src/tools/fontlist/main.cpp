@@ -5,10 +5,9 @@
 #include <windowsx.h>
 #include <wil\result.h>
 
-int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam);
-int
-AddFont(
-    ENUMLOGFONT *pelf,
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam);
+int AddFont(
+    ENUMLOGFONT* pelf,
     NEWTEXTMETRIC* pntm,
     int nFontType,
     HDC hDC);
@@ -32,31 +31,45 @@ int __cdecl wmain(int /*argc*/, WCHAR* /*argv[]*/)
 #define CONTINUE_ENUM 1
 #define END_ENUM 0
 
+// clang-format off
 #define IS_ANY_DBCS_CHARSET( CharSet )                              \
                    ( ((CharSet) == SHIFTJIS_CHARSET)    ? TRUE :    \
                      ((CharSet) == HANGEUL_CHARSET)     ? TRUE :    \
                      ((CharSet) == CHINESEBIG5_CHARSET) ? TRUE :    \
                      ((CharSet) == GB2312_CHARSET)      ? TRUE : FALSE )
+// clang-format on
 
-#define CP_US       ((UINT)437)
-#define CP_JPN      ((UINT)932)
-#define CP_WANSUNG  ((UINT)949)
-#define CP_TC       ((UINT)950)
-#define CP_SC       ((UINT)936)
-#define IsEastAsianCP(cp) ((cp)==CP_JPN || (cp)==CP_WANSUNG || (cp)==CP_TC || (cp)==CP_SC)
+#define CP_US ((UINT)437)
+#define CP_JPN ((UINT)932)
+#define CP_WANSUNG ((UINT)949)
+#define CP_TC ((UINT)950)
+#define CP_SC ((UINT)936)
+#define IsEastAsianCP(cp) ((cp) == CP_JPN || (cp) == CP_WANSUNG || (cp) == CP_TC || (cp) == CP_SC)
 
 /*
 * TTPoints -- Initial font pixel heights for TT fonts
 * NOTE:
-*   Font pixel heights for TT fonts of DBCS are the same list except 
+*   Font pixel heights for TT fonts of DBCS are the same list except
 *   odd point size because font width is (SBCS:DBCS != 1:2).
 */
 SHORT TTPoints[] = {
-    5, 6, 7, 8, 10, 12, 14, 16, 18, 20, 24, 28, 36, 72
+    5,
+    6,
+    7,
+    8,
+    10,
+    12,
+    14,
+    16,
+    18,
+    20,
+    24,
+    28,
+    36,
+    72
 };
 
-
-int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, LPARAM lParam)
+int CALLBACK FontEnumForV2Console(ENUMLOGFONT* pelf, NEWTEXTMETRIC* pntm, int nFontType, LPARAM lParam)
 {
     UINT i;
     LPCWSTR pwszFace = pelf->elfLogFont.lfFaceName;
@@ -112,7 +125,6 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     default:
         pwszCharSet = L"Unknown";
         break;
-
     }
 
     wprintf(L"Enum'd font: '%ls' (X: %d, Y: %d) weight 0x%lx (%d) charset %s \r\n",
@@ -142,7 +154,8 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     // reject non-TT fonts that aren't OEM
     if ((nFontType != TRUETYPE_FONTTYPE) &&
         (!fIsEastAsianCP || !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) &&
-        (pelf->elfLogFont.lfCharSet != OEM_CHARSET)) {
+        (pelf->elfLogFont.lfCharSet != OEM_CHARSET))
+    {
         wprintf(L"Rejecting raster font that isn't OEM_CHARSET.\r\n");
         return CONTINUE_ENUM;
     }
@@ -162,7 +175,8 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
     }
 
     // reject East Asian TT fonts that aren't East Asian charset.
-    if (fIsEastAsianCP && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet)) {
+    if (fIsEastAsianCP && !IS_ANY_DBCS_CHARSET(pelf->elfLogFont.lfCharSet))
+    {
         wprintf(L"Rejecting East Asian TrueType font that isn't marked with East Asian charsets.\r\n");
         return CONTINUE_ENUM;
     }
@@ -174,8 +188,10 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
         return CONTINUE_ENUM;
     }
 
-    if (nFontType & TRUETYPE_FONTTYPE) {
-        for (i = 0; i < ARRAYSIZE(TTPoints); i++) {
+    if (nFontType & TRUETYPE_FONTTYPE)
+    {
+        for (i = 0; i < ARRAYSIZE(TTPoints); i++)
+        {
             pelf->elfLogFont.lfHeight = TTPoints[i];
 
             // If it's an East Asian enum, skip all odd height fonts.
@@ -189,19 +205,19 @@ int FontEnumForV2Console(ENUMLOGFONT *pelf, NEWTEXTMETRIC *pntm, int nFontType, 
             AddFont(pelf, pntm, nFontType, (HDC)lParam);
         }
     }
-    else {
+    else
+    {
         AddFont(pelf, pntm, nFontType, (HDC)lParam);
     }
 
-    return CONTINUE_ENUM;  // and continue enumeration
+    return CONTINUE_ENUM; // and continue enumeration
 }
 
 // Routine Description:
 // - Add the font described by the LOGFONT structure to the font table if
 //      it's not already there.
-int
-AddFont(
-    ENUMLOGFONT *pelf,
+int AddFont(
+    ENUMLOGFONT* pelf,
     NEWTEXTMETRIC* /*pntm*/,
     int /*nFontType*/,
     HDC hDC)

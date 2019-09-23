@@ -25,17 +25,11 @@ TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<
     _pfnWriteEvents = pfn;
 }
 
-TerminalInput::~TerminalInput()
-{
-
-}
-
 // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-PC-Style-Function-Keys
 //    For the source for these tables.
 // Also refer to the values in terminfo for kcub1, kcud1, kcuf1, kcuu1, kend, khome.
 //   the 'xterm' setting lists the application mode versions of these sequences.
-const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysNormalMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysNormalMapping[]{
     { VK_UP, L"\x1b[A" },
     { VK_DOWN, L"\x1b[B" },
     { VK_RIGHT, L"\x1b[C" },
@@ -44,8 +38,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysNormalMapping[]
     { VK_END, L"\x1b[F" },
 };
 
-const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysApplicationMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysApplicationMapping[]{
     { VK_UP, L"\x1bOA" },
     { VK_DOWN, L"\x1bOB" },
     { VK_RIGHT, L"\x1bOC" },
@@ -54,11 +47,10 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgCursorKeysApplicationMapping
     { VK_END, L"\x1bOF" },
 };
 
-const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[]{
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
-    { VK_TAB, L"\x09"},
-    { VK_BACK, L"\x7f"},
+    { VK_TAB, L"\x09" },
+    { VK_BACK, L"\x7f" },
     { VK_PAUSE, L"\x1a" },
     { VK_ESCAPE, L"\x1b" },
     { VK_INSERT, L"\x1b[2~" },
@@ -88,8 +80,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadNumericMapping[]
 //It seems to me as though this was used for early numpad implementations, where presently numlock would enable
 //  "numeric" mode, outputting the numbers on the keys, while "application" mode does things like pgup/down, arrow keys, etc.
 //These keys aren't translated at all in numeric mode, so I figured I'd leave them out of the numeric table.
-const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]{
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
     { VK_TAB, L"\x09" },
     { VK_BACK, L"\x7f" },
@@ -143,8 +134,7 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgKeypadApplicationMapping[]
 // Sequences to send when a modifier is pressed with any of these keys
 // Basically, the 'm' will be replaced with a character indicating which
 //      modifier keys are pressed.
-const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]{
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
     { VK_UP, L"\x1b[1;mA" },
     { VK_DOWN, L"\x1b[1;mB" },
@@ -177,15 +167,14 @@ const TerminalInput::_TermKeyMap TerminalInput::s_rgModifierKeyMapping[]
 // These sequences are not later updated to encode the modifier state in the
 //      sequence itself, they are just weird exceptional cases to the general
 //      rules above.
-const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]
-{
+const TerminalInput::_TermKeyMap TerminalInput::s_rgSimpleModifedKeyMapping[]{
     // HEY YOU. UPDATE THE MAX LENGTH DEF WHEN YOU MAKE CHANGES HERE.
-    { VK_BACK, CTRL_PRESSED, L"\x8"},
-    { VK_BACK, ALT_PRESSED, L"\x1b\x7f"},
-    { VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8"},
-    { VK_TAB, CTRL_PRESSED, L"\t"},
-    { VK_TAB, SHIFT_PRESSED, L"\x1b[Z"},
-    { VK_DIVIDE, CTRL_PRESSED, L"\x1F"},
+    { VK_BACK, CTRL_PRESSED, L"\x8" },
+    { VK_BACK, ALT_PRESSED, L"\x1b\x7f" },
+    { VK_BACK, CTRL_PRESSED | ALT_PRESSED, L"\x1b\x8" },
+    { VK_TAB, CTRL_PRESSED, L"\t" },
+    { VK_TAB, SHIFT_PRESSED, L"\x1b[Z" },
+    { VK_DIVIDE, CTRL_PRESSED, L"\x1F" },
     // These two are not implemented here, because they are system keys.
     // { VK_TAB, ALT_PRESSED, L""}, This is the Windows system shortcut for switching windows.
     // { VK_ESCAPE, ALT_PRESSED, L""}, This is another Windows system shortcut for switching windows.
@@ -196,12 +185,12 @@ const wchar_t* const CTRL_SLASH_SEQUENCE = L"\x1f";
 // Do NOT include the null terminator in the count.
 const size_t TerminalInput::_TermKeyMap::s_cchMaxSequenceLength = 7; // UPDATE THIS DEF WHEN THE LONGEST MAPPED STRING CHANGES
 
-const size_t TerminalInput::s_cCursorKeysNormalMapping      = ARRAYSIZE(s_rgCursorKeysNormalMapping);
+const size_t TerminalInput::s_cCursorKeysNormalMapping = ARRAYSIZE(s_rgCursorKeysNormalMapping);
 const size_t TerminalInput::s_cCursorKeysApplicationMapping = ARRAYSIZE(s_rgCursorKeysApplicationMapping);
-const size_t TerminalInput::s_cKeypadNumericMapping         = ARRAYSIZE(s_rgKeypadNumericMapping);
-const size_t TerminalInput::s_cKeypadApplicationMapping     = ARRAYSIZE(s_rgKeypadApplicationMapping);
-const size_t TerminalInput::s_cModifierKeyMapping           = ARRAYSIZE(s_rgModifierKeyMapping);
-const size_t TerminalInput::s_cSimpleModifedKeyMapping      = ARRAYSIZE(s_rgSimpleModifedKeyMapping);
+const size_t TerminalInput::s_cKeypadNumericMapping = ARRAYSIZE(s_rgKeypadNumericMapping);
+const size_t TerminalInput::s_cKeypadApplicationMapping = ARRAYSIZE(s_rgKeypadApplicationMapping);
+const size_t TerminalInput::s_cModifierKeyMapping = ARRAYSIZE(s_rgModifierKeyMapping);
+const size_t TerminalInput::s_cSimpleModifedKeyMapping = ARRAYSIZE(s_rgSimpleModifedKeyMapping);
 
 void TerminalInput::ChangeKeypadMode(const bool fApplicationMode)
 {
@@ -215,31 +204,22 @@ void TerminalInput::ChangeCursorKeysMode(const bool fApplicationMode)
 
 const size_t TerminalInput::GetKeyMappingLength(const KeyEvent& keyEvent) const
 {
-    size_t length = 0;
     if (keyEvent.IsCursorKey())
     {
-        length = (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_cCursorKeysApplicationMapping : s_cCursorKeysNormalMapping;
     }
-    else
-    {
-        length = (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
-    }
-    return length;
+
+    return (_fKeypadApplicationMode) ? s_cKeypadApplicationMapping : s_cKeypadNumericMapping;
 }
 
 const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& keyEvent) const
 {
-    const TerminalInput::_TermKeyMap* mapping = nullptr;
-
     if (keyEvent.IsCursorKey())
     {
-        mapping = (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
+        return (_fCursorApplicationMode) ? s_rgCursorKeysApplicationMapping : s_rgCursorKeysNormalMapping;
     }
-    else
-    {
-        mapping = (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
-    }
-    return mapping;
+
+    return (_fKeypadApplicationMode) ? s_rgKeypadApplicationMapping : s_rgKeypadNumericMapping;
 }
 
 // Routine Description:
@@ -252,7 +232,6 @@ const TerminalInput::_TermKeyMap* TerminalInput::GetKeyMapping(const KeyEvent& k
 // - True if there was a match to a key translation, and we successfully modified and sent it to the input
 bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
 {
-
     const TerminalInput::_TermKeyMap* pMatchingMapping;
     bool fSuccess = _SearchKeyMapping(keyEvent,
                                       s_rgModifierKeyMapping,
@@ -264,7 +243,7 @@ bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
         if (SUCCEEDED(StringCchLengthW(pMatchingMapping->pwszSequence, _TermKeyMap::s_cchMaxSequenceLength + 1, &cch)) &&
             cch > 0)
         {
-            wchar_t* rwchModifiedSequence = new(std::nothrow) wchar_t[cch + 1];
+            wchar_t* rwchModifiedSequence = new (std::nothrow) wchar_t[cch + 1];
             if (rwchModifiedSequence != nullptr)
             {
                 memcpy(rwchModifiedSequence, pMatchingMapping->pwszSequence, cch * sizeof(wchar_t));
@@ -275,7 +254,7 @@ bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
                 rwchModifiedSequence[cch] = 0;
                 _SendInputSequence(rwchModifiedSequence);
                 fSuccess = true;
-                delete [] rwchModifiedSequence;
+                delete[] rwchModifiedSequence;
             }
         }
     }
@@ -305,7 +284,6 @@ bool TerminalInput::_SearchWithModifier(const KeyEvent& keyEvent) const
                 // This mapping doesn't need to be changed at all.
                 _SendInputSequence(CTRL_SLASH_SEQUENCE);
                 fSuccess = true;
-
             }
         }
     }
@@ -375,11 +353,10 @@ bool TerminalInput::_TranslateDefaultMapping(const KeyEvent& keyEvent,
                                              const size_t cKeyMapping) const
 {
     const TerminalInput::_TermKeyMap* pMatchingMapping;
-    bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
+    const bool fSuccess = _SearchKeyMapping(keyEvent, keyMapping, cKeyMapping, &pMatchingMapping);
     if (fSuccess)
     {
         _SendInputSequence(pMatchingMapping->pwszSequence);
-        fSuccess = true;
     }
     return fSuccess;
 }
@@ -392,7 +369,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
     // On key presses, prepare to translate to VT compatible sequences
     if (pInEvent->EventType() == InputEventType::KeyEvent)
     {
-        KeyEvent keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
+        auto keyEvent = *static_cast<const KeyEvent* const>(pInEvent);
 
         // Only need to handle key down. See raw key handler (see RawReadWaitRoutine in stream.cpp)
         if (keyEvent.IsKeyDown())
@@ -422,12 +399,12 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
                 keyEvent.IsCtrlPressed() &&
                 (keyEvent.GetCharData() == 0 || keyEvent.GetCharData() == 0x20) &&
                 ((keyEvent.GetVirtualKeyCode() > 0x40 && keyEvent.GetVirtualKeyCode() <= 0x5A) ||
-                 keyEvent.GetVirtualKeyCode() == VK_SPACE) )
+                 keyEvent.GetVirtualKeyCode() == VK_SPACE))
             {
                 // For Alt+Ctrl+Key messages, the UnicodeChar is NOT the Ctrl+key char, it's null.
                 //      So we need to get the char from the vKey.
                 //      EXCEPT for Alt+Ctrl+Space. Then the UnicodeChar is space, not NUL.
-                wchar_t wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
+                auto wchPressedChar = static_cast<wchar_t>(MapVirtualKeyW(keyEvent.GetVirtualKeyCode(), MAPVK_VK_TO_CHAR));
                 // This is a trick - C-Spc is supposed to send NUL. So quick change space -> @ (0x40)
                 wchPressedChar = (wchPressedChar == UNICODE_SPACE) ? 0x40 : wchPressedChar;
                 if (wchPressedChar >= 0x40 && wchPressedChar < 0x7F)
@@ -453,7 +430,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent) const
             }
             if (!fKeyHandled && keyEvent.IsCtrlPressed())
             {
-                if ((keyEvent.GetCharData() == UNICODE_SPACE ) || // Ctrl+Space
+                if ((keyEvent.GetCharData() == UNICODE_SPACE) || // Ctrl+Space
                     // when Ctrl+@ comes through, the unicodechar
                     // will be '\x0' (UNICODE_NULL), and the vkey will be
                     // VkKeyScanW(0), the vkey for null

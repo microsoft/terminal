@@ -37,7 +37,6 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(gsl::span<const INP
     return outEvents;
 }
 
-
 // Routine Description:
 // - Converts std::deque<INPUT_RECORD> to std::deque<std::unique_ptr<IInputEvent>>
 // Arguments:
@@ -49,7 +48,7 @@ std::deque<std::unique_ptr<IInputEvent>> IInputEvent::Create(const std::deque<IN
     std::deque<std::unique_ptr<IInputEvent>> outEvents;
     for (size_t i = 0; i < records.size(); ++i)
     {
-        std::unique_ptr<IInputEvent> event = IInputEvent::Create(records[i]);
+        std::unique_ptr<IInputEvent> event = IInputEvent::Create(records.at(i));
         outEvents.push_back(std::move(event));
     }
     return outEvents;

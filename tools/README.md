@@ -21,7 +21,7 @@ to similar effect.
 ## bcz
 
 `bcz` can quick be used to clean and build the project. By default, it builds
-the `%DEFAULT_CONFIGURATION%` configuration, which
+the `%DEFAULT_CONFIGURATION%` configuration, which is `Debug` if you use `razzle.cmd`.
 
  - `bcz dbg` can be used to manually build the Debug configuration.
  - `bcz rel` can be used to manually build the Release configuration.
@@ -37,6 +37,10 @@ will default to cmd.exe.
 for Linux entrypoint) in your `~` directory.
 
 Likewise, `openps` launches powershell.
+
+## runformat
+
+`runformat` will format the c++ code to match our coding style.
 
 ## testcon, runut, runft
 `runut` will automatically run all of the unit tests through TAEF. `runft` will
@@ -59,5 +63,6 @@ of the razzle environment, so you can immediately start using the macros:
  1. `bcz`
  2. `opencon`
  3. `testcon` (in the new console window)
+ 4. `runformat`
 
 If they all come out green, then you're ready for a pull request!

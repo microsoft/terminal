@@ -5,6 +5,8 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
+#include "Utils.h"
+#include "JsonUtils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -13,43 +15,44 @@ using namespace winrt::Windows::Data::Json;
 using namespace winrt::Windows::UI::Xaml;
 using namespace ::Microsoft::Console;
 
-static const std::wstring DEFAULTPROFILE_KEY{ L"defaultProfile" };
-static const std::wstring ALWAYS_SHOW_TABS_KEY{ L"alwaysShowTabs" };
-static const std::wstring INITIALROWS_KEY{ L"initialRows" };
-static const std::wstring INITIALCOLS_KEY{ L"initialCols" };
-static const std::wstring SHOW_TITLE_IN_TITLEBAR_KEY{ L"showTerminalTitleInTitlebar" };
-static const std::wstring REQUESTED_THEME_KEY{ L"requestedTheme" };
+static constexpr std::string_view KeybindingsKey{ "keybindings" };
+static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
+static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
+static constexpr std::string_view InitialRowsKey{ "initialRows" };
+static constexpr std::string_view InitialColsKey{ "initialCols" };
+static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
+static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
+static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
+static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
+static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 
-static const std::wstring SHOW_TABS_IN_TITLEBAR_KEY{ L"experimental_showTabsInTitlebar" };
-
-static const std::wstring LIGHT_THEME_VALUE{ L"light" };
-static const std::wstring DARK_THEME_VALUE{ L"dark" };
-static const std::wstring SYSTEM_THEME_VALUE{ L"system" };
+static constexpr std::wstring_view LightThemeValue{ L"light" };
+static constexpr std::wstring_view DarkThemeValue{ L"dark" };
+static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{},
+    _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _colorSchemes{},
     _defaultProfile{},
-    _alwaysShowTabs{ false },
+    _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
     _showTitleInTitlebar{ true },
-    _showTabsInTitlebar{ false },
-    _requestedTheme{ ElementTheme::Default }
+    _showTabsInTitlebar{ true },
+    _requestedTheme{ ElementTheme::Default },
+    _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
+    _copyOnSelect{ false }
 {
-
 }
 
 GlobalAppSettings::~GlobalAppSettings()
 {
-
 }
 
 const std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
 }
-
 
 std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
 {
@@ -68,7 +71,7 @@ GUID GlobalAppSettings::GetDefaultProfile() const noexcept
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
-    return _keybindings;
+    return *_keybindings;
 }
 
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
@@ -96,6 +99,30 @@ ElementTheme GlobalAppSettings::GetRequestedTheme() const noexcept
     return _requestedTheme;
 }
 
+void GlobalAppSettings::SetRequestedTheme(const ElementTheme requestedTheme) noexcept
+{
+    _requestedTheme = requestedTheme;
+}
+
+std::wstring GlobalAppSettings::GetWordDelimiters() const noexcept
+{
+    return _wordDelimiters;
+}
+
+void GlobalAppSettings::SetWordDelimiters(const std::wstring wordDelimiters) noexcept
+{
+    _wordDelimiters = wordDelimiters;
+}
+
+bool GlobalAppSettings::GetCopyOnSelect() const noexcept
+{
+    return _copyOnSelect;
+}
+
+void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
+{
+    _copyOnSelect = copyOnSelect;
+}
 
 #pragma region ExperimentalSettings
 bool GlobalAppSettings::GetShowTabsInTitlebar() const noexcept
@@ -120,6 +147,8 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
     settings.KeyBindings(GetKeybindings());
     settings.InitialRows(_initialRows);
     settings.InitialCols(_initialCols);
+    settings.WordDelimiters(_wordDelimiters);
+    settings.CopyOnSelect(_copyOnSelect);
 }
 
 // Method Description:
@@ -128,30 +157,20 @@ void GlobalAppSettings::ApplyToSettings(TerminalSettings& settings) const noexce
 // - <none>
 // Return Value:
 // - a JsonObject which is an equivalent serialization of this object.
-JsonObject GlobalAppSettings::ToJson() const
+Json::Value GlobalAppSettings::ToJson() const
 {
-    winrt::Windows::Data::Json::JsonObject jsonObject;
+    Json::Value jsonObject;
 
-    const auto guidStr = Utils::GuidToString(_defaultProfile);
-    const auto defaultProfile = JsonValue::CreateStringValue(guidStr);
-    const auto initialRows = JsonValue::CreateNumberValue(_initialRows);
-    const auto initialCols = JsonValue::CreateNumberValue(_initialCols);
-
-    jsonObject.Insert(DEFAULTPROFILE_KEY, defaultProfile);
-    jsonObject.Insert(INITIALROWS_KEY, initialRows);
-    jsonObject.Insert(INITIALCOLS_KEY, initialCols);
-    jsonObject.Insert(ALWAYS_SHOW_TABS_KEY,
-                      JsonValue::CreateBooleanValue(_alwaysShowTabs));
-    jsonObject.Insert(SHOW_TITLE_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTitleInTitlebar));
-
-    jsonObject.Insert(SHOW_TABS_IN_TITLEBAR_KEY,
-                      JsonValue::CreateBooleanValue(_showTabsInTitlebar));
-    if (_requestedTheme != ElementTheme::Default)
-    {
-        jsonObject.Insert(REQUESTED_THEME_KEY,
-                          JsonValue::CreateStringValue(_SerializeTheme(_requestedTheme)));
-    }
+    jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
+    jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
+    jsonObject[JsonKey(InitialColsKey)] = _initialCols;
+    jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
+    jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
+    jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
+    jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
+    jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
+    jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
+    jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
 
     return jsonObject;
 }
@@ -162,47 +181,63 @@ JsonObject GlobalAppSettings::ToJson() const
 // - json: an object which should be a serialization of a GlobalAppSettings object.
 // Return Value:
 // - a new GlobalAppSettings instance created from the values in `json`
-GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonObject json)
+GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
-    GlobalAppSettings result{};
-
-    if (json.HasKey(DEFAULTPROFILE_KEY))
-    {
-        auto guidString = json.GetNamedString(DEFAULTPROFILE_KEY);
-        auto guid = Utils::GuidFromString(guidString.c_str());
-        result._defaultProfile = guid;
-    }
-
-    if (json.HasKey(ALWAYS_SHOW_TABS_KEY))
-    {
-        result._alwaysShowTabs = json.GetNamedBoolean(ALWAYS_SHOW_TABS_KEY);
-    }
-    if (json.HasKey(INITIALROWS_KEY))
-    {
-        result._initialRows = static_cast<int32_t>(json.GetNamedNumber(INITIALROWS_KEY));
-    }
-    if (json.HasKey(INITIALCOLS_KEY))
-    {
-        result._initialCols = static_cast<int32_t>(json.GetNamedNumber(INITIALCOLS_KEY));
-    }
-
-    if (json.HasKey(SHOW_TITLE_IN_TITLEBAR_KEY))
-    {
-        result._showTitleInTitlebar = json.GetNamedBoolean(SHOW_TITLE_IN_TITLEBAR_KEY);
-    }
-
-    if (json.HasKey(SHOW_TABS_IN_TITLEBAR_KEY))
-    {
-        result._showTabsInTitlebar = json.GetNamedBoolean(SHOW_TABS_IN_TITLEBAR_KEY);
-    }
-
-    if (json.HasKey(REQUESTED_THEME_KEY))
-    {
-        const auto themeStr = json.GetNamedString(REQUESTED_THEME_KEY);
-        result._requestedTheme = _ParseTheme(themeStr.c_str());
-    }
-
+    GlobalAppSettings result;
+    result.LayerJson(json);
     return result;
+}
+
+void GlobalAppSettings::LayerJson(const Json::Value& json)
+{
+    if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
+    {
+        auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
+        _defaultProfile = guid;
+    }
+
+    if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
+    {
+        _alwaysShowTabs = alwaysShowTabs.asBool();
+    }
+    if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
+    {
+        _initialRows = initialRows.asInt();
+    }
+    if (auto initialCols{ json[JsonKey(InitialColsKey)] })
+    {
+        _initialCols = initialCols.asInt();
+    }
+
+    if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
+    {
+        _showTitleInTitlebar = showTitleInTitlebar.asBool();
+    }
+
+    if (auto showTabsInTitlebar{ json[JsonKey(ShowTabsInTitlebarKey)] })
+    {
+        _showTabsInTitlebar = showTabsInTitlebar.asBool();
+    }
+
+    if (auto wordDelimiters{ json[JsonKey(WordDelimitersKey)] })
+    {
+        _wordDelimiters = GetWstringFromJson(wordDelimiters);
+    }
+
+    if (auto copyOnSelect{ json[JsonKey(CopyOnSelectKey)] })
+    {
+        _copyOnSelect = copyOnSelect.asBool();
+    }
+
+    if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
+    {
+        _requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+    }
+
+    if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
+    {
+        _keybindings->LayerJson(keybindings);
+    }
 }
 
 // Method Description:
@@ -214,34 +249,34 @@ GlobalAppSettings GlobalAppSettings::FromJson(winrt::Windows::Data::Json::JsonOb
 // - The corresponding enum value which maps to the string provided by the user
 ElementTheme GlobalAppSettings::_ParseTheme(const std::wstring& themeString) noexcept
 {
-    if (themeString == LIGHT_THEME_VALUE)
+    if (themeString == LightThemeValue)
     {
         return ElementTheme::Light;
     }
-    else if (themeString == DARK_THEME_VALUE)
+    else if (themeString == DarkThemeValue)
     {
         return ElementTheme::Dark;
     }
-    // default behavior for invalid data or SYSTEM_THEME_VALUE
+    // default behavior for invalid data or SystemThemeValue
     return ElementTheme::Default;
 }
 
 // Method Description:
-// - Helper function for converting a CursorStyle to it's corresponding string
+// - Helper function for converting a CursorStyle to its corresponding string
 //   value.
 // Arguments:
 // - theme: The enum value to convert to a string.
 // Return Value:
 // - The string value for the given CursorStyle
-std::wstring GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
+std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) noexcept
 {
     switch (theme)
     {
-        case ElementTheme::Light:
-            return LIGHT_THEME_VALUE;
-        case ElementTheme::Dark:
-            return DARK_THEME_VALUE;
-        default:
-            return SYSTEM_THEME_VALUE;
+    case ElementTheme::Light:
+        return LightThemeValue;
+    case ElementTheme::Dark:
+        return DarkThemeValue;
+    default:
+        return SystemThemeValue;
     }
 }

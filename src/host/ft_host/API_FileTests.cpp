@@ -7,6 +7,10 @@
 
 #include <future>
 
+using WEX::Logging::Log;
+using WEX::TestExecution::TestData;
+using namespace WEX::Common;
+
 // This class is intended to test:
 // WriteFile
 
@@ -17,12 +21,6 @@ class FileTests
     // the buffer and cursor position for each test. Launching a new OpenConsole is much quicker.
     BEGIN_TEST_CLASS(FileTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS();
 
     TEST_METHOD(TestUtf8WriteFileInvalid);
@@ -271,7 +269,6 @@ void FileTests::TestWriteFileProcessed()
         VERIFY_ARE_EQUAL(String(pszReadBackExpected), String(pszReadBack.get()), L"Verify text matches what we expected to be written into the buffer.");
     }
 
-
     // 2. Test backspace (\x8)
     {
         pszTest = "yx\x8";
@@ -451,7 +448,8 @@ void FileTests::TestWriteFileVTProcessing()
     COORD const coordZero = { 0 };
     VERIFY_ARE_EQUAL(coordZero, csbiexOriginal.dwCursorPosition, L"Cursor should be at 0,0 in fresh buffer.");
 
-    PCSTR pszTestString = "\x1b" "[14m";
+    PCSTR pszTestString = "\x1b"
+                          "[14m";
     DWORD const cchTest = (DWORD)strlen(pszTestString);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiexBefore = { 0 };
@@ -794,7 +792,7 @@ void FileTests::TestReadFileLineSync()
 //
 //            DWORD dwRead = 0;
 //            VERIFY_WIN32_BOOL_SUCCEEDED(ReadFile(hIn, &ch, 1, nullptr, &overlapped), L"Read file was dispatched successfully.");
-//            
+//
 //            std::array<HANDLE, 2> handles;
 //            handles[0] = _cancellationEvent;
 //            handles[1] = overlapped.hEvent;

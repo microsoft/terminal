@@ -65,14 +65,14 @@ TextBufferCellIterator::operator bool() const noexcept
 // - it - The other iterator to compare to this one.
 // Return Value:
 // - True if it's the same text buffer and same cell position. False otherwise.
-bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const noexcept
+bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const
 {
     return _pos == it._pos &&
-        &_buffer == &it._buffer &&
-        _exceeded == it._exceeded &&
-        _bounds == it._bounds &&
-        _pRow == it._pRow &&
-        _attrIter == it._attrIter;
+           &_buffer == &it._buffer &&
+           _exceeded == it._exceeded &&
+           _bounds == it._bounds &&
+           _pRow == it._pRow &&
+           _attrIter == it._attrIter;
 }
 
 // Routine Description:
@@ -81,7 +81,7 @@ bool TextBufferCellIterator::operator==(const TextBufferCellIterator& it) const 
 // - it - The other iterator to compare to this one.
 // Return Value:
 // - True if it's the same text buffer and different cell position or if they're different buffers. False otherwise.
-bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const noexcept
+bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const
 {
     return !(*this == it);
 }
@@ -212,7 +212,7 @@ void TextBufferCellIterator::_SetPos(const COORD newPos)
 
     if (newPos.X != _pos.X)
     {
-        const ptrdiff_t diff = newPos.X - _pos.X;
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
         _attrIter += diff;
     }
 

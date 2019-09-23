@@ -9,7 +9,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct ConhostConnection : ConhostConnectionT<ConhostConnection>
     {
-        ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, uint32_t rows, uint32_t cols);
+        ConhostConnection(const hstring& cmdline, const hstring& startingDirectory, const hstring& startingTitle, const uint32_t rows, const uint32_t cols, const guid& guid);
 
         winrt::event_token TerminalOutput(TerminalConnection::TerminalOutputEventArgs const& handler);
         void TerminalOutput(winrt::event_token const& token) noexcept;
@@ -20,26 +20,32 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Resize(uint32_t rows, uint32_t columns);
         void Close();
 
+        winrt::guid Guid() const noexcept;
+
     private:
         winrt::event<TerminalConnection::TerminalOutputEventArgs> _outputHandlers;
         winrt::event<TerminalConnection::TerminalDisconnectedEventArgs> _disconnectHandlers;
 
-        uint32_t _initialRows;
-        uint32_t _initialCols;
+        uint32_t _initialRows{};
+        uint32_t _initialCols{};
         hstring _commandline;
         hstring _startingDirectory;
+        hstring _startingTitle;
+        guid _guid{}; // A unique session identifier for connected client
 
-        bool _connected;
-        HANDLE _inPipe;  // The pipe for writing input to
-        HANDLE _outPipe; // The pipe for reading output from
-        HANDLE _signalPipe;
-        //HPCON _hPC;
-        DWORD _outputThreadId;
-        HANDLE _hOutputThread;
-        PROCESS_INFORMATION _piConhost;
-        bool _closing;
+        bool _connected{};
+        std::atomic<bool> _closing{ false };
+        bool _recievedFirstByte{ false };
+        std::chrono::high_resolution_clock::time_point _startTime{};
 
-        static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+        wil::unique_hfile _inPipe; // The pipe for writing input to
+        wil::unique_hfile _outPipe; // The pipe for reading output from
+        wil::unique_hfile _signalPipe;
+        wil::unique_handle _hOutputThread;
+        wil::unique_process_information _piConhost;
+        wil::unique_handle _hJob;
+
+        static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         DWORD _OutputThread();
     };
 }

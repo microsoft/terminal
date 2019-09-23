@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "precomp.h"
 
 #include "thread.hpp"
@@ -12,42 +11,41 @@ using namespace Microsoft::Console::Render;
 
 RenderThread::RenderThread() :
     _pRenderer(nullptr),
-    _hThread(INVALID_HANDLE_VALUE),
-    _hEvent(INVALID_HANDLE_VALUE),
-    _hPaintCompletedEvent(INVALID_HANDLE_VALUE),
+    _hThread(nullptr),
+    _hEvent(nullptr),
+    _hPaintCompletedEvent(nullptr),
     _fKeepRunning(true),
-    _hPaintEnabledEvent(INVALID_HANDLE_VALUE)
+    _hPaintEnabledEvent(nullptr)
 {
-
 }
 
 RenderThread::~RenderThread()
 {
-    if (_hThread != INVALID_HANDLE_VALUE)
+    if (_hThread)
     {
         _fKeepRunning = false; // stop loop after final run
         SignalObjectAndWait(_hEvent, _hThread, INFINITE, FALSE); // signal final paint and wait for thread to finish.
 
         CloseHandle(_hThread);
-        _hThread = INVALID_HANDLE_VALUE;
+        _hThread = nullptr;
     }
 
-    if (_hEvent != INVALID_HANDLE_VALUE)
+    if (_hEvent)
     {
         CloseHandle(_hEvent);
-        _hEvent = INVALID_HANDLE_VALUE;
+        _hEvent = nullptr;
     }
 
-    if (_hPaintEnabledEvent != INVALID_HANDLE_VALUE)
+    if (_hPaintEnabledEvent)
     {
         CloseHandle(_hPaintEnabledEvent);
-        _hEvent = INVALID_HANDLE_VALUE;
+        _hPaintEnabledEvent = nullptr;
     }
 
-    if (_hPaintCompletedEvent != INVALID_HANDLE_VALUE)
+    if (_hPaintCompletedEvent)
     {
         CloseHandle(_hPaintCompletedEvent);
-        _hEvent = INVALID_HANDLE_VALUE;
+        _hPaintCompletedEvent = nullptr;
     }
 }
 
@@ -60,8 +58,7 @@ RenderThread::~RenderThread()
 // Return Value:
 // - S_OK if we succeeded, else an HRESULT corresponding to a failure to create
 //      an Event or Thread.
-[[nodiscard]]
-HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
+[[nodiscard]] HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
 {
     _pRenderer = pRendererParent;
 
@@ -70,10 +67,10 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hEvent = CreateEventW(nullptr, // non-inheritable security attributes
-                                     FALSE,   // auto reset event
-                                     FALSE,   // initially unsignaled
-                                     nullptr  // no name
-                                     );
+                                     FALSE, // auto reset event
+                                     FALSE, // initially unsignaled
+                                     nullptr // no name
+        );
 
         if (hEvent == nullptr)
         {
@@ -88,8 +85,8 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hPaintEnabledEvent = CreateEventW(nullptr,
-                                                 TRUE,    // manual reset event
-                                                 FALSE,   // initially signaled
+                                                 TRUE, // manual reset event
+                                                 FALSE, // initially signaled
                                                  nullptr);
 
         if (hPaintEnabledEvent == nullptr)
@@ -105,8 +102,8 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
     if (SUCCEEDED(hr))
     {
         HANDLE hPaintCompletedEvent = CreateEventW(nullptr,
-                                                   TRUE,    // manual reset event
-                                                   TRUE,    // initially signaled
+                                                   TRUE, // manual reset event
+                                                   TRUE, // initially signaled
                                                    nullptr);
 
         if (hPaintCompletedEvent == nullptr)
@@ -121,13 +118,13 @@ HRESULT RenderThread::Initialize(IRenderer* const pRendererParent) noexcept
 
     if (SUCCEEDED(hr))
     {
-        HANDLE hThread = CreateThread(nullptr,      // non-inheritable security attributes
-                                      0,            // use default stack size
+        HANDLE hThread = CreateThread(nullptr, // non-inheritable security attributes
+                                      0, // use default stack size
                                       s_ThreadProc,
                                       this,
-                                      0,            // create immediately
-                                      nullptr       // we don't need the thread ID
-                                      );
+                                      0, // create immediately
+                                      nullptr // we don't need the thread ID
+        );
 
         if (hThread == nullptr)
         {

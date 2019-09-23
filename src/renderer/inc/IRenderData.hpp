@@ -16,9 +16,8 @@ Author(s):
 
 #include "../../host/conimeinfo.h"
 #include "../../buffer/out/TextAttribute.hpp"
-#include "../../types/inc/viewport.hpp"
+#include "../../types/IBaseData.h"
 
-class TextBuffer;
 class Cursor;
 
 namespace Microsoft::Console::Render
@@ -38,13 +37,10 @@ namespace Microsoft::Console::Render
         const Microsoft::Console::Types::Viewport region;
     };
 
-    class IRenderData
+    class IRenderData : public Microsoft::Console::Types::IBaseData
     {
     public:
         virtual ~IRenderData() = 0;
-        virtual Microsoft::Console::Types::Viewport GetViewport() noexcept = 0;
-        virtual const TextBuffer& GetTextBuffer() noexcept = 0;
-        virtual const FontInfo& GetFontInfo() noexcept = 0;
         virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
         virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;
@@ -62,13 +58,7 @@ namespace Microsoft::Console::Render
         virtual const std::vector<RenderOverlay> GetOverlays() const noexcept = 0;
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
-
-        virtual std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept = 0;
-
         virtual const std::wstring GetConsoleTitle() const noexcept = 0;
-
-        virtual void LockConsole() noexcept = 0;
-        virtual void UnlockConsole() noexcept = 0;
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

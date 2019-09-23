@@ -24,7 +24,7 @@ Revision History:
 UINT gnCurrentPage;
 
 #define SYSTEM_ROOT (L"%SystemRoot%")
-#define SYSTEM_ROOT_LENGTH  (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
+#define SYSTEM_ROOT_LENGTH (sizeof(SYSTEM_ROOT) - sizeof(WCHAR))
 
 void RecreateFontHandles(const HWND hWnd);
 
@@ -38,7 +38,8 @@ void UpdateItem(HWND hDlg, UINT item, UINT nNum)
 // Sends an EM_UNDO message. Typically used after some user data is determined to be invalid.
 void Undo(HWND hControlWindow)
 {
-    if (!InEM_UNDO) {
+    if (!InEM_UNDO)
+    {
         InEM_UNDO = TRUE;
         SendMessage(hControlWindow, EM_UNDO, 0, 0);
         InEM_UNDO = FALSE;
@@ -54,15 +55,20 @@ BOOL CheckNum(HWND hDlg, UINT Item)
     BOOL fSigned;
 
     // The window position corrdinates can be signed, nothing else.
-    if (Item == IDD_WINDOW_POSX || Item == IDD_WINDOW_POSY) {
+    if (Item == IDD_WINDOW_POSX || Item == IDD_WINDOW_POSY)
+    {
         fSigned = TRUE;
-    } else {
+    }
+    else
+    {
         fSigned = FALSE;
     }
 
     GetDlgItemText(hDlg, Item, szNum, ARRAYSIZE(szNum));
-    for (i = 0; szNum[i]; i++) {
-        if (!iswdigit(szNum[i]) && (!fSigned || i > 0 || szNum[i] != TEXT('-'))) {
+    for (i = 0; szNum[i]; i++)
+    {
+        if (!iswdigit(szNum[i]) && (!fSigned || i > 0 || szNum[i] != TEXT('-')))
+        {
             return FALSE;
         }
     }
@@ -81,7 +87,6 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             (gpStateInfo->FontWeight == FW_NORMAL) &&
             (wcscmp(gpStateInfo->FaceName, DefaultFaceName) == 0))
         {
-
             gpStateInfo->FontFamily = 0;
             gpStateInfo->FontSize.X = 0;
             gpStateInfo->FontSize.Y = 0;
@@ -95,7 +100,7 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             if (!NT_SUCCESS(ShortcutSerialization::s_SetLinkValues(gpStateInfo, g_fEastAsianSystem, g_fForceV2)))
             {
                 WCHAR szMessage[MAX_PATH + 100];
-                WCHAR awchBuffer[MAX_PATH] = {0};
+                WCHAR awchBuffer[MAX_PATH] = { 0 };
                 STARTUPINFOW si;
 
                 // An error occured try to save the link file, display a message box to that effect...
@@ -136,7 +141,8 @@ void EndDlgPage(const HWND hDlg, const BOOL fSaveNow)
     /*
      * If we've already made a decision, we're done
      */
-    if (gpStateInfo->UpdateValues) {
+    if (gpStateInfo->UpdateValues)
+    {
         SetDlgMsgResult(hDlg, PSN_APPLY, PSNRET_NOERROR);
         return;
     }
@@ -152,7 +158,8 @@ void EndDlgPage(const HWND hDlg, const BOOL fSaveNow)
 
     SetDlgMsgResult(hDlg, PSN_APPLY, PSNRET_NOERROR);
 
-    if (fSaveNow) {
+    if (fSaveNow)
+    {
         // needed for "Apply" scenario
         SaveConsoleSettingsIfNeeded(hDlg);
     }
@@ -178,10 +185,10 @@ void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, con
 
     if (hwndTooltip)
     {
-        WCHAR szTooltip[TOOLTIP_MAXLENGTH] = {0};
+        WCHAR szTooltip[TOOLTIP_MAXLENGTH] = { 0 };
         if (LoadString(ghInstance, idsToolTip, szTooltip, ARRAYSIZE(szTooltip)) > 0)
         {
-            TOOLINFO toolInfo = {0};
+            TOOLINFO toolInfo = { 0 };
             toolInfo.cbSize = sizeof(toolInfo);
             toolInfo.hwnd = hDlg;
             toolInfo.uFlags = TTF_IDISHWND | TTF_SUBCLASS;
@@ -194,19 +201,22 @@ void CreateAndAssociateToolTipToControl(const UINT dlgItem, const HWND hDlg, con
 
 BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
 {
-    switch (Item) {
+    switch (Item)
+    {
     case IDD_SCRBUF_WIDTH:
         gpStateInfo->ScreenBufferSize.X = (SHORT)Value;
 
         // If we're in V2 mode with wrap text on OR if the window is larger than the buffer, adjust the window to match.
-        if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->WindowSize.X > Value) {
+        if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->WindowSize.X > Value)
+        {
             gpStateInfo->WindowSize.X = (SHORT)Value;
             UpdateItem(hDlg, IDD_WINDOW_WIDTH, Value);
         }
         break;
     case IDD_SCRBUF_HEIGHT:
         gpStateInfo->ScreenBufferSize.Y = (SHORT)Value;
-        if (gpStateInfo->WindowSize.Y > Value) {
+        if (gpStateInfo->WindowSize.Y > Value)
+        {
             gpStateInfo->WindowSize.Y = (SHORT)Value;
             UpdateItem(hDlg, IDD_WINDOW_HEIGHT, Value);
         }
@@ -215,14 +225,16 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         gpStateInfo->WindowSize.X = (SHORT)Value;
 
         // If we're in V2 mode with wrap text on OR if the buffer is smaller than the window, adjust the buffer to match.
-        if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->ScreenBufferSize.X < Value) {
+        if ((g_fForceV2 && gpStateInfo->fWrapText) || gpStateInfo->ScreenBufferSize.X < Value)
+        {
             gpStateInfo->ScreenBufferSize.X = (SHORT)Value;
             UpdateItem(hDlg, IDD_SCRBUF_WIDTH, Value);
         }
         break;
     case IDD_WINDOW_HEIGHT:
         gpStateInfo->WindowSize.Y = (SHORT)Value;
-        if (gpStateInfo->ScreenBufferSize.Y < Value) {
+        if (gpStateInfo->ScreenBufferSize.Y < Value)
+        {
             gpStateInfo->ScreenBufferSize.Y = (SHORT)Value;
             UpdateItem(hDlg, IDD_SCRBUF_HEIGHT, Value);
         }
@@ -252,23 +264,23 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         break;
     case IDD_COLOR_SCREEN_TEXT:
         gpStateInfo->ScreenAttributes =
-                    (gpStateInfo->ScreenAttributes & 0xF0) |
-                    (Value & 0x0F);
+            (gpStateInfo->ScreenAttributes & 0xF0) |
+            (Value & 0x0F);
         break;
     case IDD_COLOR_SCREEN_BKGND:
         gpStateInfo->ScreenAttributes =
-                    (gpStateInfo->ScreenAttributes & 0x0F) |
-                    (WORD)(Value << 4);
+            (gpStateInfo->ScreenAttributes & 0x0F) |
+            (WORD)(Value << 4);
         break;
     case IDD_COLOR_POPUP_TEXT:
         gpStateInfo->PopupAttributes =
-                    (gpStateInfo->PopupAttributes & 0xF0) |
-                    (Value & 0x0F);
+            (gpStateInfo->PopupAttributes & 0xF0) |
+            (Value & 0x0F);
         break;
     case IDD_COLOR_POPUP_BKGND:
         gpStateInfo->PopupAttributes =
-                    (gpStateInfo->PopupAttributes & 0x0F) |
-                    (WORD)(Value << 4);
+            (gpStateInfo->PopupAttributes & 0x0F) |
+            (WORD)(Value << 4);
         break;
     case IDD_COLOR_1:
     case IDD_COLOR_2:
@@ -317,7 +329,8 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
-                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR,
+                             IDD_TERMINAL_SOLIDBOX,
                              IDD_TERMINAL_LEGACY_CURSOR);
         }
 
@@ -330,7 +343,8 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
-                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR,
+                             IDD_TERMINAL_SOLIDBOX,
                              IDD_TERMINAL_LEGACY_CURSOR);
         }
 
@@ -343,7 +357,8 @@ BOOL UpdateStateInfo(HWND hDlg, UINT Item, int Value)
         if (g_hTerminalDlg != INVALID_HANDLE_VALUE)
         {
             CheckRadioButton(g_hTerminalDlg,
-                             IDD_TERMINAL_LEGACY_CURSOR, IDD_TERMINAL_SOLIDBOX,
+                             IDD_TERMINAL_LEGACY_CURSOR,
+                             IDD_TERMINAL_SOLIDBOX,
                              IDD_TERMINAL_LEGACY_CURSOR);
         }
 
@@ -376,7 +391,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
     size_t cbConsoleTitle;
     size_t cbSystemRoot;
 
-    LPWSTR pwszSysRoot = new(std::nothrow) wchar_t[MAX_PATH];
+    LPWSTR pwszSysRoot = new (std::nothrow) wchar_t[MAX_PATH];
     if (nullptr != pwszSysRoot)
     {
         if (0 != GetWindowsDirectoryW(pwszSysRoot, MAX_PATH))
@@ -390,7 +405,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
 
                 if (fUnexpand &&
                     cchConsoleTitle >= cchSystemRoot &&
-#pragma prefast(suppress:26018, "We've guaranteed that cchSystemRoot is equal to or smaller than cchConsoleTitle in size.")
+#pragma prefast(suppress : 26018, "We've guaranteed that cchSystemRoot is equal to or smaller than cchConsoleTitle in size.")
                     (CSTR_EQUAL == CompareStringOrdinal(pwszConsoleTitle, cchSystemRoot, pwszSysRoot, cchSystemRoot, TRUE)))
                 {
                     cbConsoleTitle -= cbSystemRoot;
@@ -412,14 +427,14 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle)
                 }
 
                 memmove(TranslatedConsoleTitle, SYSTEM_ROOT, cbSystemRoot);
-                TranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR));   // skip by characters -- not bytes
+                TranslatedConsoleTitle += (cbSystemRoot / sizeof(WCHAR)); // skip by characters -- not bytes
 
                 for (UINT i = 0; i < cbConsoleTitle; i += sizeof(WCHAR))
                 {
-#pragma prefast(suppress:26018, "We are reading the null portion of the buffer on purpose and will escape on reaching it below.")
+#pragma prefast(suppress : 26018, "We are reading the null portion of the buffer on purpose and will escape on reaching it below.")
                     if (fSubstitute && *pwszConsoleTitle == '\\')
                     {
-#pragma prefast(suppress:26019, "Console title must contain system root if this path was followed.")
+#pragma prefast(suppress : 26019, "Console title must contain system root if this path was followed.")
                         *TranslatedConsoleTitle++ = (WCHAR)'_';
                     }
                     else
@@ -449,33 +464,33 @@ UINT CALLBACK PropSheetPageProc(_In_ HWND hWnd, _In_ UINT uMsg, _Inout_ LPPROPSH
     static UINT cRefs = 0;
     switch (uMsg)
     {
-        case PSPCB_ADDREF:
-        {
-            cRefs++;
-            break;
-        }
+    case PSPCB_ADDREF:
+    {
+        cRefs++;
+        break;
+    }
 
-        case PSPCB_RELEASE:
+    case PSPCB_RELEASE:
+    {
+        cRefs--;
+        if (cRefs == 0)
         {
-            cRefs--;
-            if (cRefs == 0)
+            if (gpStateInfo->UpdateValues)
             {
-                if (gpStateInfo->UpdateValues)
-                {
-                    // only persist settings if they've changed
-                    SaveConsoleSettingsIfNeeded(hWnd);
-                }
-
-                UninitializeConsoleState();
+                // only persist settings if they've changed
+                SaveConsoleSettingsIfNeeded(hWnd);
             }
-            break;
+
+            UninitializeConsoleState();
         }
+        break;
+    }
     }
 
     return 1;
 }
 
-BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const size_t cPsps, const BOOL fRegisterCallbacks)
+BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const size_t cPsps, const BOOL fRegisterCallbacks)
 {
     BOOL fRet = (cPsps == NUMBER_OF_PAGES);
     if (fRet)
@@ -489,8 +504,8 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         PROPSHEETPAGE* const pColorsPage = &(pPsp[COLORS_PAGE_INDEX]);
         PROPSHEETPAGE* const pTerminalPage = &(pPsp[TERMINAL_PAGE_INDEX]);
 
-        pOptionsPage->dwSize      = sizeof(PROPSHEETPAGE);
-        pOptionsPage->hInstance   = ghInstance;
+        pOptionsPage->dwSize = sizeof(PROPSHEETPAGE);
+        pOptionsPage->hInstance = ghInstance;
         if (g_fIsComCtlV6Present)
         {
             pOptionsPage->pszTemplate = (gpStateInfo->Defaults) ? MAKEINTRESOURCE(DID_SETTINGS) : MAKEINTRESOURCE(DID_SETTINGS2);
@@ -499,38 +514,38 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE *pPsp, const s
         {
             pOptionsPage->pszTemplate = (gpStateInfo->Defaults) ? MAKEINTRESOURCE(DID_SETTINGS_COMCTL5) : MAKEINTRESOURCE(DID_SETTINGS2_COMCTL5);
         }
-        pOptionsPage->pfnDlgProc  = SettingsDlgProc;
-        pOptionsPage->lParam      = OPTIONS_PAGE_INDEX;
-        pOptionsPage->dwFlags      = PSP_DEFAULT;
+        pOptionsPage->pfnDlgProc = SettingsDlgProc;
+        pOptionsPage->lParam = OPTIONS_PAGE_INDEX;
+        pOptionsPage->dwFlags = PSP_DEFAULT;
 
-        pFontPage->dwSize      = sizeof(PROPSHEETPAGE);
-        pFontPage->hInstance   = ghInstance;
+        pFontPage->dwSize = sizeof(PROPSHEETPAGE);
+        pFontPage->hInstance = ghInstance;
         pFontPage->pszTemplate = MAKEINTRESOURCE(DID_FONTDLG);
-        pFontPage->pfnDlgProc  = (DLGPROC) FontDlgProc;
-        pFontPage->lParam      = FONT_PAGE_INDEX;
-        pOptionsPage->dwFlags      = PSP_DEFAULT;
+        pFontPage->pfnDlgProc = FontDlgProc;
+        pFontPage->lParam = FONT_PAGE_INDEX;
+        pOptionsPage->dwFlags = PSP_DEFAULT;
 
-        pLayoutPage->dwSize      = sizeof(PROPSHEETPAGE);
-        pLayoutPage->hInstance   = ghInstance;
+        pLayoutPage->dwSize = sizeof(PROPSHEETPAGE);
+        pLayoutPage->hInstance = ghInstance;
         pLayoutPage->pszTemplate = MAKEINTRESOURCE(DID_SCRBUFSIZE);
-        pLayoutPage->pfnDlgProc  = ScreenSizeDlgProc;
-        pLayoutPage->lParam      = LAYOUT_PAGE_INDEX;
-        pOptionsPage->dwFlags      = PSP_DEFAULT;
+        pLayoutPage->pfnDlgProc = ScreenSizeDlgProc;
+        pLayoutPage->lParam = LAYOUT_PAGE_INDEX;
+        pOptionsPage->dwFlags = PSP_DEFAULT;
 
-        pColorsPage->dwSize      = sizeof(PROPSHEETPAGE);
-        pColorsPage->hInstance   = ghInstance;
+        pColorsPage->dwSize = sizeof(PROPSHEETPAGE);
+        pColorsPage->hInstance = ghInstance;
         pColorsPage->pszTemplate = MAKEINTRESOURCE(DID_COLOR);
-        pColorsPage->pfnDlgProc  = ColorDlgProc;
-        pColorsPage->lParam      = COLORS_PAGE_INDEX;
-        pOptionsPage->dwFlags      = PSP_DEFAULT;
+        pColorsPage->pfnDlgProc = ColorDlgProc;
+        pColorsPage->lParam = COLORS_PAGE_INDEX;
+        pOptionsPage->dwFlags = PSP_DEFAULT;
         if (g_fForceV2)
         {
-            pTerminalPage->dwSize      = sizeof(PROPSHEETPAGE);
-            pTerminalPage->hInstance   = ghInstance;
+            pTerminalPage->dwSize = sizeof(PROPSHEETPAGE);
+            pTerminalPage->hInstance = ghInstance;
             pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
-            pTerminalPage->pfnDlgProc  = TerminalDlgProc;
-            pTerminalPage->lParam      = TERMINAL_PAGE_INDEX;
-            pTerminalPage->dwFlags     = PSP_DEFAULT;
+            pTerminalPage->pfnDlgProc = TerminalDlgProc;
+            pTerminalPage->lParam = TERMINAL_PAGE_INDEX;
+            pTerminalPage->dwFlags = PSP_DEFAULT;
         }
 
         // Register callbacks if requested (used for file property sheet purposes)
@@ -556,7 +571,7 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     PROPSHEETPAGE psp[NUMBER_OF_PAGES];
     PROPSHEETHEADER psh;
     INT_PTR Result = IDCANCEL;
-    WCHAR awchBuffer[MAX_PATH] = {0};
+    WCHAR awchBuffer[MAX_PATH] = { 0 };
 
     gpStateInfo = pStateInfo;
 
@@ -573,7 +588,8 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     //
     // Initialize the state information.
     //
-    if (gpStateInfo->Defaults) {
+    if (gpStateInfo->Defaults)
+    {
         InitRegistryValues(pStateInfo);
         GetRegistryValues(pStateInfo);
     }
@@ -608,9 +624,12 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     psh.dwSize = sizeof(PROPSHEETHEADER);
     psh.dwFlags = PSH_PROPTITLE | PSH_USEHICON | PSH_PROPSHEETPAGE |
                   PSH_NOAPPLYNOW | PSH_USECALLBACK | PSH_NOCONTEXTHELP;
-    if (gpStateInfo->Defaults) {
+    if (gpStateInfo->Defaults)
+    {
         LoadString(ghInstance, IDS_TITLE, awchBuffer, ARRAYSIZE(awchBuffer));
-    } else {
+    }
+    else
+    {
         awchBuffer[0] = L'"';
         ExpandEnvironmentStrings(gpStateInfo->OriginalTitle,
                                  &awchBuffer[1],
@@ -641,8 +660,10 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
     SaveConsoleSettingsIfNeeded(hWnd);
     gpStateInfo->UpdateValues = fUpdatedValues;
 
-    if (!gpStateInfo->Defaults) {
-        if (gpStateInfo->OriginalTitle != NULL) {
+    if (!gpStateInfo->Defaults)
+    {
+        if (gpStateInfo->OriginalTitle != NULL)
+        {
             HeapFree(GetProcessHeap(), 0, gpStateInfo->OriginalTitle);
         }
     }
@@ -659,50 +680,50 @@ void RegisterClasses(HINSTANCE hModule)
 {
     WNDCLASS wc;
     wc.lpszClassName = TEXT("SimpleColor");
-    wc.hInstance     = hModule;
-    wc.lpfnWndProc   = (WNDPROC) SimpleColorControlProc;
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon         = NULL;
-    wc.lpszMenuName  = NULL;
-    wc.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
-    wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.cbClsExtra    = 0;
-    wc.cbWndExtra    = 0;
+    wc.hInstance = hModule;
+    wc.lpfnWndProc = SimpleColorControlProc;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon = NULL;
+    wc.lpszMenuName = NULL;
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
     RegisterClass(&wc);
 
     wc.lpszClassName = TEXT("ColorTableColor");
-    wc.hInstance     = hModule;
-    wc.lpfnWndProc   = (WNDPROC) ColorTableControlProc;
-    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
-    wc.hIcon         = NULL;
-    wc.lpszMenuName  = NULL;
-    wc.hbrBackground = (HBRUSH) (COLOR_WINDOW + 1);
-    wc.style         = CS_HREDRAW | CS_VREDRAW;
-    wc.cbClsExtra    = 0;
-    wc.cbWndExtra    = 0;
+    wc.hInstance = hModule;
+    wc.lpfnWndProc = ColorTableControlProc;
+    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+    wc.hIcon = NULL;
+    wc.lpszMenuName = NULL;
+    wc.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.cbClsExtra = 0;
+    wc.cbWndExtra = 0;
     RegisterClass(&wc);
 
     wc.lpszClassName = TEXT("WOAWinPreview");
-    wc.lpfnWndProc   = (WNDPROC) PreviewWndProc;
-    wc.hbrBackground = (HBRUSH) (COLOR_BACKGROUND + 1);
-    wc.style         = 0;
+    wc.lpfnWndProc = PreviewWndProc;
+    wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);
+    wc.style = 0;
     RegisterClass(&wc);
 
     wc.lpszClassName = TEXT("WOAFontPreview");
-    wc.lpfnWndProc   = (WNDPROC) FontPreviewWndProc;
-    wc.hbrBackground = (HBRUSH) GetStockObject(BLACK_BRUSH);
-    wc.style         = 0;
+    wc.lpfnWndProc = FontPreviewWndProc;
+    wc.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+    wc.style = 0;
     RegisterClass(&wc);
 }
 
 void UnregisterClasses(HINSTANCE hModule)
 {
-    UnregisterClass(TEXT("cpColor"),        hModule);
-    UnregisterClass(TEXT("WOAWinPreview"),  hModule);
+    UnregisterClass(TEXT("cpColor"), hModule);
+    UnregisterClass(TEXT("WOAWinPreview"), hModule);
     UnregisterClass(TEXT("WOAFontPreview"), hModule);
 }
 
-HRESULT FindFontAndUpdateState()
+[[nodiscard]] HRESULT FindFontAndUpdateState()
 {
     g_currentFontIndex = FindCreateFont(gpStateInfo->FontFamily,
                                         gpStateInfo->FaceName,

@@ -3,6 +3,9 @@
 
 #include "precomp.h"
 
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+
 const DWORD _dwMaxMillisecondsToWaitOnStartup = 120 * 1000;
 const DWORD _dwStartupWaitPollingIntervalInMilliseconds = 200;
 
@@ -42,6 +45,23 @@ BEGIN_MODULE()
     MODULE_PROPERTY(L"WinPerf.WPRProfile", L"ConsolePerf.wprp")
     MODULE_PROPERTY(L"WinPerf.WPRProfileId", L"ConsolePerf.Verbose.File")
     MODULE_PROPERTY(L"WinPerf.Regions", L"ConsolePerf.Regions.xml")
+
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l1-2-1.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l2-2-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\sdk\\lib\\minwin\\$arch\\api-ms-win-core-console-l3-2-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\mincore\\priv_sdk\\lib\\$arch\\api-ms-win-core-console-ansi-l2-1-0.lib")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl1.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl2.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\minwin\\priv_sdk\\inc\\conmsgl3.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\internal\\windows\\inc\\winconp.h")
+
+    // Public
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\external\\sdk\\inc\\wincon.h")
+    MODULE_PROPERTY(L"ArtifactUnderTest", L"onecore\\external\\sdk\\inc\\wincontypes.h")
+
+    // Relative to _NTTREE
+    MODULE_PROPERTY(L"BinaryUnderTest", L"conhostv1.dll")
+    MODULE_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
 END_MODULE()
 
 MODULE_SETUP(ModuleSetup)
@@ -99,7 +119,7 @@ MODULE_SETUP(ModuleSetup)
     // We use regular new (not a smart pointer) and a scope exit delete because CreateProcess needs mutable space
     // and it'd be annoying to const_cast the smart pointer's .get() just for the sake of.
     PWSTR str = new WCHAR[cchNeeded];
-    auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; }});
+    auto cleanStr = wil::scope_exit([&] { if (nullptr != str) { delete[] str; } });
 
     VERIFY_SUCCEEDED_RETURN(StringCchCopyW(str, cchNeeded, (WCHAR*)value.GetBuffer()));
 

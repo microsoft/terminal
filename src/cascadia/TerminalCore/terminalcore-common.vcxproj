@@ -5,6 +5,7 @@
     <ClCompile Include="..\TerminalDispatch.cpp" />
     <ClCompile Include="..\TerminalDispatchGraphics.cpp" />
     <ClCompile Include="..\TerminalRenderData.cpp" />
+    <ClCompile Include="..\TerminalSelection.cpp" />
     <ClCompile Include="..\TerminalApi.cpp" />
     <ClCompile Include="..\Terminal.cpp" />
     <ClCompile Include="..\pch.cpp">
@@ -13,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ClInclude Include="..\ControlKeyStates.hpp" />
     <ClInclude Include="..\TerminalDispatch.hpp" />
     <ClInclude Include="..\ITerminalApi.hpp" />
     <ClInclude Include="..\pch.h" />

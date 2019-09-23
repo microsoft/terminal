@@ -13,12 +13,21 @@ pr:
   branches:
     include:
       - master
+  paths:
+    exclude:
+      - doc/*
+      - samples/*
+      - tools/*
 
 #     0.0.yyMM.dd##
 #     0.0.1904.0900
 name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
 
 jobs:
+  - template: ./templates/build-console-audit-job.yml
+    parameters:
+      platform: x64
+
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: x64
@@ -26,3 +35,9 @@ jobs:
   - template: ./templates/build-console-ci.yml
     parameters:
       platform: x86
+
+  - template: ./templates/build-console-ci.yml
+    parameters:
+      platform: ARM64
+
+  - template: ./templates/check-formatting.yml

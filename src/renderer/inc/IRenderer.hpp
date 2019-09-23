@@ -26,8 +26,7 @@ namespace Microsoft::Console::Render
     public:
         virtual ~IRenderer() = 0;
 
-        [[nodiscard]]
-        virtual HRESULT PaintFrame() = 0;
+        [[nodiscard]] virtual HRESULT PaintFrame() = 0;
 
         virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
@@ -47,10 +46,9 @@ namespace Microsoft::Console::Render
                                        const FontInfoDesired& FontInfoDesired,
                                        _Out_ FontInfo& FontInfo) = 0;
 
-        [[nodiscard]]
-        virtual HRESULT GetProposedFont(const int iDpi,
-                                        const FontInfoDesired& FontInfoDesired,
-                                        _Out_ FontInfo& FontInfo) = 0;
+        [[nodiscard]] virtual HRESULT GetProposedFont(const int iDpi,
+                                                      const FontInfoDesired& FontInfoDesired,
+                                                      _Out_ FontInfo& FontInfo) = 0;
 
         virtual bool IsGlyphWideByFont(const std::wstring_view glyph) = 0;
 
@@ -60,6 +58,6 @@ namespace Microsoft::Console::Render
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
     };
 
-    inline Microsoft::Console::Render::IRenderer::~IRenderer() { }
+    inline Microsoft::Console::Render::IRenderer::~IRenderer() {}
 
 }

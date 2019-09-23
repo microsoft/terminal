@@ -10,13 +10,12 @@
 
 using namespace WEX::Logging;
 
-static const std::wstring emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
+static constexpr std::wstring_view emoji = L"\xD83E\xDD22"; // U+1F922 nauseated face
 
-static const std::wstring ambiguous = L"\x414"; // U+0414 cyrillic capital de
+static constexpr std::wstring_view ambiguous = L"\x414"; // U+0414 cyrillic capital de
 
 // codepoint and utf16 encoded string
-static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData =
-{
+static const std::vector<std::tuple<unsigned int, std::wstring, CodepointWidth>> testData = {
     { 0x7, L"\a", CodepointWidth::Narrow }, // BEL
     { 0x20, L" ", CodepointWidth::Narrow },
     { 0x39, L"9", CodepointWidth::Narrow },
@@ -33,31 +32,10 @@ class CodepointWidthDetectorTests
 {
     TEST_CLASS(CodepointWidthDetectorTests);
 
-
-    TEST_METHOD(CodepointWidthDetectDefersMapPopulation)
-    {
-        CodepointWidthDetector widthDetector;
-        VERIFY_IS_TRUE(widthDetector._map.empty());
-        widthDetector.IsWide(UNICODE_SPACE);
-        VERIFY_IS_TRUE(widthDetector._map.empty());
-        // now force checking
-        widthDetector.GetWidth(emoji);
-        VERIFY_IS_FALSE(widthDetector._map.empty());
-    }
-
     TEST_METHOD(CanLookUpEmoji)
     {
         CodepointWidthDetector widthDetector;
         VERIFY_IS_TRUE(widthDetector.IsWide(emoji));
-    }
-
-    TEST_METHOD(TestUnicodeRangeCompare)
-    {
-        CodepointWidthDetector::UnicodeRangeCompare compare;
-        // test comparing 2 search terms
-        CodepointWidthDetector::UnicodeRange a{ 0x10 };
-        CodepointWidthDetector::UnicodeRange b{ 0x15 };
-        VERIFY_IS_TRUE(static_cast<bool>(compare(a, b)));
     }
 
     TEST_METHOD(CanExtractCodepoint)
@@ -120,5 +98,4 @@ class CodepointWidthDetectorTests
         widthDetector.NotifyFontChanged();
         VERIFY_ARE_EQUAL(0u, widthDetector._fallbackCache.size());
     }
-
 };

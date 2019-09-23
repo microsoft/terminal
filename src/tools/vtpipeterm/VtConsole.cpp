@@ -1,12 +1,11 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-
 #include "..\..\inc\conpty.h"
 #include "VtConsole.hpp"
 
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <stdlib.h> /* srand, rand */
+#include <time.h> /* time */
 
 #include <deque>
 #include <vector>
@@ -20,16 +19,12 @@ VtConsole::VtConsole(PipeReadCallback const pfnReadCallback,
                      bool const fHeadless,
                      bool const fUseConpty,
                      COORD const initialSize) :
-    _signalPipe(INVALID_HANDLE_VALUE),
-    _outPipe(INVALID_HANDLE_VALUE),
-    _inPipe(INVALID_HANDLE_VALUE),
-    _dwOutputThreadId(0)
+    _pfnReadCallback(pfnReadCallback),
+    _fHeadless(fHeadless),
+    _fUseConPty(fUseConpty),
+    _lastDimensions(initialSize)
 {
-    _pfnReadCallback = pfnReadCallback;
-    _fHeadless = fHeadless;
-    _fUseConPty = fUseConpty;
-    _lastDimensions = initialSize;
-
+    THROW_IF_NULL_ALLOC(pfnReadCallback);
 }
 
 void VtConsole::spawn()
@@ -75,7 +70,7 @@ HRESULT CreatePseudoConsoleAndHandles(COORD size,
                                       _Out_ HANDLE* phOutput,
                                       _Out_ HPCON* phPC)
 {
-    if(phPC == NULL || phInput == NULL || phOutput == NULL)
+    if (phPC == NULL || phInput == NULL || phOutput == NULL)
     {
         return E_INVALIDARG;
     }
@@ -145,15 +140,14 @@ void VtConsole::_spawn(const std::wstring& command)
     _connected = true;
 
     // Create our own output handling thread
-    // Each console needs to make sure to drain the output from it's backing host.
+    // Each console needs to make sure to drain the output from its backing host.
     _dwOutputThreadId = (DWORD)-1;
     _hOutputThread = CreateThread(nullptr,
                                   0,
-                                  (LPTHREAD_START_ROUTINE)StaticOutputThreadProc,
+                                  StaticOutputThreadProc,
                                   this,
                                   0,
                                   &_dwOutputThreadId);
-
 }
 
 PCWSTR GetCmdLine()
@@ -180,26 +174,27 @@ void VtConsole::_createPseudoConsole(const std::wstring& command)
     THROW_IF_FAILED(AttachPseudoConsole(_hPC, siEx.lpAttributeList));
 
     std::wstring realCommand = command;
-    if (realCommand == L""){
+    if (realCommand == L"")
+    {
         realCommand = L"cmd.exe";
     }
 
     std::unique_ptr<wchar_t[]> mutableCommandline = std::make_unique<wchar_t[]>(realCommand.length() + 1);
     THROW_IF_NULL_ALLOC(mutableCommandline);
 
-    HRESULT hr = StringCchCopy(mutableCommandline.get(), realCommand.length()+1, realCommand.c_str());
+    HRESULT hr = StringCchCopy(mutableCommandline.get(), realCommand.length() + 1, realCommand.c_str());
     THROW_IF_FAILED(hr);
     fSuccess = !!CreateProcessW(
         nullptr,
         mutableCommandline.get(),
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        true,       // bInheritHandles
-        EXTENDED_STARTUPINFO_PRESENT,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &siEx.StartupInfo,        // lpStartupInfo
-        &_piClient  // lpProcessInformation
+        nullptr, // lpProcessAttributes
+        nullptr, // lpThreadAttributes
+        true, // bInheritHandles
+        EXTENDED_STARTUPINFO_PRESENT, // dwCreationFlags
+        nullptr, // lpEnvironment
+        nullptr, // lpCurrentDirectory
+        &siEx.StartupInfo, // lpStartupInfo
+        &_piClient // lpProcessInformation
     );
     THROW_LAST_ERROR_IF(!fSuccess);
     DeleteProcThreadAttributeList(siEx.lpAttributeList);
@@ -216,7 +211,6 @@ void VtConsole::_createConptyManually(const std::wstring& command)
                                      &_outPipe,
                                      &_signalPipe,
                                      &_piPty));
-
     }
     else
     {
@@ -276,7 +270,7 @@ void VtConsole::_createConptyViaCommandline(const std::wstring& command)
     si.hStdError = outPipeConhostSide.get();
     si.dwFlags |= STARTF_USESTDHANDLES;
 
-    if(!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
+    if (!(_lastDimensions.X == 0 && _lastDimensions.Y == 0))
     {
         // STARTF_USECOUNTCHARS does not work.
         // minkernel/console/client/dllinit will write that value to conhost
@@ -307,14 +301,14 @@ void VtConsole::_createConptyViaCommandline(const std::wstring& command)
     bool fSuccess = !!CreateProcess(
         nullptr,
         &cmdline[0],
-        nullptr,    // lpProcessAttributes
-        nullptr,    // lpThreadAttributes
-        true,       // bInheritHandles
-        0,          // dwCreationFlags
-        nullptr,    // lpEnvironment
-        nullptr,    // lpCurrentDirectory
-        &si,        // lpStartupInfo
-        &_piPty         // lpProcessInformation
+        nullptr, // lpProcessAttributes
+        nullptr, // lpThreadAttributes
+        true, // bInheritHandles
+        0, // dwCreationFlags
+        nullptr, // lpEnvironment
+        nullptr, // lpCurrentDirectory
+        &si, // lpStartupInfo
+        &_piPty // lpProcessInformation
     );
 
     if (!fSuccess)
@@ -335,7 +329,7 @@ void VtConsole::deactivate()
     _active = false;
 }
 
-DWORD VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
+DWORD WINAPI VtConsole::StaticOutputThreadProc(LPVOID lpParameter)
 {
     VtConsole* const pInstance = (VtConsole*)lpParameter;
     return pInstance->_OutputThread();
@@ -351,8 +345,12 @@ DWORD VtConsole::_OutputThread()
         bool fSuccess = false;
 
         fSuccess = !!ReadFile(this->outPipe(), buffer, ARRAYSIZE(buffer), &dwRead, nullptr);
+        if (!fSuccess)
+        {
+            HRESULT hr = GetLastError();
+            exit(hr);
+        }
 
-        THROW_LAST_ERROR_IF(!fSuccess);
         if (this->_active)
         {
             _pfnReadCallback(buffer, dwRead);
@@ -368,8 +366,9 @@ bool VtConsole::Repaint()
 
 bool VtConsole::Resize(const unsigned short rows, const unsigned short cols)
 {
-    if (_fUseConPty) {
-        return SUCCEEDED(ResizePseudoConsole(_hPC, {(SHORT)cols, (SHORT)rows}));
+    if (_fUseConPty)
+    {
+        return SUCCEEDED(ResizePseudoConsole(_hPC, { (SHORT)cols, (SHORT)rows }));
     }
     else
     {

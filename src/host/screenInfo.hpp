@@ -39,7 +39,6 @@ Revision History:
 #include "../server/ObjectHeader.h"
 
 #include "../interactivity/inc/IAccessibilityNotifier.hpp"
-#include "../interactivity/inc/IConsoleWindow.hpp"
 #include "../interactivity/inc/IWindowMetrics.hpp"
 
 #include "../inc/ITerminalOutputConnection.hpp"
@@ -48,24 +47,19 @@ Revision History:
 #include "../renderer/inc/FontInfoDesired.hpp"
 
 #include "../types/inc/Viewport.hpp"
-
-using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::VirtualTerminal;
-
+#include "../types/IConsoleWindow.hpp"
 class ConversionAreaInfo; // forward decl window. circular reference
 
 class SCREEN_INFORMATION : public ConsoleObjectHeader, public Microsoft::Console::IIoProvider
 {
 public:
-
-    [[nodiscard]]
-    static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
-                                   const FontInfo fontInfo,
-                                   _In_ COORD coordScreenBufferSize,
-                                   const TextAttribute defaultAttributes,
-                                   const TextAttribute popupAttributes,
-                                   const UINT uiCursorSize,
-                                   _Outptr_ SCREEN_INFORMATION ** const ppScreen);
+    [[nodiscard]] static NTSTATUS CreateInstance(_In_ COORD coordWindowSize,
+                                                 const FontInfo fontInfo,
+                                                 _In_ COORD coordScreenBufferSize,
+                                                 const TextAttribute defaultAttributes,
+                                                 const TextAttribute popupAttributes,
+                                                 const UINT uiCursorSize,
+                                                 _Outptr_ SCREEN_INFORMATION** const ppScreen);
 
     ~SCREEN_INFORMATION();
 
@@ -95,8 +89,7 @@ public:
     void UpdateFont(const FontInfo* const pfiNewFont);
     void RefreshFontWithRenderer();
 
-    [[nodiscard]]
-    NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
+    [[nodiscard]] NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
     void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
@@ -115,8 +108,7 @@ public:
     void SetViewportSize(const COORD* const pcoordSize);
 
     // Forwarders to Window if we're the active buffer.
-    [[nodiscard]]
-    NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
+    [[nodiscard]] NTSTATUS SetViewportOrigin(const bool fAbsolute, const COORD coordWindowOrigin, const bool updateBottom);
 
     bool SendNotifyBeep() const;
     bool PostUpdateWindowSize() const;
@@ -163,22 +155,24 @@ public:
     bool CursorIsDoubleWidth() const;
 
     DWORD OutputMode;
-    WORD ResizingWindow;    // > 0 if we should ignore WM_SIZE messages
+    WORD ResizingWindow; // > 0 if we should ignore WM_SIZE messages
 
     short WheelDelta;
     short HWheelDelta;
+
 private:
     std::unique_ptr<TextBuffer> _textBuffer;
+
 public:
-    SCREEN_INFORMATION *Next;
+    SCREEN_INFORMATION* Next;
     BYTE WriteConsoleDbcsLeadByte[2];
     BYTE FillOutDbcsLeadChar;
     WCHAR LineChar[6];
-#define UPPER_LEFT_CORNER   0
-#define UPPER_RIGHT_CORNER  1
-#define HORIZONTAL_LINE     2
-#define VERTICAL_LINE       3
-#define BOTTOM_LEFT_CORNER  4
+#define UPPER_LEFT_CORNER 0
+#define UPPER_RIGHT_CORNER 1
+#define HORIZONTAL_LINE 2
+#define VERTICAL_LINE 3
+#define BOTTOM_LEFT_CORNER 4
 #define BOTTOM_RIGHT_CORNER 5
 
     // non ownership pointer
@@ -188,8 +182,8 @@ public:
 
     bool IsActiveScreenBuffer() const;
 
-    const StateMachine& GetStateMachine() const;
-    StateMachine& GetStateMachine();
+    const Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine() const;
+    Microsoft::Console::VirtualTerminal::StateMachine& GetStateMachine();
 
     void SetCursorInformation(const ULONG Size,
                               const bool Visible) noexcept;
@@ -199,8 +193,7 @@ public:
     void SetCursorType(const CursorType Type, const bool setMain = false) noexcept;
 
     void SetCursorDBMode(const bool DoubleCursor);
-    [[nodiscard]]
-    NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
+    [[nodiscard]] NTSTATUS SetCursorPosition(const COORD Position, const bool TurnOn);
 
     void MakeCursorVisible(const COORD CursorPosition, const bool updateBottom = true);
 
@@ -208,10 +201,10 @@ public:
     Microsoft::Console::Types::Viewport GetAbsoluteScrollMargins() const;
     void SetScrollMargins(const Microsoft::Console::Types::Viewport margins);
     bool AreMarginsSet() const noexcept;
+    bool IsCursorInMargins(const COORD cursorPosition) const noexcept;
     Microsoft::Console::Types::Viewport GetScrollingRegion() const noexcept;
 
-    [[nodiscard]]
-    NTSTATUS UseAlternateScreenBuffer();
+    [[nodiscard]] NTSTATUS UseAlternateScreenBuffer();
     void UseMainScreenBuffer();
 
     SCREEN_INFORMATION& GetMainBuffer();
@@ -236,8 +229,7 @@ public:
     void SetDefaultAttributes(const TextAttribute& attributes,
                               const TextAttribute& popupAttributes);
 
-    [[nodiscard]]
-    HRESULT VtEraseAll();
+    [[nodiscard]] HRESULT VtEraseAll();
 
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
@@ -255,20 +247,18 @@ public:
     void InitializeCursorRowAttributes();
 
 private:
-    SCREEN_INFORMATION(_In_ IWindowMetrics *pMetrics,
-                       _In_ IAccessibilityNotifier *pNotifier,
+    SCREEN_INFORMATION(_In_ Microsoft::Console::Interactivity::IWindowMetrics* pMetrics,
+                       _In_ Microsoft::Console::Interactivity::IAccessibilityNotifier* pNotifier,
                        const TextAttribute popupAttributes,
                        const FontInfo fontInfo);
 
-    IWindowMetrics *_pConsoleWindowMetrics;
-    IAccessibilityNotifier *_pAccessibilityNotifier;
+    Microsoft::Console::Interactivity::IWindowMetrics* _pConsoleWindowMetrics;
+    Microsoft::Console::Interactivity::IAccessibilityNotifier* _pAccessibilityNotifier;
 
-    [[nodiscard]]
-    HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
-                                      const COORD coordBufferOld,
-                                      _Out_ COORD* const pcoordClientNewCharacters);
-    [[nodiscard]]
-    HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
+    [[nodiscard]] HRESULT _AdjustScreenBufferHelper(const RECT* const prcClientNew,
+                                                    const COORD coordBufferOld,
+                                                    _Out_ COORD* const pcoordClientNewCharacters);
+    [[nodiscard]] HRESULT _AdjustScreenBuffer(const RECT* const prcClientNew);
     void _CalculateViewportSize(const RECT* const prcClientArea, _Out_ COORD* const pcoordSize);
     void _AdjustViewportSize(const RECT* const prcClientNew, const RECT* const prcClientOld, const COORD* const pcoordSize);
     void _InternalSetViewportSize(const COORD* const pcoordSize, const bool fResizeFromTop, const bool fResizeFromLeft);
@@ -279,22 +269,18 @@ private:
                                                _Out_ bool* const pfIsHorizontalVisible,
                                                _Out_ bool* const pfIsVerticalVisible);
 
-    [[nodiscard]]
-    NTSTATUS ResizeWithReflow(const COORD coordnewScreenSize);
-    [[nodiscard]]
-    NTSTATUS ResizeTraditional(const COORD coordNewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeWithReflow(const COORD coordnewScreenSize);
+    [[nodiscard]] NTSTATUS ResizeTraditional(const COORD coordNewScreenSize);
 
-    [[nodiscard]]
-    NTSTATUS _InitializeOutputStateMachine();
+    [[nodiscard]] NTSTATUS _InitializeOutputStateMachine();
     void _FreeOutputStateMachine();
 
-    [[nodiscard]]
-    NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
+    [[nodiscard]] NTSTATUS _CreateAltBuffer(_Out_ SCREEN_INFORMATION** const ppsiNewScreenBuffer);
 
     bool _IsAltBuffer() const;
     bool _IsInPtyMode() const;
 
-    std::shared_ptr<StateMachine> _stateMachine;
+    std::shared_ptr<Microsoft::Console::VirtualTerminal::StateMachine> _stateMachine;
 
     Microsoft::Console::Types::Viewport _scrollMargins; //The margins of the VT specified scroll region. Left and Right are currently unused, but could be in the future.
 

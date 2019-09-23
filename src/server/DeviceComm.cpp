@@ -5,14 +5,21 @@
 #include "DeviceComm.h"
 
 DeviceComm::DeviceComm(_In_ HANDLE Server) :
-    _Server(Server)
+    _Server(Server),
+    _shutdown(false)
 {
     THROW_HR_IF(E_HANDLE, Server == INVALID_HANDLE_VALUE);
 }
 
-
 DeviceComm::~DeviceComm()
 {
+}
+
+// Routine Description:
+// - Intentionally shut down our communications channel
+void DeviceComm::Shutdown()
+{
+    _shutdown = true;
 }
 
 // Routine Description:
@@ -23,8 +30,7 @@ DeviceComm::~DeviceComm()
 // - pServerInfo - Structure containing information required to initialize driver state for this console connection.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const
+[[nodiscard]] HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pServerInfo) const
 {
     return _CallIoctl(IOCTL_CONDRV_SET_SERVER_INFORMATION,
                       pServerInfo,
@@ -40,13 +46,23 @@ HRESULT DeviceComm::SetServerInformation(_In_ CD_IO_SERVER_INFORMATION* const pS
 // - pMessage - A structure to hold the message data retrieved from the driver.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
-                           _Out_ CONSOLE_API_MSG* const pMessage) const
+[[nodiscard]] HRESULT DeviceComm::ReadIo(_In_opt_ PCONSOLE_API_MSG const pReplyMsg,
+                                         _Out_ CONSOLE_API_MSG* const pMessage) const
 {
+    // If we've been told to shutdown, we should allow a reply to go through to finish things off,
+    // but no more reads of new messages are allowed.
+    if (_shutdown)
+    {
+        if (pReplyMsg)
+        {
+            LOG_IF_FAILED(CompleteIo(&pReplyMsg->Complete));
+        }
+        return E_APPLICATION_EXITING;
+    }
+
     HRESULT hr = _CallIoctl(IOCTL_CONDRV_READ_IO,
-                            pCompletion,
-                            pCompletion == nullptr ? 0 : sizeof(*pCompletion),
+                            pReplyMsg == nullptr ? nullptr : &pReplyMsg->Complete,
+                            pReplyMsg == nullptr ? 0 : sizeof(pReplyMsg->Complete),
                             &pMessage->Descriptor,
                             sizeof(CONSOLE_API_MSG) - FIELD_OFFSET(CONSOLE_API_MSG, Descriptor));
 
@@ -65,8 +81,7 @@ HRESULT DeviceComm::ReadIo(_In_opt_ CD_IO_COMPLETE* const pCompletion,
 // - pCompletion - Completion structure from the previous activity (can be used in lieu of calling CompleteIo seperately.)
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
+[[nodiscard]] HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
 {
     return _CallIoctl(IOCTL_CONDRV_COMPLETE_IO,
                       pCompletion,
@@ -82,8 +97,7 @@ HRESULT DeviceComm::CompleteIo(_In_ CD_IO_COMPLETE* const pCompletion) const
 //                  to hold retrieved buffered input data from the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
+[[nodiscard]] HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_READ_INPUT,
                       pIoOperation,
@@ -99,8 +113,7 @@ HRESULT DeviceComm::ReadInput(_In_ CD_IO_OPERATION* const pIoOperation) const
 //                  to hold buffered output data to be sent to the client application.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
+[[nodiscard]] HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
 {
     return _CallIoctl(IOCTL_CONDRV_WRITE_OUTPUT,
                       pIoOperation,
@@ -116,8 +129,7 @@ HRESULT DeviceComm::WriteOutput(_In_ CD_IO_OPERATION* const pIoOperation) const
 // - <none>
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::AllowUIAccess() const
+[[nodiscard]] HRESULT DeviceComm::AllowUIAccess() const
 {
     return _CallIoctl(IOCTL_CONDRV_ALLOW_VIA_UIACCESS,
                       nullptr,
@@ -137,12 +149,11 @@ HRESULT DeviceComm::AllowUIAccess() const
 // - cbOutBufferSize - The length in bytes of the optional output buffer.
 // Return Value:
 // - HRESULT S_OK or suitable error.
-[[nodiscard]]
-HRESULT DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
-                               _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
-                               _In_ DWORD cbInBufferSize,
-                               _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
-                               _In_ DWORD cbOutBufferSize) const
+[[nodiscard]] HRESULT DeviceComm::_CallIoctl(_In_ DWORD dwIoControlCode,
+                                             _In_reads_bytes_opt_(cbInBufferSize) PVOID pInBuffer,
+                                             _In_ DWORD cbInBufferSize,
+                                             _Out_writes_bytes_opt_(cbOutBufferSize) PVOID pOutBuffer,
+                                             _In_ DWORD cbOutBufferSize) const
 {
     // See: https://msdn.microsoft.com/en-us/library/windows/desktop/aa363216(v=vs.85).aspx
     // Written is unused but cannot be nullptr because we aren't using overlapped.

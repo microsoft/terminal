@@ -14,11 +14,11 @@ using namespace Microsoft::Console::Interactivity::Win32;
 HANDLE ConsoleInputThread::Start()
 {
     HANDLE hThread = nullptr;
-    DWORD dwThreadId = (DWORD) -1;
+    DWORD dwThreadId = (DWORD)-1;
 
     hThread = CreateThread(nullptr,
                            0,
-                           (LPTHREAD_START_ROUTINE)ConsoleInputThreadProcWin32,
+                           ConsoleInputThreadProcWin32,
                            nullptr,
                            0,
                            &dwThreadId);

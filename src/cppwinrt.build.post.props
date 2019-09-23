@@ -26,15 +26,15 @@
     <PostBuildEvent Condition="'$(Platform)'!='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
     <PostBuildEvent Condition="'$(Platform)'=='Win32'">
       <Command>
         echo OutDir=$(OutDir)
-        (echo f | xcopy /y $(OutDir)$(ProjectName).dll $(OpenConsoleDir)$(Configuration)\$(ProjectName).dll )
-        (echo f | xcopy /y $(OutDir)$(ProjectName).pdb $(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).dll&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).dll*&quot; )
+        (xcopy /Y &quot;$(OutDir)$(ProjectName).pdb&quot; &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName).pdb*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -42,7 +42,7 @@
 
   <!--
     For whatever reason, GENERATEPROJECTPRIFILE is incapable of creating this
-    directory on it's own, it just assumes it exists.
+    directory on its own, it just assumes it exists.
 
     Also make the directory w/o the platform, because the x86 build in CI will
     try to place the pri files into
@@ -51,26 +51,26 @@
   <ItemDefinitionGroup Condition="'$(Platform)'!='Win32'">
     <PreBuildEvent>
       <Command>
-        if not exist $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)
+        if not exist &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)&quot; mkdir &quot;$(OpenConsoleDir)$(Platform)\$(Configuration)\$(ProjectName)&quot;
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
     <PreBuildEvent>
       <Command>
-        if not exist $(OpenConsoleDir)$(Configuration)\$(ProjectName) mkdir $(OpenConsoleDir)\$(Configuration)\$(ProjectName)
+        if not exist &quot;$(OpenConsoleDir)$(Configuration)\$(ProjectName)&quot; mkdir &quot;$(OpenConsoleDir)\$(Configuration)\$(ProjectName)&quot;
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
 
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets')" />
+    <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.targets'))" />
   </Target>
 </Project>

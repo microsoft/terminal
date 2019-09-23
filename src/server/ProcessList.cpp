@@ -11,6 +11,8 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
+using namespace Microsoft::Console::Interactivity;
+
 // Routine Description:
 // - Allocates and stores in a list the process information given.
 // - Will not create a new entry in the list given information matches a known process. Will instead return existing entry.
@@ -25,12 +27,11 @@
 // - S_OK if the process was recorded in the list successfully or already existed.
 // - E_FAIL if we're running into an LPC port conflict by nature of the process chain.
 // - E_OUTOFMEMORY if there wasn't space to allocate a handle or push it into the list.
-[[nodiscard]]
-HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
-                                             const DWORD dwThreadId,
-                                             const ULONG ulProcessGroupId,
-                                             _In_opt_ ConsoleProcessHandle* const pParentProcessData,
-                                             _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
+[[nodiscard]] HRESULT ConsoleProcessList::AllocProcessData(const DWORD dwProcessId,
+                                                           const DWORD dwThreadId,
+                                                           const ULONG ulProcessGroupId,
+                                                           _In_opt_ ConsoleProcessHandle* const pParentProcessData,
+                                                           _Outptr_opt_ ConsoleProcessHandle** const ppProcessData)
 {
     FAIL_FAST_IF(!(ServiceLocator::LocateGlobals().getConsoleInformation().IsConsoleLocked()));
 
@@ -90,6 +91,9 @@ void ConsoleProcessList::FreeProcessData(_In_ ConsoleProcessHandle* const pProce
     FAIL_FAST_IF(!(_processes.cend() != std::find(_processes.cbegin(), _processes.cend(), pProcessData)));
 
     _processes.remove(pProcessData);
+
+    // Attempt to dispatch events to registered listeners.
+    _NotifyOnLastFree();
 
     delete pProcessData;
 }
@@ -164,9 +168,8 @@ ConsoleProcessHandle* ConsoleProcessList::FindProcessByGroupId(_In_ ULONG ulProc
 // Return Value:
 // - S_OK if buffer was filled successfully and resulting count of items is in pcProcessList.
 // - E_NOT_SUFFICIENT_BUFFER if the buffer given was too small. Refer to pcProcessList for size requirement.
-[[nodiscard]]
-HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
-                                           _Inout_ size_t* const pcProcessList) const
+[[nodiscard]] HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD* const pProcessList,
+                                                         _Inout_ size_t* const pcProcessList) const
 {
     HRESULT hr = S_OK;
 
@@ -208,11 +211,10 @@ HRESULT ConsoleProcessList::GetProcessList(_Inout_updates_(*pcProcessList) DWORD
 // Return Value:
 // - S_OK if prgRecords was filled successfully or if no records were found that matched.
 // - E_OUTOFMEMORY in a low memory situation.
-[[nodiscard]]
-HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
-                                                           const bool fCtrlClose,
-                                                           _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
-                                                           _Out_ size_t* const pcRecords) const
+[[nodiscard]] HRESULT ConsoleProcessList::GetTerminationRecordsByGroupId(const DWORD dwLimitingProcessId,
+                                                                         const bool fCtrlClose,
+                                                                         _Outptr_result_buffer_all_(*pcRecords) ConsoleProcessTerminationRecord** prgRecords,
+                                                                         _Out_ size_t* const pcRecords) const
 {
     *pcRecords = 0;
 
@@ -331,6 +333,19 @@ bool ConsoleProcessList::IsEmpty() const
 }
 
 // Routine Description:
+// - Gives us an event that we should notify when the last process is removed from this list
+// - NOTE: This is a function callback and not an event so the notification of state can occur under the
+//   same global lock state that is required to add/remove client processes from the list.
+// Arguments:
+// - func - A function to call while we're removing the last process.
+// Return Value:
+// - <none>
+void ConsoleProcessList::RegisterForNotifyOnLastFree(std::function<void()> func)
+{
+    _notifyOnLastFree.emplace_back(func);
+}
+
+// Routine Description:
 // - Requests the OS allow the console to set one of its child processes as the foreground window
 // Arguments:
 // - hProcess - Handle to the process to modify
@@ -340,4 +355,21 @@ bool ConsoleProcessList::IsEmpty() const
 void ConsoleProcessList::_ModifyProcessForegroundRights(const HANDLE hProcess, const bool fForeground) const
 {
     LOG_IF_NTSTATUS_FAILED(ServiceLocator::LocateConsoleControl()->SetForeground(hProcess, fForeground));
+}
+
+// Routine Description:
+// - Attempts to notify anyone listening for when the last client process is disconnecting.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void ConsoleProcessList::_NotifyOnLastFree() const
+{
+    if (_processes.empty())
+    {
+        for (auto& func : _notifyOnLastFree)
+        {
+            func();
+        }
+    }
 }

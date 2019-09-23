@@ -21,21 +21,20 @@ class Utf8ToWideCharParser final
 public:
     Utf8ToWideCharParser(const unsigned int codePage);
     void SetCodePage(const unsigned int codePage);
-    [[nodiscard]]
-    HRESULT Parse(_In_reads_(cchBuffer) const byte* const pBytes,
-                  _In_ unsigned int const cchBuffer,
-                  _Out_ unsigned int& cchConsumed,
-                  _Inout_ std::unique_ptr<wchar_t[]>& converted,
-                  _Out_ unsigned int& cchConverted);
+    [[nodiscard]] HRESULT Parse(_In_reads_(cchBuffer) const byte* const pBytes,
+                                _In_ unsigned int const cchBuffer,
+                                _Out_ unsigned int& cchConsumed,
+                                _Inout_ std::unique_ptr<wchar_t[]>& converted,
+                                _Out_ unsigned int& cchConverted);
 
 private:
     enum class _State
     {
-        Ready,             // ready for input, no partially parsed code points
-        Error,             // error in parsing given bytes
+        Ready, // ready for input, no partially parsed code points
+        Error, // error in parsing given bytes
         BeginPartialParse, // not a clean byte sequence, needs involved parsing
         AwaitingMoreBytes, // have a partial sequence saved, waiting for the rest of it
-        Finished           // ready to return a wide char sequence
+        Finished // ready to return a wide char sequence
     };
 
     bool _IsLeadByte(_In_ byte ch);

@@ -25,13 +25,13 @@
 
 #include "..\inc\ServiceLocator.hpp"
 
-#include "../interactivity/win32/windowtheme.hpp"
-#include "../interactivity/win32/windowUiaProvider.hpp"
-#include "../interactivity/win32/CustomWindowMessages.h"
+#include "..\interactivity\win32\windowtheme.hpp"
+#include "..\interactivity\win32\CustomWindowMessages.h"
+
+#include "..\interactivity\win32\windowUiaProvider.hpp"
 
 #include <iomanip>
 #include <sstream>
-
 
 using namespace Microsoft::Console::Interactivity::Win32;
 using namespace Microsoft::Console::Types;
@@ -39,7 +39,7 @@ using namespace Microsoft::Console::Types;
 // The static and specific window procedures for this class are contained here
 #pragma region Window Procedure
 
-LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     // Save the pointer here to the specific window instance when one is created
     if (Message == WM_CREATE)
@@ -61,14 +61,39 @@ LRESULT CALLBACK Window::s_ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, 
     return DefWindowProcW(hWnd, Message, wParam, lParam);
 }
 
-LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
+[[nodiscard]] LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _In_ WPARAM wParam, _In_ LPARAM lParam)
 {
     Globals& g = ServiceLocator::LocateGlobals();
     CONSOLE_INFORMATION& gci = g.getConsoleInformation();
     LRESULT Status = 0;
     BOOL Unlock = TRUE;
 
-    LockConsole();
+    // If we're during the initial allocation of the console, then the I/O thread is servicing a
+    // Console Connection Request under lock as the input thread is created on the first connection to a client.
+    // Normally we'd take the lock here at the top of the window proc to ensure consistency while servicing messages,
+    // but because the I/O thread needs to hold the lock for the duration of
+    // servicing the connection request, we have a wink-nudge agreement here with the I/O thread about the lock.
+    // As long as the input setup event exists and is signaled, we've been told that the I/O thread has the lock
+    // and is waiting for us to respond.
+    // As long as the input initialized event exists and is unsignaled, we haven't told the I/O thread that we're done
+    // yet and it can resume use of the lock.
+    // So under these conditions where we are assured the I/O thread is holding the lock on our behalf and waiting for us...
+    // skip the lock/unlock behavior down this entire procedure and perform the messages needed to get things set up
+    // knowing we have exclusive reign over the console variables.
+    if (g.consoleInputSetupEvent && g.consoleInputSetupEvent.is_signaled() &&
+        g.consoleInputInitializedEvent && !g.consoleInputInitializedEvent.is_signaled())
+    {
+        Unlock = FALSE;
+    }
+
+    // Under normal conditions, Unlock is TRUE at the top and we will need to take the lock
+    // to process messages.
+    // Under special init conditions, someone else holds the lock for us and we can skip all lock/unlock behavior
+    // by checking the Unlock variable.
+    if (Unlock)
+    {
+        LockConsole();
+    }
 
     SCREEN_INFORMATION& ScreenInfo = GetScreenInfo();
     if (hWnd == nullptr) // TODO: this might not be possible anymore
@@ -83,7 +108,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
             Status = DefWindowProcW(hWnd, Message, wParam, lParam);
         }
 
-        UnlockConsole();
+        if (Unlock)
+        {
+            UnlockConsole();
+        }
         return Status;
     }
 
@@ -192,7 +220,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         // GetProposedFont can fail if there's no render engine yet.
         // This can happen if we're headless.
         // Just assume that the font is 1x1 in that case.
-        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({1, 1});
+        const COORD coordFontProposed = SUCCEEDED(hr) ? fiProposed.GetSize() : COORD({ 1, 1 });
 
         // Then from that font size, we need to calculate the client area.
         // Then from the client area we need to calculate the window area (using the proposed DPI scalar here as well.)
@@ -214,7 +242,10 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         pSuggestionSize->cy = RECT_HEIGHT(&rectProposed);
 
         // Format our final suggestion for consumption.
-        UnlockConsole();
+        if (Unlock)
+        {
+            UnlockConsole();
+        }
         return TRUE;
     }
 
@@ -345,7 +376,7 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         gci.GetCursorBlinker().SettingsChanged();
     }
-    __fallthrough;
+        __fallthrough;
 
     case WM_DISPLAYCHANGE:
     {
@@ -485,12 +516,18 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         {
             HMENU hHeirMenu = Menu::s_GetHeirMenuHandle();
 
-            Unlock = FALSE;
-            UnlockConsole();
+            if (Unlock)
+            {
+                Unlock = FALSE;
+                UnlockConsole();
+            }
 
             TrackPopupMenuEx(hHeirMenu,
                              TPM_RIGHTBUTTON | (GetSystemMetrics(SM_MENUDROPALIGNMENT) == 0 ? TPM_LEFTALIGN : TPM_RIGHTALIGN),
-                             GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam), hWnd, nullptr);
+                             GET_X_LPARAM(lParam),
+                             GET_Y_LPARAM(lParam),
+                             hWnd,
+                             nullptr);
         }
         else
         {
@@ -505,8 +542,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
         switch (wParam & 0x00FF)
         {
         case HTCAPTION:
-            UnlockConsole();
-            Unlock = FALSE;
+            if (Unlock)
+            {
+                UnlockConsole();
+                Unlock = FALSE;
+            }
             SetActiveWindow(hWnd);
             SendMessageTimeoutW(hWnd, WM_SYSCOMMAND, SC_MOVE | wParam, lParam, SMTO_NORMAL, INFINITE, nullptr);
             break;
@@ -647,13 +687,13 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
         Status = 1;
 
-        bool isMouseWheel  = Message == WM_MOUSEWHEEL;
+        bool isMouseWheel = Message == WM_MOUSEWHEEL;
         bool isMouseHWheel = Message == WM_MOUSEHWHEEL;
 
         if (isMouseWheel || isMouseHWheel)
         {
             short wheelDelta = (short)HIWORD(wParam);
-            bool hasShift    = (wParam & MK_SHIFT) ? true : false;
+            bool hasShift = (wParam & MK_SHIFT) ? true : false;
 
             Scrolling::s_HandleMouseWheel(isMouseWheel,
                                           isMouseHWheel,
@@ -672,8 +712,11 @@ LRESULT CALLBACK Window::ConsoleWindowProc(_In_ HWND hWnd, _In_ UINT Message, _I
 
     case CM_BEEP:
     {
-        UnlockConsole();
-        Unlock = FALSE;
+        if (Unlock)
+        {
+            UnlockConsole();
+            Unlock = FALSE;
+        }
 
         // Don't fall back to Beep() on win32 systems -- if the user configures their system for no sound, we should
         // respect that.
@@ -819,8 +862,7 @@ void Window::_HandleWindowPosChanged(const LPARAM lParam)
 // - <none>
 // Return Value:
 // - S_OK if we succeeded. ERROR_INVALID_HANDLE if there is no HWND. E_FAIL if GDI failed for some reason.
-[[nodiscard]]
-HRESULT Window::_HandlePaint() const
+[[nodiscard]] HRESULT Window::_HandlePaint() const
 {
     HWND const hwnd = GetWindowHandle();
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_HANDLE), hwnd);
@@ -886,7 +928,7 @@ void Window::_HandleDrop(const WPARAM wParam) const
     }
 }
 
-LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
+[[nodiscard]] LRESULT Window::_HandleGetObject(const HWND hwnd, const WPARAM wParam, const LPARAM lParam)
 {
     LRESULT retVal = 0;
 

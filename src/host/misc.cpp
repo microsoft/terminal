@@ -13,10 +13,11 @@
 
 #pragma hdrstop
 
-#define CHAR_NULL      ((char)0)
+#define CHAR_NULL ((char)0)
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 
-WCHAR CharToWchar(_In_reads_(cch) const char * const pch, const UINT cch)
+WCHAR CharToWchar(_In_reads_(cch) const char* const pch, const UINT cch)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     WCHAR wc = L'\0';
@@ -77,7 +78,7 @@ void SetConsoleCPInfo(const BOOL fOutput)
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
+BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                         _In_ size_t cWords,
                         _In_ size_t cBytes) noexcept
 {
@@ -119,7 +120,7 @@ BOOL CheckBisectStringW(_In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
 BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
-                         _In_reads_bytes_(cBytes) const WCHAR * pwchBuffer,
+                         _In_reads_bytes_(cBytes) const WCHAR* pwchBuffer,
                          _In_ size_t cWords,
                          _In_ size_t cBytes,
                          _In_ SHORT sOriginalXPosition,
@@ -160,37 +161,37 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
                 pwchBuffer++;
                 switch (Char)
                 {
-                    case UNICODE_BELL:
-                        if (fEcho)
-                            goto CtrlChar;
-                        break;
-                    case UNICODE_BACKSPACE:
-                    case UNICODE_LINEFEED:
-                    case UNICODE_CARRIAGERETURN:
-                        break;
-                    case UNICODE_TAB:
+                case UNICODE_BELL:
+                    if (fEcho)
+                        goto CtrlChar;
+                    break;
+                case UNICODE_BACKSPACE:
+                case UNICODE_LINEFEED:
+                case UNICODE_CARRIAGERETURN:
+                    break;
+                case UNICODE_TAB:
+                {
+                    size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
+                    sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
+                    if (cBytes < TabSize)
+                        return TRUE;
+                    cBytes -= TabSize;
+                    break;
+                }
+                default:
+                    if (fEcho)
                     {
-                        size_t TabSize = NUMBER_OF_SPACES_IN_TAB(sOriginalXPosition);
-                        sOriginalXPosition = (SHORT)(sOriginalXPosition + TabSize);
-                        if (cBytes < TabSize)
+                    CtrlChar:
+                        if (cBytes < 2)
                             return TRUE;
-                        cBytes -= TabSize;
-                        break;
+                        cBytes -= 2;
+                        sOriginalXPosition += 2;
                     }
-                    default:
-                        if (fEcho)
-                        {
-        CtrlChar:
-                            if (cBytes < 2)
-                                return TRUE;
-                            cBytes -= 2;
-                            sOriginalXPosition += 2;
-                        }
-                        else
-                        {
-                            cBytes--;
-                            sOriginalXPosition++;
-                        }
+                    else
+                    {
+                        cBytes--;
+                        sOriginalXPosition++;
+                    }
                 }
             }
         }
@@ -201,7 +202,6 @@ BOOL CheckBisectProcessW(const SCREEN_INFORMATION& ScreenInfo,
         return CheckBisectStringW(pwchBuffer, cWords, cBytes);
     }
 }
-
 
 // Routine Description:
 // - Converts all key events in the deque to the oem char data and adds
@@ -258,22 +258,24 @@ void SplitToOem(std::deque<std::unique_ptr<IInputEvent>>& events)
 // Return Value:
 // - Returns the number characters written to pchTarget, or 0 on failure
 int ConvertToOem(const UINT uiCodePage,
-                 _In_reads_(cchSource) const WCHAR * const pwchSource,
+                 _In_reads_(cchSource) const WCHAR* const pwchSource,
                  const UINT cchSource,
-                 _Out_writes_(cchTarget) CHAR * const pchTarget,
+                 _Out_writes_(cchTarget) CHAR* const pchTarget,
                  const UINT cchTarget) noexcept
 {
-    FAIL_FAST_IF(!(pwchSource != (LPWSTR) pchTarget));
+    FAIL_FAST_IF(!(pwchSource != (LPWSTR)pchTarget));
     DBGCHARS(("ConvertToOem U->%d %.*ls\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pwchSource));
-    #pragma prefast(suppress:__WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format off
+#pragma prefast(suppress: __WARNING_W2A_BEST_FIT, "WC_NO_BEST_FIT_CHARS doesn't work in many codepages. Retain old behavior.")
+    // clang-format on
     return LOG_IF_WIN32_BOOL_FALSE(WideCharToMultiByte(uiCodePage, 0, pwchSource, cchSource, pchTarget, cchTarget, nullptr, nullptr));
 }
 
 // Data in the output buffer is the true unicode value.
 int ConvertInputToUnicode(const UINT uiCodePage,
-                          _In_reads_(cchSource) const CHAR * const pchSource,
+                          _In_reads_(cchSource) const CHAR* const pchSource,
                           const UINT cchSource,
-                          _Out_writes_(cchTarget) WCHAR * const pwchTarget,
+                          _Out_writes_(cchTarget) WCHAR* const pwchTarget,
                           const UINT cchTarget) noexcept
 {
     DBGCHARS(("ConvertInputToUnicode %d->U %.*s\n", uiCodePage, cchSource > 10 ? 10 : cchSource, pchSource));
@@ -283,9 +285,9 @@ int ConvertInputToUnicode(const UINT uiCodePage,
 
 // Output data is always translated via the ansi codepage so glyph translation works.
 int ConvertOutputToUnicode(_In_ UINT uiCodePage,
-                           _In_reads_(cchSource) const CHAR * const pchSource,
+                           _In_reads_(cchSource) const CHAR* const pchSource,
                            _In_ UINT cchSource,
-                           _Out_writes_(cchTarget) WCHAR *pwchTarget,
+                           _Out_writes_(cchTarget) WCHAR* pwchTarget,
                            _In_ UINT cchTarget) noexcept
 {
     FAIL_FAST_IF(!(cchTarget > 0));

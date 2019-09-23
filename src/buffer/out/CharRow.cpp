@@ -84,7 +84,7 @@ size_t CharRow::size() const noexcept
 // - sRowWidth - The width of the row.
 // Return Value:
 // - <none>
-void CharRow::Reset()
+void CharRow::Reset() noexcept
 {
     for (auto& cell : _data)
     {
@@ -101,8 +101,7 @@ void CharRow::Reset()
 // - newSize - the new width of the character and attributes rows
 // Return Value:
 // - S_OK on success, otherwise relevant error code
-[[nodiscard]]
-HRESULT CharRow::Resize(const size_t newSize) noexcept
+[[nodiscard]] HRESULT CharRow::Resize(const size_t newSize) noexcept
 {
     try
     {
@@ -210,7 +209,7 @@ const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 // Note: will throw exception if column is out of bounds
 DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 {
-    return const_cast<DbcsAttribute&>(static_cast<const CharRow* const>(this)->DbcsAttrAt(column));
+    return _data.at(column).DbcsAttr();
 }
 
 // Routine Description:
@@ -251,54 +250,31 @@ CharRow::reference CharRow::GlyphAt(const size_t column)
     return { *this, column };
 }
 
-// Routine Description:
-// - returns string containing text data exactly how it's stored internally, including doubling of
-// leading/trailing cells.
-// Arguments:
-// - none
-// Return Value:
-// - text stored in char row
-// - Note: will throw exception if out of memory
-std::wstring CharRow::GetTextRaw() const
-{
-    std::wstring wstr;
-    wstr.reserve(_data.size());
-    for (size_t i = 0;  i < _data.size(); ++i)
-    {
-        auto glyph = GlyphAt(i);
-        for (auto it = glyph.begin(); it != glyph.end(); ++it)
-        {
-            wstr.push_back(*it);
-        }
-    }
-    return wstr;
-}
-
 std::wstring CharRow::GetText() const
 {
     std::wstring wstr;
     wstr.reserve(_data.size());
 
-    for (size_t i = 0;  i < _data.size(); ++i)
+    for (size_t i = 0; i < _data.size(); ++i)
     {
-        auto glyph = GlyphAt(i);
+        const auto glyph = GlyphAt(i);
         if (!DbcsAttrAt(i).IsTrailing())
         {
-            for (auto it = glyph.begin(); it != glyph.end(); ++it)
+            for (const auto wch : glyph)
             {
-                wstr.push_back(*it);
+                wstr.push_back(wch);
             }
         }
     }
     return wstr;
 }
 
-UnicodeStorage& CharRow::GetUnicodeStorage()
+UnicodeStorage& CharRow::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
 
-const UnicodeStorage& CharRow::GetUnicodeStorage() const
+const UnicodeStorage& CharRow::GetUnicodeStorage() const noexcept
 {
     return _pParent->GetUnicodeStorage();
 }
@@ -309,7 +285,7 @@ const UnicodeStorage& CharRow::GetUnicodeStorage() const
 // - column - the column to generate the key for
 // Return Value:
 // - the COORD key for data access from UnicodeStorage for the column
-COORD CharRow::GetStorageKey(const size_t column) const
+COORD CharRow::GetStorageKey(const size_t column) const noexcept
 {
     return { gsl::narrow<SHORT>(column), _pParent->GetId() };
 }

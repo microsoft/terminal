@@ -14,5 +14,5 @@ Author(s):
 
 #pragma once
 
-LRESULT SimpleColorControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam);
+[[nodiscard]] LRESULT CALLBACK SimpleColorControlProc(HWND hColor, UINT wMsg, WPARAM wParam, LPARAM lParam);
 void SimpleColorDoPaint(HWND hColor, PAINTSTRUCT& ps, int ColorId);

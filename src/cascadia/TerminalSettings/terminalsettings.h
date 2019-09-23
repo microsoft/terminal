@@ -45,6 +45,10 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CursorShape(winrt::Microsoft::Terminal::Settings::CursorStyle const& value) noexcept;
         uint32_t CursorHeight();
         void CursorHeight(uint32_t value);
+        hstring WordDelimiters();
+        void WordDelimiters(hstring const& value);
+        bool CopyOnSelect();
+        void CopyOnSelect(bool value);
         // ------------------------ End of Core Settings -----------------------
 
         bool UseAcrylic();
@@ -61,6 +65,17 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         int32_t FontSize();
         void FontSize(int32_t value);
 
+        hstring BackgroundImage();
+        void BackgroundImage(hstring const& value);
+        double BackgroundImageOpacity();
+        void BackgroundImageOpacity(double value);
+        winrt::Windows::UI::Xaml::Media::Stretch BackgroundImageStretchMode();
+        void BackgroundImageStretchMode(winrt::Windows::UI::Xaml::Media::Stretch value);
+        winrt::Windows::UI::Xaml::HorizontalAlignment BackgroundImageHorizontalAlignment();
+        void BackgroundImageHorizontalAlignment(winrt::Windows::UI::Xaml::HorizontalAlignment value);
+        winrt::Windows::UI::Xaml::VerticalAlignment BackgroundImageVerticalAlignment();
+        void BackgroundImageVerticalAlignment(winrt::Windows::UI::Xaml::VerticalAlignment value);
+
         winrt::Microsoft::Terminal::Settings::IKeyBindings KeyBindings();
         void KeyBindings(winrt::Microsoft::Terminal::Settings::IKeyBindings const& value);
 
@@ -69,6 +84,9 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
 
         hstring StartingDirectory();
         void StartingDirectory(hstring const& value);
+
+        hstring StartingTitle();
+        void StartingTitle(hstring const& value);
 
         hstring EnvironmentVariables();
         void EnvironmentVariables(hstring const& value);
@@ -87,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         uint32_t _cursorColor;
         Settings::CursorStyle _cursorShape;
         uint32_t _cursorHeight;
+        hstring _wordDelimiters;
 
         bool _useAcrylic;
         bool _closeOnExit;
@@ -94,8 +113,15 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         hstring _fontFace;
         int32_t _fontSize;
         hstring _padding;
+        hstring _backgroundImage;
+        double _backgroundImageOpacity;
+        winrt::Windows::UI::Xaml::Media::Stretch _backgroundImageStretchMode;
+        winrt::Windows::UI::Xaml::HorizontalAlignment _backgroundImageHorizontalAlignment;
+        winrt::Windows::UI::Xaml::VerticalAlignment _backgroundImageVerticalAlignment;
+        bool _copyOnSelect;
         hstring _commandline;
         hstring _startingDir;
+        hstring _startingTitle;
         hstring _envVars;
         Settings::IKeyBindings _keyBindings;
         Settings::ScrollbarState _scrollbarState;

@@ -263,7 +263,7 @@ bool StateMachine::s_IsOscInvalid(const wchar_t wch)
 {
     return wch <= L'\x17' ||
            wch == L'\x19' ||
-           (wch >= L'\x1c' && wch <= L'\x1f') ;
+           (wch >= L'\x1c' && wch <= L'\x1f');
 }
 
 // Routine Description:
@@ -299,7 +299,6 @@ void StateMachine::_ActionExecute(const wchar_t wch)
 {
     _trace.TraceOnExecute(wch);
     _pEngine->ActionExecute(wch);
-
 }
 
 // Routine Description:
@@ -314,7 +313,6 @@ void StateMachine::_ActionExecuteFromEscape(const wchar_t wch)
 {
     _trace.TraceOnExecuteFromEscape(wch);
     _pEngine->ActionExecuteFromEscape(wch);
-
 }
 
 // Routine Description:
@@ -328,7 +326,6 @@ void StateMachine::_ActionPrint(const wchar_t wch)
     _trace.TraceOnAction(L"Print");
     _pEngine->ActionPrint(wch);
 }
-
 
 // Routine Description:
 // - Triggers the EscDispatch action to indicate that the listener should handle a simple escape sequence.
@@ -450,11 +447,15 @@ void StateMachine::_ActionParam(const wchar_t wch)
                 // multiply existing values by 10 to make space in the 1s digit
                 *_pusActiveParam *= 10;
 
-                // mark that we've now stored another digit.
-                _iParamAccumulatePos++;
-
                 // store the digit in the 1s place.
                 *_pusActiveParam += usDigit;
+
+                // if the total is zero, it must be a leading zero digit, so we don't count it.
+                if (*_pusActiveParam != 0)
+                {
+                    // otherwise mark that we've now stored another digit.
+                    _iParamAccumulatePos++;
+                }
 
                 if (*_pusActiveParam > SHORT_MAX)
                 {
@@ -496,7 +497,6 @@ void StateMachine::_ActionClear()
     _sOscNextChar = 0;
 
     _pEngine->ActionClear();
-
 }
 
 // Routine Description:
@@ -530,11 +530,15 @@ void StateMachine::_ActionOscParam(const wchar_t wch)
         // multiply existing values by 10 to make space in the 1s digit
         _sOscParam *= 10;
 
-        // mark that we've now stored another digit.
-        _iParamAccumulatePos++;
-
         // store the digit in the 1s place.
         _sOscParam += usDigit;
+
+        // if the total is zero, it must be a leading zero digit, so we don't count it.
+        if (_sOscParam != 0)
+        {
+            // otherwise mark that we've now stored another digit.
+            _iParamAccumulatePos++;
+        }
 
         if (_sOscParam > SHORT_MAX)
         {
@@ -849,8 +853,16 @@ void StateMachine::_EventEscape(const wchar_t wch)
     }
     else if (s_IsIntermediate(wch))
     {
-        _ActionCollect(wch);
-        _EnterEscapeIntermediate();
+        if (_pEngine->DispatchIntermediatesFromEscape())
+        {
+            _ActionEscDispatch(wch);
+            _EnterGround();
+        }
+        else
+        {
+            _ActionCollect(wch);
+            _EnterEscapeIntermediate();
+        }
     }
     else if (s_IsCsiIndicator(wch))
     {
@@ -1315,7 +1327,7 @@ bool StateMachine::FlushToTerminal()
     // However, if we're here, then the processing of pwchChar triggered the
     //      engine to request the entire sequence get passed through, including pwchCurr.
     return _pEngine->ActionPassThroughString(_pwchSequenceStart,
-                                             _pwchCurr-_pwchSequenceStart+1);
+                                             _pwchCurr - _pwchSequenceStart + 1);
 }
 
 // Routine Description:
@@ -1338,15 +1350,15 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     //   we want the partial sequence state to persist.
     static bool s_fProcessIndividually = false;
 
-    for(size_t cchCharsRemaining = cch; cchCharsRemaining > 0; cchCharsRemaining--)
+    for (size_t cchCharsRemaining = cch; cchCharsRemaining > 0; cchCharsRemaining--)
     {
         if (s_fProcessIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
             ProcessCharacter(*_pwchCurr);
             _pwchCurr++;
-            if (_state == VTStates::Ground)  // Then check if we're back at ground. If we are, the next character (pwchCurr)
-            {                                //   is the start of the next run of characters that might be printable.
+            if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
+            { //   is the start of the next run of characters that might be printable.
                 s_fProcessIndividually = false;
                 _pwchSequenceStart = _pwchCurr;
                 _currRunLength = 0;
@@ -1354,7 +1366,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         }
         else
         {
-            if (s_IsActionableFromGround(*_pwchCurr))  // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (s_IsActionableFromGround(*_pwchCurr)) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
                 FAIL_FAST_IF(!(_pwchSequenceStart + _currRunLength <= rgwch + cch));
                 _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength); // ... print all the chars leading up to it as part of the run...
@@ -1363,7 +1375,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
                 _currRunLength = 0;
                 _pwchSequenceStart = _pwchCurr;
                 ProcessCharacter(*_pwchCurr); // ... Then process the character individually.
-                if (_state == VTStates::Ground)  // If the character took us right back to ground, start another run after it.
+                if (_state == VTStates::Ground) // If the character took us right back to ground, start another run after it.
                 {
                     s_fProcessIndividually = false;
                     _pwchSequenceStart = _pwchCurr + 1;
@@ -1384,7 +1396,6 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
         // print the rest of the characters in the string
         _pEngine->ActionPrintString(_pwchSequenceStart, _currRunLength);
         _trace.DispatchPrintRunTrace(_pwchSequenceStart, _currRunLength);
-
     }
     else if (s_fProcessIndividually)
     {
@@ -1394,7 +1405,7 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
             const wchar_t* pwch = _pwchSequenceStart;
-            for (; pwch < _pwchCurr-1; pwch++)
+            for (; pwch < _pwchCurr - 1; pwch++)
             {
                 ProcessCharacter(*pwch);
             }
@@ -1421,7 +1432,6 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             default:
                 return;
             }
-
         }
     }
 }

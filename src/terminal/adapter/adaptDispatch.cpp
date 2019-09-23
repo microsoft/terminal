@@ -10,7 +10,15 @@
 // Inspired from RETURN_IF_WIN32_BOOL_FALSE
 // WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
 //  will actually return the value of GLE.
-#define RETURN_IF_FALSE(b) do { BOOL __boolRet = wil::verify_bool(b); if (!__boolRet) { return b; }} while (0, 0)
+#define RETURN_IF_FALSE(b)                    \
+    do                                        \
+    {                                         \
+        BOOL __boolRet = wil::verify_bool(b); \
+        if (!__boolRet)                       \
+        {                                     \
+            return b;                         \
+        }                                     \
+    } while (0, 0)
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -21,25 +29,28 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - <none>
 // Return Value:
 // - Always false to signify we didn't handle it.
-bool NoOp() { return false; }
+bool NoOp()
+{
+    return false;
+}
 
 // Note: AdaptDispatch will take ownership of pConApi and pDefaults
 AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
-                             AdaptDefaults* const pDefaults)
-    : _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
-      _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
-      _fChangedBackground(false),
-      _fChangedForeground(false),
-      _fChangedMetaAttrs(false),
-      _TermOutput()
+                             AdaptDefaults* const pDefaults) :
+    _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
+    _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
+    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
+    _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
+    _fChangedBackground(false),
+    _fChangedForeground(false),
+    _fChangedMetaAttrs(false),
+    _TermOutput()
 {
     // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
     _coordSavedCursor.X = 1;
     _coordSavedCursor.Y = 1;
-    _srScrollMargins = {0}; // initially, there are no scroll margins.
-    _fIsSetColumnsEnabled = false; // by default, DECSCPP is disabled.
-    // TODO:10086990 - Create a setting to re-enable this.
-
+    _srScrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
 void AdaptDispatch::Print(const wchar_t wchPrintable)
@@ -64,7 +75,6 @@ void AdaptDispatch::PrintString(const wchar_t* const rgwch, const size_t cch)
         {
             _pDefaults->PrintString(rgwch, cch);
         }
-
     }
     CATCH_LOG();
 }
@@ -318,6 +328,14 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
             if (*puiRow != 0)
             {
                 uiRow = *puiRow - 1; // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+
+                // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
+                // line numbers start at the top margin of the scrolling region, and cannot move below the bottom.
+                if (_fIsOriginModeRelative && _srScrollMargins.Bottom != 0)
+                {
+                    uiRow += _srScrollMargins.Top;
+                    uiRow = std::min<decltype(uiRow)>(uiRow, _srScrollMargins.Bottom);
+                }
             }
             else
             {
@@ -356,7 +374,7 @@ bool AdaptDispatch::_CursorMovePosition(_In_opt_ const unsigned int* const puiRo
             {
                 // Set the line and column values as offsets from the viewport edge. Use safe math to prevent overflow.
                 fSuccess = SUCCEEDED(ShortAdd(coordCursor.Y, csbiex.srWindow.Top, &coordCursor.Y)) &&
-                    SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
+                           SUCCEEDED(ShortAdd(coordCursor.X, csbiex.srWindow.Left, &coordCursor.X));
 
                 if (fSuccess)
                 {
@@ -434,6 +452,7 @@ bool AdaptDispatch::CursorSavePosition()
         // VT is also 1 based, not 0 based, so correct by 1.
         _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
         _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
+        _fIsSavedOriginModeRelative = _fIsOriginModeRelative;
     }
 
     return fSuccess;
@@ -451,7 +470,13 @@ bool AdaptDispatch::CursorRestorePosition()
     unsigned int const uiRow = _coordSavedCursor.Y;
     unsigned int const uiCol = _coordSavedCursor.X;
 
-    return _CursorMovePosition(&uiRow, &uiCol);
+    // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
+    _fIsOriginModeRelative = false;
+    bool const fSuccess = _CursorMovePosition(&uiRow, &uiCol);
+
+    // Once the cursor position is restored, we can then restore the actual origin mode.
+    _fIsOriginModeRelative = _fIsSavedOriginModeRelative;
+    return fSuccess;
 }
 
 // Routine Description:
@@ -481,7 +506,7 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     SHORT sDistance;
     RETURN_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
 
-    // get current cursor, viewport
+    // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
@@ -490,11 +515,11 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
-    const auto viewport = Viewport::FromExclusive(csbiex.srWindow);
-    // Rectangle to cut out of the existing buffer
+    // Rectangle to cut out of the existing buffer. This is inclusive.
+    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = viewport.RightExclusive();
+    srScroll.Right = SHORT_MAX;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -516,87 +541,17 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     }
     else
     {
-        // for delete, we need to add to the scroll region to move it off toward the right.
-        fSuccess = SUCCEEDED(ShortAdd(srScroll.Left, sDistance, &srScroll.Left));
+        // Delete scrolls the affected region to the left, relying on the clipping rect to actually delete the characters.
+        fSuccess = SUCCEEDED(ShortSub(coordDestination.X, sDistance, &coordDestination.X));
     }
 
     if (fSuccess)
     {
-        if (srScroll.Left >= viewport.RightExclusive() ||
-            coordDestination.X >= viewport.RightExclusive())
-        {
-            DWORD const nLength = viewport.RightExclusive() - cursor.X;
-            size_t written = 0;
-
-            // if the select/scroll region is off screen to the right or the destination is off screen to the right, fill instead of scrolling.
-            fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                              nLength,
-                                                              cursor,
-                                                              written);
-
-            if (fSuccess)
-            {
-                written = 0;
-                fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                 nLength,
-                                                                 cursor,
-                                                                 written);
-            }
-        }
-        else
-        {
-            // clip inside the viewport.
-            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
-                                                             &csbiex.srWindow,
-                                                             coordDestination,
-                                                             &ciFill);
-
-            if (fSuccess && !fIsInsert)
-            {
-                // See MSFT:19888564
-                // We've now shifted a number of the characters to the left.
-                // If the number of chars we've shifted doesn't fill the
-                //      entire region we deleted, then artifacts of the
-                //      previous contents of the row can get left behind.
-                //
-                // Example: (this is tested by DeleteCharsNearEndOfLineSimpleFirstCase)
-                // start with the following buffer contents, and the cursor on the "D"
-                // [ABCDEFG ]
-                //     ^
-                // When you DCH(3) here, we are trying to delete the D, E and F.
-                // We do that by shifting the contents of the line after the deleted
-                // characters to the left. HOWEVER, there are only 2 chars left to move.
-                // So (before the fix) the buffer end up like this:
-                // [ABCG F  ]
-                //     ^
-                // The G and " " have moved, but the F did not get overwritten.
-                //
-                // Fill the remaining space after the characters we
-                //      shifted with spaces (empty cells).
-                const short scrolledChars = viewport.RightExclusive() - srScroll.Left;
-                const short shiftedRightPos = cursor.X + scrolledChars;
-                if (shiftedRightPos < srScroll.Left)
-                {
-                    size_t written = 0;
-                    const short spacesToFill = viewport.RightInclusive() - (shiftedRightPos);
-                    const COORD fillPos{ shiftedRightPos, cursor.Y };
-                    fSuccess = !!_conApi->FillConsoleOutputCharacterW(ciFill.Char.UnicodeChar,
-                                                                      spacesToFill,
-                                                                      fillPos,
-                                                                      written);
-                    if (fSuccess)
-                    {
-                        written = 0;
-                        fSuccess = !!_conApi->FillConsoleOutputAttribute(ciFill.Attributes,
-                                                                         spacesToFill,
-                                                                         fillPos,
-                                                                         written);
-                    }
-                }
-            }
-        }
+        fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
+                                                         &srScroll,
+                                                         coordDestination,
+                                                         &ciFill);
     }
-
 
     return fSuccess;
 }
@@ -658,7 +613,7 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
     bool fSuccess = false;
     for (short y = coordStartPosition.Y; y < coordLastPosition.Y; y++)
     {
-        const COORD coordLine = {coordStartPosition.X, y};
+        const COORD coordLine = { coordStartPosition.X, y };
         fSuccess = !!_conApi->FillConsoleOutputCharacterW(wchSpace, coordLastPosition.X - coordStartPosition.X, coordLine, written);
         if (fSuccess)
         {
@@ -718,7 +673,6 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* c
     }
 
     return _EraseSingleLineDistanceHelper(coordStartPosition, nLength, wFillColor);
-
 }
 
 // Routine Description:
@@ -741,9 +695,9 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
         const COORD coordStartPosition = csbiex.dwCursorPosition;
 
         const SHORT sRemainingSpaces = csbiex.srWindow.Right - coordStartPosition.X;
-        const unsigned short usActualRemaining = (sRemainingSpaces < 0)? 0 : sRemainingSpaces;
+        const unsigned short usActualRemaining = (sRemainingSpaces < 0) ? 0 : sRemainingSpaces;
         // erase at max the number of characters remaining in the line from the current position.
-        const DWORD dwEraseLength = (uiNumChars <= usActualRemaining)? uiNumChars : usActualRemaining;
+        const DWORD dwEraseLength = (uiNumChars <= usActualRemaining) ? uiNumChars : usActualRemaining;
 
         fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwEraseLength, csbiex.wAttributes);
     }
@@ -857,7 +811,6 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     return fSuccess;
 }
 
-
 // Routine Description:
 // - DSR - Reports status of a console property back to the STDIN based on the type of status requested.
 //       - This particular routine responds to ANSI status patterns only (CSI # n), not the DEC format (CSI ? # n)
@@ -920,6 +873,12 @@ bool AdaptDispatch::_CursorPositionReport() const
         // NOTE: 1,1 is the top-left corner of the viewport in VT-speak, so add 1.
         coordCursorPos.X++;
         coordCursorPos.Y++;
+
+        // If the origin mode is relative, line numbers start at top margin of the scrolling region.
+        if (_fIsOriginModeRelative)
+        {
+            coordCursorPos.Y -= _srScrollMargins.Top;
+        }
 
         // Now send it back into the input channel of the console.
         // First format the response string.
@@ -997,13 +956,19 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
 
         if (fSuccess)
         {
-            SMALL_RECT srScreen = csbiex.srWindow;
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+            SMALL_RECT srScreen;
+            srScreen.Left = 0;
+            srScreen.Right = SHORT_MAX;
+            srScreen.Top = csbiex.srWindow.Top;
+            srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
 
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = srScreen.Left;
             // Scroll starting from the top of the scroll margins.
-            coordDestination.Y = (_srScrollMargins.Top + srScreen.Top) + sDistance * (sdDirection == ScrollDirection::Up? -1 : 1);
+            coordDestination.Y = (_srScrollMargins.Top + srScreen.Top) + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
             // We don't need to worry about clipping the margins at all, ScrollRegion inside conhost will do that correctly for us
 
             // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
@@ -1049,12 +1014,6 @@ bool AdaptDispatch::ScrollDown(_In_ unsigned int const uiDistance)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 {
-    if (!_fIsSetColumnsEnabled)
-    {
-        // Only set columns if that option is available. Return true, as this is technically a successful handling.
-        return true;
-    }
-
     SHORT sColumns;
     bool fSuccess = SUCCEEDED(UIntToShort(uiColumns, &sColumns));
     if (fSuccess)
@@ -1073,23 +1032,34 @@ bool AdaptDispatch::SetColumns(_In_ unsigned int const uiColumns)
 }
 
 // Routine Description:
-// - DECCOLM not only sets the number of columns, but also clears the screen buffer, resets the page margins, and places the cursor at 1,1
+// - DECCOLM not only sets the number of columns, but also clears the screen buffer,
+//    resets the page margins and origin mode, and places the cursor at 1,1
 // Arguments:
 // - uiColumns - Number of columns
 // Return Value:
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
 {
+    if (!_fIsDECCOLMAllowed)
+    {
+        // Only proceed if DECCOLM is allowed. Return true, as this is technically a successful handling.
+        return true;
+    }
+
     bool fSuccess = SetColumns(uiColumns);
     if (fSuccess)
     {
-        fSuccess = CursorPosition(1, 1);
+        fSuccess = SetOriginMode(false);
         if (fSuccess)
         {
-            fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
+            fSuccess = CursorPosition(1, 1);
             if (fSuccess)
             {
-                fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
+                fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
+                if (fSuccess)
+                {
+                    fSuccess = _DoSetTopBottomScrollingMargins(0, 0);
+                }
             }
         }
     }
@@ -1099,20 +1069,27 @@ bool AdaptDispatch::_DoDECCOLMHelper(_In_ unsigned int const uiColumns)
 bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
 {
     bool fSuccess = false;
-    switch(param)
+    switch (param)
     {
     case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         fSuccess = SetCursorKeysMode(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
-        fSuccess = _DoDECCOLMHelper(fEnable? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        fSuccess = _DoDECCOLMHelper(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns);
+        break;
+    case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+        // The cursor is also moved to the new home position when the origin mode is set or reset.
+        fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
         break;
     case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
         fSuccess = EnableCursorBlinking(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
         fSuccess = CursorVisibility(fEnable);
+        break;
+    case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+        fSuccess = EnableDECCOLMSupport(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
         fSuccess = EnableVT200MouseMode(fEnable);
@@ -1133,7 +1110,7 @@ bool AdaptDispatch::_PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModePara
         fSuccess = EnableAlternateScroll(fEnable);
         break;
     case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
-        fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
+        fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
         break;
     default:
         // If no functions to call, overall dispatch was a failure.
@@ -1160,7 +1137,7 @@ bool AdaptDispatch::_SetResetPrivateModes(_In_reads_(cParams) const DispatchType
     size_t cFailures = 0;
     for (size_t i = 0; i < cParams; i++)
     {
-        cFailures += _PrivateModeParamsHelper(rgParams[i], fEnable)? 0 : 1; // increment the number of failures if we fail.
+        cFailures += _PrivateModeParamsHelper(rgParams[i], fEnable) ? 0 : 1; // increment the number of failures if we fail.
     }
     return cFailures == 0;
 }
@@ -1250,6 +1227,20 @@ bool AdaptDispatch::DeleteLine(_In_ unsigned int const uiDistance)
 }
 
 // Routine Description:
+// - DECOM - Sets the cursor addressing origin mode to relative or absolute.
+//    When relative, line numbers start at top margin of the user-defined scrolling region.
+//    When absolute, line numbers are independent of the scrolling region.
+// Arguments:
+// - fRelativeMode - set to true to use relative addressing, false for absolute addressing.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetOriginMode(const bool fRelativeMode)
+{
+    _fIsOriginModeRelative = fRelativeMode;
+    return true;
+}
+
+// Routine Description:
 // - DECSTBM - Set Scrolling Region
 // This control function sets the top and bottom margins for the current page.
 //  You cannot perform scrolling outside the margins.
@@ -1278,39 +1269,36 @@ bool AdaptDispatch::_DoSetTopBottomScrollingMargins(const SHORT sTopMargin,
         SHORT sActualTop = sTopMargin;
         SHORT sActualBottom = sBottomMargin;
         SHORT sScreenHeight = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
-        if ( sActualTop == 0 && sActualBottom == 0)
+        // The default top margin is line 1
+        if (sActualTop == 0)
         {
-            // Disable Margins
-            // This case is valid, and nothing changes.
+            sActualTop = 1;
         }
-        else if (sActualBottom == 0)
+        // The default bottom margin is the screen height
+        if (sActualBottom == 0)
         {
             sActualBottom = sScreenHeight;
         }
-        else if (sActualBottom < sActualTop)
-        {
-            fSuccess = false;
-        }
-        else if ((sActualTop == 0 || sActualTop == 1) && sActualBottom == sScreenHeight)
-        {
-            // Client requests setting margins to the entire screen
-            //    - clear them instead of setting them.
-            // This is for apps like `apt` (NOT `apt-get` which set scroll
-            //      margins, but don't use the alt buffer.)
-            // Some apps will use 0 as a top, some will use 1. Both should behave the same.
-            sActualBottom = 0;
-        }
-        // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
-        if (sActualTop > 0)
-        {
-            sActualTop -= 1;
-        }
-        if (sActualBottom > 0)
-        {
-            sActualBottom -= 1;
-        }
+        // The top margin must be less than the bottom margin, and the
+        // bottom margin must be less than or equal to the screen height
+        fSuccess = (sActualTop < sActualBottom && sActualBottom <= sScreenHeight);
         if (fSuccess)
         {
+            if (sActualTop == 1 && sActualBottom == sScreenHeight)
+            {
+                // Client requests setting margins to the entire screen
+                //    - clear them instead of setting them.
+                // This is for apps like `apt` (NOT `apt-get` which set scroll
+                //      margins, but don't use the alt buffer.)
+                sActualTop = 0;
+                sActualBottom = 0;
+            }
+            else
+            {
+                // In VT, the origin is 1,1. For our array, it's 0,0. So subtract 1.
+                sActualTop -= 1;
+                sActualBottom -= 1;
+            }
             _srScrollMargins.Top = sActualTop;
             _srScrollMargins.Bottom = sActualBottom;
             fSuccess = !!_conApi->PrivateSetScrollingRegion(&_srScrollMargins);
@@ -1389,7 +1377,7 @@ bool AdaptDispatch::UseMainScreenBuffer()
 //Arguments:
 // - None
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::HorizontalTabSet()
 {
     return !!_conApi->PrivateHorizontalTabSet();
@@ -1403,7 +1391,7 @@ bool AdaptDispatch::HorizontalTabSet()
 //Arguments:
 // - sNumTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 {
     return !!_conApi->PrivateForwardTab(sNumTabs);
@@ -1415,7 +1403,7 @@ bool AdaptDispatch::ForwardTab(const SHORT sNumTabs)
 //Arguments:
 // - sNumTabs - the number of tabs to perform
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 {
     return !!_conApi->PrivateBackwardsTab(sNumTabs);
@@ -1428,7 +1416,7 @@ bool AdaptDispatch::BackwardsTab(const SHORT sNumTabs)
 //Arguments:
 // - sClearType - Whether to clear the current column, or all columns, defined in DispatchTypes::TabClearType
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::TabClear(const SHORT sClearType)
 {
     bool fSuccess = false;
@@ -1453,7 +1441,7 @@ bool AdaptDispatch::TabClear(const SHORT sClearType)
 //Arguments:
 // - wchCharset - The character indicating the charset we should switch to.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 {
     return _TermOutput.DesignateCharset(wchCharset);
@@ -1466,7 +1454,7 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 //   we should update this.
 //  X Text cursor enable          DECTCEM     Cursor enabled.
 //    Insert/replace              IRM         Replace mode.
-//    Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
+//  X Origin                      DECOM       Absolute (cursor origin at upper-left of screen.)
 //    Autowrap                    DECAWM      No autowrap.
 //    National replacement        DECNRCM     Multinational set.
 //        character set
@@ -1489,10 +1477,14 @@ bool AdaptDispatch::DesignateCharset(const wchar_t wchCharset)
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SoftReset()
 {
     bool fSuccess = CursorVisibility(true); // Cursor enabled.
+    if (fSuccess)
+    {
+        fSuccess = SetOriginMode(false); // Absolute cursor addressing.
+    }
     if (fSuccess)
     {
         fSuccess = SetCursorKeysMode(false); // Normal characters.
@@ -1512,13 +1504,14 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-		DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
+        DispatchTypes::GraphicsOptions opt = DispatchTypes::GraphicsOptions::Off;
         fSuccess = SetGraphicsRendition(&opt, 1); // Normal rendition.
     }
     if (fSuccess)
     {
-        // Save cursor state: Home position.
-        _coordSavedCursor = {1, 1};
+        // Save cursor state: Home position; Absolute addressing.
+        _coordSavedCursor = { 1, 1 };
+        _fIsSavedOriginModeRelative = false;
     }
 
     return fSuccess;
@@ -1542,26 +1535,27 @@ bool AdaptDispatch::SoftReset()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::HardReset()
 {
+    // Sets the SGR state to normal - this must be done before EraseInDisplay
+    //      to ensure that it clears with the default background color.
+    bool fSuccess = SoftReset();
+
     // Clears the screen - Needs to be done in two operations.
-    bool fSuccess = _EraseScrollback();
     if (fSuccess)
     {
         fSuccess = EraseInDisplay(DispatchTypes::EraseType::All);
     }
+    if (fSuccess)
+    {
+        fSuccess = _EraseScrollback();
+    }
 
-    // Cursor to 1,1
+    // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     if (fSuccess)
     {
         fSuccess = CursorPosition(1, 1);
-    }
-
-    // Sets the SGR state to normal.
-    if (fSuccess)
-    {
-        fSuccess = SoftReset();
     }
 
     // delete all current tab stops and reapply
@@ -1581,7 +1575,7 @@ bool AdaptDispatch::HardReset()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseScrollback()
 {
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
@@ -1617,15 +1611,15 @@ bool AdaptDispatch::_EraseScrollback()
 
             // First clear section A
             const DWORD dwTotalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - sHeight);
-            const COORD coordBelowStartPosition = {0, sHeight};
+            const COORD coordBelowStartPosition = { 0, sHeight };
             // We don't use the _EraseAreaHelper here because _EraseSingleLineDistanceHelper does it all in one operation
             fSuccess = _EraseSingleLineDistanceHelper(coordBelowStartPosition, dwTotalAreaBelow, csbiex.wAttributes);
 
             if (fSuccess)
             {
                 // If there is a section B, clear it.
-                const COORD coordBottomRight = {csbiex.dwSize.X, coordBelowStartPosition.Y};
-                const COORD coordRightStartPosition = {sWidth, 0};
+                const COORD coordBottomRight = { csbiex.dwSize.X, coordBelowStartPosition.Y };
+                const COORD coordRightStartPosition = { sWidth, 0 };
                 if (coordBottomRight.X > coordRightStartPosition.X)
                 {
                     // We use the Area helper here because the Line helper would
@@ -1647,7 +1641,7 @@ bool AdaptDispatch::_EraseScrollback()
                     if (fSuccess)
                     {
                         // Move the cursor to the same relative location.
-                        const COORD newCursor = {Cursor.X-Screen.Left, Cursor.Y-Screen.Top};
+                        const COORD newCursor = { Cursor.X - Screen.Left, Cursor.Y - Screen.Top };
                         fSuccess = !!_conApi->SetConsoleCursorPosition(newCursor);
                     }
                 }
@@ -1667,10 +1661,22 @@ bool AdaptDispatch::_EraseScrollback()
 //Arguments:
 // <none>
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseAll()
 {
     return !!_conApi->PrivateEraseAll();
+}
+
+// Routine Description:
+// - Enables or disables support for the DECCOLM escape sequence.
+// Arguments:
+// - fEnabled - set to true to allow DECCOLM to be used, false to disallow.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnableDECCOLMSupport(const bool fEnabled)
+{
+    _fIsDECCOLMAllowed = fEnabled;
+    return true;
 }
 
 //Routine Description:
@@ -1678,7 +1684,7 @@ bool AdaptDispatch::_EraseAll()
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableVT200MouseMode(fEnabled);
@@ -1686,11 +1692,11 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable UTF-8 Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableUTF8ExtendedMouseMode(fEnabled);
@@ -1698,11 +1704,11 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool fEnabled)
 
 //Routine Description:
 // Enable SGR Extended Encoding - this changes the encoding scheme for sequences
-//      emitted by the mouse input handler. Does not enable/disable mouse mode on it's own.
+//      emitted by the mouse input handler. Does not enable/disable mouse mode on its own.
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableSGRExtendedMouseMode(fEnabled);
@@ -1713,7 +1719,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableButtonEventMouseMode(fEnabled);
@@ -1725,7 +1731,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableAnyEventMouseMode(fEnabled);
@@ -1737,7 +1743,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool fEnabled)
 //Arguments:
 // - fEnabled - true to enable, false to disable.
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 {
     return !!_conApi->PrivateEnableAlternateScroll(fEnabled);
@@ -1749,7 +1755,7 @@ bool AdaptDispatch::EnableAlternateScroll(const bool fEnabled)
 //Arguments:
 // - cursorStyle - The unix-like cursor style to apply to the cursor
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 {
     bool isPty = false;
@@ -1762,7 +1768,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
     CursorType actualType = CursorType::Legacy;
     bool fEnableBlinking = false;
 
-    switch(cursorStyle)
+    switch (cursorStyle)
     {
     case DispatchTypes::CursorStyle::BlinkingBlock:
     case DispatchTypes::CursorStyle::BlinkingBlockDefault:
@@ -1808,7 +1814,7 @@ bool AdaptDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle)
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
 // Return Value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 {
     bool isPty = false;
@@ -1827,17 +1833,65 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
 // - tableIndex: The VT color table index
 // - dwColor: The new RGB color value to use.
 // Return Value:
-// True if handled successfully. False othewise.
-bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
-                                       const DWORD dwColor)
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-
     bool fSuccess = tableIndex < 256;
     if (fSuccess)
     {
         const auto realIndex = ::Xterm256ToWindowsIndex(tableIndex);
-        fSuccess = !! _conApi->PrivateSetColorTableEntry(realIndex, dwColor);
+        fSuccess = !!_conApi->PrivateSetColorTableEntry(realIndex, dwColor);
     }
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Sets the default foreground color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+    fSuccess = !!_conApi->PrivateSetDefaultForeground(dwColor);
+
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    bool isPty = false;
+    _conApi->IsConsolePty(&isPty);
+    if (isPty)
+    {
+        return false;
+    }
+
+    return fSuccess;
+}
+
+// Method Description:
+// - Sets the default background color to a new value
+// Arguments:
+// - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
+// Return Value:
+// True if handled successfully. False otherwise.
+bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+{
+    bool fSuccess = true;
+    fSuccess = !!_conApi->PrivateSetDefaultBackground(dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -1864,7 +1918,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex,
 // - rgusParams - Additional parameters to pass to the function
 // - cParams - size of rgusParams
 // Return value:
-// True if handled successfully. False othewise.
+// True if handled successfully. False otherwise.
 bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationType uiFunction,
                                        _In_reads_(cParams) const unsigned short* const rgusParams,
                                        const size_t cParams)
@@ -1875,20 +1929,20 @@ bool AdaptDispatch::WindowManipulation(const DispatchTypes::WindowManipulationTy
     //  MSFT:13271146 - QueryScreenSize
     switch (uiFunction)
     {
-        case DispatchTypes::WindowManipulationType::RefreshWindow:
-            if (cParams == 0)
-            {
-                fSuccess = DispatchCommon::s_RefreshWindow(*_conApi);
-            }
-            break;
-        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-            if (cParams == 2)
-            {
-                fSuccess = DispatchCommon::s_ResizeWindow(*_conApi, rgusParams[1], rgusParams[0]);
-            }
-            break;
-        default:
-            fSuccess = false;
+    case DispatchTypes::WindowManipulationType::RefreshWindow:
+        if (cParams == 0)
+        {
+            fSuccess = DispatchCommon::s_RefreshWindow(*_conApi);
+        }
+        break;
+    case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+        if (cParams == 2)
+        {
+            fSuccess = DispatchCommon::s_ResizeWindow(*_conApi, rgusParams[1], rgusParams[0]);
+        }
+        break;
+    default:
+        fSuccess = false;
     }
 
     return fSuccess;

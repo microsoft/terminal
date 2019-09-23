@@ -5,17 +5,15 @@
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to test boundary conditions for:
 // SetConsoleActiveScreenBuffer
 class BufferTests
 {
     BEGIN_TEST_CLASS(BufferTests)
         TEST_CLASS_PROPERTY(L"IsolationLevel", L"Method")
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
     END_TEST_CLASS()
 
     TEST_METHOD(TestSetConsoleActiveScreenBufferInvalid);
@@ -23,7 +21,7 @@ class BufferTests
     BEGIN_TEST_METHOD(TestWritingInactiveScreenBuffer)
         TEST_METHOD_PROPERTY(L"Data:UseVtOutput", L"{true, false}")
     END_TEST_METHOD()
-    
+
     TEST_METHOD(ScrollLargeBufferPerformance);
 
     TEST_METHOD(ChafaGifPerformance);
@@ -38,7 +36,7 @@ void BufferTests::TestSetConsoleActiveScreenBufferInvalid()
 void BufferTests::TestWritingInactiveScreenBuffer()
 {
     bool useVtOutput;
-    VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"UseVtOutput", useVtOutput), L"Get whether this test should check VT output mode.");
+    VERIFY_SUCCEEDED_RETURN(WEX::TestExecution::TestData::TryGetValue(L"UseVtOutput", useVtOutput), L"Get whether this test should check VT output mode.");
 
     const std::wstring primary(L"You should see me");
     const std::wstring alternative(L"You should NOT see me!");
@@ -94,7 +92,6 @@ void BufferTests::TestWritingInactiveScreenBuffer()
     VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(handle, alternativeBuffer.get(), gsl::narrow<DWORD>(alternative.size()), { 0, 0 }, &read));
     VERIFY_ARE_EQUAL(alternative.size(), read);
     VERIFY_ARE_EQUAL(String(alternative.data()), String(alternativeBuffer.get(), gsl::narrow<int>(alternative.size())));
-
 }
 
 void BufferTests::ScrollLargeBufferPerformance()
@@ -124,8 +121,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     // Set this to false to scroll the entire buffer. The issue will disappear!
     const auto ScrollOnlyInvisibleArea = true;
 
-    const SMALL_RECT Rect
-    {
+    const SMALL_RECT Rect{
         0,
         0,
         Info.dwSize.X - 1,
@@ -145,7 +141,7 @@ void BufferTests::ScrollLargeBufferPerformance()
     const auto delta = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - now).count();
 
     SetConsoleCursorPosition(Out, { 0, Info.dwSize.Y - 1 });
-    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta/count));
+    Log::Comment(String().Format(L"%d calls took %d ms. Avg %d ms per call", count, delta, delta / count));
 }
 
 void BufferTests::ChafaGifPerformance()
@@ -163,7 +159,7 @@ void BufferTests::ChafaGifPerformance()
     Info.dwSize.Y = 9999;
     SetConsoleScreenBufferSize(Out, Info.dwSize);
 
-    SetConsoleCursorPosition(Out, { 0});
+    SetConsoleCursorPosition(Out, { 0 });
 
     DWORD Mode = 0;
     GetConsoleMode(Out, &Mode);
@@ -173,11 +169,11 @@ void BufferTests::ChafaGifPerformance()
     SetConsoleOutputCP(CP_UTF8);
 
     // Taken from: https://blog.kowalczyk.info/article/zy/Embedding-binary-resources-on-Windows.html
-    HGLOBAL     res_handle = NULL;
-    HRSRC       res;
-    char *      res_data;
-    DWORD       res_size;
-    
+    HGLOBAL res_handle = NULL;
+    HRSRC res;
+    char* res_data;
+    DWORD res_size;
+
     // NOTE: providing g_hInstance is important, NULL might not work
     HMODULE hModule = (HMODULE)&__ImageBase;
 
@@ -204,7 +200,7 @@ void BufferTests::ChafaGifPerformance()
     for (DWORD pos = 0; pos < res_size; pos += 1000)
     {
         DWORD written = 0;
-        WriteConsoleA(Out, res_data + pos, min(1000, res_size-pos), &written, nullptr);
+        WriteConsoleA(Out, res_data + pos, min(1000, res_size - pos), &written, nullptr);
         count++;
     }
 

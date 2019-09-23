@@ -12,7 +12,7 @@
 
 // The following default masks are used in creating windows
 #define CONSOLE_WINDOW_FLAGS (WS_OVERLAPPEDWINDOW | WS_HSCROLL | WS_VSCROLL)
-#define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW )
+#define CONSOLE_WINDOW_EX_FLAGS (WS_EX_WINDOWEDGE | WS_EX_ACCEPTFILES | WS_EX_APPWINDOW)
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
@@ -82,7 +82,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels()
 //                 - the original value passed in will be left untouched.
 // Return Value:
 // - RECT containing the left, right, top, and bottom positions from the desktop origin in pixels. Measures the outer edges of the potential window.
-RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _Out_opt_ UINT * pDpiSuggested)
+RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT* const prcSuggested, _Out_opt_ UINT* pDpiSuggested)
 {
     // prepare rectangle
     RECT rc = *prcSuggested;
@@ -96,7 +96,7 @@ RECT WindowMetrics::GetMaxWindowRectInPixels(const RECT * const prcSuggested, _O
 
     // NOTE: We must use the nearest monitor because sometimes the system moves the window around into strange spots while performing snap and Win+D operations.
     // Those operations won't work correctly if we use MONITOR_DEFAULTTOPRIMARY.
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    auto pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow == nullptr || (TRUE != EqualRect(&rc, &rcZero)))
     {
         // For invalid window handles or when we were passed a non-zero suggestion rectangle, get the monitor from the rect.
@@ -258,7 +258,7 @@ void WindowMetrics::ConvertRect(_Inout_ RECT* const prc, const ConvertRectangle 
     DWORD dwStyle = 0;
     DWORD dwExStyle = 0;
 
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    Microsoft::Console::Types::IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow != nullptr)
     {
         dwStyle = GetWindowStyle(pWindow->GetWindowHandle());

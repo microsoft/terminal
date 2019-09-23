@@ -38,8 +38,7 @@ const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 // CAPSLOCK_ON         0x0080
 // ENHANCED_KEY        0x0100
 
-const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
-{
+const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]{
     { CsiActionCodes::ArrowUp, VK_UP },
     { CsiActionCodes::ArrowDown, VK_DOWN },
     { CsiActionCodes::ArrowRight, VK_RIGHT },
@@ -52,8 +51,7 @@ const InputStateMachineEngine::CSI_TO_VKEY InputStateMachineEngine::s_rgCsiMap[]
     { CsiActionCodes::CSI_F4, VK_F4 },
 };
 
-const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]
-{
+const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGenericMap[]{
     { GenericKeyIdentifiers::GenericHome, VK_HOME },
     { GenericKeyIdentifiers::Insert, VK_INSERT },
     { GenericKeyIdentifiers::Delete, VK_DELETE },
@@ -70,8 +68,7 @@ const InputStateMachineEngine::GENERIC_TO_VKEY InputStateMachineEngine::s_rgGene
     { GenericKeyIdentifiers::F12, VK_F12 },
 };
 
-const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
-{
+const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]{
     { Ss3ActionCodes::SS3_F1, VK_F1 },
     { Ss3ActionCodes::SS3_F2, VK_F2 },
     { Ss3ActionCodes::SS3_F3, VK_F3 },
@@ -80,7 +77,8 @@ const InputStateMachineEngine::SS3_TO_VKEY InputStateMachineEngine::s_rgSs3Map[]
 
 InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch) :
     InputStateMachineEngine(pDispatch, false)
-{}
+{
+}
 
 InputStateMachineEngine::InputStateMachineEngine(IInteractDispatch* const pDispatch, const bool lookingForDSR) :
     _pDispatch(THROW_IF_NULL_ALLOC(pDispatch)),
@@ -118,10 +116,10 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
         short vkey = 0;
         DWORD dwModifierState = 0;
 
-        switch(wch)
+        switch (wch)
         {
         case L'\b':
-            fSuccess = _GenerateKeyFromChar(wch+0x40, &vkey, nullptr);
+            fSuccess = _GenerateKeyFromChar(wch + 0x40, &vkey, nullptr);
             break;
         case L'\r':
             writeCtrl = false;
@@ -176,7 +174,6 @@ bool InputStateMachineEngine::_DoControlCharacter(const wchar_t wch, const bool 
     return fSuccess;
 }
 
-
 // Routine Description:
 // - Triggers the Execute action to indicate that the listener should
 //      immediately respond to a C0 control character.
@@ -204,7 +201,7 @@ bool InputStateMachineEngine::ActionPrint(const wchar_t wch)
 {
     short vkey = 0;
     DWORD dwModifierState = 0;
-    bool fSuccess =  _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
+    bool fSuccess = _GenerateKeyFromChar(wch, &vkey, &dwModifierState);
     if (fSuccess)
     {
         fSuccess = _WriteSingleKey(wch, vkey, dwModifierState);
@@ -311,12 +308,54 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
     const unsigned short cRemainingArgs = (cParams >= 1) ? cParams - 1 : 0;
 
     bool fSuccess = false;
-    switch(wch)
+    switch (wch)
     {
-        case CsiActionCodes::Generic:
-            dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
-            fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
+    case CsiActionCodes::Generic:
+        dwModifierState = _GetGenericKeysModifierState(rgusParams, cParams);
+        fSuccess = _GetGenericVkey(rgusParams, cParams, &vkey);
+        break;
+    // case CsiActionCodes::DSR_DeviceStatusReportResponse:
+    case CsiActionCodes::CSI_F3:
+        // The F3 case is special - it shares a code with the DeviceStatusResponse.
+        // If we're looking for that response, then do that, and break out.
+        // Else, fall though to the _GetCursorKeysModifierState handler.
+        if (_lookingForDSR)
+        {
+            fSuccess = true;
+            fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
             break;
+        }
+    case CsiActionCodes::ArrowUp:
+    case CsiActionCodes::ArrowDown:
+    case CsiActionCodes::ArrowRight:
+    case CsiActionCodes::ArrowLeft:
+    case CsiActionCodes::Home:
+    case CsiActionCodes::End:
+    case CsiActionCodes::CSI_F1:
+    case CsiActionCodes::CSI_F2:
+    case CsiActionCodes::CSI_F4:
+        dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
+        fSuccess = _GetCursorKeysVkey(wch, &vkey);
+        break;
+    case CsiActionCodes::CursorBackTab:
+        dwModifierState = SHIFT_PRESSED;
+        vkey = VK_TAB;
+        fSuccess = true;
+        break;
+    case CsiActionCodes::DTTERM_WindowManipulation:
+        fSuccess = _GetWindowManipulationType(rgusParams,
+                                              cParams,
+                                              &uiFunction);
+        break;
+    default:
+        fSuccess = false;
+        break;
+    }
+
+    if (fSuccess)
+    {
+        switch (wch)
+        {
         // case CsiActionCodes::DSR_DeviceStatusReportResponse:
         case CsiActionCodes::CSI_F3:
             // The F3 case is special - it shares a code with the DeviceStatusResponse.
@@ -324,10 +363,14 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
             // Else, fall though to the _GetCursorKeysModifierState handler.
             if (_lookingForDSR)
             {
-                fSuccess = true;
-                fSuccess = _GetXYPosition(rgusParams, cParams, &row, &col);
+                fSuccess = _pDispatch->MoveCursor(row, col);
+                // Right now we're only looking for on initial cursor
+                //      position response. After that, only look for F3.
+                _lookingForDSR = false;
                 break;
             }
+            __fallthrough;
+        case CsiActionCodes::Generic:
         case CsiActionCodes::ArrowUp:
         case CsiActionCodes::ArrowDown:
         case CsiActionCodes::ArrowRight:
@@ -337,67 +380,18 @@ bool InputStateMachineEngine::ActionCsiDispatch(const wchar_t wch,
         case CsiActionCodes::CSI_F1:
         case CsiActionCodes::CSI_F2:
         case CsiActionCodes::CSI_F4:
-            dwModifierState = _GetCursorKeysModifierState(rgusParams, cParams);
-            fSuccess = _GetCursorKeysVkey(wch, &vkey);
-            break;
         case CsiActionCodes::CursorBackTab:
-            dwModifierState = SHIFT_PRESSED;
-            vkey = VK_TAB;
-            fSuccess = true;
+            fSuccess = _WriteSingleKey(vkey, dwModifierState);
             break;
         case CsiActionCodes::DTTERM_WindowManipulation:
-            fSuccess = _GetWindowManipulationType(rgusParams,
-                                                  cParams,
-                                                  &uiFunction);
+            fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(uiFunction),
+                                                      rgusRemainingArgs,
+                                                      cRemainingArgs);
             break;
         default:
             fSuccess = false;
             break;
-
-    }
-
-    if (fSuccess)
-    {
-        switch(wch)
-        {
-            // case CsiActionCodes::DSR_DeviceStatusReportResponse:
-            case CsiActionCodes::CSI_F3:
-            // The F3 case is special - it shares a code with the DeviceStatusResponse.
-            // If we're looking for that response, then do that, and break out.
-            // Else, fall though to the _GetCursorKeysModifierState handler.
-                if (_lookingForDSR)
-                {
-                    fSuccess = _pDispatch->MoveCursor(row, col);
-                    // Right now we're only looking for on initial cursor
-                    //      position response. After that, only look for F3.
-                    _lookingForDSR = false;
-                    break;
-                }
-                __fallthrough;
-            case CsiActionCodes::Generic:
-            case CsiActionCodes::ArrowUp:
-            case CsiActionCodes::ArrowDown:
-            case CsiActionCodes::ArrowRight:
-            case CsiActionCodes::ArrowLeft:
-            case CsiActionCodes::Home:
-            case CsiActionCodes::End:
-            case CsiActionCodes::CSI_F1:
-            case CsiActionCodes::CSI_F2:
-            case CsiActionCodes::CSI_F4:
-            case CsiActionCodes::CursorBackTab:
-                fSuccess = _WriteSingleKey(vkey, dwModifierState);
-                break;
-            case CsiActionCodes::DTTERM_WindowManipulation:
-                fSuccess = _pDispatch->WindowManipulation(static_cast<DispatchTypes::WindowManipulationType>(uiFunction),
-                                                          rgusRemainingArgs,
-                                                          cRemainingArgs);
-                break;
-            default:
-                fSuccess = false;
-                break;
-
         }
-
     }
 
     return fSuccess;
@@ -604,7 +598,6 @@ size_t InputStateMachineEngine::_GenerateWrappedSequence(const wchar_t wch,
     }
 
     return index;
-
 }
 
 // Method Description:
@@ -706,7 +699,7 @@ DWORD InputStateMachineEngine::_GetCursorKeysModifierState(_In_reads_(cParams) c
 DWORD InputStateMachineEngine::_GetGenericKeysModifierState(_In_reads_(cParams) const unsigned short* const rgusParams, const unsigned short cParams)
 {
     DWORD dwModifiers = 0;
-    if (_IsModified(cParams) && cParams >=2)
+    if (_IsModified(cParams) && cParams >= 2)
     {
         dwModifiers = _GetModifier(rgusParams[1]);
     }
@@ -736,13 +729,13 @@ bool InputStateMachineEngine::_IsModified(const unsigned short cParams)
 DWORD InputStateMachineEngine::_GetModifier(const unsigned short modifierParam)
 {
     // VT Modifiers are 1+(modifier flags)
-    unsigned short vtParam = modifierParam-1;
+    unsigned short vtParam = modifierParam - 1;
     DWORD modifierState = modifierParam > 0 ? ENHANCED_KEY : 0;
 
     bool fShift = WI_IsFlagSet(vtParam, VT_SHIFT);
     bool fAlt = WI_IsFlagSet(vtParam, VT_ALT);
     bool fCtrl = WI_IsFlagSet(vtParam, VT_CTRL);
-    return modifierState | (fShift? SHIFT_PRESSED : 0) | (fAlt? LEFT_ALT_PRESSED : 0) | (fCtrl? LEFT_CTRL_PRESSED : 0);
+    return modifierState | (fShift ? SHIFT_PRESSED : 0) | (fAlt ? LEFT_ALT_PRESSED : 0) | (fCtrl ? LEFT_CTRL_PRESSED : 0);
 }
 
 // Method Description:
@@ -764,7 +757,7 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned
     }
 
     const unsigned short identifier = rgusParams[0];
-    for(int i = 0; i < ARRAYSIZE(s_rgGenericMap); i++)
+    for (int i = 0; i < ARRAYSIZE(s_rgGenericMap); i++)
     {
         GENERIC_TO_VKEY mapping = s_rgGenericMap[i];
         if (mapping.Identifier == identifier)
@@ -786,7 +779,7 @@ bool InputStateMachineEngine::_GetGenericVkey(_In_reads_(cParams) const unsigned
 bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
-    for(int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
+    for (int i = 0; i < ARRAYSIZE(s_rgCsiMap); i++)
     {
         CSI_TO_VKEY mapping = s_rgCsiMap[i];
         if (mapping.Action == wch)
@@ -809,7 +802,7 @@ bool InputStateMachineEngine::_GetCursorKeysVkey(const wchar_t wch, _Out_ short*
 bool InputStateMachineEngine::_GetSs3KeysVkey(const wchar_t wch, _Out_ short* const pVkey) const
 {
     *pVkey = 0;
-    for(int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
+    for (int i = 0; i < ARRAYSIZE(s_rgSs3Map); i++)
     {
         SS3_TO_VKEY mapping = s_rgSs3Map[i];
         if (mapping.Action == wch)
@@ -848,9 +841,9 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 
     // Because of course, these are not the same flags.
     short dwModifierState = 0 |
-        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
-        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
-        (WI_IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
+                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_SHIFT) ? SHIFT_PRESSED : 0) |
+                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_CTRL) ? LEFT_CTRL_PRESSED : 0) |
+                            (WI_IsFlagSet(keyscanModifiers, KEYSCAN_ALT) ? LEFT_ALT_PRESSED : 0);
 
     if (pVkey != nullptr)
     {
@@ -866,7 +859,7 @@ bool InputStateMachineEngine::_GenerateKeyFromChar(const wchar_t wch,
 // Method Description:
 // - Returns true if the engine should dispatch on the last charater of a string
 //      always, even if the sequence hasn't normally dispatched.
-//   If this is false, the engine will persist it's state across calls to
+//   If this is false, the engine will persist its state across calls to
 //      ProcessString, and dispatch only at the end of the sequence.
 // Return Value:
 // - True iff we should manually dispatch on the last character of a string.
@@ -886,6 +879,19 @@ bool InputStateMachineEngine::FlushAtEndOfString() const
 // - True iff we should return to the Ground state when the state machine
 //      encounters a Control (C0) character in the Escape state.
 bool InputStateMachineEngine::DispatchControlCharsFromEscape() const
+{
+    return true;
+}
+
+// Routine Description:
+// - Returns false if the engine wants to be able to collect intermediate
+//   characters in the Escape state. We do _not_ want to buffer any characters
+//   as intermediates, because we use ESC as a prefix to indicate a key was
+//   pressed while Alt was pressed.
+// Return Value:
+// - True iff we should dispatch in the Escape state when we encounter a
+//   Intermediate character.
+bool InputStateMachineEngine::DispatchIntermediatesFromEscape() const
 {
     return true;
 }
@@ -910,18 +916,18 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
 
     if (cParams > 0)
     {
-        switch(rgusParams[0])
+        switch (rgusParams[0])
         {
-            case DispatchTypes::WindowManipulationType::RefreshWindow:
-                *puiFunction = DispatchTypes::WindowManipulationType::RefreshWindow;
-                fSuccess = true;
-                break;
-            case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
-                *puiFunction = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
-                fSuccess = true;
-                break;
-            default:
-                fSuccess = false;
+        case DispatchTypes::WindowManipulationType::RefreshWindow:
+            *puiFunction = DispatchTypes::WindowManipulationType::RefreshWindow;
+            fSuccess = true;
+            break;
+        case DispatchTypes::WindowManipulationType::ResizeWindowInCharacters:
+            *puiFunction = DispatchTypes::WindowManipulationType::ResizeWindowInCharacters;
+            fSuccess = true;
+            break;
+        default:
+            fSuccess = false;
         }
     }
 
@@ -935,11 +941,10 @@ bool InputStateMachineEngine::_GetWindowManipulationType(_In_reads_(cParams) con
 // - puiColumn - Memory location to receive the X/Column position
 // Return Value:
 // - True if we successfully pulled the cursor coordinates from the parameters we've stored. False otherwise.
-_Success_(return)
-bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
-                                             const unsigned short cParams,
-                                             _Out_ unsigned int* const puiLine,
-                                             _Out_ unsigned int* const puiColumn) const
+_Success_(return ) bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned short* const rgusParams,
+                                                                const unsigned short cParams,
+                                                                _Out_ unsigned int* const puiLine,
+                                                                _Out_ unsigned int* const puiColumn) const
 {
     bool fSuccess = true;
     *puiLine = s_uiDefaultLine;
@@ -974,7 +979,6 @@ bool InputStateMachineEngine::_GetXYPosition(_In_reads_(cParams) const unsigned 
     if (*puiColumn == 0)
     {
         *puiColumn = s_uiDefaultColumn;
-
     }
 
     return fSuccess;

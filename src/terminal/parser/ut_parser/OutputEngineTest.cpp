@@ -145,11 +145,10 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         }
 
         mach.ProcessCharacter(AsciiChars::ESC);
-        if(shouldEscapeOut)
+        if (shouldEscapeOut)
         {
             VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         }
-
     }
 
     TEST_METHOD(TestEscapeImmediatePath)
@@ -192,7 +191,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'm');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
-
 
     TEST_METHOD(TestGroundPrint)
     {
@@ -269,6 +267,30 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
         mach.ProcessCharacter(L'8');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        mach.ProcessCharacter(L'J');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
+    TEST_METHOD(TestLeadingZeroCsiParam)
+    {
+        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L'[');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
+        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        }
+        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiParam);
+        }
+        VERIFY_ARE_EQUAL(*mach._pusActiveParam, 12345);
         mach.ProcessCharacter(L'J');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -429,6 +451,35 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(AsciiChars::BEL);
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
+
+    TEST_METHOD(TestLeadingZeroOscParam)
+    {
+        StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
+
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+        mach.ProcessCharacter(AsciiChars::ESC);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
+        mach.ProcessCharacter(L']');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        for (int i = 0; i < 50; i++) // Any number of leading zeros should be supported
+        {
+            mach.ProcessCharacter(L'0');
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        }
+        for (int i = 0; i < 5; i++) // We're only expecting to be able to keep 5 digits max
+        {
+            mach.ProcessCharacter((wchar_t)(L'1' + i));
+            VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscParam);
+        }
+        VERIFY_ARE_EQUAL(mach._sOscParam, 12345);
+        mach.ProcessCharacter(L';');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(L's');
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::OscString);
+        mach.ProcessCharacter(AsciiChars::BEL);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
+    }
+
     TEST_METHOD(TestLongOscParam)
     {
         StateMachine mach(new OutputStateMachineEngine(new DummyDispatch));
@@ -549,7 +600,6 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
 class StatefulDispatch final : public TermDispatch
 {
 public:
-
     virtual void Execute(const wchar_t /*wchControl*/) override
     {
     }
@@ -591,6 +641,8 @@ public:
         _fIsAltBuffer{ false },
         _fCursorKeysMode{ false },
         _fCursorBlinking{ true },
+        _fIsOriginModeRelative{ false },
+        _fIsDECCOLMAllowed{ false },
         _uiWindowWidth{ 80 }
     {
         memset(_rgOptions, s_uiGraphicsCleared, sizeof(_rgOptions));
@@ -712,7 +764,8 @@ public:
         return true;
     }
 
-    bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions, const size_t cOptions) override
+    bool SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
+                              const size_t cOptions) override
     {
         size_t cCopyLength = std::min(cOptions, s_cMaxOptions); // whichever is smaller, our buffer size or the number given
         _cOptions = cCopyLength;
@@ -741,7 +794,7 @@ public:
     bool _PrivateModeParamsHelper(_In_ DispatchTypes::PrivateModeParams const param, const bool fEnable)
     {
         bool fSuccess = false;
-        switch(param)
+        switch (param)
         {
         case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
             // set - Enable Application Mode, reset - Numeric/normal mode
@@ -750,14 +803,21 @@ public:
         case DispatchTypes::PrivateModeParams::DECCOLM_SetNumberOfColumns:
             fSuccess = SetColumns(static_cast<unsigned int>(fEnable ? DispatchTypes::s_sDECCOLMSetColumns : DispatchTypes::s_sDECCOLMResetColumns));
             break;
+        case DispatchTypes::PrivateModeParams::DECOM_OriginMode:
+            // The cursor is also moved to the new home position when the origin mode is set or reset.
+            fSuccess = SetOriginMode(fEnable) && CursorPosition(1, 1);
+            break;
         case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
             fSuccess = EnableCursorBlinking(fEnable);
             break;
         case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
             fSuccess = CursorVisibility(fEnable);
             break;
+        case DispatchTypes::PrivateModeParams::XTERM_EnableDECCOLMSupport:
+            fSuccess = EnableDECCOLMSupport(fEnable);
+            break;
         case DispatchTypes::PrivateModeParams::ASB_AlternateScreenBuffer:
-            fSuccess = fEnable? UseAlternateScreenBuffer() : UseMainScreenBuffer();
+            fSuccess = fEnable ? UseAlternateScreenBuffer() : UseMainScreenBuffer();
             break;
         default:
             // If no functions to call, overall dispatch was a failure.
@@ -774,17 +834,19 @@ public:
         size_t cFailures = 0;
         for (size_t i = 0; i < cParams; i++)
         {
-            cFailures += _PrivateModeParamsHelper(rParams[i], fEnable)? 0 : 1; // increment the number of failures if we fail.
+            cFailures += _PrivateModeParamsHelper(rParams[i], fEnable) ? 0 : 1; // increment the number of failures if we fail.
         }
         return cFailures == 0;
     }
 
-    bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams, const size_t cParams) override
+    bool SetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
+                         const size_t cParams) override
     {
         return _SetResetPrivateModesHelper(rParams, cParams, true);
     }
 
-    bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams, const size_t cParams) override
+    bool ResetPrivateModes(_In_reads_(cParams) const DispatchTypes::PrivateModeParams* const rParams,
+                           const size_t cParams) override
     {
         return _SetResetPrivateModesHelper(rParams, cParams, false);
     }
@@ -804,6 +866,18 @@ public:
     bool EnableCursorBlinking(const bool bEnable) override
     {
         _fCursorBlinking = bEnable;
+        return true;
+    }
+
+    bool SetOriginMode(const bool fRelativeMode) override
+    {
+        _fIsOriginModeRelative = fRelativeMode;
+        return true;
+    }
+
+    bool EnableDECCOLMSupport(const bool fEnabled) override
+    {
+        _fIsDECCOLMAllowed = fEnabled;
         return true;
     }
 
@@ -840,12 +914,14 @@ public:
     bool _fDeleteCharacter;
     DispatchTypes::EraseType _eraseType;
     bool _fSetGraphics;
-	DispatchTypes::AnsiStatusType _statusReportType;
+    DispatchTypes::AnsiStatusType _statusReportType;
     bool _fDeviceStatusReport;
     bool _fDeviceAttributes;
     bool _fIsAltBuffer;
     bool _fCursorKeysMode;
     bool _fCursorBlinking;
+    bool _fIsOriginModeRelative;
+    bool _fIsDECCOLMAllowed;
     unsigned int _uiWindowWidth;
 
     static const size_t s_cMaxOptions = 16;
@@ -922,7 +998,8 @@ class StateMachineExternalTest final
         }
     }
 
-    void TestCsiCursorMovement(wchar_t const wchCommand, unsigned int const uiDistance,
+    void TestCsiCursorMovement(wchar_t const wchCommand,
+                               unsigned int const uiDistance,
                                const bool fUseDistance,
                                const bool* const pfFlag,
                                StateMachine& mach,
@@ -1139,6 +1216,30 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestOriginMode)
+    {
+        StatefulDispatch* pDispatch = new StatefulDispatch;
+        VERIFY_IS_NOT_NULL(pDispatch);
+        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+
+        mach.ProcessString(L"\x1b[?6h", 5);
+        VERIFY_IS_TRUE(pDispatch->_fIsOriginModeRelative);
+        VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
+        VERIFY_ARE_EQUAL(pDispatch->_uiColumn, 1u);
+
+        pDispatch->ClearState();
+        pDispatch->_fIsOriginModeRelative = true;
+
+        mach.ProcessString(L"\x1b[?6l", 5);
+        VERIFY_IS_FALSE(pDispatch->_fIsOriginModeRelative);
+        VERIFY_IS_TRUE(pDispatch->_fCursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_uiLine, 1u);
+        VERIFY_ARE_EQUAL(pDispatch->_uiColumn, 1u);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestCursorBlinking)
     {
         StatefulDispatch* pDispatch = new StatefulDispatch;
@@ -1211,6 +1312,24 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
     }
 
+    TEST_METHOD(TestEnableDECCOLMSupport)
+    {
+        StatefulDispatch* pDispatch = new StatefulDispatch;
+        VERIFY_IS_NOT_NULL(pDispatch);
+        StateMachine mach(new OutputStateMachineEngine(pDispatch));
+
+        mach.ProcessString(L"\x1b[?40h");
+        VERIFY_IS_TRUE(pDispatch->_fIsDECCOLMAllowed);
+
+        pDispatch->ClearState();
+        pDispatch->_fIsDECCOLMAllowed = true;
+
+        mach.ProcessString(L"\x1b[?40l");
+        VERIFY_IS_FALSE(pDispatch->_fIsDECCOLMAllowed);
+
+        pDispatch->ClearState();
+    }
+
     TEST_METHOD(TestErase)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
@@ -1274,14 +1393,13 @@ class StateMachineExternalTest final
 
         mach.ProcessCharacter(wchOp);
 
-
         VERIFY_IS_TRUE(*pfOperationCallback);
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
     }
 
     void VerifyDispatchTypes(_In_reads_(cExpectedOptions) const DispatchTypes::GraphicsOptions* const rgExpectedOptions,
-                               const size_t cExpectedOptions,
-                               const StatefulDispatch& dispatch)
+                             const size_t cExpectedOptions,
+                             const StatefulDispatch& dispatch)
     {
         VERIFY_ARE_EQUAL(cExpectedOptions, dispatch._cOptions);
         bool fOptionsValid = true;
@@ -1631,7 +1749,6 @@ class StateMachineExternalTest final
 
         mach.ProcessCharacter(L'm');
 
-
         VERIFY_IS_TRUE(pDispatch->_fSetGraphics);
         VERIFY_IS_FALSE(pDispatch->_fEraseDisplay);
         VerifyDispatchTypes(rgExpected, 2, *pDispatch);
@@ -1645,6 +1762,5 @@ class StateMachineExternalTest final
         VERIFY_ARE_EQUAL(expectedDispatchTypes, pDispatch->_eraseType);
 
         pDispatch->ClearState();
-
     }
 };

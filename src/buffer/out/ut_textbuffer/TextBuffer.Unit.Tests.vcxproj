@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  <ItemGroup>
+    <ClCompile Include="TextColorTests.cpp" />
+    <ClCompile Include="TextAttributeTests.cpp" />
+    <ClCompile Include="UnicodeStorageTests.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\lib\bufferout.vcxproj">
+      <Project>{0cf235bd-2da0-407e-90ee-c467e8bbc714}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\precomp.h" />
+  </ItemGroup>
+  <PropertyGroup>
+    <ProjectGuid>{531C23E7-4B76-4C08-8BBD-04164CB628C9}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TextBufferUnitTests</RootNamespace>
+    <ProjectName>TextBuffer.Unit.Tests</ProjectName>
+    <TargetName>TextBuffer.Unit.Tests</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>..;$(SolutionDir)src\inc;$(SolutionDir)src\inc\test;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
+  <Import Project="$(SolutionDir)src\common.build.dll.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.tests.props" />
+</Project>

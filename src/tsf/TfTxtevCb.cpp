@@ -19,7 +19,6 @@ Notes:
 
 --*/
 
-
 #include "precomp.h"
 #include "ConsoleTSF.h"
 #include "TfEditses.h"
@@ -30,12 +29,13 @@ Notes:
 //
 //----------------------------------------------------------------------------
 
-BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie ecReadOnly, ITfEditRecord *pEditRecord)
+BOOL CConsoleTSF::_HasCompositionChanged(ITfContext* pInputContext, TfEditCookie ecReadOnly, ITfEditRecord* pEditRecord)
 {
     BOOL fChanged;
     if (SUCCEEDED(pEditRecord->GetSelectionStatus(&fChanged)))
     {
-        if (fChanged) {
+        if (fChanged)
+        {
             return TRUE;
         }
     }
@@ -44,29 +44,31 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie
     // Find GUID_PROP_CONIME_TRACKCOMPOSITION property.
     //
 
-    CComPtr<ITfProperty> Property;
-    CComPtr<ITfRange>    FoundRange;
-    CComPtr<ITfProperty> PropertyTrackComposition;
+    wil::com_ptr_nothrow<ITfProperty> Property;
+    wil::com_ptr_nothrow<ITfRange> FoundRange;
+    wil::com_ptr_nothrow<ITfProperty> PropertyTrackComposition;
 
     BOOL bFound = FALSE;
 
-    if (SUCCEEDED(pInputContext->GetProperty(GUID_PROP_CONIME_TRACKCOMPOSITION, &Property))) {
+    if (SUCCEEDED(pInputContext->GetProperty(GUID_PROP_CONIME_TRACKCOMPOSITION, &Property)))
+    {
+        wil::com_ptr_nothrow<IEnumTfRanges> EnumFindFirstTrackCompRange;
 
-        CComPtr<IEnumTfRanges> EnumFindFirstTrackCompRange;
-
-        if (SUCCEEDED(Property->EnumRanges(ecReadOnly, &EnumFindFirstTrackCompRange, NULL))) {
-
+        if (SUCCEEDED(Property->EnumRanges(ecReadOnly, &EnumFindFirstTrackCompRange, NULL)))
+        {
             HRESULT hr;
-            CComPtr<ITfRange> range;
+            wil::com_ptr_nothrow<ITfRange> range;
 
-            while ((hr = EnumFindFirstTrackCompRange->Next(1, &range, NULL)) == S_OK) {
-
+            while ((hr = EnumFindFirstTrackCompRange->Next(1, &range, NULL)) == S_OK)
+            {
                 VARIANT var;
                 VariantInit(&var);
 
-                hr = Property->GetValue(ecReadOnly, range, &var);
-                if (SUCCEEDED(hr)) {
-                    if ((V_VT(&var) == VT_I4 && V_I4(&var) != 0)) {
+                hr = Property->GetValue(ecReadOnly, range.get(), &var);
+                if (SUCCEEDED(hr))
+                {
+                    if ((V_VT(&var) == VT_I4 && V_I4(&var) != 0))
+                    {
                         range->Clone(&FoundRange);
                         bFound = TRUE; // FOUND!!
                         break;
@@ -75,9 +77,8 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie
 
                 VariantClear(&var);
 
-                range.Release();
-
-                if (bFound) {
+                if (bFound)
+                {
                     break; // FOUND!!
                 }
             }
@@ -88,41 +89,43 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie
     // if there is no track composition property,
     // the composition has been changed since we put it.
     //
-    if (! bFound) {
+    if (!bFound)
+    {
         return TRUE;
     }
 
-    if (FoundRange == NULL) {
+    if (FoundRange == NULL)
+    {
         return FALSE;
     }
 
+    bFound = FALSE; // RESET bFound flag...
 
-    bFound = FALSE;   // RESET bFound flag...
-
-    CComPtr<ITfRange> rangeTrackComposition;
-    if (SUCCEEDED(FoundRange->Clone(&rangeTrackComposition))) {
-
+    wil::com_ptr_nothrow<ITfRange> rangeTrackComposition;
+    if (SUCCEEDED(FoundRange->Clone(&rangeTrackComposition)))
+    {
         //
         // get the text range that does not include read only area for
         // reconversion.
         //
-        CComPtr<ITfRange> rangeAllText;
+        wil::com_ptr_nothrow<ITfRange> rangeAllText;
         LONG cch;
-        if (SUCCEEDED(CEditSessionObject::GetAllTextRange(ecReadOnly, pInputContext, &rangeAllText, &cch))) {
-
+        if (SUCCEEDED(CEditSessionObject::GetAllTextRange(ecReadOnly, pInputContext, &rangeAllText, &cch)))
+        {
             LONG lResult;
-            if (SUCCEEDED(rangeTrackComposition->CompareStart(ecReadOnly, rangeAllText, TF_ANCHOR_START, &lResult))) {
-
+            if (SUCCEEDED(rangeTrackComposition->CompareStart(ecReadOnly, rangeAllText.get(), TF_ANCHOR_START, &lResult)))
+            {
                 //
                 // if the start position of the track composition range is not
                 // the beggining of IC,
                 // the composition has been changed since we put it.
                 //
-                if (lResult != 0) {
-                    bFound = TRUE;  // FOUND!!
+                if (lResult != 0)
+                {
+                    bFound = TRUE; // FOUND!!
                 }
-                else if (SUCCEEDED(rangeTrackComposition->CompareEnd(ecReadOnly, rangeAllText, TF_ANCHOR_END, &lResult))) {
-
+                else if (SUCCEEDED(rangeTrackComposition->CompareEnd(ecReadOnly, rangeAllText.get(), TF_ANCHOR_END, &lResult)))
+                {
                     //
                     // if the start position of the track composition range is not
                     // the beggining of IC,
@@ -131,30 +134,30 @@ BOOL CConsoleTSF::_HasCompositionChanged(ITfContext *pInputContext, TfEditCookie
                     //
                     // If we find the changes in these property, we need to update hIMC.
                     //
-                    const GUID *guids[] = {&GUID_PROP_COMPOSING,
-                                           &GUID_PROP_ATTRIBUTE};
+                    const GUID* guids[] = { &GUID_PROP_COMPOSING,
+                                            &GUID_PROP_ATTRIBUTE };
                     const int guid_size = sizeof(guids) / sizeof(GUID*);
 
-                    CComPtr<IEnumTfRanges> EnumPropertyChanged;
+                    wil::com_ptr_nothrow<IEnumTfRanges> EnumPropertyChanged;
 
-                    if (lResult != 0) {
-                        bFound = TRUE;  // FOUND!!
+                    if (lResult != 0)
+                    {
+                        bFound = TRUE; // FOUND!!
                     }
-                    else if (SUCCEEDED(pEditRecord->GetTextAndPropertyUpdates(TF_GTP_INCL_TEXT, guids, guid_size, &EnumPropertyChanged))) {
-
+                    else if (SUCCEEDED(pEditRecord->GetTextAndPropertyUpdates(TF_GTP_INCL_TEXT, guids, guid_size, &EnumPropertyChanged)))
+                    {
                         HRESULT hr;
-                        CComPtr<ITfRange> range;
+                        wil::com_ptr_nothrow<ITfRange> range;
 
-                        while ((hr = EnumPropertyChanged->Next(1, &range, NULL)) == S_OK) {
+                        while ((hr = EnumPropertyChanged->Next(1, &range, NULL)) == S_OK)
+                        {
                             BOOL empty;
-                            if (range->IsEmpty(ecReadOnly, &empty) == S_OK && empty) {
-                                range.Release();
+                            if (range->IsEmpty(ecReadOnly, &empty) == S_OK && empty)
+                            {
                                 continue;
                             }
 
-                            range.Release();
-
-                            bFound = TRUE;  // FOUND!!
+                            bFound = TRUE; // FOUND!!
                             break;
                         }
                     }

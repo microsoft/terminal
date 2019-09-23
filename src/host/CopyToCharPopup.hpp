@@ -22,8 +22,8 @@ class CopyToCharPopup final : public Popup
 public:
     CopyToCharPopup(SCREEN_INFORMATION& screenInfo);
 
-    [[nodiscard]]
-    NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
+    [[nodiscard]] NTSTATUS Process(COOKED_READ_DATA& cookedReadData) noexcept override;
+
 protected:
     void _DrawContent() override;
 

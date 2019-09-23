@@ -23,24 +23,21 @@ Notes:
 #include <windows.h>
 #include <ole2.h>
 
-#include <atlbase.h>        // ATL base
+extern "C" {
+#include <winuser.h>
 
-extern "C"
-{
-    #include <winuser.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <limits.h>
 
-    #include <stdlib.h>
-    #include <string.h>
-    #include <stdio.h>
-    #include <limits.h>
-
-    #include <ime.h>
-    #include <strsafe.h>
-    #include <intsafe.h>
+#include <ime.h>
+#include <strsafe.h>
+#include <intsafe.h>
 }
 
-#include <msctf.h>          // Cicero header
-#include <tsattrs.h>        // ITextStore standard attributes
+#include <msctf.h> // Cicero header
+#include <tsattrs.h> // ITextStore standard attributes
 
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
@@ -51,5 +48,3 @@ extern "C"
 
 #include "TfCtxtComp.h"
 #include "ConsoleTSF.h"
-
-

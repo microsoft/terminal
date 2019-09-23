@@ -53,9 +53,8 @@ public:
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept;
     bool WasDoubleBytePadded() const noexcept;
     size_t size() const noexcept;
-    void Reset();
-    [[nodiscard]]
-    HRESULT Resize(const size_t newSize) noexcept;
+    void Reset() noexcept;
+    [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
     size_t MeasureLeft() const;
     size_t MeasureRight() const noexcept;
     void ClearCell(const size_t column);
@@ -64,9 +63,6 @@ public:
     DbcsAttribute& DbcsAttrAt(const size_t column);
     void ClearGlyph(const size_t column);
     std::wstring GetText() const;
-
-    // other functions implemented at the template class level
-    std::wstring GetTextRaw() const;
 
     // working with glyphs
     const reference GlyphAt(const size_t column) const;
@@ -79,9 +75,9 @@ public:
     iterator end() noexcept;
     const_iterator cend() const noexcept;
 
-    UnicodeStorage& GetUnicodeStorage();
-    const UnicodeStorage& GetUnicodeStorage() const;
-    COORD GetStorageKey(const size_t column) const;
+    UnicodeStorage& GetUnicodeStorage() noexcept;
+    const UnicodeStorage& GetUnicodeStorage() const noexcept;
+    COORD GetStorageKey(const size_t column) const noexcept;
 
     void UpdateParent(ROW* const pParent) noexcept;
 
@@ -116,8 +112,7 @@ void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttr
                    endChars,
                    startAttrs,
                    outIt,
-                   [](const wchar_t wch, const DbcsAttribute attr)
-    {
-        return CharRow::value_type{ wch, attr };
-    });
+                   [](const wchar_t wch, const DbcsAttribute attr) {
+                       return CharRow::value_type{ wch, attr };
+                   });
 }

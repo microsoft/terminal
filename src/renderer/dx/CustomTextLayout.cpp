@@ -7,6 +7,7 @@
 
 #include <wrl.h>
 #include <wrl/client.h>
+#include <VersionHelpers.h>
 
 using namespace Microsoft::Console::Render;
 
@@ -19,16 +20,16 @@ using namespace Microsoft::Console::Render;
 // - font - The DirectWrite font face to use while calculating layout (by default, will fallback if necessary)
 // - clusters - From the backing buffer, the text to be displayed clustered by the columns it should consume.
 // - width - The count of pixels available per column (the expected pixel width of every column)
-CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
-                                   IDWriteTextAnalyzer1* const analyzer,
-                                   IDWriteTextFormat2* const format,
-                                   IDWriteFontFace5* const font,
+CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory,
+                                   gsl::not_null<IDWriteTextAnalyzer1*> const analyzer,
+                                   gsl::not_null<IDWriteTextFormat*> const format,
+                                   gsl::not_null<IDWriteFontFace1*> const font,
                                    std::basic_string_view<Cluster> const clusters,
                                    size_t const width) :
-    _factory{ factory },
-    _analyzer{ analyzer },
-    _format{ format },
-    _font{ font },
+    _factory{ factory.get() },
+    _analyzer{ analyzer.get() },
+    _format{ format.get() },
+    _font{ font.get() },
     _localeName{},
     _numberSubstitution{},
     _readingDirection{ DWRITE_READING_DIRECTION_LEFT_TO_RIGHT },
@@ -38,7 +39,7 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
     _width{ width }
 {
     // Fetch the locale name out once now from the format
-    _localeName.resize(format->GetLocaleNameLength() + 1); // +1 for null
+    _localeName.resize(gsl::narrow_cast<size_t>(format->GetLocaleNameLength()) + 1); // +1 for null
     THROW_IF_FAILED(format->GetLocaleName(_localeName.data(), gsl::narrow<UINT32>(_localeName.size())));
 
     for (const auto& cluster : clusters)
@@ -55,16 +56,16 @@ CustomTextLayout::CustomTextLayout(IDWriteFactory2* const factory,
 // - columns - The number of columns the layout should consume when done.
 // Return Value:
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::GetColumns(_Out_ UINT32* columns)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetColumns(_Out_ UINT32* columns)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, columns);
     *columns = 0;
 
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
 
     const auto totalAdvance = std::accumulate(_glyphAdvances.cbegin(), _glyphAdvances.cend(), 0.0f);
-    
+
     *columns = static_cast<UINT32>(ceil(totalAdvance / _width));
 
     return S_OK;
@@ -85,11 +86,10 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetColumns(_Out_ UINT32* columns)
 // - originY - Y pixel point of top left corner on final surface for drawing
 // Return Value:
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
-                                                 _In_ IDWriteTextRenderer* renderer,
-                                                 FLOAT originX,
-                                                 FLOAT originY)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingContext,
+                                                               _In_ IDWriteTextRenderer* renderer,
+                                                               FLOAT originX,
+                                                               FLOAT originY) noexcept
 {
     RETURN_IF_FAILED(_AnalyzeRuns());
     RETURN_IF_FAILED(_ShapeGlyphRuns());
@@ -109,8 +109,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::Draw(_In_opt_ void* clientDrawingCon
 // - <none> - Uses internal state
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
-[[nodiscard]]
-HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 {
     try
     {
@@ -135,7 +134,6 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
         RETURN_IF_FAILED(_analyzer->AnalyzeBidi(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeScript(this, 0, textLength, this));
         RETURN_IF_FAILED(_analyzer->AnalyzeNumberSubstitution(this, 0, textLength, this));
-
         // Perform our custom font fallback analyzer that mimics the pattern of the real analyzers.
         RETURN_IF_FAILED(_AnalyzeFontFallback(this, 0, textLength));
 
@@ -149,7 +147,7 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
         }
 
         // Resequence the resulting runs in order before returning to caller.
-        size_t totalRuns = _runs.size();
+        const size_t totalRuns = _runs.size();
         std::vector<LinkedRun> runs;
         runs.resize(totalRuns);
 
@@ -173,8 +171,7 @@ HRESULT CustomTextLayout::_AnalyzeRuns() noexcept
 // - <none> - Uses internal state
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
-[[nodiscard]]
-HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
 {
     try
     {
@@ -182,7 +179,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
         const auto textLength = gsl::narrow<UINT32>(_text.size());
 
         // Estimate the maximum number of glyph indices needed to hold a string.
-        UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
+        const UINT32 estimatedGlyphCount = _EstimateGlyphCount(textLength);
 
         _glyphIndices.resize(estimatedGlyphCount);
         _glyphOffsets.resize(estimatedGlyphCount);
@@ -221,8 +218,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRuns() noexcept
 //              - On output, the position that should be used by the next call as its start position
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
-[[nodiscard]]
-HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphStart) noexcept
 {
     try
     {
@@ -235,9 +231,9 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         // will shape as if the line is not broken.
 
         Run& run = _runs.at(runIndex);
-        UINT32 textStart = run.textStart;
-        UINT32 textLength = run.textLength;
-        UINT32 maxGlyphCount = static_cast<UINT32>(_glyphIndices.size() - glyphStart);
+        const UINT32 textStart = run.textStart;
+        const UINT32 textLength = run.textLength;
+        UINT32 maxGlyphCount = gsl::narrow<UINT32>(_glyphIndices.size() - glyphStart);
         UINT32 actualGlyphCount = 0;
 
         run.glyphStart = glyphStart;
@@ -262,7 +258,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
-        std::vector<DWRITE_SHAPING_TEXT_PROPERTIES>  textProps(textLength);
+        std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
         // Get the glyphs from the text, retrying if needed.
@@ -273,31 +269,30 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
         do
         {
             hr = _analyzer->GetGlyphs(
-                &_text[textStart],
+                &_text.at(textStart),
                 textLength,
                 run.fontFace.Get(),
-                run.isSideways,         // isSideways,
-                WI_IsFlagSet(run.bidiLevel, 1),    // isRightToLeft
+                run.isSideways, // isSideways,
+                WI_IsFlagSet(run.bidiLevel, 1), // isRightToLeft
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
-                nullptr,                   // features
-                nullptr,                   // featureLengths
-                0,                      // featureCount
-                maxGlyphCount,          // maxGlyphCount
-                &_glyphClusters[textStart],
-                &textProps[0],
-                &_glyphIndices[glyphStart],
-                &glyphProps[0],
-                &actualGlyphCount
-            );
+                nullptr, // features
+                nullptr, // featureLengths
+                0, // featureCount
+                maxGlyphCount, // maxGlyphCount
+                &_glyphClusters.at(textStart),
+                &textProps.at(0),
+                &_glyphIndices.at(glyphStart),
+                &glyphProps.at(0),
+                &actualGlyphCount);
             tries++;
 
             if (hr == E_NOT_SUFFICIENT_BUFFER)
             {
                 // Try again using a larger buffer.
                 maxGlyphCount = _EstimateGlyphCount(maxGlyphCount);
-                UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
+                const UINT32 totalGlyphsArrayCount = glyphStart + maxGlyphCount;
 
                 glyphProps.resize(maxGlyphCount);
                 _glyphIndices.resize(totalGlyphsArrayCount);
@@ -312,32 +307,31 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 
         // Get the placement of the all the glyphs.
 
-        _glyphAdvances.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphAdvances.size()));
-        _glyphOffsets.resize(std::max(static_cast<size_t>(glyphStart + actualGlyphCount), _glyphOffsets.size()));
+        _glyphAdvances.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphAdvances.size()));
+        _glyphOffsets.resize(std::max(gsl::narrow_cast<size_t>(glyphStart) + gsl::narrow_cast<size_t>(actualGlyphCount), _glyphOffsets.size()));
 
         const auto fontSizeFormat = _format->GetFontSize();
         const auto fontSize = fontSizeFormat * run.fontScale;
 
         hr = _analyzer->GetGlyphPlacements(
-            &_text[textStart],
-            &_glyphClusters[textStart],
-            &textProps[0],
+            &_text.at(textStart),
+            &_glyphClusters.at(textStart),
+            &textProps.at(0),
             textLength,
-            &_glyphIndices[glyphStart],
-            &glyphProps[0],
+            &_glyphIndices.at(glyphStart),
+            &glyphProps.at(0),
             actualGlyphCount,
             run.fontFace.Get(),
             fontSize,
             run.isSideways,
-            (run.bidiLevel & 1),    // isRightToLeft
+            (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            NULL,                   // features
-            NULL,                   // featureRangeLengths
-            0,                      // featureRanges
-            &_glyphAdvances[glyphStart],
-            &_glyphOffsets[glyphStart]
-        );
+            NULL, // features
+            NULL, // featureRangeLengths
+            0, // featureRanges
+            &_glyphAdvances.at(glyphStart),
+            &_glyphOffsets.at(glyphStart));
 
         RETURN_IF_FAILED(hr);
 
@@ -357,8 +351,7 @@ HRESULT CustomTextLayout::_ShapeGlyphRun(const UINT32 runIndex, UINT32& glyphSta
 // - <none> - Uses internal state
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
-[[nodiscard]]
-HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
 {
     try
     {
@@ -379,8 +372,7 @@ HRESULT CustomTextLayout::_CorrectGlyphRuns() noexcept
 // - runIndex - The ID number of the internal runs array to use while shaping
 // Return Value:
 // - S_OK or suitable DirectWrite or STL error code
-[[nodiscard]]
-HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
 {
     try
     {
@@ -400,13 +392,13 @@ HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
         for (auto i = run.glyphStart; i < (run.glyphStart + run.glyphCount); i++)
         {
             // Advance is how wide in pixels the glyph is
-            auto& advance = _glyphAdvances[i];
+            auto& advance = _glyphAdvances.at(i);
 
             // Offsets is how far to move the origin (in pixels) from where it is
-            auto& offset = _glyphOffsets[i];
+            auto& offset = _glyphOffsets.at(i);
 
             // Get how many columns we expected the glyph to have and mutiply into pixels.
-            const auto columns = _textClusterColumns[i];
+            const auto columns = _textClusterColumns.at(i);
             const auto advanceExpected = static_cast<float>(columns * _width);
 
             // If what we expect is bigger than what we have... pad it out.
@@ -428,7 +420,7 @@ HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
                 // We need to retrieve the design information for this specific glyph so we can figure out the appropriate
                 // height proportional to the width that we desire.
                 INT32 advanceInDesignUnits;
-                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices[i], &advanceInDesignUnits));
+                RETURN_IF_FAILED(run.fontFace->GetDesignGlyphAdvances(1, &_glyphIndices.at(i), &advanceInDesignUnits));
 
                 // When things are drawn, we want the font size (as specified in the base font in the original format)
                 // to be scaled by some factor.
@@ -436,7 +428,7 @@ HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
                 // the width (and height) of the glyph will shrink to fit the monospace cell box.
 
                 // This pattern is copied from the DxRenderer's algorithm for figuring out the font height for a specific width
-                // and was advised by the DirectWrite team. 
+                // and was advised by the DirectWrite team.
                 const float widthAdvance = static_cast<float>(advanceInDesignUnits) / metrics.designUnitsPerEm;
                 const auto fontSizeWant = advanceExpected / widthAdvance;
                 run.fontScale = fontSizeWant / _format->GetFontSize();
@@ -462,7 +454,6 @@ HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
     return S_OK;
 }
 
-
 // Routine Description:
 // - Takes the analyzed and shaped textual information from the layout process and
 //   forwards it into the given renderer in a run-by-run fashion.
@@ -471,13 +462,14 @@ HRESULT CustomTextLayout::_CorrectGlyphRun(const UINT32 runIndex) noexcept
 //                          while attempting to graphically place the text onto the screen
 // - renderer - The interface to be used for actually putting text onto the screen
 // - origin - pixel point of top left corner on final surface for drawing
-// Return Value: 
+// Return Value:
 // - S_OK or suitable DirectX/DirectWrite/Direct2D result code.
-[[nodiscard]]
-HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
-                                         IDWriteTextRenderer* renderer,
-                                         const D2D_POINT_2F origin) noexcept
+[[nodiscard]] HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
+                                                       IDWriteTextRenderer* renderer,
+                                                       const D2D_POINT_2F origin) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, renderer);
+
     try
     {
         // We're going to start from the origin given and walk to the right for each
@@ -488,26 +480,40 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
         for (UINT32 runIndex = 0; runIndex < _runs.size(); ++runIndex)
         {
             // Get the run
-            Run& run = _runs.at(runIndex);
+            const Run& run = _runs.at(runIndex);
 
             // Prepare the glyph run and description objects by converting our
             // internal storage representation into something that matches DWrite's structures.
-            DWRITE_GLYPH_RUN glyphRun = { 0 };
+            DWRITE_GLYPH_RUN glyphRun;
             glyphRun.bidiLevel = run.bidiLevel;
             glyphRun.fontEmSize = _format->GetFontSize() * run.fontScale;
             glyphRun.fontFace = run.fontFace.Get();
-            glyphRun.glyphAdvances = _glyphAdvances.data() + run.glyphStart;
+            glyphRun.glyphAdvances = &_glyphAdvances.at(run.glyphStart);
             glyphRun.glyphCount = run.glyphCount;
-            glyphRun.glyphIndices = _glyphIndices.data() + run.glyphStart;
-            glyphRun.glyphOffsets = _glyphOffsets.data() + run.glyphStart;
+            glyphRun.glyphIndices = &_glyphIndices.at(run.glyphStart);
+            glyphRun.glyphOffsets = &_glyphOffsets.at(run.glyphStart);
             glyphRun.isSideways = false;
 
-            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription = { 0 };
+            DWRITE_GLYPH_RUN_DESCRIPTION glyphRunDescription;
             glyphRunDescription.clusterMap = _glyphClusters.data();
             glyphRunDescription.localeName = _localeName.data();
             glyphRunDescription.string = _text.data();
             glyphRunDescription.stringLength = run.textLength;
             glyphRunDescription.textPosition = run.textStart;
+
+            // Calculate the origin for the next run based on the amount of space
+            // that would be consumed. We are doing this calculation now, not after,
+            // because if the text is RTL then we need to advance immediately, before the
+            // write call since DirectX expects the origin to the RIGHT of the text for RTL.
+            const auto postOriginX = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
+                                                     _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
+                                                     mutableOrigin.x);
+
+            // Check for RTL, if it is, apply space adjustment.
+            if (WI_IsFlagSet(glyphRun.bidiLevel, 1))
+            {
+                mutableOrigin.x = postOriginX;
+            }
 
             // Try to draw it
             RETURN_IF_FAILED(renderer->DrawGlyphRun(clientDrawingContext,
@@ -518,10 +524,9 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
                                                     &glyphRunDescription,
                                                     nullptr));
 
-            // Shift origin to the right for the next run based on the amount of space consumed.
-            mutableOrigin.x = std::accumulate(_glyphAdvances.begin() + run.glyphStart,
-                                              _glyphAdvances.begin() + run.glyphStart + run.glyphCount,
-                                              mutableOrigin.x);
+            // Either way, we should be at this point by the end of writing this sequence,
+            // whether it was LTR or RTL.
+            mutableOrigin.x = postOriginX;
         }
     }
     CATCH_RETURN();
@@ -529,7 +534,7 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 }
 
 // Routine Description:
-// - Estimates the maximum number of glyph indices needed to hold a string of 
+// - Estimates the maximum number of glyph indices needed to hold a string of
 //   a given length.  This is the formula given in the Uniscribe SDK and should
 //   cover most cases. Degenerate cases will require a reallocation.
 // Arguments:
@@ -537,8 +542,7 @@ HRESULT CustomTextLayout::_DrawGlyphRuns(_In_opt_ void* clientDrawingContext,
 // Return Value:
 // - An estimate of how many glyph spaces may be required in the shaping arrays
 //   to hold the data from a string of the given length.
-[[nodiscard]]
-UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
+[[nodiscard]] constexpr UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 {
     // This formula is from https://docs.microsoft.com/en-us/windows/desktop/api/dwrite/nf-dwrite-idwritetextanalyzer-getglyphs
     // and is the recommended formula for estimating buffer size for glyph count.
@@ -556,17 +560,19 @@ UINT32 CustomTextLayout::_EstimateGlyphCount(const UINT32 textLength) noexcept
 // - textLength - The characters available at/after the textString pointer (string length).
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPosition,
-                                                              _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                              _Out_ UINT32* textLength)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPosition,
+                                                                            _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                            _Out_ UINT32* textLength)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textString);
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+
     *textString = nullptr;
     *textLength = 0;
 
     if (textPosition < _text.size())
     {
-        *textString = _text.data() + textPosition;
+        *textString = &_text.at(textPosition);
         *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
     }
 
@@ -583,11 +589,13 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextAtPosition(UINT32 textPositio
 // - textLength - The characters available at/after the textString pointer (string length).
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPosition,
-                                                                  _Outptr_result_buffer_(*textLength) WCHAR const** textString,
-                                                                  _Out_ UINT32* textLength)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPosition,
+                                                                                _Outptr_result_buffer_(*textLength) WCHAR const** textString,
+                                                                                _Out_ UINT32* textLength) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textString);
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+
     *textString = nullptr;
     *textLength = 0;
 
@@ -607,8 +615,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetTextBeforePosition(UINT32 textPos
 // - <none>
 // Return Value:
 // - The reading direction held for this layout from construction
-[[nodiscard]]
-DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection()
+[[nodiscard]] DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReadingDirection() noexcept
 {
     return _readingDirection;
 }
@@ -622,11 +629,13 @@ DWRITE_READING_DIRECTION STDMETHODCALLTYPE CustomTextLayout::GetParagraphReading
 // - localeName - Zero terminated string of the locale name.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
-                                                          _Out_ UINT32* textLength,
-                                                          _Outptr_result_z_ WCHAR const** localeName)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
+                                                                        _Out_ UINT32* textLength,
+                                                                        _Outptr_result_z_ WCHAR const** localeName) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+    RETURN_HR_IF_NULL(E_INVALIDARG, localeName);
+
     *localeName = _localeName.data();
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
 
@@ -635,18 +644,20 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetLocaleName(UINT32 textPosition,
 
 // Routine Description:
 // - Implementation of IDWriteTextAnalysisSource::GetNumberSubstitution
-// - Retrieves the number substitution object name to apply to this text. 
+// - Retrieves the number substitution object name to apply to this text.
 // Arguments:
 // - textPosition - The index of the first character in the held string for which layout information is needed
 // - textLength - How many characters of the string from the index that the returned locale applies to
 // - numberSubstitution - Object to use for substituting numbers inside the determined range
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPosition,
-                                                                  _Out_ UINT32* textLength,
-                                                                  _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPosition,
+                                                                                _Out_ UINT32* textLength,
+                                                                                _COM_Outptr_ IDWriteNumberSubstitution** numberSubstitution) noexcept
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, textLength);
+    RETURN_HR_IF_NULL(E_INVALIDARG, numberSubstitution);
+
     *numberSubstitution = nullptr;
     *textLength = gsl::narrow<UINT32>(_text.size()) - textPosition;
 
@@ -665,10 +676,9 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::GetNumberSubstitution(UINT32 textPos
 // - scriptAnalysis - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
-                                                              UINT32 textLength,
-                                                              _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPosition,
+                                                                            UINT32 textLength,
+                                                                            _In_ DWRITE_SCRIPT_ANALYSIS const* scriptAnalysis)
 {
     try
     {
@@ -695,10 +705,9 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetScriptAnalysis(UINT32 textPositio
 // - scriptAnalysis - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPosition,
-                                                               UINT32 textLength,
-                                                               _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPosition,
+                                                                             UINT32 textLength,
+                                                                             _In_reads_(textLength) DWRITE_LINE_BREAKPOINT const* lineBreakpoints)
 {
     try
     {
@@ -724,11 +733,10 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetLineBreakpoints(UINT32 textPositi
 // - resolvedLevel - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
-                                                         UINT32 textLength,
-                                                         UINT8 /*explicitLevel*/,
-                                                         UINT8 resolvedLevel)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
+                                                                       UINT32 textLength,
+                                                                       UINT8 /*explicitLevel*/,
+                                                                       UINT8 resolvedLevel)
 {
     try
     {
@@ -755,10 +763,9 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetBidiLevel(UINT32 textPosition,
 // - numberSubstitution - The analysis information for all glyphs starting at position for length.
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPosition,
-                                                                  UINT32 textLength,
-                                                                  _In_ IDWriteNumberSubstitution* numberSubstitution)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPosition,
+                                                                                UINT32 textLength,
+                                                                                _In_ IDWriteNumberSubstitution* numberSubstitution)
 {
     try
     {
@@ -778,23 +785,26 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::SetNumberSubstitution(UINT32 textPos
 
 #pragma region internal methods for mimicing text analyzer pattern but for font fallback
 // Routine Description:
-// - Mimics an IDWriteTextAnalyser but for font fallback calculations. 
+// - Mimics an IDWriteTextAnalyser but for font fallback calculations.
 // Arguments:
 // - source - a text analysis source to retrieve substrings of the text to be analyzed
 // - textPosition - the index to start the substring operation
 // - textLength - the length of the substring operation
 // Result:
 // - S_OK, STL/GSL errors, or a suitable DirectWrite failure code on font fallback analysis.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnalysisSource* const source,
-                                                                 UINT32 textPosition,
-                                                                 UINT32 textLength)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnalysisSource* const source,
+                                                                               UINT32 textPosition,
+                                                                               UINT32 textLength)
 {
     try
     {
         // Get the font fallback first
         ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        RETURN_IF_FAILED(_format.As(&format1));
+        if (FAILED(_format.As(&format1)))
+        {
+            // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
+            return S_FALSE;
+        }
         RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> fallback;
@@ -804,7 +814,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
         RETURN_IF_FAILED(format1->GetFontCollection(&collection));
 
         std::wstring familyName;
-        familyName.resize(format1->GetFontFamilyNameLength() + 1);
+        familyName.resize(gsl::narrow_cast<size_t>(format1->GetFontFamilyNameLength()) + 1);
         RETURN_IF_FAILED(format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
 
         const auto weight = format1->GetFontWeight();
@@ -822,7 +832,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
         while (textLength > 0)
         {
             UINT32 mappedLength = 0;
-            IDWriteFont* mappedFont = nullptr;
+            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
             FLOAT scale = 0.0f;
 
             fallback->MapCharacters(source,
@@ -837,7 +847,7 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
                                     &mappedFont,
                                     &scale);
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont, scale));
+            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
 
             textPosition += mappedLength;
             textLength -= mappedLength;
@@ -857,11 +867,10 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_AnalyzeFontFallback(IDWriteTextAnal
 // - font - the font that applies to the substring range
 // - scale - the scale of the font to apply
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]]
-HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                           UINT32 textLength,
-                                                           IDWriteFont* const font,
-                                                           FLOAT const scale)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
+                                                                         UINT32 textLength,
+                                                                         _In_ IDWriteFont* const font,
+                                                                         FLOAT const scale)
 {
     try
     {
@@ -906,11 +915,8 @@ HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
 //              - The starting index is implicit based on the currently chosen run.
 // Return Value:
 // - reference to the run needed to store analysis data
-[[nodiscard]]
-CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
+[[nodiscard]] CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 {
-
-
     const auto originalRunIndex = _runIndex;
 
     auto& run = _runs.at(originalRunIndex);
@@ -921,7 +927,7 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
     if (textLength < runTextLength)
     {
         runTextLength = textLength; // Limit to what's actually left.
-        UINT32 runTextStart = run.textStart;
+        const UINT32 runTextStart = run.textStart;
 
         _SplitCurrentRun(runTextStart + runTextLength);
     }
@@ -949,18 +955,13 @@ CustomTextLayout::LinkedRun& CustomTextLayout::_FetchNextRun(UINT32& textLength)
 // - <none> - Updates internal state
 void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 {
-
-
-    if (_runIndex < _runs.size()
-        && _runs[_runIndex].ContainsTextPosition(textPosition))
+    if (_runIndex < _runs.size() && _runs.at(_runIndex).ContainsTextPosition(textPosition))
     {
         return;
     }
 
-    _runIndex = static_cast<UINT32>(
-        std::find(_runs.begin(), _runs.end(), textPosition)
-        - _runs.begin()
-        );
+    _runIndex = gsl::narrow<UINT32>(
+        std::find(_runs.begin(), _runs.end(), textPosition) - _runs.begin());
 }
 
 // Routine Description:
@@ -971,14 +972,13 @@ void CustomTextLayout::_SetCurrentRun(const UINT32 textPosition)
 // - <none> - Updates internal state, the back half will be selected after running
 void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
 {
-
-    UINT32 runTextStart = _runs.at(_runIndex).textStart;
+    const UINT32 runTextStart = _runs.at(_runIndex).textStart;
 
     if (splitPosition <= runTextStart)
         return; // no change
 
     // Grow runs by one.
-    size_t totalRuns = _runs.size();
+    const size_t totalRuns = _runs.size();
     try
     {
         _runs.resize(totalRuns + 1);
@@ -989,16 +989,16 @@ void CustomTextLayout::_SplitCurrentRun(const UINT32 splitPosition)
     }
 
     // Copy the old run to the end.
-    LinkedRun& frontHalf = _runs[_runIndex];
+    LinkedRun& frontHalf = _runs.at(_runIndex);
     LinkedRun& backHalf = _runs.back();
     backHalf = frontHalf;
 
     // Adjust runs' text positions and lengths.
-    UINT32 splitPoint = splitPosition - runTextStart;
+    const UINT32 splitPoint = splitPosition - runTextStart;
     backHalf.textStart += splitPoint;
     backHalf.textLength -= splitPoint;
     frontHalf.textLength = splitPoint;
-    frontHalf.nextRunIndex = static_cast<UINT32>(totalRuns);
-    _runIndex = static_cast<UINT32>(totalRuns);
+    frontHalf.nextRunIndex = gsl::narrow<UINT32>(totalRuns);
+    _runIndex = gsl::narrow<UINT32>(totalRuns);
 }
 #pragma endregion

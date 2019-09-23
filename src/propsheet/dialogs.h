@@ -21,6 +21,8 @@ Revision History:
 
 #pragma once
 
+// clang-format off
+
 #define DID_SETTINGS                100
 // unused 101
 // unused 102
@@ -41,6 +43,7 @@ Revision History:
 #define IDD_LANGUAGE_GROUPBOX       116
 #define DID_SETTINGS_COMCTL5        117
 #define DID_SETTINGS2_COMCTL5       118
+#define IDD_CURSOR_ADVANCED         119
 
 #define DID_FONTDLG                 200
 #define IDD_STATIC                  201
@@ -159,6 +162,4 @@ Revision History:
 
 #define BM_TRUETYPE_ICON            1000
 
-
-
-
+// clang-format on

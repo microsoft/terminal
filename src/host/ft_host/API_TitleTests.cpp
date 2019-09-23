@@ -3,17 +3,14 @@
 
 #include "precomp.h"
 
+using WEX::Logging::Log;
+using namespace WEX::Common;
+
 // This class is intended to test:
 // GetConsoleTitle
 class TitleTests
 {
     BEGIN_TEST_CLASS(TitleTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl2.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"api-ms-win-core-console-ansi-l2-1-0.lib")
     END_TEST_CLASS()
 
     TEST_METHOD_SETUP(TestSetup);
@@ -68,7 +65,7 @@ void TestGetConsoleTitleAPrepExpectedHelper(_In_reads_(cchTitle) const char* con
     // Prep expected data
     if (cchTryToRead >= cchTitle - 1)
     {
-        VERIFY_SUCCEEDED(StringCchCopyNA(chReadExpected, cchReadExpected, chTitle, cchTryToRead));  // Copy as much room as we said we had leaving space for null terminator
+        VERIFY_SUCCEEDED(StringCchCopyNA(chReadExpected, cchReadExpected, chTitle, cchTryToRead)); // Copy as much room as we said we had leaving space for null terminator
 
         if (cchTryToRead == cchTitle - 1)
         {
@@ -79,7 +76,6 @@ void TestGetConsoleTitleAPrepExpectedHelper(_In_reads_(cchTitle) const char* con
     {
         chReadExpected[0] = '\0';
     }
-
 }
 
 void TestGetConsoleTitleWPrepExpectedHelper(_In_reads_(cchTitle) const wchar_t* const wchTitle,
@@ -140,7 +136,7 @@ void TestGetConsoleTitleWVerifyHelper(_Inout_updates_(cchReadBuffer) wchar_t* co
                                       const size_t cchTryToRead,
                                       const DWORD dwExpectedRetVal,
                                       const DWORD dwExpectedLastError,
-                                      _In_reads_(cchExpected) const wchar_t* const  wchReadExpected,
+                                      _In_reads_(cchExpected) const wchar_t* const wchReadExpected,
                                       const size_t cchExpected)
 {
     VERIFY_ARE_EQUAL(cchExpected, cchReadBuffer);
@@ -254,7 +250,6 @@ void TitleTests::TestGetConsoleTitleA()
     // Run the call and test it out.
     TestGetConsoleTitleAVerifyHelper(nullptr, 0, 0, 0, S_OK, nullptr, 0);
 }
-
 
 void TitleTests::TestGetConsoleTitleW()
 {

@@ -25,4 +25,17 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
+       set after we've imported Microsoft.Cpp.targets -->
+  <PropertyGroup>
+    <CAExcludePath>$(SolutionDir)\dep\;$(CAExcludePath)</CAExcludePath>
+  </PropertyGroup>
+  <Target Name="CleanUpPrecompForSmallCIAgents" AfterTargets="AfterBuild" Condition="'$(AGENT_ID)' != ''">
+    <ItemGroup>
+      <FilesToClean Include="$(IntDir)\**\*.pch" />
+      <FilesToClean Include="$(IntDir)\**\precomp.obj" />
+    </ItemGroup>
+    <Delete Files="@(FilesToClean)"/>
+    <Message Text="PCH and Precomp objects have been deleted for $(ProjectName)." />
+  </Target>
 </Project>

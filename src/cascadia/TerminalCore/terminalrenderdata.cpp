@@ -117,6 +117,12 @@ std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() n
     return result;
 }
 
+void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
+{
+    SetSelectionAnchor(coordStart);
+    SetEndSelectionPosition(coordEnd);
+}
+
 const std::wstring Terminal::GetConsoleTitle() const noexcept
 {
     return _title;
@@ -128,14 +134,14 @@ const std::wstring Terminal::GetConsoleTitle() const noexcept
 //      operation.
 //   Callers should make sure to also call Terminal::UnlockConsole once
 //      they're done with any querying they need to do.
-void Terminal::LockConsole()  noexcept
+void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock_shared();
 }
 
 // Method Description:
 // - Unlocks the terminal after a call to Terminal::LockConsole.
-void Terminal::UnlockConsole()  noexcept
+void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock_shared();
 }

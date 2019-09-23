@@ -15,7 +15,7 @@ Because we build outside of the OS repo, we need a way to get code back into it 
 
 ## What to do when cherry-picking to inbox fails
 
-Sometimes VSTS doesn't want to allow a cherry pick to the inbox branch. It might have a valid reason or it might just be finicky. You'll need to complete the merge manually on a local machine. The steps are:
+Sometimes VSTS doesn't want to allow a cherry pick to the inbox branch. It might have a valid reason, or it might just be finicky. You'll need to complete the merge manually on a local machine. The steps are:
 
 1. make sure you have pulled the latest commits for the `dev/main` and `inbox` branches
 2. make a new branch from inbox

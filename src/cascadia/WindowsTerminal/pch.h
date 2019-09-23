@@ -24,6 +24,7 @@ Abstract:
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 
 #include <windows.h>
+#include <UIAutomation.h>
 #include <stdlib.h>
 #include <string.h>
 #include <shellscalingapi.h>
@@ -48,3 +49,13 @@ Abstract:
 //  * Media for ScaleTransform
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
+
+#include <wil/resource.h>
+#include <wil/win32_helpers.h>
+
+// Including TraceLogging essentials for the binary
+#include <TraceLoggingProvider.h>
+#include <winmeta.h>
+TRACELOGGING_DECLARE_PROVIDER(g_hWindowsTerminalProvider);
+#include <telemetry\ProjectTelemetry.h>
+#include <TraceLoggingActivity.h>

@@ -17,11 +17,12 @@ Abstract:
 
 #pragma once
 
+// clang-format off
+
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
 #pragma warning(push)
-#pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers
 #endif
@@ -34,3 +35,5 @@ Abstract:
 #include "..\inc\operators.hpp"
 #include "..\inc\unicode.hpp"
 #pragma warning(pop)
+
+// clang-format on

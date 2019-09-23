@@ -22,7 +22,6 @@ namespace Microsoft::Console::VirtualTerminal
 {
     class TermTelemetry sealed
     {
-
     public:
         // Implement this as a singleton class.
         static TermTelemetry& Instance()
@@ -83,13 +82,15 @@ namespace Microsoft::Console::VirtualTerminal
             OSCSCC,
             OSCRCC,
             REP,
+            OSCFG,
+            OSCBG,
             // Only use this last enum as a count of the number of codes.
             NUMBER_OF_CODES
         };
         void Log(const Codes code);
         void LogFailed(const wchar_t wch);
         void SetShouldWriteFinalLog(const bool writeLog);
-        void SetActivityId(const GUID *activityId);
+        void SetActivityId(const GUID* activityId);
         unsigned int GetAndResetTimesUsedCurrent();
         unsigned int GetAndResetTimesFailedCurrent();
         unsigned int GetAndResetTimesFailedOutsideRangeCurrent();

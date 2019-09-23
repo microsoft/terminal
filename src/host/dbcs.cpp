@@ -12,6 +12,7 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
 // Routine Description:
 // - This routine check bisected on Ascii string end.
 // Arguments:
@@ -20,7 +21,7 @@
 // Return Value:
 // - TRUE - Bisected character.
 // - FALSE - Correctly.
-bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO * const pCPInfo)
+bool CheckBisectStringA(_In_reads_bytes_(cbBuf) PCHAR pchBuf, _In_ DWORD cbBuf, const CPINFO* const pCPInfo)
 {
     while (cbBuf)
     {
@@ -101,7 +102,7 @@ DWORD UnicodeRasterFontCellMungeOnRead(const gsl::span<CHAR_INFO> buffer)
 // - pCPInfo - the code page to check the char in.
 // Return Value:
 // true if ch is a lead byte, false otherwise.
-bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
+bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO* const pCPInfo)
 {
     FAIL_FAST_IF_NULL(pCPInfo);
     // NOTE: This must be unsigned for the comparison. If we compare signed, this will never hit
@@ -109,7 +110,7 @@ bool IsDBCSLeadByteConsole(const CHAR ch, const CPINFO * const pCPInfo)
     unsigned char const uchComparison = (unsigned char)ch;
 
     int i = 0;
-    // this is ok because the the array is guaranteed to have 2
+    // this is ok because the array is guaranteed to have 2
     // null bytes at the end.
     while (pCPInfo->LeadByte[i])
     {
@@ -127,12 +128,12 @@ BYTE CodePageToCharSet(const UINT uiCodePage)
     CHARSETINFO csi;
 
     const auto inputServices = ServiceLocator::LocateInputServices();
-    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD *) IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
+    if (nullptr == inputServices || !inputServices->TranslateCharsetInfo((DWORD*)IntToPtr(uiCodePage), &csi, TCI_SRCCODEPAGE))
     {
         csi.ciCharset = OEM_CHARSET;
     }
 
-    return (BYTE) csi.ciCharset;
+    return (BYTE)csi.ciCharset;
 }
 
 BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
@@ -152,20 +153,20 @@ BOOL IsAvailableEastAsianCodePage(const UINT uiCodePage)
 }
 
 _Ret_range_(0, cbAnsi)
-ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
-                            const ULONG cchUnicode,
-                            _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
-                            const ULONG cbAnsi,
-                            _Out_ std::unique_ptr<IInputEvent>& partialEvent)
+    ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
+                                const ULONG cchUnicode,
+                                _Out_writes_bytes_(cbAnsi) PCHAR pchAnsi,
+                                const ULONG cbAnsi,
+                                _Out_ std::unique_ptr<IInputEvent>& partialEvent)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    PWCHAR const TmpUni = new(std::nothrow) WCHAR[cchUnicode];
+    PWCHAR const TmpUni = new (std::nothrow) WCHAR[cchUnicode];
     if (TmpUni == nullptr)
     {
         return 0;
     }
 
-    memcpy(TmpUni, pwchUnicode, cchUnicode* sizeof(WCHAR));
+    memcpy(TmpUni, pwchUnicode, cchUnicode * sizeof(WCHAR));
 
     BYTE AsciiDbcs[2];
     AsciiDbcs[1] = 0;
@@ -176,11 +177,11 @@ ULONG TranslateUnicodeToOem(_In_reads_(cchUnicode) PCWCHAR pwchUnicode,
         if (IsGlyphFullWidth(TmpUni[i]))
         {
             ULONG const NumBytes = sizeof(AsciiDbcs);
-            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR) & AsciiDbcs[0], NumBytes);
+            ConvertToOem(gci.CP, &TmpUni[i], 1, (LPSTR)&AsciiDbcs[0], NumBytes);
             if (IsDBCSLeadByteConsole(AsciiDbcs[0], &gci.CPInfo))
             {
                 if (j < cbAnsi - 1)
-                {   // -1 is safe DBCS in buffer
+                { // -1 is safe DBCS in buffer
                     pchAnsi[j] = AsciiDbcs[0];
                     j++;
                     pchAnsi[j] = AsciiDbcs[1];

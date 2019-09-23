@@ -32,14 +32,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         hstring _commandline;
 
         bool _connected;
-        HANDLE _inPipe;  // The pipe for writing input to
+        HANDLE _inPipe; // The pipe for writing input to
         HANDLE _outPipe; // The pipe for reading output from
         HPCON _hPC;
         DWORD _outputThreadId;
         HANDLE _hOutputThread;
         PROCESS_INFORMATION _piClient;
 
-        static DWORD StaticOutputThreadProc(LPVOID lpParameter);
+        static DWORD WINAPI StaticOutputThreadProc(LPVOID lpParameter);
         void _CreatePseudoConsole();
         DWORD _OutputThread();
     };

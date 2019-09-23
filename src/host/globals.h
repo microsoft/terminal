@@ -33,8 +33,6 @@ Revision History:
 #include <winmeta.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hConhostV2EventTraceProvider);
 
-using namespace Microsoft::Console::Render;
-
 class Globals
 {
 public:
@@ -58,14 +56,15 @@ public:
     ULONG cursorPixelWidth = 1;
 
     NTSTATUS ntstatusConsoleInputInitStatus;
-    wil::unique_event_nothrow hConsoleInputInitEvent;
+    wil::unique_event_nothrow consoleInputSetupEvent;
+    wil::unique_event_nothrow consoleInputInitializedEvent;
     DWORD dwInputThreadId;
 
     std::vector<wchar_t> WordDelimiters;
 
-    IRenderer* pRender;
+    Microsoft::Console::Render::IRenderer* pRender;
 
-    IFontDefaultList* pFontDefaultList;
+    Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 
     bool IsHeadless() const;
 

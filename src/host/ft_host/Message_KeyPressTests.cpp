@@ -23,14 +23,13 @@
 #define SLEEP_WAIT_TIME (2 * 1000)
 #define GERMAN_KEYBOARD_LAYOUT (MAKELANGID(LANG_GERMAN, SUBLANG_GERMAN))
 
+using namespace WEX::TestExecution;
+using namespace WEX::Common;
+using WEX::Logging::Log;
+
 class KeyPressTests
 {
     BEGIN_TEST_CLASS(KeyPressTests)
-        TEST_CLASS_PROPERTY(L"BinaryUnderTest", L"conhost.exe")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincon.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"winconp.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"wincontypes.h")
-        TEST_CLASS_PROPERTY(L"ArtifactUnderTest", L"conmsgl1.h")
     END_TEST_CLASS()
 
     void TurnOffModifierKeys(HWND hwnd)
@@ -62,7 +61,7 @@ class KeyPressTests
         }
 
         Log::Comment(L"Checks that the context menu key is correctly added to the input buffer.");
-        Log::Comment(L"This test will fail on some keyboard layouts. Ensure you're using a QWERTY keyboard if " \
+        Log::Comment(L"This test will fail on some keyboard layouts. Ensure you're using a QWERTY keyboard if "
                      L"you're encountering a test failure here.");
 
         HWND hwnd = GetConsoleWindow();
@@ -99,12 +98,10 @@ class KeyPressTests
         VERIFY_ARE_EQUAL(expectedRecord, record);
     }
 
-
     BEGIN_TEST_METHOD(TestAltGr)
         TEST_METHOD_PROPERTY(L"Ignore[@DevTest=true]", L"false")
         TEST_METHOD_PROPERTY(L"Ignore[default]", L"true")
     END_TEST_METHOD()
-
 
     TEST_METHOD(TestCoalesceSameKeyPress)
     {
@@ -160,9 +157,9 @@ class KeyPressTests
             // VKeys for A-Z
             // See https://msdn.microsoft.com/en-us/library/windows/desktop/dd375731(v=vs.85).aspx
             TEST_METHOD_PROPERTY(L"Data:vKey", L"{"
-                "0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,"
-                "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A"
-            "}")
+                                               "0x41,0x42,0x43,0x44,0x45,0x46,0x47,0x48,0x49,0x4A,0x4B,0x4C,0x4D,0x4E,0x4F,"
+                                               "0x50,0x51,0x52,0x53,0x54,0x55,0x56,0x57,0x58,0x59,0x5A"
+                                               "}")
         END_TEST_METHOD_PROPERTIES();
 
         if (!OneCoreDelay::IsSendMessageWPresent())
@@ -195,14 +192,14 @@ class KeyPressTests
         Log::Comment(NoThrowString().Format(L"Mode:0x%x", dwInMode));
 
         UINT vkCtrl = VK_LCONTROL; // Need this instead of VK_CONTROL
-        UINT uiCtrlScancode = MapVirtualKey(vkCtrl , MAPVK_VK_TO_VSC);
+        UINT uiCtrlScancode = MapVirtualKey(vkCtrl, MAPVK_VK_TO_VSC);
         // According to
         // KEY_KEYDOWN https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
-        LPARAM CtrlFlags = (LOBYTE(uiCtrlScancode)<<16) | SINGLE_KEY_REPEAT;
+        LPARAM CtrlFlags = (LOBYTE(uiCtrlScancode) << 16) | SINGLE_KEY_REPEAT;
         LPARAM CtrlUpFlags = CtrlFlags | KEY_MESSAGE_UPKEY_CODE;
 
-        UINT uiScancode = MapVirtualKey(vk , MAPVK_VK_TO_VSC);
+        UINT uiScancode = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
         LPARAM DownFlags = (LOBYTE(uiScancode) << 16) | SINGLE_KEY_REPEAT;
         LPARAM UpFlags = DownFlags | KEY_MESSAGE_UPKEY_CODE;
 
@@ -213,10 +210,10 @@ class KeyPressTests
         // Don't Use PostMessage, those events come in the wrong order.
         // Also can't use SendInput because of the whole test window backgrounding thing.
         //      It'd work locally, until you minimize the window.
-        SendMessage(hwnd, WM_KEYDOWN,   vkCtrl,     CtrlFlags);
-        SendMessage(hwnd, WM_KEYDOWN,   vk,         DownFlags);
-        SendMessage(hwnd, WM_KEYUP,     vk,         UpFlags);
-        SendMessage(hwnd, WM_KEYUP,     vkCtrl,     CtrlUpFlags);
+        SendMessage(hwnd, WM_KEYDOWN, vkCtrl, CtrlFlags);
+        SendMessage(hwnd, WM_KEYDOWN, vk, DownFlags);
+        SendMessage(hwnd, WM_KEYUP, vk, UpFlags);
+        SendMessage(hwnd, WM_KEYUP, vkCtrl, CtrlUpFlags);
 
         Sleep(50);
 
@@ -236,23 +233,22 @@ class KeyPressTests
             INPUT_RECORD rc = inputBuffer[i];
             switch (rc.EventType)
             {
-                case KEY_EVENT:
-                {
-                    Log::Comment(NoThrowString().Format(
-                        L"Down: %d Repeat: %d KeyCode: 0x%x ScanCode: 0x%x Char: %c (0x%x) KeyState: 0x%x",
-                        rc.Event.KeyEvent.bKeyDown,
-                        rc.Event.KeyEvent.wRepeatCount,
-                        rc.Event.KeyEvent.wVirtualKeyCode,
-                        rc.Event.KeyEvent.wVirtualScanCode,
-                        rc.Event.KeyEvent.uChar.UnicodeChar != 0 ? rc.Event.KeyEvent.uChar.UnicodeChar : ' ',
-                        rc.Event.KeyEvent.uChar.UnicodeChar,
-                        rc.Event.KeyEvent.dwControlKeyState
-                    ));
+            case KEY_EVENT:
+            {
+                Log::Comment(NoThrowString().Format(
+                    L"Down: %d Repeat: %d KeyCode: 0x%x ScanCode: 0x%x Char: %c (0x%x) KeyState: 0x%x",
+                    rc.Event.KeyEvent.bKeyDown,
+                    rc.Event.KeyEvent.wRepeatCount,
+                    rc.Event.KeyEvent.wVirtualKeyCode,
+                    rc.Event.KeyEvent.wVirtualScanCode,
+                    rc.Event.KeyEvent.uChar.UnicodeChar != 0 ? rc.Event.KeyEvent.uChar.UnicodeChar : ' ',
+                    rc.Event.KeyEvent.uChar.UnicodeChar,
+                    rc.Event.KeyEvent.dwControlKeyState));
 
-                    break;
-                }
-                default:
-                    Log::Comment(NoThrowString().Format(L"Another event type was found."));
+                break;
+            }
+            default:
+                Log::Comment(NoThrowString().Format(L"Another event type was found."));
             }
         }
         VERIFY_ARE_EQUAL(events, 4u);
@@ -288,19 +284,19 @@ class KeyPressTests
         // KEY_KEYDOWN https://msdn.microsoft.com/en-us/library/windows/desktop/ms646280(v=vs.85).aspx
         // KEY_UP https://msdn.microsoft.com/en-us/library/windows/desktop/ms646281(v=vs.85).aspx
         const UINT vsc = MapVirtualKey(VK_F11, MAPVK_VK_TO_VSC);
-        const LPARAM F11Flags = (LOBYTE(vsc)<<16) | SINGLE_KEY_REPEAT;
+        const LPARAM F11Flags = (LOBYTE(vsc) << 16) | SINGLE_KEY_REPEAT;
         const LPARAM F11UpFlags = F11Flags | KEY_MESSAGE_UPKEY_CODE;
 
         // Send F11 key down and up. lParam is VirtualScanCode and RepeatCount
-        SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags );
-        SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags );
+        SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags);
+        SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags);
 
         LONG maxStyle = GetWindowLongW(hwnd, GWL_STYLE);
         LONG maxExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);
 
         // Send F11 key down and up. lParam is VirtualScanCode and RepeatCount
-        SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags );
-        SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags );
+        SendMessage(hwnd, WM_KEYDOWN, VK_F11, F11Flags);
+        SendMessage(hwnd, WM_KEYUP, VK_F11, F11UpFlags);
 
         LONG newStyle = GetWindowLongW(hwnd, GWL_STYLE);
         LONG newExStyle = GetWindowLongW(hwnd, GWL_EXSTYLE);

@@ -3,14 +3,16 @@
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190417.3\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.190730.2\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
     <!-- 17134 is RS4 -->
     <!-- 17763 is RS5 -->
-    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.17763.0</WindowsTargetPlatformVersion>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
+    <!-- 18362 is 19H1 -->
+    <WindowsTargetPlatformVersion Condition=" '$(WindowsTargetPlatformVersion)' == '' ">10.0.18362.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.18362.0</WindowsTargetPlatformMinVersion>
     <CppWinRTEnabled>true</CppWinRTEnabled>
+    <CppWinRTOptimized>true</CppWinRTOptimized>
     <DefaultLanguage>en-US</DefaultLanguage>
     <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
     <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
@@ -72,7 +74,7 @@
 
   <PropertyGroup Label="Configuration">
     <ConfigurationType Condition="'$(ConfigurationType)'==''">DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
@@ -92,6 +94,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase- /std:c++17 </AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -127,6 +130,7 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AppContainer>false</AppContainer>
     </Link>
   </ItemDefinitionGroup>
 

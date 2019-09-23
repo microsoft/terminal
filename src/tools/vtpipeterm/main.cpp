@@ -7,8 +7,8 @@
 #include <wil\resource.h>
 #include <wil\wistd_functional.h>
 #include <wil\wistd_memory.h>
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <stdlib.h> /* srand, rand */
+#include <time.h> /* time */
 
 #include <deque>
 #include <memory>
@@ -115,7 +115,7 @@ HANDLE outPipe()
 
 void newConsole()
 {
-    auto con = new VtConsole(ReadCallback, g_headless, g_useConpty, {lastTerminalWidth, lastTerminalHeight});
+    auto con = new VtConsole(ReadCallback, g_headless, g_useConpty, { lastTerminalWidth, lastTerminalHeight });
     con->spawn();
     consoles.push_back(con);
 }
@@ -160,7 +160,6 @@ void printKeyEvent(KEY_EVENT_RECORD keyEvent)
                 keyEvent.uChar.AsciiChar,
                 keyEvent.dwControlKeyState);
     }
-
 }
 
 void toPrintableBuffer(char c, char* printBuffer, int* printCch)
@@ -171,7 +170,8 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
         printBuffer[1] = '[';
         *printCch = 2;
     }
-    else if (c == '\x03') {
+    else if (c == '\x03')
+    {
         printBuffer[0] = '^';
         printBuffer[1] = 'C';
         *printCch = 2;
@@ -197,7 +197,7 @@ void toPrintableBuffer(char c, char* printBuffer, int* printCch)
     else if (c < '\x20')
     {
         printBuffer[0] = '^';
-        printBuffer[1] = c+0x40;
+        printBuffer[1] = c + 0x40;
         *printCch = 2;
     }
     else if (c == '\x7f')
@@ -300,30 +300,30 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 }
                 if (doUnicode)
                 {
-                    switch(c)
+                    switch (c)
                     {
-                        case '1':
-                            lang = TEST_LANG_CYRILLIC;
-                            break;
-                        case '2':
-                            lang = TEST_LANG_CHINESE;
-                            break;
-                        case '3':
-                            lang = TEST_LANG_JAPANESE;
-                            break;
-                        case '4':
-                            lang = TEST_LANG_KOREAN;
-                            break;
-                        case '#':
-                            lang = TEST_LANG_GOOD_POUND;
-                            break;
-                        case '$':
-                            lang = TEST_LANG_BAD_POUND;
-                            break;
-                        default:
-                            doUnicode = false;
-                            lang = TEST_LANG_NONE;
-                            break;
+                    case '1':
+                        lang = TEST_LANG_CYRILLIC;
+                        break;
+                    case '2':
+                        lang = TEST_LANG_CHINESE;
+                        break;
+                    case '3':
+                        lang = TEST_LANG_JAPANESE;
+                        break;
+                    case '4':
+                        lang = TEST_LANG_KOREAN;
+                        break;
+                    case '#':
+                        lang = TEST_LANG_GOOD_POUND;
+                        break;
+                    case '$':
+                        lang = TEST_LANG_BAD_POUND;
+                        break;
+                    default:
+                        doUnicode = false;
+                        lang = TEST_LANG_NONE;
+                        break;
                     }
                 }
                 else if (!prefixPressed)
@@ -341,26 +341,26 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
                 }
                 else
                 {
-                    switch(c)
+                    switch (c)
                     {
-                        case 'n':
-                        case '\t':
-                            nextConsole();
-                            break;
-                        case 't':
-                            newConsole();
-                            nextConsole();
-                            break;
-                        case 'u':
-                            doUnicode = true;
-                            break;
-                        case 'r':
-                            signalConsole();
-                            break;
-                        default:
-                            *nextBuffer = c;
-                            nextBuffer++;
-                            bufferCch++;
+                    case 'n':
+                    case '\t':
+                        nextConsole();
+                        break;
+                    case 't':
+                        newConsole();
+                        nextConsole();
+                        break;
+                    case 'u':
+                        doUnicode = true;
+                        break;
+                    case 'r':
+                        signalConsole();
+                        break;
+                    default:
+                        *nextBuffer = c;
+                        nextBuffer++;
+                        bufferCch++;
                     }
                     prefixPressed = false;
                 }
@@ -375,7 +375,6 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
             WINDOW_BUFFER_SIZE_RECORD resize = event.Event.WindowBufferSizeEvent;
             handleResize();
         }
-
     }
 
     if (bufferCch > 0)
@@ -389,29 +388,29 @@ void handleManyEvents(const INPUT_RECORD* const inputBuffer, int cEvents)
     if (doUnicode && lang != TEST_LANG_NONE)
     {
         std::string str;
-        switch(lang)
+        switch (lang)
         {
-            case TEST_LANG_CYRILLIC:
-                str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
-                break;
-            case TEST_LANG_CHINESE:
-                str = "側経意責家方家閉討店暖育田庁載社転線宇。";
-                break;
-            case TEST_LANG_JAPANESE:
-                str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
-                break;
-            case TEST_LANG_KOREAN:
-                str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
-                break;
-            case TEST_LANG_GOOD_POUND:
-                str = "\xc2\xa3"; // UTF-8 £
-                break;
-            case TEST_LANG_BAD_POUND:
-                str = "\xa3";  // UTF-16 £
-                break;
-            default:
-                str = "";
-                break;
+        case TEST_LANG_CYRILLIC:
+            str = "Лорем ипсум долор сит амет, пер цлита поссит ех, ат мунере фабулас петентиум сит.";
+            break;
+        case TEST_LANG_CHINESE:
+            str = "側経意責家方家閉討店暖育田庁載社転線宇。";
+            break;
+        case TEST_LANG_JAPANESE:
+            str = "旅ロ京青利セムレ弱改フヨス波府かばぼ意送でぼ調掲察たス日西重ケアナ住橋ユムミク順待ふかんぼ人奨貯鏡すびそ。";
+            break;
+        case TEST_LANG_KOREAN:
+            str = "국민경제의 발전을 위한 중요정책의 수립에 관하여 대통령의 자문에 응하기 위하여 국민경제자문회의를 둘 수 있다.";
+            break;
+        case TEST_LANG_GOOD_POUND:
+            str = "\xc2\xa3"; // UTF-8 £
+            break;
+        case TEST_LANG_BAD_POUND:
+            str = "\xa3"; // UTF-16 £
+            break;
+        default:
+            str = "";
+            break;
         }
         getConsole()->WriteInput(str);
         PrintInputToDebug(str);
@@ -461,7 +460,7 @@ void SetupInput()
     SetConsoleMode(hIn, dwInMode);
 }
 
-DWORD InputThread(LPVOID /*lpParameter*/)
+DWORD WINAPI InputThread(LPVOID /*lpParameter*/)
 {
     // Because the input thread ends up owning the lifetime of the application,
     // Set/restore the CP here.
@@ -470,12 +469,10 @@ DWORD InputThread(LPVOID /*lpParameter*/)
     unsigned int launchCP = GetConsoleCP();
     THROW_LAST_ERROR_IF(!SetConsoleOutputCP(CP_UTF8));
     THROW_LAST_ERROR_IF(!SetConsoleCP(CP_UTF8));
-    auto restore = wil::scope_exit([&]
-    {
+    auto restore = wil::scope_exit([&] {
         SetConsoleOutputCP(launchOutputCP);
         SetConsoleCP(launchCP);
     });
-
 
     for (;;)
     {
@@ -494,25 +491,23 @@ DWORD InputThread(LPVOID /*lpParameter*/)
     }
 }
 
-
 void CreateIOThreads()
 {
     // The VtConsoles themselves handle their output threads.
 
-    DWORD dwInputThreadId = (DWORD) -1;
+    DWORD dwInputThreadId = (DWORD)-1;
     HANDLE hInputThread = CreateThread(nullptr,
-                                        0,
-                                        (LPTHREAD_START_ROUTINE)InputThread,
-                                        nullptr,
-                                        0,
-                                        &dwInputThreadId);
+                                       0,
+                                       InputThread,
+                                       nullptr,
+                                       0,
+                                       &dwInputThreadId);
     hInputThread;
 }
 
-
-BOOL CtrlHandler( DWORD fdwCtrlType )
+BOOL WINAPI CtrlHandler(DWORD fdwCtrlType)
 {
-    switch( fdwCtrlType )
+    switch (fdwCtrlType)
     {
     // Handle the CTRL-C signal.
     case CTRL_C_EVENT:
@@ -526,12 +521,12 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 // this function has unreachable code due to its unusual lifetime. We
 // disable the warning about it here.
 #pragma warning(push)
-#pragma warning(disable:4702)
+#pragma warning(disable : 4702)
 int __cdecl wmain(int argc, WCHAR* argv[])
 {
     // initialize random seed:
     srand((unsigned int)time(NULL));
-    SetConsoleCtrlHandler( (PHANDLER_ROUTINE) CtrlHandler, TRUE );
+    SetConsoleCtrlHandler(CtrlHandler, TRUE);
 
     hOut = GetStdHandle(STD_OUTPUT_HANDLE);
     hIn = GetStdHandle(STD_INPUT_HANDLE);
@@ -555,10 +550,10 @@ int __cdecl wmain(int argc, WCHAR* argv[])
             {
                 fUseDebug = true;
             }
-            else if (arg == std::wstring(L"--out") && i+1 < argc)
+            else if (arg == std::wstring(L"--out") && i + 1 < argc)
             {
                 g_useOutfile = true;
-                outfile = argv[i+1];
+                outfile = argv[i + 1];
                 i++;
             }
         }
@@ -572,13 +567,12 @@ int __cdecl wmain(int argc, WCHAR* argv[])
 
     if (g_useOutfile)
     {
-        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE,  FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL , NULL);
+        hOutFile = CreateFileW(outfile.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
         if (hOutFile == INVALID_HANDLE_VALUE)
         {
             printf("Failed to open outfile (%ls) for writing\n", outfile.c_str());
             Sleep(1000);
             exit(0);
-
         }
     }
 
@@ -595,7 +589,7 @@ int __cdecl wmain(int argc, WCHAR* argv[])
     if (fUseDebug)
     {
         // Create a debug console for writting debugging output to.
-        debug = new VtConsole(DebugReadCallback, false, false, {80,32});
+        debug = new VtConsole(DebugReadCallback, false, false, { 80, 32 });
         // Echo stdin to stdout, but ignore newlines (so cat doesn't echo the input)
         // debug->spawn(L"ubuntu run tr -d '\n' | cat -sA");
         debug->spawn(L"wsl tr -d '\n' | cat -sA");

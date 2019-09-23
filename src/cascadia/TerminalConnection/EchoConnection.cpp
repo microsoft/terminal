@@ -5,6 +5,8 @@
 #include "EchoConnection.h"
 #include <sstream>
 
+#include "EchoConnection.g.cpp"
+
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     EchoConnection::EchoConnection()
@@ -30,7 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     void EchoConnection::TerminalDisconnected(winrt::event_token const& token) noexcept
     {
         token;
-     }
+    }
 
     void EchoConnection::Start()
     {
@@ -43,7 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         {
             if (wch < 0x20)
             {
-                prettyPrint << L"^" << (wchar_t)(wch+0x40);
+                prettyPrint << L"^" << (wchar_t)(wch + 0x40);
             }
             else if (wch == 0x7f)
             {

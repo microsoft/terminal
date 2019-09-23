@@ -19,20 +19,19 @@ class Utf8ToWideCharParserTests
     static const unsigned int utf8CodePage = 65001;
     static const unsigned int USACodePage = 1252;
 
-
     TEST_CLASS(Utf8ToWideCharParserTests);
 
     TEST_METHOD(ConvertsAsciiTest)
     {
         Log::Comment(L"Testing that ASCII chars are correctly converted to wide chars");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         // ascii "hello"
         const unsigned char hello[5] = { 0x48, 0x65, 0x6c, 0x6c, 0x6f };
         const unsigned char wideHello[10] = { 0x48, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x6c, 0x00, 0x6f, 0x00 };
         unsigned int count = 5;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
+        unique_ptr<wchar_t[]> output{ nullptr };
 
         VERIFY_SUCCEEDED(parser.Parse(hello, count, consumed, output, generated));
         VERIFY_ARE_EQUAL(consumed, (unsigned int)5);
@@ -49,14 +48,14 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(ConvertSimpleUtf8Test)
     {
         Log::Comment(L"Testing that a simple UTF8 sequence can be converted");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         // U+3059, U+3057 (hiragana sushi)
-        const unsigned char sushi[6] = { 0xe3, 0x81, 0x99, 0xe3, 0x81, 0x97};
+        const unsigned char sushi[6] = { 0xe3, 0x81, 0x99, 0xe3, 0x81, 0x97 };
         const unsigned char wideSushi[4] = { 0x59, 0x30, 0x57, 0x30 };
         unsigned int count = 6;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
+        unique_ptr<wchar_t[]> output{ nullptr };
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
         VERIFY_ARE_EQUAL(consumed, (unsigned int)6);
@@ -76,11 +75,11 @@ class Utf8ToWideCharParserTests
         // U+3057 (hiragana shi)
         unsigned char shi[3] = { 0xe3, 0x81, 0x97 };
         unsigned char wideShi[2] = { 0x57, 0x30 };
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         unsigned int count = 1;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
+        unique_ptr<wchar_t[]> output{ nullptr };
 
         for (int i = 0; i < 2; ++i)
         {
@@ -112,8 +111,8 @@ class Utf8ToWideCharParserTests
         unsigned int count = 4;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        unique_ptr<wchar_t[]> output{ nullptr };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
         // check that we got the first wide char back
@@ -157,6 +156,8 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(MergesMultiplePartialSequencesTest)
     {
         Log::Comment(L"Testing that partial sequences sent individually will be merged together");
+
+        // clang-format off
         // (hiragana doomo arigatoo)
         const unsigned char doomoArigatoo[24] = {
             0xe3, 0x81, 0xa9, // U+3069
@@ -178,12 +179,14 @@ class Utf8ToWideCharParserTests
             0x68, 0x30,
             0x46, 0x30
         };
+        // clang-format on
+
         // send first 4 bytes
         unsigned int count = 4;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        unique_ptr<wchar_t[]> output{ nullptr };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
 
         VERIFY_SUCCEEDED(parser.Parse(doomoArigatoo, count, consumed, output, generated));
         VERIFY_ARE_EQUAL(consumed, (unsigned int)4);
@@ -191,7 +194,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for(int i = 0; i < 2; ++i)
+        for (int i = 0; i < 2; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i], pReturnedBytes[i]);
         }
@@ -207,7 +210,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for(int i = 0; i < 10; ++i)
+        for (int i = 0; i < 10; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i + 2], pReturnedBytes[i]);
         }
@@ -223,7 +226,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for(int i = 0; i < 4; ++i)
+        for (int i = 0; i < 4; ++i)
         {
             VERIFY_ARE_EQUAL(wideDoomoArigatoo[i + 12], pReturnedBytes[i]);
         }
@@ -232,18 +235,22 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(RemovesInvalidSequencesTest)
     {
         Log::Comment(L"Testing that invalid sequences are removed and don't stop the parsing of the rest");
+
+        // clang-format off
         // hiragana sushi with junk between japanese characters
         const unsigned char sushi[9] = {
             0xe3, 0x81, 0x99, // U+3059
             0x80, 0x81, 0x82, // junk continuation bytes
             0xe3, 0x81, 0x97  // U+3057
         };
+        // clang-format on
+
         const unsigned char wideSushi[4] = { 0x59, 0x30, 0x57, 0x30 };
         unsigned int count = 9;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        unique_ptr<wchar_t[]> output{ nullptr };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
 
         VERIFY_SUCCEEDED(parser.Parse(sushi, count, consumed, output, generated));
         VERIFY_ARE_EQUAL(consumed, (unsigned int)9);
@@ -251,7 +258,7 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_NOT_EQUAL(output.get(), nullptr);
 
         unsigned char* pReturnedBytes = reinterpret_cast<unsigned char*>(output.get());
-        for(int i = 0; i < ARRAYSIZE(wideSushi); ++i)
+        for (int i = 0; i < ARRAYSIZE(wideSushi); ++i)
         {
             VERIFY_ARE_EQUAL(wideSushi[i], pReturnedBytes[i]);
         }
@@ -260,14 +267,14 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(PartialBytesAreDroppedOnCodePageChangeTest)
     {
         Log::Comment(L"Testing that a saved partial sequence is cleared when the codepage changes");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         // 2 bytes of a 4 byte sequence
         const unsigned int inputSize = 2;
         const unsigned char partialSequence[inputSize] = { 0xF0, 0x80 };
         unsigned int count = inputSize;
         unsigned int consumed = 0;
         unsigned int generated = 0;
-        unique_ptr<wchar_t[]> output { nullptr };
+        unique_ptr<wchar_t[]> output{ nullptr };
         VERIFY_SUCCEEDED(parser.Parse(partialSequence, count, consumed, output, generated));
         VERIFY_ARE_EQUAL(parser._currentState, Utf8ToWideCharParser::_State::BeginPartialParse);
         VERIFY_ARE_EQUAL(parser._bytesStored, inputSize);
@@ -285,7 +292,7 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(_IsLeadByteTest)
     {
         Log::Comment(L"Testing that _IsLeadByte properly differentiates correct from incorrect sequences");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         VERIFY_IS_TRUE(parser._IsLeadByte(0xC0)); // 2 byte sequence
         VERIFY_IS_TRUE(parser._IsLeadByte(0xE0)); // 3 byte sequence
         VERIFY_IS_TRUE(parser._IsLeadByte(0xF0)); // 4 byte sequence
@@ -300,11 +307,10 @@ class Utf8ToWideCharParserTests
         VERIFY_IS_FALSE(parser._IsLeadByte(0xFF)); // all 1's
     }
 
-
     TEST_METHOD(_IsContinuationByteTest)
     {
         Log::Comment(L"Testing that _IsContinuationByte properly differentiates correct from incorrect sequences");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         for (BYTE i = 0x00; i < 0xFF; ++i)
         {
             if (IsBitSet(i, 0x80) && !IsBitSet(i, 0x40))
@@ -322,7 +328,7 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(_IsAsciiByteTest)
     {
         Log::Comment(L"Testing that _IsAsciiByte properly differentiates correct from incorrect sequences");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         for (BYTE i = 0x00; i < 0x80; ++i)
         {
             VERIFY_IS_TRUE(parser._IsAsciiByte(i), NoThrowString().Format(L"Byte is 0x%02x", i));
@@ -336,7 +342,7 @@ class Utf8ToWideCharParserTests
     TEST_METHOD(_Utf8SequenceSizeTest)
     {
         Log::Comment(L"Testing that _Utf8SequenceSize correctly counts the number of MSB 1's");
-        auto parser = Utf8ToWideCharParser { utf8CodePage };
+        auto parser = Utf8ToWideCharParser{ utf8CodePage };
         VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x00), (unsigned int)0);
         VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0x80), (unsigned int)1);
         VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xC2), (unsigned int)2);
@@ -349,5 +355,4 @@ class Utf8ToWideCharParserTests
         VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFE), (unsigned int)7);
         VERIFY_ARE_EQUAL(parser._Utf8SequenceSize(0xFF), (unsigned int)8);
     }
-
 };

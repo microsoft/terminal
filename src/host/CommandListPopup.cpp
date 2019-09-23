@@ -14,7 +14,7 @@
 
 #include "..\interactivity\inc\ServiceLocator.hpp"
 
-static constexpr size_t COMMAND_NUMBER_SIZE = 8;   // size of command number buffer
+static constexpr size_t COMMAND_NUMBER_SIZE = 8; // size of command number buffer
 
 // Routine Description:
 // - Calculates what the proposed size of the popup should be, based on the commands in the history
@@ -59,8 +59,9 @@ CommandListPopup::CommandListPopup(SCREEN_INFORMATION& screenInfo, const Command
     _setBottomIndex();
 }
 
-[[nodiscard]]
-NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData, const wchar_t wch, const DWORD modifiers) noexcept
+[[nodiscard]] NTSTATUS CommandListPopup::_handlePopupKeys(COOKED_READ_DATA& cookedReadData,
+                                                          const wchar_t wch,
+                                                          const DWORD modifiers) noexcept
 {
     try
     {
@@ -146,8 +147,7 @@ void CommandListPopup::_setBottomIndex()
     }
 }
 
-[[nodiscard]]
-NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) noexcept
 {
     try
     {
@@ -176,8 +176,7 @@ NTSTATUS CommandListPopup::_deleteSelection(COOKED_READ_DATA& cookedReadData) no
 // - moves the selected history item up in the history list
 // Arguments:
 // - cookedReadData - the read wait object to operate upon
-[[nodiscard]]
-NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
 {
     try
     {
@@ -199,8 +198,7 @@ NTSTATUS CommandListPopup::_swapUp(COOKED_READ_DATA& cookedReadData) noexcept
 // - moves the selected history item down in the history list
 // Arguments:
 // - cookedReadData - the read wait object to operate upon
-[[nodiscard]]
-NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CommandListPopup::_swapDown(COOKED_READ_DATA& cookedReadData) noexcept
 {
     try
     {
@@ -285,8 +283,7 @@ void CommandListPopup::_cycleSelectionToMatchingCommands(COOKED_READ_DATA& cooke
 // Return Value:
 // - CONSOLE_STATUS_WAIT - we ran out of input, so a wait block was created
 // - CONSOLE_STATUS_READ_COMPLETE - user hit return
-[[nodiscard]]
-NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
+[[nodiscard]] NTSTATUS CommandListPopup::Process(COOKED_READ_DATA& cookedReadData) noexcept
 {
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -345,7 +342,7 @@ void CommandListPopup::_drawList()
         WriteCoord.Y += 1i16;
     }
 
-    auto& api = ServiceLocator::LocateGlobals().api;
+    auto& api = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().api;
 
     WriteCoord.Y = _region.Top + 1i16;
     SHORT i = std::max(gsl::narrow<SHORT>(_bottomIndex - Height() + 1), 0i16);
@@ -515,7 +512,7 @@ void CommandListPopup::_update(const SHORT originalDelta, const bool wrap)
 }
 
 // Routine Description:
-// - Adjusts the highligted line in a list of commands
+// - Adjusts the highlighted line in a list of commands
 // Arguments:
 // - OldCurrentCommand - The previous command highlighted
 // - NewCurrentCommand - The new command to be highlighted.

@@ -20,12 +20,12 @@ namespace Microsoft::Console
     class PtySignalInputThread final
     {
     public:
-        PtySignalInputThread(_In_ wil::unique_hfile hPipe);
+        PtySignalInputThread(wil::unique_hfile hPipe,
+                             wil::shared_event shutdownEvent);
         ~PtySignalInputThread();
 
-        [[nodiscard]]
-        HRESULT Start() noexcept;
-        static DWORD StaticThreadProc(_In_ LPVOID lpParameter);
+        [[nodiscard]] HRESULT Start() noexcept;
+        static DWORD WINAPI StaticThreadProc(_In_ LPVOID lpParameter);
 
         // Prevent copying and assignment.
         PtySignalInputThread(const PtySignalInputThread&) = delete;
@@ -34,10 +34,10 @@ namespace Microsoft::Console
         void ConnectConsole() noexcept;
 
     private:
-        [[nodiscard]]
-        HRESULT _InputThread();
-        bool _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
-        void _Shutdown();
+        [[nodiscard]] HRESULT _InputThread();
+        [[nodiscard]] HRESULT _GetData(_Out_writes_bytes_(cbBuffer) void* const pBuffer, const DWORD cbBuffer);
+
+        wil::shared_event _shutdownEvent;
 
         wil::unique_hfile _hFile;
         wil::unique_handle _hThread;

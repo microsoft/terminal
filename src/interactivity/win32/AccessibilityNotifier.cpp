@@ -8,6 +8,7 @@
 #include "..\inc\ServiceLocator.hpp"
 #include "ConsoleControl.hpp"
 
+using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity::Win32;
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
@@ -23,7 +24,6 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ RECT rectangle)
                                                                                       &caretInfo,
                                                                                       sizeof(caretInfo)));
     }
-
 }
 
 void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags flags, _In_ LONG position)
@@ -60,12 +60,11 @@ void AccessibilityNotifier::NotifyConsoleCaretEvent(_In_ ConsoleCaretEventFlags 
         }
         previousCursorLocation = currentCursorPosition;
     }
-
 }
 
 void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LONG y)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SCROLL,
@@ -77,7 +76,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateScrollEvent(_In_ LONG x, _In_ LON
 
 void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_ LONG charAndAttribute)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_SIMPLE,
@@ -89,7 +88,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateSimpleEvent(_In_ LONG start, _In_
 
 void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _In_ LONG endXY)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_UPDATE_REGION,
@@ -101,7 +100,7 @@ void AccessibilityNotifier::NotifyConsoleUpdateRegionEvent(_In_ LONG startXY, _I
 
 void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_LAYOUT,
@@ -113,19 +112,19 @@ void AccessibilityNotifier::NotifyConsoleLayoutEvent()
 
 void AccessibilityNotifier::NotifyConsoleStartApplicationEvent(_In_ DWORD processId)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_START_APPLICATION,
-                        pWindow->GetWindowHandle(),
-                        processId,
-                        0);
+                       pWindow->GetWindowHandle(),
+                       processId,
+                       0);
     }
 }
 
 void AccessibilityNotifier::NotifyConsoleEndApplicationEvent(_In_ DWORD processId)
 {
-    IConsoleWindow *pWindow = ServiceLocator::LocateConsoleWindow();
+    IConsoleWindow* pWindow = ServiceLocator::LocateConsoleWindow();
     if (pWindow)
     {
         NotifyWinEvent(EVENT_CONSOLE_END_APPLICATION,

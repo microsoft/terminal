@@ -4,12 +4,12 @@ parameters:
   additionalBuildArguments: ''
 
 jobs:
-- job: Build${{ parameters.platform }}
-  displayName: Build ${{ parameters.platform }}
+- job: Build${{ parameters.platform }}${{ parameters.configuration }}
+  displayName: Build ${{ parameters.platform }} ${{ parameters.configuration }}
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: vs2017-win2016 }
+  pool: { vmImage: windows-2019 }
 
   steps:
   - template: build-console-steps.yml

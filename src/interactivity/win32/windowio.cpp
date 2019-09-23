@@ -23,7 +23,7 @@
 #pragma hdrstop
 
 using namespace Microsoft::Console::Interactivity::Win32;
-
+using Microsoft::Console::Interactivity::ServiceLocator;
 // For usage with WM_SYSKEYDOWN message processing.
 // See https://msdn.microsoft.com/en-us/library/windows/desktop/ms646286(v=vs.85).aspx
 // Bit 29 is whether ALT was held when the message was posted.
@@ -61,7 +61,6 @@ ULONG ConvertMouseButtonState(_In_ ULONG Flag, _In_ ULONG State)
 VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pProcessData)
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF(!(gci.IsConsoleLocked()));
 
     DWORD dwProcessId;
     DWORD dwThreadId;
@@ -94,9 +93,9 @@ VOID SetConsoleWindowOwner(const HWND hwnd, _Inout_opt_ ConsoleProcessHandle* pP
 
     // Comment out this line to enable UIA tree to be visible until UIAutomationCore.dll can support our scenario.
     LOG_IF_FAILED(ServiceLocator::LocateConsoleControl<Microsoft::Console::Interactivity::Win32::ConsoleControl>()
-        ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
-                  &ConsoleOwner,
-                  sizeof(ConsoleOwner)));
+                      ->Control(ConsoleControl::ControlType::ConsoleSetWindowOwner,
+                                &ConsoleOwner,
+                                sizeof(ConsoleOwner)));
 }
 
 // ----------------------------
@@ -358,7 +357,6 @@ void HandleKeyEvent(const HWND hWnd,
                     ServiceLocator::LocateConsoleWindow<Window>()->ChangeWindowOpacity(opacityDelta);
                     return;
                 }
-
             }
         }
     }
@@ -475,7 +473,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     if (VirtualKeyCode == VK_ESCAPE &&
         bCtrlDown && !(GetKeyState(VK_MENU) & KEY_PRESSED) && !(GetKeyState(VK_SHIFT) & KEY_PRESSED))
     {
-        return TRUE;    // call DefWindowProc
+        return TRUE; // call DefWindowProc
     }
 
     // check for alt-f4
@@ -485,12 +483,11 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     }
 
     if (WI_IsFlagClear(lParam, WM_SYSKEYDOWN_ALT_PRESSED))
-    {   // we're iconic
+    { // we're iconic
         // Check for ENTER while iconic (restore accelerator).
         if (VirtualKeyCode == VK_RETURN)
         {
-
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
         else
         {
@@ -521,16 +518,16 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
                 return FALSE;
             }
 
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
 
         if (VirtualKeyCode == VK_ESCAPE)
         {
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
         if (VirtualKeyCode == VK_TAB)
         {
-            return TRUE;    // call DefWindowProc
+            return TRUE; // call DefWindowProc
         }
     }
 
@@ -539,8 +536,7 @@ BOOL HandleSysKeyEvent(const HWND hWnd, const UINT Message, const WPARAM wParam,
     return FALSE;
 }
 
-[[nodiscard]]
-static HRESULT _AdjustFontSize(const SHORT delta) noexcept
+[[nodiscard]] static HRESULT _AdjustFontSize(const SHORT delta) noexcept
 {
     auto& globals = ServiceLocator::LocateGlobals();
     auto& screenInfo = globals.getConsoleInformation().GetActiveOutputBuffer();
@@ -622,7 +618,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
     // We need to try and have the virtual terminal handle the mouse's position in viewport coordinates,
     //   not in screen buffer coordinates. It expects the top left to always be 0,0
-    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on it's own.)
+    //   (the TerminalMouseInput object will add (1,1) to convert to VT coords on its own.)
     // Mouse events with shift pressed will ignore this and fall through to the default handler.
     //   This is in line with PuTTY's behavior and vim's own documentation:
     //   "The xterm handling of the mouse buttons can still be used by keeping the shift key pressed." - `:help 'mouse'`, vim.
@@ -779,7 +775,6 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
                     MousePosition = wordBounds.second;
                     // update both ends of the selection since we may have adjusted the anchor in some circumstances.
                     pSelection->AdjustSelection(wordBounds.first, wordBounds.second);
-
                 }
                 catch (...)
                 {
@@ -917,7 +912,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
             EventFlags);
         EventsWritten = static_cast<ULONG>(gci.pInputBuffer->Write(std::move(mouseEvent)));
     }
-    catch(...)
+    catch (...)
     {
         LOG_HR(wil::ResultFromCaughtException());
         EventsWritten = 0;
@@ -937,7 +932,7 @@ BOOL HandleMouseEvent(const SCREEN_INFORMATION& ScreenInfo,
 
 // Routine Description:
 // - This routine gets called to filter input to console dialogs so that we can do the special processing that StoreKeyInfo does.
-LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
+LRESULT CALLBACK DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 {
     MSG msg = *((PMSG)lParam);
 
@@ -947,7 +942,6 @@ LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
         {
             if (msg.message != WM_CHAR && msg.message != WM_DEADCHAR && msg.message != WM_SYSCHAR && msg.message != WM_SYSDEADCHAR)
             {
-
                 // don't store key info if dialog box input
                 if (GetWindowLongPtrW(msg.hwnd, GWLP_HWNDPARENT) == 0)
                 {
@@ -962,7 +956,7 @@ LRESULT DialogHookProc(int nCode, WPARAM /*wParam*/, LPARAM lParam)
 
 // Routine Description:
 // - This routine gets called by the console input thread to set up the console window.
-NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
+NTSTATUS InitWindowsSubsystem(_Out_ HHOOK* phhook)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     ConsoleProcessHandle* ProcessData = gci.ProcessHandleList.FindProcessInList(ConsoleProcessList::ROOT_PROCESS_ID);
@@ -979,7 +973,7 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 
     // We intentionally ignore the return value of SetWindowsHookEx. There are mixed LUID cases where this call will fail but in the past this call
     // was special cased (for CSRSS) to always succeed. Thus, we ignore failure for app compat (as not having the hook isn't fatal).
-    *phhook = SetWindowsHookExW(WH_MSGFILTER, (HOOKPROC)DialogHookProc, nullptr, GetCurrentThreadId());
+    *phhook = SetWindowsHookExW(WH_MSGFILTER, DialogHookProc, nullptr, GetCurrentThreadId());
 
     SetConsoleWindowOwner(ServiceLocator::LocateConsoleWindow()->GetWindowHandle(), ProcessData);
 
@@ -995,11 +989,14 @@ NTSTATUS InitWindowsSubsystem(_Out_ HHOOK * phhook)
 // (for a window)
 // ----------------------------
 
-DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
+DWORD WINAPI ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
 {
     InitEnvironmentVariables();
 
-    LockConsole();
+    // When the setup event is triggered, the I/O thread has told us that it is
+    // officially holding the global lock on our behalf and we're free to setup.
+    ServiceLocator::LocateGlobals().consoleInputSetupEvent.wait();
+
     HHOOK hhook = nullptr;
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1018,15 +1015,17 @@ DWORD ConsoleInputThreadProcWin32(LPVOID /*lpParameter*/)
         ServiceLocator::LocatePseudoWindow();
     }
 
-    UnlockConsole();
+    // Now we must pass back virtual ownership of the global lock by telling the I/O
+    // thread that we're done and what our status is.
+    ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
+    ServiceLocator::LocateGlobals().consoleInputInitializedEvent.SetEvent();
+
+    // If not successful, end the thread by returning the status.
+    // If successful, proceed down below to the message pump loop.
     if (!NT_SUCCESS(Status))
     {
-        ServiceLocator::LocateGlobals().ntstatusConsoleInputInitStatus = Status;
-        ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
         return Status;
     }
-
-    ServiceLocator::LocateGlobals().hConsoleInputInitEvent.SetEvent();
 
     for (;;)
     {

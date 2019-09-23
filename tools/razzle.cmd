@@ -1,77 +1,13 @@
 @echo off
 
+echo Setting up dev environment...
+
 rem Open Console build environment setup
 rem Adds msbuild to your path, and adds the open\tools directory as well
 rem This recreates what it's like to be an actual windows developer!
 
 rem skip the setup if we're already ready.
 if not "%OpenConBuild%" == "" goto :END
-
-rem Add path to MSBuild Binaries
-set MSBUILD=()
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Professional\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe" (
-    set MSBUILD="%ProgramFiles%\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Community\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Professional\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin" (
-    set MSBUILD="%ProgramFiles(x86)%\Microsoft Visual Studio\2019\Enterprise\MSBuild\Current\Bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles(x86)%\MSBuild\14.0\bin" (
-    set MSBUILD="%ProgramFiles(x86)%\MSBuild\14.0\bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-if exist "%ProgramFiles%\MSBuild\14.0\bin" (
-    set MSBUILD="%ProgramFiles%\MSBuild\14.0\bin\msbuild.exe"
-    goto :FOUND_MSBUILD
-)
-
-if %MSBUILD%==() (
-    echo "Could not find MsBuild on your machine. It may be installed somewhere else."
-    goto :EXIT
-)
-
-:FOUND_MSBUILD
 
 rem Add Opencon build scripts to path
 set PATH=%PATH%;%~dp0;
@@ -83,6 +19,41 @@ set OPENCON=%OPENCON_TOOLS:~0,-7%
 
 rem Add nuget to PATH
 set PATH=%PATH%%OPENCON%\dep\nuget;
+
+rem Run nuget restore so you can use vswhere
+nuget restore %OPENCON% -Verbosity quiet
+
+rem Find vswhere
+rem from https://github.com/microsoft/vs-setup-samples/blob/master/tools/vswhere.cmd
+for /f "usebackq delims=" %%I in (`dir /b /aD /o-N /s "%~dp0..\packages\vswhere*" 2^>nul`) do (
+    for /f "usebackq delims=" %%J in (`where /r "%%I" vswhere.exe 2^>nul`) do (
+        set VSWHERE=%%J
+    )
+)
+
+if not defined VSWHERE (
+    echo Could not find vswhere on your machine. Please set the VSWHERE variable to the location of vswhere.exe and run razzle again.
+    goto :EXIT
+)
+
+rem Add path to MSBuild Binaries
+for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+    set MSBUILD=%%B
+)
+
+rem Try to find MSBuild in prerelease versions of MSVS
+if not defined MSBUILD (
+    for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+        set MSBUILD=%%B
+    )
+)
+
+if not defined MSBUILD (
+    echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
+    goto :EXIT
+)
+
+set PATH=%PATH%%MSBUILD%\..;
 
 if "%PROCESSOR_ARCHITECTURE%" == "AMD64" (
     set ARCH=x64
@@ -133,7 +104,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-set TAEF=%OPENCON%\packages\Taef.Redist.Wlk.10.30.180808002\build\binaries\%ARCH%\TE.exe
+set TAEF=%OPENCON%\packages\Taef.Redist.Wlk.10.38.190610001-uapadmin\build\Binaries\%ARCH%\TE.exe
 rem Set this envvar so setup won't repeat itself
 set OpenConBuild=true
 

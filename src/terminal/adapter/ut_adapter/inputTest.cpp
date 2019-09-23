@@ -36,7 +36,6 @@ static wchar_t s_pwsInputBuffer[256];
 class Microsoft::Console::VirtualTerminal::InputTest
 {
 public:
-
     TEST_CLASS(InputTest);
 
     static void s_TerminalInputTestCallback(_In_ std::deque<std::unique_ptr<IInputEvent>>& inEvents);
@@ -49,13 +48,12 @@ public:
 
     wchar_t GetModifierChar(const bool fShift, const bool fAlt, const bool fCtrl)
     {
-        return L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
+        return L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
     }
 
     bool ControlAndAltPressed(unsigned int uiKeystate)
     {
-        return WI_IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)
-               && WI_IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
+        return WI_IsAnyFlagSet(uiKeystate, LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED) && WI_IsAnyFlagSet(uiKeystate, LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED);
     }
 
     bool ControlOrAltPressed(unsigned int uiKeystate)
@@ -127,7 +125,6 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
     {
         Log::Comment(L"We are expecting a null input event, preceded by an escape");
 
-
         INPUT_RECORD irExpectedEscape = { 0 };
         irExpectedEscape.EventType = KEY_EVENT;
         irExpectedEscape.Event.KeyEvent.bKeyDown = TRUE;
@@ -153,7 +150,6 @@ void InputTest::s_TerminalInputTestNullCallback(_In_ std::deque<std::unique_ptr<
     {
         VERIFY_FAIL(NoThrowString().Format(L"Expected either one or two inputs, got %zu", records.size()));
     }
-
 }
 
 void InputTest::TerminalInputTests()
@@ -174,13 +170,13 @@ void InputTest::TerminalInputTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
-        // MapVirtualKey's return value must be mapped to a wchar_t because
-        // that's what we're requesting from it, there isn't any data loss
-        // from the cast.
-        #pragma warning(push)
-        #pragma warning(disable:4242)
+// MapVirtualKey's return value must be mapped to a wchar_t because
+// that's what we're requesting from it, there isn't any data loss
+// from the cast.
+#pragma warning(push)
+#pragma warning(disable : 4242)
         irTest.Event.KeyEvent.uChar.UnicodeChar = (wchar_t)MapVirtualKey(vkey, MAPVK_VK_TO_CHAR);
-        #pragma warning(pop)
+#pragma warning(pop)
 
         // Set up expected result
         switch (vkey)
@@ -343,6 +339,7 @@ void InputTest::TerminalInputModifierKeyTests()
     unsigned int uiKeystate = uiActualKeystate;
 
     const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
+    const BYTE slashVkey = LOBYTE(VkKeyScanW(L'/'));
 
     Log::Comment(L"Sending every possible VKEY at the input stream for interception during key DOWN.");
     for (BYTE vkey = 0; vkey < BYTE_MAX; vkey++)
@@ -359,6 +356,12 @@ void InputTest::TerminalInputModifierKeyTests()
         irTest.Event.KeyEvent.wRepeatCount = 1;
         irTest.Event.KeyEvent.wVirtualKeyCode = vkey;
         irTest.Event.KeyEvent.bKeyDown = TRUE;
+
+        // Ctrl-/ is handled in another test, because it's weird.
+        if (ControlPressed(uiKeystate) && (vkey == VK_DIVIDE || vkey == slashVkey))
+        {
+            continue;
+        }
 
         // Set up expected result
         switch (vkey)
@@ -377,9 +380,7 @@ void InputTest::TerminalInputModifierKeyTests()
             continue;
         case VK_BACK:
             // Backspace is kinda different from other keys - we'll handle in another test.
-        case VK_DIVIDE:
         case VK_OEM_2:
-            // Ctrl-/ is also handled in another test, because it's weird.
             // VK_OEM_2 is typically the '/?' key
             continue;
             // wcscpy_s(s_pwsInputBuffer, L"\x7f");
@@ -530,7 +531,7 @@ void InputTest::TerminalInputModifierKeyTests()
                 bool fShift = !!(uiKeystate & SHIFT_PRESSED);
                 bool fAlt = (uiKeystate & LEFT_ALT_PRESSED) || (uiKeystate & RIGHT_ALT_PRESSED);
                 bool fCtrl = (uiKeystate & LEFT_CTRL_PRESSED) || (uiKeystate & RIGHT_CTRL_PRESSED);
-                s_pwsInputBuffer[cch-2] = L'1' + (fShift? 1 : 0) + (fAlt? 2 : 0) + (fCtrl? 4 : 0);
+                s_pwsInputBuffer[cch - 2] = L'1' + (fShift ? 1 : 0) + (fAlt ? 2 : 0) + (fCtrl ? 4 : 0);
             }
         }
         s_pwszInputExpected = s_pwsInputBuffer;
@@ -539,7 +540,6 @@ void InputTest::TerminalInputModifierKeyTests()
         auto inputEvent = IInputEvent::Create(irTest);
         // Send key into object (will trigger callback and verification)
         VERIFY_ARE_EQUAL(fExpectedKeyHandled, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
-
     }
 }
 
@@ -592,7 +592,6 @@ void InputTest::TerminalInputNullKeyTests()
     irTest.Event.KeyEvent.dwControlKeyState = uiKeystate;
     inputEvent = IInputEvent::Create(irTest);
     VERIFY_ARE_EQUAL(false, pInput->HandleKey(inputEvent.get()), L"Verify key was handled if it should have been.");
-
 }
 
 void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, const BYTE vkey, const wchar_t wch)
@@ -620,7 +619,6 @@ void TestKey(const TerminalInput* const pInput, const unsigned int uiKeystate, c
 void InputTest::DifferentModifiersTest()
 {
     Log::Comment(L"Starting test...");
-
 
     const TerminalInput* const pInput = new TerminalInput(s_TerminalInputTestCallback);
 

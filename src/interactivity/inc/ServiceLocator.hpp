@@ -16,19 +16,20 @@ Author(s):
 #pragma once
 
 #include "IInteractivityFactory.hpp"
-#include "IConsoleWindow.hpp"
+#include "../types/IConsoleWindow.hpp"
 #include "../../host/globals.h"
 
 #include <memory>
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Types;
+
 namespace Microsoft::Console::Interactivity
 {
     class ServiceLocator final
     {
     public:
-
         static void RundownAndExit(const HRESULT hr);
 
         // N.B.: Location methods without corresponding creation methods
@@ -36,63 +37,64 @@ namespace Microsoft::Console::Interactivity
         //       In case the on-demand creation fails, the return value
         //       is nullptr and a message is logged.
 
+        static IAccessibilityNotifier* LocateAccessibilityNotifier();
 
-        static IAccessibilityNotifier *LocateAccessibilityNotifier();
-
-        static IConsoleControl *LocateConsoleControl();
-        template <typename T> static T *LocateConsoleControl()
+        static IConsoleControl* LocateConsoleControl();
+        template<typename T>
+        static T* LocateConsoleControl()
         {
             return static_cast<T*>(LocateConsoleControl());
         }
 
-        [[nodiscard]]
-        static NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
-        static IConsoleInputThread *LocateConsoleInputThread();
-        template <typename T> static T *LocateConsoleInputThread()
+        [[nodiscard]] static NTSTATUS CreateConsoleInputThread(_Outptr_result_nullonfailure_ IConsoleInputThread** thread);
+        static IConsoleInputThread* LocateConsoleInputThread();
+        template<typename T>
+        static T* LocateConsoleInputThread()
         {
             return static_cast<T*>(LocateConsoleInputThread());
         }
 
-        [[nodiscard]]
-        static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow *window);
-        static IConsoleWindow *LocateConsoleWindow();
-        template <typename T> static T *LocateConsoleWindow()
+        [[nodiscard]] static NTSTATUS SetConsoleWindowInstance(_In_ IConsoleWindow* window);
+        static IConsoleWindow* LocateConsoleWindow();
+        template<typename T>
+        static T* LocateConsoleWindow()
         {
             return static_cast<T*>(s_consoleWindow);
         }
 
-        static IWindowMetrics *LocateWindowMetrics();
-        template <typename T> static T *LocateWindowMetrics()
+        static IWindowMetrics* LocateWindowMetrics();
+        template<typename T>
+        static T* LocateWindowMetrics()
         {
             return static_cast<T*>(LocateWindowMetrics());
         }
 
-        static IHighDpiApi *LocateHighDpiApi();
-        template <typename T> static T *LocateHighDpiApi()
+        static IHighDpiApi* LocateHighDpiApi();
+        template<typename T>
+        static T* LocateHighDpiApi()
         {
             return static_cast<T*>(LocateHighDpiApi());
         }
 
-        static IInputServices *LocateInputServices();
-        template <typename T> static T *LocateInputServices()
+        static IInputServices* LocateInputServices();
+        template<typename T>
+        static T* LocateInputServices()
         {
             return static_cast<T*>(LocateInputServices());
         }
 
-        static ISystemConfigurationProvider *LocateSystemConfigurationProvider();
+        static ISystemConfigurationProvider* LocateSystemConfigurationProvider();
 
         static Globals& LocateGlobals();
 
         static HWND LocatePseudoWindow();
-
 
     protected:
         ServiceLocator(ServiceLocator const&) = delete;
         ServiceLocator& operator=(ServiceLocator const&) = delete;
 
     private:
-        [[nodiscard]]
-        static NTSTATUS LoadInteractivityFactory();
+        [[nodiscard]] static NTSTATUS LoadInteractivityFactory();
 
         static std::unique_ptr<IInteractivityFactory> s_interactivityFactory;
 

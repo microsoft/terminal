@@ -51,17 +51,15 @@ void RecreateFontHandles(const HWND hWnd);
 /* ----- Globals ----- */
 
 HBITMAP hbmTT = NULL; // handle of TT logo bitmap
-BITMAP bmTT;          // attributes of TT source bitmap
+BITMAP bmTT; // attributes of TT source bitmap
 
 BOOL gbPointSizeError = FALSE;
 BOOL gbBold = FALSE;
 BOOL gbUserChoseBold = FALSE; // TRUE if bold state was due to user choice
 
-BOOL
-SelectCurrentFont(
+BOOL SelectCurrentFont(
     HWND hDlg,
-    int FontIndex
-    );
+    int FontIndex);
 
 // Globals strings loaded from resource
 WCHAR wszSelectedFont[CCH_SELECTEDFONT + 1];
@@ -84,7 +82,7 @@ UINT GetItemHeight(const HWND hDlg)
     HFONT hFont = GetWindowFont(hDlg);
     if (hFont)
     {
-        hFont = (HFONT) SelectObject(hDC, hFont);
+        hFont = (HFONT)SelectObject(hDC, hFont);
     }
     TEXTMETRIC tm;
     GetTextMetrics(hDC, &tm);
@@ -99,7 +97,7 @@ UINT GetItemHeight(const HWND hDlg)
 // The V1 console doesn't support arbitrary TTF fonts, so only allow the enumeration of all TT fonts in the conditions below:
 BOOL ShouldAllowAllMonoTTFonts()
 {
-    return (gpStateInfo->fIsV2Console ||            // allow if connected to a v2 conhost or
+    return (gpStateInfo->fIsV2Console || // allow if connected to a v2 conhost or
             (gpStateInfo->Defaults && g_fForceV2)); // we're in defaults and v2 is turned on
 }
 
@@ -134,7 +132,7 @@ BOOL IsBoldOnlyTTFont(_In_ PCWSTR pwszTTFace, _In_opt_ PCWSTR pwszAltTTFace)
 
         // only care if this TT font's name matches
         if ((0 != lstrcmp(FontInfo[i].FaceName, pwszTTFace)) && // wrong face name and
-            (pwszAltTTFace != NULL ||                           // either pwszAltTTFace is NULL or
+            (pwszAltTTFace == NULL || // either pwszAltTTFace is NULL or
              (0 != lstrcmp(FontInfo[i].FaceName, pwszAltTTFace)))) // pwszAltTTFace is wrong too
         {
             // A TrueType font, but not the one we're interested in
@@ -216,8 +214,7 @@ FontDlgProc(
     HWND hDlg,
     UINT wMsg,
     WPARAM wParam,
-    LPARAM lParam
-    )
+    LPARAM lParam)
 
 /*++
 
@@ -232,34 +229,32 @@ FontDlgProc(
     int FontIndex = g_currentFontIndex; // init to keep compiler happy
     BOOL bLB;
 
-    switch (wMsg) {
+    switch (wMsg)
+    {
     case WM_INITDIALOG:
         /*
          * Load the font description strings
          */
-        LoadString(ghInstance, IDS_RASTERFONT,
-                   wszRasterFonts, ARRAYSIZE(wszRasterFonts));
+        LoadString(ghInstance, IDS_RASTERFONT, wszRasterFonts, ARRAYSIZE(wszRasterFonts));
         DBGFONTS(("wszRasterFonts = \"%ls\"\n", wszRasterFonts));
 
-        LoadString(ghInstance, IDS_SELECTEDFONT,
-                   wszSelectedFont, ARRAYSIZE(wszSelectedFont));
+        LoadString(ghInstance, IDS_SELECTEDFONT, wszSelectedFont, ARRAYSIZE(wszSelectedFont));
         DBGFONTS(("wszSelectedFont = \"%ls\"\n", wszSelectedFont));
 
         /* Save current font size as dialog window's user data */
 
-        if (g_fEastAsianSystem) {
-            SetWindowLongPtr(hDlg, GWLP_USERDATA,
-                          MAKELONG(FontInfo[g_currentFontIndex].tmCharSet,
-                                   FontInfo[g_currentFontIndex].Size.Y));
-        } else {
-            SetWindowLongPtr(hDlg, GWLP_USERDATA,
-                          MAKELONG(FontInfo[g_currentFontIndex].Size.X,
-                                   FontInfo[g_currentFontIndex].Size.Y));
+        if (g_fEastAsianSystem)
+        {
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, MAKELONG(FontInfo[g_currentFontIndex].tmCharSet, FontInfo[g_currentFontIndex].Size.Y));
+        }
+        else
+        {
+            SetWindowLongPtr(hDlg, GWLP_USERDATA, MAKELONG(FontInfo[g_currentFontIndex].Size.X, FontInfo[g_currentFontIndex].Size.Y));
         }
 
         if (g_fHostedInFileProperties || gpStateInfo->Defaults)
         {
-            FindFontAndUpdateState();
+            LOG_IF_FAILED(FindFontAndUpdateState());
         }
 
         // IMPORTANT NOTE: When the propsheet and conhost disagree on a font (e.g. user has switched charsets and forgot
@@ -325,7 +320,8 @@ FontDlgProc(
         return TRUE;
 
     case WM_PAINT:
-        if (fChangeCodePage) {
+        if (fChangeCodePage)
+        {
             fChangeCodePage = FALSE;
 
             /* Create the list of suitable fonts */
@@ -356,41 +352,43 @@ FontDlgProc(
             switch (HIWORD(wParam))
             {
             case LBN_SELCHANGE:
-RedoFontListAndPreview:
+            RedoFontListAndPreview:
+            {
+                // if the font we're switching away from is a bold-only TT font, and the user didn't explicitly ask
+                // for bold earlier, then unset bold. note that we're depending on the fact that by this point
+                // FontIndex hasn't yet been updated to refer to the new font that the user selected.
+                if (IS_BOLD(FontInfo[FontIndex].Weight) &&
+                    IsBoldOnlyTTFont(FontInfo[FontIndex].FaceName, NULL) &&
+                    !gbUserChoseBold)
                 {
-                    // if the font we're switching away from is a bold-only TT font, and the user didn't explicitly ask
-                    // for bold earlier, then unset bold. note that we're depending on the fact that by this point
-                    // FontIndex hasn't yet been updated to refer to the new font that the user selected.
-                    if (IS_BOLD(FontInfo[FontIndex].Weight) &&
-                        IsBoldOnlyTTFont(FontInfo[FontIndex].FaceName, NULL) &&
-                        !gbUserChoseBold)
-                    {
-                        gbBold = FALSE;
-                    }
-
-                    WCHAR atchNewFace[LF_FACESIZE];
-                    LONG l;
-
-                    DBGFONTS(("LBN_SELCHANGE from FACENAME\n"));
-                    l = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L);
-                    bLB = (BOOL)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETITEMDATA, l, 0L);
-                    if (!bLB) {
-                        SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETTEXT, l, (LPARAM)atchNewFace);
-                        DBGFONTS(("LBN_EDITUPDATE, got TT face \"%ls\"\n", atchNewFace));
-                    }
-                    FontIndex = FontListCreate(hDlg,
-                                               bLB ? NULL : atchNewFace,
-                                               FALSE);
-                    SelectCurrentSize(hDlg, bLB, FontIndex);
-                    PreviewUpdate(hDlg, bLB);
-                    UpdateApplyButton(hDlg);
-                    return TRUE;
+                    gbBold = FALSE;
                 }
+
+                WCHAR atchNewFace[LF_FACESIZE];
+                LONG l;
+
+                DBGFONTS(("LBN_SELCHANGE from FACENAME\n"));
+                l = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L);
+                bLB = (BOOL)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETITEMDATA, l, 0L);
+                if (!bLB)
+                {
+                    SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETTEXT, l, (LPARAM)atchNewFace);
+                    DBGFONTS(("LBN_EDITUPDATE, got TT face \"%ls\"\n", atchNewFace));
+                }
+                FontIndex = FontListCreate(hDlg,
+                                           bLB ? NULL : atchNewFace,
+                                           FALSE);
+                SelectCurrentSize(hDlg, bLB, FontIndex);
+                PreviewUpdate(hDlg, bLB);
+                UpdateApplyButton(hDlg);
+                return TRUE;
+            }
             }
             break;
 
         case IDD_POINTSLIST:
-            switch (HIWORD(wParam)) {
+            switch (HIWORD(wParam))
+            {
             case CBN_SELCHANGE:
                 DBGFONTS(("CBN_SELCHANGE from POINTSLIST\n"));
                 PreviewUpdate(hDlg, FALSE);
@@ -399,10 +397,12 @@ RedoFontListAndPreview:
 
             case CBN_KILLFOCUS:
                 DBGFONTS(("CBN_KILLFOCUS from POINTSLIST\n"));
-                if (!gbPointSizeError) {
+                if (!gbPointSizeError)
+                {
                     hWndFocus = GetFocus();
                     if (hWndFocus != NULL && IsChild(hDlg, hWndFocus) &&
-                        hWndFocus != GetDlgItem(hDlg, IDCANCEL)) {
+                        hWndFocus != GetDlgItem(hDlg, IDCANCEL))
+                    {
                         AddCustomFontSizeToListIfNeeded(hDlg);
                         PreviewUpdate(hDlg, FALSE);
                     }
@@ -410,13 +410,14 @@ RedoFontListAndPreview:
                 return TRUE;
 
             default:
-                DBGFONTS(("unhandled CBN_%x from POINTSLIST\n",HIWORD(wParam)));
+                DBGFONTS(("unhandled CBN_%x from POINTSLIST\n", HIWORD(wParam)));
                 break;
             }
             break;
 
         case IDD_PIXELSLIST:
-            switch (HIWORD(wParam)) {
+            switch (HIWORD(wParam))
+            {
             case LBN_SELCHANGE:
                 DBGFONTS(("LBN_SELCHANGE from PIXELSLIST\n"));
                 PreviewUpdate(hDlg, TRUE);
@@ -435,15 +436,18 @@ RedoFontListAndPreview:
 
     case WM_NOTIFY:
     {
-        const PSHNOTIFY * const pshn = (LPPSHNOTIFY)lParam;
-        switch (pshn->hdr.code) {
+        const PSHNOTIFY* const pshn = (LPPSHNOTIFY)lParam;
+        switch (pshn->hdr.code)
+        {
         case PSN_KILLACTIVE:
             //
             // If the TT combo box is visible, update selection
             //
             hWndList = GetDlgItem(hDlg, IDD_POINTSLIST);
-            if (hWndList != NULL && IsWindowVisible(hWndList)) {
-                if (!PreviewUpdate(hDlg, FALSE)) {
+            if (hWndList != NULL && IsWindowVisible(hWndList))
+            {
+                if (!PreviewUpdate(hDlg, FALSE))
+                {
                     SetDlgMsgResult(hDlg, PSN_KILLACTIVE, TRUE);
                     return TRUE;
                 }
@@ -452,10 +456,13 @@ RedoFontListAndPreview:
 
             FontIndex = g_currentFontIndex;
 
-            if (FontInfo[FontIndex].SizeWant.Y == 0) {
+            if (FontInfo[FontIndex].SizeWant.Y == 0)
+            {
                 // Raster Font, so save actual size
                 gpStateInfo->FontSize = FontInfo[FontIndex].Size;
-            } else {
+            }
+            else
+            {
                 // TT Font, so save desired size
                 gpStateInfo->FontSize = FontInfo[FontIndex].SizeWant;
             }
@@ -495,7 +502,8 @@ RedoFontListAndPreview:
         /*
          * Delete the TrueType logo bitmap
          */
-        if (hbmTT != NULL) {
+        if (hbmTT != NULL)
+        {
             DeleteObject(hbmTT);
             hbmTT = NULL;
         }
@@ -534,26 +542,35 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
     int iLastShowY = 0;
     int nSameSize = 0;
 
-    for (ULONG i = 0; i < NumberOfFonts; i++) {
-        if (!fRasterFont == !TM_IS_TT_FONT(FontInfo[i].Family)) {
+    for (ULONG i = 0; i < NumberOfFonts; i++)
+    {
+        if (!fRasterFont == !TM_IS_TT_FONT(FontInfo[i].Family))
+        {
             DBGFONTS(("  Font %x not right type\n", i));
             continue;
         }
-        if (fDbcsCharSet) {
-            if (!IS_DBCS_OR_OEM_CHARSET(FontInfo[i].tmCharSet)) {
+        if (fDbcsCharSet)
+        {
+            if (!IS_DBCS_OR_OEM_CHARSET(FontInfo[i].tmCharSet))
+            {
                 DBGFONTS(("  Font %x not right type for DBCS character set\n", i));
                 continue;
             }
-        } else {
-            if (IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet)) {
+        }
+        else
+        {
+            if (IS_ANY_DBCS_CHARSET(FontInfo[i].tmCharSet))
+            {
                 DBGFONTS(("  Font %x not right type for SBCS character set\n", i));
                 continue;
             }
         }
 
-        if (!fRasterFont) {
+        if (!fRasterFont)
+        {
             if ((0 != lstrcmp(FontInfo[i].FaceName, pwszTTFace)) &&
-                (0 != lstrcmp(FontInfo[i].FaceName, pwszAltTTFace))) {
+                (0 != lstrcmp(FontInfo[i].FaceName, pwszAltTTFace)))
+            {
                 /*
                  * A TrueType font, but not the one we're interested in,
                  * so don't add it to the list of point sizes.
@@ -564,41 +581,56 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
 
             // if we're being asked to add bold fonts, add unconditionally according to weight. Otherwise, only this
             // entry to the list of it's in line with user choice. Raster fonts aren't available in bold.
-            if (!fAddBoldFonts && gbBold != IS_BOLD(FontInfo[i].Weight)) {
+            if (!fAddBoldFonts && gbBold != IS_BOLD(FontInfo[i].Weight))
+            {
                 DBGFONTS(("  Font %x has weight %d, but we wanted %sbold\n",
-                          i, FontInfo[i].Weight, gbBold ? "" : "not "));
+                          i,
+                          FontInfo[i].Weight,
+                          gbBold ? "" : "not "));
                 continue;
             }
         }
 
         int ShowX;
-        if (FontInfo[i].SizeWant.X > 0) {
+        if (FontInfo[i].SizeWant.X > 0)
+        {
             ShowX = FontInfo[i].SizeWant.X;
-        } else {
+        }
+        else
+        {
             ShowX = FontInfo[i].Size.X;
         }
 
         int ShowY;
-        if (FontInfo[i].SizeWant.Y > 0) {
+        if (FontInfo[i].SizeWant.Y > 0)
+        {
             ShowY = FontInfo[i].SizeWant.Y;
-        } else {
+        }
+        else
+        {
             ShowY = FontInfo[i].Size.Y;
         }
 
         /*
          * Add the size description string to the end of the right list
          */
-        if (TM_IS_TT_FONT(FontInfo[i].Family)) {
+        if (TM_IS_TT_FONT(FontInfo[i].Family))
+        {
             // point size
             StringCchPrintf(wszText,
                             ARRAYSIZE(wszText),
                             TEXT("%2d"),
                             FontInfo[i].SizeWant.Y);
-        } else {
+        }
+        else
+        {
             // pixel size
-            if ((iLastShowX == ShowX) && (iLastShowY == ShowY)) {
+            if ((iLastShowX == ShowX) && (iLastShowY == ShowY))
+            {
                 nSameSize++;
-            } else {
+            }
+            else
+            {
                 iLastShowX = ShowX;
                 iLastShowY = ShowY;
                 nSameSize = 0;
@@ -610,7 +642,8 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
              * be visible and exists off the edge of the list
              */
             if (((dwExStyle & WS_EX_RIGHT) && !(dwExStyle & WS_EX_LAYOUTRTL)) ||
-                (!(dwExStyle & WS_EX_RIGHT) && (dwExStyle & WS_EX_LAYOUTRTL))) {
+                (!(dwExStyle & WS_EX_RIGHT) && (dwExStyle & WS_EX_LAYOUTRTL)))
+            {
                 // flip  it so that the hidden part be at the far left
                 StringCchPrintf(wszText,
                                 ARRAYSIZE(wszText),
@@ -618,7 +651,9 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
                                 nSameSize,
                                 ShowX,
                                 ShowY);
-            } else {
+            }
+            else
+            {
                 StringCchPrintf(wszText,
                                 ARRAYSIZE(wszText),
                                 TEXT("%2d x %2d                #%d"),
@@ -629,13 +664,15 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
         }
 
         LONG lListIndex = lcbFINDSTRINGEXACT(hWndShow, fRasterFont, wszText);
-        if (lListIndex == LB_ERR) {
+        if (lListIndex == LB_ERR)
+        {
             lListIndex = lcbADDSTRING(hWndShow, fRasterFont, wszText);
         }
         DBGFONTS(("  added %ls to %sSLIST(%p) index %lx\n",
                   wszText,
                   fRasterFont ? "PIXEL" : "POINT",
-                  hWndShow, lListIndex));
+                  hWndShow,
+                  lListIndex));
         lcbSETITEMDATA(hWndShow, fRasterFont, (DWORD)lListIndex, i);
     }
 }
@@ -648,50 +685,57 @@ void AddFontSizesToList(PCWSTR pwszTTFace,
     Returns
         FontIndex of selected font (LB_ERR if none)
 --*/
-int
-FontListCreate(
+int FontListCreate(
     __in HWND hDlg,
     __in_ecount_opt(LF_FACESIZE) LPWSTR pwszTTFace,
     __in BOOL bNewFaceList)
 {
     LONG lListIndex;
     ULONG i;
-    HWND hWndShow;    // List or Combo box
-    HWND hWndHide;    // Combo or List box
+    HWND hWndShow; // List or Combo box
+    HWND hWndHide; // Combo or List box
     HWND hWndFaceCombo;
     BOOL bLB;
-    UINT  CodePage = gpStateInfo->CodePage;
-    BOOL  fFindTTFont = FALSE;
+    UINT CodePage = gpStateInfo->CodePage;
+    BOOL fFindTTFont = FALSE;
     LPWSTR pwszAltTTFace;
     LONG_PTR dwExStyle;
 
     FAIL_FAST_IF(!(OEMCP != 0)); // must be initialized
 
     bLB = ((pwszTTFace == nullptr) || (pwszTTFace[0] == TEXT('\0')));
-    if (bLB) {
+    if (bLB)
+    {
         pwszAltTTFace = NULL;
-    } else {
-        if (ShouldAllowAllMonoTTFonts() || IsAvailableTTFont(pwszTTFace)) {
+    }
+    else
+    {
+        if (ShouldAllowAllMonoTTFonts() || IsAvailableTTFont(pwszTTFace))
+        {
             pwszAltTTFace = GetAltFaceName(pwszTTFace);
-        } else {
+        }
+        else
+        {
             pwszAltTTFace = pwszTTFace;
         }
     }
 
-    DBGFONTS(("FontListCreate %p, %s, %s new FaceList\n", hDlg,
-            bLB ? "Raster" : "TrueType",
-            bNewFaceList ? "Make" : "No" ));
+    DBGFONTS(("FontListCreate %p, %s, %s new FaceList\n", hDlg, bLB ? "Raster" : "TrueType", bNewFaceList ? "Make" : "No"));
 
     /*
      * This only enumerates face names and font sizes if necessary.
      */
-    EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT);
+    if (!NT_SUCCESS(EnumerateFonts(bLB ? EF_OEMFONT : EF_TTFONT)))
+    {
+        return LB_ERR;
+    }
 
     /* init the TTFaceNames */
 
     DBGFONTS(("  Create %s fonts\n", bLB ? "Raster" : "TrueType"));
 
-    if (bNewFaceList) {
+    if (bNewFaceList)
+    {
         PFACENODE panFace;
         hWndFaceCombo = GetDlgItem(hDlg, IDD_FACENAME);
 
@@ -706,11 +750,14 @@ FontListCreate(
 
         // now enumerate all of the new truetype font face names we've loaded that are appropriate for our codepage. add them to
         // the faces list. if we find an exact match for pwszTTFace or pwszAltTTFace, note that in fFindTTFont.
-        for (panFace = gpFaceNames; panFace; panFace = panFace->pNext) {
-            if ((panFace->dwFlag & (EF_TTFONT|EF_NEW)) != (EF_TTFONT|EF_NEW)) {
+        for (panFace = gpFaceNames; panFace; panFace = panFace->pNext)
+        {
+            if ((panFace->dwFlag & (EF_TTFONT | EF_NEW)) != (EF_TTFONT | EF_NEW))
+            {
                 continue;
             }
-            if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT)) {
+            if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT))
+            {
                 continue;
             }
 
@@ -718,38 +765,44 @@ FontListCreate(
             // face dialog list -- this is handled in DoFontEnum by using the FontEnumForV2Console enumerator
             if (ShouldAllowAllMonoTTFonts() ||
                 (g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
-                (!g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, 0))) {
-
+                (!g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, 0)))
+            {
                 if (!bLB &&
                     (lstrcmp(pwszTTFace, panFace->atch) == 0 ||
-                      lstrcmp(pwszAltTTFace, panFace->atch) == 0)) {
+                     lstrcmp(pwszAltTTFace, panFace->atch) == 0))
+                {
                     fFindTTFont = TRUE;
                 }
 
                 lListIndex = (LONG)SendMessage(hWndFaceCombo, LB_ADDSTRING, 0, (LPARAM)panFace->atch);
                 SendMessage(hWndFaceCombo, LB_SETITEMDATA, lListIndex, FALSE);
                 DBGFONTS(("Added \"%ls\", set Item Data %d = FALSE\n",
-                          panFace->atch, lListIndex));
+                          panFace->atch,
+                          lListIndex));
             }
         }
 
         // if we haven't found the specific TT font we're looking for, choose *any* TT font that's appropriate for our
         // codepage
-        if (!bLB && !fFindTTFont) {
-            for (panFace = gpFaceNames; panFace; panFace = panFace->pNext) {
-                if ((panFace->dwFlag & (EF_TTFONT | EF_NEW)) != (EF_TTFONT | EF_NEW)) {
+        if (!bLB && !fFindTTFont)
+        {
+            for (panFace = gpFaceNames; panFace; panFace = panFace->pNext)
+            {
+                if ((panFace->dwFlag & (EF_TTFONT | EF_NEW)) != (EF_TTFONT | EF_NEW))
+                {
                     continue;
                 }
 
-                if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT)) {
+                if (!g_fEastAsianSystem && (panFace->dwFlag & EF_DBCSFONT))
+                {
                     continue;
                 }
 
-                if (( g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
+                if ((g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, CodePage)) ||
                     (!g_fEastAsianSystem && IsAvailableTTFontCP(panFace->atch, 0)))
                 {
-
-                    if (lstrcmp(pwszTTFace, panFace->atch) != 0) {
+                    if (lstrcmp(pwszTTFace, panFace->atch) != 0)
+                    {
                         // found a reasonably appropriate font that isn't the one being requested (we couldn't find that
                         // one). use this one instead.
                         StringCchCopy(pwszTTFace,
@@ -770,11 +823,14 @@ FontListCreate(
      * For JAPAN, We uses "MS Gothic" TT font.
      * So, Bold of this font is not 1:2 width between SBCS:DBCS.
      */
-    if (g_fEastAsianSystem && IsDisableBoldTTFont(pwszTTFace)) {
+    if (g_fEastAsianSystem && IsDisableBoldTTFont(pwszTTFace))
+    {
         EnableWindow(hWndShow, FALSE);
         gbBold = FALSE;
         CheckDlgButton(hDlg, IDD_BOLDFONT, FALSE);
-    } else {
+    }
+    else
+    {
         CheckDlgButton(hDlg, IDD_BOLDFONT, (bLB || !gbBold) ? FALSE : TRUE);
         EnableWindow(hWndShow, bLB ? FALSE : TRUE);
     }
@@ -793,12 +849,14 @@ FontListCreate(
 
     // if we're building a new face list (basically any time we're not handling a selection change), empty the contents
     // of the pixel size list (raster) or point size list (TT) as appropriate.
-    if (bNewFaceList) {
+    if (bNewFaceList)
+    {
         lcbRESETCONTENT(hWndShow, bLB);
     }
 
     dwExStyle = GetWindowLongPtr(hWndShow, GWL_EXSTYLE);
-    if ((dwExStyle & WS_EX_LAYOUTRTL) && !(dwExStyle & WS_EX_RTLREADING)) {
+    if ((dwExStyle & WS_EX_LAYOUTRTL) && !(dwExStyle & WS_EX_RTLREADING))
+    {
         // if mirrored RTL Reading means LTR !!
         SetWindowLongPtr(hWndShow, GWL_EXSTYLE, dwExStyle | WS_EX_RTLREADING);
     }
@@ -834,7 +892,6 @@ FontListCreate(
     return i;
 }
 
-
 /** DrawItemFontList
  *
  *  Answer the WM_DRAWITEM message sent from the font list box or
@@ -855,38 +912,48 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
     WCHAR wszFace[LF_FACESIZE];
     HBITMAP hOld;
     int dy, dxttbmp;
-    HBRUSH  hbrFill;
+    HBRUSH hbrFill;
     HWND hWndItem;
     BOOL bLB;
 
-    if ((int)lpdis->itemID < 0) {
+    if ((int)lpdis->itemID < 0)
+    {
         return;
     }
 
     hDC = lpdis->hDC;
 
-    if (lpdis->itemAction & ODA_FOCUS) {
-        if (lpdis->itemState & ODS_SELECTED) {
+    if (lpdis->itemAction & ODA_FOCUS)
+    {
+        if (lpdis->itemState & ODS_SELECTED)
+        {
             DrawFocusRect(hDC, &lpdis->rcItem);
         }
-    } else {
-        if (lpdis->itemState & ODS_SELECTED) {
+    }
+    else
+    {
+        if (lpdis->itemState & ODS_SELECTED)
+        {
             rgbText = SetTextColor(hDC, GetSysColor(COLOR_HIGHLIGHTTEXT));
             rgbBack = SetBkColor(hDC, rgbFill = GetSysColor(COLOR_HIGHLIGHT));
-        } else {
+        }
+        else
+        {
             rgbText = SetTextColor(hDC, GetSysColor(COLOR_WINDOWTEXT));
             rgbBack = SetBkColor(hDC, rgbFill = GetSysColor(COLOR_WINDOW));
         }
         // draw selection background
         hbrFill = CreateSolidBrush(rgbFill);
-        if (hbrFill) {
+        if (hbrFill)
+        {
             FillRect(hDC, &lpdis->rcItem, hbrFill);
             DeleteObject(hbrFill);
         }
 
         // get the string
         hWndItem = lpdis->hwndItem;
-        if (!IsWindow(hWndItem)) {
+        if (!IsWindow(hWndItem))
+        {
             return;
         }
 
@@ -898,7 +965,8 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
          * are fonts their lengths are the same. Third, a buffer overrun here
          * isn't really interesting from a security perspective, anyway.
          */
-        if (SendMessage(hWndItem, LB_GETTEXTLEN, lpdis->itemID, 0) >= ARRAYSIZE(wszFace)) {
+        if (SendMessage(hWndItem, LB_GETTEXTLEN, lpdis->itemID, 0) >= ARRAYSIZE(wszFace))
+        {
             return;
         }
 
@@ -906,25 +974,22 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
         bLB = (BOOL)SendMessage(hWndItem, LB_GETITEMDATA, lpdis->itemID, 0L);
         dxttbmp = bLB ? 0 : bmTT.bmWidth;
 
-        DBGFONTS(("DrawItemFontList must redraw \"%ls\" %s\n", wszFace,
-                bLB ? "Raster" : "TrueType"));
+        DBGFONTS(("DrawItemFontList must redraw \"%ls\" %s\n", wszFace, bLB ? "Raster" : "TrueType"));
 
         // draw the text
-        TabbedTextOut(hDC, lpdis->rcItem.left + dxttbmp,
-                      lpdis->rcItem.top, wszFace,
-                      (UINT)wcslen(wszFace), 0, NULL, dxttbmp);
+        TabbedTextOut(hDC, lpdis->rcItem.left + dxttbmp, lpdis->rcItem.top, wszFace, (UINT)wcslen(wszFace), 0, NULL, dxttbmp);
 
         // and the TT bitmap if needed
-        if (!bLB) {
+        if (!bLB)
+        {
             hdcMem = CreateCompatibleDC(hDC);
-            if (hdcMem) {
-                hOld = (HBITMAP) SelectObject(hdcMem, hbmTT);
+            if (hdcMem)
+            {
+                hOld = (HBITMAP)SelectObject(hdcMem, hbmTT);
 
                 dy = ((lpdis->rcItem.bottom - lpdis->rcItem.top) - bmTT.bmHeight) / 2;
 
-                BitBlt(hDC, lpdis->rcItem.left, lpdis->rcItem.top + dy,
-                       dxttbmp, GetItemHeight(hDlg), hdcMem,
-                       0, 0, SRCINVERT);
+                BitBlt(hDC, lpdis->rcItem.left, lpdis->rcItem.top + dy, dxttbmp, GetItemHeight(hDlg), hdcMem, 0, 0, SRCINVERT);
 
                 if (hOld)
                     SelectObject(hdcMem, hOld);
@@ -935,18 +1000,17 @@ VOID DrawItemFontList(const HWND hDlg, const LPDRAWITEMSTRUCT lpdis)
         SetTextColor(hDC, rgbText);
         SetBkColor(hDC, rgbBack);
 
-        if (lpdis->itemState & ODS_FOCUS) {
+        if (lpdis->itemState & ODS_FOCUS)
+        {
             DrawFocusRect(hDC, &lpdis->rcItem);
         }
     }
 }
 
-
-UINT
-GetPointSizeInRange(
-   HWND hDlg,
-   INT Min,
-   INT Max)
+UINT GetPointSizeInRange(
+    HWND hDlg,
+    INT Min,
+    INT Max)
 /*++
 
 Routine Description:
@@ -965,9 +1029,11 @@ Return Value:
     int nTmp = 0;
     BOOL bOK;
 
-    if (GetDlgItemText(hDlg, IDD_POINTSLIST, szBuf, ARRAYSIZE(szBuf))) {
+    if (GetDlgItemText(hDlg, IDD_POINTSLIST, szBuf, ARRAYSIZE(szBuf)))
+    {
         nTmp = GetDlgItemInt(hDlg, IDD_POINTSLIST, &bOK, TRUE);
-        if (bOK && nTmp >= Min && nTmp <= Max) {
+        if (bOK && nTmp >= Min && nTmp <= Max)
+        {
             return nTmp;
         }
     }
@@ -975,16 +1041,15 @@ Return Value:
     return 0;
 }
 
-
 /* ----- Preview routines ----- */
 
-LRESULT
-FontPreviewWndProc(
-    HWND hWnd,
-    UINT wMessage,
-    WPARAM wParam,
-    LPARAM lParam
-    )
+[[nodiscard]] LRESULT
+    CALLBACK
+    FontPreviewWndProc(
+        HWND hWnd,
+        UINT wMessage,
+        WPARAM wParam,
+        LPARAM lParam)
 
 /*  FontPreviewWndProc
  *      Handles the font preview window
@@ -999,7 +1064,8 @@ FontPreviewWndProc(
     COLORREF rgbText;
     COLORREF rgbBk;
 
-    switch (wMessage) {
+    switch (wMessage)
+    {
     case WM_ERASEBKGND:
         break;
 
@@ -1007,22 +1073,23 @@ FontPreviewWndProc(
         BeginPaint(hWnd, &ps);
 
         /* Draw the font sample */
-        if (GetWindowLong(hWnd, GWL_ID) == IDD_COLOR_POPUP_COLORS) {
+        if (GetWindowLong(hWnd, GWL_ID) == IDD_COLOR_POPUP_COLORS)
+        {
             rgbText = GetNearestColor(ps.hdc, PopupTextColor(gpStateInfo));
             rgbBk = GetNearestColor(ps.hdc, PopupBkColor(gpStateInfo));
-        } else {
+        }
+        else
+        {
             rgbText = GetNearestColor(ps.hdc, ScreenTextColor(gpStateInfo));
             rgbBk = GetNearestColor(ps.hdc, ScreenBkColor(gpStateInfo));
         }
         SetTextColor(ps.hdc, rgbText);
         SetBkColor(ps.hdc, rgbBk);
         GetClientRect(hWnd, &rect);
-        hfontOld = (HFONT) SelectObject(ps.hdc, FontInfo[g_currentFontIndex].hFont);
+        hfontOld = (HFONT)SelectObject(ps.hdc, FontInfo[g_currentFontIndex].hFont);
         hbrNew = CreateSolidBrush(rgbBk);
-        hbrOld = (HBRUSH) SelectObject(ps.hdc, hbrNew);
-        PatBlt(ps.hdc, rect.left, rect.top,
-                rect.right - rect.left, rect.bottom - rect.top,
-                PATCOPY);
+        hbrOld = (HBRUSH)SelectObject(ps.hdc, hbrNew);
+        PatBlt(ps.hdc, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, PATCOPY);
         InflateRect(&rect, -2, -2);
         DrawText(ps.hdc, g_szPreviewText, -1, &rect, 0);
         SelectObject(ps.hdc, hbrOld);
@@ -1043,7 +1110,6 @@ FontPreviewWndProc(
     return 0L;
 }
 
-
 /*
  * Get the font index for a new font
  * If necessary, attempt to create the font.
@@ -1054,8 +1120,7 @@ FontPreviewWndProc(
  *           NULL or TEXT("")  - use DefaultFaceName
  * Size:     Must match SizeWant or actual Size.
  */
-int
-FindCreateFont(
+int FindCreateFont(
     __in DWORD Family,
     __in_ecount(LF_FACESIZE) LPWSTR pwszFace,
     __in COORD Size,
@@ -1069,7 +1134,7 @@ FindCreateFont(
     BOOL bFontOK;
     WCHAR AltFaceName[LF_FACESIZE];
     COORD AltFontSize;
-    BYTE  AltFontFamily;
+    BYTE AltFontFamily;
     ULONG AltFontIndex = 0, i;
     LPWSTR pwszAltFace;
 
@@ -1078,32 +1143,50 @@ FindCreateFont(
     FAIL_FAST_IF(!(OEMCP != 0));
 
     DBGFONTS(("FindCreateFont Family=%x %ls (%d,%d) %d %d %x\n",
-            Family, pwszFace, Size.X, Size.Y, Weight, CodePage, CharSet));
+              Family,
+              pwszFace,
+              Size.X,
+              Size.Y,
+              Weight,
+              CodePage,
+              CharSet));
 
-    if (g_fEastAsianSystem) {
-        if (IS_DBCS_OR_OEM_CHARSET(CharSet)) {
-            if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
+    if (g_fEastAsianSystem)
+    {
+        if (IS_DBCS_OR_OEM_CHARSET(CharSet))
+        {
+            if (pwszFace == NULL || *pwszFace == TEXT('\0'))
+            {
                 pwszFace = DefaultFaceName;
             }
-            if (Size.Y == 0) {
+            if (Size.Y == 0)
+            {
                 Size = DefaultFontSize;
             }
-        } else {
+        }
+        else
+        {
             MakeAltRasterFont(CodePage, &AltFontSize, &AltFontFamily, &AltFontIndex, AltFaceName);
 
-            if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
+            if (pwszFace == NULL || *pwszFace == TEXT('\0'))
+            {
                 pwszFace = AltFaceName;
             }
-            if (Size.Y == 0) {
+            if (Size.Y == 0)
+            {
                 Size.X = AltFontSize.X;
                 Size.Y = AltFontSize.Y;
             }
         }
-    } else {
-        if (pwszFace == NULL || *pwszFace == TEXT('\0')) {
+    }
+    else
+    {
+        if (pwszFace == NULL || *pwszFace == TEXT('\0'))
+        {
             pwszFace = DefaultFaceName;
         }
-        if (Size.Y == 0) {
+        if (Size.Y == 0)
+        {
             Size = DefaultFontSize;
         }
     }
@@ -1112,7 +1195,7 @@ FindCreateFont(
     if (wcscmp(pwszFace, DEFAULT_TT_FONT_FACENAME) == 0)
     {
         // retrieve default font face name for this codepage, and then set it as our current face
-        WCHAR szDefaultCodepageTTFont[LF_FACESIZE] = {0};
+        WCHAR szDefaultCodepageTTFont[LF_FACESIZE] = { 0 };
         if (NT_SUCCESS(GetTTFontFaceForCodePage(CodePage, szDefaultCodepageTTFont, ARRAYSIZE(szDefaultCodepageTTFont))) &&
             NT_SUCCESS(StringCchCopyW(DefaultTTFaceName, ARRAYSIZE(DefaultTTFaceName), szDefaultCodepageTTFont)))
         {
@@ -1121,9 +1204,12 @@ FindCreateFont(
         }
     }
 
-    if (ShouldAllowAllMonoTTFonts() || IsAvailableTTFont(pwszFace)) {
+    if (ShouldAllowAllMonoTTFonts() || IsAvailableTTFont(pwszFace))
+    {
         pwszAltFace = GetAltFaceName(pwszFace);
-    } else {
+    }
+    else
+    {
         pwszAltFace = pwszFace;
     }
 
@@ -1131,11 +1217,13 @@ FindCreateFont(
      * Try to find the exact font
      */
 TryFindExactFont:
-    for (i = 0; i < NumberOfFonts; i++) {
+    for (i = 0; i < NumberOfFonts; i++)
+    {
         /*
          * If looking for a particular Family, skip non-matches
          */
-        if (Family != 0 && (BYTE)Family != FontInfo[i].Family) {
+        if (Family != 0 && (BYTE)Family != FontInfo[i].Family)
+        {
             continue;
         }
 
@@ -1143,20 +1231,23 @@ TryFindExactFont:
          * Skip non-matching sizes
          */
         if ((FontInfo[i].SizeWant.Y != Size.Y) &&
-             !SIZE_EQUAL(FontInfo[i].Size, Size)) {
+            !SIZE_EQUAL(FontInfo[i].Size, Size))
+        {
             continue;
         }
 
         /*
          * Skip non-matching weights
          */
-        if ((Weight != 0) && (Weight != FontInfo[i].Weight)) {
+        if ((Weight != 0) && (Weight != FontInfo[i].Weight))
+        {
             continue;
         }
 
         if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
             (FontInfo[i].tmCharSet != CharSet &&
-             !(FontInfo[i].tmCharSet == OEM_CHARSET && g_fEastAsianSystem))) {
+             !(FontInfo[i].tmCharSet == OEM_CHARSET && g_fEastAsianSystem)))
+        {
             continue;
         }
 
@@ -1166,31 +1257,41 @@ TryFindExactFont:
          * it is a raster font, consider it.
          */
         if ((pwszFace == NULL) || (pwszFace[0] == TEXT('\0')) ||
-                (lstrcmp(FontInfo[i].FaceName, pwszFace) == 0) ||
-                (lstrcmp(FontInfo[i].FaceName, pwszAltFace) == 0)) {
+            (lstrcmp(FontInfo[i].FaceName, pwszFace) == 0) ||
+            (lstrcmp(FontInfo[i].FaceName, pwszAltFace) == 0))
+        {
             FontIndex = i;
             goto FoundFont;
-        } else if (!TM_IS_TT_FONT(FontInfo[i].Family)) {
+        }
+        else if (!TM_IS_TT_FONT(FontInfo[i].Family))
+        {
             FontIndex = i;
         }
     }
 
-    if (FontIndex == NOT_CREATED_NOR_FOUND) {
+    if (FontIndex == NOT_CREATED_NOR_FOUND)
+    {
         /*
          * Didn't find the exact font, so try to create it
          */
-        if (Size.Y < 0) {
+        if (Size.Y < 0)
+        {
             Size.Y = -Size.Y;
         }
         bFontOK = DoFontEnum(NULL, pwszFace, &Size.Y, 1);
-        if (bFontOK) {
+        if (bFontOK)
+        {
             DBGFONTS(("FindCreateFont created font!\n"));
             FontIndex = CREATED_BUT_NOT_FOUND;
             goto TryFindExactFont;
-        } else {
+        }
+        else
+        {
             DBGFONTS(("FindCreateFont failed to create font!\n"));
         }
-    } else if (FontIndex >= 0) {
+    }
+    else if (FontIndex >= 0)
+    {
         // a close Raster Font fit - only the name doesn't match.
         goto FoundFont;
     }
@@ -1199,47 +1300,60 @@ TryFindExactFont:
      * Failed to find exact match, even after enumeration, so now try to find
      * a font of same family and same size or bigger.
      */
-    for (i = 0; i < NumberOfFonts; i++) {
-        if (g_fEastAsianSystem) {
-            if (Family != 0 && (BYTE)Family != FontInfo[i].Family) {
+    for (i = 0; i < NumberOfFonts; i++)
+    {
+        if (g_fEastAsianSystem)
+        {
+            if (Family != 0 && (BYTE)Family != FontInfo[i].Family)
+            {
                 continue;
             }
 
             if (!TM_IS_TT_FONT(FontInfo[i].Family) &&
-                FontInfo[i].tmCharSet != CharSet) {
+                FontInfo[i].tmCharSet != CharSet)
+            {
                 continue;
             }
-        } else {
-        if ((BYTE)Family != FontInfo[i].Family) {
-            continue;
         }
+        else
+        {
+            if ((BYTE)Family != FontInfo[i].Family)
+            {
+                continue;
+            }
         }
 
-        if (FontInfo[i].Size.Y >= Size.Y && FontInfo[i].Size.X >= Size.X) {
+        if (FontInfo[i].Size.Y >= Size.Y && FontInfo[i].Size.X >= Size.X)
+        {
             // Same family, size >= desired.
             FontIndex = i;
             break;
         }
     }
 
-    if (FontIndex < 0) {
+    if (FontIndex < 0)
+    {
         DBGFONTS(("FindCreateFont defaults!\n"));
-        if (g_fEastAsianSystem) {
-            if (CodePage == OEMCP) {
+        if (g_fEastAsianSystem)
+        {
+            if (CodePage == OEMCP)
+            {
                 FontIndex = DefaultFontIndex;
-            } else {
+            }
+            else
+            {
                 FontIndex = AltFontIndex;
             }
-        } else {
-        FontIndex = DefaultFontIndex;
+        }
+        else
+        {
+            FontIndex = DefaultFontIndex;
         }
     }
 
 FoundFont:
     FAIL_FAST_IF(!(FontIndex < (int)NumberOfFonts));
-    DBGFONTS(("FindCreateFont returns %x : %ls (%d,%d)\n", FontIndex,
-            FontInfo[FontIndex].FaceName,
-            FontInfo[FontIndex].Size.X, FontInfo[FontIndex].Size.Y));
+    DBGFONTS(("FindCreateFont returns %x : %ls (%d,%d)\n", FontIndex, FontInfo[FontIndex].FaceName, FontInfo[FontIndex].Size.X, FontInfo[FontIndex].Size.Y));
     return FontIndex;
 
 #undef NOT_CREATED_NOR_FOUND
@@ -1254,31 +1368,37 @@ FoundFont:
  * Returns
  *   FontIndex : Index into FontInfo[] cache
  */
-int
-SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
+int SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
 {
     int iCB;
     HWND hWndList;
 
     DBGFONTS(("SelectCurrentSize %p %s %x\n",
-            hDlg, bLB ? "Raster" : "TrueType", FontIndex));
+              hDlg,
+              bLB ? "Raster" : "TrueType",
+              FontIndex));
 
     hWndList = GetDlgItem(hDlg, bLB ? IDD_PIXELSLIST : IDD_POINTSLIST);
     iCB = lcbGETCOUNT(hWndList, bLB);
     DBGFONTS(("  Count of items in %p = %lx\n", hWndList, iCB));
 
-    if (FontIndex >= 0) {
+    if (FontIndex >= 0)
+    {
         /*
          * look for FontIndex
          */
-        while (iCB > 0) {
+        while (iCB > 0)
+        {
             iCB--;
-            if (lcbGETITEMDATA(hWndList, bLB, iCB) == FontIndex) {
+            if (lcbGETITEMDATA(hWndList, bLB, iCB) == FontIndex)
+            {
                 lcbSETCURSEL(hWndList, bLB, iCB);
                 break;
             }
         }
-    } else {
+    }
+    else
+    {
         /*
          * Look for a reasonable default size: looking backwards, find
          * the first one same height or smaller.
@@ -1287,10 +1407,11 @@ SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
 
         if (g_fEastAsianSystem &&
             bLB &&
-            FontInfo[g_currentFontIndex].tmCharSet != LOBYTE(LOWORD(Size))) {
+            FontInfo[g_currentFontIndex].tmCharSet != LOBYTE(LOWORD(Size)))
+        {
             WCHAR AltFaceName[LF_FACESIZE];
             COORD AltFontSize;
-            BYTE  AltFontFamily;
+            BYTE AltFontFamily;
             ULONG AltFontIndex = 0;
 
             MakeAltRasterFont(gpStateInfo->CodePage,
@@ -1299,18 +1420,24 @@ SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
                               &AltFontIndex,
                               AltFaceName);
 
-            while (iCB > 0) {
+            while (iCB > 0)
+            {
                 iCB--;
-                if (lcbGETITEMDATA(hWndList, bLB, iCB) == (int)AltFontIndex) {
+                if (lcbGETITEMDATA(hWndList, bLB, iCB) == (int)AltFontIndex)
+                {
                     lcbSETCURSEL(hWndList, bLB, iCB);
                     break;
                 }
             }
-        } else {
-            while (iCB > 0) {
+        }
+        else
+        {
+            while (iCB > 0)
+            {
                 iCB--;
                 FontIndex = lcbGETITEMDATA(hWndList, bLB, iCB);
-                if (FontInfo[FontIndex].Size.Y <= HIWORD(Size)) {
+                if (FontInfo[FontIndex].Size.Y <= HIWORD(Size))
+                {
                     lcbSETCURSEL(hWndList, bLB, iCB);
                     break;
                 }
@@ -1322,9 +1449,7 @@ SelectCurrentSize(HWND hDlg, BOOL bLB, int FontIndex)
     return FontIndex;
 }
 
-
-BOOL
-SelectCurrentFont(
+BOOL SelectCurrentFont(
     HWND hDlg,
     int FontIndex)
 {
@@ -1344,11 +1469,8 @@ SelectCurrentFont(
     return bLB;
 }
 
-
-BOOL
-PreviewInit(
-    HWND hDlg
-    )
+BOOL PreviewInit(
+    HWND hDlg)
 
 /*  PreviewInit
  *      Prepares the preview code, sizing the window and the dialog to
@@ -1371,7 +1493,8 @@ PreviewInit(
                            gpStateInfo->CodePage);
 
     DBGFONTS(("Changing Font Number from %d to %d\n",
-              g_currentFontIndex, nFont));
+              g_currentFontIndex,
+              nFont));
     FAIL_FAST_IF(!((ULONG)nFont < NumberOfFonts));
     g_currentFontIndex = nFont;
 
@@ -1386,12 +1509,9 @@ PreviewInit(
     return SelectCurrentFont(hDlg, nFont);
 }
 
-
-BOOL
-PreviewUpdate(
+BOOL PreviewUpdate(
     HWND hDlg,
-    BOOL bLB
-    )
+    BOOL bLB)
 
 /*++
 
@@ -1409,8 +1529,7 @@ PreviewUpdate(
     HWND hWndList;
     DWORD_PTR Parameters[2];
 
-    DBGFONTS(("PreviewUpdate hDlg=%p, %s\n", hDlg,
-            bLB ? "Raster" : "TrueType"));
+    DBGFONTS(("PreviewUpdate hDlg=%p, %s\n", hDlg, bLB ? "Raster" : "TrueType"));
 
     hWndList = GetDlgItem(hDlg, bLB ? IDD_PIXELSLIST : IDD_POINTSLIST);
 
@@ -1419,7 +1538,8 @@ PreviewUpdate(
      */
     lIndex = lcbGETCURSEL(hWndList, bLB);
     DBGFONTS(("PreviewUpdate GETCURSEL gets %x\n", lIndex));
-    if ((lIndex < 0) && !bLB) {
+    if ((lIndex < 0) && !bLB)
+    {
         COORD NewSize;
 
         lIndex = (LONG)SendDlgItemMessage(hDlg, IDD_FACENAME, LB_GETCURSEL, 0, 0L);
@@ -1427,7 +1547,8 @@ PreviewUpdate(
         NewSize.X = 0;
         NewSize.Y = (SHORT)GetPointSizeInRange(hDlg, MIN_PIXEL_HEIGHT, MAX_PIXEL_HEIGHT);
 
-        if (NewSize.Y == 0) {
+        if (NewSize.Y == 0)
+        {
             WCHAR wszBuf[60];
             /*
              * Use wszText, wszBuf to put up an error msg for bad point size
@@ -1441,7 +1562,7 @@ PreviewUpdate(
                             MAX_PIXEL_HEIGHT);
 
             GetWindowText(hDlg, wszBuf, ARRAYSIZE(wszBuf));
-            MessageBox(hDlg, wszText, wszBuf, MB_OK|MB_ICONINFORMATION);
+            MessageBox(hDlg, wszText, wszBuf, MB_OK | MB_ICONINFORMATION);
             SetFocus(hWndList);
             gbPointSizeError = FALSE;
             return FALSE;
@@ -1452,11 +1573,14 @@ PreviewUpdate(
                                    NewSize,
                                    0,
                                    gpStateInfo->CodePage);
-    } else {
+    }
+    else
+    {
         FontIndex = lcbGETITEMDATA(hWndList, bLB, lIndex);
     }
 
-    if (FontIndex < 0) {
+    if (FontIndex < 0)
+    {
         FontIndex = DefaultFontIndex;
     }
 
@@ -1464,11 +1588,13 @@ PreviewUpdate(
      * If we've selected a new font, tell the property sheet we've changed
      */
     FAIL_FAST_IF(!((ULONG)FontIndex < NumberOfFonts));
-    if ((ULONG)FontIndex >= NumberOfFonts) {
+    if ((ULONG)FontIndex >= NumberOfFonts)
+    {
         FontIndex = 0;
     }
 
-    if (g_currentFontIndex != (ULONG)FontIndex) {
+    if (g_currentFontIndex != (ULONG)FontIndex)
+    {
         g_currentFontIndex = FontIndex;
     }
 

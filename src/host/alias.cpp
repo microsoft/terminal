@@ -22,6 +22,8 @@
 
 #pragma hdrstop
 
+using Microsoft::Console::Interactivity::ServiceLocator;
+
 struct case_insensitive_hash
 {
     std::size_t operator()(const std::wstring& key) const
@@ -42,12 +44,13 @@ struct case_insensitive_equality
 };
 
 std::unordered_map<std::wstring,
-    std::unordered_map<std::wstring,
-    std::wstring,
-    case_insensitive_hash,
-    case_insensitive_equality>,
-    case_insensitive_hash,
-    case_insensitive_equality> g_aliasData;
+                   std::unordered_map<std::wstring,
+                                      std::wstring,
+                                      case_insensitive_hash,
+                                      case_insensitive_equality>,
+                   case_insensitive_hash,
+                   case_insensitive_equality>
+    g_aliasData;
 
 // Routine Description:
 // - Adds a command line alias to the global set.
@@ -58,10 +61,9 @@ std::unordered_map<std::wstring,
 // - exeName - The client EXE application attached to the host to whom this substitution will apply
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::AddConsoleAliasAImpl(const std::string_view source,
-                                          const std::string_view target,
-                                          const std::string_view exeName) noexcept
+[[nodiscard]] HRESULT ApiRoutines::AddConsoleAliasAImpl(const std::string_view source,
+                                                        const std::string_view target,
+                                                        const std::string_view exeName) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const codepage = gci.CP;
@@ -85,10 +87,9 @@ HRESULT ApiRoutines::AddConsoleAliasAImpl(const std::string_view source,
 // - exeName - The client EXE application attached to the host to whom this substitution will apply
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::AddConsoleAliasWImpl(const std::wstring_view source,
-                                          const std::wstring_view target,
-                                          const std::wstring_view exeName) noexcept
+[[nodiscard]] HRESULT ApiRoutines::AddConsoleAliasWImpl(const std::wstring_view source,
+                                                        const std::wstring_view target,
+                                                        const std::wstring_view exeName) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -138,11 +139,10 @@ HRESULT ApiRoutines::AddConsoleAliasWImpl(const std::wstring_view source,
 // - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
-                                   std::optional<gsl::span<wchar_t>> target,
-                                   size_t& writtenOrNeeded,
-                                   const std::wstring_view exeName)
+[[nodiscard]] HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
+                                                 std::optional<gsl::span<wchar_t>> target,
+                                                 size_t& writtenOrNeeded,
+                                                 const std::wstring_view exeName)
 {
     // Ensure output variables are initialized
     writtenOrNeeded = 0;
@@ -197,11 +197,10 @@ HRESULT GetConsoleAliasWImplHelper(const std::wstring_view source,
 // - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
-                                          gsl::span<char> target,
-                                          size_t& written,
-                                          const std::string_view exeName) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
+                                                        gsl::span<char> target,
+                                                        size_t& written,
+                                                        const std::string_view exeName) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const codepage = gci.CP;
@@ -271,11 +270,10 @@ HRESULT ApiRoutines::GetConsoleAliasAImpl(const std::string_view source,
 // - exeName - The client EXE application attached to the host whose set we should check
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
-                                          gsl::span<wchar_t> target,
-                                          size_t& written,
-                                          const std::wstring_view exeName) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
+                                                        gsl::span<wchar_t> target,
+                                                        size_t& written,
+                                                        const std::wstring_view exeName) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -294,7 +292,7 @@ HRESULT ApiRoutines::GetConsoleAliasWImpl(const std::wstring_view source,
     CATCH_RETURN();
 }
 
-// These variables define the seperator character and the length of the string.
+// These variables define the separator character and the length of the string.
 // They will be used to as the joiner between source and target strings when returning alias data in list form.
 static std::wstring aliasesSeparator(L"=");
 
@@ -310,26 +308,25 @@ static std::wstring aliasesSeparator(L"=");
 // - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
-                                           const bool countInUnicode,
-                                           const UINT codepage,
-                                           size_t& bufferRequired)
+[[nodiscard]] HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
+                                                         const bool countInUnicode,
+                                                         const UINT codepage,
+                                                         size_t& bufferRequired)
 {
     // Ensure output variables are initialized
     bufferRequired = 0;
-    
+
     try
     {
         const std::wstring exeNameString(exeName);
 
         size_t cchNeeded = 0;
 
-        // Each of the aliases will be made up of the source, a seperator, the target, then a null character.
+        // Each of the aliases will be made up of the source, a separator, the target, then a null character.
         // They are of the form "Source=Target" when returned.
         size_t const cchNull = 1;
         size_t cchSeperator = aliasesSeparator.size();
-        // If we're counting how much multibyte space will be needed, trial convert the seperator before we add.
+        // If we're counting how much multibyte space will be needed, trial convert the separator before we add.
         if (!countInUnicode)
         {
             cchSeperator = GetALengthFromW(codepage, aliasesSeparator);
@@ -376,9 +373,8 @@ HRESULT GetConsoleAliasesLengthWImplHelper(const std::wstring_view exeName,
 // - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(const std::string_view exeName,
-                                                  size_t& bufferRequired) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(const std::string_view exeName,
+                                                                size_t& bufferRequired) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const codepage = gci.CP;
@@ -407,9 +403,8 @@ HRESULT ApiRoutines::GetConsoleAliasesLengthAImpl(const std::string_view exeName
 // - bufferRequired - Receives the length of buffer that would be required to retrieve all aliases for the given exe.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
-                                                  size_t& bufferRequired) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesLengthWImpl(const std::wstring_view exeName,
+                                                                size_t& bufferRequired) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -447,10 +442,9 @@ void Alias::s_ClearCmdExeAliases()
 //                     or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
-                                     std::optional<gsl::span<wchar_t>> aliasBuffer,
-                                     size_t& writtenOrNeeded)
+[[nodiscard]] HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
+                                                   std::optional<gsl::span<wchar_t>> aliasBuffer,
+                                                   size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
@@ -465,7 +459,7 @@ HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
     LPWSTR AliasesBufferPtrW = aliasBuffer.has_value() ? aliasBuffer.value().data() : nullptr;
     size_t cchTotalLength = 0; // accumulate the characters we need/have copied as we walk the list
 
-    // Each of the alises will be made up of the source, a seperator, the target, then a null character.
+    // Each of the alises will be made up of the source, a separator, the target, then a null character.
     // They are of the form "Source=Target" when returned.
     size_t const cchNull = 1;
 
@@ -535,10 +529,9 @@ HRESULT GetConsoleAliasesWImplHelper(const std::wstring_view exeName,
 // - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
-                                            gsl::span<char> alias,
-                                            size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
+                                                          gsl::span<char> alias,
+                                                          size_t& written) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const codepage = gci.CP;
@@ -600,10 +593,9 @@ HRESULT ApiRoutines::GetConsoleAliasesAImpl(const std::string_view exeName,
 // - written - Will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
-                                            gsl::span<wchar_t> alias,
-                                            size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
+                                                          gsl::span<wchar_t> alias,
+                                                          size_t& written) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -626,8 +618,7 @@ HRESULT ApiRoutines::GetConsoleAliasesWImpl(const std::wstring_view exeName,
 // - bufferRequired - Receives the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT GetConsoleAliasExesLengthImplHelper(const bool countInUnicode, const UINT codepage, size_t& bufferRequired)
+[[nodiscard]] HRESULT GetConsoleAliasExesLengthImplHelper(const bool countInUnicode, const UINT codepage, size_t& bufferRequired)
 {
     // Ensure output variables are initialized
     bufferRequired = 0;
@@ -663,8 +654,7 @@ HRESULT GetConsoleAliasExesLengthImplHelper(const bool countInUnicode, const UIN
 // - bufferRequired - Receives the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noexcept
 {
     LockConsole();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -679,8 +669,7 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthAImpl(size_t& bufferRequired) noex
 // - bufferRequired - Pointer to receive the length of buffer that would be required to retrieve all relevant EXE names.
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
@@ -702,9 +691,8 @@ HRESULT ApiRoutines::GetConsoleAliasExesLengthWImpl(size_t& bufferRequired) noex
 //                                        or how many characters would have been needed (if buffer is nullopt).
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasExesBuffer,
-                                       size_t& writtenOrNeeded)
+[[nodiscard]] HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasExesBuffer,
+                                                     size_t& writtenOrNeeded)
 {
     // Ensure output variables are initialized.
     writtenOrNeeded = 0;
@@ -745,11 +733,9 @@ HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasEx
 
         // Accumulate the total written amount.
         RETURN_IF_FAILED(SizeTAdd(cchTotalLength, cchNeeded, &cchTotalLength));
-
     }
 
     writtenOrNeeded = cchTotalLength;
-
 
     return S_OK;
 }
@@ -762,9 +748,8 @@ HRESULT GetConsoleAliasExesWImplHelper(std::optional<gsl::span<wchar_t>> aliasEx
 // - written - Specifies how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
-                                              size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
+                                                            size_t& written) noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     UINT const codepage = gci.CP;
@@ -822,9 +807,8 @@ HRESULT ApiRoutines::GetConsoleAliasExesAImpl(gsl::span<char> aliasExes,
 // - pcchAliasExesBufferWrittenOrNeeded - Pointer to space that will specify how many characters were written
 // Return Value:
 // - Check HRESULT with SUCCEEDED. Can return memory, safe math, safe string, or locale conversion errors.
-[[nodiscard]]
-HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
-                                              size_t& written) noexcept
+[[nodiscard]] HRESULT ApiRoutines::GetConsoleAliasExesWImpl(gsl::span<wchar_t> aliasExes,
+                                                            size_t& written) noexcept
 {
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });

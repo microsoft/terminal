@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "KeyChord.h"
 
+#include "KeyChord.g.cpp"
+
 namespace winrt::Microsoft::Terminal::Settings::implementation
 {
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) :

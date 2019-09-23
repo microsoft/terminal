@@ -16,7 +16,7 @@ using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
-const COORD VtEngine::INVALID_COORDS = {-1, -1};
+const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 
 // Routine Description:
 // - Creates a new VT-based rendering engine
@@ -25,10 +25,12 @@ const COORD VtEngine::INVALID_COORDS = {-1, -1};
 // - <none>
 // Return Value:
 // - An instance of a Renderer.
-VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
+VtEngine::VtEngine(wil::unique_hfile pipe,
+                   wil::shared_event shutdownEvent,
                    const IDefaultColorProvider& colorProvider,
                    const Viewport initialViewport) :
     RenderEngineBase(),
+    _shutdownEvent(shutdownEvent),
     _hFile(std::move(pipe)),
     _colorProvider(colorProvider),
     _LastFG(INVALID_COLOR),
@@ -37,9 +39,9 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _lastViewport(initialViewport),
     _invalidRect(Viewport::Empty()),
     _fInvalidRectUsed(false),
-    _lastRealCursor({0}),
-    _lastText({0}),
-    _scrollDelta({0}),
+    _lastRealCursor({ 0 }),
+    _lastText({ 0 }),
+    _scrollDelta({ 0 }),
     _quickReturn(false),
     _clearedAllThisFrame(false),
     _cursorMoved(false),
@@ -49,20 +51,50 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _circled(false),
     _firstPaint(true),
     _skipCursor(false),
-    _pipeBroken(false),
-    _exitResult{ S_OK },
-    _terminalOwner{ nullptr },
     _newBottomLine{ false },
     _deferredCursorPos{ INVALID_COORDS },
-    _trace {}
+    _inResizeRequest{ false },
+    _trace{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
     THROW_HR_IF(E_HANDLE, _hFile.get() == INVALID_HANDLE_VALUE);
+    THROW_HR_IF(E_HANDLE, !_shutdownEvent);
 #else
     // member is only defined when UNIT_TESTING is.
     _usingTestCallback = false;
 #endif
+
+    // Set up a background thread to wait until the shared shutdown event is called and then execute cleanup tasks.
+    _shutdownWatchdog = std::async(std::launch::async, [=] {
+        _shutdownEvent.wait();
+
+        // When someone calls the _Flush method, they will go into a potentially blocking WriteFile operation.
+        // Before they do that, they'll store their thread ID here so we can get them unstuck should we be shutting down.
+        if (const auto threadId = _blockedThreadId.load())
+        {
+            // If we indeed had a valid thread ID meaning someone is blocked on a WriteFile operation,
+            // then let's open a handle to their thread. We need the standard read/write privileges to see
+            // what their thread is up to (it will not work without these) and also the Terminate privilege to
+            // unstick them.
+            wil::unique_handle threadHandle(OpenThread(STANDARD_RIGHTS_ALL | THREAD_TERMINATE, FALSE, threadId));
+            LOG_LAST_ERROR_IF_NULL(threadHandle.get());
+            if (threadHandle)
+            {
+                // Presuming we got all the way to acquiring the blocked thread's handle, call the OS function that
+                // will unstick any thread that is otherwise permanently blocked on a synchronous operation.
+                LOG_IF_WIN32_BOOL_FALSE(CancelSynchronousIo(threadHandle.get()));
+            }
+        }
+    });
+}
+
+VtEngine::~VtEngine()
+{
+    if (_shutdownEvent)
+    {
+        _shutdownEvent.SetEvent();
+    }
 }
 
 // Method Description:
@@ -73,8 +105,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - str: The buffer to write to the pipe. Might have nulls in it.
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_Write(std::string_view const str) noexcept
+[[nodiscard]] HRESULT VtEngine::_Write(std::string_view const str) noexcept
 {
     _trace.TraceString(str);
 #ifdef UNIT_TESTING
@@ -94,8 +125,7 @@ HRESULT VtEngine::_Write(std::string_view const str) noexcept
     CATCH_RETURN();
 }
 
-[[nodiscard]]
-HRESULT VtEngine::_Flush() noexcept
+[[nodiscard]] HRESULT VtEngine::_Flush() noexcept
 {
 #ifdef UNIT_TESTING
     if (_hFile.get() == INVALID_HANDLE_VALUE)
@@ -105,19 +135,20 @@ HRESULT VtEngine::_Flush() noexcept
     }
 #endif
 
-    if (!_pipeBroken)
+    if (!_shutdownEvent.is_signaled())
     {
+        // Stash the current thread ID before we go into the potentially blocking synchronous write file operation.
+        // This will let the shutdown watchdog thread break us out of the stuck state should a shutdown event
+        // occur while we're still waiting for the WriteFile to complete.
+        _blockedThreadId.store(GetCurrentThreadId());
         bool fSuccess = !!WriteFile(_hFile.get(), _buffer.data(), static_cast<DWORD>(_buffer.size()), nullptr, nullptr);
+        _blockedThreadId.store(0); // When done, clear the thread ID.
+
         _buffer.clear();
         if (!fSuccess)
         {
-            _exitResult = HRESULT_FROM_WIN32(GetLastError());
-            _pipeBroken = true;
-            if (_terminalOwner)
-            {
-                _terminalOwner->CloseOutput();
-            }
-            return _exitResult;
+            _shutdownEvent.SetEvent();
+            RETURN_LAST_ERROR();
         }
     }
 
@@ -126,8 +157,7 @@ HRESULT VtEngine::_Flush() noexcept
 
 // Method Description:
 // - Wrapper for ITerminalOutputConnection. See _Write.
-[[nodiscard]]
-HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
+[[nodiscard]] HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
 {
     return _Write(str);
 }
@@ -139,8 +169,7 @@ HRESULT VtEngine::WriteTerminalUtf8(const std::string& str) noexcept
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
 {
     try
     {
@@ -159,14 +188,13 @@ HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring& wstr) noexcept
 // - wstr - wstring of text to be written
 // Return Value:
 // - S_OK or suitable HRESULT error from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
 {
     const size_t cchActual = wstr.length();
 
     std::string needed;
     needed.reserve(wstr.size());
-    
+
     for (const auto& wch : wstr)
     {
         // We're explicitly replacing characters outside ASCII with a ? because
@@ -186,10 +214,8 @@ HRESULT VtEngine::_WriteTerminalAscii(const std::wstring& wstr) noexcept
 // Return Value:
 // - S_OK, E_INVALIDARG for a invalid format string, or suitable HRESULT error
 //      from writing pipe.
-[[nodiscard]]
-HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
+[[nodiscard]] HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) noexcept
 {
-
     HRESULT hr = E_FAIL;
     va_list argList;
     va_start(argList, pFormat);
@@ -221,9 +247,8 @@ HRESULT VtEngine::_WriteFormattedString(const std::string* const pFormat, ...) n
 // - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
-                             _Out_ FontInfo& /*pfiFont*/) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                           _Out_ FontInfo& /*pfiFont*/) noexcept
 {
     return S_OK;
 }
@@ -236,8 +261,7 @@ HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
 //      the system default DPI defined in Windows headers as a constant.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 {
     return S_OK;
 }
@@ -250,8 +274,7 @@ HRESULT VtEngine::UpdateDpi(const int /*iDpi*/) noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]]
-HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     HRESULT hr = S_OK;
     const Viewport oldView = _lastViewport;
@@ -280,7 +303,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
     if (SUCCEEDED(hr))
     {
         // Viewport is smaller now - just update it all.
-        if ( oldView.Height() > newView.Height() || oldView.Width() > newView.Width() )
+        if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
         {
             hr = InvalidateAll();
         }
@@ -295,7 +318,7 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
                 short top = 0;
                 short right = newView.RightInclusive();
                 short bottom = oldView.BottomInclusive();
-                Viewport rightOfOldViewport = Viewport::FromInclusive({left, top, right, bottom});
+                Viewport rightOfOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
                 hr = _InvalidCombine(rightOfOldViewport);
             }
             if (SUCCEEDED(hr) && oldView.Height() < newView.Height())
@@ -304,9 +327,8 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
                 short top = oldView.BottomExclusive();
                 short right = newView.RightInclusive();
                 short bottom = newView.BottomInclusive();
-                Viewport belowOldViewport = Viewport::FromInclusive({left, top, right, bottom});
+                Viewport belowOldViewport = Viewport::FromInclusive({ left, top, right, bottom });
                 hr = _InvalidCombine(belowOldViewport);
-
             }
         }
     }
@@ -326,10 +348,9 @@ HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 // - iDpi - The DPI we will have when rendering
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
-                                  _Out_ FontInfo& /*pfiFont*/,
-                                  const int /*iDpi*/) noexcept
+[[nodiscard]] HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
+                                                _Out_ FontInfo& /*pfiFont*/,
+                                                const int /*iDpi*/) noexcept
 {
     return S_FALSE;
 }
@@ -340,10 +361,9 @@ HRESULT VtEngine::GetProposedFont(const FontInfoDesired& /*pfiFontDesired*/,
 // - pFontSize - recieves the current X by Y size of the font.
 // Return Value:
 // - S_FALSE: This is unsupported by the VT Renderer and should use another engine's value.
-[[nodiscard]]
-HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
+[[nodiscard]] HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 {
-    *pFontSize = COORD({1, 1});
+    *pFontSize = COORD({ 1, 1 });
     return S_FALSE;
 }
 
@@ -356,7 +376,6 @@ HRESULT VtEngine::GetFontSize(_Out_ COORD* const pFontSize) noexcept
 // - <none>
 void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t const)> pfn)
 {
-
 #ifdef UNIT_TESTING
 
     _pfnTestCallback = pfn;
@@ -365,7 +384,6 @@ void VtEngine::SetTestCallback(_In_ std::function<bool(const char* const, size_t
 #else
     THROW_HR(E_FAIL);
 #endif
-
 }
 
 // Method Description:
@@ -387,8 +405,7 @@ bool VtEngine::_AllIsInvalid() const
 // - <none>
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::SuppressResizeRepaint() noexcept
+[[nodiscard]] HRESULT VtEngine::SuppressResizeRepaint() noexcept
 {
     _suppressResizeRepaint = true;
     return S_OK;
@@ -404,8 +421,7 @@ HRESULT VtEngine::SuppressResizeRepaint() noexcept
 // - coordCursor: The cursor position to inherit from.
 // Return Value:
 // - S_OK
-[[nodiscard]]
-HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
+[[nodiscard]] HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
 {
     _virtualTop = coordCursor.Y;
     _lastText = coordCursor;
@@ -413,11 +429,6 @@ HRESULT VtEngine::InheritCursor(const COORD coordCursor) noexcept
     // Prevent us from clearing the entire viewport on the first paint
     _firstPaint = false;
     return S_OK;
-}
-
-void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
-{
-    _terminalOwner = terminalOwner;
 }
 
 // Method Description:
@@ -433,4 +444,32 @@ HRESULT VtEngine::RequestCursor() noexcept
     RETURN_IF_FAILED(_RequestCursor());
     RETURN_IF_FAILED(_Flush());
     return S_OK;
+}
+
+// Method Description:
+// - Tell the vt renderer to begin a resize operation. During a resize
+//   operation, the vt renderer should _not_ request to be repainted during a
+//   text buffer circling event. Any callers of this method should make sure to
+//   call EndResize to make sure the renderer returns to normal behavior.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::BeginResizeRequest()
+{
+    _inResizeRequest = true;
+}
+
+// Method Description:
+// - Tell the vt renderer to end a resize operation.
+//   See BeginResize for more details.
+//   See GH#1795 for context on this method.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void VtEngine::EndResizeRequest()
+{
+    _inResizeRequest = false;
 }
