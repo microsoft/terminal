@@ -1,8 +1,8 @@
-# Terminal v1.0 Timeline
+# Terminal v1.0 Timeline & Roadmap
 
 ## Overview
 
-This document outlines the path to delivering Windows Terminal v1.0 by spring 2020.
+This document outlines our timeline and roadmap to delivering Windows Terminal v1.0 by spring 2020.
 
 ## Milestones
 
@@ -14,16 +14,19 @@ The Windows Terminal project is engineered and delivered as a set of 4-week mile
 | 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 3 |
 | 1 week | Release <br/> <ul><li>Available from [Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) & [GitHub Releases](https://github.com/microsoft/terminal/releases) (Tues of 4th week)</li><li>Release Notes & Announcement Blog published</li><li>Engineering System Maintenance</li><li>Community Engagement</li><li>Docs</li><li>Future Milestone Planning</li></ul> | Release available from Microsoft Store & GitHub Releases |
 
-## Terminal Releases
+## Terminal Roadmap & Releases
+
 Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, and to declare v1.0 by April 2020:
+
+> ⚠ Note: Terminal v1.0 will be a quality-oriented release driven in large part by the community. So, ___if you see bugs, find/file them___!
 
 | Milestone end date | Phase | Key features |
 | --- | --- | --- |
-| 2019-05-07 | [Announcement](https://devblogs.microsoft.com/commandline/introducing-windows-terminal/) | Terminal announced & open-sourced ([Build 2019 Terminal session](https://www.youtube.com/watch?v=KMudkRcwjCw), ["Sizzle" video](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)) | 
-| 2019-07-09 | [v0.2 (update)](https://github.com/microsoft/terminal/releases/tag/v0.2.1831.0) | First version of the Terminal released via the Microsoft Store, fundamental features in place, basic tab control, basic UI layout, config & settings via JSON file | 
+| 2019-05-07 | [Announcement](https://devblogs.microsoft.com/commandline/introducing-windows-terminal/) | Terminal announced & open-sourced ([Build 2019 Terminal session](https://www.youtube.com/watch?v=KMudkRcwjCw), ["Sizzle" video](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)) |
+| 2019-07-09 | [v0.2 (update)](https://github.com/microsoft/terminal/releases/tag/v0.2.1831.0) | First version of the Terminal released via the Microsoft Store, fundamental features in place, basic tab control, basic UI layout, config & settings via JSON file |
 | 2019-08-02 | [v0.3](https://github.com/microsoft/terminal/releases/tag/v0.3.2142.0) | Major UI improvements, improved tab bar layout & color, basic a11y support, Azure Cloud Shell connection |
-| 2019-08-27 | [v0.4](https://github.com/microsoft/terminal/releases/tag/v0.4.2382.0) | HTML Copy, Tab Titles, Double/Triple Click Selection, Local Settings, JSON settings validation, A11y improvements | 
-| 2019-09-24 | 1909 | Stability & Quality improvements, installs [Cascadia Code](https://github.com/microsoft/cascadia-code) font |
+| 2019-08-27 | [v0.4](https://github.com/microsoft/terminal/releases/tag/v0.4.2382.0) | HTML Copy, Tab Titles, Double/Triple Click Selection, Local Settings, JSON settings validation, A11y improvements |
+| 2019-09-24 | [1909]( http://devblogs.microsoft.com/commandline/windows-terminal-preview-1909) | Stability & Quality improvements, installs [Cascadia Code](https://github.com/microsoft/cascadia-code) font, adds JSON schema to `profiles.json` settings file enabling Intellisense in VSCode, etc. |
 | 2019-10-22 | 1910 | Cascading Settings, Dynamic Profiles |
 | 2019-11-19 | 1911 | Final v1.0 feature work |
 | 2019-12-17 | 1912 | "Feature Complete" - All v1.0 Features in-place |
@@ -31,9 +34,10 @@ Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, a
 | 2020-01-28 | Beta 1 | Pri 0/1/2 Bug fixes & polish |
 | 2020-02-25 | Beta 2 | Pri 0/1 Bug fixes & polish |
 | 2020-03-24 | RC | Pri 0 bug fixes |
-| 2020-04-01 ? | v1.0 | Terminal v1.0 Released |
+| 2020-04-01 ? | v1.0 | Terminal v1.0 Release |
 
 ## GitHub Milestones
+
 Each milestone above is/will be reflected in our [GitHub milestones](https://github.com/microsoft/terminal/milestones):
 
 | Milestone | Description |
@@ -84,8 +88,8 @@ The following are a list of the key features/feature-areas we're aiming to deliv
 
 Feature Notes:
 
-* Feature Priorities: <br/>
-  0 = Mandatory <br/>
-  1 = Optimal <br/>
-  2 = Optional / Stretch-goal <br/>
+\* Feature Priorities:
 
+0. Mandatory <br/>
+1. Optimal <br/>
+2. Optional / Stretch-goal <br/>
