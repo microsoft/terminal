@@ -85,7 +85,7 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## Where can I download Windows Terminal?
 
-The latest release of Windows Terminal can be downloaded from [this repo's Releases](/releases) page or [from the Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
+The latest release of Windows Terminal can be downloaded from [this repo's Releases](https://github.com/microsoft/terminal/releases) page or [from the Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
