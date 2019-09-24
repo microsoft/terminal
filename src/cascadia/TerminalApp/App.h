@@ -77,7 +77,6 @@ namespace winrt::TerminalApp::implementation
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
         void _LoadSettings();
-        void _OpenSettings();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();

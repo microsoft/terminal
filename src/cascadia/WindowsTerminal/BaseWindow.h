@@ -56,13 +56,24 @@ public:
             return HandleDpiChange(_window.get(), wparam, lparam);
         }
 
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
         case WM_GETOBJECT:
         {
             return HandleGetObject(_window.get(), wparam, lparam);
         }
+        */
 
         case WM_DESTROY:
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+            // signal to uia that they can disconnect our uia provider
+            if (_pUiaProvider)
+            {
+                UiaReturnRawElementProvider(hWnd, 0, 0, NULL);
+            }
+            */
             PostQuitMessage(0);
             return 0;
         }

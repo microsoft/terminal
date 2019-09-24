@@ -23,13 +23,14 @@ static_assert(sizeof(unsigned int) == sizeof(wchar_t) * 2,
 class CodepointWidthDetector final
 {
 public:
-    CodepointWidthDetector() = default;
+    CodepointWidthDetector() noexcept;
     CodepointWidthDetector(const CodepointWidthDetector&) = delete;
     CodepointWidthDetector(CodepointWidthDetector&&) = delete;
     ~CodepointWidthDetector() = default;
     CodepointWidthDetector& operator=(const CodepointWidthDetector&) = delete;
+    CodepointWidthDetector& operator=(CodepointWidthDetector&&) = delete;
 
-    CodepointWidth GetWidth(const std::wstring_view glyph) const noexcept;
+    CodepointWidth GetWidth(const std::wstring_view glyph) const;
     bool IsWide(const std::wstring_view glyph) const;
     bool IsWide(const wchar_t wch) const noexcept;
     void SetFallbackMethod(std::function<bool(const std::wstring_view)> pfnFallback);

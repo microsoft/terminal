@@ -97,7 +97,7 @@ void AppHost::Initialize()
 // - newTitle: the string to use as the new window title
 // Return Value:
 // - <none>
-void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& sender, winrt::hstring newTitle)
+void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
     _window->UpdateTitle(newTitle.c_str());
 }
@@ -109,7 +109,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& se
 // - LastTabClosedEventArgs: unused
 // Return Value:
 // - <none>
-void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& sender, const winrt::TerminalApp::LastTabClosedEventArgs& args)
+void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
     _window->Close();
 }
@@ -248,6 +248,13 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
     // If we can't resize the window, that's really okay. We can just go on with
     // the originally proposed window size.
     LOG_LAST_ERROR_IF(!succeeded);
+
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "WindowCreated",
+        TraceLoggingDescription("Event emitted upon creating the application window"),
+        TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
     return _app.GetLaunchMode();
 }

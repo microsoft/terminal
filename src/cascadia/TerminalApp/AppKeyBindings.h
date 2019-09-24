@@ -7,6 +7,13 @@
 #include "ActionArgs.h"
 #include "..\inc\cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+    class KeyBindingsTests;
+}
+
 namespace winrt::TerminalApp::implementation
 {
     struct KeyChordHash
@@ -35,9 +42,14 @@ namespace winrt::TerminalApp::implementation
 
         bool TryKeyChord(winrt::Microsoft::Terminal::Settings::KeyChord const& kc);
         void SetKeyBinding(TerminalApp::ShortcutAction const& action, winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
+        void ClearKeyBinding(winrt::Microsoft::Terminal::Settings::KeyChord const& chord);
         Microsoft::Terminal::Settings::KeyChord GetKeyBinding(TerminalApp::ShortcutAction const& action);
 
         static Windows::System::VirtualKeyModifiers ConvertVKModifiers(winrt::Microsoft::Terminal::Settings::KeyModifiers modifiers);
+
+        // Defined in AppKeyBindingsSerialization.cpp
+        void LayerJson(const Json::Value& json);
+        Json::Value ToJson();
 
         // clang-format off
         TYPED_EVENT(CopyText,          TerminalApp::AppKeyBindings, TerminalApp::ActionEventArgs);
@@ -69,6 +81,9 @@ namespace winrt::TerminalApp::implementation
     private:
         std::unordered_map<winrt::Microsoft::Terminal::Settings::KeyChord, TerminalApp::ShortcutAction, KeyChordHash, KeyChordEquality> _keyShortcuts;
         bool _DoAction(ShortcutAction action);
+
+        friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::KeyBindingsTests;
     };
 }
 

@@ -3,6 +3,30 @@
 
 #include "precomp.h"
 
+void InitializeCursorSize(const HWND hOptionsDlg)
+{
+    unsigned int newRadioValue = IDD_CURSOR_ADVANCED;
+    if (gpStateInfo->CursorType != 0)
+    {
+        // IDD_CURSOR_ADVANCED is used as a placeholder for when a
+        // non-legacy shape is selected.
+        newRadioValue = IDD_CURSOR_ADVANCED;
+    }
+    else if (gpStateInfo->CursorSize <= 25)
+    {
+        newRadioValue = IDD_CURSOR_SMALL;
+    }
+    else if (gpStateInfo->CursorSize <= 50)
+    {
+        newRadioValue = IDD_CURSOR_MEDIUM;
+    }
+    else
+    {
+        newRadioValue = IDD_CURSOR_LARGE;
+    }
+    CheckRadioButton(hOptionsDlg, IDD_CURSOR_SMALL, IDD_CURSOR_ADVANCED, newRadioValue);
+}
+
 bool OptionsCommandCallback(HWND hDlg, const unsigned int Item, const unsigned int Notification, HWND hControlWindow)
 {
     UINT Value;
@@ -147,6 +171,9 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
     switch (wMsg)
     {
     case WM_INITDIALOG:
+        // Initialize the global handle to this dialog
+        g_hOptionsDlg = hDlg;
+
         CheckDlgButton(hDlg, IDD_HISTORY_NODUP, gpStateInfo->HistoryNoDup);
         CheckDlgButton(hDlg, IDD_QUICKEDIT, gpStateInfo->QuickEdit);
         CheckDlgButton(hDlg, IDD_INSERT, gpStateInfo->InsertMode);
@@ -167,19 +194,7 @@ INT_PTR WINAPI SettingsDlgProc(HWND hDlg, UINT wMsg, WPARAM wParam, LPARAM lPara
         CreateAndAssociateToolTipToControl(IDD_INTERCEPT_COPY_PASTE, hDlg, IDS_TOOLTIP_INTERCEPT_COPY_PASTE);
 
         // initialize cursor radio buttons
-        if (gpStateInfo->CursorSize <= 25)
-        {
-            Item = IDD_CURSOR_SMALL;
-        }
-        else if (gpStateInfo->CursorSize <= 50)
-        {
-            Item = IDD_CURSOR_MEDIUM;
-        }
-        else
-        {
-            Item = IDD_CURSOR_LARGE;
-        }
-        CheckRadioButton(hDlg, IDD_CURSOR_SMALL, IDD_CURSOR_LARGE, Item);
+        InitializeCursorSize(hDlg);
 
         SetDlgItemInt(hDlg, IDD_HISTORY_SIZE, gpStateInfo->HistoryBufferSize, FALSE);
         SendDlgItemMessage(hDlg, IDD_HISTORY_SIZE, EM_LIMITTEXT, 3, 0);

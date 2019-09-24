@@ -63,7 +63,7 @@ public:
         return _glyphStored;
     }
 
-    void SetGlyphStored(const bool stored)
+    void SetGlyphStored(const bool stored) noexcept
     {
         _glyphStored = stored;
     }

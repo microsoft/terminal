@@ -28,7 +28,7 @@ class Cursor final
 public:
     static const unsigned int s_InvertCursorColor = INVALID_COLOR;
 
-    Cursor(const ULONG ulSize, TextBuffer& parentBuffer);
+    Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept;
 
     ~Cursor();
 
@@ -50,41 +50,41 @@ public:
     ULONG GetSize() const noexcept;
     COORD GetPosition() const noexcept;
 
-    const CursorType GetType() const;
-    const bool IsUsingColor() const;
-    const COLORREF GetColor() const;
+    const CursorType GetType() const noexcept;
+    const bool IsUsingColor() const noexcept;
+    const COLORREF GetColor() const noexcept;
 
-    void StartDeferDrawing();
-    void EndDeferDrawing();
+    void StartDeferDrawing() noexcept;
+    void EndDeferDrawing() noexcept;
 
-    void SetHasMoved(const bool fHasMoved);
-    void SetIsVisible(const bool fIsVisible);
-    void SetIsOn(const bool fIsOn);
-    void SetBlinkingAllowed(const bool fIsOn);
-    void SetIsDouble(const bool fIsDouble);
-    void SetIsConversionArea(const bool fIsConversionArea);
-    void SetIsPopupShown(const bool fIsPopupShown);
-    void SetDelay(const bool fDelay);
-    void SetSize(const ULONG ulSize);
+    void SetHasMoved(const bool fHasMoved) noexcept;
+    void SetIsVisible(const bool fIsVisible) noexcept;
+    void SetIsOn(const bool fIsOn) noexcept;
+    void SetBlinkingAllowed(const bool fIsOn) noexcept;
+    void SetIsDouble(const bool fIsDouble) noexcept;
+    void SetIsConversionArea(const bool fIsConversionArea) noexcept;
+    void SetIsPopupShown(const bool fIsPopupShown) noexcept;
+    void SetDelay(const bool fDelay) noexcept;
+    void SetSize(const ULONG ulSize) noexcept;
     void SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept;
 
-    void SetPosition(const COORD cPosition);
-    void SetXPosition(const int NewX);
-    void SetYPosition(const int NewY);
-    void IncrementXPosition(const int DeltaX);
-    void IncrementYPosition(const int DeltaY);
-    void DecrementXPosition(const int DeltaX);
-    void DecrementYPosition(const int DeltaY);
+    void SetPosition(const COORD cPosition) noexcept;
+    void SetXPosition(const int NewX) noexcept;
+    void SetYPosition(const int NewY) noexcept;
+    void IncrementXPosition(const int DeltaX) noexcept;
+    void IncrementYPosition(const int DeltaY) noexcept;
+    void DecrementXPosition(const int DeltaX) noexcept;
+    void DecrementYPosition(const int DeltaY) noexcept;
 
-    void CopyProperties(const Cursor& OtherCursor);
+    void CopyProperties(const Cursor& OtherCursor) noexcept;
 
-    void DelayEOLWrap(const COORD coordDelayedAt);
-    void ResetDelayEOLWrap();
-    COORD GetDelayedAtPosition() const;
-    bool IsDelayedEOLWrap() const;
+    void DelayEOLWrap(const COORD coordDelayedAt) noexcept;
+    void ResetDelayEOLWrap() noexcept;
+    COORD GetDelayedAtPosition() const noexcept;
+    bool IsDelayedEOLWrap() const noexcept;
 
-    void SetColor(const unsigned int color);
-    void SetType(const CursorType type);
+    void SetColor(const unsigned int color) noexcept;
+    void SetType(const CursorType type) noexcept;
 
 private:
     TextBuffer& _parentBuffer;

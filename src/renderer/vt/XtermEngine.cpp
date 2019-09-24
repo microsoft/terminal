@@ -10,12 +10,13 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
+                         wil::shared_event shutdownEvent,
                          const IDefaultColorProvider& colorProvider,
                          const Viewport initialViewport,
                          _In_reads_(cColorTable) const COLORREF* const ColorTable,
                          const WORD cColorTable,
                          const bool fUseAsciiOnly) :
-    VtEngine(std::move(hPipe), colorProvider, initialViewport),
+    VtEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport),
     _ColorTable(ColorTable),
     _cColorTable(cColorTable),
     _fUseAsciiOnly(fUseAsciiOnly),

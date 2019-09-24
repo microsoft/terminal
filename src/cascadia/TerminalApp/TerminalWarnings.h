@@ -29,7 +29,8 @@ namespace TerminalApp
     // that we could not recover from.
     enum class SettingsLoadErrors : uint32_t
     {
-        NoProfiles = 0
+        NoProfiles = 0,
+        AllProfilesHidden = 1
     };
 
     // This is a helper class to wrap up a SettingsLoadErrors into a proper

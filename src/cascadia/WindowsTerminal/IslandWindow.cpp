@@ -168,6 +168,16 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     {
         if (_interopWindowHandle != nullptr)
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+                // set the text area to have focus for accessibility consumers
+                if (_pUiaProvider)
+                {
+                    LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
+                }
+                break;
+            */
+
             // send focus to the child window
             SetFocus(_interopWindowHandle);
             return 0; // eat the message

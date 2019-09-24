@@ -10,6 +10,7 @@ using namespace Microsoft::Console;
 using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
+using namespace WEX::Common;
 
 namespace TerminalAppUnitTests
 {
@@ -22,11 +23,15 @@ namespace TerminalAppUnitTests
         TEST_METHOD(ParseInvalidJson);
         TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(ProfileGeneratesGuid);
-        TEST_METHOD(GeneratedGuidRoundtrips);
+        TEST_METHOD(DiffProfile);
+        TEST_METHOD(DiffProfileWithNull);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
             reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
+
+            // Use 4 spaces to indent instead of \t
+            _builder.settings_["indentation"] = "    ";
             return true;
         }
 
@@ -35,6 +40,7 @@ namespace TerminalAppUnitTests
 
     private:
         std::unique_ptr<Json::CharReader> reader;
+        Json::StreamWriterBuilder _builder;
     };
 
     Json::Value JsonTests::VerifyParseSucceeded(std::string content)
@@ -103,9 +109,16 @@ namespace TerminalAppUnitTests
 
     void JsonTests::ProfileGeneratesGuid()
     {
-        // Parse some profiles without guids. We should generate new guids for
-        // them. The null guid _is_ a valid guid, so we won't re-generate that
-        // guid. null is _not_ a valid guid, so we'll regenerate that.
+        // Parse some profiles without guids. We should NOT generate new guids
+        // for them. If a profile doesn't have a GUID, we'll leave its _guid
+        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // ensure all profiles have a GUID that's actually set.
+        // The null guid _is_ a valid guid, so we won't re-generate that
+        // guid. null is _not_ a valid guid, so we'll leave that nullopt
+
+        // See SettingsTests::ValidateProfilesGenerateGuids for a version of
+        // this test that includes synthesizing GUIDS for profiles without GUIDs
+        // set
 
         const std::string profileWithoutGuid{ R"({
                                               "name" : "profile0"
@@ -140,42 +153,67 @@ namespace TerminalAppUnitTests
         const GUID cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
         const GUID nullGuid{ 0 };
 
-        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
+        VERIFY_IS_FALSE(profile0._guid.has_value());
+        VERIFY_IS_FALSE(profile1._guid.has_value());
+        VERIFY_IS_FALSE(profile2._guid.has_value());
+        VERIFY_IS_TRUE(profile3._guid.has_value());
+        VERIFY_IS_TRUE(profile4._guid.has_value());
 
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), nullGuid);
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), nullGuid);
         VERIFY_ARE_EQUAL(profile3.GetGuid(), nullGuid);
-
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(profile1.GetGuid(), cmdGuid);
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), cmdGuid);
-
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), profile1.GetGuid());
-        VERIFY_ARE_NOT_EQUAL(profile2.GetGuid(), profile1.GetGuid());
+        VERIFY_ARE_EQUAL(profile4.GetGuid(), cmdGuid);
     }
 
-    void JsonTests::GeneratedGuidRoundtrips()
+    void JsonTests::DiffProfile()
     {
-        // Parse a profile without a guid.
-        // We should automatically generate a GUID for that profile.
-        // When that profile is serialized and deserialized again, the GUID we
-        // generated for it should persist.
-        const std::string profileWithoutGuid{ R"({
-                                              "name" : "profile0"
-                                              })" };
-        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+        Profile profile0;
+        Profile profile1;
 
-        const auto profile0 = Profile::FromJson(profile0Json);
-        const GUID nullGuid{ 0 };
+        Log::Comment(NoThrowString().Format(
+            L"Both these profiles are the same, their diff should have _no_ values"));
 
-        VERIFY_ARE_NOT_EQUAL(profile0.GetGuid(), nullGuid);
+        auto diff = profile1.DiffToJson(profile0);
 
-        const auto serializedProfile = profile0.ToJson();
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
 
-        const auto profile1 = Profile::FromJson(serializedProfile);
+        VERIFY_ARE_EQUAL(0u, diff.getMemberNames().size());
 
-        VERIFY_ARE_EQUAL(profile1.GetGuid(), profile0.GetGuid());
+        profile1._name = L"profile1";
+        diff = profile1.DiffToJson(profile0);
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+    }
+
+    void JsonTests::DiffProfileWithNull()
+    {
+        Profile profile0;
+        Profile profile1;
+
+        profile0._icon = L"foo";
+
+        Log::Comment(NoThrowString().Format(
+            L"Case 1: Base object has an optional that the derived does not - diff will have null for that value"));
+        auto diff = profile1.DiffToJson(profile0);
+
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+        VERIFY_IS_TRUE(diff.isMember("icon"));
+        VERIFY_IS_TRUE(diff["icon"].isNull());
+
+        Log::Comment(NoThrowString().Format(
+            L"Case 2: Add an optional to the derived object that's not present in the root."));
+
+        profile0._icon = std::nullopt;
+        profile1._icon = L"bar";
+
+        diff = profile1.DiffToJson(profile0);
+
+        Log::Comment(NoThrowString().Format(L"diff:%hs", Json::writeString(_builder, diff).c_str()));
+
+        VERIFY_ARE_EQUAL(1u, diff.getMemberNames().size());
+        VERIFY_IS_TRUE(diff.isMember("icon"));
+        VERIFY_IS_TRUE(diff["icon"].isString());
+        VERIFY_IS_TRUE("bar" == diff["icon"].asString());
     }
 
 }
