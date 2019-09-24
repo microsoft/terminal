@@ -77,7 +77,6 @@
                   "newTabProfile6",
                   "newTabProfile7",
                   "newTabProfile8",
-                  "newWindow",
                   "nextTab",
                   "openNewTabDropdown",
                   "openSettings",
@@ -109,7 +108,7 @@
               "keys": {
                 "description": "Defines the key combinations used to call the command.",
                 "items": {
-                  "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>\\w+?)?(?<=\\w)$",
+                  "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
                   "type": "string"
                 },
                 "minItems": 1,
@@ -384,6 +383,10 @@
             "description": "When set to true, the window will scroll to the command input line when typing. When set to false, the window will not scroll when you start typing.",
             "type": "boolean"
           },
+          "source": {
+            "description": "Defines where the shell of the profile was found.",
+            "type": "string"
+          },
           "startingDirectory": {
             "description": "The directory the shell starts in when it is loaded.",
             "type": "string"
@@ -399,8 +402,6 @@
           }
         },
         "required": [
-          "colorScheme",
-          "commandline",
           "guid",
           "name"
         ],
@@ -497,7 +498,6 @@
     }
   },
   "required": [
-    "globals",
     "profiles",
     "schemes"
   ],
