@@ -121,10 +121,6 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     {
         nCmdShow = SW_MAXIMIZE;
     }
-    else if (launchMode == L"minimized")
-    {
-        nCmdShow = SW_SHOWMINIMIZED;
-    }
 
     ShowWindow(_window.get(), nCmdShow);
     UpdateWindow(_window.get());
