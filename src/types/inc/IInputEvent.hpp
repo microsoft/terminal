@@ -120,6 +120,28 @@ DWORD ToConsoleControlKeyFlag(const ModifierKeyState modifierKey) noexcept;
 class KeyEvent : public IInputEvent
 {
 public:
+    enum class Modifiers : DWORD
+    {
+        None = 0,
+        RightAlt = RIGHT_ALT_PRESSED,
+        LeftAlt = LEFT_ALT_PRESSED,
+        RightCtrl = RIGHT_CTRL_PRESSED,
+        LeftCtrl = LEFT_CTRL_PRESSED,
+        Shift = SHIFT_PRESSED,
+        NumLock = NUMLOCK_ON,
+        ScrollLock = SCROLLLOCK_ON,
+        CapsLock = CAPSLOCK_ON,
+        EnhancedKey = ENHANCED_KEY,
+        DbcsChar = NLS_DBCSCHAR,
+        Alphanumeric = NLS_ALPHANUMERIC,
+        Katakana = NLS_KATAKANA,
+        Hiragana = NLS_HIRAGANA,
+        Roman = NLS_ROMAN,
+        ImeConvert = NLS_IME_CONVERSION,
+        AltNumpad = ALTNUMPAD_BIT,
+        ImeDisable = NLS_IME_DISABLE
+    };
+
     constexpr KeyEvent(const KEY_EVENT_RECORD& record) :
         _keyDown{ !!record.bKeyDown },
         _repeatCount{ record.wRepeatCount },
@@ -166,28 +188,28 @@ public:
 
     constexpr bool IsShiftPressed() const noexcept
     {
-        return WI_IsFlagSet(_activeModifierKeys, SHIFT_PRESSED);
+        return WI_IsFlagSet(GetActiveModifierKeys(), SHIFT_PRESSED);
     }
 
     constexpr bool IsAltPressed() const noexcept
     {
-        return WI_IsAnyFlagSet(_activeModifierKeys, ALT_PRESSED);
+        return WI_IsAnyFlagSet(GetActiveModifierKeys(), ALT_PRESSED);
     }
 
     constexpr bool IsCtrlPressed() const noexcept
     {
-        return WI_IsAnyFlagSet(_activeModifierKeys, CTRL_PRESSED);
+        return WI_IsAnyFlagSet(GetActiveModifierKeys(), CTRL_PRESSED);
     }
 
     constexpr bool IsAltGrPressed() const noexcept
     {
-        return WI_IsFlagSet(_activeModifierKeys, LEFT_CTRL_PRESSED) &&
-               WI_IsFlagSet(_activeModifierKeys, RIGHT_ALT_PRESSED);
+        return WI_IsFlagSet(GetActiveModifierKeys(), LEFT_CTRL_PRESSED) &&
+               WI_IsFlagSet(GetActiveModifierKeys(), RIGHT_ALT_PRESSED);
     }
 
     constexpr bool IsModifierPressed() const noexcept
     {
-        return WI_IsAnyFlagSet(_activeModifierKeys, MOD_PRESSED);
+        return WI_IsAnyFlagSet(GetActiveModifierKeys(), MOD_PRESSED);
     }
 
     constexpr bool IsCursorKey() const noexcept
@@ -198,7 +220,7 @@ public:
 
     constexpr bool IsAltNumpadSet() const noexcept
     {
-        return WI_IsFlagSet(_activeModifierKeys, ALTNUMPAD_BIT);
+        return WI_IsFlagSet(GetActiveModifierKeys(), ALTNUMPAD_BIT);
     }
 
     constexpr bool IsKeyDown() const noexcept
@@ -233,7 +255,7 @@ public:
 
     constexpr DWORD GetActiveModifierKeys() const noexcept
     {
-        return _activeModifierKeys;
+        return static_cast<DWORD>(_activeModifierKeys);
     }
 
     void SetKeyDown(const bool keyDown) noexcept;
@@ -255,7 +277,7 @@ private:
     WORD _virtualKeyCode;
     WORD _virtualScanCode;
     wchar_t _charData;
-    DWORD _activeModifierKeys;
+    Modifiers _activeModifierKeys;
 
     friend constexpr bool operator==(const KeyEvent& a, const KeyEvent& b) noexcept;
 #ifdef UNIT_TESTING
