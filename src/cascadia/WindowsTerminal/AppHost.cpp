@@ -126,7 +126,7 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 //   create. We'll use this rect to determine which monitor the window is about
 //   to appear on.
 // Return Value:
-// - <none>
+// - A string that indicates the launch mode
 winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
 {
     winrt::hstring launchMode = _app.GetLaunchMode();

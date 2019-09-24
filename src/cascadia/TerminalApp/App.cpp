@@ -366,13 +366,13 @@ namespace winrt::TerminalApp::implementation
     // - Get the user defined initial position from Json settings file.
     //   This position represents the top left corner of the Terminal window.
     //   This setting is optional, if not provided, we will use the system
-    //   default size, which is provided in IslandWindow::MakeWindow. 
+    //   default size, which is provided in IslandWindow::MakeWindow.
     // Arguments:
     // - defaultInitialX: the system default x coordinate value
     // - defaultInitialY: the system defualt y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
-    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(const uint64_t defaultInitialX, const uint64_t defaultInitialY)
+    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(int defaultInitialX, int defaultInitialY)
     {
         if (!_loadedInitialSettings)
         {
@@ -380,15 +380,15 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        winrt::Windows::Foundation::Point point(defaultInitialX, defaultInitialY);
+        winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
 
         if (!_settings->GlobalSettings().GetUseDefaultInitialX())
         {
-            point.X = _settings->GlobalSettings().GetInitialX();
+            point.X = (float)_settings->GlobalSettings().GetInitialX();
         }
         if (!_settings->GlobalSettings().GetUseDefaultInitialY())
         {
-            point.Y = _settings->GlobalSettings().GetInitialY();
+            point.Y = (float)_settings->GlobalSettings().GetInitialY();
         }
 
         return point;

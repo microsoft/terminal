@@ -257,13 +257,13 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
     if (auto initialX{ json[JsonKey(InitialXKey)] })
     {
-        result._useDefaultInitialX = false;
-        result._initialX = initialX.asInt();
+        _useDefaultInitialX = false;
+        _initialX = initialX.asInt();
     }
     if (auto initialY{ json[JsonKey(InitialYKey)] })
     {
-        result._useDefaultInitialY = false;
-        result._initialY = initialY.asInt();
+        _useDefaultInitialY = false;
+        _initialY = initialY.asInt();
     }
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
@@ -287,7 +287,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
-        result._launchMode = GetWstringFromJson(launchMode);
+        _launchMode = GetWstringFromJson(launchMode);
     }
 
     if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
