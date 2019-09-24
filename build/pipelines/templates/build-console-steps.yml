@@ -107,5 +107,5 @@ steps:
   inputs:
     targetType: filePath
     filePath: build\scripts\Index-Pdbs.ps1
-    arguments: -SearchDir '${{ parameters.buildOutputDir }}\$(buildConfiguration)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
     errorActionPreference: silentlyContinue
