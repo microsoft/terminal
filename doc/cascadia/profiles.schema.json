@@ -384,7 +384,7 @@
             "type": "boolean"
           },
           "source": {
-            "description": "Defines where the shell of the profile was found.",
+            "description": "Stores the name of the profile generator that originated this profile.",
             "type": "string"
           },
           "startingDirectory": {
