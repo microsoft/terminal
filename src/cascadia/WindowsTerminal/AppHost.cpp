@@ -163,12 +163,14 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         offScreenTestRect.bottom = offScreenTestRect.top + 1;
 
         bool isTitlebarIntersectWithMonitors = false;
-        EnumDisplayMonitors(nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
-            auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
-            *intersectWithMonitor = true;
-            // Continue the enumeration
-            return TRUE;
-        }, reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+        EnumDisplayMonitors(
+            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+                *intersectWithMonitor = true;
+                // Continue the enumeration
+                return TRUE;
+            },
+            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
 
         if (!isTitlebarIntersectWithMonitors)
         {
