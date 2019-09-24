@@ -320,6 +320,27 @@ void Pane::Close()
     _closedHandlers();
 }
 
+std::pair<int, int> Pane::SnapDimension(bool widthOrHeight, int value)
+{
+    if (_IsLeaf())
+    {
+        const auto val = _control.SnapDimensionToGrid(widthOrHeight, value);
+        return std::make_pair(gsl::narrow_cast<int>(val), gsl::narrow_cast<int>(val << 32));
+    }
+    else if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
+    {
+        const auto firstResult = _firstChild->SnapDimension(widthOrHeight, value);
+        const auto secondResult = _secondChild->SnapDimension(widthOrHeight, value);
+        const int lowerValue = std::max(firstResult.first, secondResult.first);
+        const int higherValue = std::min(firstResult.second, secondResult.second);
+        return std::make_pair(lowerValue, higherValue);
+    }
+    else
+    {
+        throw std::bad_exception();
+    }
+}
+
 // Method Description:
 // - Get the root UIElement of this pane. There may be a single TermControl as a
 //   child, or an entire tree of grids and panes as children of this element.

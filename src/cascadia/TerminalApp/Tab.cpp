@@ -230,6 +230,11 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
     _rootPane->Split(splitType, profile, control);
 }
 
+std::pair<int, int> Tab::SnapDimension(bool widthOrHeight, int value)
+{
+    return _rootPane->SnapDimension(widthOrHeight, value);
+}
+
 // Method Description:
 // - Update the size of our panes to fill the new given size. This happens when
 //   the window is resized.

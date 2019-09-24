@@ -35,6 +35,7 @@ namespace TerminalApp
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+        UInt32 SnapDimension(Boolean widthOrHeight, UInt32 value);
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

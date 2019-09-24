@@ -1058,6 +1058,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    int TerminalPage::SnapDimension(bool widthOrHeight, int value)
+    {
+        const auto focusedTabIndex = _GetFocusedTabIndex();
+        const auto closestValues = _tabs[focusedTabIndex]->SnapDimension(widthOrHeight, value);
+        return value - closestValues.first > closestValues.second - value ? closestValues.first : closestValues.second;
+    }
+
     // Method Description:
     // - Place `copiedData` into the clipboard as text. Triggered when a
     //   terminal control raises it's CopyToClipboard event.

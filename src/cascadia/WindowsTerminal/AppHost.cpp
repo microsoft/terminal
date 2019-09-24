@@ -37,6 +37,11 @@ AppHost::AppHost() noexcept :
                          std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
+    _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::App::SnapDimension,
+                                      _app,
+                                      std::placeholders::_1,
+                                      std::placeholders::_2));
+
     _window->MakeWindow();
 }
 

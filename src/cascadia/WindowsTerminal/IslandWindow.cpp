@@ -93,6 +93,11 @@ void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, 
     _pfnCreateCallback = pfn;
 }
 
+void IslandWindow::SetSnapDimensionCallback(std::function<int(bool widthOrHeight, int value)> pfn) noexcept
+{
+    _pfnSnapDimensionCallback = pfn;
+}
+
 // Method Description:
 // - Handles a WM_CREATE message. Calls our create callback, if one's been set.
 // Arguments:
@@ -204,6 +209,51 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         // bell when alt+key is pressed. A menu is active and the user presses a
         // key that does not correspond to any mnemonic or accelerator key,
         return MAKELRESULT(0, MNC_CLOSE);
+    }
+    case WM_SIZING:
+    {
+        LPRECT r = (LPRECT)lparam;
+        int width = r->right - r->left;
+        int height = r->bottom - r->top;
+
+        if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
+        {
+            width = _pfnSnapDimensionCallback(true, width);
+        }
+        if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
+        {
+            height = _pfnSnapDimensionCallback(false, height);
+        }
+
+        switch (wparam)
+        {
+        case WMSZ_LEFT:
+        case WMSZ_TOPLEFT:
+        case WMSZ_BOTTOMLEFT:
+            r->left = r->right - width;
+            break;
+        case WMSZ_RIGHT:
+        case WMSZ_TOPRIGHT:
+        case WMSZ_BOTTOMRIGHT:
+            r->right = r->left + width;
+            break;
+        }
+
+        switch (wparam)
+        {
+        case WMSZ_BOTTOM:
+        case WMSZ_BOTTOMLEFT:
+        case WMSZ_BOTTOMRIGHT:
+            r->bottom = r->top + height;
+            break;
+        case WMSZ_TOP:
+        case WMSZ_TOPLEFT:
+        case WMSZ_TOPRIGHT:
+            r->top = r->bottom - height;
+            break;
+        }
+
+        return true; //ew || eh;
     }
     case WM_CLOSE:
     {

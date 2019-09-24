@@ -22,6 +22,7 @@ public:
 
     bool CanSplitPane(Pane::SplitState splitType);
     void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    std::pair<int, int> SnapDimension(bool widthOrHeight, int value);
 
     void UpdateFocus();
     void UpdateIcon(const winrt::hstring iconPath);

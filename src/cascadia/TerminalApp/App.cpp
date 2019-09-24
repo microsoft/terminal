@@ -653,6 +653,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    int App::SnapDimension(bool widthOrHeight, int value)
+    {
+        return _root->SnapDimension(widthOrHeight, value);
+    }
+
     // Methods that proxy typed event handlers through TerminalPage
     winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement> const& handler)
     {

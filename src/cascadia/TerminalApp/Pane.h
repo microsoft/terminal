@@ -53,6 +53,7 @@ public:
     void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void Close();
+    std::pair<int, int> SnapDimension(bool widthOrHeight, int value);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
@@ -130,4 +131,5 @@ private:
         }
         return false;
     }
+
 };
