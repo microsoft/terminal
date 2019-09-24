@@ -1,8 +1,8 @@
-# Terminal v1.0 Timeline & Roadmap
+# Terminal v1.0 Roadmap
 
 ## Overview
 
-This document outlines our timeline and roadmap to delivering Windows Terminal v1.0 by spring 2020.
+This document outlines our roadmap to delivering Windows Terminal v1.0 by spring 2020.
 
 ## Milestones
 
@@ -14,7 +14,7 @@ The Windows Terminal project is engineered and delivered as a set of 4-week mile
 | 1 week | Quality & Stability<br/> <ul><li>Bug Fixes</li><li>Perf & Stability</li><li>UI Polish</li><li>Tests</li><li>etc.</li></ul>| Push to Microsoft Store at end of week 3 |
 | 1 week | Release <br/> <ul><li>Available from [Microsoft Store](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701) & [GitHub Releases](https://github.com/microsoft/terminal/releases) (Tues of 4th week)</li><li>Release Notes & Announcement Blog published</li><li>Engineering System Maintenance</li><li>Community Engagement</li><li>Docs</li><li>Future Milestone Planning</li></ul> | Release available from Microsoft Store & GitHub Releases |
 
-## Terminal Roadmap & Releases
+## Terminal Roadmap / Timeline
 
 Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, and to declare v1.0 by April 2020:
 
@@ -71,9 +71,9 @@ The following are a list of the key features/feature-areas we're aiming to deliv
 | V1 | 0 | Code Reuse | Terminal's core engine will reuse & share componentry from within Windows Console wherever feasible to minimize support & maintenance costs for both|
 | V1 | 0 | Terminal Reuse | Terminal's core will be hostable as a UWP (and perhaps WPF) Control so that apps can host/embed a high quality Terminal. This will satisfy a long-standing ask from many customers and partners for a hostable/embeddable Terminal Control. |
 | V1 | 0 | Rich, modern text renderer | Terminal must be able to render glyphs from East Asian and Middle Asian languages, inc. Chinese, Hebrew, Arabic, etc. Terminal will also be able to render Emoji - an increasingly important feature considering that several programming languages now support Emoji in method and variable names! To render such glyphs, the Terminal needs a DirectWrite-based layout & rendering system which supports font fallback, customizable text layout, GPU accelerated rendering, and many other features not currently supported by the built-in Windows Console |
-| V1 | 0 | Unicode & UTF-8 support | Terminal must be able to store data encoded as Unicode UTF-16/UCS-2 and UTF-8, including surrogate pairs |
-| V1 | 0 | Extended Unicode Support | The Terminal will support rendering text for almost every language for which there is a fixed-width font including East Asian languages. Bonus points for RTL languages/scripts. |
-| V1 | 0 | Multiple instances | Must be able to launch multiple independent instances of the Terminal - users need to run tools side-by-side independently |
+| V1 | 0 | Solid Unicode & UTF-8 support | Terminal must be able to store data encoded as Unicode UTF-16/UCS-2 and UTF-8, including surrogate pairs. Note: Terminal v1.0 won't be able to support composing characters or grapheme clusters that are not representable with a single unicode codepoint - this will be addressed in a subsequent release |
+| V1 | 0 | International text rendering | The Terminal will support rendering text for almost every language for which there is a fixed-width font including East Asian languages. Bonus points for RTL languages/scripts. |
+| V1 | 0 | Multiple instances | Users must be able to launch multiple independent instances of the Terminal in order to run tools side-by-side / independently |
 | V1 | 0 | Elevation | Terminal can be launched "elevated" with Admin rights if required so that the user can perform operations that affect machine-wide state |
 | V1 | 0 | Multiple Tabs per instance | Each Terminal instance must support one or more independent tabs. This is the #1 ask from the community! |
 | V1 | 0 | Configurability & Customization | The new Terminal will have a modern, flexible settings mechanism that persists settings to/from a JSON file stored in the user's app data folders, and/or in files synchronized between machines via OneDrive, etc. There will be no settings UI in Terminal v1 - this is a feature for a future Terminal release. |
