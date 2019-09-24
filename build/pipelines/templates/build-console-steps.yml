@@ -54,6 +54,14 @@ steps:
       $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
       .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
 
+- task: powershell@2
+  displayName: 'Source Index PDBs'
+  inputs:
+    targetType: filePath
+    filePath: build\scripts\Index-Pdbs.ps1
+    arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+    errorActionPreference: silentlyContinue
+
 - task: VSTest@2
   displayName: 'Run Unit Tests'
   inputs:
@@ -81,7 +89,7 @@ steps:
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-
+   
 - task: CopyFiles@2
   displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
   inputs:
@@ -102,10 +110,3 @@ steps:
     ArtifactName: 'appx-$(BuildConfiguration)'
   condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
   
-- task: powershell@2
-  displayName: 'Source Index PDBs'
-  inputs:
-    targetType: filePath
-    filePath: build\scripts\Index-Pdbs.ps1
-    arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
-    errorActionPreference: silentlyContinue

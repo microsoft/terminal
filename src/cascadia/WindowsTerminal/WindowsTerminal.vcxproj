@@ -132,8 +132,16 @@
     <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
   </PropertyGroup>
   <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
-    <MSBuild Projects="@(ProjectReferenceWithConfiguration)" Targets="GetPackagingOutputs" BuildInParallel="$(BuildInParallel)" Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)" Condition="'@(ProjectReferenceWithConfiguration)' != ''&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'" ContinueOnError="$(_ContinueOnError)">
-      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects" />
+    <MSBuild
+      Projects="@(ProjectReferenceWithConfiguration)"
+      Targets="GetPackagingOutputs"
+      BuildInParallel="$(BuildInParallel)"
+      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
+      Condition="'@(ProjectReferenceWithConfiguration)' != ''
+                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
+                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
+      ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
     </MSBuild>
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
