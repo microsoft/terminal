@@ -115,7 +115,6 @@ class Microsoft::Console::Render::VtRendererTest
     std::deque<std::string> qExpectedInput;
     bool WriteCallback(const char* const pch, size_t const cch);
     void TestPaint(VtEngine& engine, std::function<void()> pfn);
-    void TestPaintXterm(XtermEngine& engine, std::function<void()> pfn);
     Viewport SetUpViewport();
 };
 
@@ -160,38 +159,6 @@ void VtRendererTest::TestPaint(VtEngine& engine, std::function<void()> pfn)
     VERIFY_SUCCEEDED(engine.StartPaint());
     pfn();
     VERIFY_SUCCEEDED(engine.EndPaint());
-}
-
-// Function Description:
-// - Small helper to do a series of testing wrapped by StartPaint/EndPaint calls
-//  Also expects \x1b[?25l and \x1b[?25h on start/stop, for cursor visibility
-// Arguments:
-// - engine: the engine to operate on
-// - pfn: A function pointer to some test code to run.
-// Return Value:
-// - <none>
-void VtRendererTest::TestPaintXterm(XtermEngine& engine, std::function<void()> pfn)
-{
-    HRESULT hr = engine.StartPaint();
-    pfn();
-    // If we didn't have anything to do on this frame, still execute our
-    //      callback, but don't check for the following ?25h
-    if (hr != S_FALSE)
-    {
-        // If the engine has decided that it needs to disble the cursor, it'll
-        //      insert ?25l to the front of the buffer (which won't hit this
-        //      callback) and write ?25h to the end of the frame
-        if (engine._needToDisableCursor)
-        {
-            qExpectedInput.push_back("\x1b[?25h");
-        }
-    }
-
-    VERIFY_SUCCEEDED(engine.EndPaint());
-
-    VERIFY_ARE_EQUAL(qExpectedInput.size(),
-                     static_cast<size_t>(0),
-                     L"Done painting, there shouldn't be any output we're still expecting");
 }
 
 void VtRendererTest::VtSequenceHelperTests()
@@ -261,7 +228,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
     VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
@@ -616,7 +583,7 @@ void VtRendererTest::XtermTestInvalidate()
         L"Make sure that invalidating anything only invalidates that portion"));
     SMALL_RECT invalid = { 1, 1, 1, 1 };
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(invalid, engine->_invalidRect.ToExclusive());
     });
 
