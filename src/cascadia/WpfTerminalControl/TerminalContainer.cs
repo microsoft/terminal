@@ -258,6 +258,7 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.RegisterScrollCallback(this.terminal, scrollCallback);
             NativeMethods.RegisterWriteCallback(this.terminal, writeCallback);
 
+            // If the saved DPI scale isn't the default scale, we push it to the terminal.
             if (this.dpiScale.DpiScaleX != 96)
             {
                 NativeMethods.DpiChanged(this.terminal, (int)(96 * dpiScale.DpiScaleX));
