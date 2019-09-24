@@ -261,7 +261,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     // Verify the first paint emits a clear and go home
     qExpectedInput.push_back("\x1b[2J");
     VERIFY_IS_TRUE(engine->_firstPaint);
-    TestPaint(*engine, [&]() {
+    TestPaintXterm(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
     });
 
@@ -287,7 +287,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -303,7 +303,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     scrollDelta = { 0, 3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -317,7 +317,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     scrollDelta = { 0, -1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -332,7 +332,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
     scrollDelta = { 0, -3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -352,7 +352,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -546,8 +546,6 @@ void VtRendererTest::Xterm256TestCursor()
             L"----move to the start of this line (y stays the same)----"));
         qExpectedInput.push_back("\r");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 1 }));
-
-        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]() {
@@ -626,7 +624,7 @@ void VtRendererTest::XtermTestInvalidate()
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -641,7 +639,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, 3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -655,7 +653,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, -1 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
         invalid = view.ToExclusive();
@@ -670,7 +668,7 @@ void VtRendererTest::XtermTestInvalidate()
 
     scrollDelta = { 0, -3 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -690,7 +688,7 @@ void VtRendererTest::XtermTestInvalidate()
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
     VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
         invalid = view.ToExclusive();
@@ -853,8 +851,6 @@ void VtRendererTest::XtermTestCursor()
             L"----move to the start of this line (y stays the same)----"));
         qExpectedInput.push_back("\r");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 1 }));
-
-        qExpectedInput.push_back("\x1b[?25h");
     });
 
     TestPaint(*engine, [&]() {
@@ -1119,14 +1115,14 @@ void VtRendererTest::TestWrapping()
 
     Viewport view = SetUpViewport();
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Make sure the cursor is at 0,0"));
         qExpectedInput.push_back("\x1b[H");
         VERIFY_SUCCEEDED(engine->_MoveCursor({ 0, 0 }));
     });
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"Painting a line that wrapped, then painting another line, and "
             L"making sure we don't manually move the cursor between those paints."));
@@ -1185,7 +1181,7 @@ void VtRendererTest::TestResize()
 
     VERIFY_SUCCEEDED(engine->UpdateViewport(newView.ToInclusive()));
 
-    TestPaintXterm(*engine, [&]() {
+    TestPaint(*engine, [&]() {
         VERIFY_ARE_EQUAL(newView, engine->_invalidRect);
         VERIFY_IS_FALSE(engine->_firstPaint);
         VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
