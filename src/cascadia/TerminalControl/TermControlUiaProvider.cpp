@@ -106,13 +106,13 @@ std::deque<UiaTextRangeBase*> TermControlUiaProvider::GetSelectionRanges(_In_ IR
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
 {
-    return UiaTextRange::Create(_pData, pProvider);
+    return WRL::Make<UiaTextRange>(_pData, pProvider).Detach();
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                           const Cursor& cursor)
 {
-    return UiaTextRange::Create(_pData, pProvider, cursor);
+    return WRL::Make<UiaTextRange>(_pData, pProvider, cursor).Detach();
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -120,11 +120,11 @@ UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProvid
                                                           const Endpoint end,
                                                           const bool degenerate)
 {
-    return UiaTextRange::Create(_pData, pProvider, start, end, degenerate);
+    return WRL::Make<UiaTextRange>(_pData, pProvider, start, end, degenerate).Detach();
 }
 
 UiaTextRangeBase* TermControlUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                           const UiaPoint point)
 {
-    return UiaTextRange::Create(_pData, pProvider, point);
+    return WRL::Make<UiaTextRange>(_pData, pProvider, point).Detach();
 }

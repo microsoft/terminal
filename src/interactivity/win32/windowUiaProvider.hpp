@@ -21,6 +21,7 @@ Author(s):
 
 #include "precomp.h"
 #include "../types/WindowUiaProviderBase.hpp"
+#include <wrl.h>
 
 namespace Microsoft::Console::Types
 {
@@ -55,8 +56,7 @@ namespace Microsoft::Console::Interactivity::Win32
 
     private:
         WindowUiaProvider(Microsoft::Console::Types::IConsoleWindow* baseWindow);
-        ~WindowUiaProvider();
 
-        ScreenInfoUiaProvider* _pScreenInfoProvider;
+        WRL::ComPtr<ScreenInfoUiaProvider> _pScreenInfoProvider;
     };
 }

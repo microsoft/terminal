@@ -33,7 +33,6 @@ SAFEARRAY* BuildIntSafeArray(std::basic_string_view<int> data)
 
 ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     _signalFiringMapping{},
-    _cRefs(1),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData))
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
@@ -68,56 +67,6 @@ ScreenInfoUiaProviderBase::ScreenInfoUiaProviderBase(_In_ IUiaData* pData) :
     return hr;
 }
 
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProviderBase::AddRef()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-ScreenInfoUiaProviderBase::Release()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP ScreenInfoUiaProviderBase::QueryInterface(_In_ REFIID riid,
-                                                         _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppInterface);
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(IRawElementProviderSimple) ||
-        riid == __uuidof(IRawElementProviderFragment) ||
-        riid == __uuidof(ITextProvider))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-
-    return S_OK;
-}
-
-#pragma endregion
-
 #pragma region IRawElementProviderSimple
 
 // Implementation of IRawElementProviderSimple::get_ProviderOptions.
@@ -148,7 +97,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetPatternProvider(_In_ PATTERNID patt
 
     if (patternId == UIA_TextPatternId)
     {
-        hr = this->QueryInterface(IID_PPV_ARGS(ppInterface));
+        hr = QueryInterface(IID_PPV_ARGS(ppInterface));
         if (FAILED(hr))
         {
             *ppInterface = nullptr;
@@ -315,13 +264,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
             return E_OUTOFMEMORY;
         }
 
-        IRawElementProviderSimple* pProvider;
-        hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (pProvider == nullptr)
-        {
-            hr = E_POINTER;
-        }
-
         if (FAILED(hr))
         {
             SafeArrayDestroy(*ppRetVal);
@@ -332,7 +274,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
         UiaTextRangeBase* range;
         try
         {
-            range = CreateTextRange(pProvider,
+            range = CreateTextRange(this,
                                     cursor);
         }
         catch (...)
@@ -340,7 +282,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        pProvider->Release();
         if (range == nullptr)
         {
             SafeArrayDestroy(*ppRetVal);
@@ -361,18 +302,14 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     {
         // get the selection ranges
         std::deque<UiaTextRangeBase*> ranges;
-        IRawElementProviderSimple* pProvider;
-        RETURN_IF_FAILED(QueryInterface(IID_PPV_ARGS(&pProvider)));
-        RETURN_HR_IF_NULL(E_POINTER, pProvider);
         try
         {
-            ranges = GetSelectionRanges(pProvider);
+            ranges = GetSelectionRanges(this);
         }
         catch (...)
         {
             hr = wil::ResultFromCaughtException();
         }
-        pProvider->Release();
         RETURN_IF_FAILED(hr);
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
@@ -396,12 +333,7 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
                 *ppRetVal = nullptr;
                 while (!ranges.empty())
                 {
-                    UiaTextRangeBase* pRange = ranges.at(0);
                     ranges.pop_front();
-                    if (pRange)
-                    {
-                        pRange->Release();
-                    }
                 }
                 return hr;
             }
@@ -446,24 +378,11 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
         // - 1 to get the last column in the row
         const int end = start + screenBufferCoords.X - 1;
 
-        IRawElementProviderSimple* pProvider;
-        HRESULT hr = this->QueryInterface(IID_PPV_ARGS(&pProvider));
-        if (pProvider == nullptr)
-        {
-            hr = E_POINTER;
-        }
-
-        if (FAILED(hr))
-        {
-            SafeArrayDestroy(*ppRetVal);
-            *ppRetVal = nullptr;
-            return hr;
-        }
-
+        HRESULT hr = S_OK;
         UiaTextRangeBase* range;
         try
         {
-            range = CreateTextRange(pProvider,
+            range = CreateTextRange(this,
                                     start,
                                     end,
                                     false);
@@ -473,7 +392,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_mayben
             range = nullptr;
             hr = wil::ResultFromCaughtException();
         }
-        pProvider->Release();
 
         if (range == nullptr)
         {
@@ -503,21 +421,16 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromChild(_In_ IRawElementProvide
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
-    RETURN_HR_IF_NULL(E_POINTER, pProvider);
-
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateTextRange(pProvider);
+        *ppRetVal = CreateTextRange(this);
     }
     catch (...)
     {
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    pProvider->Release();
 
     return hr;
 }
@@ -531,14 +444,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
-    RETURN_HR_IF_NULL(E_POINTER, pProvider);
-
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateTextRange(pProvider,
+        *ppRetVal = CreateTextRange(this,
                                     point);
     }
     catch (...)
@@ -546,7 +455,6 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::RangeFromPoint(_In_ UiaPoint point,
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    pProvider->Release();
 
     return hr;
 }
@@ -559,21 +467,16 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::get_DocumentRange(_COM_Outptr_result_m
     RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
     *ppRetVal = nullptr;
 
-    IRawElementProviderSimple* pProvider;
-    RETURN_IF_FAILED(this->QueryInterface(IID_PPV_ARGS(&pProvider)));
-    RETURN_HR_IF_NULL(E_POINTER, pProvider);
-
     HRESULT hr = S_OK;
     try
     {
-        *ppRetVal = CreateTextRange(pProvider);
+        *ppRetVal = CreateTextRange(this);
     }
     catch (...)
     {
         *ppRetVal = nullptr;
         hr = wil::ResultFromCaughtException();
     }
-    pProvider->Release();
 
     if (*ppRetVal)
     {

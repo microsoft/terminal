@@ -27,40 +27,6 @@ namespace Microsoft::Terminal
                                                             _In_ IRawElementProviderSimple* pProvider);
 
         // degenerate range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider);
-
-        // degenerate range at cursor position
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Cursor& cursor);
-
-        // specific endpoint range
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const Endpoint start,
-                                    const Endpoint end,
-                                    const bool degenerate);
-
-        // range from a UiaPoint
-        static UiaTextRange* Create(_In_ Microsoft::Console::Types::IUiaData* pData,
-                                    _In_ IRawElementProviderSimple* const pProvider,
-                                    const UiaPoint point);
-
-        IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-        IFACEMETHODIMP FindText(_In_ BSTR text,
-                                _In_ BOOL searchBackward,
-                                _In_ BOOL ignoreCase,
-                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
-
-    protected:
-        void _ChangeViewport(const SMALL_RECT NewWindow) override;
-        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
-        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
-        const COORD _getScreenFontSize() const override;
-
-    private:
-        // degenerate range
         UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider);
 
@@ -80,5 +46,17 @@ namespace Microsoft::Terminal
         UiaTextRange(_In_ Microsoft::Console::Types::IUiaData* pData,
                      _In_ IRawElementProviderSimple* const pProvider,
                      const UiaPoint point);
+
+        IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+        IFACEMETHODIMP FindText(_In_ BSTR text,
+                                _In_ BOOL searchBackward,
+                                _In_ BOOL ignoreCase,
+                                _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) override;
+
+    protected:
+        void _ChangeViewport(const SMALL_RECT NewWindow) override;
+        void _TranslatePointToScreen(LPPOINT clientPoint) const override;
+        void _TranslatePointFromScreen(LPPOINT screenPoint) const override;
+        const COORD _getScreenFontSize() const override;
     };
 }

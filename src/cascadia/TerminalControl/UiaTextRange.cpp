@@ -22,17 +22,17 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         ScreenInfoRow currentRow = rect.Top();
         Endpoint start = _screenInfoRowToEndpoint(pData, currentRow) + rect.Left();
         Endpoint end = _screenInfoRowToEndpoint(pData, currentRow) + rect.RightInclusive();
-        UiaTextRange* range = UiaTextRange::Create(pData,
-                                                   pProvider,
-                                                   start,
-                                                   end,
-                                                   false);
+        UiaTextRange* range = WRL::Make<UiaTextRange>(pData,
+                                                      pProvider,
+                                                      start,
+                                                      end,
+                                                      false)
+                                  .Detach();
         if (range == nullptr)
         {
             // something went wrong, clean up and throw
             while (!ranges.empty())
             {
-                UiaTextRangeBase* temp = ranges[0];
                 ranges.pop_front();
             }
             THROW_HR(E_INVALIDARG);
@@ -43,67 +43,6 @@ std::deque<UiaTextRange*> UiaTextRange::GetSelectionRanges(_In_ IUiaData* pData,
         }
     }
     return ranges;
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Cursor& cursor)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider, cursor);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const Endpoint start,
-                                   const Endpoint end,
-                                   const bool degenerate)
-{
-    try
-    {
-        return new UiaTextRange(pData,
-                                pProvider,
-                                start,
-                                end,
-                                degenerate);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
-}
-
-UiaTextRange* UiaTextRange::Create(_In_ IUiaData* pData,
-                                   _In_ IRawElementProviderSimple* const pProvider,
-                                   const UiaPoint point)
-{
-    try
-    {
-        return new UiaTextRange(pData, pProvider, point);
-    }
-    catch (...)
-    {
-        return nullptr;
-    }
 }
 
 // degenerate range constructor.
@@ -143,7 +82,7 @@ IFACEMETHODIMP UiaTextRange::Clone(_Outptr_result_maybenull_ ITextRangeProvider*
     *ppRetVal = nullptr;
     try
     {
-        *ppRetVal = new UiaTextRange(*this);
+        *ppRetVal = WRL::Make<UiaTextRange>(*this).Detach();
     }
     catch (...)
     {

@@ -18,18 +18,10 @@ WindowUiaProvider::WindowUiaProvider(IConsoleWindow* baseWindow) :
 {
 }
 
-WindowUiaProvider::~WindowUiaProvider()
-{
-    if (_pScreenInfoProvider)
-    {
-        _pScreenInfoProvider->Release();
-    }
-}
-
 WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
 {
     WindowUiaProvider* pWindowProvider = nullptr;
-    ScreenInfoUiaProvider* pScreenInfoProvider = nullptr;
+    WRL::ComPtr<ScreenInfoUiaProvider> pScreenInfoProvider;
     try
     {
         pWindowProvider = new WindowUiaProvider(baseWindow);
@@ -38,8 +30,8 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
         IUiaData* uiaData = &gci.renderData;
 
-        pScreenInfoProvider = new ScreenInfoUiaProvider(uiaData, pWindowProvider);
-        pWindowProvider->_pScreenInfoProvider = pScreenInfoProvider;
+        pScreenInfoProvider = WRL::Make<ScreenInfoUiaProvider>(uiaData, pWindowProvider);
+        pWindowProvider->_pScreenInfoProvider.Attach(pScreenInfoProvider.Detach());
 
         // TODO GitHub #1914: Re-attach Tracing to UIA Tree
         //Tracing::s_TraceUia(pWindowProvider, ApiCall::Create, nullptr);
@@ -48,16 +40,6 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
     }
     catch (...)
     {
-        if (nullptr != pWindowProvider)
-        {
-            pWindowProvider->Release();
-        }
-
-        if (nullptr != pScreenInfoProvider)
-        {
-            pScreenInfoProvider->Release();
-        }
-
         LOG_CAUGHT_EXCEPTION();
 
         return nullptr;
@@ -105,8 +87,7 @@ WindowUiaProvider* WindowUiaProvider::Create(IConsoleWindow* baseWindow)
     }
     CATCH_RETURN();
 
-    IRawElementProviderSimple* pProvider = static_cast<IRawElementProviderSimple*>(this);
-    hr = UiaRaiseAutomationEvent(pProvider, id);
+    hr = UiaRaiseAutomationEvent(this, id);
     _signalEventFiring[id] = false;
 
     return hr;
@@ -122,8 +103,7 @@ IFACEMETHODIMP WindowUiaProvider::Navigate(_In_ NavigateDirection direction, _CO
 
     if (direction == NavigateDirection_FirstChild || direction == NavigateDirection_LastChild)
     {
-        *ppProvider = _pScreenInfoProvider;
-        (*ppProvider)->AddRef();
+        *ppProvider = _pScreenInfoProvider.Get();
 
         // signal that the focus changed
         LOG_IF_FAILED(_pScreenInfoProvider->Signal(UIA_AutomationFocusChangedEventId));
@@ -148,8 +128,7 @@ IFACEMETHODIMP WindowUiaProvider::ElementProviderFromPoint(_In_ double /*x*/,
 {
     RETURN_IF_FAILED(_EnsureValidHwnd());
 
-    *ppProvider = _pScreenInfoProvider;
-    (*ppProvider)->AddRef();
+    *ppProvider = _pScreenInfoProvider.Get();
 
     return S_OK;
 }

@@ -103,7 +103,6 @@ void UiaTextRangeBase::_outputObjectState()
 
 // degenerate range constructor.
 UiaTextRangeBase::UiaTextRangeBase(_In_ IUiaData* pData, _In_ IRawElementProviderSimple* const pProvider) :
-    _cRefs{ 1 },
     _pProvider{ THROW_HR_IF_NULL(E_INVALIDARG, pProvider) },
     _start{ 0 },
     _end{ 0 },
@@ -185,7 +184,6 @@ void UiaTextRangeBase::Initialize(_In_ const UiaPoint point)
 }
 
 UiaTextRangeBase::UiaTextRangeBase(const UiaTextRangeBase& a) noexcept :
-    _cRefs{ 1 },
     _pProvider{ a._pProvider },
     _start{ a._start },
     _end{ a._end },
@@ -233,55 +231,6 @@ void UiaTextRangeBase::SetRangeValues(const Endpoint start, const Endpoint end, 
     _end = end;
     _degenerate = isDegenerate;
 }
-
-#pragma region IUnknown
-
-IFACEMETHODIMP_(ULONG)
-UiaTextRangeBase::AddRef()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::AddRef, nullptr);
-    return InterlockedIncrement(&_cRefs);
-}
-
-IFACEMETHODIMP_(ULONG)
-UiaTextRangeBase::Release()
-{
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::Release, nullptr);
-
-    const long val = InterlockedDecrement(&_cRefs);
-    if (val == 0)
-    {
-        delete this;
-    }
-    return val;
-}
-
-IFACEMETHODIMP UiaTextRangeBase::QueryInterface(_In_ REFIID riid, _COM_Outptr_result_maybenull_ void** ppInterface)
-{
-    RETURN_HR_IF(E_INVALIDARG, ppInterface == nullptr);
-    *ppInterface = nullptr;
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(this, ApiCall::QueryInterface, nullptr);
-
-    if (riid == __uuidof(IUnknown) ||
-        riid == __uuidof(ITextRangeProvider))
-    {
-        *ppInterface = this;
-    }
-    else
-    {
-        *ppInterface = nullptr;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-    return S_OK;
-}
-
-#pragma endregion
 
 #pragma region ITextRangeProvider
 

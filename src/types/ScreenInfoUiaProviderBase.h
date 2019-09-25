@@ -22,6 +22,7 @@ Author(s):
 #pragma once
 
 #include "precomp.h"
+#include <wrl.h>
 #include "../buffer/out/textBuffer.hpp"
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
@@ -32,9 +33,7 @@ namespace Microsoft::Console::Types
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
-        public IRawElementProviderSimple,
-        public IRawElementProviderFragment,
-        public ITextProvider
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
         ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
@@ -45,14 +44,6 @@ namespace Microsoft::Console::Types
         virtual ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef() override;
-        IFACEMETHODIMP_(ULONG)
-        Release() override;
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept override;
@@ -105,9 +96,6 @@ namespace Microsoft::Console::Types
         IUiaData* _pData;
 
     private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
         // this is used to prevent the object from
         // signaling an event while it is already in the
         // process of signalling another event.
@@ -134,9 +122,6 @@ namespace Microsoft::Console::Types
         {
             Constructor,
             Signal,
-            AddRef,
-            Release,
-            QueryInterface,
             GetProviderOptions,
             GetPatternProvider,
             GetPropertyValue,

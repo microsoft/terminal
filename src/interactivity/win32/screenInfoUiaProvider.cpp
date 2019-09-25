@@ -108,13 +108,13 @@ std::deque<UiaTextRangeBase*> ScreenInfoUiaProvider::GetSelectionRanges(_In_ IRa
 
 UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider)
 {
-    return UiaTextRange::Create(_pData, pProvider);
+    return Microsoft::WRL::Make<UiaTextRange>(_pData, pProvider).Detach();
 }
 
 UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                          const Cursor& cursor)
 {
-    return UiaTextRange::Create(_pData, pProvider, cursor);
+    return Microsoft::WRL::Make<UiaTextRange>(_pData, pProvider, cursor).Detach();
 }
 
 UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
@@ -122,11 +122,11 @@ UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProvide
                                                          const Endpoint end,
                                                          const bool degenerate)
 {
-    return UiaTextRange::Create(_pData, pProvider, start, end, degenerate);
+    return Microsoft::WRL::Make<UiaTextRange>(_pData, pProvider, start, end, degenerate).Detach();
 }
 
 UiaTextRangeBase* ScreenInfoUiaProvider::CreateTextRange(_In_ IRawElementProviderSimple* const pProvider,
                                                          const UiaPoint point)
 {
-    return UiaTextRange::Create(_pData, pProvider, point);
+    return Microsoft::WRL::Make<UiaTextRange>(_pData, pProvider, point).Detach();
 }
