@@ -27,7 +27,7 @@ Every public release of Windows Terminal is avaiable for manual download from [t
 
 > ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
-### Install Windows Terminal via Chocolatey (unofficial)
+### Via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
 
