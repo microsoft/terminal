@@ -100,6 +100,8 @@ private:
     static std::string_view SerializeImageAlignment(const std::tuple<winrt::Windows::UI::Xaml::HorizontalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment> imageAlignment);
     static winrt::Microsoft::Terminal::Settings::CursorStyle _ParseCursorShape(const std::wstring& cursorShapeString);
     static std::wstring_view _SerializeCursorStyle(const winrt::Microsoft::Terminal::Settings::CursorStyle cursorShape);
+    static winrt::Microsoft::Terminal::Settings::CursorBlinkingStyle _ParseCursorBlinkingStyle(const std::wstring& cursorBlinkingStyleString);
+    static std::wstring_view _SerializeCursorBlinkingStyle(const winrt::Microsoft::Terminal::Settings::CursorBlinkingStyle cursorBlinkingStyle);
 
     static GUID _GenerateGuidForProfile(const std::wstring& name, const std::optional<std::wstring>& source) noexcept;
 
@@ -121,6 +123,7 @@ private:
     uint32_t _cursorColor;
     uint32_t _cursorHeight;
     winrt::Microsoft::Terminal::Settings::CursorStyle _cursorShape;
+    winrt::Microsoft::Terminal::Settings::CursorBlinkingStyle _cursorBlinking;
 
     std::wstring _commandline;
     std::wstring _fontFace;

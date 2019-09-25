@@ -12,6 +12,12 @@ namespace Microsoft.Terminal.Settings
         EmptyBox
     };
 
+    enum CursorBlinkingStyle
+    {
+        Blink = 0,
+        Solid = 1,
+    };
+
     interface ICoreSettings
     {
         UInt32 DefaultForeground;
@@ -26,6 +32,7 @@ namespace Microsoft.Terminal.Settings
 
         UInt32 CursorColor;
         CursorStyle CursorShape;
+        CursorBlinkingStyle CursorBlinking;
         UInt32 CursorHeight;
         String WordDelimiters;
         Boolean CopyOnSelect;

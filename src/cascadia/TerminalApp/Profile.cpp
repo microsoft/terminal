@@ -30,6 +30,7 @@ static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view CursorShapeKey{ "cursorShape" };
+static constexpr std::string_view CursorBlinkingKey{ "cursorBlinking" };
 static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
 
 static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
@@ -58,6 +59,10 @@ static constexpr std::wstring_view CursorShapeBar{ L"bar" };
 static constexpr std::wstring_view CursorShapeUnderscore{ L"underscore" };
 static constexpr std::wstring_view CursorShapeFilledbox{ L"filledBox" };
 static constexpr std::wstring_view CursorShapeEmptybox{ L"emptyBox" };
+
+// Possible values for Cursor Blinking Style
+static constexpr std::wstring_view CursorBlinkingStyleBlink{ L"blink" };
+static constexpr std::wstring_view CursorBlinkingStyleSolid{ L"solid" };
 
 // Possible values for Image Stretch Mode
 static constexpr std::string_view ImageStretchModeNone{ "none" };
@@ -184,6 +189,7 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
     terminalSettings.CursorColor(_cursorColor);
     terminalSettings.CursorHeight(_cursorHeight);
     terminalSettings.CursorShape(_cursorShape);
+    terminalSettings.CursorBlinking(_cursorBlinking);
 
     // Fill in the remaining properties from the profile
     terminalSettings.UseAcrylic(_useAcrylic);
@@ -302,6 +308,7 @@ Json::Value Profile::ToJson() const
         root[JsonKey(CursorHeightKey)] = _cursorHeight;
     }
     root[JsonKey(CursorShapeKey)] = winrt::to_string(_SerializeCursorStyle(_cursorShape));
+    root[JsonKey(CursorBlinkingKey)] = winrt::to_string(_SerializeCursorBlinkingStyle(_cursorBlinking));
 
     ///// Control Settings /////
     root[JsonKey(CommandlineKey)] = winrt::to_string(_commandline);
@@ -648,6 +655,12 @@ void Profile::LayerJson(const Json::Value& json)
         auto cursorShape{ json[JsonKey(CursorShapeKey)] };
         _cursorShape = _ParseCursorShape(GetWstringFromJson(cursorShape));
     }
+    if (json.isMember(JsonKey(CursorBlinkingKey)))
+    {
+        auto cursorBlinking{ json[JsonKey(CursorBlinkingKey)] };
+        _cursorBlinking = _ParseCursorBlinkingStyle(GetWstringFromJson(cursorBlinking));
+    }
+
     JsonUtils::GetOptionalString(json, TabTitleKey, _tabTitle);
 
     // Control Settings
@@ -1106,6 +1119,47 @@ std::wstring_view Profile::_SerializeCursorStyle(const CursorStyle cursorShape)
     default:
     case CursorStyle::Bar:
         return CursorShapeBar;
+    }
+}
+
+// Method Description:
+// - Helper function for converting a user-specified cursor blinking style corresponding
+//   CursorBlinkingStyle enum value
+// Arguments:
+// - cursorBlinkingStyleString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+CursorBlinkingStyle Profile::_ParseCursorBlinkingStyle(const std::wstring& cursorBlinkingStyleString)
+{
+    if (cursorBlinkingStyleString == CursorBlinkingStyleBlink)
+    {
+        return CursorBlinkingStyle::Blink;
+    }
+    else if (cursorBlinkingStyleString == CursorBlinkingStyleSolid)
+    {
+        return CursorBlinkingStyle::Solid;
+    }
+
+    // default behavior for invalid data
+    return CursorBlinkingStyle::Blink;
+}
+
+// Method Description:
+// - Helper function for converting a CursorBlinkingStyle to its corresponding string
+//   value.
+// Arguments:
+// - cursorBlinkingStyle: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CursorBlinkingStyle
+std::wstring_view Profile::_SerializeCursorBlinkingStyle(const CursorBlinkingStyle cursorBlinkingStyle)
+{
+    switch (cursorBlinkingStyle)
+    {
+    case CursorBlinkingStyle::Solid:
+        return CursorBlinkingStyleSolid;
+    default:
+    case CursorBlinkingStyle::Blink:
+        return CursorBlinkingStyleBlink;
     }
 }
 

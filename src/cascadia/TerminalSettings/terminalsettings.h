@@ -43,6 +43,8 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         void CursorColor(uint32_t value);
         CursorStyle CursorShape() const noexcept;
         void CursorShape(winrt::Microsoft::Terminal::Settings::CursorStyle const& value) noexcept;
+        CursorBlinkingStyle CursorBlinking() const noexcept;
+        void CursorBlinking(winrt::Microsoft::Terminal::Settings::CursorBlinkingStyle const& value) noexcept;
         uint32_t CursorHeight();
         void CursorHeight(uint32_t value);
         hstring WordDelimiters();
@@ -104,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         bool _snapOnInput;
         uint32_t _cursorColor;
         Settings::CursorStyle _cursorShape;
+        Settings::CursorBlinkingStyle _cursorBlinking;
         uint32_t _cursorHeight;
         hstring _wordDelimiters;
 

@@ -146,7 +146,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
             // Refresh our font with the renderer
             _UpdateFont();
-
+            // Refresh cursor blinking style
+            _UpdateCursorBlinking();
             const auto width = _swapChainPanel.ActualWidth();
             const auto height = _swapChainPanel.ActualHeight();
             if (width != 0 && height != 0)
@@ -536,21 +537,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        // Set up blinking cursor
-        int blinkTime = GetCaretBlinkTime();
-        if (blinkTime != INFINITE)
-        {
-            // Create a timer
-            _cursorTimer = std::make_optional(DispatcherTimer());
-            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
-            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
-            _cursorTimer.value().Start();
-        }
-        else
-        {
-            // The user has disabled cursor blinking
-            _cursorTimer = std::nullopt;
-        }
+        // Set up cursor blinking
+        _UpdateCursorBlinking();
 
         // import value from WinUser (convert from milli-seconds to micro-seconds)
         _multiClickTimer = GetDoubleClickTime() * 1000;
@@ -1245,6 +1233,30 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
+    // - Update cursor blinking style. This will create or stop cursor timer as needed.
+    void TermControl::_UpdateCursorBlinking()
+    {
+        auto blinkingStyle = _settings.CursorBlinking();
+        switch (blinkingStyle)
+        {
+        case CursorBlinkingStyle::Solid:
+            if (_cursorTimer.has_value())
+            {
+                _cursorTimer.value().Stop();
+            }
+
+            _cursorTimer = std::nullopt;
+
+            _terminal->SetCursorVisible(true);
+            break;
+        case CursorBlinkingStyle::Blink:
+        default:
+            _CreateBlinkTimer();
+            break;
+        }
+    }
+
+    // Method Description:
     // - Triggered when the swapchain changes size. We use this to resize the
     //      terminal buffers to match the new visible size.
     // Arguments:
@@ -1273,6 +1285,31 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // TODO: MSFT: 21169071 - Shouldn't this all happen through _renderer and trigger the invalidate automatically on DPI change?
         THROW_IF_FAILED(_renderEngine->UpdateDpi(dpi));
         _renderer->TriggerRedrawAll();
+    }
+
+    // Method Description:
+    // - Create cursor blink timer if there is none.
+    void TermControl::_CreateBlinkTimer()
+    {
+        if (_cursorTimer.has_value())
+        {
+            return;
+        }
+
+        int blinkTime = GetCaretBlinkTime();
+        if (blinkTime != INFINITE)
+        {
+            // Create a timer
+            _cursorTimer = std::make_optional(DispatcherTimer());
+            _cursorTimer.value().Interval(std::chrono::milliseconds(blinkTime));
+            _cursorTimer.value().Tick({ this, &TermControl::_BlinkCursor });
+            _cursorTimer.value().Start();
+        }
+        else
+        {
+            // The user has disabled cursor blinking
+            _cursorTimer = std::nullopt;
+        }
     }
 
     // Method Description:

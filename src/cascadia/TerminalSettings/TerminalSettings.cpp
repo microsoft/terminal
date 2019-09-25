@@ -130,6 +130,16 @@ namespace winrt::Microsoft::Terminal::Settings::implementation
         _cursorShape = value;
     }
 
+    Settings::CursorBlinkingStyle TerminalSettings::CursorBlinking() const noexcept
+    {
+        return _cursorBlinking;
+    }
+
+    void TerminalSettings::CursorBlinking(Settings::CursorBlinkingStyle const& value) noexcept
+    {
+        _cursorBlinking = value;
+    }
+
     uint32_t TerminalSettings::CursorHeight()
     {
         return _cursorHeight;

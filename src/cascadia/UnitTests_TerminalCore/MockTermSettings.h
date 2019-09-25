@@ -30,6 +30,7 @@ namespace TerminalCoreUnitTests
         bool SnapOnInput() { return false; }
         uint32_t CursorColor() { return COLOR_WHITE; }
         CursorStyle CursorShape() const noexcept { return CursorStyle::Vintage; }
+        CursorBlinkingStyle CursorBlinking() const noexcept { return CursorBlinkingStyle::Blink; }
         uint32_t CursorHeight() { return 42UL; }
         winrt::hstring WordDelimiters() { return winrt::to_hstring(DEFAULT_WORD_DELIMITERS.c_str()); }
         bool CopyOnSelect() { return _copyOnSelect; }
@@ -46,6 +47,7 @@ namespace TerminalCoreUnitTests
         void SnapOnInput(bool) {}
         void CursorColor(uint32_t) {}
         void CursorShape(CursorStyle const&) noexcept {}
+        void CursorBlinking(CursorBlinkingStyle const&) noexcept {}
         void CursorHeight(uint32_t) {}
         void WordDelimiters(winrt::hstring) {}
         void CopyOnSelect(bool copyOnSelect) { _copyOnSelect = copyOnSelect; }
