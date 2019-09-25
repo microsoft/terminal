@@ -27,6 +27,21 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
+#pragma pack(push, 1)
+
+enum class ExtendedAttributes : BYTE
+{
+    Normal = 0x00,
+    Bold = 0x01,
+    Italics = 0x02,
+    Blinking = 0x04,
+    Invisible = 0x08,
+    CrossedOut = 0x10,
+    DoublyUnderlined = 0x20,
+    Faint = 0x40,
+};
+DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
+
 class TextAttribute final
 {
 public:
@@ -34,7 +49,8 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{},
         _background{},
-        _isBold{ false }
+        // _isBold{ false }
+        _extendedAttrs{ ExtendedAttributes::Normal }
     {
     }
 
@@ -42,7 +58,8 @@ public:
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
         _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
         _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
-        _isBold{ false }
+        // _isBold{ false }
+        _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
         WI_ClearAllFlags(_wAttrLegacy, COMMON_LVB_SBCSDBCS);
@@ -53,7 +70,8 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        _isBold{ false }
+        // _isBold{ false }
+        _extendedAttrs{ ExtendedAttributes::Normal }
     {
     }
 
@@ -62,7 +80,7 @@ public:
         const BYTE fg = (_foreground.GetIndex() & FG_ATTRS);
         const BYTE bg = (_background.GetIndex() << 4) & BG_ATTRS;
         const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
+        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
     }
 
     // Method Description:
@@ -85,7 +103,7 @@ public:
         const BYTE fg = (fgIndex & FG_ATTRS);
         const BYTE bg = (bgIndex << 4) & BG_ATTRS;
         const WORD meta = (_wAttrLegacy & META_ATTRS);
-        return (fg | bg | meta) | (_isBold ? FOREGROUND_INTENSITY : 0);
+        return (fg | bg | meta) | (IsBold() ? FOREGROUND_INTENSITY : 0);
     }
 
     COLORREF CalculateRgbForeground(std::basic_string_view<COLORREF> colorTable,
@@ -131,7 +149,13 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    bool IsBold() const noexcept;
+    // bool IsBold() const noexcept;
+    constexpr bool IsBold() const noexcept
+    {
+        // return _isBold;
+        return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
+        // return (_extendedAttrs & ExtendedAttributes::Bold) == ExtendedAttributes::Bold;
+    }
 
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
@@ -159,7 +183,8 @@ private:
     WORD _wAttrLegacy;
     TextColor _foreground;
     TextColor _background;
-    bool _isBold;
+    // bool _isBold;
+    ExtendedAttributes _extendedAttrs;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -168,6 +193,13 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
+
+#pragma pack(pop)
+// 2 for _wAttrLegacy
+// 4 for _foreground
+// 4 for _foreground
+// 1 for _extendedAttrs
+static_assert(sizeof(TextAttribute) <= 11 * sizeof(BYTE), "We should only need 11B for an entire TextColor. Any more than that is just waste");
 
 enum class TextAttributeBehavior
 {
@@ -181,7 +213,7 @@ constexpr bool operator==(const TextAttribute& a, const TextAttribute& b) noexce
     return a._wAttrLegacy == b._wAttrLegacy &&
            a._foreground == b._foreground &&
            a._background == b._background &&
-           a._isBold == b._isBold;
+           a._extendedAttrs == b._extendedAttrs;
 }
 
 constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexcept

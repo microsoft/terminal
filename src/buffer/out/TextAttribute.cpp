@@ -44,7 +44,7 @@ COLORREF TextAttribute::CalculateRgbBackground(std::basic_string_view<COLORREF> 
 COLORREF TextAttribute::_GetRgbForeground(std::basic_string_view<COLORREF> colorTable,
                                           COLORREF defaultColor) const noexcept
 {
-    return _foreground.GetColor(colorTable, defaultColor, _isBold);
+    return _foreground.GetColor(colorTable, defaultColor, IsBold());
 }
 
 // Routine Description:
@@ -155,10 +155,11 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     }
 }
 
-bool TextAttribute::IsBold() const noexcept
-{
-    return _isBold;
-}
+// bool TextAttribute::IsBold() const noexcept
+// {
+//     // return _isBold;
+//     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
+// }
 
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
@@ -224,7 +225,8 @@ void TextAttribute::Invert() noexcept
 
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
-    _isBold = isBold;
+    WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
+    // _isBold = isBold;
 }
 
 void TextAttribute::SetDefaultForeground() noexcept
