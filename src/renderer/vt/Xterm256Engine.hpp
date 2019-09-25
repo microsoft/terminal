@@ -39,6 +39,14 @@ namespace Microsoft::Console::Render
                                                    const bool isSettingDefaultBrushes) noexcept override;
 
     private:
+        [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
+
+        bool _usingItalics{ false };
+        bool _usingBlinking{ false };
+        bool _usingInvisible{ false };
+        bool _usingCrossedOut{ false };
+        bool _usingDoublyUnderlined{ false };
+
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
 #endif

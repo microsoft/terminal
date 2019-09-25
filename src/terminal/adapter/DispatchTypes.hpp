@@ -13,21 +13,30 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
+    // TODO:GH#<todo> add support for DoublyUnderlined, Faint(2) to the adapter as well.
     enum GraphicsOptions : unsigned int
     {
         Off = 0,
         BoldBright = 1,
-        RGBColor = 2,
+        RGBColorOrFaint = 2,
         // 2 is also Faint, decreased intensity (ISO 6429).
+        Italics = 3,
         Underline = 4,
-        Xterm256Index = 5,
+        BlinkOrXterm256Index = 5,
         // 5 is also Blink (appears as Bold).
         // the 2 and 5 entries here are only for the extended graphics options
         // as we do not currently support those features individually
         Negative = 7,
+        Invisible = 8,
+        CrossedOut = 9,
+        DoublyUnderlined = 21,
         UnBold = 22,
+        NotItalics = 23,
         NoUnderline = 24,
-        Positive = 27,
+        Steady = 25, // _not_ blink
+        Positive = 27, // _not_ inverse
+        Visible = 28, // _not_ invisible
+        NotCrossedOut = 29, // _not_ invisible
         ForegroundBlack = 30,
         ForegroundRed = 31,
         ForegroundGreen = 32,

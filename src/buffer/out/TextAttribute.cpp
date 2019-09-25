@@ -216,6 +216,11 @@ void TextAttribute::Debolden() noexcept
     _SetBoldness(false);
 }
 
+void TextAttribute::SetExtendedAttributes(const ExtendedAttributes attrs) noexcept
+{
+    _extendedAttrs = attrs;
+}
+
 // Routine Description:
 // - swaps foreground and background color
 void TextAttribute::Invert() noexcept

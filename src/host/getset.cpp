@@ -970,6 +970,22 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
     buffer.SetAttributes(attrs);
 }
 
+ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo)
+{
+    auto& buffer = screenInfo.GetActiveBuffer();
+    auto attrs = buffer.GetAttributes();
+    return attrs.GetExtendedAttributes();
+}
+
+void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
+                                           const ExtendedAttributes extendedAttrs)
+{
+    auto& buffer = screenInfo.GetActiveBuffer();
+    auto attrs = buffer.GetAttributes();
+    attrs.SetExtendedAttributes(extendedAttrs);
+    buffer.SetAttributes(attrs);
+}
+
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:

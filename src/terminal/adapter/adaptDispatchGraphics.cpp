@@ -12,6 +12,19 @@
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
+// Inspired from RETURN_IF_WIN32_BOOL_FALSE
+// WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
+//  will actually return the value of GLE.
+#define RETURN_IF_FALSE(b)                    \
+    do                                        \
+    {                                         \
+        BOOL __boolRet = wil::verify_bool(b); \
+        if (!__boolRet)                       \
+        {                                     \
+            return b;                         \
+        }                                     \
+    } while (0, 0)
+
 // Routine Description:
 // - Small helper to disable all color flags within a given font attributes field
 // Arguments:
@@ -266,6 +279,27 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
 //   These are followed by up to 4 more values which compose the entire option.
 // Return Value:
 // - true if the opt is the indicator for an extended color sequence, false otherwise.
+bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
+{
+    // TODO:GH#<todo> add support for DoublyUnderlined, Faint(RGBColorOrFaint).
+    // These two are currently partially implemented as other things:
+    // * Faint is kinda like the opposite of what bold does
+    // * Doubly underlined should exist in a trinary state with Underlined
+    return opt == DispatchTypes::GraphicsOptions::Italics ||
+           opt == DispatchTypes::GraphicsOptions::NotItalics ||
+           opt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index ||
+           opt == DispatchTypes::GraphicsOptions::Steady ||
+           opt == DispatchTypes::GraphicsOptions::Invisible ||
+           opt == DispatchTypes::GraphicsOptions::Visible ||
+           opt == DispatchTypes::GraphicsOptions::CrossedOut ||
+           opt == DispatchTypes::GraphicsOptions::NotCrossedOut;
+}
+
+// Routine Description:
+// Returns true if the GraphicsOption represents an extended color option.
+//   These are followed by up to 4 more values which compose the entire option.
+// Return Value:
+// - true if the opt is the indicator for an extended color sequence, false otherwise.
 bool AdaptDispatch::s_IsRgbColorOption(const DispatchTypes::GraphicsOptions opt)
 {
     return opt == DispatchTypes::GraphicsOptions::ForegroundExtended ||
@@ -338,7 +372,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTypes
             *pfIsForeground = false;
         }
 
-        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColor && cOptions >= 5)
+        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint && cOptions >= 5)
         {
             *pcOptionsConsumed = 5;
             // ensure that each value fits in a byte
@@ -350,7 +384,7 @@ bool AdaptDispatch::_SetRgbColorsHelper(_In_reads_(cOptions) const DispatchTypes
 
             fSuccess = !!_conApi->SetConsoleRGBTextAttribute(*prgbColor, *pfIsForeground);
         }
-        else if (typeOpt == DispatchTypes::GraphicsOptions::Xterm256Index && cOptions >= 3)
+        else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && cOptions >= 3)
         {
             *pcOptionsConsumed = 3;
             if (rgOptions[2] <= 255) // ensure that the provided index is on the table
@@ -372,6 +406,8 @@ bool AdaptDispatch::_SetBoldColorHelper(const DispatchTypes::GraphicsOptions opt
 
 bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option)
 {
+    // TODO: reset extended attrs too
+
     const bool fg = option == GraphicsOptions::Off || option == GraphicsOptions::ForegroundDefault;
     const bool bg = option == GraphicsOptions::Off || option == GraphicsOptions::BackgroundDefault;
     bool success = _conApi->PrivateSetDefaultAttributes(fg, bg);
@@ -383,6 +419,47 @@ bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions 
                   _conApi->PrivateBoldText(false);
     }
     return success;
+}
+
+bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions opt)
+{
+    ExtendedAttributes attrs{ ExtendedAttributes::Normal };
+
+    RETURN_IF_FALSE(_conApi->PrivateGetExtendedTextAttributes(&attrs));
+
+    switch (opt)
+    {
+    case DispatchTypes::GraphicsOptions::Italics:
+        WI_SetFlag(attrs, ExtendedAttributes::Italics);
+        break;
+    case DispatchTypes::GraphicsOptions::NotItalics:
+        WI_ClearFlag(attrs, ExtendedAttributes::Italics);
+        break;
+    case DispatchTypes::GraphicsOptions::BlinkOrXterm256Index:
+        WI_SetFlag(attrs, ExtendedAttributes::Blinking);
+        break;
+    case DispatchTypes::GraphicsOptions::Steady:
+        WI_ClearFlag(attrs, ExtendedAttributes::Blinking);
+        break;
+    case DispatchTypes::GraphicsOptions::Invisible:
+        WI_SetFlag(attrs, ExtendedAttributes::Invisible);
+        break;
+    case DispatchTypes::GraphicsOptions::Visible:
+        WI_ClearFlag(attrs, ExtendedAttributes::Invisible);
+        break;
+    case DispatchTypes::GraphicsOptions::CrossedOut:
+        WI_SetFlag(attrs, ExtendedAttributes::CrossedOut);
+        break;
+    case DispatchTypes::GraphicsOptions::NotCrossedOut:
+        WI_ClearFlag(attrs, ExtendedAttributes::CrossedOut);
+        break;
+        // TODO:GH#<todo> add support for the following
+        // case DispatchTypes::GraphicsOptions::DoublyUnderlined:
+        // case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
+        // case DispatchTypes::GraphicsOptions::DoublyUnderlined:
+    }
+
+    return _conApi->PrivateSetExtendedTextAttributes(attrs);
 }
 
 // Routine Description:
@@ -415,6 +492,10 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
             else if (s_IsBoldColorOption(opt))
             {
                 fSuccess = _SetBoldColorHelper(rgOptions[i]);
+            }
+            else if (s_IsExtendedTextAttribute(opt))
+            {
+                fSuccess = _SetExtendedTextAttributeHelper(rgOptions[i]);
             }
             else if (s_IsRgbColorOption(opt))
             {

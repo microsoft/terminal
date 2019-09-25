@@ -147,6 +147,8 @@ public:
         return _extendedAttrs;
     }
 
+    void SetExtendedAttributes(const ExtendedAttributes attrs) noexcept;
+
     void SetForeground(const COLORREF rgbForeground) noexcept;
     void SetBackground(const COLORREF rgbBackground) noexcept;
     void SetColor(const COLORREF rgbColor, const bool fIsForeground) noexcept;

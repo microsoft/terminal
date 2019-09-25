@@ -273,6 +273,18 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
     return TRUE;
 }
 
+BOOL ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs)
+{
+    *pAttrs = DoSrvPrivateGetExtendedTextAttributes(_io.GetActiveOutputBuffer());
+    return TRUE;
+}
+
+BOOL ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
+{
+    DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);
+    return TRUE;
+}
+
 // Routine Description:
 // - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
 // Arguments:
