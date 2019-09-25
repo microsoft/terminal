@@ -11,6 +11,7 @@
 #include "../../terminal/input/terminalInput.hpp"
 
 #include "../../types/inc/Viewport.hpp"
+#include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
@@ -30,7 +31,8 @@ namespace Microsoft::Terminal::Core
 class Microsoft::Terminal::Core::Terminal final :
     public Microsoft::Terminal::Core::ITerminalApi,
     public Microsoft::Terminal::Core::ITerminalInput,
-    public Microsoft::Console::Render::IRenderData
+    public Microsoft::Console::Render::IRenderData,
+    public Microsoft::Console::Types::IUiaData
 {
 public:
     Terminal();
@@ -88,11 +90,17 @@ public:
     int GetScrollOffset() override;
 #pragma endregion
 
-#pragma region IRenderData
-    // These methods are defined in TerminalRenderData.cpp
+#pragma region IBaseData(base to IRenderData and IUiaData)
     Microsoft::Console::Types::Viewport GetViewport() noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+
+    void LockConsole() noexcept override;
+    void UnlockConsole() noexcept override;
+#pragma endregion
+
+#pragma region IRenderData
+    // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
     const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept override;
     const COLORREF GetBackgroundColor(const TextAttribute& attr) const noexcept override;
@@ -106,27 +114,14 @@ public:
     bool IsCursorDoubleWidth() const noexcept override;
     const std::vector<Microsoft::Console::Render::RenderOverlay> GetOverlays() const noexcept override;
     const bool IsGridLineDrawingAllowed() noexcept override;
+#pragma endregion
+
+#pragma region IUiaData
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
-    bool IsAreaSelected() const override;
+    const bool IsSelectionActive() const noexcept;
     void ClearSelection() override;
     void SelectNewRegion(const COORD coordStart, const COORD coordEnd) override;
-
-    // TODO GitHub #605: Search functionality
-    // For now, just adding it here to make UiaTextRange easier to create (Accessibility)
-    // We should actually abstract this out better once Windows Terminal has Search
-    HRESULT SearchForText(_In_ BSTR text,
-                          _In_ BOOL searchBackward,
-                          _In_ BOOL ignoreCase,
-                          _Outptr_result_maybenull_ ITextRangeProvider** ppRetVal,
-                          unsigned int _start,
-                          unsigned int _end,
-                          std::function<unsigned int(IRenderData*, const COORD)> _coordToEndpoint,
-                          std::function<COORD(IRenderData*, const unsigned int)> _endpointToCoord,
-                          std::function<IFACEMETHODIMP(ITextRangeProvider**)> Clone) override;
-
     const std::wstring GetConsoleTitle() const noexcept override;
-    void LockConsole() noexcept override;
-    void UnlockConsole() noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -139,14 +134,14 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    const bool IsSelectionActive() const noexcept;
+    const bool IsCopyOnSelectActive() const noexcept;
     void DoubleClickSelection(const COORD position);
     void TripleClickSelection(const COORD position);
     void SetSelectionAnchor(const COORD position);
     void SetEndSelectionPosition(const COORD position);
     void SetBoxSelection(const bool isEnabled) noexcept;
 
-    const std::wstring RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
+    const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const;
 #pragma endregion
 
 private:
@@ -166,14 +161,29 @@ private:
 
     bool _snapOnInput;
 
-    // Text Selection
+#pragma region Text Selection
+    enum class SelectionExpansionMode
+    {
+        Cell,
+        Word,
+        Line
+    };
+    enum class DelimiterClass
+    {
+        ControlChar,
+        DelimiterChar,
+        RegularChar
+    };
     COORD _selectionAnchor;
     COORD _endSelectionPosition;
     bool _boxSelection;
     bool _selectionActive;
-    SHORT _selectionAnchor_YOffset;
-    SHORT _endSelectionPosition_YOffset;
+    bool _allowSingleCharSelection;
+    bool _copyOnSelect;
+    SHORT _selectionVerticalOffset;
     std::wstring _wordDelimiters;
+    SelectionExpansionMode _multiClickSelectionMode;
+#pragma endregion
 
     std::shared_mutex _readWriteLock;
 
@@ -213,12 +223,16 @@ private:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    std::vector<SMALL_RECT> _GetSelectionRects() const;
-    const SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
-    const SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
-    void _ExpandDoubleClickSelectionLeft(const COORD position);
-    void _ExpandDoubleClickSelectionRight(const COORD position);
-    const bool _isWordDelimiter(std::wstring_view cellChar) const;
-    const COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
+    SHORT _ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const;
+    SHORT _ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const;
+    COORD _ExpandDoubleClickSelectionLeft(const COORD position) const;
+    COORD _ExpandDoubleClickSelectionRight(const COORD position) const;
+    DelimiterClass _GetDelimiterClass(const std::wstring_view cellChar) const noexcept;
+    COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    const bool _IsSingleCellSelection() const noexcept;
+    std::tuple<COORD, COORD> _PreprocessSelectionCoords() const;
+    SMALL_RECT _GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const;
+    void _ExpandSelectionRow(SMALL_RECT& selectionRow) const;
 #pragma endregion
 };

@@ -8,6 +8,7 @@ This document serves as a storage point for those posts.
 - [How are the Windows graphics/messaging stack assembled?](#gfxMsgStack)
 - [Output Processing between "Far East" and "Western"](#fesb)
 - [Why do we not backport things?](#backport)
+- [Why can't we have mixed elevated and non-elevated tabs in the Terminal?](#elevation)
 
 ## <a name="cmd"></a>Why do we avoid changing CMD.exe?
 `setlocal` doesn't behave the same way as an environment variable. It's a thing that would have to be put in at the top of the batch script that is `somefile.cmd` as one of its first commands to adjust the way that one specific batch file is processed by the `cmd.exe` engine. That's probably not suitable for your needs, but that's the way we have to go.
@@ -145,3 +146,36 @@ It's also costly in terms of time, effort, and testing for us to validate a modi
 So from our little team working hard to make developers happy, we virtually never make the cut for servicing. We're sorry, but we hope you can understand. It's just the reality of the situation to say "nope" when people ask for a backport. In our team's ideal world, you would all be running the latest console bits everywhere everytime we make a change. But that's just not how it is today.
 
 Original Source: https://github.com/microsoft/terminal/issues/279#issuecomment-439179675
+
+## <a name="elevation"></a>Why can't we have mixed elevated and non-elevated tabs in the Terminal?
+
+_guest speaker @DHowett-MSFT_
+
+[1] It is trivial when you are _hosting traditional windows_ with traditional window handles. That works very well in the conemu case, or in the tabbed shell case, where you can take over a window in an elevated session and re-parent it under a window in a non-elevated session.
+
+When you do that, there's a few security features that I'll touch on in [2]. Because of those, you can parent it but you can't really force it to do anything.
+
+There's a problem, though. The Terminal isn't architected as a collection of re-parentable windows. For example, it's not running a console host and moving its window into a tab. It was designed to support a "connection" -- something that can read and write text. It's a lower-level primitive than a window. We realized the error of our ways and decided that the UNIX model was right the entire time, and pipes and text and streams are _where it's at._
+
+Given that we're using Xaml islands to host a modern UI and stitching a DirectX surface into it, we're far beyond the world of standard window handles anyway. Xaml islands are fully composed into a single HWND, much like Chrome and Firefox and the gamut of DirectX/OpenGL/SDL games. We don't **have** components that can be run in one process (elevated) and hosted in another (non-elevated) that aren't the aforementioned "connections".
+
+Now, the obvious followup question is _"why can't you have one elevated connection in a tab next to a non-elevated connection?"_ This is where @sba923 should pick up reading (:smile:). I'm probably going to cover some things that you (@robomac) know already.
+
+[2] When you have two windows on the same desktop in the same window station, they can communicate with eachother. I can use `SendKeys` easily through `WScript.Shell` to send keyboard input to any window that the shell can see.
+
+Running a process elevated _severs_ that connection. The shell can't see the elevated window. No other program at the same integrity level as the shell can see the elevated window. Even if it has its window handle, it can't really interact with it. This is also why you can't drag/drop from explorer into notepad if notepad is running elevated. Only another elevated process can interact with another elevated window.
+
+That "security" feature (call it what you like, it was probably intended to be a security feature at one point) only exists for a few session-global object types. Windows are one of them. Pipes aren't really one of them.
+
+Because of that, it's trivial to break that security. Take the terminal as an example of that. If we start an elevated connection and host it in a _non-elevated_ window, we've suddenly created a conduit through that security boundary. The elevated thing on the other end isn't a window, it's just a text-mode application. It immediately does the bidding of the non-elevated host.
+
+Anybody that can _control_ the non-elevated host (like `WScript.Shell::SendKeys`) _also_ gets an instant conduit through the elevation boundary. Suddenly, any medium integrity application on your system can control a high-integrity process. This could be your browser, or the bitcoin miner that got installed with the `left-pad` package from NPM, or really any number of things.
+
+It's a small risk, but it _is_ a risk.
+
+---
+
+Other platforms have accepted that risk in preference for user convenience. They aren't wrong to do so, but I think Microsoft gets less of a "pass" on things like "accepting risk for user convenience". Windows 9x was an unmitigated security disaster, and limited user accounts and elevation prompts and kernel-level security for window management were the answer to those things. They're not locks to be loosened lightly.
+
+Original Source: https://github.com/microsoft/terminal/issues/632#issuecomment-519375707
+

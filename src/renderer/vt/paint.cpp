@@ -20,7 +20,7 @@ using namespace Microsoft::Console::Types;
 //      HRESULT error code if painting didn't start successfully.
 [[nodiscard]] HRESULT VtEngine::StartPaint() noexcept
 {
-    if (_pipeBroken)
+    if (_shutdownEvent.is_signaled())
     {
         return S_FALSE;
     }
@@ -475,7 +475,6 @@ using namespace Microsoft::Console::Types;
 
     if (useEraseChar)
     {
-        RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         // ECH doesn't actually move the cursor itself. However, we think that
         //   the cursor *should* be at the end of the area we just erased. Stash
         //   that position as our new deferred position. If we don't move the
@@ -483,6 +482,15 @@ using namespace Microsoft::Console::Types;
         //   cursor to the deferred position at the end of the frame, or right
         //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
+
+        if (_deferredCursorPos.X < _lastViewport.RightInclusive())
+        {
+            RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
+        }
+        else
+        {
+            RETURN_IF_FAILED(_EraseLine());
+        }
     }
     else if (_newBottomLine)
     {

@@ -7,6 +7,7 @@
 #include "WindowUiaProvider.hpp"
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
+#include "../../cascadia/inc/cppwinrt_utils.h"
 
 class IslandWindow :
     public BaseWindow<IslandWindow>,
@@ -35,7 +36,7 @@ public:
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
 #pragma region IUiaWindow
-    void ChangeViewport(const SMALL_RECT NewWindow)
+    void ChangeViewport(const SMALL_RECT /*NewWindow*/)
     {
         // TODO GitHub #1352: Hook up ScreenInfoUiaProvider to WindowUiaProvider
         // Relevant comment from zadjii-msft:
@@ -56,7 +57,7 @@ public:
         return BaseWindow::GetHandle();
     };
 
-    [[nodiscard]] HRESULT SignalUia(_In_ EVENTID id) override { return E_NOTIMPL; };
+    [[nodiscard]] HRESULT SignalUia(_In_ EVENTID /*id*/) override { return E_NOTIMPL; };
     [[nodiscard]] HRESULT UiaSetTextAreaFocus() override { return E_NOTIMPL; };
 
     RECT GetWindowRect() const noexcept override
@@ -65,6 +66,8 @@ public:
     };
 
 #pragma endregion
+
+    DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 
 protected:
     void ForceResize()

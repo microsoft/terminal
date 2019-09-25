@@ -28,3 +28,28 @@ inline std::string JsonKey(const std::string_view key)
 {
     return static_cast<std::string>(key);
 }
+
+winrt::Windows::UI::Xaml::Controls::IconElement GetColoredIcon(const winrt::hstring& path);
+
+// This is a pair of helpers for determining if a pair of guids are equal, and
+// establishing an ordering on GUIDs (via std::less).
+namespace std
+{
+    template<>
+    struct less<GUID>
+    {
+        bool operator()(const GUID& lhs, const GUID& rhs) const
+        {
+            return memcmp(&lhs, &rhs, sizeof(rhs)) < 0;
+        }
+    };
+
+    template<>
+    struct equal_to<GUID>
+    {
+        bool operator()(const GUID& lhs, const GUID& rhs) const
+        {
+            return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
+        }
+    };
+}

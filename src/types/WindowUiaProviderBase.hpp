@@ -25,7 +25,6 @@ Author(s):
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
-    class ScreenInfoUiaProvider;
 
     class WindowUiaProviderBase :
         public IRawElementProviderSimple,
@@ -33,33 +32,43 @@ namespace Microsoft::Console::Types
         public IRawElementProviderFragmentRoot
     {
     public:
+        virtual ~WindowUiaProviderBase() = default;
+
+    protected:
+        WindowUiaProviderBase() = default;
+        WindowUiaProviderBase(const WindowUiaProviderBase&) = default;
+        WindowUiaProviderBase(WindowUiaProviderBase&&) = default;
+        WindowUiaProviderBase& operator=(const WindowUiaProviderBase&) = default;
+        WindowUiaProviderBase& operator=(WindowUiaProviderBase&&) = default;
+
+    public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
 
         // IUnknown methods
         IFACEMETHODIMP_(ULONG)
-        AddRef();
+        AddRef() override;
         IFACEMETHODIMP_(ULONG)
-        Release();
+        Release() override;
         IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface);
+                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
-        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions);
+        IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;
         IFACEMETHODIMP GetPatternProvider(_In_ PATTERNID iid,
-                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface);
+                                          _COM_Outptr_result_maybenull_ IUnknown** ppInterface) override;
         IFACEMETHODIMP GetPropertyValue(_In_ PROPERTYID idProp,
-                                        _Out_ VARIANT* pVariant);
-        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider);
+                                        _Out_ VARIANT* pVariant) override;
+        IFACEMETHODIMP get_HostRawElementProvider(_COM_Outptr_result_maybenull_ IRawElementProviderSimple** ppProvider) override;
 
         // IRawElementProviderFragment methods
         virtual IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                         _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) = 0;
-        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId);
-        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect);
-        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots);
+        IFACEMETHODIMP GetRuntimeId(_Outptr_result_maybenull_ SAFEARRAY** ppRuntimeId) override;
+        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
+        IFACEMETHODIMP GetEmbeddedFragmentRoots(_Outptr_result_maybenull_ SAFEARRAY** ppRoots) override;
         virtual IFACEMETHODIMP SetFocus() = 0;
-        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider);
+        IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) override;
 
         // IRawElementProviderFragmentRoot methods
         virtual IFACEMETHODIMP ElementProviderFromPoint(_In_ double x,

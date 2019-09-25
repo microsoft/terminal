@@ -161,10 +161,35 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     {
         if (_interopWindowHandle != nullptr)
         {
+            // TODO GitHub #2447: Properly attach WindowUiaProvider for signaling model
+            /*
+                // set the text area to have focus for accessibility consumers
+                if (_pUiaProvider)
+                {
+                    LOG_IF_FAILED(_pUiaProvider->SetTextAreaFocus());
+                }
+                break;
+            */
+
             // send focus to the child window
             SetFocus(_interopWindowHandle);
             return 0; // eat the message
         }
+    }
+
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
+    {
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
+        break;
     }
     case WM_MENUCHAR:
     {
@@ -258,3 +283,5 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
     // drawing ourselves to match the new theme
     ::InvalidateRect(_window.get(), nullptr, false);
 }
+
+DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

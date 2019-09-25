@@ -65,11 +65,22 @@
     <ClInclude Include="../GlobalAppSettings.h" />
     <ClInclude Include="../Profile.h" />
     <ClInclude Include="../CascadiaSettings.h" />
-    <ClInclude Include="../AppKeyBindingsSerialization.h" />
     <ClInclude Include="../KeyChordSerialization.h" />
+    <ClInclude Include="../JsonUtils.h" />
     <ClInclude Include="../Utils.h" />
+    <ClInclude Include="../DefaultProfileUtils.h" />
+    <ClInclude Include="../TerminalWarnings.h" />
+    <ClInclude Include="../IDynamicProfileGenerator.h" />
+    <ClInclude Include="../PowershellCoreProfileGenerator.h" />
+    <ClInclude Include="../WslDistroGenerator.h" />
+    <ClInclude Include="../AzureCloudShellGenerator.h" />
     <ClInclude Include="pch.h" />
-    <ClInclude Include="../AppKeyBindings.h" />
+    <ClInclude Include="../ActionArgs.h"  >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="../AppKeyBindings.h" >
+      <DependentUpon>../AppKeyBindings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="../App.h" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClInclude>
@@ -100,15 +111,26 @@
     <ClCompile Include="../CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="../AppKeyBindingsSerialization.cpp" />
     <ClCompile Include="../KeyChordSerialization.cpp" />
+    <ClCompile Include="../JsonUtils.cpp" />
     <ClCompile Include="../Utils.cpp" />
+    <ClCompile Include="../DefaultProfileUtils.cpp" />
     <ClCompile Include="../ScopedResourceLoader.cpp" />
+    <ClCompile Include="../PowershellCoreProfileGenerator.cpp" />
+    <ClCompile Include="../WslDistroGenerator.cpp" />
+    <ClCompile Include="../AzureCloudShellGenerator.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="../AppKeyBindings.cpp" >
       <DependentUpon>../AppKeyBindings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="../ActionArgs.cpp" >
+      <DependentUpon>../ActionArgs.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="../App.cpp" >
+      <DependentUpon>../App.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="../AppActionHandlers.cpp" >
       <DependentUpon>../App.xaml</DependentUpon>
     </ClCompile>
 
@@ -128,6 +150,7 @@
       <DependentUpon>../App.xaml</DependentUpon>
     </Midl>
     <Midl Include="../AppKeyBindings.idl" />
+    <Midl Include="../ActionArgs.idl" />
     <Midl Include="../MinMaxCloseControl.idl">
       <DependentUpon>../MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -306,4 +329,22 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
+
+  <!-- This target will take our defaults.json and stamp it into a .h file that
+  we can include in the code directly. This way, we don't need to worry about
+  failing to load the default settings at runtime. -->
+  <Target Name="_TerminalAppGenerateDefaultsH"
+          Inputs="..\defaults.json"
+          Outputs="Generated Files\defaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\defaults.json -OutPath '&quot;Generated Files\defaults.h&quot;' -VariableName DefaultJson" />
+  </Target>
+  <!-- Same as above, but for the default profiles.json template -->
+  <Target Name="_TerminalAppGenerateUserSettingsH"
+          Inputs="..\userDefaults.json"
+          Outputs="Generated Files\userDefaults.h"
+          BeforeTargets="BeforeClCompile">
+    <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile ..\userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
+  </Target>
+
 </Project>

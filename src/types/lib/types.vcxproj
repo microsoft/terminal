@@ -11,8 +11,8 @@
     <ClCompile Include="..\KeyEvent.cpp" />
     <ClCompile Include="..\MenuEvent.cpp" />
     <ClCompile Include="..\ModifierKeyState.cpp" />
-    <ClCompile Include="..\ScreenInfoUiaProvider.cpp" />
-    <ClCompile Include="..\UiaTextRange.cpp" />
+    <ClCompile Include="..\ScreenInfoUiaProviderBase.cpp" />
+    <ClCompile Include="..\UiaTextRangeBase.cpp" />
     <ClCompile Include="..\Utf16Parser.cpp" />
     <ClCompile Include="..\UTF8OutPipeReader.cpp" />
     <ClCompile Include="..\Viewport.cpp" />
@@ -24,6 +24,7 @@
     <ClCompile Include="..\WindowUiaProviderBase.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\IBaseData.h" />
     <ClInclude Include="..\IConsoleWindow.hpp" />
     <ClInclude Include="..\inc\CodepointWidthDetector.hpp" />
     <ClInclude Include="..\inc\convert.hpp" />
@@ -32,10 +33,11 @@
     <ClInclude Include="..\inc\UTF8OutPipeReader.hpp" />
     <ClInclude Include="..\inc\Viewport.hpp" />
     <ClInclude Include="..\inc\Utf16Parser.hpp" />
+    <ClInclude Include="..\IUiaData.h" />
     <ClInclude Include="..\IUiaWindow.h" />
     <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\ScreenInfoUiaProvider.h" />
-    <ClInclude Include="..\UiaTextRange.hpp" />
+    <ClInclude Include="..\ScreenInfoUiaProviderBase.h" />
+    <ClInclude Include="..\UiaTextRangeBase.hpp" />
     <ClInclude Include="..\utils.hpp" />
     <ClInclude Include="..\WindowUiaProviderBase.hpp" />
   </ItemGroup>

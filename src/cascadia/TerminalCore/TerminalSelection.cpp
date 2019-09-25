@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
 
@@ -10,65 +11,128 @@ using namespace Microsoft::Terminal::Core;
 // - Helper to determine the selected region of the buffer. Used for rendering.
 // Return Value:
 // - A vector of rectangles representing the regions to select, line by line. They are absolute coordinates relative to the buffer origin.
-std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
+std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 {
-    std::vector<SMALL_RECT> selectionArea;
+    std::vector<SMALL_RECT> result;
 
-    if (!_selectionActive)
+    if (!IsSelectionActive())
     {
-        return selectionArea;
+        return result;
     }
 
+    try
+    {
+        // NOTE: (0,0) is the top-left of the screen
+        // the physically "higher" coordinate is closer to the top-left
+        // the physically "lower" coordinate is closer to the bottom-right
+        const auto [higherCoord, lowerCoord] = _PreprocessSelectionCoords();
+
+        SHORT selectionRectSize;
+        THROW_IF_FAILED(ShortSub(lowerCoord.Y, higherCoord.Y, &selectionRectSize));
+        THROW_IF_FAILED(ShortAdd(selectionRectSize, 1, &selectionRectSize));
+
+        std::vector<SMALL_RECT> selectionArea;
+        selectionArea.reserve(selectionRectSize);
+        for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+        {
+            SMALL_RECT selectionRow = _GetSelectionRow(row, higherCoord, lowerCoord);
+            _ExpandSelectionRow(selectionRow);
+            selectionArea.emplace_back(selectionRow);
+        }
+        result.swap(selectionArea);
+    }
+    CATCH_LOG();
+    return result;
+}
+
+// Method Description:
+// - convert selection anchors to proper coordinates for rendering
+// NOTE: (0,0) is top-left so vertical comparison is inverted
+// Arguments:
+// - None
+// Return Value:
+// - tuple.first: the physically "higher" coordinate (closer to the top-left)
+// - tuple.second: the physically "lower" coordinate (closer to the bottom-right)
+std::tuple<COORD, COORD> Terminal::_PreprocessSelectionCoords() const
+{
     // create these new anchors for comparison and rendering
     COORD selectionAnchorWithOffset{ _selectionAnchor };
     COORD endSelectionPositionWithOffset{ _endSelectionPosition };
 
     // Add anchor offset here to update properly on new buffer output
-    THROW_IF_FAILED(ShortAdd(selectionAnchorWithOffset.Y, _selectionAnchor_YOffset, &selectionAnchorWithOffset.Y));
-    THROW_IF_FAILED(ShortAdd(endSelectionPositionWithOffset.Y, _endSelectionPosition_YOffset, &endSelectionPositionWithOffset.Y));
+    THROW_IF_FAILED(ShortAdd(selectionAnchorWithOffset.Y, _selectionVerticalOffset, &selectionAnchorWithOffset.Y));
+    THROW_IF_FAILED(ShortAdd(endSelectionPositionWithOffset.Y, _selectionVerticalOffset, &endSelectionPositionWithOffset.Y));
 
-    // clamp Y values to be within mutable viewport bounds
-    selectionAnchorWithOffset.Y = std::clamp(selectionAnchorWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
-    endSelectionPositionWithOffset.Y = std::clamp(endSelectionPositionWithOffset.Y, static_cast<SHORT>(0), _mutableViewport.BottomInclusive());
-
-    // clamp X values to be within buffer bounds
+    // clamp anchors to be within buffer bounds
     const auto bufferSize = _buffer->GetSize();
-    selectionAnchorWithOffset.X = std::clamp(_selectionAnchor.X, bufferSize.Left(), bufferSize.RightInclusive());
-    endSelectionPositionWithOffset.X = std::clamp(_endSelectionPosition.X, bufferSize.Left(), bufferSize.RightInclusive());
+    bufferSize.Clamp(selectionAnchorWithOffset);
+    bufferSize.Clamp(endSelectionPositionWithOffset);
 
     // NOTE: (0,0) is top-left so vertical comparison is inverted
-    const COORD& higherCoord = (selectionAnchorWithOffset.Y <= endSelectionPositionWithOffset.Y) ?
-                                   selectionAnchorWithOffset :
-                                   endSelectionPositionWithOffset;
-    const COORD& lowerCoord = (selectionAnchorWithOffset.Y > endSelectionPositionWithOffset.Y) ?
-                                  selectionAnchorWithOffset :
-                                  endSelectionPositionWithOffset;
+    // CompareInBounds returns whether A is to the left of (rv<0), equal to (rv==0), or to the right of (rv>0) B.
+    // Here, we want the "left"most coordinate to be the one "higher" on the screen. The other gets the dubious honor of
+    // being the "lower."
+    return bufferSize.CompareInBounds(selectionAnchorWithOffset, endSelectionPositionWithOffset) <= 0 ?
+               std::make_tuple(selectionAnchorWithOffset, endSelectionPositionWithOffset) :
+               std::make_tuple(endSelectionPositionWithOffset, selectionAnchorWithOffset);
+}
 
-    selectionArea.reserve(lowerCoord.Y - higherCoord.Y + 1);
-    for (auto row = higherCoord.Y; row <= lowerCoord.Y; row++)
+// Method Description:
+// - constructs the selection row at the given row
+// NOTE: (0,0) is top-left so vertical comparison is inverted
+// Arguments:
+// - row: the buffer y-value under observation
+// - higherCoord: the physically "higher" coordinate (closer to the top-left)
+// - lowerCoord: the physically "lower" coordinate (closer to the bottom-right)
+// Return Value:
+// - the selection row needed for rendering
+SMALL_RECT Terminal::_GetSelectionRow(const SHORT row, const COORD higherCoord, const COORD lowerCoord) const
+{
+    SMALL_RECT selectionRow;
+
+    selectionRow.Top = row;
+    selectionRow.Bottom = row;
+
+    if (_boxSelection || higherCoord.Y == lowerCoord.Y)
     {
-        SMALL_RECT selectionRow;
-
-        selectionRow.Top = row;
-        selectionRow.Bottom = row;
-
-        if (_boxSelection || higherCoord.Y == lowerCoord.Y)
-        {
-            selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
-            selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
-        }
-        else
-        {
-            selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : 0;
-            selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : bufferSize.RightInclusive();
-        }
-
-        selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
-        selectionRow.Right = _ExpandWideGlyphSelectionRight(selectionRow.Right, row);
-
-        selectionArea.emplace_back(selectionRow);
+        selectionRow.Left = std::min(higherCoord.X, lowerCoord.X);
+        selectionRow.Right = std::max(higherCoord.X, lowerCoord.X);
     }
-    return selectionArea;
+    else
+    {
+        selectionRow.Left = (row == higherCoord.Y) ? higherCoord.X : _buffer->GetSize().Left();
+        selectionRow.Right = (row == lowerCoord.Y) ? lowerCoord.X : _buffer->GetSize().RightInclusive();
+    }
+
+    return selectionRow;
+}
+
+// Method Description:
+// - Expand the selection row according to selection mode and wide glyphs
+// - this is particularly useful for box selections (ALT + selection)
+// Arguments:
+// - selectionRow: the selection row to be expanded
+// Return Value:
+// - modifies selectionRow's Left and Right values to expand properly
+void Terminal::_ExpandSelectionRow(SMALL_RECT& selectionRow) const
+{
+    const auto row = selectionRow.Top;
+
+    // expand selection for Double/Triple Click
+    if (_multiClickSelectionMode == SelectionExpansionMode::Word)
+    {
+        selectionRow.Left = _ExpandDoubleClickSelectionLeft({ selectionRow.Left, row }).X;
+        selectionRow.Right = _ExpandDoubleClickSelectionRight({ selectionRow.Right, row }).X;
+    }
+    else if (_multiClickSelectionMode == SelectionExpansionMode::Line)
+    {
+        selectionRow.Left = _buffer->GetSize().Left();
+        selectionRow.Right = _buffer->GetSize().RightInclusive();
+    }
+
+    // expand selection for Wide Glyphs
+    selectionRow.Left = _ExpandWideGlyphSelectionLeft(selectionRow.Left, row);
+    selectionRow.Right = _ExpandWideGlyphSelectionRight(selectionRow.Right, row);
 }
 
 // Method Description:
@@ -77,10 +141,11 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
+SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
-    if (xPos <= 0 || xPos > _buffer->GetSize().RightInclusive())
+    const auto bufferSize = _buffer->GetSize();
+    if (xPos <= bufferSize.Left() || xPos > bufferSize.RightInclusive())
     {
         return xPos;
     }
@@ -91,7 +156,7 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
     {
         // move off by highlighting the lead half too.
         // alters position.X
-        _buffer->GetSize().DecrementInBounds(position);
+        bufferSize.DecrementInBounds(position);
     }
     return position.X;
 }
@@ -102,10 +167,11 @@ const SHORT Terminal::_ExpandWideGlyphSelectionLeft(const SHORT xPos, const SHOR
 // - position: the (x,y) coordinate on the visible viewport
 // Return Value:
 // - updated x position to encapsulate the wide glyph
-const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
+SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHORT yPos) const
 {
     // don't change the value if at/outside the boundary
-    if (xPos < 0 || xPos >= _buffer->GetSize().RightInclusive())
+    const auto bufferSize = _buffer->GetSize();
+    if (xPos < bufferSize.Left() || xPos >= bufferSize.RightInclusive())
     {
         return xPos;
     }
@@ -116,9 +182,18 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
     {
         // move off by highlighting the trailing half too.
         // alters position.X
-        _buffer->GetSize().IncrementInBounds(position);
+        bufferSize.IncrementInBounds(position);
     }
     return position.X;
+}
+
+// Method Description:
+// - Checks if selection is on a single cell
+// Return Value:
+// - bool representing if selection is only a single cell. Used for copyOnSelect
+const bool Terminal::_IsSingleCellSelection() const noexcept
+{
+    return (_selectionAnchor == _endSelectionPosition);
 }
 
 // Method Description:
@@ -127,7 +202,22 @@ const SHORT Terminal::_ExpandWideGlyphSelectionRight(const SHORT xPos, const SHO
 // - bool representing if selection is active. Used to decide copy/paste on right click
 const bool Terminal::IsSelectionActive() const noexcept
 {
+    // A single cell selection is not considered an active selection,
+    // if it's not allowed
+    if (!_allowSingleCharSelection && _IsSingleCellSelection())
+    {
+        return false;
+    }
     return _selectionActive;
+}
+
+// Method Description:
+// - Checks if the CopyOnSelect setting is active
+// Return Value:
+// - true if feature is active, false otherwise.
+const bool Terminal::IsCopyOnSelectActive() const noexcept
+{
+    return _copyOnSelect;
 }
 
 // Method Description:
@@ -136,22 +226,21 @@ const bool Terminal::IsSelectionActive() const noexcept
 // - position: the (x,y) coordinate on the visible viewport
 void Terminal::DoubleClickSelection(const COORD position)
 {
-    // if you double click a delimiter, just select that one cell
     COORD positionWithOffsets = _ConvertToBufferCell(position);
-    const auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    if (_isWordDelimiter(cellChar))
-    {
-        SetSelectionAnchor(position);
-        return;
-    }
 
     // scan leftwards until delimiter is found and
     // set selection anchor to one right of that spot
-    _ExpandDoubleClickSelectionLeft(position);
+    _selectionAnchor = _ExpandDoubleClickSelectionLeft(positionWithOffsets);
+    THROW_IF_FAILED(ShortSub(_selectionAnchor.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_selectionAnchor.Y));
+    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     // scan rightwards until delimiter is found and
     // set endSelectionPosition to one left of that spot
-    _ExpandDoubleClickSelectionRight(position);
+    _endSelectionPosition = _ExpandDoubleClickSelectionRight(positionWithOffsets);
+    THROW_IF_FAILED(ShortSub(_endSelectionPosition.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &_endSelectionPosition.Y));
+
+    _selectionActive = true;
+    _multiClickSelectionMode = SelectionExpansionMode::Word;
 }
 
 // Method Description:
@@ -162,6 +251,8 @@ void Terminal::TripleClickSelection(const COORD position)
 {
     SetSelectionAnchor({ 0, position.Y });
     SetEndSelectionPosition({ _buffer->GetSize().RightInclusive(), position.Y });
+
+    _multiClickSelectionMode = SelectionExpansionMode::Line;
 }
 
 // Method Description:
@@ -177,10 +268,14 @@ void Terminal::SetSelectionAnchor(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
 
     _selectionActive = true;
+    _allowSingleCharSelection = (_copyOnSelect) ? false : true;
+
     SetEndSelectionPosition(position);
+
+    _multiClickSelectionMode = SelectionExpansionMode::Cell;
 }
 
 // Method Description:
@@ -196,7 +291,12 @@ void Terminal::SetEndSelectionPosition(const COORD position)
 
     // copy value of ViewStartIndex to support scrolling
     // and update on new buffer output (used in _GetSelectionRects())
-    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    _selectionVerticalOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+
+    if (_copyOnSelect && !_IsSingleCellSelection())
+    {
+        _allowSingleCharSelection = true;
+    }
 }
 
 // Method Description:
@@ -213,10 +313,10 @@ void Terminal::SetBoxSelection(const bool isEnabled) noexcept
 void Terminal::ClearSelection()
 {
     _selectionActive = false;
+    _allowSingleCharSelection = false;
     _selectionAnchor = { 0, 0 };
     _endSelectionPosition = { 0, 0 };
-    _selectionAnchor_YOffset = 0;
-    _endSelectionPosition_YOffset = 0;
+    _selectionVerticalOffset = 0;
 
     _buffer->GetRenderTarget().TriggerSelection();
 }
@@ -228,104 +328,115 @@ void Terminal::ClearSelection()
 //    and get text to appear on separate lines.
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const std::wstring Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace) const
 {
     std::function<COLORREF(TextAttribute&)> GetForegroundColor = std::bind(&Terminal::GetForegroundColor, this, std::placeholders::_1);
     std::function<COLORREF(TextAttribute&)> GetBackgroundColor = std::bind(&Terminal::GetBackgroundColor, this, std::placeholders::_1);
 
-    auto data = _buffer->GetTextForClipboard(!_boxSelection,
-                                             trimTrailingWhitespace,
-                                             _GetSelectionRects(),
-                                             GetForegroundColor,
-                                             GetBackgroundColor);
-
-    std::wstring result;
-    for (const auto& text : data.text)
-    {
-        result += text;
-    }
-
-    return result;
+    return _buffer->GetTextForClipboard(!_boxSelection,
+                                        trimTrailingWhitespace,
+                                        _GetSelectionRects(),
+                                        GetForegroundColor,
+                                        GetBackgroundColor);
 }
 
 // Method Description:
-// - expand the double click selection to the left (stopped by delimiter)
+// - expand the double click selection to the left
+// - stopped by delimiter if started on delimiter
 // Arguments:
-// - position: viewport coordinate for selection
+// - position: buffer coordinate for selection
 // Return Value:
-// - update _selectionAnchor to new expanded location
-void Terminal::_ExpandDoubleClickSelectionLeft(const COORD position)
+// - updated copy of "position" to new expanded location (with vertical offset)
+COORD Terminal::_ExpandDoubleClickSelectionLeft(const COORD position) const
 {
-    // don't change the value if at/outside the boundary
-    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
+    const auto bufferViewport = _buffer->GetSize();
+
+    // force position to be within bounds
+    COORD positionWithOffsets = position;
+    bufferViewport.Clamp(positionWithOffsets);
+
+    // can't expand left
+    if (position.X == bufferViewport.Left())
     {
-        return;
+        return positionWithOffsets;
     }
 
-    COORD positionWithOffsets = _ConvertToBufferCell(position);
-    const auto bufferViewport = _buffer->GetSize();
-    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != 0 && !_isWordDelimiter(cellChar))
+    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
+    while (positionWithOffsets.X > bufferViewport.Left() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.DecrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+        bufferIterator--;
     }
 
-    if (positionWithOffsets.X != 0 || _isWordDelimiter(cellChar))
+    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.IncrementInBounds(positionWithOffsets);
     }
 
-    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
-    _selectionAnchor = positionWithOffsets;
-    _selectionAnchor_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
-    _selectionActive = true;
+    return positionWithOffsets;
 }
 
 // Method Description:
-// - expand the double click selection to the right (stopped by delimiter)
+// - expand the double click selection to the right
+// - stopped by delimiter if started on delimiter
 // Arguments:
-// - position: viewport coordinate for selection
+// - position: buffer coordinate for selection
 // Return Value:
-// - update _endSelectionPosition to new expanded location
-void Terminal::_ExpandDoubleClickSelectionRight(const COORD position)
+// - updated copy of "position" to new expanded location (with vertical offset)
+COORD Terminal::_ExpandDoubleClickSelectionRight(const COORD position) const
 {
-    // don't change the value if at/outside the boundary
-    if (position.X <= 0 || position.X >= _buffer->GetSize().RightInclusive())
+    const auto bufferViewport = _buffer->GetSize();
+
+    // force position to be within bounds
+    COORD positionWithOffsets = position;
+    bufferViewport.Clamp(positionWithOffsets);
+
+    // can't expand right
+    if (position.X == bufferViewport.RightInclusive())
     {
-        return;
+        return positionWithOffsets;
     }
 
-    COORD positionWithOffsets = _ConvertToBufferCell(position);
-    const auto bufferViewport = _buffer->GetSize();
-    auto cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
-    while (positionWithOffsets.X != _buffer->GetSize().RightInclusive() && !_isWordDelimiter(cellChar))
+    auto bufferIterator = _buffer->GetTextDataAt(positionWithOffsets);
+    const auto startedOnDelimiter = _GetDelimiterClass(*bufferIterator);
+    while (positionWithOffsets.X < bufferViewport.RightInclusive() && (_GetDelimiterClass(*bufferIterator) == startedOnDelimiter))
     {
         bufferViewport.IncrementInBounds(positionWithOffsets);
-        cellChar = _buffer->GetCellDataAt(positionWithOffsets)->Chars();
+        bufferIterator++;
     }
 
-    if (positionWithOffsets.X != bufferViewport.RightInclusive() || _isWordDelimiter(cellChar))
+    if (_GetDelimiterClass(*bufferIterator) != startedOnDelimiter)
     {
         // move off of delimiter to highlight properly
         bufferViewport.DecrementInBounds(positionWithOffsets);
     }
 
-    THROW_IF_FAILED(ShortSub(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
-    _endSelectionPosition = positionWithOffsets;
-    _endSelectionPosition_YOffset = gsl::narrow<SHORT>(_ViewStartIndex());
+    return positionWithOffsets;
 }
 
 // Method Description:
-// - check if buffer cell data contains delimiter for double click selection
+// - get delimiter class for buffer cell data
+// - used for double click selection
 // Arguments:
 // - cellChar: the char saved to the buffer cell under observation
 // Return Value:
-// - true if cell data contains the delimiter.
-const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
+// - the delimiter class for the given char
+Terminal::DelimiterClass Terminal::_GetDelimiterClass(const std::wstring_view cellChar) const noexcept
 {
-    return _wordDelimiters.find(cellChar) != std::wstring_view::npos;
+    if (cellChar[0] <= UNICODE_SPACE)
+    {
+        return DelimiterClass::ControlChar;
+    }
+    else if (_wordDelimiters.find(cellChar) != std::wstring_view::npos)
+    {
+        return DelimiterClass::DelimiterChar;
+    }
+    else
+    {
+        return DelimiterClass::RegularChar;
+    }
 }
 
 // Method Description:
@@ -334,9 +445,12 @@ const bool Terminal::_isWordDelimiter(std::wstring_view cellChar) const
 // - viewportPos: a coordinate on the viewport
 // Return Value:
 // - the corresponding location on the buffer
-const COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
+COORD Terminal::_ConvertToBufferCell(const COORD viewportPos) const
 {
+    // Force position to be valid
     COORD positionWithOffsets = viewportPos;
+    _buffer->GetSize().Clamp(positionWithOffsets);
+
     THROW_IF_FAILED(ShortSub(viewportPos.Y, gsl::narrow<SHORT>(_scrollOffset), &positionWithOffsets.Y));
     THROW_IF_FAILED(ShortAdd(positionWithOffsets.Y, gsl::narrow<SHORT>(_ViewStartIndex()), &positionWithOffsets.Y));
     return positionWithOffsets;

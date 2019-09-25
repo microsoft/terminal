@@ -118,16 +118,42 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="InitialJsonParseErrorText" xml:space="preserve">
-    <value>Settings could not be loaded from file - temporarily using the default settings. Check for syntax errors, including trailing commas.</value>
+    <value>Settings could not be loaded from file. Check for syntax errors, including trailing commas.
+</value>
+  </data>
+  <data name="MissingDefaultProfileText" xml:space="preserve">
+    <value>Could not find your default profile in your list of profiles - using the first profile. Check to make sure the defaultProfile matches the GUID of one of your profiles.
+</value>
+  </data>
+  <data name="DuplicateProfileText" xml:space="preserve">
+    <value>Found multiple profiles with the same GUID in your settings file - ignoring duplicates. Make sure each profile's GUID is unique.
+</value>
+  </data>
+  <data name="NoProfilesText" xml:space="preserve">
+    <value>No profiles were found in your settings.
+</value>
+  </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>All profiles were hidden in your settings. You must have at least one non-hidden profile.
+</value>
+  </data>
+  <data name="ReloadJsonParseErrorText" xml:space="preserve">
+    <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.
+</value>
+  </data>
+  <data name="UsingDefaultSettingsText" xml:space="preserve">
+    <value>
+Temporarily using the Windows Terminal default settings.
+</value>
   </data>
   <data name="InitialJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to load settings</value>
   </data>
+  <data name="SettingsValidateErrorTitle" xml:space="preserve">
+    <value>Encountered errors while loading user settings</value>
+  </data>
   <data name="Ok" xml:space="preserve">
     <value>Ok</value>
-  </data>
-  <data name="ReloadJsonParseErrorText" xml:space="preserve">
-    <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.</value>
   </data>
   <data name="ReloadJsonParseErrorTitle" xml:space="preserve">
     <value>Failed to reload settings</value>
@@ -170,5 +196,14 @@
   </data>
   <data name="SettingsMenuItem" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CloseAll" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="CloseWindowWarningTitle" xml:space="preserve">
+    <value>Do you want to close all tabs?</value>
   </data>
 </root>

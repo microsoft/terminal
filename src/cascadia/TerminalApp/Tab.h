@@ -19,10 +19,13 @@ public:
     void SetFocused(const bool focused);
 
     void Scroll(const int delta);
-    void AddVerticalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    void AddHorizontalSplit(const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+
+    bool CanSplitPane(Pane::SplitState splitType);
+    void SplitPane(Pane::SplitState splitType, const GUID& profile, winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
 
     void UpdateFocus();
+    void UpdateIcon(const winrt::hstring iconPath);
+
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void ResizePane(const winrt::TerminalApp::Direction& direction);
     void NavigateFocus(const winrt::TerminalApp::Direction& direction);
@@ -37,6 +40,7 @@ public:
 
 private:
     std::shared_ptr<Pane> _rootPane{ nullptr };
+    winrt::hstring _lastIconPath{};
 
     bool _focused{ false };
     winrt::Microsoft::UI::Xaml::Controls::TabViewItem _tabViewItem{ nullptr };

@@ -45,6 +45,8 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _boxSelection{ false },
     _selectionActive{ false },
+    _allowSingleCharSelection{ true },
+    _copyOnSelect{ false },
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
 {
@@ -135,6 +137,8 @@ void Terminal::UpdateSettings(winrt::Microsoft::Terminal::Settings::ICoreSetting
 
     _wordDelimiters = settings.WordDelimiters();
 
+    _copyOnSelect = settings.CopyOnSelect();
+
     // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
     // have a smaller scrollback. We should do this carefully - if the new buffer
     // size is smaller than where the mutable viewport currently is, we'll want
@@ -192,7 +196,7 @@ void Terminal::Write(std::wstring_view stringView)
 // - Send this particular key event to the terminal. The terminal will translate
 //   the key and the modifiers pressed into the appropriate VT sequence for that
 //   key chord. If we do translate the key, we'll return true. In that case, the
-//   event should NOT br processed any further. If we return false, the event
+//   event should NOT be processed any further. If we return false, the event
 //   was NOT translated, and we should instead use the event to try and get the
 //   real character out of the event.
 // Arguments:
