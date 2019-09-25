@@ -16,7 +16,7 @@ Other related repositories include:
 
 > 👉 Note: To run the Windows Terminal you'll need to be running Windows 10 1903 (build 18362) or later
 
-### Install Windows Terminal via the Microsoft Store
+### From the Microsoft Store
 
 Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
 
