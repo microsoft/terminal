@@ -14,7 +14,7 @@ Other related repositories include:
 
 ## Installing & running Windows Terminal
 
-> 👉 Note: To run the Windows Terminal you'll need to be running at  Windows 10 build 1903 (build 18362) or later
+> 👉 Note: To run the Windows Terminal you'll need to be running Windows 10 1903 (build 18362) or later
 
 ### Install Windows Terminal via the Microsoft Store
 
