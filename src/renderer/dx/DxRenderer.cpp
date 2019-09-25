@@ -1225,7 +1225,7 @@ enum class CursorPaintType
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                                      COLORREF const colorBackground,
                                                      const WORD /*legacyColorAttribute*/,
-                                                     const bool /*isBold*/,
+                                                     const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = _ColorFFromColorRef(colorForeground);

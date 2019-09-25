@@ -33,7 +33,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT Xterm256Engine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
-                                                           const bool isBold,
+                                                           const ExtendedAttributes extendedAttrs,
                                                            const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -46,7 +46,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,
                                               colorBackground,
-                                              isBold,
+                                              WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
                                               _ColorTable,
                                               _cColorTable);
 }

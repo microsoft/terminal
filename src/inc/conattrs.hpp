@@ -8,6 +8,19 @@ Licensed under the MIT license.
 #define BG_ATTRS (BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY)
 #define META_ATTRS (COMMON_LVB_LEADING_BYTE | COMMON_LVB_TRAILING_BYTE | COMMON_LVB_GRID_HORIZONTAL | COMMON_LVB_GRID_LVERTICAL | COMMON_LVB_GRID_RVERTICAL | COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE)
 
+enum class ExtendedAttributes : BYTE
+{
+    Normal = 0x00,
+    Bold = 0x01,
+    Italics = 0x02,
+    Blinking = 0x04,
+    Invisible = 0x08,
+    CrossedOut = 0x10,
+    DoublyUnderlined = 0x20,
+    Faint = 0x40,
+};
+DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
+
 WORD FindNearestTableIndex(const COLORREF Color,
                            _In_reads_(cColorTable) const COLORREF* const ColorTable,
                            const WORD cColorTable);

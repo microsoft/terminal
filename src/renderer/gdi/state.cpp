@@ -184,7 +184,7 @@ GdiEngine::~GdiEngine()
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                       const COLORREF colorBackground,
                                                       const WORD /*legacyColorAttribute*/,
-                                                      const bool /*isBold*/,
+                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());

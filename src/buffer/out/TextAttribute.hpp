@@ -29,19 +29,6 @@ Revision History:
 
 #pragma pack(push, 1)
 
-enum class ExtendedAttributes : BYTE
-{
-    Normal = 0x00,
-    Bold = 0x01,
-    Italics = 0x02,
-    Blinking = 0x04,
-    Invisible = 0x08,
-    CrossedOut = 0x10,
-    DoublyUnderlined = 0x20,
-    Faint = 0x40,
-};
-DEFINE_ENUM_FLAG_OPERATORS(ExtendedAttributes);
-
 class TextAttribute final
 {
 public:
@@ -149,12 +136,15 @@ public:
     friend constexpr bool operator!=(const WORD& legacyAttr, const TextAttribute& attr) noexcept;
 
     bool IsLegacy() const noexcept;
-    // bool IsBold() const noexcept;
+
     constexpr bool IsBold() const noexcept
     {
-        // return _isBold;
         return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
-        // return (_extendedAttrs & ExtendedAttributes::Bold) == ExtendedAttributes::Bold;
+    }
+
+    constexpr ExtendedAttributes GetExtendedAttributes() const noexcept
+    {
+        return _extendedAttrs;
     }
 
     void SetForeground(const COLORREF rgbForeground) noexcept;
