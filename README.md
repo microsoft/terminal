@@ -76,7 +76,7 @@ The Windows Console host, `conhost.exe`, is Windows' original command-line user 
 
 Since assuming ownership of the Windows command-line in 2014, the team has added several new features to the Console, including window transparency, line-based selection, support for [ANSI / Virtual Terminal sequences](https://en.wikipedia.org/wiki/ANSI_escape_code), [24-bit color](https://devblogs.microsoft.com/commandline/24-bit-color-in-the-windows-console/), a [Pseudoconsole ("ConPTY")](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/), and more.
 
-However, because the Console's primary goal is to maintain backward compatibility, we've been unable to add many of the features the community has been asking for (and which we've been wanting to add) for the last several years - like tabs, unicode text, emoji, etc!
+However, because Windows Console's primary goal is to maintain backward compatibility, we've been unable to add many of the features the community has been asking for (and which we've been wanting to add) for the last several years including tabs, unicode text, emoji, etc.
 
 These limitations led us to create the new Windows Terminal.
 
