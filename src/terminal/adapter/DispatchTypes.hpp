@@ -13,7 +13,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
-    // TODO:GH#<todo> add support for DoublyUnderlined, Faint(2) to the adapter as well.
+    // TODO:GH#2916 add support for DoublyUnderlined, Faint(2) to the adapter as well.
     enum GraphicsOptions : unsigned int
     {
         Off = 0,

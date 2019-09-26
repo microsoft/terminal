@@ -1218,7 +1218,7 @@ enum class CursorPaintType
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.

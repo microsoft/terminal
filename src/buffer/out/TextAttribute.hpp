@@ -36,7 +36,6 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{},
         _background{},
-        // _isBold{ false }
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
     }
@@ -45,7 +44,6 @@ public:
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
         _foreground{ gsl::narrow_cast<BYTE>(wLegacyAttr & FG_ATTRS) },
         _background{ gsl::narrow_cast<BYTE>((wLegacyAttr & BG_ATTRS) >> 4) },
-        // _isBold{ false }
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
         // If we're given lead/trailing byte information with the legacy color, strip it.
@@ -175,7 +173,6 @@ private:
     WORD _wAttrLegacy;
     TextColor _foreground;
     TextColor _background;
-    // bool _isBold;
     ExtendedAttributes _extendedAttrs;
 
 #ifdef UNIT_TESTING

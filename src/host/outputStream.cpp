@@ -273,12 +273,26 @@ BOOL ConhostInternalGetSet::PrivateBoldText(const bool bolded)
     return TRUE;
 }
 
+// Method Description:
+// - Retrieves the currently active ExtendedAttributes. See also
+//   DoSrvPrivateGetExtendedTextAttributes
+// Arguments:
+// - pAttrs: Recieves the ExtendedAttributes value.
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateGetExtendedTextAttributes). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateGetExtendedTextAttributes(ExtendedAttributes* const pAttrs)
 {
     *pAttrs = DoSrvPrivateGetExtendedTextAttributes(_io.GetActiveOutputBuffer());
     return TRUE;
 }
 
+// Method Description:
+// - Sets the active ExtendedAttributes of the active screen buffer. Text
+//   written to this buffer will be written with these attributes.
+// Arguments:
+// - extendedAttrs: The new ExtendedAttributes to use
+// Return Value:
+// - TRUE if successful (see DoSrvPrivateSetExtendedTextAttributes). FALSE otherwise.
 BOOL ConhostInternalGetSet::PrivateSetExtendedTextAttributes(const ExtendedAttributes attrs)
 {
     DoSrvPrivateSetExtendedTextAttributes(_io.GetActiveOutputBuffer(), attrs);

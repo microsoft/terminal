@@ -26,6 +26,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
+// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
@@ -42,8 +43,10 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // We have to do this here, instead of in PaintBufferGridLines, because
     //      we'll have already painted the text by the time PaintBufferGridLines
     //      is called.
+    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
 
+    // Only do extended attributes in xterm-256color, as to not break telnet.exe.
     RETURN_IF_FAILED(_UpdateExtendedAttrs(extendedAttrs));
 
     return VtEngine::_RgbUpdateDrawingBrushes(colorForeground,

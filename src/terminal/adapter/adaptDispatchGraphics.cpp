@@ -49,7 +49,9 @@ void AdaptDispatch::s_DisableAllColors(_Inout_ WORD* const pAttr, const bool fIs
 // Arguments:
 // - pAttr - Pointer to font attributes field to adjust
 // - wApplyThis - Color values to apply to the low or high word of the font attributes field.
-// - fIsForeground - TRUE = foreground color. FALSE = background color. Specifies which half of the bit field to reset and then apply wApplyThis upon.
+// - fIsForeground - TRUE = foreground color. FALSE = background color.
+//   Specifies which half of the bit field to reset and then apply wApplyThis
+//   upon.
 // Return Value:
 // - <none>
 void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyThis, const bool fIsForeground)
@@ -75,7 +77,9 @@ void AdaptDispatch::s_ApplyColors(_Inout_ WORD* const pAttr, const WORD wApplyTh
 
 // Routine Description:
 // - Helper to apply the actual flags to each text attributes field.
-// - Placed as a helper so it can be recursive/re-entrant for some of the convenience flag methods that perform similar/multiple operations in one command.
+// - Placed as a helper so it can be recursive/re-entrant for some of the
+//   convenience flag methods that perform similar/multiple operations in one
+//   command.
 // Arguments:
 // - opt - Graphics option sent to us by the parser/requestor.
 // - pAttr - Pointer to the font attribute field to adjust
@@ -96,6 +100,7 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
         _fChangedMetaAttrs = true;
         break;
     case DispatchTypes::GraphicsOptions::Underline:
+        // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
         *pAttr |= COMMON_LVB_UNDERSCORE;
         _fChangedMetaAttrs = true;
         break;
@@ -275,13 +280,13 @@ void AdaptDispatch::_SetGraphicsOptionHelper(const DispatchTypes::GraphicsOption
 }
 
 // Routine Description:
-// Returns true if the GraphicsOption represents an extended color option.
-//   These are followed by up to 4 more values which compose the entire option.
+// Returns true if the GraphicsOption represents an extended text attribute.
+//   These include things such as Underlined, Italics, Blinking, etc.
 // Return Value:
-// - true if the opt is the indicator for an extended color sequence, false otherwise.
+// - true if the opt is the indicator for an extended text attribute, false otherwise.
 bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptions opt) noexcept
 {
-    // TODO:GH#<todo> add support for DoublyUnderlined, Faint(RGBColorOrFaint).
+    // TODO:GH#2916 add support for DoublyUnderlined, Faint(RGBColorOrFaint).
     // These two are currently partially implemented as other things:
     // * Faint is kinda like the opposite of what bold does
     // * Doubly underlined should exist in a trinary state with Underlined
@@ -406,8 +411,6 @@ bool AdaptDispatch::_SetBoldColorHelper(const DispatchTypes::GraphicsOptions opt
 
 bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions option)
 {
-    // TODO: reset extended attrs too
-
     const bool fg = option == GraphicsOptions::Off || option == GraphicsOptions::ForegroundDefault;
     const bool bg = option == GraphicsOptions::Off || option == GraphicsOptions::BackgroundDefault;
 
@@ -424,6 +427,16 @@ bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions 
     return success;
 }
 
+// Method Description:
+// - Sets the attributes for extended text attributes. Retrieves the current
+//   extended attrs from the console, modifies them according to the new
+//   GraphicsOption, and the sets them again.
+// - Notably does _not_ handle Bold, Faint, Underline, DoublyUnderlined, or
+//   NoUnderline. Those should be handled in TODO:GH#2916.
+// Arguments:
+// - opt: the graphics option to set
+// Return Value:
+// - True if handled successfully. False otherwise.
 bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::GraphicsOptions opt)
 {
     ExtendedAttributes attrs{ ExtendedAttributes::Normal };
@@ -456,7 +469,7 @@ bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::Graphic
     case DispatchTypes::GraphicsOptions::NotCrossedOut:
         WI_ClearFlag(attrs, ExtendedAttributes::CrossedOut);
         break;
-        // TODO:GH#<todo> add support for the following
+        // TODO:GH#2916 add support for the following
         // case DispatchTypes::GraphicsOptions::DoublyUnderlined:
         // case DispatchTypes::GraphicsOptions::RGBColorOrFaint:
         // case DispatchTypes::GraphicsOptions::DoublyUnderlined:
@@ -466,19 +479,26 @@ bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::Graphic
 }
 
 // Routine Description:
-// - SGR - Modifies the graphical rendering options applied to the next characters written into the buffer.
-//       - Options include colors, invert, underlines, and other "font style" type options.
+// - SGR - Modifies the graphical rendering options applied to the next
+//   characters written into the buffer.
+//       - Options include colors, invert, underlines, and other "font style"
+//         type options.
+
 // Arguments:
-// - rgOptions - An array of options that will be applied from 0 to N, in order, one at a time by setting or removing flags in the font style properties.
+// - rgOptions - An array of options that will be applied from 0 to N, in order,
+//   one at a time by setting or removing flags in the font style properties.
 // - cOptions - The count of options (a.k.a. the N in the above line of comments)
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions, const size_t cOptions)
+bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchTypes::GraphicsOptions* const rgOptions,
+                                         const size_t cOptions)
 {
-    // We use the private function here to get just the default color attributes as a performance optimization.
-    // Calling the public GetConsoleScreenBufferInfoEx costs a lot of performance time/power in a tight loop
-    // because it has to fill the Largest Window Size by asking the OS and wastes time memcpying colors and other data
-    // we do not need to resolve this Set Graphics Rendition request.
+    // We use the private function here to get just the default color attributes
+    // as a performance optimization. Calling the public
+    // GetConsoleScreenBufferInfoEx costs a lot of performance time/power in a
+    // tight loop because it has to fill the Largest Window Size by asking the
+    // OS and wastes time memcpying colors and other data we do not need to
+    // resolve this Set Graphics Rendition request.
     WORD attr;
     bool fSuccess = !!_conApi->PrivateGetConsoleScreenBufferAttributes(&attr);
 
@@ -508,14 +528,21 @@ bool AdaptDispatch::SetGraphicsRendition(_In_reads_(cOptions) const DispatchType
                 size_t cOptionsConsumed = 0;
 
                 // _SetRgbColorsHelper will call the appropriate ConApi function
-                fSuccess = _SetRgbColorsHelper(&(rgOptions[i]), cOptions - i, &rgbColor, &fIsForeground, &cOptionsConsumed);
+                fSuccess = _SetRgbColorsHelper(&(rgOptions[i]),
+                                               cOptions - i,
+                                               &rgbColor,
+                                               &fIsForeground,
+                                               &cOptionsConsumed);
 
                 i += (cOptionsConsumed - 1); // cOptionsConsumed includes the opt we're currently on.
             }
             else
             {
                 _SetGraphicsOptionHelper(opt, &attr);
-                fSuccess = !!_conApi->PrivateSetLegacyAttributes(attr, _fChangedForeground, _fChangedBackground, _fChangedMetaAttrs);
+                fSuccess = !!_conApi->PrivateSetLegacyAttributes(attr,
+                                                                 _fChangedForeground,
+                                                                 _fChangedBackground,
+                                                                 _fChangedMetaAttrs);
 
                 // Make sure we un-bold
                 if (fSuccess && opt == DispatchTypes::GraphicsOptions::Off)

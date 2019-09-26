@@ -29,6 +29,7 @@ WinTelnetEngine::WinTelnetEngine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
+// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:

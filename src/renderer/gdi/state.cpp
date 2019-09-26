@@ -176,7 +176,7 @@ GdiEngine::~GdiEngine()
 // - colorForeground - Foreground Color
 // - colorBackground - Background colo
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:

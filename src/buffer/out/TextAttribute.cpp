@@ -155,12 +155,6 @@ void TextAttribute::SetColor(const COLORREF rgbColor, const bool fIsForeground) 
     }
 }
 
-// bool TextAttribute::IsBold() const noexcept
-// {
-//     // return _isBold;
-//     return WI_IsFlagSet(_extendedAttrs, ExtendedAttributes::Bold);
-// }
-
 bool TextAttribute::_IsReverseVideo() const noexcept
 {
     return WI_IsFlagSet(_wAttrLegacy, COMMON_LVB_REVERSE_VIDEO);
@@ -231,7 +225,6 @@ void TextAttribute::Invert() noexcept
 void TextAttribute::_SetBoldness(const bool isBold) noexcept
 {
     WI_UpdateFlag(_extendedAttrs, ExtendedAttributes::Bold, isBold);
-    // _isBold = isBold;
 }
 
 void TextAttribute::SetDefaultForeground() noexcept
