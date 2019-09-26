@@ -212,17 +212,29 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
     case WM_SIZING:
     {
-        LPRECT r = (LPRECT)lparam;
-        int width = r->right - r->left;
-        int height = r->bottom - r->top;
+        LPRECT winRect = (LPRECT)lparam;
+
+        // Find nearest montitor.
+        HMONITOR hmon = MonitorFromRect(winRect, MONITOR_DEFAULTTONEAREST);
+
+        // This API guarantees that dpix and dpiy will be equal, but neither is an
+        // optional parameter so give two UINTs.
+        UINT dpix = USER_DEFAULT_SCREEN_DPI;
+        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+        // If this fails, we'll use the default of 96.
+        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+
+        const auto client2win = GetClientToWinSizeDelta(dpix);
+        int clientWidth = winRect->right - winRect->left - client2win.cx;
+        int clientHeight = winRect->bottom - winRect->top - client2win.cy;
 
         if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
         {
-            width = _pfnSnapDimensionCallback(true, width);
+            clientWidth = _pfnSnapDimensionCallback(true, clientWidth);
         }
         if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
         {
-            height = _pfnSnapDimensionCallback(false, height);
+            clientHeight = _pfnSnapDimensionCallback(false, clientHeight);
         }
 
         switch (wparam)
@@ -230,12 +242,12 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         case WMSZ_LEFT:
         case WMSZ_TOPLEFT:
         case WMSZ_BOTTOMLEFT:
-            r->left = r->right - width;
+            winRect->left = winRect->right - (clientWidth + client2win.cx);
             break;
         case WMSZ_RIGHT:
         case WMSZ_TOPRIGHT:
         case WMSZ_BOTTOMRIGHT:
-            r->right = r->left + width;
+            winRect->right = winRect->left + (clientWidth + client2win.cx);
             break;
         }
 
@@ -244,12 +256,12 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         case WMSZ_BOTTOM:
         case WMSZ_BOTTOMLEFT:
         case WMSZ_BOTTOMRIGHT:
-            r->bottom = r->top + height;
+            winRect->bottom = winRect->top + (clientHeight + client2win.cy);
             break;
         case WMSZ_TOP:
         case WMSZ_TOPLEFT:
         case WMSZ_TOPRIGHT:
-            r->top = r->bottom - height;
+            winRect->top = winRect->bottom - (clientHeight + client2win.cy);
             break;
         }
 
@@ -333,6 +345,21 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 {
     _rootGrid.Children().Clear();
     _rootGrid.Children().Append(content);
+}
+
+SIZE IslandWindow::GetClientToWinSizeDelta(UINT dpix) const noexcept
+{
+    RECT rect{};
+    bool succeeded = AdjustWindowRectExForDpi(&rect, WS_OVERLAPPEDWINDOW, false, 0, dpix);
+    if (!succeeded)
+    {
+        // If we failed to get the correct window size for whatever reason, log
+        // the error and go on. We'll use whatever the control proposed as the
+        // size of our window, which will be at least close.
+        LOG_LAST_ERROR();
+    }
+
+    return { rect.right - rect.left, rect.bottom - rect.top };
 }
 
 void IslandWindow::OnAppInitialized()

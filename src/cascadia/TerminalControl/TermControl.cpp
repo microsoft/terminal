@@ -1643,33 +1643,23 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
-    uint64_t TermControl::SnapDimensionToGrid(bool widthOrHeight, int value)
+    int TermControl::SnapDimensionToGrid(bool widthOrHeight, int value)
     {
         const auto fontSize = _actualFont.GetSize();
         const int fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        const int padding = gsl::narrow_cast<int>(widthOrHeight ?
+        int nonTerminalArea = gsl::narrow_cast<int>(widthOrHeight ?
             _swapChainPanel.Margin().Left + _swapChainPanel.Margin().Right :
             _swapChainPanel.Margin().Top + _swapChainPanel.Margin().Bottom);
 
-        int gridSize = value - padding;
         if (widthOrHeight && _settings.ScrollState() == ScrollbarState::Visible)
         {
-            gridSize -= gsl::narrow_cast<int>(_scrollBar.ActualWidth());
+            nonTerminalArea += gsl::narrow_cast<int>(_scrollBar.ActualWidth());
         }
 
+        const int gridSize = value - nonTerminalArea;
         const int cells = gridSize / fontDimension;
-        const int lowerValue = cells * fontDimension + padding;
-        if (lowerValue == value)
-        {
-            return static_cast<uint64_t>(lowerValue) | static_cast<uint64_t>(lowerValue) << 32; //std::make_pair(lowerValue, lowerValue);
-        }
-        else
-        {
-            const int higherWidth = lowerValue + fontDimension;
-            //return std::make_pair(lowerValue, higherWidth);
-            return static_cast<uint64_t>(lowerValue) | static_cast<uint64_t>(higherWidth) << 32;
-        }
+        return cells * fontDimension + nonTerminalArea;
     }
 
     // Method Description:

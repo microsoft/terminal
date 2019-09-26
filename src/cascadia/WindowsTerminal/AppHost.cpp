@@ -70,7 +70,7 @@ void AppHost::Initialize()
 
     if (_useNonClientArea)
     {
-        // Register our callbar for when the app's non-client content changes.
+        // Register our callbar for when the app's non-clientRect content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
@@ -149,99 +149,66 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
-    if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
-    {
-        // Find nearest montitor.
-        HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+	if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
+	{
+		// Find nearest montitor.
+		HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
 
-        // Get nearest monitor information
-        MONITORINFO monitorInfo;
-        monitorInfo.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfo(hmon, &monitorInfo);
+		// Get nearest monitor information
+		MONITORINFO monitorInfo;
+		monitorInfo.cbSize = sizeof(MONITORINFO);
+		GetMonitorInfo(hmon, &monitorInfo);
 
-        // This API guarantees that dpix and dpiy will be equal, but neither is an
-        // optional parameter so give two UINTs.
-        UINT dpix = USER_DEFAULT_SCREEN_DPI;
-        UINT dpiy = USER_DEFAULT_SCREEN_DPI;
-        // If this fails, we'll use the default of 96.
-        GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
+		// This API guarantees that dpix and dpiy will be equal, but neither is an
+		// optional parameter so give two UINTs.
+		UINT dpix = USER_DEFAULT_SCREEN_DPI;
+		UINT dpiy = USER_DEFAULT_SCREEN_DPI;
+		// If this fails, we'll use the default of 96.
+		GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-        // We need to check if the top left point of the titlebar of the window is within any screen
-        RECT offScreenTestRect;
-        offScreenTestRect.left = proposedRect.left;
-        offScreenTestRect.top = proposedRect.top;
-        offScreenTestRect.right = offScreenTestRect.left + 1;
-        offScreenTestRect.bottom = offScreenTestRect.top + 1;
+		// We need to check if the top left point of the titlebar of the window is within any screen
+		RECT offScreenTestRect;
+		offScreenTestRect.left = proposedRect.left;
+		offScreenTestRect.top = proposedRect.top;
+		offScreenTestRect.right = offScreenTestRect.left + 1;
+		offScreenTestRect.bottom = offScreenTestRect.top + 1;
 
-        bool isTitlebarIntersectWithMonitors = false;
-        EnumDisplayMonitors(
-            nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
-                auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
-                *intersectWithMonitor = true;
-                // Continue the enumeration
-                return FALSE;
-            },
-            reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
+		bool isTitlebarIntersectWithMonitors = false;
+		EnumDisplayMonitors(
+			nullptr, &offScreenTestRect, [](HMONITOR, HDC, LPRECT, LPARAM lParam) -> BOOL {
+				auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
+				*intersectWithMonitor = true;
+				// Continue the enumeration
+				return FALSE;
+			},
+			reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
 
-        if (!isTitlebarIntersectWithMonitors)
-        {
-            // If the title bar is out-of-screen, we set the initial position to
-            // the top left corner of the nearest monitor
-            proposedRect.left = monitorInfo.rcWork.left;
-            proposedRect.top = monitorInfo.rcWork.top;
-        }
+		if (!isTitlebarIntersectWithMonitors)
+		{
+			// If the title bar is out-of-screen, we set the initial position to
+			// the top left corner of the nearest monitor
+			proposedRect.left = monitorInfo.rcWork.left;
+			proposedRect.top = monitorInfo.rcWork.top;
+		}
 
-        auto initialSize = _app.GetLaunchDimensions(dpix);
+		auto initialSize = _app.GetLaunchDimensions(dpix);
 
-        const short _currentWidth = Utils::ClampToShortMax(
-            static_cast<long>(ceil(initialSize.X)), 1);
-        const short _currentHeight = Utils::ClampToShortMax(
-            static_cast<long>(ceil(initialSize.Y)), 1);
+		const short _currentWidth = Utils::ClampToShortMax(
+			static_cast<long>(ceil(initialSize.X)), 1);
+		const short _currentHeight = Utils::ClampToShortMax(
+			static_cast<long>(ceil(initialSize.Y)), 1);
 
-        // Create a RECT from our requested client size
-        auto nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                    _currentHeight })
-                             .ToRect();
+		// Create a RECT from our requested clientRect size
+		const auto clientRect = Viewport::FromDimensions({ _currentWidth,
+													       _currentHeight })
+			.ToRect();
 
-        // Get the size of a window we'd need to host that client rect. This will
-        // add the titlebar space.
-        if (_useNonClientArea)
-        {
-            // If we're in NC tabs mode, do the math ourselves. Get the margins
-            // we're using for the window - this will include the size of the
-            // titlebar content.
-            const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
-            const MARGINS margins = pNcWindow->GetFrameMargins();
-            nonClient.left = 0;
-            nonClient.top = 0;
-            nonClient.right = margins.cxLeftWidth + nonClient.right + margins.cxRightWidth;
-            nonClient.bottom = margins.cyTopHeight + nonClient.bottom + margins.cyBottomHeight;
-        }
-        else
-        {
-            bool succeeded = AdjustWindowRectExForDpi(&nonClient, WS_OVERLAPPEDWINDOW, false, 0, dpix);
-            if (!succeeded)
-            {
-                // If we failed to get the correct window size for whatever reason, log
-                // the error and go on. We'll use whatever the control proposed as the
-                // size of our window, which will be at least close.
-                LOG_LAST_ERROR();
-                nonClient = Viewport::FromDimensions({ _currentWidth,
-                                                       _currentHeight })
-                                .ToRect();
-            }
-
-            // For client island scenario, there is an invisible border of 8 pixels.
-            // We need to remove this border to guarantee the left edge of the window
-            // coincides with the screen
-            const auto pCWindow = static_cast<IslandWindow*>(_window.get());
-            const RECT frame = pCWindow->GetFrameBorderMargins(dpix);
-            proposedRect.left += frame.left;
-        }
-
-        adjustedHeight = nonClient.bottom - nonClient.top;
-        adjustedWidth = nonClient.right - nonClient.left;
-    }
+		// Get the size of a window we'd need to host that client rect. This will
+		// add the titlebar space.
+		const auto client2win = _window->GetClientToWinSizeDelta(dpix);
+		adjustedHeight = clientRect.bottom - clientRect.top + client2win.cx;
+		adjustedWidth = clientRect.right - clientRect.left + client2win.cy;
+	}
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };

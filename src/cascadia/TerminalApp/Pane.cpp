@@ -324,8 +324,14 @@ std::pair<int, int> Pane::SnapDimension(bool widthOrHeight, int value)
 {
     if (_IsLeaf())
     {
-        const auto val = _control.SnapDimensionToGrid(widthOrHeight, value);
-        return std::make_pair(gsl::narrow_cast<int>(val), gsl::narrow_cast<int>(val << 32));
+        const int lower = _control.SnapDimensionToGrid(widthOrHeight, value);
+        int higher = lower;
+        if (value != lower)
+        {
+            const auto cellSize = _control.CharacterDimensions();
+            higher = lower + static_cast<int>(widthOrHeight ? cellSize.Width : cellSize.Height);
+        }
+        return std::make_pair(lower, higher);
     }
     else if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
     {

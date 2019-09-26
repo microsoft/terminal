@@ -1062,7 +1062,7 @@ namespace winrt::TerminalApp::implementation
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
         const auto closestValues = _tabs[focusedTabIndex]->SnapDimension(widthOrHeight, value);
-        return value - closestValues.first > closestValues.second - value ? closestValues.first : closestValues.second;
+        return value - closestValues.first < closestValues.second - value ? closestValues.first : closestValues.second;
     }
 
     // Method Description:

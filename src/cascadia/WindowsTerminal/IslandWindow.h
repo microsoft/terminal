@@ -29,6 +29,7 @@ public:
     void OnRestore() override;
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
+    virtual SIZE GetClientToWinSizeDelta(UINT dpix) const noexcept;
 
     virtual void Initialize();
 

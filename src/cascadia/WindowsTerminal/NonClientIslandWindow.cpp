@@ -340,6 +340,18 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     return margins;
 }
 
+SIZE NonClientIslandWindow::GetClientToWinSizeDelta(UINT /* dpix */) const noexcept
+{
+    SIZE offset;
+    // If we're in NC tabs mode, do the math ourselves. Get the margins
+    // we're using for the window - this will include the size of the
+    // titlebar content.
+    const MARGINS margins = GetFrameMargins();
+    offset.cx = margins.cxLeftWidth + margins.cxRightWidth;
+    offset.cy = margins.cyTopHeight + margins.cyBottomHeight;
+    return offset;
+}
+
 // Method Description:
 // - Updates the borders of our window frame, using DwmExtendFrameIntoClientArea.
 // Arguments:

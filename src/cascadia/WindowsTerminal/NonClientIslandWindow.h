@@ -34,6 +34,7 @@ public:
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
 
     MARGINS GetFrameMargins() const noexcept;
+    virtual SIZE GetClientToWinSizeDelta(UINT dpix) const noexcept override;
 
     void Initialize() override;
 
