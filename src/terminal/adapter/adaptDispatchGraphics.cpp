@@ -410,13 +410,16 @@ bool AdaptDispatch::_SetDefaultColorHelper(const DispatchTypes::GraphicsOptions 
 
     const bool fg = option == GraphicsOptions::Off || option == GraphicsOptions::ForegroundDefault;
     const bool bg = option == GraphicsOptions::Off || option == GraphicsOptions::BackgroundDefault;
+
     bool success = _conApi->PrivateSetDefaultAttributes(fg, bg);
+
     if (success && fg && bg)
     {
         // If we're resetting both the FG & BG, also reset the meta attributes (underline)
         //      as well as the boldness
         success = _conApi->PrivateSetLegacyAttributes(0, false, false, true) &&
-                  _conApi->PrivateBoldText(false);
+                  _conApi->PrivateBoldText(false) &&
+                  _conApi->PrivateSetExtendedTextAttributes(ExtendedAttributes::Normal);
     }
     return success;
 }

@@ -45,7 +45,6 @@ namespace Microsoft::Console::Render
         bool _usingBlinking{ false };
         bool _usingInvisible{ false };
         bool _usingCrossedOut{ false };
-        bool _usingDoublyUnderlined{ false };
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;
