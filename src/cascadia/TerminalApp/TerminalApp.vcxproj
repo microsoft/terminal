@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
+  <Import Project="..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props')" />
+  <Import Project="..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props')" />
+  <Import Project="..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props')" />
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
-
   <PropertyGroup>
     <!-- cppwinrt.build.pre.props depends on these settings: -->
     <!-- build a dll, not exe (Application) -->
@@ -21,7 +22,6 @@
   <ItemGroup>
     <!-- DON'T PUT XAML FILES HERE! Put them in TerminalAppLib.vcxproj -->
   </ItemGroup>
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <!-- Only put headers for winrt types in here. Don't put other header files
@@ -60,31 +60,25 @@
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-
     <!-- The midl compiler however, _will_ aggregate our winmd dependencies
     somehow. So make sure to only include top-level dependencies here (don't
     include Settings and Connection, since Control will include them for us) -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
-
     <!-- Reference TerminalAppLib here, so we can use it's TerminalApp.winmd as
     our TerminalApp.winmd. This didn't work correctly in VS2017, you'd need to
     manually reference the lib -->
-
-    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" >
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj">
       <Private>true</Private>
       <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
     </ProjectReference>
-
   </ItemGroup>
-
   <PropertyGroup>
     <!-- A small helper for paths to the compiled cppwinrt projects -->
     <_BinRoot Condition="'$(Platform)' != 'Win32'">$(OpenConsoleDir)$(Platform)\$(Configuration)\</_BinRoot>
     <_BinRoot Condition="'$(Platform)' == 'Win32'">$(OpenConsoleDir)$(Configuration)\</_BinRoot>
   </PropertyGroup>
-
   <PropertyGroup>
     <!--
       DON'T REDIRECT OUR OUTPUT.
@@ -99,18 +93,28 @@
     </ClCompile>
     <Link>
       <AdditionalDependencies>User32.lib;WindowsApp.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-
       <!-- TerminalAppLib contains a DllMain that we need to force the use of. -->
       <AdditionalOptions Condition="'$(Platform)'=='Win32'">/INCLUDE:_DllMain@12</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)'!='Win32'">/INCLUDE:DllMain</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <!-- Import this set of targets that fixes a VS bug that manifests when using
   the TerminalAppLib project -->
   <Import Project="FixVisualStudioBug.targets" />
-
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets'))" />
+  </Target>
+  <Import Project="..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets')" />
 </Project>
