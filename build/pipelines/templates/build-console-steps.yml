@@ -44,7 +44,7 @@ steps:
     configuration: '$(BuildConfiguration)'
     msbuildArgs: ${{ parameters.additionalBuildArguments }}
     clean: true
-    maximumCpuCount: true
+    maximumCpuCount: false
 
 - task: PowerShell@2
   displayName: 'Check MSIX for common regressions'
