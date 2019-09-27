@@ -12,7 +12,6 @@ BOOL g_fForceV2;
 // If we didn't launch as a v2 console window, we don't want to persist v2
 // settings when we close, as they'll get zero'd. Use this to track the initial
 // launch state.
-BOOL g_fLaunchedAsV2;
 BOOL g_fEditKeys;
 BYTE g_bPreviewOpacity = 0x00; //sentinel value for initial test on dialog entry. Once initialized, won't be less than TRANSPARENCY_RANGE_MIN
 

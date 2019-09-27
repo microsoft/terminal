@@ -94,6 +94,12 @@ private:
     {
         g_fHostedInFileProperties = TRUE;
         gpStateInfo = &g_csi;
+
+        // Initialize the fIsV2Console with whatever the current v2 seeting is
+        // in the registry. Usually this is set by conhost, but in this path,
+        // we're being launched straight from explorer. See GH#2319, GH#2651
+        gpStateInfo->fIsV2Console = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2, TRUE);
+
         InitRegistryValues(gpStateInfo);
         gpStateInfo->Defaults = TRUE;
         GetRegistryValues(gpStateInfo);

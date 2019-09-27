@@ -169,7 +169,6 @@ DWORD GetRegistryValues(
 
     // initial values for global v2 settings
     g_fForceV2 = GetConsoleBoolValue(CONSOLE_REGISTRY_FORCEV2, TRUE);
-    g_fLaunchedAsV2 = g_fForceV2;
     g_fEditKeys = GetConsoleBoolValue(CONSOLE_REGISTRY_EXTENDEDEDITKEY, TRUE);
 
     //
@@ -951,7 +950,7 @@ VOID SetRegistryValues(
     // v1 console doesn't know anything about these settings, and their value
     // will be incorrectly zero'd if we save in this state.
     // See microsoft/terminal#2319 for more details.
-    if (g_fLaunchedAsV2)
+    if (gpStateInfo->fIsV2Console)
     {
         // Save cursor type and color
         dwValue = pStateInfo->CursorType;

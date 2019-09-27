@@ -409,13 +409,15 @@ void ShortcutSerialization::s_GetLinkTitle(_In_ PCWSTR pwszShortcutFilename,
     return (SUCCEEDED(hr)) ? STATUS_SUCCESS : STATUS_UNSUCCESSFUL;
 }
 
-/**
-Writes the console properties out to the link it was opened from.
-Arguments:
-    pStateInfo - pointer to structure containing information
-Return Value:
-    A status code if something failed or S_OK
-*/
+// Function Description:
+// - Writes the console properties out to the link it was opened from.
+// Arguments:
+// - pStateInfo: pointer to structure containing information
+// - writeTerminalSettings: If true, persist the "Terminal" properties only
+//   present in the v2 console. This should be false if called from a v11
+//   console. See GH#2319
+// Return Value:
+// - A status code if something failed or S_OK
 [[nodiscard]] NTSTATUS ShortcutSerialization::s_SetLinkValues(_In_ PCONSOLE_STATE_INFO pStateInfo,
                                                               const BOOL fEastAsianSystem,
                                                               const BOOL fForceV2,
