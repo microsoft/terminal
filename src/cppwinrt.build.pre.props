@@ -95,7 +95,7 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
       <WarningLevel>Level4</WarningLevel>
       <TreatWarningAsError>true</TreatWarningAsError>
-      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase- /std:c++17 </AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase- /std:c++17 /FS </AdditionalOptions>
       <DisableSpecificWarnings>28204</DisableSpecificWarnings>
       <PreprocessorDefinitions Condition="'$(ConfigurationType)'=='DynamicLibrary'">_WINRT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>

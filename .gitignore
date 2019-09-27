@@ -25,6 +25,9 @@ bld/
 objfre/
 objchk/
 
+#Build logs
+*.binlog
+
 # Visual Studio 2015 cache/options directory
 .vs/
 
