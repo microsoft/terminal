@@ -15,6 +15,7 @@
 #include "AzureCloudShellGenerator.h" // For AzureConnectionType
 #include "TelnetGenerator.h" // For TelnetConnectionType
 #include "TabRowControl.h"
+#include "DebugTapConnection.h"
 
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
@@ -509,7 +510,19 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
 
         // Create a connection based on the values in our settings object.
-        const auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+
+        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        auto connection = _CreateConnectionFromSettings(profileGuid, settings);
+
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+        if (altPressed)
+        {
+            std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+        }
 
         TermControl term{ settings, connection };
 
@@ -573,6 +586,16 @@ namespace winrt::TerminalApp::implementation
             // This kicks off TabView::SelectionChanged, in response to which
             // we'll attach the terminal's Xaml control to the Xaml root.
             _tabView.SelectedItem(tabViewItem);
+        }
+
+        if (debugConnection)
+        {
+            TermControl newControl{ settings, debugConnection };
+
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl, newTab);
+
+            newTab->SplitPane(Pane::SplitState::Vertical, profileGuid, newControl);
         }
     }
 
