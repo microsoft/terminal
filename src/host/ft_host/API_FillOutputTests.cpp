@@ -70,15 +70,12 @@ class FillOutputTests
 
         CONSOLE_SCREEN_BUFFER_INFOEX sbiex = { 0 };
         sbiex.cbSize = sizeof(sbiex);
-        GetConsoleScreenBufferInfoEx(hConsole, &sbiex);
+        VERIFY_WIN32_BOOL_SUCCEEDED(GetConsoleScreenBufferInfoEx(hConsole, &sbiex));
 
-        const auto ogConsoleWidth = sbiex.dwSize.X;
+        const auto consoleWidth = sbiex.dwSize.X;
 
-        std::wstring input = L"";
-        for (SHORT i = 0; i < ogConsoleWidth + 2; i++)
-        {
-            input.append(L"a");
-        }
+        std::wstring input(consoleWidth + 2, L'a');
+        std::wstring filled(consoleWidth, L'b');
 
         // Write until a wrap occurs
         VERIFY_WIN32_BOOL_SUCCEEDED(WriteConsoleW(hConsole,
@@ -88,18 +85,17 @@ class FillOutputTests
                                                   nullptr));
 
         // Verify wrap occurred
-        std::unique_ptr<wchar_t[]> bufferText = std::make_unique<wchar_t[]>(ogConsoleWidth);
+        std::unique_ptr<wchar_t[]> bufferText = std::make_unique<wchar_t[]>(consoleWidth);
         DWORD readSize = 0;
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(hConsole,
                                                                 bufferText.get(),
-                                                                ogConsoleWidth,
+                                                                consoleWidth,
                                                                 { 0, 0 },
                                                                 &readSize));
 
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            VERIFY_ARE_EQUAL(bufferText[i], L'a');
-        }
+        WEX::Common::String expected(input.c_str(), readSize);
+        WEX::Common::String actual(bufferText.get(), readSize);
+        VERIFY_ARE_EQUAL(expected, actual);
 
         bufferText = std::make_unique<wchar_t[]>(2);
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(hConsole,
@@ -109,37 +105,32 @@ class FillOutputTests
                                                                 &readSize));
 
         VERIFY_ARE_EQUAL(2u, readSize);
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            VERIFY_ARE_EQUAL(bufferText[i], L'a');
-        }
+        expected = WEX::Common::String(input.c_str(), readSize);
+        actual = WEX::Common::String(bufferText.get(), readSize);
+        VERIFY_ARE_EQUAL(expected, actual);
 
         // Fill Console Line with 'b's
         VERIFY_WIN32_BOOL_SUCCEEDED(FillConsoleOutputCharacterW(hConsole,
                                                                 L'b',
-                                                                ogConsoleWidth,
+                                                                consoleWidth,
                                                                 { 2, 0 },
                                                                 &charsWritten));
 
         // Verify first line is full of 'a's then 'b's
-        bufferText = std::make_unique<wchar_t[]>(ogConsoleWidth);
+        bufferText = std::make_unique<wchar_t[]>(consoleWidth);
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(hConsole,
                                                                 bufferText.get(),
-                                                                ogConsoleWidth,
+                                                                consoleWidth,
                                                                 { 0, 0 },
                                                                 &readSize));
 
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            if (i < 2)
-            {
-                VERIFY_ARE_EQUAL(bufferText[i], L'a');
-            }
-            else
-            {
-                VERIFY_ARE_EQUAL(bufferText[i], L'b');
-            }
-        }
+        expected = WEX::Common::String(input.c_str(), 2);
+        actual = WEX::Common::String(bufferText.get(), 2);
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = WEX::Common::String(filled.c_str(), consoleWidth - 2);
+        actual = WEX::Common::String(&bufferText[2], readSize - 2);
+        VERIFY_ARE_EQUAL(expected, actual);
 
         // Verify second line is still has 'a's that wrapped over
         bufferText = std::make_unique<wchar_t[]>(2);
@@ -150,35 +141,30 @@ class FillOutputTests
                                                                 &readSize));
 
         VERIFY_ARE_EQUAL(2u, readSize);
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            VERIFY_ARE_EQUAL(bufferText[i], L'a');
-        }
+        expected = WEX::Common::String(input.c_str(), 2);
+        actual = WEX::Common::String(bufferText.get(), readSize);
+        VERIFY_ARE_EQUAL(expected, actual);
 
         // Resize to be smaller by 2
         sbiex.srWindow.Right -= 2;
         sbiex.dwSize.X -= 2;
-        SetConsoleScreenBufferInfoEx(hConsole, &sbiex);
+        VERIFY_WIN32_BOOL_SUCCEEDED(SetConsoleScreenBufferInfoEx(hConsole, &sbiex));
 
         // Verify first line is full of 'a's then 'b's
-        bufferText = std::make_unique<wchar_t[]>(ogConsoleWidth - static_cast<SHORT>(2));
+        bufferText = std::make_unique<wchar_t[]>(consoleWidth - 2);
         VERIFY_WIN32_BOOL_SUCCEEDED(ReadConsoleOutputCharacterW(hConsole,
                                                                 bufferText.get(),
-                                                                ogConsoleWidth - static_cast<SHORT>(2),
+                                                                consoleWidth - static_cast<SHORT>(2),
                                                                 { 0, 0 },
                                                                 &readSize));
 
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            if (i < 2)
-            {
-                VERIFY_ARE_EQUAL(bufferText[i], L'a');
-            }
-            else
-            {
-                VERIFY_ARE_EQUAL(bufferText[i], L'b');
-            }
-        }
+        expected = WEX::Common::String(input.c_str(), 2);
+        actual = WEX::Common::String(bufferText.get(), 2);
+        VERIFY_ARE_EQUAL(expected, actual);
+
+        expected = WEX::Common::String(filled.c_str(), consoleWidth - 4);
+        actual = WEX::Common::String(&bufferText[2], readSize - 2);
+        VERIFY_ARE_EQUAL(expected, actual);
 
         // Verify second line is still has 'a's ('b's didn't wrap over)
         bufferText = std::make_unique<wchar_t[]>(static_cast<SHORT>(2));
@@ -189,9 +175,8 @@ class FillOutputTests
                                                                 &readSize));
 
         VERIFY_ARE_EQUAL(2u, readSize);
-        for (DWORD i = 0; i < readSize; i++)
-        {
-            VERIFY_ARE_EQUAL(bufferText[i], L'a');
-        }
+        expected = WEX::Common::String(input.c_str(), 2);
+        actual = WEX::Common::String(bufferText.get(), readSize);
+        VERIFY_ARE_EQUAL(expected, actual);
     }
 };
