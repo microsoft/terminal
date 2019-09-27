@@ -2,7 +2,7 @@
 author: Carlos Zamora @cazamor
 created on: 2019-08-30
 last updated: 2019-09-21
-issue id: <github issue id>
+issue id: #715
 ---
 
 # Keyboard Selection
@@ -55,8 +55,10 @@ For `SelectionExpansionMode = Viewport`, the selection anchor will be updated ac
 
 Every combination of the `Direction` and `SelectionExpansionMode` will map to a keybinding. These pairings are shown below in the UI/UX Design --> Keybindings section.
 
+**NOTE**: If `copyOnSelect` is enabled, we need to make sure we update the clipboard on every change in selection.
+
 ### Mark Mode
-Upon mark mode being enabled by a user keybinding, the current cursor position becomes the selection anchor. The arrow keys move the selection anchor by cell.
+Upon mark mode being enabled by a user keybinding (`ToggleMarkMode`), the current cursor position becomes the selection anchor. The arrow keys move the selection anchor by cell. Using the arrow keys while holding `Shift` moves the second selection anchor by cell. Additionally, using the arrow keys while holding `Ctrl` and `Shift` moves the second selection anchor by word. This allows the user to make a selection of their choice. The user can exit mark mode by using the `ToggleMarkMode` keybinding.
 
 
 ## UI/UX Design
@@ -88,7 +90,7 @@ By default, the following keybindings will be set:
 
 ### Accessibility
 
-Being able to create and update a selection without the use of a mouse is a very important feature to users with disabilities. The UI Automation system (particularly with the use of the signaling model), should be aware that a new selection exists. Thus, the bounding rects should be updated and the associated text regions should be reread appropriately. 
+Being able to create and update a selection without the use of a mouse is a very important feature to users with disabilities. The UI Automation system (particularly with the use of the signaling model), should be aware that a new selection exists. Thus, the bounding rects should be updated and the associated text regions should be reread appropriately.
 
 ### Security
 
@@ -138,4 +140,4 @@ In addition to the `enum direction` and `enum expansionMode` args introduced abo
 ## Resources
 
 - https://blogs.windows.com/windowsdeveloper/2014/10/07/console-improvements-in-the-windows-10-technical-preview/
-- 
+-
