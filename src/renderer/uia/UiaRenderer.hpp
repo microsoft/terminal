@@ -24,7 +24,7 @@ namespace Microsoft::Console::Render
     class UiaEngine final : public RenderEngineBase
     {
     public:
-        UiaEngine();
+        UiaEngine() noexcept;
         ~UiaEngine();
         UiaEngine(const UiaEngine&) = default;
         UiaEngine(UiaEngine&&) = default;
@@ -72,12 +72,12 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
-        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() override;
+        [[nodiscard]] SMALL_RECT GetDirtyRectInChars() noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
-        [[nodiscard]] virtual HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring& newTitle) noexcept override;
 
     private:
         bool _isEnabled;

@@ -13,7 +13,9 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Constructs a UIA engine for console text
 //   which primarily notifies automation clients of any activity
-UiaEngine::UiaEngine() :
+UiaEngine::UiaEngine() noexcept:
+    _isPainting(false),
+    _isEnabled(false),
     RenderEngineBase() {}
 
 // Routine Description:
@@ -369,7 +371,7 @@ UiaEngine::~UiaEngine()
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT UiaEngine::GetDirtyRectInChars()
+[[nodiscard]] SMALL_RECT UiaEngine::GetDirtyRectInChars() noexcept
 {
     return {};
 }
