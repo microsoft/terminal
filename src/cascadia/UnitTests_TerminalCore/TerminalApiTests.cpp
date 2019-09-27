@@ -61,9 +61,9 @@ namespace TerminalCoreUnitTests
                     SetEvent(b.ev);
                     return 0;
                 },
-                (LPVOID)& b,
-                    0,
-                    nullptr);
+                (LPVOID)&b,
+                0,
+                nullptr);
 
             Log::Comment(L"Waiting for the write.");
             switch (WaitForSingleObject(b.ev, 2000))
