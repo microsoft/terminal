@@ -17,7 +17,7 @@
             "commandline": "powershell.exe",
             "hidden": false,
             "startingDirectory": "%USERPROFILE%",
-             "closeOnExit": true,
+            "closeOnExit": true,
             "colorScheme": "Campbell Powershell",
             "cursorColor": "#FFFFFF",
             "cursorShape": "bar",
