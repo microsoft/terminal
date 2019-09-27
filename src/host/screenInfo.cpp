@@ -68,6 +68,9 @@ SCREEN_INFORMATION::SCREEN_INFORMATION(
     LineChar[3] = UNICODE_BOX_DRAW_LIGHT_VERTICAL;
     LineChar[4] = UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT;
     LineChar[5] = UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT;
+
+    // Check if VT mode is enabled. Note that this can be true w/o calling
+    // SetConsoleMode, if VirtualTerminalLevel is set to !=0 in the registry.
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (gci.GetVirtTermLevel() != 0)
     {
@@ -131,6 +134,16 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
+
+        if (pScreen->InVTMode())
+        {
+            // microsoft/terminal#411: If VT mode is enabled, lets construct the
+            // VT tab stops. Without this line, if a user has
+            // VirtualTerminalLevel set, then
+            // SetConsoleMode(ENABLE_VIRTUAL_TERMINAL_PROCESSING) won't set our
+            // tab stops, because we're never going from vt off -> on
+            pScreen->SetDefaultVtTabStops();
+        }
 
         if (NT_SUCCESS(status))
         {

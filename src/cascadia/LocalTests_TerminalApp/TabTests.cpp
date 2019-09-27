@@ -69,7 +69,7 @@ namespace TerminalAppLocalTests
     {
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
-        winrt::Microsoft::Terminal::Settings::TerminalSettings settings{};
+        winrt::Microsoft::Terminal::Settings::TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);

@@ -14,7 +14,7 @@
 // - wstr - The UTF-16 string to parse.
 // Return Value:
 // - A view into the string given of just the next codepoint unit.
-std::wstring_view Utf16Parser::ParseNext(std::wstring_view wstr)
+std::wstring_view Utf16Parser::ParseNext(std::wstring_view wstr) noexcept
 {
     for (size_t pos = 0; pos < wstr.size(); ++pos)
     {

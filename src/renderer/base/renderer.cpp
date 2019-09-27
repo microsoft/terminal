@@ -10,6 +10,8 @@
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
+static constexpr auto maxRetriesForRenderEngine = 3;
+
 // Routine Description:
 // - Creates a new renderer controller for a console.
 // Arguments:
@@ -62,7 +64,21 @@ Renderer::~Renderer()
 
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
-        LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
+        auto tries = maxRetriesForRenderEngine;
+        while (tries > 0)
+        {
+            const auto hr = _PaintFrameForEngine(pEngine);
+            if (E_PENDING == hr)
+            {
+                if (--tries == 0)
+                {
+                    FAIL_FAST_HR_MSG(E_UNEXPECTED, "A rendering engine required too many retries.");
+                }
+                continue;
+            }
+            LOG_IF_FAILED(hr);
+            break;
+        }
     }
 
     return S_OK;

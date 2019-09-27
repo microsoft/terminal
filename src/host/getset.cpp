@@ -632,7 +632,9 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
 
-        const COORD coordScreenBufferSize = context.GetBufferSize().Dimensions();
+        auto& buffer = context.GetActiveBuffer();
+
+        const COORD coordScreenBufferSize = buffer.GetBufferSize().Dimensions();
         // clang-format off
         RETURN_HR_IF(E_INVALIDARG, (position.X >= coordScreenBufferSize.X ||
                                     position.Y >= coordScreenBufferSize.Y ||
@@ -643,35 +645,46 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         // MSFT: 15813316 - Try to use this SetCursorPosition call to inherit the cursor position.
         RETURN_IF_FAILED(gci.GetVtIo()->SetCursorPosition(position));
 
-        RETURN_IF_NTSTATUS_FAILED(context.SetCursorPosition(position, true));
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetCursorPosition(position, true));
 
         LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
-        COORD WindowOrigin;
-        WindowOrigin.X = 0;
-        WindowOrigin.Y = 0;
+        // Attempt to "snap" the viewport to the cursor position. If the cursor
+        // is not in the current viewport, we'll try and move the viewport so
+        // that the cursor is visible.
+        // microsoft/terminal#1222 - Use the "virtual" viewport here, so that
+        // when the console is in terminal-scrolling mode, the viewport snaps
+        // back to the virtual viewport's location.
+        const SMALL_RECT currentViewport = gci.IsTerminalScrolling() ?
+                                               buffer.GetVirtualViewport().ToInclusive() :
+                                               buffer.GetViewport().ToInclusive();
+        COORD delta{ 0 };
         {
-            const SMALL_RECT currentViewport = context.GetViewport().ToInclusive();
             if (currentViewport.Left > position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Left;
+                delta.X = position.X - currentViewport.Left;
             }
             else if (currentViewport.Right < position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Right;
+                delta.X = position.X - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Top;
+                delta.Y = position.Y - currentViewport.Top;
             }
             else if (currentViewport.Bottom < position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Bottom;
+                delta.Y = position.Y - currentViewport.Bottom;
             }
         }
 
-        RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, WindowOrigin, true));
+        COORD newWindowOrigin{ 0 };
+        newWindowOrigin.X = currentViewport.Left + delta.X;
+        newWindowOrigin.Y = currentViewport.Top + delta.Y;
+        // SetViewportOrigin will worry about clamping these values to the
+        // buffer for us.
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, newWindowOrigin, true));
 
         return S_OK;
     }
@@ -820,6 +833,8 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+        auto& buffer = context.GetActiveBuffer();
+
         TextAttribute useThisAttr(fillAttribute);
 
         // Here we're being a little clever - similar to FillConsoleOutputAttributeImpl
@@ -835,10 +850,11 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         //      this scenario is highly unlikely, and we can reasonably do this
         //      on their behalf.
         // see MSFT:19853701
-        if (context.InVTMode())
+
+        if (buffer.InVTMode())
         {
             const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto currentAttributes = context.GetAttributes();
+            const auto currentAttributes = buffer.GetAttributes();
             const auto bufferLegacy = gci.GenerateLegacyAttributes(currentAttributes);
             if (bufferLegacy == fillAttribute)
             {
@@ -846,7 +862,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
             }
         }
 
-        ScrollRegion(context, source, clip, target, fillCharacter, useThisAttr);
+        ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
         return S_OK;
     }
@@ -1356,24 +1372,27 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
         if (screenInfo.IsCursorInMargins(oldCursorPosition))
         {
             // Cursor is at the top of the viewport
-            const COORD bufferSize = screenInfo.GetBufferSize().Dimensions();
-            // Rectangle to cut out of the existing buffer
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
             SMALL_RECT srScroll;
             srScroll.Left = 0;
-            srScroll.Right = bufferSize.X;
+            srScroll.Right = SHORT_MAX;
             srScroll.Top = viewport.Top;
-            srScroll.Bottom = viewport.Bottom - 1;
+            srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            SMALL_RECT srClip = viewport;
-
             Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
                                                                                                               srScroll,
                                                                                                               coordDestination,
-                                                                                                              srClip,
+                                                                                                              srScroll,
                                                                                                               UNICODE_SPACE,
                                                                                                               screenInfo.GetAttributes().GetLegacyAttributes()));
         }
@@ -2023,6 +2042,7 @@ void DoSrvPrivateSetDefaultTabStops()
 
 // Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
+//   this also moves the cursor to the left margin, which is expected behaviour for IL and DL
 // Parameters:
 // - count - the number of lines to modify
 // - insert - true if inserting lines, false if deleting lines
@@ -2033,13 +2053,18 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
     const auto cursorPosition = textBuffer.GetCursor().GetPosition();
     if (screenInfo.IsCursorInMargins(cursorPosition))
     {
-        const auto screenEdges = screenInfo.GetBufferSize().ToInclusive();
-        // Rectangle to cut out of the existing buffer
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
         SMALL_RECT srScroll;
         srScroll.Left = 0;
-        srScroll.Right = screenEdges.Right - screenEdges.Left;
+        srScroll.Right = SHORT_MAX;
         srScroll.Top = cursorPosition.Y;
-        srScroll.Bottom = screenEdges.Bottom;
+        srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;
@@ -2051,9 +2076,6 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         {
             coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
         }
-
-        SMALL_RECT srClip = screenEdges;
-        srClip.Top = cursorPosition.Y;
 
         // Here we previously called to ScrollConsoleScreenBufferWImpl to
         // perform the scrolling operation. However, that function only accepts
@@ -2068,12 +2090,16 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
             ScrollRegion(screenInfo,
                          srScroll,
-                         srClip,
+                         srScroll,
                          coordDestination,
                          UNICODE_SPACE,
                          screenInfo.GetAttributes());
         }
         CATCH_LOG();
+
+        // The IL and DL controls are also expected to move the cursor to the left margin.
+        // For now this is just column 0, since we don't yet support DECSLRM.
+        LOG_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
     }
 }
 

@@ -265,11 +265,11 @@ bool Terminal::EraseInLine(const ::Microsoft::Console::VirtualTerminal::Dispatch
         break;
     case DispatchTypes::EraseType::ToEnd:
         startPos.X = cursorPos.X;
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::All:
         startPos.X = viewport.Left();
-        nlength = viewport.RightInclusive() - startPos.X;
+        nlength = viewport.RightExclusive() - startPos.X;
         break;
     case DispatchTypes::EraseType::Scrollback:
         return false;

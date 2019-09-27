@@ -23,8 +23,16 @@ namespace Microsoft::Console::Types
     class IUiaData : public IBaseData
     {
     public:
-        virtual ~IUiaData() = 0;
+        ~IUiaData() = 0;
 
+    protected:
+        IUiaData() = default;
+        IUiaData(const IUiaData&) = default;
+        IUiaData(IUiaData&&) = default;
+        IUiaData& operator=(const IUiaData&) = default;
+        IUiaData& operator=(IUiaData&&) = default;
+
+    public:
         virtual const bool IsSelectionActive() const = 0;
         virtual void ClearSelection() = 0;
         virtual void SelectNewRegion(const COORD coordStart, const COORD coordEnd) = 0;

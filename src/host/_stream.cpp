@@ -140,15 +140,11 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         const COORD newPostMarginsOrigin = { 0, moveToYPosition };
         const COORD newViewOrigin = { 0, newViewTop };
 
-        // Unset the margins to scroll the content below the margins,
-        //      then restore them after.
-        screenInfo.SetScrollMargins(Viewport::FromInclusive({ 0 }));
         try
         {
             ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
-        screenInfo.SetScrollMargins(relativeMargins);
 
         // Move the viewport down
         auto hr = screenInfo.SetViewportOrigin(true, newViewOrigin, true);
@@ -186,39 +182,19 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         SMALL_RECT scrollRect = { 0 };
         scrollRect.Top = srMargins.Top;
         scrollRect.Bottom = srMargins.Bottom;
-        scrollRect.Left = screenInfo.GetViewport().Left(); // NOTE: Left/Right Scroll margins don't do anything currently.
-        scrollRect.Right = screenInfo.GetViewport().RightInclusive();
+        scrollRect.Left = 0; // NOTE: Left/Right Scroll margins don't do anything currently.
+        scrollRect.Right = bufferSize.X - 1; // -1, otherwise this would be an exclusive rect.
 
         COORD dest;
         dest.X = scrollRect.Left;
         dest.Y = scrollRect.Top - diff;
 
-        SMALL_RECT clipRect = scrollRect;
-        // Typically ScrollRegion() clips by the scroll margins. However, if
-        //      we're scrolling down at the top of the viewport, we'll need to
-        //      not clip at the margins, instead move the contents of the margins
-        //      up above the viewport. So we'll clear out the current margins, and
-        //      set them to the viewport+(#diff rows above the viewport).
-        if (scrollDownAtTop)
-        {
-            clipRect.Top -= diff;
-            auto fakeMargins = srMargins;
-            fakeMargins.Top -= diff;
-            auto fakeRelative = viewport.ConvertToOrigin(Viewport::FromInclusive(fakeMargins));
-            screenInfo.SetScrollMargins(fakeRelative);
-        }
-
         try
         {
-            ScrollRegion(screenInfo, scrollRect, clipRect, dest, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, bufferAttributes);
         }
         CATCH_LOG();
 
-        if (scrollDownAtTop)
-        {
-            // Undo the fake margins we set above
-            screenInfo.SetScrollMargins(relativeMargins);
-        }
         coordCursor.Y -= diff;
     }
 
@@ -511,26 +487,29 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                     }
                     else
                     {
-                        // As a special favor to incompetent apps that attempt to display control chars,
-                        // convert to corresponding OEM Glyph Chars
-                        WORD CharType;
-
-                        GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
-                        if (CharType == C1_CNTRL)
-                        {
-                            ConvertOutputToUnicode(gci.OutputCP,
-                                                   (LPSTR)&RealUnicodeChar,
-                                                   1,
-                                                   LocalBufPtr,
-                                                   1);
-                        }
-                        else if (Char == UNICODE_NULL)
+                        if (Char == UNICODE_NULL)
                         {
                             *LocalBufPtr = UNICODE_SPACE;
                         }
                         else
                         {
-                            *LocalBufPtr = Char;
+                            // As a special favor to incompetent apps that attempt to display control chars,
+                            // convert to corresponding OEM Glyph Chars
+                            WORD CharType;
+
+                            GetStringTypeW(CT_CTYPE1, &RealUnicodeChar, 1, &CharType);
+                            if (WI_IsFlagSet(CharType, C1_CNTRL))
+                            {
+                                ConvertOutputToUnicode(gci.OutputCP,
+                                                       (LPSTR)&RealUnicodeChar,
+                                                       1,
+                                                       LocalBufPtr,
+                                                       1);
+                            }
+                            else
+                            {
+                                *LocalBufPtr = Char;
+                            }
                         }
 
                         LocalBufPtr++;

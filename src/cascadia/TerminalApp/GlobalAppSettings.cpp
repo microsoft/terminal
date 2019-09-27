@@ -5,8 +5,8 @@
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "AppKeyBindingsSerialization.h"
 #include "Utils.h"
+#include "JsonUtils.h"
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -31,7 +31,7 @@ static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keybindings{},
+    _keybindings{ winrt::make_self<winrt::TerminalApp::implementation::AppKeyBindings>() },
     _colorSchemes{},
     _defaultProfile{},
     _alwaysShowTabs{ true },
@@ -71,12 +71,7 @@ GUID GlobalAppSettings::GetDefaultProfile() const noexcept
 
 AppKeyBindings GlobalAppSettings::GetKeybindings() const noexcept
 {
-    return _keybindings;
-}
-
-void GlobalAppSettings::SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept
-{
-    _keybindings = newBindings;
+    return *_keybindings;
 }
 
 bool GlobalAppSettings::GetAlwaysShowTabs() const noexcept
@@ -175,7 +170,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
-    jsonObject[JsonKey(KeybindingsKey)] = AppKeyBindingsSerialization::ToJson(_keybindings);
+    jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
 
     return jsonObject;
 }
@@ -188,58 +183,61 @@ Json::Value GlobalAppSettings::ToJson() const
 // - a new GlobalAppSettings instance created from the values in `json`
 GlobalAppSettings GlobalAppSettings::FromJson(const Json::Value& json)
 {
-    GlobalAppSettings result{};
+    GlobalAppSettings result;
+    result.LayerJson(json);
+    return result;
+}
 
+void GlobalAppSettings::LayerJson(const Json::Value& json)
+{
     if (auto defaultProfile{ json[JsonKey(DefaultProfileKey)] })
     {
         auto guid = Utils::GuidFromString(GetWstringFromJson(defaultProfile));
-        result._defaultProfile = guid;
+        _defaultProfile = guid;
     }
 
     if (auto alwaysShowTabs{ json[JsonKey(AlwaysShowTabsKey)] })
     {
-        result._alwaysShowTabs = alwaysShowTabs.asBool();
+        _alwaysShowTabs = alwaysShowTabs.asBool();
     }
     if (auto initialRows{ json[JsonKey(InitialRowsKey)] })
     {
-        result._initialRows = initialRows.asInt();
+        _initialRows = initialRows.asInt();
     }
     if (auto initialCols{ json[JsonKey(InitialColsKey)] })
     {
-        result._initialCols = initialCols.asInt();
+        _initialCols = initialCols.asInt();
     }
 
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
-        result._showTitleInTitlebar = showTitleInTitlebar.asBool();
+        _showTitleInTitlebar = showTitleInTitlebar.asBool();
     }
 
     if (auto showTabsInTitlebar{ json[JsonKey(ShowTabsInTitlebarKey)] })
     {
-        result._showTabsInTitlebar = showTabsInTitlebar.asBool();
+        _showTabsInTitlebar = showTabsInTitlebar.asBool();
     }
 
     if (auto wordDelimiters{ json[JsonKey(WordDelimitersKey)] })
     {
-        result._wordDelimiters = GetWstringFromJson(wordDelimiters);
+        _wordDelimiters = GetWstringFromJson(wordDelimiters);
     }
 
     if (auto copyOnSelect{ json[JsonKey(CopyOnSelectKey)] })
     {
-        result._copyOnSelect = copyOnSelect.asBool();
+        _copyOnSelect = copyOnSelect.asBool();
     }
 
     if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
     {
-        result._requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
+        _requestedTheme = _ParseTheme(GetWstringFromJson(requestedTheme));
     }
 
     if (auto keybindings{ json[JsonKey(KeybindingsKey)] })
     {
-        result._keybindings = AppKeyBindingsSerialization::FromJson(keybindings);
+        _keybindings->LayerJson(keybindings);
     }
-
-    return result;
 }
 
 // Method Description:
