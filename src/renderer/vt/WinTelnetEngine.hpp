@@ -24,6 +24,7 @@ namespace Microsoft::Console::Render
     {
     public:
         WinTelnetEngine(_In_ wil::unique_hfile hPipe,
+                        wil::shared_event shutdownEvent,
                         const Microsoft::Console::IDefaultColorProvider& colorProvider,
                         const Microsoft::Console::Types::Viewport initialViewport,
                         _In_reads_(cColorTable) const COLORREF* const ColorTable,

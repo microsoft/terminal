@@ -23,6 +23,20 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 {
     TEST_CLASS(VtIoTests);
 
+    wil::shared_event _shutdownEvent;
+
+    TEST_CLASS_SETUP(VtIoTestsSetup)
+    {
+        _shutdownEvent.create(wil::EventOptions::ManualReset);
+        return true;
+    }
+
+    TEST_METHOD_SETUP(VtIoMethodSetup)
+    {
+        _shutdownEvent.ResetEvent();
+        return true;
+    }
+
     // General Tests:
     TEST_METHOD(NoOpStartTest);
     TEST_METHOD(ModeParsingTest);
@@ -119,28 +133,28 @@ void VtIoTests::DtorTestJustEngine()
 
         wil::unique_hfile hOutputFile;
         hOutputFile.reset(INVALID_HANDLE_VALUE);
-        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
+        auto pRenderer256 = new Xterm256Engine(std::move(hOutputFile), _shutdownEvent, p, SetUpViewport(), colorTable, colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made Xterm256Engine"));
         delete pRenderer256;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, false);
+        auto pRenderEngineXterm = new XtermEngine(std::move(hOutputFile), _shutdownEvent, p, SetUpViewport(), colorTable, colorTableSize, false);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXterm;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize, true);
+        auto pRenderEngineXtermAscii = new XtermEngine(std::move(hOutputFile), _shutdownEvent, p, SetUpViewport(), colorTable, colorTableSize, true);
         Log::Comment(NoThrowString().Format(L"Made XtermEngine"));
         delete pRenderEngineXtermAscii;
         Log::Comment(NoThrowString().Format(L"Deleted."));
 
         hOutputFile.reset(INVALID_HANDLE_VALUE);
 
-        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), p, SetUpViewport(), colorTable, colorTableSize);
+        auto pRenderEngineWinTelnet = new WinTelnetEngine(std::move(hOutputFile), _shutdownEvent, p, SetUpViewport(), colorTable, colorTableSize);
         Log::Comment(NoThrowString().Format(L"Made WinTelnetEngine"));
         delete pRenderEngineWinTelnet;
         Log::Comment(NoThrowString().Format(L"Deleted."));
@@ -173,6 +187,7 @@ void VtIoTests::DtorTestDeleteVtio()
         VtIo* vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                  _shutdownEvent,
                                                                   p,
                                                                   SetUpViewport(),
                                                                   colorTable,
@@ -185,6 +200,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                               _shutdownEvent,
                                                                p,
                                                                SetUpViewport(),
                                                                colorTable,
@@ -198,6 +214,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                               _shutdownEvent,
                                                                p,
                                                                SetUpViewport(),
                                                                colorTable,
@@ -211,6 +228,7 @@ void VtIoTests::DtorTestDeleteVtio()
         vtio = new VtIo();
         Log::Comment(NoThrowString().Format(L"Made VtIo"));
         vtio->_pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                   _shutdownEvent,
                                                                    p,
                                                                    SetUpViewport(),
                                                                    colorTable,
@@ -246,6 +264,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                     _shutdownEvent,
                                                                      p,
                                                                      SetUpViewport(),
                                                                      colorTable,
@@ -256,6 +275,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                  _shutdownEvent,
                                                                   p,
                                                                   SetUpViewport(),
                                                                   colorTable,
@@ -267,6 +287,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                  _shutdownEvent,
                                                                   p,
                                                                   SetUpViewport(),
                                                                   colorTable,
@@ -278,6 +299,7 @@ void VtIoTests::DtorTestStackAlloc()
         {
             VtIo vtio;
             vtio._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                      _shutdownEvent,
                                                                       p,
                                                                       SetUpViewport(),
                                                                       colorTable,
@@ -310,6 +332,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio1;
             vtio1._pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(hOutputFile),
+                                                                      _shutdownEvent,
                                                                       p,
                                                                       SetUpViewport(),
                                                                       colorTable,
@@ -318,6 +341,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio2;
             vtio2._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                   _shutdownEvent,
                                                                    p,
                                                                    SetUpViewport(),
                                                                    colorTable,
@@ -327,6 +351,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio3;
             vtio3._pVtRenderEngine = std::make_unique<XtermEngine>(std::move(hOutputFile),
+                                                                   _shutdownEvent,
                                                                    p,
                                                                    SetUpViewport(),
                                                                    colorTable,
@@ -336,6 +361,7 @@ void VtIoTests::DtorTestStackAllocMany()
             hOutputFile.reset(INVALID_HANDLE_VALUE);
             VtIo vtio4;
             vtio4._pVtRenderEngine = std::make_unique<WinTelnetEngine>(std::move(hOutputFile),
+                                                                       _shutdownEvent,
                                                                        p,
                                                                        SetUpViewport(),
                                                                        colorTable,
@@ -415,6 +441,7 @@ void VtIoTests::BasicAnonymousPipeOpeningWithSignalChannelTest()
     Log::Comment(L"\tinitializing vtio");
 
     VtIo vtio;
+    vtio._doNotTerminate = true; // suspend process termination on teardown so we don't lose the test host process
     VERIFY_IS_FALSE(vtio.IsUsingVt());
     VERIFY_ARE_EQUAL(nullptr, vtio._pPtySignalInputThread);
     VERIFY_SUCCEEDED(vtio._Initialize(inPipeReadSide.release(), outPipeWriteSide.release(), L"", signalPipeReadSide.release()));

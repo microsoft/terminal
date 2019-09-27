@@ -72,4 +72,9 @@
             <ExpandedItem>_Mypair._Myval2</ExpandedItem>
         </Expand>
     </Type>
+
+    <Type Name="KeyEvent">
+        <DisplayString Condition="_keyDown">{{↓  wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+        <DisplayString Condition="!_keyDown">{{↑ wch:{_charData} mod:{_activeModifierKeys} repeat:{_repeatCount} vk:{_virtualKeyCode} vsc:{_virtualScanCode}}</DisplayString>
+    </Type>
 </AutoVisualizer>

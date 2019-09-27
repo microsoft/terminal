@@ -9,11 +9,12 @@ using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 
 Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
+                               wil::shared_event shutdownEvent,
                                const IDefaultColorProvider& colorProvider,
                                const Viewport initialViewport,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                const WORD cColorTable) :
-    XtermEngine(std::move(hPipe), colorProvider, initialViewport, ColorTable, cColorTable, false)
+    XtermEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport, ColorTable, cColorTable, false)
 {
 }
 

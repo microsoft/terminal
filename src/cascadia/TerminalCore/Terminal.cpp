@@ -45,7 +45,7 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _boxSelection{ false },
     _selectionActive{ false },
-    _allowSingleCharSelection{ false },
+    _allowSingleCharSelection{ true },
     _copyOnSelect{ false },
     _selectionAnchor{ 0, 0 },
     _endSelectionPosition{ 0, 0 }
