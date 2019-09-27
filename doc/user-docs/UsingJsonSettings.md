@@ -241,6 +241,8 @@ following objects into your `globals.keybindings` array:
 { "command": "paste", "keys": ["ctrl+shift+v"] }
 ```
 
+> 👉 **Note**: you can also add a keybinding for the `copyTextWithoutNewlines` command. This removes newlines as the text is copied to your clipboard.
+
 This will add copy and paste on <kbd>ctrl+shift+c</kbd>
 and <kbd>ctrl+shift+v</kbd> respectively.
 
@@ -270,7 +272,7 @@ You can even set multiple keybindings for a single action if you'd like. For exa
 will bind both <kbd>ctrl+shift+v</kbd> and
 <kbd>shift+Insert</kbd> to `paste`.
 
-Note: If you set your copy keybinding to `"ctrl+c"`, you'll only be able to send
+> 👉 **Note**: If you set your copy keybinding to `"ctrl+c"`, you'll only be able to send
 an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,
