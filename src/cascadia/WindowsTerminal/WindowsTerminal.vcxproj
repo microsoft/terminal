@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props')" />
-  <Import Project="..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props')" />
-  <Import Project="..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props" Condition="Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props')" />
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+
   <PropertyGroup>
     <ConfigurationType>Application</ConfigurationType>
     <SubSystem>Windows</SubSystem>
@@ -82,9 +81,12 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettings\TerminalSettings.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
+
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\TerminalApp.vcxproj" />
+
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
   </ItemGroup>
+
   <!--
     This ItemGroup and the Globals PropertyGroup below it are required in order
     to enable F5 debugging for the unpackaged application
@@ -100,6 +102,7 @@
     <!-- DON'T REDIRECT OUR OUTPUT -->
     <NoOutputRedirection>true</NoOutputRedirection>
   </PropertyGroup>
+
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.2.190611001-prerelease\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
@@ -110,18 +113,15 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets'))" />
   </Target>
+
   <Import Project="$(OpenConsoleDir)src\common.build.post.props" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
+
   <Import Project="..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets" Condition="Exists('..\..\..\packages\Microsoft.Windows.ImplementationLibrary.1.0.190521.3\build\native\Microsoft.Windows.ImplementationLibrary.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.0.0-preview7\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.1-rc\build\native\Microsoft.VCRTForwarders.140.targets')" />
+
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into
        the package, we tell it.
@@ -143,12 +143,11 @@
       ContinueOnError="$(_ContinueOnError)">
       <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
     </MSBuild>
+
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
   </Target>
+  
   <Import Project="$(OpenConsoleDir)\build\rules\GenerateSxsManifestsFromWinmds.targets" />
-  <Import Project="..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets" Condition="Exists('..\..\..\packages\Microsoft.Build.Tasks.Git.1.0.0-beta2-19367-01\build\Microsoft.Build.Tasks.Git.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.Common.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.Common.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets" Condition="Exists('..\..\..\packages\Microsoft.SourceLink.GitHub.1.0.0-beta2-19367-01\build\Microsoft.SourceLink.GitHub.targets')" />
 </Project>
