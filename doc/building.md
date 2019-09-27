@@ -1,7 +1,7 @@
 
 # How to build Openconsole
 
-Openconsole can be built with Visual Studio or from the command line. There are build scripts for both cmd and powershell in /tools.
+Openconsole can be built with Visual Studio or from the command line. There are build scripts for both cmd and PowerShell in /tools.
 
 When using Visual Studio, be sure to set up the path for code formatting. This can be done in Visual Studio by going to Tools > Options > Text Editor > C++ > Formatting and checking "Use custom clang-format.exe file" and choosing the clang-format.exe in the repository at /dep/llvm/clang-format.exe by clicking "browse" right under the check box.
 
@@ -33,4 +33,4 @@ Openconsole has three configuration types:
 - Release
 - AuditMode
 
-AuditMode is an experimental mode that enables some additional static analyis from CppCoreCheck.
+AuditMode is an experimental mode that enables some additional static analysis from CppCoreCheck.

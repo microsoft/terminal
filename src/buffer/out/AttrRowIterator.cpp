@@ -6,21 +6,21 @@
 #include "AttrRowIterator.hpp"
 #include "AttrRow.hpp"
 
-AttrRowIterator AttrRowIterator::CreateEndIterator(const ATTR_ROW* const attrRow)
+AttrRowIterator AttrRowIterator::CreateEndIterator(const ATTR_ROW* const attrRow) noexcept
 {
     AttrRowIterator it{ attrRow };
     it._setToEnd();
     return it;
 }
 
-AttrRowIterator::AttrRowIterator(const ATTR_ROW* const attrRow) :
+AttrRowIterator::AttrRowIterator(const ATTR_ROW* const attrRow) noexcept :
     _pAttrRow{ attrRow },
     _run{ attrRow->_list.cbegin() },
     _currentAttributeIndex{ 0 }
 {
 }
 
-AttrRowIterator::operator bool() const noexcept
+AttrRowIterator::operator bool() const
 {
     return _run < _pAttrRow->_list.cend();
 }
@@ -139,7 +139,7 @@ void AttrRowIterator::_decrement(size_t count)
 
 // Routine Description:
 // - sets fields on the iterator to describe the end() state of the ATTR_ROW
-void AttrRowIterator::_setToEnd()
+void AttrRowIterator::_setToEnd() noexcept
 {
     _run = _pAttrRow->_list.cend();
     _currentAttributeIndex = 0;

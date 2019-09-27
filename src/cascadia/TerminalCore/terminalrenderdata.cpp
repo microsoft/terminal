@@ -92,7 +92,9 @@ COLORREF Terminal::GetCursorColor() const noexcept
 
 bool Terminal::IsCursorDoubleWidth() const noexcept
 {
-    return false;
+    const auto position = _buffer->GetCursor().GetPosition();
+    TextBufferTextIterator it(TextBufferCellIterator(*_buffer, position));
+    return IsGlyphFullWidth(*it);
 }
 
 const std::vector<RenderOverlay> Terminal::GetOverlays() const noexcept
