@@ -14,7 +14,6 @@ using namespace Microsoft::Console::VirtualTerminal;
 OutputStateMachineEngine::OutputStateMachineEngine(ITermDispatch* const pDispatch) :
     _dispatch(pDispatch),
     _pfnFlushToTerminal(nullptr),
-    _pTtyConnection(nullptr),
     _lastPrintedChar(AsciiChars::NUL)
 {
 }
@@ -1677,10 +1676,8 @@ _Success_(return ) bool OutputStateMachineEngine::_GetCursorStyle(_In_reads_(cPa
 //      currently processing.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection,
-                                                     std::function<bool()> pfnFlushToTerminal)
+void OutputStateMachineEngine::EnableFlushing(std::function<bool()> pfnFlushToTerminal)
 {
-    this->_pTtyConnection = pTtyConnection;
     this->_pfnFlushToTerminal = pfnFlushToTerminal;
 }
 

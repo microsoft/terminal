@@ -2521,13 +2521,11 @@ void SCREEN_INFORMATION::SetTerminalConnection(_In_ ITerminalOutputConnection* c
     OutputStateMachineEngine& engine = reinterpret_cast<OutputStateMachineEngine&>(_stateMachine->Engine());
     if (pTtyConnection)
     {
-        engine.SetTerminalConnection(pTtyConnection,
-                                     std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
+        engine.EnableFlushing(std::bind(&StateMachine::FlushToTerminal, _stateMachine.get()));
     }
     else
     {
-        engine.SetTerminalConnection(nullptr,
-                                     nullptr);
+        engine.EnableFlushing(nullptr);
     }
 }
 
