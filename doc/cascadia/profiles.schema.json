@@ -12,11 +12,81 @@
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
       "type": "string"
-    }
-  },
-  "properties": {
-    "globals": {
+    },
+    "Keybinding": {
       "additionalProperties": false,
+      "properties": {
+        "command": {
+          "description": "The command executed when the associated key bindings are pressed.",
+          "enum": [
+            "closePane",
+            "closeTab",
+            "closeWindow",
+            "copy",
+            "copyTextWithoutNewlines",
+            "decreaseFontSize",
+            "duplicateTab",
+            "increaseFontSize",
+            "moveFocusDown",
+            "moveFocusLeft",
+            "moveFocusRight",
+            "moveFocusUp",
+            "newTab",
+            "newTabProfile0",
+            "newTabProfile1",
+            "newTabProfile2",
+            "newTabProfile3",
+            "newTabProfile4",
+            "newTabProfile5",
+            "newTabProfile6",
+            "newTabProfile7",
+            "newTabProfile8",
+            "nextTab",
+            "openNewTabDropdown",
+            "openSettings",
+            "paste",
+            "prevTab",
+            "resizePaneDown",
+            "resizePaneLeft",
+            "resizePaneRight",
+            "resizePaneUp",
+            "scrollDown",
+            "scrollDownPage",
+            "scrollUp",
+            "scrollUpPage",
+            "splitHorizontal",
+            "splitVertical",
+            "switchToTab",
+            "switchToTab0",
+            "switchToTab1",
+            "switchToTab2",
+            "switchToTab3",
+            "switchToTab4",
+            "switchToTab5",
+            "switchToTab6",
+            "switchToTab7",
+            "switchToTab8"
+          ],
+          "type": "string"
+        },
+        "keys": {
+          "description": "Defines the key combinations used to call the command.",
+          "items": {
+            "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        }
+      },
+      "required": [
+        "command",
+        "keys"
+      ],
+      "type": "object"
+    },
+    "Globals": {
+      "additionalProperties": true,
       "description": "Properties that affect the entire window, regardless of the profile settings.",
       "properties": {
         "alwaysShowTabs": {
@@ -50,76 +120,7 @@
         "keybindings": {
           "description": "Properties are specific to each custom key binding.",
           "items": {
-            "additionalProperties": false,
-            "properties": {
-              "command": {
-                "description": "The command executed when the associated key bindings are pressed.",
-                "enum": [
-                  "closePane",
-                  "closeTab",
-                  "closeWindow",
-                  "copy",
-                  "copyTextWithoutNewlines",
-                  "decreaseFontSize",
-                  "duplicateTab",
-                  "increaseFontSize",
-                  "moveFocusDown",
-                  "moveFocusLeft",
-                  "moveFocusRight",
-                  "moveFocusUp",
-                  "newTab",
-                  "newTabProfile0",
-                  "newTabProfile1",
-                  "newTabProfile2",
-                  "newTabProfile3",
-                  "newTabProfile4",
-                  "newTabProfile5",
-                  "newTabProfile6",
-                  "newTabProfile7",
-                  "newTabProfile8",
-                  "nextTab",
-                  "openNewTabDropdown",
-                  "openSettings",
-                  "paste",
-                  "prevTab",
-                  "resizePaneDown",
-                  "resizePaneLeft",
-                  "resizePaneRight",
-                  "resizePaneUp",
-                  "scrollDown",
-                  "scrollDownPage",
-                  "scrollUp",
-                  "scrollUpPage",
-                  "splitHorizontal",
-                  "splitVertical",
-                  "switchToTab",
-                  "switchToTab0",
-                  "switchToTab1",
-                  "switchToTab2",
-                  "switchToTab3",
-                  "switchToTab4",
-                  "switchToTab5",
-                  "switchToTab6",
-                  "switchToTab7",
-                  "switchToTab8"
-                ],
-                "type": "string"
-              },
-              "keys": {
-                "description": "Defines the key combinations used to call the command.",
-                "items": {
-                  "pattern": "^(?<modifier>(ctrl|alt|shift)\\+?((ctrl|alt|shift)(?<!\\2)\\+?)?((ctrl|alt|shift)(?<!\\2|\\4))?\\+?)?(?<key>[^+\\s]+?)?(?<=[^+\\s])$",
-                  "type": "string"
-                },
-                "minItems": 1,
-                "type": "array"
-              }
-            },
-            "required": [
-              "command",
-              "keys"
-            ],
-            "type": "object"
+            "$ref": "#/definitions/Keybinding"
           },
           "type": "array"
         },
@@ -154,7 +155,7 @@
       ],
       "type": "object"
     },
-    "profiles": {
+    "ProfileList": {
       "description": "Properties are specific to each unique profile.",
       "items": {
         "additionalProperties": false,
@@ -348,6 +349,11 @@
             "$ref": "#/definitions/ProfileGuid",
             "description": "Unique identifier of the profile. Written in registry format: \"{00000000-0000-0000-0000-000000000000}\"."
           },
+          "hidden": {
+            "default": false,
+            "description": "If set to true, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamicially generated profiles, while leaving them in your settings file.",
+            "type": "boolean"
+          },
           "historySize": {
             "default": 9001,
             "description": "The number of lines above the ones displayed in the window you can scroll back to.",
@@ -409,7 +415,7 @@
       },
       "type": "array"
     },
-    "schemes": {
+    "SchemeList": {
       "description": "Properties are specific to each color scheme. ColorTool is a great tool you can use to create and explore new color schemes. All colors use hex color format.",
       "items": {
         "additionalProperties": false,
@@ -497,9 +503,36 @@
       "type": "array"
     }
   },
-  "required": [
-    "profiles",
-    "schemes"
-  ],
-  "type": "object"
+  "oneOf": [
+    {
+      "allOf": [
+        { "$ref": "#/definitions/Globals" },
+        {
+          "additionalItems": true,
+          "properties": {
+            "profiles": { "$ref": "#/definitions/ProfileList" },
+            "schemes": { "$ref": "#/definitions/SchemeList" }
+          },
+          "required": [
+            "profiles",
+            "schemes",
+            "defaultProfile"
+          ]
+        }
+      ]
+    },
+    {
+      "additionalItems": false,
+      "properties": {
+        "globals": { "$ref": "#/definitions/Globals" },
+        "profiles": { "$ref": "#/definitions/ProfileList" },
+        "schemes": { "$ref": "#/definitions/SchemeList" }
+      },
+      "required": [
+        "profiles",
+        "schemes",
+        "globals"
+      ]
+    }
+  ]
 }
