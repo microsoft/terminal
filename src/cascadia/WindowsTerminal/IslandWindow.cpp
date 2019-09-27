@@ -88,7 +88,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<winrt::hstring(const HWND, const RECT)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<winrt::TerminalApp::LaunchMode(const HWND, const RECT)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -110,14 +110,14 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     rc.right = rc.left + pcs->cx;
     rc.bottom = rc.top + pcs->cy;
 
-    winrt::hstring launchMode = L"";
+    winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
         launchMode = _pfnCreateCallback(_window.get(), rc);
     }
 
     int nCmdShow = SW_SHOW;
-    if (launchMode == L"maximized")
+    if (launchMode == winrt::TerminalApp::LaunchMode::MaximizedMode)
     {
         nCmdShow = SW_MAXIMIZE;
     }

@@ -60,11 +60,11 @@ public:
 
     int32_t GetInitialX() const noexcept;
     void SetInitialX(const int32_t initialX) noexcept;
-    bool GetUseDefaultInitialX() const noexcept;
+    bool GetIsInitialXSet() const noexcept;
 
     int32_t GetInitialY() const noexcept;
     void SetInitialY(const int32_t initialY) noexcept;
-    bool GetUseDefaultInitialY() const noexcept;
+    bool GetIsInitialYSet() const noexcept;
 
     winrt::hstring GetLaunchMode() const noexcept;
     void SetLaunchMode(const std::wstring launchMode);
@@ -86,10 +86,10 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
-    int _initialX;
+    int32_t _initialX;
     int32_t _initialY;
-    bool _useDefaultInitialX;
-    bool _useDefaultInitialY;
+    bool _isInitialXSet;
+    bool _isInitialYSet;
 
     bool _showStatusline;
     bool _alwaysShowTabs;

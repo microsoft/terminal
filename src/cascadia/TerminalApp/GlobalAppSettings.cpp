@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include <WinUser.h>
 #include "pch.h"
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
@@ -42,8 +41,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _initialCols{ DEFAULT_COLS },
     _initialX{ 0 },
     _initialY{ 0 },
-    _useDefaultInitialX{ true },
-    _useDefaultInitialY{ true },
+    _isInitialXSet{ false },
+    _isInitialYSet{ false },
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default },
@@ -136,6 +135,7 @@ winrt::hstring GlobalAppSettings::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }
+
 void GlobalAppSettings::SetLaunchMode(const std::wstring launchMode)
 {
     _launchMode = launchMode;
@@ -156,25 +156,30 @@ int32_t GlobalAppSettings::GetInitialX() const noexcept
 {
     return _initialX;
 }
+
 void GlobalAppSettings::SetInitialX(const int32_t initialX) noexcept
 {
     _initialX = initialX;
 }
-bool GlobalAppSettings::GetUseDefaultInitialX() const noexcept
+
+bool GlobalAppSettings::GetIsInitialXSet() const noexcept
 {
-    return _useDefaultInitialX;
+    return _isInitialXSet;
 }
+
 int32_t GlobalAppSettings::GetInitialY() const noexcept
 {
     return _initialY;
 }
+
 void GlobalAppSettings::SetInitialY(const int32_t initialY) noexcept
 {
     _initialY = initialY;
 }
-bool GlobalAppSettings::GetUseDefaultInitialY() const noexcept
+
+bool GlobalAppSettings::GetIsInitialYSet() const noexcept
 {
-    return _useDefaultInitialY;
+    return _isInitialYSet;
 }
 
 #pragma endregion
@@ -208,8 +213,14 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-    jsonObject[JsonKey(InitialXKey)] = _initialX;
-    jsonObject[JsonKey(InitialYKey)] = _initialY;
+    if (_isInitialXSet)
+    {
+        jsonObject[JsonKey(InitialXKey)] = _initialX;
+    }
+    if (_isInitialYSet)
+    {
+        jsonObject[JsonKey(InitialYKey)] = _initialY;
+    }
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
@@ -257,12 +268,12 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
     if (auto initialX{ json[JsonKey(InitialXKey)] })
     {
-        _useDefaultInitialX = false;
+        _isInitialXSet = true;
         _initialX = initialX.asInt();
     }
     if (auto initialY{ json[JsonKey(InitialYKey)] })
     {
-        _useDefaultInitialY = false;
+        _isInitialYSet = true;
         _initialY = initialY.asInt();
     }
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })

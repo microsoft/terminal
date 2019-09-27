@@ -3,9 +3,16 @@
 
 namespace TerminalApp
 {
+    enum LaunchMode
+    {
+        DefaultMode,
+        MaximizedMode,
+    };
+
     delegate void LastTabClosedEventArgs();
     [default_interface] runtimeclass App : Microsoft.Toolkit.Win32.UI.XamlHost.XamlApplication
     {
+
         App();
 
         void Initialize();
@@ -18,14 +25,13 @@ namespace TerminalApp
         void Create();
 
         void LoadSettings();
-
         Windows.UI.Xaml.UIElement GetRoot();
 
         String Title { get; };
 
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
-        String GetLaunchMode();
+        LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
 

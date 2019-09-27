@@ -31,8 +31,8 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
 
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
-        winrt::Windows::Foundation::Point GetLaunchInitialPositions(int defaultInitialX, int defaultInitialY);
-        hstring GetLaunchMode();
+        winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
+        LaunchMode GetLaunchMode();
         bool GetShowTabsInTitlebar();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;

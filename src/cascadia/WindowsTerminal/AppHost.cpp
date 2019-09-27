@@ -126,19 +126,19 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 //   create. We'll use this rect to determine which monitor the window is about
 //   to appear on.
 // Return Value:
-// - A string that indicates the launch mode
-winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
+// - A LaunchMode enum that indicates the launch mode
+winrt::TerminalApp::LaunchMode AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
 {
-    winrt::hstring launchMode = _app.GetLaunchMode();
+    winrt::TerminalApp::LaunchMode launchMode = _app.GetLaunchMode();
 
     // Acquire the actual intial position
     winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
-    proposedRect.left = (long)initialPosition.X;
-    proposedRect.top = (long)initialPosition.Y;
+    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
+    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
-    if (launchMode == L"default")
+    if (launchMode == winrt::TerminalApp::LaunchMode::DefaultMode)
     {
         // Find nearest montitor.
         HMONITOR hmon = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
@@ -146,7 +146,7 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         // Get nearest monitor information
         MONITORINFO monitorInfo;
         monitorInfo.cbSize = sizeof(MONITORINFO);
-        GetMonitorInfoA(hmon, &monitorInfo);
+        GetMonitorInfo(hmon, &monitorInfo);
 
         // This API guarantees that dpix and dpiy will be equal, but neither is an
         // optional parameter so give two UINTs.
@@ -155,7 +155,7 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         // If this fails, we'll use the default of 96.
         GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy);
 
-        // We need to check if the top left point of the titlebar of the window is winthin any screen
+        // We need to check if the top left point of the titlebar of the window is within any screen
         RECT offScreenTestRect;
         offScreenTestRect.left = proposedRect.left;
         offScreenTestRect.top = proposedRect.top;
@@ -168,7 +168,7 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
                 auto intersectWithMonitor = reinterpret_cast<bool*>(lParam);
                 *intersectWithMonitor = true;
                 // Continue the enumeration
-                return TRUE;
+                return FALSE;
             },
             reinterpret_cast<LPARAM>(&isTitlebarIntersectWithMonitors));
 
@@ -199,7 +199,7 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
             // If we're in NC tabs mode, do the math ourselves. Get the margins
             // we're using for the window - this will include the size of the
             // titlebar content.
-            auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
+            const auto pNcWindow = static_cast<NonClientIslandWindow*>(_window.get());
             const MARGINS margins = pNcWindow->GetFrameMargins();
             nonClient.left = 0;
             nonClient.top = 0;
@@ -222,8 +222,8 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         }
 
         // Calculate the maximum size the window could have without hangs-off
-        long horizontalMaxLength = std::abs(proposedRect.left - monitorInfo.rcWork.right);
-        long verticalMaxLength = std::abs(proposedRect.top - monitorInfo.rcWork.bottom);
+        const long horizontalMaxLength = std::abs(proposedRect.left - monitorInfo.rcWork.right);
+        const long verticalMaxLength = std::abs(proposedRect.top - monitorInfo.rcWork.bottom);
 
         adjustedHeight = std::min(nonClient.bottom - nonClient.top, verticalMaxLength);
         adjustedWidth = std::min(nonClient.right - nonClient.left, horizontalMaxLength);
@@ -258,7 +258,7 @@ winrt::hstring AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-    return _app.GetLaunchMode();
+    return launchMode;
 }
 
 // Method Description:

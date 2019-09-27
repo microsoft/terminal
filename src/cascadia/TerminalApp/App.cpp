@@ -344,14 +344,14 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Get the launch mode in json settings file. Now there
-    //   two launch mode: default, maximize. Default means the window
-    //   will launch according to the launch dimensions provided. Maximize
+    //   two launch mode: default, maximized. Default means the window
+    //   will launch according to the launch dimensions provided. Maximized
     //   means the window will launch as a maximized window
     // Arguments:
     // - <none>
     // Return Value:
-    // - a string representing launch mode: "default" or "maximize"
-    hstring App::GetLaunchMode()
+    // - LaunchMode enum that indicates the launch mode
+    LaunchMode App::GetLaunchMode()
     {
         if (!_loadedInitialSettings)
         {
@@ -359,7 +359,14 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        return _settings->GlobalSettings().GetLaunchMode();
+        hstring launchModeText = _settings->GlobalSettings().GetLaunchMode();
+        LaunchMode launchMode = LaunchMode::DefaultMode;
+        if (launchModeText == L"maximized")
+        {
+            launchMode = LaunchMode::MaximizedMode;
+        }
+
+        return launchMode;
     }
 
     // Method Description:
@@ -372,7 +379,7 @@ namespace winrt::TerminalApp::implementation
     // - defaultInitialY: the system defualt y coordinate value
     // Return Value:
     // - a point containing the requested initial position in pixels.
-    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(int defaultInitialX, int defaultInitialY)
+    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY)
     {
         if (!_loadedInitialSettings)
         {
@@ -382,13 +389,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
 
-        if (!_settings->GlobalSettings().GetUseDefaultInitialX())
+        if (_settings->GlobalSettings().GetIsInitialXSet())
         {
-            point.X = (float)_settings->GlobalSettings().GetInitialX();
+            point.X = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialX());
         }
-        if (!_settings->GlobalSettings().GetUseDefaultInitialY())
+        if (_settings->GlobalSettings().GetIsInitialYSet())
         {
-            point.Y = (float)_settings->GlobalSettings().GetInitialY();
+            point.Y = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialY());
         }
 
         return point;

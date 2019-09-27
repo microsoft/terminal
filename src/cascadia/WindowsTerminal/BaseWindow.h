@@ -232,7 +232,7 @@ public:
     // the window will launch
     void RefreshCurrentDPI()
     {
-        _currentDpi = GetDpiForWindow(this->_window.get());
+        _currentDpi = GetDpiForWindow(_window.get());
     }
 
 protected:
