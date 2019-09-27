@@ -183,6 +183,11 @@ When dynamic profiles are created at runtime, they'll be added to the
 a linux distro, then the profile will remain in your `profiles.json` file, but
 the profile will be hidden.
 
+The Windows Terminal uses the `guid` property of these dynamically-generated
+profiles to uniquely identify them. If you try to change the `guid` of a
+dynamically-generated profile, the Terminal will automatically recreate a new
+entry for that profile.
+
 If you'd like to disable a particular dynamic profile source, you can add that
 `source` to the global `"disabledProfileSources"` array. For example, if you'd
 like to hide all the WSL profiles, you could add the following setting:
