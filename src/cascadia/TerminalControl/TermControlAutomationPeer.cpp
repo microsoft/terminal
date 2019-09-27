@@ -31,6 +31,33 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         TermControlAutomationPeerT<TermControlAutomationPeer>(owner), // pass owner to FrameworkElementAutomationPeer
         _uiaProvider{ owner, std::bind(&TermControlAutomationPeer::GetBoundingRectWrapped, this) } {};
 
+    // Method Description:
+    // - Signals the ui automation client that some part of the uia tree has changed and should be updated
+    // Arguments:
+    // - eventId: an identifier for what kind of event the console performed and is notifying the client of
+    // Return Value:
+    // - <none>
+    void TermControlAutomationPeer::SignalUia(ConsoleUiaEvent eventId)
+    {
+        switch (eventId)
+        {
+        case ConsoleUiaEvent::CursorChanged:
+            // The event that is raised when the text was changed in an edit control.
+            RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
+            break;
+        case ConsoleUiaEvent::SelectionChanged:
+            // The event that is raised when the text selection is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+            break;
+        case ConsoleUiaEvent::TextChanged:
+            // The event that is raised when textual content is modified.
+            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+            break;
+        default:
+            return;
+        }
+    }
+
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
     {
         return L"TermControl";

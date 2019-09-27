@@ -13,9 +13,10 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Constructs a UIA engine for console text
 //   which primarily notifies automation clients of any activity
-UiaEngine::UiaEngine() noexcept :
+UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
+    _dispatcher{ THROW_HR_IF_NULL(E_INVALIDARG, dispatcher) },
     _isPainting{ false },
-    _isEnabled{ false },
+    _isEnabled{ true },
     RenderEngineBase()
 {
 }
