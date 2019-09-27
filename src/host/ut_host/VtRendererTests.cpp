@@ -121,6 +121,8 @@ class Microsoft::Console::Render::VtRendererTest
 
     TEST_METHOD(TestResize);
 
+    TEST_METHOD(TestCursorVisibility);
+
     void Test16Colors(VtEngine* engine);
 
     std::deque<std::string> qExpectedInput;
@@ -1164,4 +1166,120 @@ void VtRendererTest::TestResize()
         VERIFY_IS_FALSE(engine->_firstPaint);
         VERIFY_IS_FALSE(engine->_suppressResizeRepaint);
     });
+}
+
+void VtRendererTest::TestCursorVisibility()
+{
+    Viewport view = SetUpViewport();
+    wil::unique_hfile hFile = wil::unique_hfile(INVALID_HANDLE_VALUE);
+    auto engine = std::make_unique<Xterm256Engine>(std::move(hFile), _shutdownEvent, p, view, g_ColorTable, static_cast<WORD>(COLOR_TABLE_SIZE));
+    auto pfn = std::bind(&VtRendererTest::WriteCallback, this, std::placeholders::_1, std::placeholders::_2);
+    engine->SetTestCallback(pfn);
+
+    // Verify the first paint emits a clear
+    qExpectedInput.push_back("\x1b[2J");
+    VERIFY_IS_TRUE(engine->_firstPaint);
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    TestPaint(*engine, [&]() {
+        // During StartPaint, we'll mark the cursor as off. make sure that happens.
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_firstPaint);
+    });
+
+    // The cursor wasn't painted in the last frame.
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+
+    COORD origin{ 0, 0 };
+
+    VERIFY_ARE_NOT_EQUAL(origin, engine->_lastText);
+
+    IRenderEngine::CursorOptions options{};
+    options.coordCursor = origin;
+
+    // Frame 1: Paint the cursor at the home position. At the end of the frame,
+    // the cursor should be on. Because we're moving the cursor with CUP, we
+    // need to disable the cursor during this frame.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"Make sure the cursor is at 0,0"));
+        qExpectedInput.push_back("\x1b[H");
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_needToDisableCursor);
+
+        qExpectedInput.push_back("\x1b[?25h");
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 2: Paint the cursor again at the home position. At the end of the
+    // frame, the cursor should be on, the same as before. We aren't moving the
+    // cursor during this frame, so _needToDisableCursor will stay false.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"If we just paint the cursor again at the same position, the cursor should not need to be disabled"));
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 3: Paint the cursor at 2,2. At the end of the frame, the cursor
+    // should be on, the same as before. Because we're moving the cursor with
+    // CUP, we need to disable the cursor during this frame.
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        Log::Comment(NoThrowString().Format(L"Move the cursor to 2,2"));
+        qExpectedInput.push_back("\x1b[3;3H");
+
+        options.coordCursor = { 2, 2 };
+
+        VERIFY_SUCCEEDED(engine->PaintCursor(options));
+
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+        VERIFY_IS_TRUE(engine->_needToDisableCursor);
+
+        // Because _needToDisableCursor is true, we'll insert a ?25l at the
+        // start of the frame. Unfortunately, we can't test to make sure that
+        // it's there, but we can ensure that the matching ?25h is printed:
+        qExpectedInput.push_back("\x1b[?25h");
+    });
+
+    VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+    VERIFY_IS_TRUE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+    // Frame 4: Don't paint the cursor. At the end of the frame, the cursor
+    // should be off.
+    Log::Comment(NoThrowString().Format(L"Painting without calling PaintCursor will hide the cursor"));
+    TestPaint(*engine, [&]() {
+        VERIFY_IS_TRUE(engine->_lastCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+        VERIFY_IS_FALSE(engine->_needToDisableCursor);
+
+        qExpectedInput.push_back("\x1b[?25l");
+    });
+
+    VERIFY_IS_FALSE(engine->_lastCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_nextCursorIsVisible);
+    VERIFY_IS_FALSE(engine->_needToDisableCursor);
 }
