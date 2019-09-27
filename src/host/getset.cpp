@@ -649,31 +649,42 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
-        COORD WindowOrigin;
-        WindowOrigin.X = 0;
-        WindowOrigin.Y = 0;
+        // Attempt to "snap" the viewport to the cursor position. If the cursor
+        // is not in the current viewport, we'll try and move the viewport so
+        // that the cursor is visible.
+        // microsoft/terminal#1222 - Use the "virtual" viewport here, so that
+        // when the console is in terminal-scrolling mode, the viewport snaps
+        // back to the virtual viewport's location.
+        const SMALL_RECT currentViewport = gci.IsTerminalScrolling() ?
+                                               buffer.GetVirtualViewport().ToInclusive() :
+                                               buffer.GetViewport().ToInclusive();
+        COORD delta{ 0 };
         {
-            const SMALL_RECT currentViewport = buffer.GetViewport().ToInclusive();
             if (currentViewport.Left > position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Left;
+                delta.X = position.X - currentViewport.Left;
             }
             else if (currentViewport.Right < position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Right;
+                delta.X = position.X - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Top;
+                delta.Y = position.Y - currentViewport.Top;
             }
             else if (currentViewport.Bottom < position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Bottom;
+                delta.Y = position.Y - currentViewport.Bottom;
             }
         }
 
-        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(false, WindowOrigin, true));
+        COORD newWindowOrigin{ 0 };
+        newWindowOrigin.X = currentViewport.Left + delta.X;
+        newWindowOrigin.Y = currentViewport.Top + delta.Y;
+        // SetViewportOrigin will worry about clamping these values to the
+        // buffer for us.
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, newWindowOrigin, true));
 
         return S_OK;
     }
@@ -1368,6 +1379,11 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             srScroll.Right = SHORT_MAX;
             srScroll.Top = viewport.Top;
             srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = 0;
@@ -2044,6 +2060,11 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         srScroll.Right = SHORT_MAX;
         srScroll.Top = cursorPosition.Y;
         srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;

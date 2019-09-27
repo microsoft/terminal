@@ -84,6 +84,9 @@
     <ClCompile Include="API_FillOutputTests.cpp">
       <Filter>Source Files\API</Filter>
     </ClCompile>
+    <ClCompile Include="API_PtyTests.cpp">
+      <Filter>Source Files\API</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Common.hpp">

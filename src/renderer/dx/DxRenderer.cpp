@@ -866,15 +866,31 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // Arguments:
 // - <none>
 // Return Value:
-// - S_OK or relevant DirectX error
+// - S_OK on success, E_PENDING to indicate a retry or a relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::Present() noexcept
 {
     if (_presentReady)
     {
         try
         {
-            FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present(1, 0));
-            /*FAIL_FAST_IF_FAILED(_dxgiSwapChain->Present1(1, 0, &_presentParams));*/
+            HRESULT hr = S_OK;
+
+            hr = _dxgiSwapChain->Present(1, 0);
+            /*hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);*/
+
+            if (FAILED(hr))
+            {
+                // These two error codes are indicated for destroy-and-recreate
+                if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET)
+                {
+                    // We don't need to end painting here, as the renderer has done it for us.
+                    _ReleaseDeviceResources();
+                    FAIL_FAST_IF_FAILED(InvalidateAll());
+                    return E_PENDING; // Indicate a retry to the renderer.
+                }
+
+                FAIL_FAST_HR(hr);
+            }
 
             RETURN_IF_FAILED(_CopyFrontToBack());
             _presentReady = false;

@@ -963,13 +963,17 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
             srScreen.Right = SHORT_MAX;
             srScreen.Top = csbiex.srWindow.Top;
             srScreen.Bottom = csbiex.srWindow.Bottom - 1; // srWindow is exclusive, hence the - 1
+            // Clip to the DECSTBM margin boundaries
+            if (_srScrollMargins.Top < _srScrollMargins.Bottom)
+            {
+                srScreen.Top = csbiex.srWindow.Top + _srScrollMargins.Top;
+                srScreen.Bottom = csbiex.srWindow.Top + _srScrollMargins.Bottom;
+            }
 
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = srScreen.Left;
-            // Scroll starting from the top of the scroll margins.
-            coordDestination.Y = (_srScrollMargins.Top + srScreen.Top) + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
-            // We don't need to worry about clipping the margins at all, ScrollRegion inside conhost will do that correctly for us
+            coordDestination.Y = srScreen.Top + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
 
             // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
             CHAR_INFO ciFill;

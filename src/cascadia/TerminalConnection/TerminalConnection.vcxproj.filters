@@ -15,6 +15,7 @@
     <ClCompile Include="ConhostConnection.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="AzureConnection.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
