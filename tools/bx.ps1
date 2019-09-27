@@ -9,19 +9,24 @@ if ($projects.length -eq 0)
 }
 $projectPath = $projects.FullName
 
-$msBuildCondition = "'%(ProjectReference.Identity)' == '$projectPath.metaproj'"
 
 # Parse the solution's metaproj file.
 [xml]$Metaproj = Get-Content "$env:OPENCON\OpenConsole.sln.metaproj"
 
 $targets = $Metaproj.Project.Target
 
-# Filter to project targets that match out metaproj file.
+# Most projects are in OpenConsole.sln.metaproj as "<project>.*proj.metaproj".
+# We'll filter to search for these first and foremost.
+$msBuildCondition = "'%(ProjectReference.Identity)' == '$projectPath.metaproj'"
+
+# Filter to project targets that match our metaproj file.
 # For Conhost\Server, this will match:
 #   [Conhost\Server, Conhost\Server:Clean, Conhost\Server:Rebuild, Conhost\Server:Publish]
 $matchingTargets = $targets | Where-Object { $_.MSBuild.Condition -eq $msBuildCondition }
 
-# If we didn't find a target, it's possible that the project doesn't have a metaproj
+# If we didn't find a target, it's possible that the project didn't have a
+# .metaproj in OpenConsole.sln.metaproj. Try filtering again, but leave off the
+# .metaproj extension.
 if ($matchingTargets.length -eq 0)
 {
     $conditionNoMeta = "'%(ProjectReference.Identity)' == '$projectPath'"
