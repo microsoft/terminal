@@ -93,7 +93,7 @@ void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, 
     _pfnCreateCallback = pfn;
 }
 
-void IslandWindow::SetSnapDimensionCallback(std::function<int(bool widthOrHeight, int value)> pfn) noexcept
+void IslandWindow::SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept
 {
     _pfnSnapDimensionCallback = pfn;
 }
@@ -230,11 +230,11 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
 
         if (wparam != WMSZ_TOP && wparam != WMSZ_BOTTOM)
         {
-            clientWidth = _pfnSnapDimensionCallback(true, clientWidth);
+            clientWidth = (int)_pfnSnapDimensionCallback(true, (float)clientWidth);
         }
         if (wparam != WMSZ_LEFT && wparam != WMSZ_RIGHT)
         {
-            clientHeight = _pfnSnapDimensionCallback(false, clientHeight);
+            clientHeight = (int)_pfnSnapDimensionCallback(false, (float)clientHeight);
         }
 
         switch (wparam)

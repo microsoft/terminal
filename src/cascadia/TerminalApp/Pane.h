@@ -51,9 +51,9 @@ public:
 
     bool CanSplit(SplitState splitType);
     void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
+    float SnapDimension(const bool widthOrHeight, const float dimension);
 
     void Close();
-    std::pair<int, int> SnapDimension(bool widthOrHeight, int value);
 
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
@@ -65,8 +65,7 @@ private:
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
-    std::optional<float> _firstPercent{ std::nullopt };
-    std::optional<float> _secondPercent{ std::nullopt };
+    float _desiredSplitPosition;
 
     bool _lastFocused{ false };
     std::optional<GUID> _profile{ std::nullopt };
@@ -94,7 +93,9 @@ private:
     void _FocusFirstChild();
     void _ControlClosedHandler();
 
-    std::pair<float, float> _GetPaneSizes(const float& fullSize);
+    std::pair<float, float> _GetPaneSizes(const bool widthOrHeight, float fullSize);
+    float _CampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
+    float _SnapDimension(const bool widthOrHeight, const bool toLargerOrSmaller, const float dimension);
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
 

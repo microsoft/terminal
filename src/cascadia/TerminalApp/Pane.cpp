@@ -58,7 +58,7 @@ void Pane::ResizeContent(const Size& newSize)
 
     if (_splitState == SplitState::Vertical)
     {
-        const auto paneSizes = _GetPaneSizes(width);
+        const auto paneSizes = _GetPaneSizes(true, width);
 
         const Size firstSize{ paneSizes.first, height };
         const Size secondSize{ paneSizes.second, height };
@@ -67,7 +67,7 @@ void Pane::ResizeContent(const Size& newSize)
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        const auto paneSizes = _GetPaneSizes(height);
+        const auto paneSizes = _GetPaneSizes(false, height);
 
         const Size firstSize{ width, paneSizes.first };
         const Size secondSize{ width, paneSizes.second };
@@ -107,26 +107,9 @@ bool Pane::_Resize(const Direction& direction)
                            gsl::narrow_cast<float>(_root.ActualHeight()) };
     // actualDimension is the size in DIPs of this pane in the direction we're
     // resizing.
-    auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
-    actualDimension -= PaneSeparatorSize;
+    const auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
 
-    const auto firstMinSize = _firstChild->_GetMinSize();
-    const auto secondMinSize = _secondChild->_GetMinSize();
-
-    // These are the minimum amount of space we need for each of our children
-    const auto firstMinDimension = changeWidth ? firstMinSize.Width : firstMinSize.Height;
-    const auto secondMinDimension = changeWidth ? secondMinSize.Width : secondMinSize.Height;
-
-    const auto firstMinPercent = firstMinDimension / actualDimension;
-    const auto secondMinPercent = secondMinDimension / actualDimension;
-
-    // Make sure that the first pane doesn't get bigger than the space we need
-    // to reserve for the second.
-    const auto firstMaxPercent = 1.0f - secondMinPercent;
-
-    _firstPercent = std::clamp(_firstPercent.value() - amount, firstMinPercent, firstMaxPercent);
-    // Update the other child to fill the remaining percent
-    _secondPercent = 1.0f - _firstPercent.value();
+    _desiredSplitPosition = _CampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
     // Resize our columns to match the new percentages.
     ResizeContent(actualSize);
@@ -308,6 +291,23 @@ void Pane::_ControlClosedHandler()
     }
 }
 
+
+// Method Description:
+// - Adjusts given size dimension (width or height) so that all descendant terminals
+//   align with their character grids as close as possible. Snaps to closes match
+//   (either upward or downward). Also ensures it fits in minimal size of the pane.
+// Arguments:
+// - widthOrHeight: if true operates on width, otherwise on height
+// - dimension: a dimension (width or height) to snap
+// Return Value:
+// - calculated dimension
+float Pane::SnapDimension(const bool widthOrHeight, const float dimension)
+{
+    const auto lower = _SnapDimension(widthOrHeight, false, dimension);
+    const auto higher = _SnapDimension(widthOrHeight, true, dimension);
+    return dimension - lower < higher - dimension ? lower : higher;
+}
+
 // Method Description:
 // - Fire our Closed event to tell our parent that we should be removed.
 // Arguments:
@@ -318,33 +318,6 @@ void Pane::Close()
 {
     // Fire our Closed event to tell our parent that we should be removed.
     _closedHandlers();
-}
-
-std::pair<int, int> Pane::SnapDimension(bool widthOrHeight, int value)
-{
-    if (_IsLeaf())
-    {
-        const int lower = _control.SnapDimensionToGrid(widthOrHeight, value);
-        int higher = lower;
-        if (value != lower)
-        {
-            const auto cellSize = _control.CharacterDimensions();
-            higher = lower + static_cast<int>(widthOrHeight ? cellSize.Width : cellSize.Height);
-        }
-        return std::make_pair(lower, higher);
-    }
-    else if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
-    {
-        const auto firstResult = _firstChild->SnapDimension(widthOrHeight, value);
-        const auto secondResult = _secondChild->SnapDimension(widthOrHeight, value);
-        const int lowerValue = std::max(firstResult.first, secondResult.first);
-        const int higherValue = std::min(firstResult.second, secondResult.second);
-        return std::make_pair(lowerValue, higherValue);
-    }
-    else
-    {
-        throw std::bad_exception();
-    }
 }
 
 // Method Description:
@@ -697,7 +670,7 @@ void Pane::_SetupChildCloseHandlers()
 //   row/cols. The middle one is for the separator. The first and third are for
 //   each of the child panes, and are given a size in pixels, based off the
 //   availiable space, and the percent of the space they respectively consume,
-//   which is stored in _firstPercent and _secondPercent.
+//   which is stored in _desiredSplitPosition
 // - Does nothing if our split state is currently set to SplitState::None
 // Arguments:
 // - rootSize: The dimensions in pixels that this pane (and its children should consume.)
@@ -713,7 +686,7 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         auto separatorColDef = Controls::ColumnDefinition();
         separatorColDef.Width(GridLengthHelper::Auto());
 
-        const auto paneSizes = _GetPaneSizes(rootSize.Width);
+        const auto paneSizes = _GetPaneSizes(true, rootSize.Width);
 
         auto firstColDef = Controls::ColumnDefinition();
         firstColDef.Width(GridLengthHelper::FromPixels(paneSizes.first));
@@ -733,7 +706,7 @@ void Pane::_CreateRowColDefinitions(const Size& rootSize)
         auto separatorRowDef = Controls::RowDefinition();
         separatorRowDef.Height(GridLengthHelper::Auto());
 
-        const auto paneSizes = _GetPaneSizes(rootSize.Height);
+        const auto paneSizes = _GetPaneSizes(false, rootSize.Height);
 
         auto firstRowDef = Controls::RowDefinition();
         firstRowDef.Height(GridLengthHelper::FromPixels(paneSizes.first));
@@ -909,11 +882,7 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _connectionClosedToken.value = 0;
 
     _splitState = splitType;
-
-    _firstPercent = { Half };
-    _secondPercent = { Half };
-
-    _CreateSplitContent();
+    _desiredSplitPosition = Half;
 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
@@ -926,6 +895,8 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _profile = std::nullopt;
     _control = { nullptr };
     _secondChild = std::make_shared<Pane>(profile, control);
+
+    _CreateSplitContent();
 
     _root.Children().Append(_firstChild->GetRootElement());
     _root.Children().Append(_separatorRoot);
@@ -941,25 +912,121 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
-//   should fill. Accounts for the size of the separator that should be between
-//   them as well.
+//   should fill. If specified size is lower than required then children will be
+//   of minimum size. Snaps first child to grid but not the second. Accounts for
+//   the size of the separator that should be between them as well.
 // Arguments:
+// - widthOrHeight: if true, operates on width, otherwise on height.
 // - fullSize: the amount of space in pixels that should be filled by our
-//   children and their separator
+//   children and their separator. Can be arbitrarily low.
 // Return Value:
 // - a pair with the size of our first child and the size of our second child,
 //   respectively.
-std::pair<float, float> Pane::_GetPaneSizes(const float& fullSize)
+std::pair<float, float> Pane::_GetPaneSizes(const bool widthOrHeight, float fullSize)
 {
     if (_IsLeaf())
     {
         THROW_HR(E_FAIL);
     }
 
+    const auto minSize = _GetMinSize();
+    const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
+    fullSize = std::max(fullSize, minDimension);
+
     const auto sizeMinusSeparator = fullSize - PaneSeparatorSize;
-    const auto firstSize = sizeMinusSeparator * _firstPercent.value();
-    const auto secondSize = sizeMinusSeparator * _secondPercent.value();
+
+    const auto proportionalFirstSize = sizeMinusSeparator * _desiredSplitPosition;
+    auto firstSize = _firstChild->SnapDimension(widthOrHeight, proportionalFirstSize);
+
+    auto secondSize = sizeMinusSeparator - firstSize;
+    const auto secondMinSize = _secondChild->_GetMinSize();
+    const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
+    secondSize = std::max(secondSize, secondMinDimension);
+
+    firstSize = _firstChild->SnapDimension(widthOrHeight, sizeMinusSeparator - secondSize);
+
     return { firstSize, secondSize };
+}
+
+// Method Description:
+// - Adjusts split position so that no child pane is smaller then its
+//   minimum size
+// Arguments:
+// - widthOrHeight: if true, operates on width, otherwise on height.
+// - requestedValue: split position value to be clamped
+// - totalSize: size (width or height) of the parent pane
+// Return Value:
+// - split position (value in range <0.0, 1.0>)
+float Pane::_CampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize)
+{
+    const auto firstMinSize = _firstChild->_GetMinSize();
+    const auto secondMinSize = _secondChild->_GetMinSize();
+
+    const auto firstMinDimension = widthOrHeight ? firstMinSize.Width : firstMinSize.Height;
+    const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
+
+    const auto minSplitPosition = firstMinDimension / (totalSize - PaneSeparatorSize);
+    const auto maxSplitPosition = 1.0f - (secondMinDimension / (totalSize - PaneSeparatorSize));
+
+    return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
+}
+
+// Method Description:
+// - Adjusts given size dimension (width or height) so that all descendant terminals
+//   align with their character grids as close as possible. Also ensures it fits in
+//   minimal size of the pane.
+// Arguments:
+// - widthOrHeight: if true operates on width, otherwise on height
+// - toLargerOrSmaller: if true snaps upward (to greater size), if false snap downward
+// - dimension: a dimension (width or height) to be snapped
+// Return Value:
+// - calculated dimension
+float Pane::_SnapDimension(const bool widthOrHeight, const bool toLargerOrSmaller, const float dimension)
+{
+    if (_IsLeaf())
+    {
+        const auto minSize = _GetMinSize();
+        const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
+
+        if (dimension <= minDimension)
+        {
+            return minDimension;
+        }
+
+        const float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+        float result;
+        if (!toLargerOrSmaller || lower == dimension)
+        {
+            result = lower;
+        }
+        else
+        {
+            const auto cellSize = _control.CharacterDimensions();
+            result = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+        }
+
+        return std::max(result, minDimension);
+    }
+    else if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
+    {
+        const auto firstSnapped = _firstChild->_SnapDimension(widthOrHeight, toLargerOrSmaller, dimension);
+        const auto secondSnapped = _secondChild->_SnapDimension(widthOrHeight, toLargerOrSmaller, dimension);
+        return toLargerOrSmaller ?
+                   std::min(firstSnapped, secondSnapped) :
+                   std::max(firstSnapped, secondSnapped);
+    }
+    else
+    {
+        const auto sizes = _GetPaneSizes(widthOrHeight, dimension);
+        auto firstSize = sizes.first;
+
+        auto secondSize = _secondChild->_SnapDimension(widthOrHeight, toLargerOrSmaller, sizes.second);
+        const auto secondMinSize = _secondChild->_GetMinSize();
+        const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
+        secondSize = std::max(secondSize, secondMinDimension);
+
+        return firstSize + PaneSeparatorSize + secondSize;
+    }
 }
 
 // Method Description:

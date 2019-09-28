@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         bool ShouldCloseOnExit() const noexcept;
         Windows::Foundation::Size CharacterDimensions() const;
         Windows::Foundation::Size MinimumSize() const;
-        int SnapDimensionToGrid(bool widthOrHeight, int value);
+        float SnapDimensionToGrid(bool widthOrHeight, float dimension);
 
         void ScrollViewport(int viewTop);
         void KeyboardScrollViewport(int viewTop);

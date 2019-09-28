@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.TerminalControl
         event ConnectionClosedEventArgs ConnectionClosed;
         event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
         event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
-        UInt32 SnapDimensionToGrid(Boolean widthOrHeight, UInt32 value);
+        Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         String Title { get; };
 

@@ -1058,11 +1058,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    int TerminalPage::SnapDimension(bool widthOrHeight, int value)
+    float TerminalPage::SnapDimension(bool widthOrHeight, float dimension)
     {
         const auto focusedTabIndex = _GetFocusedTabIndex();
-        const auto closestValues = _tabs[focusedTabIndex]->SnapDimension(widthOrHeight, value);
-        return value - closestValues.first < closestValues.second - value ? closestValues.first : closestValues.second;
+        return _tabs[focusedTabIndex]->SnapDimension(widthOrHeight, dimension);
     }
 
     // Method Description:

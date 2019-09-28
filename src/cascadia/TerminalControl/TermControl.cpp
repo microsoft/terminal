@@ -1643,22 +1643,22 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
 
-    int TermControl::SnapDimensionToGrid(bool widthOrHeight, int value)
+    float TermControl::SnapDimensionToGrid(bool widthOrHeight, float dimension)
     {
         const auto fontSize = _actualFont.GetSize();
-        const int fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
+        const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
-        int nonTerminalArea = gsl::narrow_cast<int>(widthOrHeight ?
+        auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
             _swapChainPanel.Margin().Left + _swapChainPanel.Margin().Right :
             _swapChainPanel.Margin().Top + _swapChainPanel.Margin().Bottom);
 
         if (widthOrHeight && _settings.ScrollState() == ScrollbarState::Visible)
         {
-            nonTerminalArea += gsl::narrow_cast<int>(_scrollBar.ActualWidth());
+            nonTerminalArea += gsl::narrow_cast<float>(_scrollBar.ActualWidth());
         }
 
-        const int gridSize = value - nonTerminalArea;
-        const int cells = gridSize / fontDimension;
+        const auto gridSize = dimension - nonTerminalArea;
+        const int cells = static_cast<int>(gridSize / fontDimension);
         return cells * fontDimension + nonTerminalArea;
     }
 

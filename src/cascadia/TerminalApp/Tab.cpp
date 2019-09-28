@@ -230,9 +230,9 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
     _rootPane->Split(splitType, profile, control);
 }
 
-std::pair<int, int> Tab::SnapDimension(bool widthOrHeight, int value)
+float Tab::SnapDimension(bool widthOrHeight, float dimension)
 {
-    return _rootPane->SnapDimension(widthOrHeight, value);
+    return _rootPane->SnapDimension(widthOrHeight, dimension);
 }
 
 // Method Description:

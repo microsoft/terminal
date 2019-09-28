@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
-        int SnapDimension(bool widthOrHeight, int value);
+        float SnapDimension(bool widthOrHeight, float dimension);
 
         void CloseWindow();
 

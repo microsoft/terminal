@@ -655,7 +655,7 @@ namespace winrt::TerminalApp::implementation
 
     int App::SnapDimension(bool widthOrHeight, int value)
     {
-        return _root->SnapDimension(widthOrHeight, value);
+        return _root->SnapDimension(widthOrHeight, dimension);
     }
 
     // Methods that proxy typed event handlers through TerminalPage

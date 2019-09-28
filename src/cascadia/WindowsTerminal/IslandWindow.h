@@ -34,7 +34,7 @@ public:
     virtual void Initialize();
 
     void SetCreateCallback(std::function<void(const HWND, const RECT)> pfn) noexcept;
-    void SetSnapDimensionCallback(std::function<int(bool widthOrHeight, int value)> pfn) noexcept;
+    void SetSnapDimensionCallback(std::function<float(bool widthOrHeight, float dimension)> pfn) noexcept;
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
@@ -89,7 +89,7 @@ protected:
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
     std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
-    std::function<int(bool widthOrHeight, int value)> _pfnSnapDimensionCallback;
+    std::function<float(bool widthOrHeight, float dimension)> _pfnSnapDimensionCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };
