@@ -28,6 +28,8 @@ static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
+static constexpr std::wstring_view DefaultLaunchModeValue{ L"default" };
+static constexpr std::wstring_view MaximizedLaunchModeValue{ L"maximized" };
 static constexpr std::wstring_view LightThemeValue{ L"light" };
 static constexpr std::wstring_view DarkThemeValue{ L"dark" };
 static constexpr std::wstring_view SystemThemeValue{ L"system" };
@@ -48,7 +50,7 @@ GlobalAppSettings::GlobalAppSettings() :
     _requestedTheme{ ElementTheme::Default },
     _wordDelimiters{ DEFAULT_WORD_DELIMITERS },
     _copyOnSelect{ false },
-    _launchMode{ DEFAULT_LAUNCH_MODE }
+    _launchMode{ LaunchMode::DefaultMode }
 {
 }
 
@@ -131,12 +133,12 @@ void GlobalAppSettings::SetCopyOnSelect(const bool copyOnSelect) noexcept
     _copyOnSelect = copyOnSelect;
 }
 
-winrt::hstring GlobalAppSettings::GetLaunchMode() const noexcept
+LaunchMode GlobalAppSettings::GetLaunchMode() const noexcept
 {
     return _launchMode;
 }
 
-void GlobalAppSettings::SetLaunchMode(const std::wstring launchMode)
+void GlobalAppSettings::SetLaunchMode(const LaunchMode launchMode)
 {
     _launchMode = launchMode;
 }
@@ -226,7 +228,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
     jsonObject[JsonKey(WordDelimitersKey)] = winrt::to_string(_wordDelimiters);
     jsonObject[JsonKey(CopyOnSelectKey)] = _copyOnSelect;
-    jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_launchMode);
+    jsonObject[JsonKey(LaunchModeKey)] = winrt::to_string(_SerializeLaunchMode(_launchMode));
     jsonObject[JsonKey(RequestedThemeKey)] = winrt::to_string(_SerializeTheme(_requestedTheme));
     jsonObject[JsonKey(KeybindingsKey)] = _keybindings->ToJson();
 
@@ -298,7 +300,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     if (auto launchMode{ json[JsonKey(LaunchModeKey)] })
     {
-        _launchMode = GetWstringFromJson(launchMode);
+        _launchMode = _ParseLaunchMode(GetWstringFromJson(launchMode));
     }
 
     if (auto requestedTheme{ json[JsonKey(RequestedThemeKey)] })
@@ -350,5 +352,40 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
         return DarkThemeValue;
     default:
         return SystemThemeValue;
+    }
+}
+
+// Method Description:
+// - Helper function for converting the user-specified launch mode
+//   to a LaunchMode enum value
+// Arguments:
+// - launchModeString: The string value from the settings file to parse
+// Return Value:
+// - The corresponding enum value which maps to the string provided by the user
+LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeString) noexcept
+{
+    if (launchModeString == MaximizedLaunchModeValue)
+    {
+        return LaunchMode::MaximizedMode;
+    }
+
+    return LaunchMode::DefaultMode;
+}
+
+// Method Description:
+// - Helper function for converting a LaunchMode to its corresponding string
+//   value.
+// Arguments:
+// - launchMode: The enum value to convert to a string.
+// Return Value:
+// - The string value for the given CursorStyle
+std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launchMode) noexcept
+{
+    switch (launchMode)
+    {
+        case LaunchMode::MaximizedMode:
+            return MaximizedLaunchModeValue;
+        default:
+            return DefaultLaunchModeValue;
     }
 }

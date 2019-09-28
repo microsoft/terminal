@@ -24,6 +24,7 @@ public:
 
     [[nodiscard]] virtual LRESULT MessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept override;
     IRawElementProviderSimple* _GetUiaProvider();
+    RECT GetFrameBorderMargins(unsigned int currentDpi);
     void OnResize(const UINT width, const UINT height) override;
     void OnMinimize() override;
     void OnRestore() override;

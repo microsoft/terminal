@@ -219,14 +219,17 @@ winrt::TerminalApp::LaunchMode AppHost::_HandleCreateWindow(const HWND hwnd, REC
                                                        _currentHeight })
                                 .ToRect();
             }
+
+            // For client island scenario, there is an invisible border of 8 pixals.
+            // We need to remove this border to guarantee the left edge of the window
+            // coincides with the screen
+            const auto pCWindow = static_cast<IslandWindow*>(_window.get());
+            const RECT frame = pCWindow->GetFrameBorderMargins(dpix);
+            proposedRect.left -= (frame.left * -1);
         }
 
-        // Calculate the maximum size the window could have without hangs-off
-        const long horizontalMaxLength = std::abs(proposedRect.left - monitorInfo.rcWork.right);
-        const long verticalMaxLength = std::abs(proposedRect.top - monitorInfo.rcWork.bottom);
-
-        adjustedHeight = std::min(nonClient.bottom - nonClient.top, verticalMaxLength);
-        adjustedWidth = std::min(nonClient.right - nonClient.left, horizontalMaxLength);
+        adjustedHeight = nonClient.bottom - nonClient.top;
+        adjustedWidth = nonClient.right - nonClient.left;
     }
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),

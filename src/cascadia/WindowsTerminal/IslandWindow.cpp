@@ -235,6 +235,15 @@ IRawElementProviderSimple* IslandWindow::_GetUiaProvider()
     return _pUiaProvider;
 }
 
+RECT IslandWindow::GetFrameBorderMargins(unsigned int currentDpi)
+{
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto targetStyle = windowStyle & ~WS_DLGFRAME;
+    RECT frame{};
+    AdjustWindowRectExForDpi(&frame, targetStyle, false, GetWindowExStyle(_window.get()), currentDpi);
+    return frame;
+}
+
 // Method Description:
 // - Called when the window has been resized (or maximized)
 // Arguments:

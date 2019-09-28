@@ -66,8 +66,8 @@ public:
     void SetInitialY(const int32_t initialY) noexcept;
     bool GetIsInitialYSet() const noexcept;
 
-    winrt::hstring GetLaunchMode() const noexcept;
-    void SetLaunchMode(const std::wstring launchMode);
+    winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
+    void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
 
     winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme() const noexcept;
 
@@ -100,10 +100,13 @@ private:
     bool _copyOnSelect;
     winrt::Windows::UI::Xaml::ElementTheme _requestedTheme;
 
-    winrt::hstring _launchMode;
+    winrt::TerminalApp::LaunchMode _launchMode;
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
+    static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
+    static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
 
     friend class TerminalAppLocalTests::SettingsTests;
 };

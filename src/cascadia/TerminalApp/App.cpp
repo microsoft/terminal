@@ -359,14 +359,7 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        hstring launchModeText = _settings->GlobalSettings().GetLaunchMode();
-        LaunchMode launchMode = LaunchMode::DefaultMode;
-        if (launchModeText == L"maximized")
-        {
-            launchMode = LaunchMode::MaximizedMode;
-        }
-
-        return launchMode;
+        return _settings->GlobalSettings().GetLaunchMode();
     }
 
     // Method Description:
