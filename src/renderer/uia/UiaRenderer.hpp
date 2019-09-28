@@ -80,6 +80,10 @@ namespace Microsoft::Console::Render
     private:
         bool _isEnabled;
         bool _isPainting;
+        bool _selectionChanged;
+
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
+
+        std::vector<SMALL_RECT> _prevSelection;
     };
 }

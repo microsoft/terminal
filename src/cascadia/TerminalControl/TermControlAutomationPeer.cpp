@@ -39,23 +39,25 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // - <none>
     void TermControlAutomationPeer::SignalUia(ConsoleUiaEvent eventId)
     {
-        switch (eventId)
-        {
-        case ConsoleUiaEvent::CursorChanged:
-            // The event that is raised when the text was changed in an edit control.
-            RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
-            break;
-        case ConsoleUiaEvent::SelectionChanged:
-            // The event that is raised when the text selection is modified.
-            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
-            break;
-        case ConsoleUiaEvent::TextChanged:
-            // The event that is raised when textual content is modified.
-            RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
-            break;
-        default:
-            return;
-        }
+        Dispatcher().RunAsync(Windows::UI::Core::CoreDispatcherPriority::Normal, [this, eventId]() {
+            switch (eventId)
+            {
+            case ConsoleUiaEvent::CursorChanged:
+                // The event that is raised when the text was changed in an edit control.
+                RaiseAutomationEvent(AutomationEvents::TextEditTextChanged);
+                break;
+            case ConsoleUiaEvent::SelectionChanged:
+                // The event that is raised when the text selection is modified.
+                RaiseAutomationEvent(AutomationEvents::TextPatternOnTextSelectionChanged);
+                break;
+            case ConsoleUiaEvent::TextChanged:
+                // The event that is raised when textual content is modified.
+                RaiseAutomationEvent(AutomationEvents::TextPatternOnTextChanged);
+                break;
+            default:
+                return;
+            }
+        });
     }
 
     winrt::hstring TermControlAutomationPeer::GetClassNameCore() const
