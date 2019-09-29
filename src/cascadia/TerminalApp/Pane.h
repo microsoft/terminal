@@ -94,7 +94,7 @@ private:
     void _ControlClosedHandler();
 
     std::pair<float, float> _GetPaneSizes(const bool widthOrHeight, float fullSize);
-    float _CampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
+    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
     float _SnapDimension(const bool widthOrHeight, const bool toLargerOrSmaller, const float dimension);
 
     winrt::Windows::Foundation::Size _GetMinSize() const;

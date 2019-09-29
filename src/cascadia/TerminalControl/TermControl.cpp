@@ -1636,9 +1636,11 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         // Account for the size of any padding
-        auto thickness = _ParseThicknessFromPadding(_settings.Padding());
+        /*auto thickness = _ParseThicknessFromPadding(_settings.Padding());
         width += thickness.Left + thickness.Right;
-        height += thickness.Top + thickness.Bottom;
+        height += thickness.Top + thickness.Bottom;*/
+        width += _swapChainPanel.Margin().Left + _swapChainPanel.Margin().Right;
+        height += _swapChainPanel.Margin().Top + _swapChainPanel.Margin().Bottom;
 
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }

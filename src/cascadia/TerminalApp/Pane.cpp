@@ -109,7 +109,7 @@ bool Pane::_Resize(const Direction& direction)
     // resizing.
     const auto actualDimension = changeWidth ? actualSize.Width : actualSize.Height;
 
-    _desiredSplitPosition = _CampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
+    _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
     // Resize our columns to match the new percentages.
     ResizeContent(actualSize);
@@ -291,7 +291,6 @@ void Pane::_ControlClosedHandler()
     }
 }
 
-
 // Method Description:
 // - Adjusts given size dimension (width or height) so that all descendant terminals
 //   align with their character grids as close as possible. Snaps to closes match
@@ -304,6 +303,11 @@ void Pane::_ControlClosedHandler()
 float Pane::SnapDimension(const bool widthOrHeight, const float dimension)
 {
     const auto lower = _SnapDimension(widthOrHeight, false, dimension);
+    if (lower > dimension)
+    {
+        return lower;
+    }
+
     const auto higher = _SnapDimension(widthOrHeight, true, dimension);
     return dimension - lower < higher - dimension ? lower : higher;
 }
@@ -937,14 +941,18 @@ std::pair<float, float> Pane::_GetPaneSizes(const bool widthOrHeight, float full
 
     const auto proportionalFirstSize = sizeMinusSeparator * _desiredSplitPosition;
     auto firstSize = _firstChild->SnapDimension(widthOrHeight, proportionalFirstSize);
-
     auto secondSize = sizeMinusSeparator - firstSize;
+
     const auto secondMinSize = _secondChild->_GetMinSize();
     const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
-    secondSize = std::max(secondSize, secondMinDimension);
+    if (secondSize < secondMinDimension)
+    {
+        secondSize = secondMinDimension;
+        firstSize = _firstChild->_SnapDimension(widthOrHeight, false, sizeMinusSeparator - secondSize);
+        secondSize = sizeMinusSeparator - firstSize;
+    }
 
-    firstSize = _firstChild->SnapDimension(widthOrHeight, sizeMinusSeparator - secondSize);
-
+    assert(firstSize + PaneSeparatorSize + secondSize == fullSize);
     return { firstSize, secondSize };
 }
 
@@ -957,7 +965,7 @@ std::pair<float, float> Pane::_GetPaneSizes(const bool widthOrHeight, float full
 // - totalSize: size (width or height) of the parent pane
 // Return Value:
 // - split position (value in range <0.0, 1.0>)
-float Pane::_CampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize)
+float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize)
 {
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
@@ -1017,15 +1025,26 @@ float Pane::_SnapDimension(const bool widthOrHeight, const bool toLargerOrSmalle
     }
     else
     {
-        const auto sizes = _GetPaneSizes(widthOrHeight, dimension);
-        auto firstSize = sizes.first;
+        for (float resultSize = dimension;;)
+        {
+            const auto sizes = _GetPaneSizes(widthOrHeight, resultSize);
+            const auto firstSize = sizes.first;
+            const auto secondSize = _secondChild->_SnapDimension(widthOrHeight, toLargerOrSmaller, sizes.second);
+            const float newSize = firstSize + PaneSeparatorSize + secondSize;
 
-        auto secondSize = _secondChild->_SnapDimension(widthOrHeight, toLargerOrSmaller, sizes.second);
-        const auto secondMinSize = _secondChild->_GetMinSize();
-        const auto secondMinDimension = widthOrHeight ? secondMinSize.Width : secondMinSize.Height;
-        secondSize = std::max(secondSize, secondMinDimension);
+            const auto minDim = widthOrHeight ? _GetMinSize().Width : _GetMinSize().Height;
+            if (toLargerOrSmaller)
+                assert(newSize >= resultSize);
+            else
+                assert(newSize <= resultSize || newSize == minDim);
 
-        return firstSize + PaneSeparatorSize + secondSize;
+            if (newSize == resultSize)
+            {
+                return resultSize;
+            }
+
+            resultSize = newSize;
+        }
     }
 }
 
