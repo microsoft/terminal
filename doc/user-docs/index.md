@@ -31,8 +31,8 @@ None at this time. See issue [#607](https://github.com/microsoft/terminal/issues
 
 ## Multiple Tabs
 
-Additional shells can be started by hitting the `+` button from the tab bar -- a new instance of the
-default shell is displayed (default shortcut `Ctrl+Shift+1`).
+Additional shells can be started by hitting the <kbd>+</kbd> button from the tab bar -- a new instance of the
+default shell is displayed (default shortcut <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>1</kbd>).
 
 ## Running a Different Shell
 
@@ -72,7 +72,7 @@ All Windows Terminal settings are currently managed using the `profiles.json` fi
 To open the settings file from Windows Terminal:
 
 1. Click the `⌵` button in the top bar.
-2. From the dropdown list, click `Settings`. You can also use a shortcut: `Ctrl+,`.
+2. From the dropdown list, click `Settings`. You can also use a shortcut: <kbd>Ctrl</kbd>+<kbd>,</kbd>.
 3. Your default `json` editor will open the settings file.
 
 For an introduction to the various settings, see [Using Json Settings](UsingJsonSettings.md). The list of valid settings can be found in the [profiles.json documentation](../cascadia/SettingsSchema.md) section.
@@ -86,6 +86,6 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
 
     (ref https://twitter.com/r_keith_hill/status/1142871145852440576)
 
-2. Terminal zoom can be changed by holding `Ctrl` and scrolling with mouse.
-3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding `Ctrl+Shift` and scrolling with mouse.
+2. Terminal zoom can be changed by holding <kbd>Ctrl</kbd> and scrolling with mouse.
+3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding <kbd>Ctrl</kbd>+<kbd>Shift</kbd> and scrolling with mouse.
 4. Please add more Tips and Tricks
