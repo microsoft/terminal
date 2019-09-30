@@ -48,7 +48,7 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
 {
     HINSTANCE hInstance = wil::GetModuleInstanceHandle();
 
-    if(RegisterTermClass(hInstance))
+    if (RegisterTermClass(hInstance))
     {
         _hwnd = wil::unique_hwnd(CreateWindowExW(
             0,

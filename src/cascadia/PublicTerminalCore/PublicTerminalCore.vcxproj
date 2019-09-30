@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\common.build.pre.props" />
+  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
+
+  <Import Project="$(SolutionDir)src\common.build.pre.props" />
+  
   <PropertyGroup Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
@@ -29,16 +32,28 @@
     <ProjectReference Include="..\TerminalCore\lib\TerminalCore-lib.vcxproj">
       <Project>{ca5cad1a-abcd-429c-b551-8562ec954746}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj">
+      <Project>{0cf235bd-2da0-407e-90ee-c467e8bbc714}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj">
+      <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj">
+      <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj">
+      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(IntermediateOutputPath);..\..\inc;..\..\host;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ResourceCompile>
-      <AdditionalIncludeDirectories>$(IntermediateOutputPath);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-    </ResourceCompile>
   </ItemDefinitionGroup>
-  <Import Project="..\..\common.build.dll.props" />
-  <Import Project="..\..\common.build.post.props" />
+  <Import Project="$(SolutionDir)src\common.build.dll.props" />
+  <Import Project="$(SolutionDir)src\common.build.post.props" />
 </Project>
