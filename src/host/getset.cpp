@@ -1418,17 +1418,23 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     screenInfo.GetViewport().Clamp(clampedPos);
 
     // Make sure the cursor stays inside the margins, but only if it started there
-    if (screenInfo.AreMarginsSet() && screenInfo.IsCursorInMargins(cursor.GetPosition()))
+    if (screenInfo.AreMarginsSet()) // && screenInfo.IsCursorInMargins(cursor.GetPosition()))
     {
-        try
+        const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+        const auto v = clampedPos.Y;
+        const auto lo = margins.Top;
+        const auto hi = margins.Bottom;
+
+        const bool cursorBelowTop = v < lo;
+        const bool cursorAboveBottom = v > hi;
+        if (cursorBelowTop || cursorAboveBottom)
         {
-            const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-            const auto v = clampedPos.Y;
-            const auto lo = margins.Top;
-            const auto hi = margins.Bottom;
-            clampedPos.Y = std::clamp(v, lo, hi);
+            try
+            {
+                clampedPos.Y = std::clamp(v, lo, hi);
+            }
+            CATCH_RETURN();
         }
-        CATCH_RETURN();
     }
     cursor.SetPosition(clampedPos);
 
