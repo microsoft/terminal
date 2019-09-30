@@ -1,9 +1,10 @@
 ---
 name: Community Guidance Request ✨
-about: Suggest somewhere the Windows Terminal Team needs to provide community guidance through new documentation or process.
-title: "Guidance"
+about: Suggest somewhere the Windows Terminal Team needs to provide community guidance
+  through new documentation or process.
+title: ''
 labels: Issue-Docs
-assignees: 'bitcrazed'
+assignees: bitcrazed
 
 ---
 
