@@ -27,7 +27,7 @@ You may ask yourself, why is the destructor deleted, then later defined to the
   strangeness that can occur as well, the details of which escape my memory from
   when @austdi and I first investigaved this early 2018.
 
-The end result of not defining your interfaces exacly like this will be that
+The end result of not defining your interfaces exactly like this will be that
   occasionally, when destructing objects, you'll get a segfault.
 
 To check that this behavior works, I direct your attention to the VtIoTests.

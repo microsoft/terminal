@@ -51,4 +51,8 @@ namespace TerminalApp
         Direction Direction { get; };
     };
 
+    [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
+    {
+        Int32 Delta { get; };
+    };
 }

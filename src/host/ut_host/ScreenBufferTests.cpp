@@ -179,6 +179,8 @@ class ScreenBufferTests
 
     TEST_METHOD(RestoreDownAltBufferWithTerminalScrolling);
 
+    TEST_METHOD(SnapCursorWithTerminalScrolling);
+
     TEST_METHOD(ClearAlternateBuffer);
 
     TEST_METHOD(InitializeTabStopsInVTMode);
@@ -4286,6 +4288,81 @@ void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
         VERIFY_ARE_EQUAL(0, altBuffer._viewport.Top());
         VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
     }
+}
+
+void ScreenBufferTests::SnapCursorWithTerminalScrolling()
+{
+    // This is a test for microsoft/terminal#1222. Refer to that issue for more
+    // context
+
+    auto& g = ServiceLocator::LocateGlobals();
+    CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+    gci.SetTerminalScrolling(true);
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+    const auto originalView = si._viewport;
+    si._virtualBottom = originalView.BottomInclusive();
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"originalView=%s", VerifyOutputTraits<SMALL_RECT>::ToString(originalView.ToInclusive()).GetBuffer()));
+
+    Log::Comment(NoThrowString().Format(
+        L"First set the viewport somewhere lower in the buffer, as if the text "
+        L"was output there. Manually move the cursor there as well, so the "
+        L"cursor is within that viewport."));
+    const COORD secondWindowOrigin{ 0, 10 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, secondWindowOrigin, true));
+    si.GetTextBuffer().GetCursor().SetPosition(secondWindowOrigin);
+
+    const auto secondView = si._viewport;
+    const auto secondVirtualBottom = si._virtualBottom;
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"secondView=%s", VerifyOutputTraits<SMALL_RECT>::ToString(secondView.ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(10, secondView.Top());
+    VERIFY_ARE_EQUAL(originalView.Height() + 10, secondView.BottomExclusive());
+    VERIFY_ARE_EQUAL(originalView.Height() + 10 - 1, secondVirtualBottom);
+
+    Log::Comment(NoThrowString().Format(
+        L"Emulate scrolling upwards with the mouse (not moving the virtual view)"));
+
+    const COORD thirdWindowOrigin{ 0, 2 };
+    VERIFY_SUCCEEDED(si.SetViewportOrigin(true, thirdWindowOrigin, false));
+
+    const auto thirdView = si._viewport;
+    const auto thirdVirtualBottom = si._virtualBottom;
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"thirdView=%s", VerifyOutputTraits<SMALL_RECT>::ToString(thirdView.ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(2, thirdView.Top());
+    VERIFY_ARE_EQUAL(originalView.Height() + 2, thirdView.BottomExclusive());
+    VERIFY_ARE_EQUAL(secondVirtualBottom, thirdVirtualBottom);
+
+    Log::Comment(NoThrowString().Format(
+        L"Call SetConsoleCursorPosition to snap to the cursor"));
+    VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(si, secondWindowOrigin));
+
+    const auto fourthView = si._viewport;
+    const auto fourthVirtualBottom = si._virtualBottom;
+
+    Log::Comment(NoThrowString().Format(
+        L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
+    Log::Comment(NoThrowString().Format(
+        L"thirdView=%s", VerifyOutputTraits<SMALL_RECT>::ToString(fourthView.ToInclusive()).GetBuffer()));
+
+    VERIFY_ARE_EQUAL(10, fourthView.Top());
+    VERIFY_ARE_EQUAL(originalView.Height() + 10, fourthView.BottomExclusive());
+    VERIFY_ARE_EQUAL(secondVirtualBottom, fourthVirtualBottom);
 }
 
 void ScreenBufferTests::ClearAlternateBuffer()
