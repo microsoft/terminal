@@ -4527,6 +4527,7 @@ void ScreenBufferTests::CursorUpDownAcrossMargins()
         auto iter = tbi.GetCellDataAt({ 0, 18 });
         VERIFY_ARE_EQUAL(L"Y", iter->Chars());
     }
+    stateMachine.ProcessString(L"\x1b[r");
 }
 
 void ScreenBufferTests::CursorUpDownOutsideMargins()
@@ -4541,6 +4542,10 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
     // * moves to line 1 (i.e. above the top margin)
     // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
     // * writes out Y
+
+    // This test is different becasue the end location of the vertical movement
+    // should not be within the margins at all. WE should not clamp this
+    // movement to be within the margins.
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -4572,4 +4577,5 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
         auto iter = tbi.GetCellDataAt({ 0, 1 });
         VERIFY_ARE_EQUAL(L"Y", iter->Chars());
     }
+    stateMachine.ProcessString(L"\x1b[r");
 }

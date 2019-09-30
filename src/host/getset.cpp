@@ -1417,21 +1417,42 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
-    // Make sure the cursor stays inside the margins, but only if it started there
-    if (screenInfo.AreMarginsSet()) // && screenInfo.IsCursorInMargins(cursor.GetPosition()))
+    // Make sure the cursor stays inside the margins
+    if (screenInfo.AreMarginsSet())
     {
         const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-        const auto v = clampedPos.Y;
+
+        const auto newY = clampedPos.Y;
+        const auto cursorY = cursor.GetPosition().Y;
+
         const auto lo = margins.Top;
         const auto hi = margins.Bottom;
 
-        const bool cursorBelowTop = v < lo;
-        const bool cursorAboveBottom = v > hi;
-        if (cursorBelowTop || cursorAboveBottom)
+        // See microsoft/terminal#2929 - If the cursor is _below_ the top
+        // margin, it should stay below the top margin. If it's _above_ the
+        // bottom, it should stay above the bottom. Cursor movements that stay
+        // outside the margins shouldn't necessarily be affected. For example,
+        // moving up while below the bottom margin shouldn't just jump straight
+        // to the bottom margin. See
+        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
+        // behavior.
+        const bool cursorBelowTop = cursorY > lo;
+        const bool cursorAboveBottom = cursorY < hi;
+
+        if (cursorBelowTop)
         {
             try
             {
-                clampedPos.Y = std::clamp(v, lo, hi);
+                clampedPos.Y = std::max(newY, lo);
+            }
+            CATCH_RETURN();
+        }
+
+        if (cursorAboveBottom)
+        {
+            try
+            {
+                clampedPos.Y = std::min(newY, hi);
             }
             CATCH_RETURN();
         }
