@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "HwndTerminal.hpp"
 #include <DefaultSettings.h>
@@ -60,8 +63,8 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
                 WS_VISIBLE,
             0,
             0,
-            50,
-            50,
+            0,
+            0,
             parentHwnd,
             nullptr,
             hInstance,

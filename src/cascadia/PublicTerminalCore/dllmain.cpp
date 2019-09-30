@@ -1,4 +1,6 @@
-// dllmain.cpp : Defines the entry point for the DLL application.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 
 HINSTANCE g_hInstance = NULL;

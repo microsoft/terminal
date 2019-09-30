@@ -1,8 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using System;
 
 namespace Microsoft.Terminal.Wpf
 {
@@ -19,7 +18,6 @@ namespace Microsoft.Terminal.Wpf
     public interface ITerminalConnection
     {
         event EventHandler<TerminalOutputEventArgs> TerminalOutput;
-        event EventHandler TerminalDisconnected;
 
         void Start();
         void WriteInput(string data);

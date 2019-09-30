@@ -1,4 +1,7 @@
-﻿using System;
+﻿// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+using System;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -190,12 +193,10 @@ namespace Microsoft.Terminal.Wpf
                 if (this.connection != null)
                 {
                     this.connection.TerminalOutput -= Connection_TerminalOutput;
-                    this.connection.TerminalDisconnected -= Connection_TerminalDisconnected;
                 }
 
                 this.connection = value;
                 this.connection.TerminalOutput += Connection_TerminalOutput;
-                this.connection.TerminalDisconnected += Connection_TerminalDisconnected;
                 this.connection.Start();
             }
         }
@@ -234,11 +235,6 @@ namespace Microsoft.Terminal.Wpf
             NativeMethods.Resize(this.terminal, rows, columns);
         }
 
-        private void Connection_TerminalDisconnected(object sender, EventArgs e)
-        {
-            // TODO
-        }
-
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
             if (this.terminal != IntPtr.Zero)
@@ -249,7 +245,6 @@ namespace Microsoft.Terminal.Wpf
 
         protected override HandleRef BuildWindowCore(HandleRef hwndParent)
         {
-
             NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
 
             this.scrollCallback = this.OnScroll;
