@@ -288,7 +288,14 @@ const wchar_t* _stdcall GetSelection(void* terminal)
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
 
-    std::wstring selectedText = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+    const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
+
+    // convert text: vector<string> --> string
+    std::wstring selectedText;
+    for (const auto& text : bufferData.text)
+    {
+        selectedText += text;
+    }
 
     const wchar_t* text = selectedText.c_str();
     size_t textChars = wcslen(text) + 1;
