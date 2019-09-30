@@ -168,7 +168,12 @@ std::deque<std::unique_ptr<IInputEvent>> Clipboard::TextToKeyEvents(_In_reads_(c
         // This change doesn't break pasting text into any of those applications
         //      with CR/LF (Windows) line endings either. That apparently always
         //      worked right.
-        if (IsInVirtualTerminalInputMode() && currentChar == UNICODE_LINEFEED)
+        // microsoft/terminal#663: Originally this was scoped to only work in VT
+        // Input Mode (guarded by IsInVirtualTerminalInputMode). However, that
+        // breaks pasting linefeed-only text into cmd, and with the growing
+        // prevalance of LF-only files on Windows, we want this scenario to work
+        // for cmd as well as WSL.
+        if (currentChar == UNICODE_LINEFEED)
         {
             currentChar = UNICODE_CARRIAGERETURN;
         }
