@@ -22,6 +22,7 @@
 #include <wrl/client.h>
 
 #include "CustomTextRenderer.h"
+#include "CustomTextLayout.h"
 
 #include "../../types/inc/Viewport.hpp"
 
@@ -121,6 +122,7 @@ namespace Microsoft::Console::Render
 
         SIZE _displaySizePixels;
         SIZE _glyphCell;
+        ::Microsoft::WRL::ComPtr<CustomTextLayout> _drawingTextLayout;
 
         D2D1_COLOR_F _defaultForegroundColor;
         D2D1_COLOR_F _defaultBackgroundColor;

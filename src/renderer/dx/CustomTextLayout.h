@@ -26,6 +26,8 @@ namespace Microsoft::Console::Render
                          const std::basic_string_view<::Microsoft::Console::Render::Cluster> clusters,
                          size_t const width);
 
+        void SetData(std::basic_string_view<Cluster> const clustor);
+
         [[nodiscard]] HRESULT STDMETHODCALLTYPE GetColumns(_Out_ UINT32* columns);
 
         // IDWriteTextLayout methods (but we don't actually want to implement them all, so just this one matching the existing interface)

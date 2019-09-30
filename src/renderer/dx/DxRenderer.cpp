@@ -4,7 +4,6 @@
 #include "precomp.h"
 
 #include "DxRenderer.hpp"
-#include "CustomTextLayout.h"
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
@@ -959,12 +958,20 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
         origin.y = static_cast<float>(coord.Y * _glyphCell.cy);
 
         // Create the text layout
-        CustomTextLayout layout(_dwriteFactory.Get(),
-                                _dwriteTextAnalyzer.Get(),
-                                _dwriteTextFormat.Get(),
-                                _dwriteFontFace.Get(),
-                                clusters,
-                                _glyphCell.cx);
+        if (_drawingTextLayout == nullptr)
+        {
+            _drawingTextLayout = ::Microsoft::WRL::Details::Make<CustomTextLayout>(_dwriteFactory.Get(),
+                                                    _dwriteTextAnalyzer.Get(),
+                                                    _dwriteTextFormat.Get(),
+                                                    _dwriteFontFace.Get(),
+                                                    clusters,
+                                                    _glyphCell.cx);
+        }
+        else
+        {
+            _drawingTextLayout->SetData(clusters);
+        }
+  
 
         // Get the baseline for this font as that's where we draw from
         DWRITE_LINE_SPACING spacing;
@@ -980,7 +987,7 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
 
         // Layout then render the text
-        RETURN_IF_FAILED(layout.Draw(&context, _customRenderer.Get(), origin.x, origin.y));
+        RETURN_IF_FAILED(_drawingTextLayout->Draw(&context, _customRenderer.Get(), origin.x, origin.y));
     }
     CATCH_RETURN();
 
@@ -1274,6 +1281,8 @@ enum class CursorPaintType
 
         _glyphCell.cx = size.X;
         _glyphCell.cy = size.Y;
+
+        _drawingTextLayout = nullptr;
     }
     CATCH_RETURN();
 
