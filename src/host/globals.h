@@ -56,7 +56,8 @@ public:
     ULONG cursorPixelWidth = 1;
 
     NTSTATUS ntstatusConsoleInputInitStatus;
-    wil::unique_event_nothrow hConsoleInputInitEvent;
+    wil::unique_event_nothrow consoleInputSetupEvent;
+    wil::unique_event_nothrow consoleInputInitializedEvent;
     DWORD dwInputThreadId;
 
     std::vector<wchar_t> WordDelimiters;

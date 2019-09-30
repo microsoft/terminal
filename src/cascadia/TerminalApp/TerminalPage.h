@@ -61,6 +61,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<ScopedResourceLoader> _resourceLoader{ nullptr };
 
         void _ShowAboutDialog();
+        void _ShowCloseWarningDialog();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
@@ -71,6 +72,7 @@ namespace winrt::TerminalApp::implementation
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _FeedbackButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _AboutButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
+        void _CloseWarningPrimaryButtonOnClick(Windows::UI::Xaml::Controls::ContentDialog sender, Windows::UI::Xaml::Controls::ContentDialogButtonClickEventArgs eventArgs);
 
         void _HookupKeyBindings(TerminalApp::AppKeyBindings bindings) noexcept;
 
@@ -79,6 +81,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabView();
         void _DuplicateTabViewItem();
         void _RemoveTabViewItem(const IInspectable& tabViewItem);
+        void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
 
@@ -91,6 +94,8 @@ namespace winrt::TerminalApp::implementation
         void _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
+        void _CloseWindow();
+        void _CloseAllTabs();
 
         // Todo: add more event implementations here
         // MSFT:20641986: Add keybindings for New Window
@@ -110,8 +115,7 @@ namespace winrt::TerminalApp::implementation
         void _PasteText();
         static fire_and_forget PasteFromClipboard(winrt::Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs eventArgs);
 
-        void _OpenSettings();
-        fire_and_forget LaunchSettings();
+        fire_and_forget _LaunchSettings(const bool openDefaults);
 
         void _OnTabClick(const IInspectable& sender, const Windows::UI::Xaml::Input::PointerRoutedEventArgs& eventArgs);
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
@@ -143,6 +147,8 @@ namespace winrt::TerminalApp::implementation
         void _HandleResizePane(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
+        void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
+        void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

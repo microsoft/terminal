@@ -18,6 +18,17 @@ namespace winrt::TerminalApp::implementation
         _keyShortcuts[chord] = action;
     }
 
+    // Method Description:
+    // - Remove the action that's bound to a particular KeyChord.
+    // Arguments:
+    // - chord: the keystroke to remove the action for.
+    // Return Value:
+    // - <none>
+    void AppKeyBindings::ClearKeyBinding(const Settings::KeyChord& chord)
+    {
+        _keyShortcuts.erase(chord);
+    }
+
     Microsoft::Terminal::Settings::KeyChord AppKeyBindings::GetKeyBinding(TerminalApp::ShortcutAction const& action)
     {
         for (auto& kv : _keyShortcuts)
@@ -375,6 +386,22 @@ namespace winrt::TerminalApp::implementation
             args->Direction(Direction::Down);
             auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
             _MoveFocusHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
+        case ShortcutAction::IncreaseFontSize:
+        {
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            args->Delta(1);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            _AdjustFontSizeHandlers(*this, *eventArgs);
+            return eventArgs->Handled();
+        }
+        case ShortcutAction::DecreaseFontSize:
+        {
+            auto args = winrt::make_self<AdjustFontSizeArgs>();
+            args->Delta(-1);
+            auto eventArgs = winrt::make_self<ActionEventArgs>(*args);
+            _AdjustFontSizeHandlers(*this, *eventArgs);
             return eventArgs->Handled();
         }
         default:

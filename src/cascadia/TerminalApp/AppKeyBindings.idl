@@ -6,7 +6,8 @@ namespace TerminalApp
 {
     enum ShortcutAction
     {
-        CopyText = 0,
+        Invalid = 0,
+        CopyText,
         CopyTextWithoutNewlines,
         PasteText,
         NewTab,
@@ -60,6 +61,7 @@ namespace TerminalApp
         AppKeyBindings();
 
         void SetKeyBinding(ShortcutAction action, Microsoft.Terminal.Settings.KeyChord chord);
+        void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
         Microsoft.Terminal.Settings.KeyChord GetKeyBinding(ShortcutAction action);
 
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> CopyText;
@@ -77,8 +79,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> PrevTab;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitVertical;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> SplitHorizontal;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> IncreaseFontSize;
-        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> DecreaseFontSize;
+        event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> AdjustFontSize;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollUp;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollDown;
         event Windows.Foundation.TypedEventHandler<AppKeyBindings, ActionEventArgs> ScrollUpPage;

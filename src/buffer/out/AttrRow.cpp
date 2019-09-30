@@ -46,7 +46,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
     {
         // Get the attribute that covers the final column of old width.
         const auto runPos = FindAttrIndex(_cchRowWidth - 1, nullptr);
-        auto& run = _list[runPos];
+        auto& run = _list.at(runPos);
 
         // Extend its length by the additional columns we're adding.
         run.SetLength(run.GetLength() + newWidth - _cchRowWidth);
@@ -60,7 +60,7 @@ void ATTR_ROW::Resize(const size_t newWidth)
         // Get the attribute that covers the final column of the new width
         size_t CountOfAttr = 0;
         const auto runPos = FindAttrIndex(newWidth - 1, &CountOfAttr);
-        auto& run = _list[runPos];
+        auto& run = _list.at(runPos);
 
         // CountOfAttr was given to us as "how many columns left from this point forward are covered by the returned run"
         // So if the original run was B5 covering a 5 size OldWidth and we have a NewWidth of 3
@@ -108,7 +108,7 @@ TextAttribute ATTR_ROW::GetAttrByColumn(const size_t column,
 {
     THROW_HR_IF(E_INVALIDARG, column >= _cchRowWidth);
     const auto runPos = FindAttrIndex(column, pApplies);
-    return _list[runPos].GetAttributes();
+    return _list.at(runPos).GetAttributes();
 }
 
 // Routine Description:
@@ -290,10 +290,10 @@ void ATTR_ROW::ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAtt
         // two elements in our internal list.
         else if (_list.size() == 2 && newAttrs.at(0).GetLength() == 1)
         {
-            auto left = _list.begin();
+            const auto left = _list.begin();
             if (iStart == left->GetLength() && NewAttr == left->GetAttributes())
             {
-                auto right = left + 1;
+                const auto right = left + 1;
                 left->IncrementLength();
                 right->DecrementLength();
 

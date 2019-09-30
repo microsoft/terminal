@@ -17,6 +17,12 @@ Author(s):
 #include "AppKeyBindings.h"
 #include "ColorScheme.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class SettingsTests;
+};
+
 namespace TerminalApp
 {
     class GlobalAppSettings;
@@ -34,7 +40,6 @@ public:
     GUID GetDefaultProfile() const noexcept;
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
-    void SetKeybindings(winrt::TerminalApp::AppKeyBindings newBindings) noexcept;
 
     bool GetAlwaysShowTabs() const noexcept;
     void SetAlwaysShowTabs(const bool showTabs) noexcept;
@@ -57,12 +62,13 @@ public:
 
     Json::Value ToJson() const;
     static GlobalAppSettings FromJson(const Json::Value& json);
+    void LayerJson(const Json::Value& json);
 
     void ApplyToSettings(winrt::Microsoft::Terminal::Settings::TerminalSettings& settings) const noexcept;
 
 private:
     GUID _defaultProfile;
-    winrt::TerminalApp::AppKeyBindings _keybindings;
+    winrt::com_ptr<winrt::TerminalApp::implementation::AppKeyBindings> _keybindings;
 
     std::vector<ColorScheme> _colorSchemes;
 
@@ -80,4 +86,6 @@ private:
 
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
+
+    friend class TerminalAppLocalTests::SettingsTests;
 };

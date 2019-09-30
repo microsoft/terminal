@@ -36,7 +36,7 @@ Largely inspired by the settings model that both VS Code (and Sublime Text) use.
 ### Goal: Minimize Re-Serializing `profiles.json`
 
 We want to re-serialize the user settings file, `profiles.json`, as little as
-possible. Each time we serialize the file, there's the possiblity that we've
+possible. Each time we serialize the file, there's the possibility that we've
 re-ordered the keys, as `jsoncpp` provides no ordering guarantee of the keys.
 This isn't great, as each write of the file will randomly re-order the file.
 
@@ -241,7 +241,7 @@ Currently, these profiles are only generated when a user first launches the
 Terminal. If they already have a `profiles.json` file, then we won't run the
 auto-generation behavior. This is obviously not great - if any new types of
 dynamic profiles are added, then users that already have the Terminal installed
-won't get any of these dynamic profiles. Furthemore, if any of the sources of
+won't get any of these dynamic profiles. Furthermore, if any of the sources of
 these dynamic profiles are removed, then the app won't auto-remove the
 associated profile.
 
@@ -695,7 +695,7 @@ generators _must_ be enabled to use the dynamic profiles.
   feature spec.
   - We'll also want to make sure that when we're serializing default/dynamic
     profiles, we take into account the state from the global defaults, and we
-    don't duplicate that inormation into the entries for those types of profiles
+    don't duplicate that information into the entries for those types of profiles
     in the user profiles.
 * **Re-ordering profiles** - Under "Solution Design", we provide an algorithm
   for decoding the settings. One of the steps mentioned is parsing the user
