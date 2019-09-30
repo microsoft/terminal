@@ -110,7 +110,7 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 ## I tried running WindowsTerminal.exe and it crashes
 
 * Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-* Make sure you're on the right version of Windows. You'll need to be on Insider's builds, or wait for the 1903 release, as the Windows Terminal **REQUIRES** features from the latest Windows release.
+* Make sure you're on the right version of Windows. You'll need to be on Windows version 1903 or later, as the Windows Terminal **REQUIRES** features from the latest Windows release.
 
 ---
 
