@@ -163,6 +163,11 @@ public:
 
     BOOL PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
 
+    BOOL PrivateScrollRegion(const SMALL_RECT scrollRect,
+                             const std::optional<SMALL_RECT> clipRect,
+                             const COORD destinationOrigin,
+                             const bool standardFillAttrs) noexcept override;
+
 private:
     Microsoft::Console::IIoProvider& _io;
 };

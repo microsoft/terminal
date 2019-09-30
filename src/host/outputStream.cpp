@@ -812,3 +812,28 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) co
 {
     return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
 }
+
+// Routine Description:
+// - Connects the PrivateScrollRegion call directly into our Driver Message servicing
+//    call inside Conhost.exe
+//   PrivateScrollRegion is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - scrollRect - Region to copy/move (source and size).
+// - clipRect - Optional clip region to contain buffer change effects.
+// - destinationOrigin - Upper left corner of target region.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - TRUE if successful (see DoSrvPrivateScrollRegion). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
+                                                const std::optional<SMALL_RECT> clipRect,
+                                                const COORD destinationOrigin,
+                                                const bool standardFillAttrs) noexcept
+{
+    return SUCCEEDED(DoSrvPrivateScrollRegion(_io.GetActiveOutputBuffer(),
+                                              scrollRect,
+                                              clipRect,
+                                              destinationOrigin,
+                                              standardFillAttrs));
+}

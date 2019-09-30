@@ -711,6 +711,16 @@ public:
         return _fPrivateSetDefaultBackgroundResult;
     }
 
+    BOOL PrivateScrollRegion(const SMALL_RECT /*scrollRect*/,
+                             const std::optional<SMALL_RECT> /*clipRect*/,
+                             const COORD /*destinationOrigin*/,
+                             const bool /*standardFillAttrs*/) noexcept override
+    {
+        Log::Comment(L"PrivateScrollRegion MOCK called...");
+
+        return TRUE;
+    }
+
     void _IncrementCoordPos(_Inout_ COORD* pcoord)
     {
         pcoord->X++;

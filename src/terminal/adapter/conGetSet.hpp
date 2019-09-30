@@ -110,5 +110,10 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL PrivateSetColorTableEntry(const short index, const COLORREF value) const = 0;
         virtual BOOL PrivateSetDefaultForeground(const COLORREF value) const = 0;
         virtual BOOL PrivateSetDefaultBackground(const COLORREF value) const = 0;
+
+        virtual BOOL PrivateScrollRegion(const SMALL_RECT scrollRect,
+                                         const std::optional<SMALL_RECT> clipRect,
+                                         const COORD destinationOrigin,
+                                         const bool standardFillAttrs) = 0;
     };
 }
