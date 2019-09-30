@@ -184,6 +184,8 @@ class ScreenBufferTests
     TEST_METHOD(ClearAlternateBuffer);
 
     TEST_METHOD(InitializeTabStopsInVTMode);
+
+    TEST_METHOD(CursorUpDownAcrossMargins);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4479,4 +4481,49 @@ void ScreenBufferTests::InitializeTabStopsInVTMode()
     m_state->PrepareGlobalScreenBuffer();
 
     VERIFY_IS_TRUE(gci.GetActiveOutputBuffer().AreTabsSet());
+}
+
+void ScreenBufferTests::CursorUpDownAcrossMargins()
+{
+    // Test inspired by: https://github.com/microsoft/terminal/issues/2929
+    // echo -e "\e[6;19r\e[24H\e[99AX\e[1H\e[99BY\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 24 (i.e. below the bottom margin)
+    // * executes the CUU sequence with a count of 99, to move up 99 lines
+    // * writes out X
+    // * moves to line 1 (i.e. above the top margin)
+    // * executes the CUD sequence with a count of 99, to move down 99 lines
+    // * writes out Y
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+    stateMachine.ProcessString(L"\x1b[24H");
+    VERIFY_ARE_EQUAL(23, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[99A");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[1H");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[99B");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 18 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
 }
