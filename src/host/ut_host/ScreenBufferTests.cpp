@@ -186,6 +186,7 @@ class ScreenBufferTests
     TEST_METHOD(InitializeTabStopsInVTMode);
 
     TEST_METHOD(CursorUpDownAcrossMargins);
+    TEST_METHOD(CursorUpDownOutsideMargins);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4524,6 +4525,51 @@ void ScreenBufferTests::CursorUpDownAcrossMargins()
     stateMachine.ProcessString(L"Y");
     {
         auto iter = tbi.GetCellDataAt({ 0, 18 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
+}
+
+void ScreenBufferTests::CursorUpDownOutsideMargins()
+{
+    // Test inspired by the CursorUpDownAcrossMargins test.
+    // echo -e "\e[6;19r\e[24H\e[1AX\e[1H\e[1BY\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 24 (i.e. below the bottom margin)
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (still below margins)
+    // * writes out X
+    // * moves to line 1 (i.e. above the top margin)
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
+    // * writes out Y
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+    stateMachine.ProcessString(L"\x1b[24H");
+    VERIFY_ARE_EQUAL(23, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(22, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 22 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[1H");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 1 });
         VERIFY_ARE_EQUAL(L"Y", iter->Chars());
     }
 }
