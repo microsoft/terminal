@@ -43,6 +43,9 @@ namespace Microsoft.Terminal.Wpf
         private NativeMethods.ScrollCallback scrollCallback;
         private NativeMethods.WriteCallback writeCallback;
 
+        // We keep track of the DPI scale since we could get a DPI changed event before we are able to initialize the terminal.
+        private DpiScale dpiScale = new DpiScale(96, 96);
+
         public event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
 
         public event EventHandler<int> UserScrolled;
@@ -74,7 +77,15 @@ namespace Microsoft.Terminal.Wpf
 
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
-            NativeMethods.DpiChanged(this.terminal, (int)(96 * newDpi.DpiScaleX));
+            // Save the DPI if the terminal hasn't been initialized.
+            if(this.terminal == IntPtr.Zero)
+            {
+                this.dpiScale = newDpi;
+            }
+            else
+            {
+                NativeMethods.DpiChanged(this.terminal, (int)(96 * newDpi.DpiScaleX));
+            }
         }
 
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
@@ -246,6 +257,12 @@ namespace Microsoft.Terminal.Wpf
 
             NativeMethods.RegisterScrollCallback(this.terminal, scrollCallback);
             NativeMethods.RegisterWriteCallback(this.terminal, writeCallback);
+
+            // If the saved DPI scale isn't the default scale, we push it to the terminal.
+            if (this.dpiScale.DpiScaleX != 96)
+            {
+                NativeMethods.DpiChanged(this.terminal, (int)(96 * dpiScale.DpiScaleX));
+            }
 
             return new HandleRef(this, this.hwnd);
         }

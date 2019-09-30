@@ -8,6 +8,6 @@
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
         <local:TerminalContainer x:Name="termContainer" Margin="0,0,17,0"/>
-        <ScrollBar x:Name="scrollbar" Width="17" HorizontalAlignment="Right" ValueChanged="Scrollbar_ValueChanged"/>
+        <ScrollBar x:Name="scrollbar" Width="17" HorizontalAlignment="Right" Scroll="Scrollbar_Scroll" />
     </Grid>
 </UserControl>
