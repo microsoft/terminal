@@ -378,7 +378,7 @@ LaunchMode GlobalAppSettings::_ParseLaunchMode(const std::wstring& launchModeStr
 // Arguments:
 // - launchMode: The enum value to convert to a string.
 // Return Value:
-// - The string value for the given CursorStyle
+// - The string value for the given LaunchMode
 std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launchMode) noexcept
 {
     switch (launchMode)

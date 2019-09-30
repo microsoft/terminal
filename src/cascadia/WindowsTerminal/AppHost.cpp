@@ -220,7 +220,7 @@ winrt::TerminalApp::LaunchMode AppHost::_HandleCreateWindow(const HWND hwnd, REC
                                 .ToRect();
             }
 
-            // For client island scenario, there is an invisible border of 8 pixals.
+            // For client island scenario, there is an invisible border of 8 pixels.
             // We need to remove this border to guarantee the left edge of the window
             // coincides with the screen
             const auto pCWindow = static_cast<IslandWindow*>(_window.get());
