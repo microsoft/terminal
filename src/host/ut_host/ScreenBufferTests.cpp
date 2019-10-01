@@ -171,7 +171,7 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
-    TEST_METHOD(InsertDeleteLines256Colors);
+    TEST_METHOD(ScrollLines256Colors);
 
     TEST_METHOD(SetOriginMode);
 
@@ -3996,10 +3996,10 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     }
 }
 
-void ScreenBufferTests::InsertDeleteLines256Colors()
+void ScreenBufferTests::ScrollLines256Colors()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:insert", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:scrollType", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:colorStyle", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
 
@@ -4009,16 +4009,22 @@ void ScreenBufferTests::InsertDeleteLines256Colors()
     const int Use256Color = 1;
     const int UseRGBColor = 2;
 
-    bool insert;
+    // scrollType will be used to control whether we use InsertLines,
+    // DeleteLines, or ReverseIndex to scroll the contents of the buffer.
+    const int InsertLines = 0;
+    const int DeleteLines = 1;
+    const int ReverseLineFeed = 2;
+
+    int scrollType;
     int colorStyle;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"insert", insert), L"whether to insert(true) or delete(false) lines");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines ot ReverseLineFeed");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
 
     // This test is largely taken from repro code from
     // https://github.com/microsoft/terminal/issues/832#issuecomment-507447272
     Log::Comment(
         L"Sets the attributes to a 256/RGB color, then scrolls some lines with"
-        L" DL. Verifies the rows are cleared with the attributes we'd expect.");
+        L" IL/DL/RI. Verifies the rows are cleared with the attributes we'd expect.");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -4054,8 +4060,22 @@ void ScreenBufferTests::InsertDeleteLines256Colors()
     // Move to home
     stateMachine.ProcessString(L"\x1b[H");
 
-    // Insert/Delete 10 lines
-    stateMachine.ProcessString(insert ? L"\x1b[10L" : L"\x1b[10M");
+    // Insert/Delete/Reverse Index 10 lines
+    std::wstring scrollSeq = L"";
+    if (scrollType == InsertLines)
+    {
+        scrollSeq = L"\x1b[10L";
+    }
+    if (scrollType == DeleteLines)
+    {
+        scrollSeq = L"\x1b[10M";
+    }
+    if (scrollType == ReverseLineFeed)
+    {
+        // This is 10 "Reverse Index" commands, which don't accept a parameter.
+        scrollSeq = L"\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM";
+    }
+    stateMachine.ProcessString(scrollSeq);
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
