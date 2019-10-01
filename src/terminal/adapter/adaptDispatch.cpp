@@ -516,11 +516,6 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
     coordDestination.Y = cursor.Y;
     coordDestination.X = cursor.X;
 
-    // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
-    CHAR_INFO ciFill;
-    ciFill.Attributes = csbiex.wAttributes;
-    ciFill.Char.UnicodeChar = L' ';
-
     bool fSuccess = false;
     if (fIsInsert)
     {
@@ -535,10 +530,8 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 
     if (fSuccess)
     {
-        fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScroll,
-                                                         &srScroll,
-                                                         coordDestination,
-                                                         &ciFill);
+        // Note the revealed characters are filled with the standard erase attributes.
+        fSuccess = !!_conApi->PrivateScrollRegion(srScroll, srScroll, coordDestination, true);
     }
 
     return fSuccess;
@@ -963,11 +956,8 @@ bool AdaptDispatch::_ScrollMovement(const ScrollDirection sdDirection, _In_ unsi
             coordDestination.X = srScreen.Left;
             coordDestination.Y = srScreen.Top + sDistance * (sdDirection == ScrollDirection::Up ? -1 : 1);
 
-            // Fill character for remaining space left behind by "cut" operation (or for fill if we "cut" the entire line)
-            CHAR_INFO ciFill;
-            ciFill.Attributes = csbiex.wAttributes;
-            ciFill.Char.UnicodeChar = L' ';
-            fSuccess = !!_conApi->ScrollConsoleScreenBufferW(&srScreen, &srScreen, coordDestination, &ciFill);
+            // Note the revealed lines are filled with the standard erase attributes.
+            fSuccess = !!_conApi->PrivateScrollRegion(srScreen, srScreen, coordDestination, true);
         }
     }
 

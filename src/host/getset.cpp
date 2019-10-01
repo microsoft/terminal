@@ -1422,25 +1422,12 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            // Here we previously called to ScrollConsoleScreenBufferWImpl to
-            // perform the scrolling operation. However, that function only
-            // accepts a WORD for the fill attributes. That means we'd lose
-            // 256/RGB fidelity for fill attributes. So instead, we'll just call
-            // ScrollRegion ourselves, with the same params that
-            // ScrollConsoleScreenBufferWImpl would have.
-            // See microsoft/terminal#832, #2702 for more context.
-            try
-            {
-                LockConsole();
-                auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-                ScrollRegion(screenInfo,
-                             srScroll,
-                             srScroll,
-                             coordDestination,
-                             UNICODE_SPACE,
-                             screenInfo.GetAttributes());
-            }
-            CATCH_LOG();
+            // Note the revealed lines are filled with the standard erase attributes.
+            Status = NTSTATUS_FROM_HRESULT(DoSrvPrivateScrollRegion(screenInfo,
+                                                                    srScroll,
+                                                                    srScroll,
+                                                                    coordDestination,
+                                                                    true));
         }
     }
     return Status;
@@ -2149,25 +2136,12 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
             coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
         }
 
-        // Here we previously called to ScrollConsoleScreenBufferWImpl to
-        // perform the scrolling operation. However, that function only accepts
-        // a WORD for the fill attributes. That means we'd lose 256/RGB fidelity
-        // for fill attributes. So instead, we'll just call ScrollRegion
-        // ourselves, with the same params that ScrollConsoleScreenBufferWImpl
-        // would have.
-        // See microsoft/terminal#832 for more context.
-        try
-        {
-            LockConsole();
-            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-            ScrollRegion(screenInfo,
-                         srScroll,
-                         srScroll,
-                         coordDestination,
-                         UNICODE_SPACE,
-                         screenInfo.GetAttributes());
-        }
-        CATCH_LOG();
+        // Note the revealed lines are filled with the standard erase attributes.
+        LOG_IF_FAILED(DoSrvPrivateScrollRegion(screenInfo,
+                                               srScroll,
+                                               srScroll,
+                                               coordDestination,
+                                               true));
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
