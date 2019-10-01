@@ -275,8 +275,12 @@
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
 
   <ItemGroup>
-    <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
-    <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
+    <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj">
+      <Project>{ca5cad1a-1754-4a9d-93d7-857a9d17cb1b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj">
+      <Project>{9cbd7dfa-1754-4a9d-93d7-857a9d17cb1b}</Project>
+    </ProjectReference>
   </ItemGroup>
   <!-- Stomp the path to conhost.exe.
     This task will copy OpenConsole.exe to the appx as conhost.exe, and place it

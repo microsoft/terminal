@@ -24,8 +24,12 @@
 
   <!-- ========================= Project References ======================== -->
   <ItemGroup>
-    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj" />
-    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)\src\cascadia\TerminalApp\lib\TerminalAppLib.vcxproj">
+      <Project>{ca5cad1a-9a12-429c-b551-8562ec954746}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)\src\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <!-- ========================= Globals ======================== -->
