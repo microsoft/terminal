@@ -63,8 +63,8 @@ namespace Microsoft::Console::Render
         bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
-        bool _lastCursorIsVisible = false;
-        bool _nextCursorIsVisible = true;
+        bool _lastCursorIsVisible;
+        bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 

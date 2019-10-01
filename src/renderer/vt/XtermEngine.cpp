@@ -22,7 +22,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _fUseAsciiOnly(fUseAsciiOnly),
     _previousLineWrapped(false),
     _usingUnderLine(false),
-    _needToDisableCursor(false)
+    _needToDisableCursor(false),
+    _lastCursorIsVisible(false),
+    _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
