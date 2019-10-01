@@ -638,41 +638,29 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         }
 
         const auto modifiers = _GetPressedModifierKeys();
-
-        // AltGr key combinations don't always contain any meaningful,
-        // pretranslated unicode character during WM_KEYDOWN.
-        // E.g. on a German keyboard AltGr+Q should result in a "@" character,
-        // but actually results in "Q" with Alt and Ctrl modifier states.
-        // By returning false though, we can abort handling this WM_KEYDOWN
-        // event and let the WM_CHAR handler kick in, which will be
-        // provided with an appropriate unicode character.
-        //
-        // GH#2235: Make sure to handle AltGr before trying keybindings,
-        // so Ctrl+Alt keybindings won't eat an AltGr keypress.
-        if (modifiers.IsAltGrPressed())
-        {
-            _HandleVoidKeyEvent();
-            e.Handled(false);
-            return;
-        }
-
         const auto vkey = static_cast<WORD>(e.OriginalKey());
+        const auto scanCode = e.KeyStatus().ScanCode;
         bool handled = false;
 
-        auto bindings = _settings.KeyBindings();
-        if (bindings)
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate between AltGr and Ctrl+Alt yet.
+        // -> Don't check for key bindings if this is an AltGr key combination.
+        if (!modifiers.IsAltGrPressed())
         {
-            handled = bindings.TryKeyChord({
-                modifiers.IsCtrlPressed(),
-                modifiers.IsAltPressed(),
-                modifiers.IsShiftPressed(),
-                vkey,
-            });
+            auto bindings = _settings.KeyBindings();
+            if (bindings)
+            {
+                handled = bindings.TryKeyChord({
+                    modifiers.IsCtrlPressed(),
+                    modifiers.IsAltPressed(),
+                    modifiers.IsShiftPressed(),
+                    vkey,
+                });
+            }
         }
 
         if (!handled)
         {
-            handled = _TrySendKeyEvent(vkey, modifiers);
+            handled = _TrySendKeyEvent(vkey, scanCode, modifiers);
         }
 
         // Manually prevent keyboard navigation with tab. We want to send tab to
@@ -687,17 +675,6 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     }
 
     // Method Description:
-    // - Some key events cannot be handled (e.g. AltGr combinations) and are
-    //   delegated to the character handler. Just like with _TrySendKeyEvent(),
-    //   the character handler counts on us though to:
-    // - Clears the current selection.
-    // - Makes the cursor briefly visible during typing.
-    void TermControl::_HandleVoidKeyEvent()
-    {
-        _TrySendKeyEvent(0, {});
-    }
-
-    // Method Description:
     // - Send this particular key event to the terminal.
     //   See Terminal::SendKeyEvent for more information.
     // - Clears the current selection.
@@ -705,14 +682,14 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - states: The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    bool TermControl::_TrySendKeyEvent(WORD vkey, const ControlKeyStates modifiers)
+    bool TermControl::_TrySendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates modifiers)
     {
         _terminal->ClearSelection();
 
         // If the terminal translated the key, mark the event as handled.
         // This will prevent the system from trying to get the character out
         // of it and sending us a CharacterRecieved event.
-        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, modifiers) : true;
+        const auto handled = vkey ? _terminal->SendKeyEvent(vkey, scanCode, modifiers) : true;
 
         if (_cursorTimer.has_value())
         {
@@ -987,10 +964,19 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void TermControl::_MouseZoomHandler(const double mouseDelta)
     {
         const auto fontDelta = mouseDelta < 0 ? -1 : 1;
+        AdjustFontSize(fontDelta);
+    }
+
+    // Method Description:
+    // - Adjust the font size of the terminal control.
+    // Arguments:
+    // - fontSizeDelta: The amount to increase or decrease the font size by.
+    void TermControl::AdjustFontSize(int fontSizeDelta)
+    {
         try
         {
             // Make sure we have a non-zero font size
-            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontDelta), static_cast<short>(1));
+            const auto newSize = std::max(gsl::narrow<short>(_desiredFont.GetEngineSize().Y + fontSizeDelta), static_cast<short>(1));
             const auto* fontFace = _settings.FontFace().c_str();
             _actualFont = { fontFace, 0, 10, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
