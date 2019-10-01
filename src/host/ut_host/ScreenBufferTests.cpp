@@ -3269,8 +3269,13 @@ void ScreenBufferTests::ScrollOperations()
         _FillLine(viewportLine++, viewportChar++, viewportAttr);
     }
 
-    // Set the background color so that it will be used to fill the revealed area.
-    si.SetAttributes({ BACKGROUND_RED });
+    // Set the attributes that will be used to fill the revealed area.
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(fillAttr);
+    // But note that the meta attributes are expected to be cleared.
+    auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetMetaAttributes(0);
 
     // Place the cursor in the center.
     auto cursorPos = COORD{ bufferWidth / 2, (viewportStart + viewportEnd) / 2 };
@@ -3324,10 +3329,10 @@ void ScreenBufferTests::ScrollOperations()
         VERIFY_IS_TRUE(_ValidateLineContains(viewportLine++, viewportChar++, viewportAttr));
     }
 
-    Log::Comment(L"The revealed area should now be blank, with default buffer attributes.");
+    Log::Comment(L"The revealed area should now be blank, with standard erase attributes.");
     const auto revealedStart = scrollDirection == Up ? viewportEnd - deletedLines : scrollStart;
     const auto revealedEnd = revealedStart + scrollMagnitude;
-    VERIFY_IS_TRUE(_ValidateLinesContain(revealedStart, revealedEnd, L' ', si.GetAttributes()));
+    VERIFY_IS_TRUE(_ValidateLinesContain(revealedStart, revealedEnd, L' ', expectedFillAttr));
 }
 
 void ScreenBufferTests::InsertChars()
@@ -3383,8 +3388,13 @@ void ScreenBufferTests::InsertChars()
     const auto textAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
     _FillLine({ viewportStart, insertLine }, textChars, textAttr);
 
-    // Set the background color so that it will be used to fill the revealed area.
-    si.SetAttributes({ BACKGROUND_RED });
+    // Set the attributes that will be used to fill the revealed area.
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(fillAttr);
+    // But note that the meta attributes are expected to be cleared.
+    auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetMetaAttributes(0);
 
     // Insert 5 spaces at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
@@ -3404,8 +3414,8 @@ void ScreenBufferTests::InsertChars()
                    L"Field of Qs left of the viewport should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportStart, insertLine }, L"ABCDEFGHIJ", textAttr),
                    L"First half of the alphabet should remain unchanged.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L"     ", si.GetAttributes()),
-                   L"Spaces should be inserted with the current attributes at the cursor position.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L"     ", expectedFillAttr),
+                   L"Spaces should be inserted with standard erase attributes at the cursor position.");
     VERIFY_IS_TRUE(_ValidateLineContains({ insertPos + 5, insertLine }, L"KLMNOPQRST", textAttr),
                    L"Second half of the alphabet should have moved to the right by the number of spaces inserted.");
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd + 5, insertLine }, L"QQQQQ", bufferAttr),
@@ -3427,9 +3437,6 @@ void ScreenBufferTests::InsertChars()
     // Fill the viewport range with text. Red on Blue.
     _FillLine({ viewportStart, insertLine }, textChars, textAttr);
 
-    // Set the background color so that it will be used to fill the revealed area.
-    si.SetAttributes({ BACKGROUND_RED });
-
     // Insert 5 spaces at the right edge. Only 1 should be inserted.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
     //  After: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQ
@@ -3450,8 +3457,8 @@ void ScreenBufferTests::InsertChars()
                    L"Entire viewport range should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, insertLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L" ", si.GetAttributes()),
-                   L"One space should be inserted with the current attributes at the cursor postion.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ insertPos, insertLine }, L" ", expectedFillAttr),
+                   L"One space should be inserted with standard erase attributes at the cursor postion.");
 
     Log::Comment(
         L"Test 3: Inserting at the exact beginning of the line. Same line structure. "
@@ -3482,7 +3489,7 @@ void ScreenBufferTests::InsertChars()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from insert operation.");
 
     // Verify the updated structure of the line.
-    VERIFY_IS_TRUE(_ValidateLineContains(insertLine, L' ', si.GetAttributes()),
+    VERIFY_IS_TRUE(_ValidateLineContains(insertLine, L' ', expectedFillAttr),
                    L"A whole line of spaces was inserted at the start, erasing the line.");
 }
 
@@ -3539,8 +3546,13 @@ void ScreenBufferTests::DeleteChars()
     const auto textAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
     _FillLine({ viewportStart, deleteLine }, textChars, textAttr);
 
-    // Set the background color so that it will be used to fill the revealed area.
-    si.SetAttributes({ BACKGROUND_RED });
+    // Set the attributes that will be used to fill the revealed area.
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(fillAttr);
+    // But note that the meta attributes are expected to be cleared.
+    auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetMetaAttributes(0);
 
     // Delete 5 characters at the cursor position.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
@@ -3564,8 +3576,8 @@ void ScreenBufferTests::DeleteChars()
                    L"Only half of the second part of the alphabet remains.");
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd - 5, deleteLine }, L"QQQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should be moved left.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ bufferWidth - 5, deleteLine }, L"     ", si.GetAttributes()),
-                   L"The rest of the line should be replaced with spaces with the current attributes.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ bufferWidth - 5, deleteLine }, L"     ", expectedFillAttr),
+                   L"The rest of the line should be replaced with spaces with standard erase attributes.");
 
     Log::Comment(
         L"Test 2: Deleting at the exact end of the line. Same line structure. "
@@ -3582,9 +3594,6 @@ void ScreenBufferTests::DeleteChars()
 
     // Fill the viewport range with text. Red on Blue.
     _FillLine({ viewportStart, deleteLine }, textChars, textAttr);
-
-    // Set the background color so that it will be used to fill the revealed area.
-    si.SetAttributes({ BACKGROUND_RED });
 
     // Delete 5 characters at the right edge. Only 1 should be deleted.
     // Before: QQQQQQQQQQABCDEFGHIJKLMNOPQRSTQQQQQQQQQQ
@@ -3606,8 +3615,8 @@ void ScreenBufferTests::DeleteChars()
                    L"Entire viewport range should remain unchanged.");
     VERIFY_IS_TRUE(_ValidateLineContains({ viewportEnd, deleteLine }, L"QQQQQQQQQ", bufferAttr),
                    L"Field of Qs right of the viewport should remain unchanged except for the last spot.");
-    VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L" ", si.GetAttributes()),
-                   L"One character should be erased with the current attributes at the cursor postion.");
+    VERIFY_IS_TRUE(_ValidateLineContains({ deletePos, deleteLine }, L" ", expectedFillAttr),
+                   L"One character should be erased with standard erase attributes at the cursor postion.");
 
     Log::Comment(
         L"Test 3: Deleting at the exact beginning of the line. Same line structure. "
@@ -3638,7 +3647,7 @@ void ScreenBufferTests::DeleteChars()
     VERIFY_ARE_EQUAL(expectedCursor, cursor.GetPosition(), L"Verify cursor didn't move from delete operation.");
 
     // Verify the updated structure of the line.
-    VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', si.GetAttributes()),
+    VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
                    L"A whole line of spaces was inserted from the right, erasing the line.");
 }
 
