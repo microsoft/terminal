@@ -173,7 +173,7 @@ class ScreenBufferTests
     TEST_METHOD(DeleteLinesInMargins);
     TEST_METHOD(ReverseLineFeedInMargins);
 
-    TEST_METHOD(InsertDeleteLines256Colors);
+    TEST_METHOD(ScrollLines256Colors);
 
     TEST_METHOD(SetOriginMode);
 
@@ -186,6 +186,10 @@ class ScreenBufferTests
     TEST_METHOD(ClearAlternateBuffer);
 
     TEST_METHOD(InitializeTabStopsInVTMode);
+
+    TEST_METHOD(CursorUpDownAcrossMargins);
+    TEST_METHOD(CursorUpDownOutsideMargins);
+    TEST_METHOD(CursorUpDownExactlyAtMargins);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4037,10 +4041,10 @@ void ScreenBufferTests::ReverseLineFeedInMargins()
     }
 }
 
-void ScreenBufferTests::InsertDeleteLines256Colors()
+void ScreenBufferTests::ScrollLines256Colors()
 {
     BEGIN_TEST_METHOD_PROPERTIES()
-        TEST_METHOD_PROPERTY(L"Data:insert", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:scrollType", L"{0, 1, 2}")
         TEST_METHOD_PROPERTY(L"Data:colorStyle", L"{0, 1, 2}")
     END_TEST_METHOD_PROPERTIES();
 
@@ -4050,16 +4054,22 @@ void ScreenBufferTests::InsertDeleteLines256Colors()
     const int Use256Color = 1;
     const int UseRGBColor = 2;
 
-    bool insert;
+    // scrollType will be used to control whether we use InsertLines,
+    // DeleteLines, or ReverseIndex to scroll the contents of the buffer.
+    const int InsertLines = 0;
+    const int DeleteLines = 1;
+    const int ReverseLineFeed = 2;
+
+    int scrollType;
     int colorStyle;
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L"insert", insert), L"whether to insert(true) or delete(false) lines");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"scrollType", scrollType), L"controls whether to use InsertLines, DeleteLines ot ReverseLineFeed");
     VERIFY_SUCCEEDED(TestData::TryGetValue(L"colorStyle", colorStyle), L"controls whether to use the 16 color table, 256 table, or RGB colors");
 
     // This test is largely taken from repro code from
     // https://github.com/microsoft/terminal/issues/832#issuecomment-507447272
     Log::Comment(
         L"Sets the attributes to a 256/RGB color, then scrolls some lines with"
-        L" DL. Verifies the rows are cleared with the attributes we'd expect.");
+        L" IL/DL/RI. Verifies the rows are cleared with the attributes we'd expect.");
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer();
@@ -4095,8 +4105,22 @@ void ScreenBufferTests::InsertDeleteLines256Colors()
     // Move to home
     stateMachine.ProcessString(L"\x1b[H");
 
-    // Insert/Delete 10 lines
-    stateMachine.ProcessString(insert ? L"\x1b[10L" : L"\x1b[10M");
+    // Insert/Delete/Reverse Index 10 lines
+    std::wstring scrollSeq = L"";
+    if (scrollType == InsertLines)
+    {
+        scrollSeq = L"\x1b[10L";
+    }
+    if (scrollType == DeleteLines)
+    {
+        scrollSeq = L"\x1b[10M";
+    }
+    if (scrollType == ReverseLineFeed)
+    {
+        // This is 10 "Reverse Index" commands, which don't accept a parameter.
+        scrollSeq = L"\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM\x1bM";
+    }
+    stateMachine.ProcessString(scrollSeq);
 
     Log::Comment(NoThrowString().Format(
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
@@ -4520,4 +4544,171 @@ void ScreenBufferTests::InitializeTabStopsInVTMode()
     m_state->PrepareGlobalScreenBuffer();
 
     VERIFY_IS_TRUE(gci.GetActiveOutputBuffer().AreTabsSet());
+}
+
+void ScreenBufferTests::CursorUpDownAcrossMargins()
+{
+    // Test inspired by: https://github.com/microsoft/terminal/issues/2929
+    // echo -e "\e[6;19r\e[24H\e[99AX\e[1H\e[99BY\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 24 (i.e. below the bottom margin)
+    // * executes the CUU sequence with a count of 99, to move up 99 lines
+    // * writes out X
+    // * moves to line 1 (i.e. above the top margin)
+    // * executes the CUD sequence with a count of 99, to move down 99 lines
+    // * writes out Y
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+    stateMachine.ProcessString(L"\x1b[24H");
+    VERIFY_ARE_EQUAL(23, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[99A");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[1H");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[99B");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 18 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorUpDownOutsideMargins()
+{
+    // Test inspired by the CursorUpDownAcrossMargins test.
+    // echo -e "\e[6;19r\e[24H\e[1AX\e[1H\e[1BY\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 24 (i.e. below the bottom margin)
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (still below margins)
+    // * writes out X
+    // * moves to line 1 (i.e. above the top margin)
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
+    // * writes out Y
+
+    // This test is different becasue the end location of the vertical movement
+    // should not be within the margins at all. We should not clamp this
+    // movement to be within the margins.
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+    stateMachine.ProcessString(L"\x1b[24H");
+    VERIFY_ARE_EQUAL(23, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(22, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"X");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 22 });
+        VERIFY_ARE_EQUAL(L"X", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[1H");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"Y");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 1 });
+        VERIFY_ARE_EQUAL(L"Y", iter->Chars());
+    }
+    stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorUpDownExactlyAtMargins()
+{
+    // Test inspired by the CursorUpDownAcrossMargins test.
+    // echo -e "\e[6;19r\e[19H\e[1B1\e[1A2\e[6H\e[1A3\e[1B4\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 19 (i.e. on the bottom margin)
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still on the margin)
+    // * writes out 1
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (now inside margins)
+    // * writes out 2
+    // * moves to line 6 (i.e. on the top margin)
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (still on the margin)
+    // * writes out 3
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
+    // * writes out 4
+
+    // This test is different becasue the starting location for these scroll
+    // operations is _exactly_ on the margins
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+
+    stateMachine.ProcessString(L"\x1b[19;1H");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"1");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 18 });
+        VERIFY_ARE_EQUAL(L"1", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(17, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"2");
+    {
+        auto iter = tbi.GetCellDataAt({ 1, 17 });
+        VERIFY_ARE_EQUAL(L"2", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[6;1H");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"3");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"3", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(6, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"4");
+    {
+        auto iter = tbi.GetCellDataAt({ 1, 6 });
+        VERIFY_ARE_EQUAL(L"4", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[r");
 }

@@ -52,6 +52,17 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
 
     _dispatch->Execute(wch);
     _ClearLastChar();
+
+    if (wch == AsciiChars::BEL)
+    {
+        // microsoft/terminal#2952
+        // If we're attached to a terminal, let's also pass the BEL through.
+        if (_pfnFlushToTerminal != nullptr)
+        {
+            _pfnFlushToTerminal();
+        }
+    }
+
     return true;
 }
 

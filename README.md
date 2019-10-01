@@ -23,7 +23,7 @@ Download the Microsoft Terminal free from the Microsoft Store and it'll be conti
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
 ### From this repository
-Every public release of Windows Terminal is avaiable for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
+Every public release of Windows Terminal is available for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
 
 > ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
@@ -110,7 +110,7 @@ Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when 
 ## I tried running WindowsTerminal.exe and it crashes
 
 * Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-* Make sure you're on the right version of Windows. You'll need to be on Insider's builds, or wait for the 1903 release, as the Windows Terminal **REQUIRES** features from the latest Windows release.
+* Make sure you're on the right version of Windows. You'll need to be on Windows version 1903 or later, as the Windows Terminal **REQUIRES** features from the latest Windows release.
 
 ---
 
