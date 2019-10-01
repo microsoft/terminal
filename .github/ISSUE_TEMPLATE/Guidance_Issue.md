@@ -4,7 +4,7 @@ about: Suggest somewhere the Windows Terminal Team needs to provide community gu
   through new documentation or process.
 title: ''
 labels: Issue-Docs
-assignees: bitcrazed
+assignees: cinnamon-msft
 
 ---
 
