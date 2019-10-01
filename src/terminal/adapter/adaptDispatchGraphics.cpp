@@ -288,7 +288,10 @@ bool AdaptDispatch::s_IsExtendedTextAttribute(const DispatchTypes::GraphicsOptio
 {
     // TODO:GH#2916 add support for DoublyUnderlined, Faint(RGBColorOrFaint).
     // These two are currently partially implemented as other things:
-    // * Faint is kinda like the opposite of what bold does
+    // * Faint is approximately the opposite of bold does, though it's much
+    //   [more complicated](
+    //   https://github.com/microsoft/terminal/issues/2916#issuecomment-535860910)
+    //   and less supported/used.
     // * Doubly underlined should exist in a trinary state with Underlined
     return opt == DispatchTypes::GraphicsOptions::Italics ||
            opt == DispatchTypes::GraphicsOptions::NotItalics ||

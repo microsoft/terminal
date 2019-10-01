@@ -68,23 +68,23 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // Helper lambda to check if a state (attr) has changed since it's last
     // value (lastState), and appropriately start/end that state with the given
     // begin/end functions.
-    auto updateFlagAndState = [extendedAttrs](const ExtendedAttributes attr,
-                                              bool& lastState,
-                                              std::function<HRESULT(void)> beginFn,
-                                              std::function<HRESULT(void)> endFn) -> HRESULT {
+    auto updateFlagAndState = [extendedAttrs, this](const ExtendedAttributes attr,
+                                                    bool& lastState,
+                                                    std::function<HRESULT(Xterm256Engine*)> beginFn,
+                                                    std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
         // Unfortunately, we can't use WI_IsFlagSet here, since that requires a
         // compile-time check that the flag (attr) is a _single_ flag, and that
         // won't work in this case.
-        const bool flagSet = (extendedAttrs & attr) == attr;
+        const bool flagSet = WI_AreAllFlagsSet(extendedAttrs, attr);
         if (flagSet != lastState)
         {
             if (flagSet)
             {
-                RETURN_IF_FAILED(beginFn());
+                RETURN_IF_FAILED(beginFn(this));
             }
             else
             {
-                RETURN_IF_FAILED(endFn());
+                RETURN_IF_FAILED(endFn(this));
             }
             lastState = flagSet;
         }
@@ -93,26 +93,26 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
 
     auto hr = updateFlagAndState(ExtendedAttributes::Italics,
                                  _usingItalics,
-                                 std::bind(&Xterm256Engine::_BeginItalics, this),
-                                 std::bind(&Xterm256Engine::_EndItalics, this));
+                                 &Xterm256Engine::_BeginItalics,
+                                 &Xterm256Engine::_EndItalics);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::Blinking,
                             _usingBlinking,
-                            std::bind(&Xterm256Engine::_BeginBlink, this),
-                            std::bind(&Xterm256Engine::_EndBlink, this));
+                            &Xterm256Engine::_BeginBlink,
+                            &Xterm256Engine::_EndBlink);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::Invisible,
                             _usingInvisible,
-                            std::bind(&Xterm256Engine::_BeginInvisible, this),
-                            std::bind(&Xterm256Engine::_EndInvisible, this));
+                            &Xterm256Engine::_BeginInvisible,
+                            &Xterm256Engine::_EndInvisible);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::CrossedOut,
                             _usingCrossedOut,
-                            std::bind(&Xterm256Engine::_BeginCrossedOut, this),
-                            std::bind(&Xterm256Engine::_EndCrossedOut, this));
+                            &Xterm256Engine::_BeginCrossedOut,
+                            &Xterm256Engine::_EndCrossedOut);
     RETURN_IF_FAILED(hr);
 
     return S_OK;

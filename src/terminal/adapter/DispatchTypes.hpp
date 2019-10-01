@@ -18,14 +18,12 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
     {
         Off = 0,
         BoldBright = 1,
-        RGBColorOrFaint = 2,
-        // 2 is also Faint, decreased intensity (ISO 6429).
+        // The 2 and 5 entries here are for BOTH the extended graphics options,
+        // as well as the Faint/Blink options.
+        RGBColorOrFaint = 2, // 2 is also Faint, decreased intensity (ISO 6429).
         Italics = 3,
         Underline = 4,
-        BlinkOrXterm256Index = 5,
-        // 5 is also Blink (appears as Bold).
-        // the 2 and 5 entries here are only for the extended graphics options
-        // as we do not currently support those features individually
+        BlinkOrXterm256Index = 5, // 5 is also Blink (appears as Bold).
         Negative = 7,
         Invisible = 8,
         CrossedOut = 9,
@@ -36,7 +34,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Steady = 25, // _not_ blink
         Positive = 27, // _not_ inverse
         Visible = 28, // _not_ invisible
-        NotCrossedOut = 29, // _not_ invisible
+        NotCrossedOut = 29,
         ForegroundBlack = 30,
         ForegroundRed = 31,
         ForegroundGreen = 32,

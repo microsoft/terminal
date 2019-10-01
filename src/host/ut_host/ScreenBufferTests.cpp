@@ -4411,6 +4411,10 @@ void ScreenBufferTests::TestExtendedTextAttributes()
     // This is a test for microsoft/terminal#2554. Refer to that issue for more
     // context.
 
+    // We're going to set every possible combination of extended attributes via
+    // VT, then disable them, and make sure that they are all always represented
+    // internally correctly.
+
     // Run this test for each and every possible combination of states.
     BEGIN_TEST_METHOD_PROPERTIES()
         TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")

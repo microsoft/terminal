@@ -971,8 +971,9 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
 }
 
 // Method Description:
-// - Retrieves the active ExtendedAttributes of the given screen buffer. Text
-//   written to this buffer will be written with these attributes.
+// - Retrieves the active ExtendedAttributes (italic, underline, etc.) of the
+//   given screen buffer. Text written to this buffer will be written with these
+//   attributes.
 // Arguments:
 // - screenInfo: The buffer to get the extended attrs from.
 // Return Value:
@@ -985,8 +986,9 @@ ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& scr
 }
 
 // Method Description:
-// - Sets the active ExtendedAttributes of the given screen buffer. Text written
-//   to this buffer will be written with these attributes.
+// - Sets the active ExtendedAttributes (italic, underline, etc.) of the given
+//   screen buffer. Text written to this buffer will be written with these
+//   attributes.
 // Arguments:
 // - screenInfo: The buffer to set the extended attrs for.
 // - extendedAttrs: The new ExtendedAttributes to use
