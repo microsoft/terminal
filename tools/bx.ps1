@@ -20,6 +20,11 @@ $targets = $Metaproj.Project.Target
 # For Conhost\Server, this will match:
 #   [Conhost\Server, Conhost\Server:Clean, Conhost\Server:Rebuild, Conhost\Server:Publish]
 $matchingTargets = $targets | Where-Object { $_.MSBuild.Condition -eq $msBuildCondition }
+if ($matchingTargets.length -eq 0)
+{
+    $conditionNoMeta = "'%(ProjectReference.Identity)' == '$projectPath'"
+    $matchingTargets = $targets | Where-Object { $_.MSBuild.Condition -eq $conditionNoMeta }
+}
 
 # Further filter to the targets that dont have a suffix (like ":Clean")
 $matchingTargets = $matchingTargets | Where-Object { $hasProperty = $_.MsBuild.PSobject.Properties.name -match "Targets" ; return -Not $hasProperty }
