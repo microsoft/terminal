@@ -12,7 +12,7 @@ namespace Microsoft::Terminal::Core
     public:
         virtual ~ITerminalInput() {}
 
-        virtual bool SendKeyEvent(const WORD vkey, const ControlKeyStates states) = 0;
+        virtual bool SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) = 0;
 
         // void SendMouseEvent(uint row, uint col, KeyModifiers modifiers);
         [[nodiscard]] virtual HRESULT UserResize(const COORD size) noexcept = 0;
