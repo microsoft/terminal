@@ -339,6 +339,18 @@ public:
         return !!_fPrivateBoldTextResult;
     }
 
+    BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const /*pAttrs*/)
+    {
+        Log::Comment(L"PrivateGetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
+    BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes /*attrs*/)
+    {
+        Log::Comment(L"PrivateSetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                    _Out_ size_t& eventsWritten) override
     {
