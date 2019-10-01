@@ -182,8 +182,9 @@
       make sure that if you add a cppwinrt dependency to any of these projects,
       you also update all the consumers
     -->
-    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
-
+    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+      <Project>{18d09a24-8240-42d6-8cb6-236eee820263}</Project>
+    </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
     manually include the winmds as References below -->
