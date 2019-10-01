@@ -82,7 +82,7 @@ project from our `TerminalAppLib` project:
   <ItemGroup>
     <!-- Manually add references to each of our dependent winmds. Mark them as
     private=false and CopyLocalSatelliteAssemblies=false, so that we don't
-    propogate them upwards (which can make referencing this project result in
+    propagate them upwards (which can make referencing this project result in
     duplicate type definitions)-->
 
     <Reference Include="Microsoft.Terminal.Settings">
@@ -106,7 +106,7 @@ in the dll project's directory.
 
 ### Update the dll project
 
-Now that we havea lib that builds all your code, we can go ahead and tear out
+Now that we have a lib that builds all your code, we can go ahead and tear out
 most of the dead code from the old dll project. Remove all the source files from
 the dll's `.vcxproj` file, save for the `pch.h` and `pch.cpp` files. You _may_
 need to leave the headers for any C++/WinRT types you've authored in this project
@@ -301,7 +301,7 @@ you want to use any XAML types, then you'll have to keep reading.
 
 ### Using Xaml Types (with XAML Islands)
 
-To be able to instatiate XAML types in your unittest, we'll need to make use of
+To be able to instantiate XAML types in your unittest, we'll need to make use of
 the [XAML Hosting
 API](https://docs.microsoft.com/en-us/windows/apps/desktop/modernize/using-the-xaml-hosting-api)
 (Xaml Islands). This enables you to use XAML APIs from a Win32 context.

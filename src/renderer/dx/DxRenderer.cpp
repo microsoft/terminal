@@ -1360,7 +1360,7 @@ float DxEngine::GetScaling() const noexcept
 // - <none>
 // Return Value:
 // - Rectangle describing dirty area in characters.
-[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars()
+[[nodiscard]] SMALL_RECT DxEngine::GetDirtyRectInChars() noexcept
 {
     SMALL_RECT r;
     r.Top = gsl::narrow<SHORT>(floor(_invalidRect.top / _glyphCell.cy));

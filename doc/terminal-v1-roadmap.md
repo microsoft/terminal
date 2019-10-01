@@ -20,7 +20,7 @@ Ultimately, we're aiming for Terminal v1.0 to be feature-complete by Dec 2019, a
 
 > ⚠ Note: Terminal v1.0 will be a quality-oriented release driven in large part by the community. So, ___if you see bugs, find/file them___!
 
-| Milestone end date | Phase | Key features |
+| Milestone end date&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | Milestone Name | Key Deliverables |
 | --- | --- | --- |
 | 2019-05-07 | [Announcement](https://devblogs.microsoft.com/commandline/introducing-windows-terminal/) | Terminal announced & open-sourced ([Build 2019 Terminal session](https://www.youtube.com/watch?v=KMudkRcwjCw), ["Sizzle" video](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)) |
 | 2019-07-09 | [v0.2 (update)](https://github.com/microsoft/terminal/releases/tag/v0.2.1831.0) | First version of the Terminal released via the Microsoft Store, fundamental features in place, basic tab control, basic UI layout, config & settings via JSON file |
@@ -58,13 +58,13 @@ Incoming issues/asks/etc. are triaged several times a week, labelled appropriate
 * P1/2 issues/features/asks  assigned to the current or future milestone, or to the [Terminal v1.0 milestone](https://github.com/microsoft/terminal/milestone/6) for future assignment, if required to deliver a v1.0 feature
 * Issues/features/asks not on our list of v1.0 features is assigned to the [Terminal Backlog](https://github.com/microsoft/terminal/milestone/7) for subsequent triage, prioritization & scheduling.
 
-## v1.0 Features
+## v1.0 Scenarios
 
-The following are a list of the key features/feature-areas we're aiming to deliver for Terminal v1.0.
+The following are a list of the key scenarios we're aiming to deliver for Terminal v1.0.
 
 > 👉 Note: There are many other features that don't fit within v1.0, but will be re-assessed and prioritized for v2.0, the plan for which will be published in early in 2020.
 
-| Release | Priority\* | Feature | Description/Notes |
+| Release | Priority\* | Scenario | Description/Notes |
 | --- | --- | --- | --- |
 | V1 | 0 | Performance & Efficiency | Terminal shall be fast and efficient. Input latency should be eliminated wherever possible. Terminal will be very memory-efficient, and will avoid utilizing unnecessary dependencies to minimize memory consumption and disk footprint |
 | V1 | 0 | Reliability | Every reasonable step should be taken to ensure that Terminal will not crash unexpectedly. Crashing is considered harmful to the user's well-being & state of mind. Crashing issues are prioritized Pri-0 by default |
