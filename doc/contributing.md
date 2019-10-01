@@ -21,6 +21,9 @@ We drive the bot by tagging issues with specific labels which cause the bot engi
 Therefore, if you do file issues, or create PRs, please keep an eye on your GitHub notifications. If you do not respond to requests for information, your issues/PRs may be closed automatically.
 
 ---
+## Reporting Security Issues
+
+**Please do not report security vulnerabilities through public GitHub issues.** Instead, please report them to the MSRC. See [Security.md](../SECURITY.md) for more information.
 
 ## Before you start, file an issue
 
