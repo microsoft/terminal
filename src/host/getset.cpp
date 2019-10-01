@@ -1378,12 +1378,25 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
-                                                                                                              srScroll,
-                                                                                                              coordDestination,
-                                                                                                              srScroll,
-                                                                                                              UNICODE_SPACE,
-                                                                                                              screenInfo.GetAttributes().GetLegacyAttributes()));
+            // Here we previously called to ScrollConsoleScreenBufferWImpl to
+            // perform the scrolling operation. However, that function only
+            // accepts a WORD for the fill attributes. That means we'd lose
+            // 256/RGB fidelity for fill attributes. So instead, we'll just call
+            // ScrollRegion ourselves, with the same params that
+            // ScrollConsoleScreenBufferWImpl would have.
+            // See microsoft/terminal#832, #2702 for more context.
+            try
+            {
+                LockConsole();
+                auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+                ScrollRegion(screenInfo,
+                             srScroll,
+                             srScroll,
+                             coordDestination,
+                             UNICODE_SPACE,
+                             screenInfo.GetAttributes());
+            }
+            CATCH_LOG();
         }
     }
     return Status;
