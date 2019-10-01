@@ -1422,7 +1422,6 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     {
         const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
 
-        const auto newY = clampedPos.Y;
         const auto cursorY = cursor.GetPosition().Y;
 
         const auto lo = margins.Top;
@@ -1436,14 +1435,14 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
         // to the bottom margin. See
         // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
         // behavior.
-        const bool cursorBelowTop = cursorY > lo;
-        const bool cursorAboveBottom = cursorY < hi;
+        const bool cursorBelowTop = cursorY >= lo;
+        const bool cursorAboveBottom = cursorY <= hi;
 
         if (cursorBelowTop)
         {
             try
             {
-                clampedPos.Y = std::max(newY, lo);
+                clampedPos.Y = std::max(clampedPos.Y, lo);
             }
             CATCH_RETURN();
         }
@@ -1452,7 +1451,7 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
         {
             try
             {
-                clampedPos.Y = std::min(newY, hi);
+                clampedPos.Y = std::min(clampedPos.Y, hi);
             }
             CATCH_RETURN();
         }

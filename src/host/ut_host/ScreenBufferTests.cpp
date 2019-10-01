@@ -187,6 +187,7 @@ class ScreenBufferTests
 
     TEST_METHOD(CursorUpDownAcrossMargins);
     TEST_METHOD(CursorUpDownOutsideMargins);
+    TEST_METHOD(CursorUpDownExactlyAtMargins);
 };
 
 void ScreenBufferTests::SingleAlternateBufferCreationTest()
@@ -4544,7 +4545,7 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
     // * writes out Y
 
     // This test is different becasue the end location of the vertical movement
-    // should not be within the margins at all. WE should not clamp this
+    // should not be within the margins at all. We should not clamp this
     // movement to be within the margins.
 
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
@@ -4577,5 +4578,76 @@ void ScreenBufferTests::CursorUpDownOutsideMargins()
         auto iter = tbi.GetCellDataAt({ 0, 1 });
         VERIFY_ARE_EQUAL(L"Y", iter->Chars());
     }
+    stateMachine.ProcessString(L"\x1b[r");
+}
+
+void ScreenBufferTests::CursorUpDownExactlyAtMargins()
+{
+    // Test inspired by the CursorUpDownAcrossMargins test.
+    // echo -e "\e[6;19r\e[19H\e[1B1\e[1A2\e[6H\e[1A3\e[1B4\e[r"
+    // This does the following:
+    // * sets the top and bottom DECSTBM margins to 6 and 19
+    // * moves to line 19 (i.e. on the bottom margin)
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still on the margin)
+    // * writes out 1
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (now inside margins)
+    // * writes out 2
+    // * moves to line 6 (i.e. on the top margin)
+    // * executes the CUU sequence with a count of 1, to move up 1 lines (still on the margin)
+    // * writes out 3
+    // * executes the CUD sequence with a count of 1, to move down 1 lines (still above margins)
+    // * writes out 4
+
+    // This test is different becasue the starting location for these scroll
+    // operations is _exactly_ on the margins
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si.GetTextBuffer().GetCursor();
+
+    VERIFY_IS_TRUE(si.GetViewport().BottomInclusive() > 24);
+
+    // Set some scrolling margins
+    stateMachine.ProcessString(L"\x1b[6;19r");
+
+    stateMachine.ProcessString(L"\x1b[19;1H");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(18, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"1");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 18 });
+        VERIFY_ARE_EQUAL(L"1", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(17, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"2");
+    {
+        auto iter = tbi.GetCellDataAt({ 1, 17 });
+        VERIFY_ARE_EQUAL(L"2", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[6;1H");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\x1b[1A");
+    VERIFY_ARE_EQUAL(5, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"3");
+    {
+        auto iter = tbi.GetCellDataAt({ 0, 5 });
+        VERIFY_ARE_EQUAL(L"3", iter->Chars());
+    }
+
+    stateMachine.ProcessString(L"\x1b[1B");
+    VERIFY_ARE_EQUAL(6, cursor.GetPosition().Y);
+    stateMachine.ProcessString(L"4");
+    {
+        auto iter = tbi.GetCellDataAt({ 1, 6 });
+        VERIFY_ARE_EQUAL(L"4", iter->Chars());
+    }
+
     stateMachine.ProcessString(L"\x1b[r");
 }
