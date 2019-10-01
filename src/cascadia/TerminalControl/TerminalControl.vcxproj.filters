@@ -17,6 +17,7 @@
     <ClCompile Include="XamlUiaTextRange.cpp" />
     <ClCompile Include="TermControlUiaProvider.cpp" />
     <ClCompile Include="UiaTextRange.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
