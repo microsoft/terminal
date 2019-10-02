@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TabRowControl: TabRowControlT<TabRowControl, implementation::TabRowControl>
+    struct TabRowControl : TabRowControlT<TabRowControl, implementation::TabRowControl>
     {
     };
 }

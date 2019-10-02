@@ -68,19 +68,18 @@ namespace Microsoft::TerminalApp::details
 {
     // This is a template that helps us figure out which BitmapIconSource to use for a given IconSource.
     // We have to do this because some of our code still wants to use WUX IconSources.
-    template <typename TIconSource>
+    template<typename TIconSource>
     struct BitmapIconSource
     {
-
     };
 
-    template <>
+    template<>
     struct BitmapIconSource<winrt::Microsoft::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Microsoft::UI::Xaml::Controls::BitmapIconSource;
     };
 
-    template <>
+    template<>
     struct BitmapIconSource<winrt::Windows::UI::Xaml::Controls::IconSource>
     {
         using type = winrt::Windows::UI::Xaml::Controls::BitmapIconSource;
