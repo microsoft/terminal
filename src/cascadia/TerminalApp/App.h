@@ -74,21 +74,11 @@ namespace winrt::TerminalApp::implementation
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         [[nodiscard]] HRESULT _TryLoadSettings() noexcept;
-        void _LoadSettings();
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
-
-        static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
-
-        winrt::Microsoft::Terminal::TerminalControl::TermControl _GetFocusedControl();
-
-        void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
-        void _PasteFromClipboardHandler(const IInspectable& sender, const Microsoft::Terminal::TerminalControl::PasteFromClipboardEventArgs& eventArgs);
-
-        static void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
     };
 }
 

@@ -7,7 +7,7 @@ namespace TerminalApp
     {
         TitlebarControl(UInt64 parentWindowHandle);
 
-        Windows.UI.Xaml.UIElement Content;
+        IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };
     }
 }

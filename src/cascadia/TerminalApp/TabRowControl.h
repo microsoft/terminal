@@ -13,13 +13,13 @@ namespace winrt::TerminalApp::implementation
     {
         TabRowControl();
 
-        void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
+        void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Microsoft::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
     };
 }
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TabRowControl : TabRowControlT<TabRowControl, implementation::TabRowControl>
+    struct TabRowControl: TabRowControlT<TabRowControl, implementation::TabRowControl>
     {
     };
 }

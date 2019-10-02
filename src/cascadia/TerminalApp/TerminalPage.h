@@ -52,7 +52,7 @@ namespace winrt::TerminalApp::implementation
         Microsoft::UI::Xaml::Controls::TabView _tabView{ nullptr };
         TerminalApp::TabRowControl _tabRow{ nullptr };
         Windows::UI::Xaml::Controls::Grid _tabContent{ nullptr };
-        Windows::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
+        Microsoft::UI::Xaml::Controls::SplitButton _newTabButton{ nullptr };
 
         std::shared_ptr<::TerminalApp::CascadiaSettings> _settings{ nullptr };
 
@@ -80,7 +80,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(std::shared_ptr<Tab> tab);
         void _UpdateTabView();
         void _DuplicateTabViewItem();
-        void _RemoveTabViewItem(const IInspectable& tabViewItem);
+        void _RemoveTabViewItem(const Microsoft::UI::Xaml::Controls::TabViewItem& tabViewItem);
         void _RemoveTabViewItemByIndex(uint32_t tabIndex);
 
         void _RegisterTerminalEvents(Microsoft::Terminal::TerminalControl::TermControl term, std::shared_ptr<Tab> hostingTab);
@@ -105,7 +105,6 @@ namespace winrt::TerminalApp::implementation
         void _SplitPane(const Pane::SplitState splitType, const std::optional<GUID>& profileGuid);
         void _ResizePane(const Direction& direction);
         void _ScrollPage(int delta);
-        static Windows::UI::Xaml::Controls::IconElement _GetIconFromProfile(const ::TerminalApp::Profile& profile);
         void _SetAcceleratorForMenuItem(Windows::UI::Xaml::Controls::MenuFlyoutItem& menuItem, const winrt::Microsoft::Terminal::Settings::KeyChord& keyChord);
 
         void _CopyToClipboardHandler(const IInspectable& sender, const winrt::Microsoft::Terminal::TerminalControl::CopyToClipboardEventArgs& copiedData);
@@ -121,7 +120,7 @@ namespace winrt::TerminalApp::implementation
         void _OnTabSelectionChanged(const IInspectable& sender, const Windows::UI::Xaml::Controls::SelectionChangedEventArgs& eventArgs);
         void _OnTabItemsChanged(const IInspectable& sender, const Windows::Foundation::Collections::IVectorChangedEventArgs& eventArgs);
         void _OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e);
-        void _OnTabClosing(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabClosingEventArgs& eventArgs);
+        void _OnTabCloseRequested(const IInspectable& sender, const Microsoft::UI::Xaml::Controls::TabViewTabCloseRequestedEventArgs& eventArgs);
 
         void _RefreshUIForSettingsReload();
 

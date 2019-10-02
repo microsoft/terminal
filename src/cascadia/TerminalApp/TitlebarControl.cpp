@@ -24,15 +24,14 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
     }
 
-    Windows::UI::Xaml::UIElement TitlebarControl::Content()
+    IInspectable TitlebarControl::Content()
     {
-        return ContentRoot().Children().Size() > 0 ? ContentRoot().Children().GetAt(0) : nullptr;
+        return ContentRoot().Content();
     }
 
-    void TitlebarControl::Content(Windows::UI::Xaml::UIElement content)
+    void TitlebarControl::Content(IInspectable content)
     {
-        ContentRoot().Children().Clear();
-        ContentRoot().Children().Append(content);
+        ContentRoot().Content(content);
     }
 
     void TitlebarControl::Root_SizeChanged(const IInspectable& sender,
