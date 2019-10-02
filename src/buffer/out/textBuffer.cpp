@@ -549,7 +549,11 @@ bool TextBuffer::IncrementCircularBuffer()
     _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    const bool fSuccess = _storage.at(_firstRow).Reset(_currentAttributes);
+    // The VT standard requires that the new row is initialized with
+    // the current background color, but with no meta attributes set.
+    auto fillAttributes = _currentAttributes;
+    fillAttributes.SetMetaAttributes(0);
+    const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
     if (fSuccess)
     {
         // Now proceed to increment.

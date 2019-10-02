@@ -72,7 +72,10 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         }
     }
 
-    const auto bufferAttributes = screenInfo.GetAttributes();
+    // The VT standard requires the lines revealed when scrolling are filled
+    // with the current background color, but with no meta attributes set.
+    auto fillAttributes = screenInfo.GetAttributes();
+    fillAttributes.SetMetaAttributes(0);
 
     const auto relativeMargins = screenInfo.GetRelativeScrollMargins();
     auto viewport = screenInfo.GetViewport();
@@ -142,7 +145,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, std::nullopt, newPostMarginsOrigin, UNICODE_SPACE, fillAttributes);
         }
         CATCH_LOG();
 
@@ -191,7 +194,7 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 
         try
         {
-            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, bufferAttributes);
+            ScrollRegion(screenInfo, scrollRect, scrollRect, dest, UNICODE_SPACE, fillAttributes);
         }
         CATCH_LOG();
 

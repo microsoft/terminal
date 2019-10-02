@@ -2801,7 +2801,7 @@ void SCREEN_INFORMATION::UpdateBottom()
 }
 
 // Method Description:
-// - Initialize the row with the cursor on it to the current text attributes.
+// - Initialize the row with the cursor on it to the standard erase attributes.
 //      This is executed when we move the cursor below the current viewport in
 //      VT mode. When that happens in a real terminal, the line is brand new,
 //      so it gets initialized for the first time with the current attributes.
@@ -2818,7 +2818,11 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
     {
         const auto& cursor = _textBuffer->GetCursor();
         ROW& row = _textBuffer->GetRowByOffset(cursor.GetPosition().Y);
-        row.GetAttrRow().SetAttrToEnd(0, GetAttributes());
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        auto fillAttributes = GetAttributes();
+        fillAttributes.SetMetaAttributes(0);
+        row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
     }
 }
 
