@@ -298,10 +298,10 @@ namespace winrt::TerminalApp::implementation
             auto feedbackFlyout = WUX::Controls::MenuFlyoutItem{};
             feedbackFlyout.Text(_resourceLoader->GetLocalizedString(L"FeedbackMenuItem"));
 
-            WUX::Controls::FontIcon feedbackIco{};
-            feedbackIco.Glyph(L"\xE939");
-            feedbackIco.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            feedbackFlyout.Icon(feedbackIco);
+            WUX::Controls::FontIcon feedbackIcon{};
+            feedbackIcon.Glyph(L"\xE939");
+            feedbackIcon.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            feedbackFlyout.Icon(feedbackIcon);
 
             feedbackFlyout.Click({ this, &TerminalPage::_FeedbackButtonOnClick });
             newTabFlyout.Items().Append(feedbackFlyout);
@@ -310,9 +310,9 @@ namespace winrt::TerminalApp::implementation
             auto aboutFlyout = WUX::Controls::MenuFlyoutItem{};
             aboutFlyout.Text(_resourceLoader->GetLocalizedString(L"AboutMenuItem"));
 
-            WUX::Controls::SymbolIcon aboutIco{};
-            aboutIco.Symbol(WUX::Controls::Symbol::Help);
-            aboutFlyout.Icon(aboutIco);
+            WUX::Controls::SymbolIcon aboutIcon{};
+            aboutIcon.Symbol(WUX::Controls::Symbol::Help);
+            aboutFlyout.Icon(aboutIcon);
 
             aboutFlyout.Click({ this, &TerminalPage::_AboutButtonOnClick });
             newTabFlyout.Items().Append(aboutFlyout);
