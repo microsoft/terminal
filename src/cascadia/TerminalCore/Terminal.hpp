@@ -83,7 +83,7 @@ public:
 
 #pragma region ITerminalInput
     // These methods are defined in Terminal.cpp
-    bool SendKeyEvent(const WORD vkey, const Microsoft::Terminal::Core::ControlKeyStates states) override;
+    bool SendKeyEvent(const WORD vkey, const WORD scanCode, const Microsoft::Terminal::Core::ControlKeyStates states) override;
     bool SendCharEvent(const char16_t ch) override;
 
     [[nodiscard]] HRESULT UserResize(const COORD viewportSize) noexcept override;
@@ -209,6 +209,9 @@ private:
     // Additionally, maybe some people want to scroll into the history, then have that scroll out from
     //      underneath them, while others would prefer to anchor it in place.
     //      Either way, we sohould make this behavior controlled by a setting.
+
+    static WORD _ScanCodeFromVirtualKey(const WORD vkey) noexcept;
+    static wchar_t _CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept;
 
     int _ViewStartIndex() const noexcept;
     int _VisibleStartIndex() const noexcept;
