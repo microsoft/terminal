@@ -667,6 +667,17 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         return false;
     }
 
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+    if (_titlebar)
+    {
+        _titlebar.SetWindowVisualState(isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                                     isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                                   winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
+    }
+
     // Figure out the suggested dimensions
     RECT rcSuggested;
     rcSuggested.left = windowPos->x;
@@ -713,9 +724,6 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             }
         }
     }
-
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
 
     // If we're about to maximize the window, determine how much we're about to
     // overhang by, and adjust for that.

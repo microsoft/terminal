@@ -20,6 +20,8 @@ namespace winrt::TerminalApp::implementation
         Windows::UI::Xaml::UIElement Content();
         void Content(Windows::UI::Xaml::UIElement content);
 
+        void SetWindowVisualState(WindowVisualState visualState);
+
         void Root_SizeChanged(const IInspectable& sender, Windows::UI::Xaml::SizeChangedEventArgs const& e);
 
         void Minimize_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
