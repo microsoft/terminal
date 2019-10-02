@@ -619,7 +619,7 @@ bool AdaptDispatch::_EraseAreaHelper(const COORD coordStartPosition, const COORD
 //           - This is not aware of circular buffer. Line 0 is always the top visible line if you scrolled the whole way up the window.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const DispatchTypes::EraseType eraseType, const SHORT sLineId, const WORD wFillColor) const
+bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const DispatchTypes::EraseType eraseType, const SHORT sLineId) const
 {
     COORD coordStartPosition = { 0 };
     coordStartPosition.Y = sLineId;
@@ -630,7 +630,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* c
     {
     case DispatchTypes::EraseType::FromBeginning:
     case DispatchTypes::EraseType::All:
-        coordStartPosition.X = pcsbiex->srWindow.Left; // from beginning and the whole line start from the left viewport edge.
+        coordStartPosition.X = 0; // from beginning and the whole line start from the left most edge of the buffer.
         break;
     case DispatchTypes::EraseType::ToEnd:
         coordStartPosition.X = pcsbiex->dwCursorPosition.X; // from the current cursor position (including it)
@@ -644,16 +644,17 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* c
     {
     case DispatchTypes::EraseType::FromBeginning:
         // +1 because if cursor were at the left edge, the length would be 0 and we want to paint at least the 1 character the cursor is on.
-        nLength = (pcsbiex->dwCursorPosition.X - pcsbiex->srWindow.Left) + 1;
+        nLength = pcsbiex->dwCursorPosition.X + 1;
         break;
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
-        // Remember the .Right value is 1 farther than the right most displayed character in the viewport. Therefore no +1.
-        nLength = pcsbiex->srWindow.Right - coordStartPosition.X;
+        // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
+        nLength = pcsbiex->dwSize.X - coordStartPosition.X;
         break;
     }
 
-    return _EraseSingleLineDistanceHelper(coordStartPosition, nLength, wFillColor);
+    // Note that the region is filled with the standard erase attributes.
+    return !!_conApi->PrivateFillRegion(coordStartPosition, nLength, L' ', true);
 }
 
 // Routine Description:
@@ -675,12 +676,13 @@ bool AdaptDispatch::EraseCharacters(_In_ unsigned int const uiNumChars)
     {
         const COORD coordStartPosition = csbiex.dwCursorPosition;
 
-        const SHORT sRemainingSpaces = csbiex.srWindow.Right - coordStartPosition.X;
+        const SHORT sRemainingSpaces = csbiex.dwSize.X - coordStartPosition.X;
         const unsigned short usActualRemaining = (sRemainingSpaces < 0) ? 0 : sRemainingSpaces;
         // erase at max the number of characters remaining in the line from the current position.
         const DWORD dwEraseLength = (uiNumChars <= usActualRemaining) ? uiNumChars : usActualRemaining;
 
-        fSuccess = _EraseSingleLineDistanceHelper(coordStartPosition, dwEraseLength, csbiex.wAttributes);
+        // Note that the region is filled with the standard erase attributes.
+        fSuccess = !!_conApi->PrivateFillRegion(coordStartPosition, dwEraseLength, L' ', true);
     }
     return fSuccess;
 }
@@ -734,7 +736,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
             // For beginning and all, erase all complete lines before (above vertically) from the cursor position.
             for (SHORT sStartLine = csbiex.srWindow.Top; sStartLine < csbiex.dwCursorPosition.Y; sStartLine++)
             {
-                fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine, csbiex.wAttributes);
+                fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine);
 
                 if (!fSuccess)
                 {
@@ -746,7 +748,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
         if (fSuccess)
         {
             // 2. Cursor Line
-            fSuccess = _EraseSingleLineHelper(&csbiex, eraseType, csbiex.dwCursorPosition.Y, csbiex.wAttributes);
+            fSuccess = _EraseSingleLineHelper(&csbiex, eraseType, csbiex.dwCursorPosition.Y);
         }
 
         if (fSuccess)
@@ -758,7 +760,7 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
                 // Remember that the viewport bottom value is 1 beyond the viewable area of the viewport.
                 for (SHORT sStartLine = csbiex.dwCursorPosition.Y + 1; sStartLine < csbiex.srWindow.Bottom; sStartLine++)
                 {
-                    fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine, csbiex.wAttributes);
+                    fSuccess = _EraseSingleLineHelper(&csbiex, DispatchTypes::EraseType::All, sStartLine);
 
                     if (!fSuccess)
                     {
@@ -786,7 +788,7 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
 
     if (fSuccess)
     {
-        fSuccess = _EraseSingleLineHelper(&csbiex, eraseType, csbiex.dwCursorPosition.Y, csbiex.wAttributes);
+        fSuccess = _EraseSingleLineHelper(&csbiex, eraseType, csbiex.dwCursorPosition.Y);
     }
 
     return fSuccess;
