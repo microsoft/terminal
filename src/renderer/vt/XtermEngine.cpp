@@ -22,7 +22,9 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     _fUseAsciiOnly(fUseAsciiOnly),
     _previousLineWrapped(false),
     _usingUnderLine(false),
-    _needToDisableCursor(false)
+    _needToDisableCursor(false),
+    _lastCursorIsVisible(false),
+    _nextCursorIsVisible(true)
 {
     // Set out initial cursor position to -1, -1. This will force our initial
     //      paint to manually move the cursor to 0, 0, not just ignore it.
@@ -44,6 +46,11 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     RETURN_IF_FAILED(VtEngine::StartPaint());
 
     _trace.TraceLastText(_lastText);
+
+    // Prep us to think that the cursor is not visible this frame. If it _is_
+    // visible, then PaintCursor will be called, and we'll set this to true
+    // during the frame.
+    _nextCursorIsVisible = false;
 
     if (_firstPaint)
     {
@@ -73,14 +80,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 
     if (!_quickReturn)
     {
-        if (!_WillWriteSingleChar())
-        {
-            // MSFT:TODO:20331739
-            // Make sure to match the cursor visibility in the terminal to the console's
-            // // Turn off cursor
-            // RETURN_IF_FAILED(_HideCursor());
-        }
-        else
+        if (_WillWriteSingleChar())
         {
             // Don't re-enable the cursor.
             _quickReturn = true;
@@ -99,22 +99,38 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
 [[nodiscard]] HRESULT XtermEngine::EndPaint() noexcept
 {
-    // MSFT:TODO:20331739
-    // Make sure to match the cursor visibility in the terminal to the console's
-    // if (!_quickReturn)
-    // {
-    //     // Turn on cursor
-    //     RETURN_IF_FAILED(_ShowCursor());
-    // }
-
     // If during the frame we determined that the cursor needed to be disabled,
     //      then insert a cursor off at the start of the buffer, and re-enable
     //      the cursor here.
     if (_needToDisableCursor)
     {
-        _buffer.insert(0, "\x1b[25l");
+        // If the cursor was previously visible, let's hide it for this frame,
+        // by prepending a cursor off.
+        if (_lastCursorIsVisible)
+        {
+            _buffer.insert(0, "\x1b[25l");
+            _lastCursorIsVisible = false;
+        }
+        // If the cursor was NOT previously visible, then that's fine! we don't
+        // need to worry, it's already off.
+    }
+
+    // If the cursor is moving from off -> on (including cases where we just
+    // disabled if for this frame), show the cursor at the end of the frame
+    if (_nextCursorIsVisible && !_lastCursorIsVisible)
+    {
         RETURN_IF_FAILED(_ShowCursor());
     }
+    // Otherwise, if the cursor previously was visible, and it should be hidden
+    // (on -> off), hide it at the end of the frame.
+    else if (!_nextCursorIsVisible && _lastCursorIsVisible)
+    {
+        RETURN_IF_FAILED(_HideCursor());
+    }
+
+    // Update our tracker of what we thought the last cursor state of the
+    // terminal was.
+    _lastCursorIsVisible = _nextCursorIsVisible;
 
     RETURN_IF_FAILED(VtEngine::EndPaint());
 
@@ -176,6 +192,27 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
     return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
+}
+
+// Routine Description:
+// - Draws the cursor on the screen
+// Arguments:
+// - options - Options that affect the presentation of the cursor
+// Return Value:
+// - S_OK or suitable HRESULT error from writing pipe.
+[[nodiscard]] HRESULT XtermEngine::PaintCursor(const IRenderEngine::CursorOptions& options) noexcept
+{
+    // PaintCursor is only called when the cursor is in fact visible in a single
+    // frame. When this is called, mark _nextCursorIsVisible as true. At the end
+    // of the frame, we'll decide to either turn the cursor on or not, based
+    // upon the previous state.
+
+    // When this method is not called during a frame, it's because the cursor
+    // was not visible. In that case, at the end of the frame,
+    // _nextCursorIsVisible will still be false (from when we set it during
+    // StartPaint)
+    _nextCursorIsVisible = true;
+    return VtEngine::PaintCursor(options);
 }
 
 // Routine Description:
