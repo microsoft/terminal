@@ -234,7 +234,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Types.Unit.Tests", "src\typ
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PublicTerminalCore", "src\cascadia\PublicTerminalCore\PublicTerminalCore.vcxproj", "{84848BFA-931D-42CE-9ADF-01EE54DE7890}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WpfTerminalControl", "src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj", "{376FE273-6B84-4EB5-8B30-8DE9D21B022C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WpfTerminalControl", "src\cascadia\WpfTerminalControl\WpfTerminalControl.csproj", "{376FE273-6B84-4EB5-8B30-8DE9D21B022C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitTests_TerminalApp", "src\cascadia\ut_app\TerminalApp.UnitTests.vcxproj", "{CA5CAD1A-9333-4D05-B12A-1905CBF112F9}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -1159,18 +1159,20 @@ Global
 		{84848BFA-931D-42CE-9ADF-01EE54DE7890}.Release|x64.Build.0 = Release|x64
 		{84848BFA-931D-42CE-9ADF-01EE54DE7890}.Release|x86.ActiveCfg = Release|Win32
 		{84848BFA-931D-42CE-9ADF-01EE54DE7890}.Release|x86.Build.0 = Release|Win32
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|Any CPU.ActiveCfg = Release|Win32
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|ARM64.ActiveCfg = Release|ARM64
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|Any CPU.ActiveCfg = Release|Any CPU
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|ARM64.ActiveCfg = Release|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|x64.ActiveCfg = Release|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.AuditMode|x86.ActiveCfg = Release|Any CPU
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|Any CPU.ActiveCfg = Debug|Win32
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|ARM64.ActiveCfg = Debug|ARM64
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|ARM64.ActiveCfg = Debug|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|x64.ActiveCfg = Debug|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|x64.Build.0 = Debug|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|x86.ActiveCfg = Debug|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Debug|x86.Build.0 = Debug|Any CPU
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|Any CPU.ActiveCfg = Release|Win32
-		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|ARM64.ActiveCfg = Release|ARM64
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|ARM64.ActiveCfg = Release|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|x64.ActiveCfg = Release|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|x64.Build.0 = Release|Any CPU
 		{376FE273-6B84-4EB5-8B30-8DE9D21B022C}.Release|x86.ActiveCfg = Release|Any CPU
