@@ -88,4 +88,7 @@ For an introduction to the various settings, see [Using Json Settings](UsingJson
 
 2. Terminal zoom can be changed by holding `Ctrl` and scrolling with mouse.
 3. If `useAcrylic` is enabled in profiles.json, background opacity can be changed by holding `Ctrl+Shift` and scrolling with mouse.
-4. Please add more Tips and Tricks
+4. Steps to open Windows Terminal at specific Windows Explorer location:
+    a. In Windows terminal settings change default profile > "startingDirectory": to "."
+    b. Navigate to location in Windows Explorer and type 'wt' in the path bar
+5. Please add more Tips and Tricks
