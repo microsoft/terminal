@@ -711,6 +711,16 @@ public:
         return _fPrivateSetDefaultBackgroundResult;
     }
 
+    BOOL PrivateFillRegion(const COORD /*startPosition*/,
+                           const size_t /*fillLength*/,
+                           const wchar_t /*fillChar*/,
+                           const bool /*standardFillAttrs*/) noexcept override
+    {
+        Log::Comment(L"PrivateFillRegion MOCK called...");
+
+        return TRUE;
+    }
+
     BOOL PrivateScrollRegion(const SMALL_RECT /*scrollRect*/,
                              const std::optional<SMALL_RECT> /*clipRect*/,
                              const COORD /*destinationOrigin*/,

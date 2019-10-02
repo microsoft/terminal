@@ -111,6 +111,11 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL PrivateSetDefaultForeground(const COLORREF value) const = 0;
         virtual BOOL PrivateSetDefaultBackground(const COLORREF value) const = 0;
 
+        virtual BOOL PrivateFillRegion(const COORD startPosition,
+                                       const size_t fillLength,
+                                       const wchar_t fillChar,
+                                       const bool standardFillAttrs) = 0;
+
         virtual BOOL PrivateScrollRegion(const SMALL_RECT scrollRect,
                                          const std::optional<SMALL_RECT> clipRect,
                                          const COORD destinationOrigin,

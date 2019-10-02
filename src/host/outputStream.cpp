@@ -814,6 +814,32 @@ BOOL ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) co
 }
 
 // Routine Description:
+// - Connects the PrivateFillRegion call directly into our Driver Message servicing
+//    call inside Conhost.exe
+//   PrivateFillRegion is an internal-only "API" call that the vt commands can execute,
+//    but it is not represented as a function call on our public API surface.
+// Arguments:
+// - screenInfo - Reference to screen buffer info.
+// - startPosition - The position to begin filling at.
+// - fillLength - The number of characters to fill.
+// - fillChar - Character to fill the target region with.
+// - standardFillAttrs - If true, fill with the standard erase attributes.
+//                       If false, fill with the default attributes.
+// Return value:
+// - TRUE if successful (see DoSrvPrivateScrollRegion). FALSE otherwise.
+BOOL ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
+                                              const size_t fillLength,
+                                              const wchar_t fillChar,
+                                              const bool standardFillAttrs) noexcept
+{
+    return SUCCEEDED(DoSrvPrivateFillRegion(_io.GetActiveOutputBuffer(),
+                                            startPosition,
+                                            fillLength,
+                                            fillChar,
+                                            standardFillAttrs));
+}
+
+// Routine Description:
 // - Connects the PrivateScrollRegion call directly into our Driver Message servicing
 //    call inside Conhost.exe
 //   PrivateScrollRegion is an internal-only "API" call that the vt commands can execute,
