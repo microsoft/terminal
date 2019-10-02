@@ -19,7 +19,7 @@ To compile Windows Terminal yourself using the source code, follow the instructi
 ## Starting Windows Terminal
 
 1. Locate the _Windows Terminal_ app in your Start menu.
-2. Click _Windows Terminal_ to launch the app. If you need administrative privileges, right-click the entry and click `Run as administrator`.
+2. Click _Windows Terminal_ to launch the app. If you need administrative privileges, right-click the entry and click `Run as administrator`. Alternatively, you can highlight the app and press `Ctrl`+`Shift`+`Enter`.
 
 NOTE: The default shell is PowerShell; you can change this using the _Running a Different Shell_ procedure.
 
