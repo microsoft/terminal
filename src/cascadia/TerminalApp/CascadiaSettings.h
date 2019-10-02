@@ -104,6 +104,7 @@ private:
     void _ValidateNoDuplicateProfiles();
     void _ReorderProfilesToMatchUserSettingsOrder();
     void _RemoveHiddenProfiles();
+    void _ValidateAllSchemesExist();
 
     friend class TerminalAppLocalTests::SettingsTests;
     friend class TerminalAppLocalTests::ProfileTests;

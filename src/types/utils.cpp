@@ -119,37 +119,6 @@ bool Utils::IsValidHandle(const HANDLE handle) noexcept
 
 // Function Description:
 // - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the ANSI/VT RGB order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-
-    // clang-format off
-    table[0]   = RGB( 12,   12,   12);
-    table[1]   = RGB( 197,  15,   31);
-    table[2]   = RGB( 19,   161,  14);
-    table[3]   = RGB( 193,  156,  0);
-    table[4]   = RGB( 0,    55,   218);
-    table[5]   = RGB( 136,  23,   152);
-    table[6]   = RGB( 58,   150,  221);
-    table[7]   = RGB( 204,  204,  204);
-    table[8]   = RGB( 118,  118,  118);
-    table[9]   = RGB( 231,  72,   86);
-    table[10]  = RGB( 22,   198,  12);
-    table[11]  = RGB( 249,  241,  165);
-    table[12]  = RGB( 59,   120,  255);
-    table[13]  = RGB( 180,  0,    158);
-    table[14]  = RGB( 97,   214,  214);
-    table[15]  = RGB( 242,  242,  242);
-    // clang-format on
-}
-
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
 //   scheme, in the Windows BGR order.
 // Arguments:
 // - table: a color table with at least 16 entries

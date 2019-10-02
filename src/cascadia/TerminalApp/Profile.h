@@ -63,6 +63,8 @@ public:
     bool HasConnectionType() const noexcept;
     GUID GetConnectionType() const noexcept;
 
+    bool ValidateColorScheme(const std::vector<::TerminalApp::ColorScheme>& schemes) noexcept;
+
     void SetFontFace(std::wstring fontFace) noexcept;
     void SetColorScheme(std::optional<std::wstring> schemeName) noexcept;
     void SetTabTitle(std::wstring tabTitle) noexcept;

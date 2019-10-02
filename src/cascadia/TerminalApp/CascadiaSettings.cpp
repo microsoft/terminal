@@ -174,9 +174,10 @@ void CascadiaSettings::_ValidateSettings()
     _ValidateNoDuplicateProfiles();
     _ValidateDefaultProfileExists();
 
-    // TODO:GH#2547 ensure that all the profile's color scheme names are
+    // Ensure that all the profile's color scheme names are
     // actually the names of schemes we've parsed. If the scheme doesn't exist,
     // just use the hardcoded defaults
+    _ValidateAllSchemesExist();
 
     // TODO:GH#2548 ensure there's at least one key bound. Display a warning if
     // there's _NO_ keys bound to any actions. That's highly irregular, and
@@ -364,5 +365,32 @@ void CascadiaSettings::_RemoveHiddenProfiles()
         // Throw an exception. This is an invalid state, and we want the app to
         // be able to gracefully use the default settings.
         throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::AllProfilesHidden);
+    }
+}
+
+// Method Description:
+// - Ensures that every profile has a valid "color scheme" set. If any profile
+//   has a colorScheme set to a value which is _not_ the name of an actual color
+//   scheme, we'll set the color table of the profile to something reasonable.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+// - Appends a SettingsLoadWarnings::UnknownColorScheme to our list of warnings if
+//   we find any such duplicate.
+void CascadiaSettings::_ValidateAllSchemesExist()
+{
+    bool foundInvalidScheme = false;
+    for (auto& profile : _profiles)
+    {
+        if (!profile.ValidateColorScheme(_globals.GetColorSchemes()))
+        {
+            foundInvalidScheme = true;
+        }
+    }
+
+    if (foundInvalidScheme)
+    {
+        _warnings.push_back(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme);
     }
 }

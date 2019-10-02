@@ -1188,3 +1188,31 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 
     return Profile::_GenerateGuidForProfile(name, source);
 }
+
+// Method Description:
+// - Validates that the `colorScheme` set for this Profile exists. If it does
+//   exist, returns true. Otherwise, we'll initialize our color table to the
+//   default color scheme, the Campbell scheme, and returns false.
+// - This is done
+//   for microsoft/terminal#2547. In the case where the scheme was invalid, we'd
+//   leave the table un-initialized, resulting in all the colors being RGB(0, 0,
+//   0,) _black_.
+// Arguments:
+// - schemes: a list of color schemes to check and ensure that our colorScheme exitsts in.
+// Return Value:
+// - true if the color scheme existed, false otherwise.
+bool Profile::ValidateColorScheme(const std::vector<::TerminalApp::ColorScheme>& schemes) noexcept
+{
+    const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
+    // If we couldn't find a match, initialize the table to the campbell colors
+    if (matchingScheme == nullptr)
+    {
+        gsl::span<uint32_t> tableView{ &_colorTable[0], COLOR_TABLE_SIZE };
+        // Then use fill the first 16 values with the Campbell scheme
+        Utils::InitializeCampbellColorTable(tableView);
+
+        return false;
+    }
+
+    return true;
+}
