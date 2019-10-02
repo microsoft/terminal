@@ -40,6 +40,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
+        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
+
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
                                                            const WORD legacyColorAttribute,
@@ -61,6 +63,8 @@ namespace Microsoft::Console::Render
         bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
+        bool _lastCursorIsVisible;
+        bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
