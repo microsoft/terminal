@@ -329,7 +329,7 @@ const wchar_t* _stdcall GetSelection(void* terminal)
 void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
-
+    const auto scanCode = MapVirtualKeyW(wParam, MAPVK_VK_TO_VSC);
     struct KeyModifier
     {
         int vkey;
@@ -357,7 +357,7 @@ void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
         }
     }
 
-    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, flags);
+    publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
 }
 
 void _stdcall SendCharEvent(void* terminal, char16_t ch)
