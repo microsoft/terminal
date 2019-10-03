@@ -586,15 +586,20 @@ void Pane::_CloseChild(const bool closeFirst)
         // re-attach the TermControl to our Grid.
         _firstChild->_root.Children().Clear();
         _secondChild->_root.Children().Clear();
+        _firstChild->_border.Child(nullptr);
+        _secondChild->_border.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
+        _border.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
         _separatorRoot = { nullptr };
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_control);
+        // _root.Children().Append(_control);
+        _root.Children().Append(_border);
+        _border.Child(_control);
 
         if (_lastFocused)
         {
@@ -635,6 +640,7 @@ void Pane::_CloseChild(const bool closeFirst)
 
         // Reset our UI:
         _root.Children().Clear();
+        _border.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
@@ -658,6 +664,7 @@ void Pane::_CloseChild(const bool closeFirst)
         // Remove the child's UI elements from the child's grid, so we can
         // attach them to us instead.
         remainingChild->_root.Children().Clear();
+        remainingChild->_border.Child(nullptr);
 
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_separatorRoot);
@@ -807,7 +814,6 @@ void Pane::_UpdateBorders()
         right = PaneMargin;
     }
     _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
-    // _root.Margin(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
 
 // Method Description:
