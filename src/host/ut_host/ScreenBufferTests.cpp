@@ -105,6 +105,8 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests);
 
+    TEST_METHOD(OutputNULTest);
+
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
     TEST_METHOD(VtResizeDECCOLM);
@@ -373,14 +375,14 @@ void ScreenBufferTests::TestReverseLineFeed()
 
     cursor.SetPosition({ 0, 5 });
     VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(true, { 0, 5 }, true));
-    stateMachine.ProcessString(L"ABCDEFGH", 9);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    stateMachine.ProcessString(L"ABCDEFGH");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 5);
 
     LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     viewport = screenInfo.GetViewport();
     VERIFY_ARE_EQUAL(viewport.Top(), 5);
@@ -814,6 +816,45 @@ void ScreenBufferTests::EraseAllTests()
         viewport.Top(),
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
+}
+
+void ScreenBufferTests::OutputNULTest()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si._textBuffer->GetCursor();
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing a single NUL"));
+    stateMachine.ProcessString(L"\0", 1);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing many NULs"));
+    stateMachine.ProcessString(L"\0\0\0\0\0\0\0\0", 8);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Testing a single NUL followed by real text"));
+    stateMachine.ProcessString(L"\0foo", 4);
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing NULs in between other strings"));
+    stateMachine.ProcessString(L"\0foo\0bar\0", 9);
+    VERIFY_ARE_EQUAL(6, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
 }
 
 void ScreenBufferTests::VtResize()
