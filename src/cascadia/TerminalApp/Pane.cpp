@@ -555,13 +555,13 @@ void Pane::_CloseChild(const bool closeFirst)
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
-    // TODO: Update borders for closing.
-    // This will work when the remaining child is a leaf, but not when it's a parent.
-    // _borders = _firstChild->_borders & _secondChild->_borders;
-
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
+        // TODO: Update borders for closing.
+        // This will work when the remaining child is a leaf, but not when it's a parent.
+        _borders = _firstChild->_borders & _secondChild->_borders;
+
         // take the control and profile of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
         _profile = remainingChild->_profile;
@@ -608,12 +608,24 @@ void Pane::_CloseChild(const bool closeFirst)
 
         _splitState = SplitState::None;
 
+        _UpdateBorders();
+
         // Release our children.
         _firstChild = nullptr;
         _secondChild = nullptr;
     }
     else
     {
+        Borders clearBorderFlag = Borders::None;
+        if (_splitState == SplitState::Horizontal)
+        {
+            clearBorderFlag = closeFirst ? Borders::Top : Borders::Bottom;
+        }
+        else if (_splitState == SplitState::Vertical)
+        {
+            clearBorderFlag = closeFirst ? Borders::Left : Borders::Right;
+        }
+
         // First stash away references to the old panes and their tokens
         const auto oldFirstToken = _firstClosedToken;
         const auto oldSecondToken = _secondClosedToken;
@@ -669,6 +681,12 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_separatorRoot);
         _root.Children().Append(_secondChild->GetRootElement());
+
+        WI_ClearAllFlags(_firstChild->_borders, clearBorderFlag);
+        WI_ClearAllFlags(_secondChild->_borders, clearBorderFlag);
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastFocused)
