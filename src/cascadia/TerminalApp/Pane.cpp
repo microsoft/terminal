@@ -17,24 +17,16 @@ static const int PaneSeparatorSize = 0;
 static const int PaneMargin = 2;
 static const float Half = 0.50f;
 
+winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
+
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
     _root.Children().Append(_border);
+    _border.Child(_control);
 
-    auto oldChild = _border.Child();
-    auto uiElem = _control.try_as<UIElement>();
-
-    // SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 0, 255, 0) };
-    // _border.BorderBrush(bBrush);
-    // _border.BorderBrush(nullptr);
-
-    // _border.Child(_control);
-    _border.Child(uiElem);
-
-    // _root.Children().Append(_control);
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
@@ -50,6 +42,36 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         if (style)
         {
             _root.Style(style);
+        }
+    }
+
+    if (s_focusedBorderBrush == nullptr)
+    {
+        const auto accentColorKey = winrt::box_value(L"SystemAccentColor");
+        if (res.HasKey(accentColorKey))
+        {
+            const auto thing = res.Lookup(accentColorKey);
+            auto c = winrt::unbox_value_or<Color>(thing, winrt::Windows::UI::Colors::Transparent());
+            // if (c)
+            // {
+            auto r = c.R, g = c.G, b = c.B;
+            // auto r = c->R, g = c->G, b = c->B;
+            auto rgb = RGB(r, g, b);
+            rgb;
+            // }
+            // auto r = c.R, g = c.G, b = c.B;
+            // auto rgb = RGB(r, g, b);
+            // rgb;
+            // s_focusedBorderBrush = SolidColorBrush(c.get());
+            s_focusedBorderBrush = SolidColorBrush(c);
+            // s_focusedBorderBrush = SolidColorBrush{ ColorHelper::FromArgb(255, c->R, c->G, c->B) };
+            // try_as fails by returning nullptr
+            // auto c = s_focusedBorderBrush.Color();
+        }
+        else
+        {
+            // Debugging purposes TODO: remove me
+            s_focusedBorderBrush = SolidColorBrush{ ColorHelper::FromArgb(255, 255, 0, 255) };
         }
     }
 }
@@ -462,17 +484,7 @@ void Pane::UpdateFocus()
 
         _lastFocused = controlFocused;
 
-        if (_lastFocused)
-        {
-            SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 255, 0, 255) };
-            _border.BorderBrush(bBrush);
-        }
-        else
-        {
-            // SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 0, 0, 0) };
-            // _border.BorderBrush(bBrush);
-            _border.BorderBrush(nullptr);
-        }
+        _border.BorderBrush(_lastFocused ? s_focusedBorderBrush : nullptr);
     }
     else
     {
