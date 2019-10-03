@@ -5,8 +5,10 @@
 #include "Pane.h"
 
 using namespace winrt::Windows::Foundation;
+using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Xaml::Media;
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
@@ -20,7 +22,19 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_control);
+    _root.Children().Append(_border);
+
+    auto oldChild = _border.Child();
+    auto uiElem = _control.try_as<UIElement>();
+
+    // SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 0, 255, 0) };
+    // _border.BorderBrush(bBrush);
+    // _border.BorderBrush(nullptr);
+
+    // _border.Child(_control);
+    _border.Child(uiElem);
+
+    // _root.Children().Append(_control);
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
@@ -447,10 +461,23 @@ void Pane::UpdateFocus()
                                     _control.FocusState() != FocusState::Unfocused;
 
         _lastFocused = controlFocused;
+
+        if (_lastFocused)
+        {
+            SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 255, 0, 255) };
+            _border.BorderBrush(bBrush);
+        }
+        else
+        {
+            // SolidColorBrush bBrush{ ColorHelper::FromArgb(255, 0, 0, 0) };
+            // _border.BorderBrush(bBrush);
+            _border.BorderBrush(nullptr);
+        }
     }
     else
     {
         _lastFocused = false;
+
         _firstChild->UpdateFocus();
         _secondChild->UpdateFocus();
     }
@@ -779,8 +806,8 @@ void Pane::_UpdateBorders()
     {
         right = PaneMargin;
     }
-
-    _root.Margin(ThicknessHelper::FromLengths(left, top, right, bottom));
+    _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
+    // _root.Margin(ThicknessHelper::FromLengths(left, top, right, bottom));
 }
 
 // Method Description:
@@ -937,6 +964,7 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
     _root.Children().Clear();
+    _border.Child(nullptr);
 
     // Create two new Panes
     //   Move our control, guid into the first one.

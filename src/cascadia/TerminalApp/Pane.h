@@ -68,6 +68,7 @@ public:
 
 private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
+    winrt::Windows::UI::Xaml::Controls::Border _border{};
     winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
 
