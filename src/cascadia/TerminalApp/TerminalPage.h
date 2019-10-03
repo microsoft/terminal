@@ -36,7 +36,7 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
-        void _CloseWindow();
+        void CloseWindow();
 
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);

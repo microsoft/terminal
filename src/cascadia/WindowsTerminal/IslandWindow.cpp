@@ -200,6 +200,9 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
     }
     case WM_CLOSE:
     {
+        // If the user wants to close the app by clicking 'X' button,
+        // we hand off the close experience to the app layer. If all the tabs
+        // are closed, the window will be closed as well. 
         _windowCloseButtonClickedHandler();
         return 0;
     }

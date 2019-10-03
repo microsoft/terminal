@@ -582,6 +582,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Used to tell the app that the 'X' button has been clicked and
+    //   the user wants to close the app. We kick off the close warning
+    //   experience. 
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void App::WindowCloseButtonClicked()
     {
         if (_root)

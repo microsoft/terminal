@@ -825,7 +825,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app with keys. If there is more
     //   than one tab opened, show a warning dialog.
-    void TerminalPage::_CloseWindow()
+    void TerminalPage::CloseWindow()
     {
         if (_tabs.size() > 1)
         {
