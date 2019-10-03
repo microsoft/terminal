@@ -34,7 +34,7 @@ __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
 __declspec(dllexport) void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
 __declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
-__declspec(dllexport) void _stdcall SendCharEvent(void* terminal, char16_t ch);
+__declspec(dllexport) void _stdcall SendCharEvent(void* terminal, wchar_t ch);
 };
 
 struct HwndTerminal
@@ -67,7 +67,7 @@ private:
     friend const wchar_t* _stdcall GetSelection(void* terminal);
     friend bool _stdcall IsSelectionActive(void* terminal);
     friend void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
-    friend void _stdcall SendCharEvent(void* terminal, char16_t ch);
+    friend void _stdcall SendCharEvent(void* terminal, wchar_t ch);
     friend void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     void _UpdateFont(int newDpi);
 };

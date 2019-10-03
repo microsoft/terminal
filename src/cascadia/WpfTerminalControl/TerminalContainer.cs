@@ -1,42 +1,21 @@
-﻿// Copyright (c) Microsoft Corporation.
+﻿// <copyright file="TerminalContainer.cs" company="Microsoft Corporation">
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-using System;
-using System.Runtime.InteropServices;
-using System.Windows;
-using System.Windows.Interop;
+// </copyright>
 
 namespace Microsoft.Terminal.Wpf
 {
+    using System;
+    using System.Runtime.InteropServices;
+    using System.Windows;
+    using System.Windows.Interop;
+
     /// <summary>
-    /// Follow steps 1a or 1b and then 2 to use this custom control in a XAML file.
-    ///
-    /// Step 1a) Using this custom control in a XAML file that exists in the current project.
-    /// Add this XmlNamespace attribute to the root element of the markup file where it is 
-    /// to be used:
-    ///
-    ///     xmlns:MyNamespace="clr-namespace:WpfTerminalControl"
-    ///
-    ///
-    /// Step 1b) Using this custom control in a XAML file that exists in a different project.
-    /// Add this XmlNamespace attribute to the root element of the markup file where it is 
-    /// to be used:
-    ///
-    ///     xmlns:MyNamespace="clr-namespace:WpfTerminalControl;assembly=WpfTerminalControl"
-    ///
-    /// You will also need to add a project reference from the project where the XAML file lives
-    /// to this project and Rebuild to avoid compilation errors:
-    ///
-    ///     Right click on the target project in the Solution Explorer and
-    ///     "Add Reference"->"Projects"->[Browse to and select this project]
-    ///
-    ///
-    /// Step 2)
-    /// Go ahead and use your control in the XAML file.
-    ///
-    ///     <MyNamespace:TerminalControl/>
-    ///
+    /// The container class that hosts the native hwnd terminal.
     /// </summary>
+    /// <remarks>
+    /// This class is only left public since xaml cannot work with internal classes.
+    /// </remarks>
     public class TerminalContainer : HwndHost
     {
         private ITerminalConnection connection;
@@ -47,48 +26,147 @@ namespace Microsoft.Terminal.Wpf
         private NativeMethods.WriteCallback writeCallback;
 
         // We keep track of the DPI scale since we could get a DPI changed event before we are able to initialize the terminal.
-        private DpiScale dpiScale = new DpiScale(96, 96);
+        private DpiScale dpiScale = new DpiScale(NativeMethods.USER_DEFAULT_SCREEN_DPI, NativeMethods.USER_DEFAULT_SCREEN_DPI);
 
-        public event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
-
-        public event EventHandler<int> UserScrolled;
-
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TerminalContainer"/> class.
+        /// </summary>
         public TerminalContainer()
         {
-            this.MessageHook += TerminalContainer_MessageHook;
-
-            this.GotFocus += TerminalContainer_GotFocus;
+            this.MessageHook += this.TerminalContainer_MessageHook;
+            this.GotFocus += this.TerminalContainer_GotFocus;
             this.Focusable = true;
         }
 
         /// <summary>
-        /// Character rows available to the terminal.
+        /// Event that is fired when the terminal buffer scrolls from text output.
         /// </summary>
-        public int Rows { get; private set; }
-
+        internal event EventHandler<(int viewTop, int viewHeight, int bufferSize)> TerminalScrolled;
 
         /// <summary>
-        /// Character columns available to the terminal.
+        /// Event that is fired when the user engages in a mouse scroll over the terminal hwnd.
         /// </summary>
-        public int Columns { get; private set; }
+        internal event EventHandler<int> UserScrolled;
 
+        /// <summary>
+        /// Gets the character rows available to the terminal.
+        /// </summary>
+        internal int Rows { get; private set; }
 
-        public void UserScroll(int viewTop)
+        /// <summary>
+        /// Gets the character columns available to the terminal.
+        /// </summary>
+        internal int Columns { get; private set; }
+
+        /// <summary>
+        /// Sets the connection to the terminal backend.
+        /// </summary>
+        internal ITerminalConnection Connection
+        {
+            private get
+            {
+                return this.connection;
+            }
+
+            set
+            {
+                if (this.connection != null)
+                {
+                    this.connection.TerminalOutput -= this.Connection_TerminalOutput;
+                }
+
+                this.connection = value;
+                this.connection.TerminalOutput += this.Connection_TerminalOutput;
+                this.connection.Start();
+            }
+        }
+
+        /// <summary>
+        /// Manually invoke a scroll of the terminal buffer.
+        /// </summary>
+        /// <param name="viewTop">The top line to show in the terminal.</param>
+        internal void UserScroll(int viewTop)
         {
             NativeMethods.UserScroll(this.terminal, viewTop);
         }
 
+        /// <summary>
+        /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
+        /// </summary>
+        /// <param name="theme">The color theme for the terminal to use.</param>
+        /// <param name="fontFamily">The font family to use in the terminal.</param>
+        /// <param name="fontSize">The font size to use in the terminal.</param>
+        /// <param name="newDpi">The dpi that the terminal should be rendered at.</param>
+        internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
+        {
+            NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+        }
+
+        /// <summary>
+        /// Triggers a refresh of the terminal with the given size.
+        /// </summary>
+        /// <param name="renderSize">Size of the rendering window.</param>
+        /// <returns>Tuple with rows and columns.</returns>
+        internal (int rows, int columns) TriggerResize(Size renderSize)
+        {
+            int columns, rows;
+            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out columns, out rows);
+
+            this.Rows = rows;
+            this.Columns = columns;
+
+            return (rows, columns);
+        }
+
+        /// <summary>
+        /// Resizes the terminal.
+        /// </summary>
+        /// <param name="rows">Number of rows to show.</param>
+        /// <param name="columns">Number of columns to show.</param>
+        internal void Resize(uint rows, uint columns)
+        {
+            NativeMethods.Resize(this.terminal, rows, columns);
+        }
+
+        /// <inheritdoc/>
         protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
         {
             // Save the DPI if the terminal hasn't been initialized.
-            if(this.terminal == IntPtr.Zero)
+            if (this.terminal == IntPtr.Zero)
             {
                 this.dpiScale = newDpi;
             }
             else
             {
-                NativeMethods.DpiChanged(this.terminal, (int)(96 * newDpi.DpiScaleX));
+                NativeMethods.DpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
             }
+        }
+
+        /// <inheritdoc/>
+        protected override HandleRef BuildWindowCore(HandleRef hwndParent)
+        {
+            NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
+
+            this.scrollCallback = this.OnScroll;
+            this.writeCallback = this.OnWrite;
+
+            NativeMethods.RegisterScrollCallback(this.terminal, this.scrollCallback);
+            NativeMethods.RegisterWriteCallback(this.terminal, this.writeCallback);
+
+            // If the saved DPI scale isn't the default scale, we push it to the terminal.
+            if (this.dpiScale.DpiScaleX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
+            {
+                NativeMethods.DpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * this.dpiScale.DpiScaleX));
+            }
+
+            return new HandleRef(this, this.hwnd);
+        }
+
+        /// <inheritdoc/>
+        protected override void DestroyWindowCore(HandleRef hwnd)
+        {
+            NativeMethods.DestroyTerminal(this.terminal);
+            this.terminal = IntPtr.Zero;
         }
 
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
@@ -118,6 +196,7 @@ namespace Microsoft.Terminal.Wpf
                         {
                             this.connection.WriteInput(Clipboard.GetText());
                         }
+
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEMOVE:
                         this.MouseMoveHandler((int)wParam, (int)lParam);
@@ -144,7 +223,7 @@ namespace Microsoft.Terminal.Wpf
 
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:
-                        var delta = (((int)wParam) >> 16);
+                        var delta = ((int)wParam) >> 16;
                         this.UserScrolled?.Invoke(this, delta);
                         break;
                 }
@@ -182,90 +261,12 @@ namespace Microsoft.Terminal.Wpf
             }
         }
 
-        public ITerminalConnection Connection
-        {
-            private get
-            {
-                return this.connection;
-            }
-            set
-            {
-                if (this.connection != null)
-                {
-                    this.connection.TerminalOutput -= Connection_TerminalOutput;
-                }
-
-                this.connection = value;
-                this.connection.TerminalOutput += Connection_TerminalOutput;
-                this.connection.Start();
-            }
-        }
-
-        /// <summary>
-        /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
-        /// </summary>
-        public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
-        {
-            NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
-        }
-
-        /// <summary>
-        /// Triggers a refresh of the terminal with the given size.
-        /// </summary>
-        /// <param name="renderSize">Size of the rendering window</param>
-        /// <returns>Tuple with rows and columns.</returns>
-        public (int rows, int columns) TriggerResize(Size renderSize)
-        {
-            int columns, rows;
-            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out columns, out rows);
-
-            this.Rows = rows;
-            this.Columns = columns;
-
-            return (rows, columns);
-        }
-
-        /// <summary>
-        /// Resizes the terminal
-        /// </summary>
-        /// <param name="rows">Number of rows to show</param>
-        /// <param name="columns">Number of columns to show</param>
-        public void Resize(uint rows, uint columns)
-        {
-            NativeMethods.Resize(this.terminal, rows, columns);
-        }
-
         private void Connection_TerminalOutput(object sender, TerminalOutputEventArgs e)
         {
             if (this.terminal != IntPtr.Zero)
             {
                 NativeMethods.SendTerminalOutput(this.terminal, e.Data);
             }
-        }
-
-        protected override HandleRef BuildWindowCore(HandleRef hwndParent)
-        {
-            NativeMethods.CreateTerminal(hwndParent.Handle, out this.hwnd, out this.terminal);
-
-            this.scrollCallback = this.OnScroll;
-            this.writeCallback = this.OnWrite;
-
-            NativeMethods.RegisterScrollCallback(this.terminal, scrollCallback);
-            NativeMethods.RegisterWriteCallback(this.terminal, writeCallback);
-
-            // If the saved DPI scale isn't the default scale, we push it to the terminal.
-            if (this.dpiScale.DpiScaleX != 96)
-            {
-                NativeMethods.DpiChanged(this.terminal, (int)(96 * dpiScale.DpiScaleX));
-            }
-
-            return new HandleRef(this, this.hwnd);
-        }
-
-        protected override void DestroyWindowCore(HandleRef hwnd)
-        {
-            NativeMethods.DestroyTerminal(terminal);
-            terminal = IntPtr.Zero;
         }
 
         private void OnScroll(int viewTop, int viewHeight, int bufferSize)

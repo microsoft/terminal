@@ -1,63 +1,47 @@
-﻿// Copyright (c) Microsoft Corporation.
+﻿// <copyright file="TerminalControl.xaml.cs" company="Microsoft Corporation">
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
+// </copyright>
 
 namespace Microsoft.Terminal.Wpf
 {
+    using System.Windows;
+    using System.Windows.Controls;
+    using System.Windows.Input;
+    using System.Windows.Media;
+
     /// <summary>
-    /// Interaction logic for UserControl1.xaml
+    /// A basic terminal control. This control can receive and render standard VT100 sequences.
     /// </summary>
     public partial class TerminalControl : UserControl
     {
         private int accumulatedDelta = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="TerminalControl"/> class.
+        /// </summary>
         public TerminalControl()
         {
-            InitializeComponent();
-            this.termContainer.TerminalScrolled += TermControl_TerminalScrolled;
-            this.termContainer.UserScrolled += TermControl_UserScrolled;
-            this.scrollbar.MouseWheel += Scrollbar_MouseWheel;
+            this.InitializeComponent();
+
+            this.termContainer.TerminalScrolled += this.TermControl_TerminalScrolled;
+            this.termContainer.UserScrolled += this.TermControl_UserScrolled;
+            this.scrollbar.MouseWheel += this.Scrollbar_MouseWheel;
         }
 
         /// <summary>
-        /// Character rows available to the terminal.
+        /// Gets the character rows available to the terminal.
         /// </summary>
         public int Rows => this.termContainer.Rows;
 
         /// <summary>
-        /// Character columns available to the terminal.
+        /// Gets the character columns available to the terminal.
         /// </summary>
         public int Columns => this.termContainer.Columns;
 
-        private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
-        {
-            this.TermControl_UserScrolled(sender, e.Delta);
-        }
-
-        private void TermControl_UserScrolled(object sender, int delta)
-        {
-            var lineDelta = 120 / SystemParameters.WheelScrollLines;
-            this.accumulatedDelta += delta;
-
-            if (accumulatedDelta < lineDelta && accumulatedDelta > -lineDelta)
-            {
-                return;
-            }
-
-            Dispatcher.InvokeAsync(() =>
-            {
-                var lines = -this.accumulatedDelta / lineDelta;
-                this.scrollbar.Value += lines;
-                this.accumulatedDelta = 0;
-
-                this.termContainer.UserScroll((int)this.scrollbar.Value);
-            });
-        }
-
+        /// <summary>
+        /// Sets the connection to a terminal backend.
+        /// </summary>
         public ITerminalConnection Connection
         {
             set
@@ -69,6 +53,9 @@ namespace Microsoft.Terminal.Wpf
         /// <summary>
         /// Sets the theme for the terminal. This includes font family, size, color, as well as background and foreground colors.
         /// </summary>
+        /// <param name="theme">The color theme to use in the terminal.</param>
+        /// <param name="fontFamily">The font family to use in the terminal.</param>
+        /// <param name="fontSize">The font size to use in the terminal.</param>
         public void SetTheme(TerminalTheme theme, string fontFamily, short fontSize)
         {
             PresentationSource source = PresentationSource.FromVisual(this);
@@ -79,7 +66,7 @@ namespace Microsoft.Terminal.Wpf
             }
 
             int dpiX;
-            dpiX = (int)(96.0 * source.CompositionTarget.TransformToDevice.M11);
+            dpiX = (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * source.CompositionTarget.TransformToDevice.M11);
 
             this.termContainer.SetTheme(theme, fontFamily, fontSize, dpiX);
         }
@@ -95,19 +82,44 @@ namespace Microsoft.Terminal.Wpf
         }
 
         /// <summary>
-        /// Resizes the terminal to the specified size.
+        /// Resizes the terminal to the specified dimensions.
         /// </summary>
-        /// <param name="Rendersize">Rendering size for the terminal.</param>
-        public (int rows, int columns) TriggerResize(Size Rendersize)
+        /// <param name="rendersize">Rendering size for the terminal.</param>
+        /// <returns>A tuple of (int, int) representing the number of rows and columns in the terminal.</returns>
+        public (int rows, int columns) TriggerResize(Size rendersize)
         {
-            return this.termContainer.TriggerResize(Rendersize);
+            return this.termContainer.TriggerResize(rendersize);
+        }
+
+        private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            this.TermControl_UserScrolled(sender, e.Delta);
+        }
+
+        private void TermControl_UserScrolled(object sender, int delta)
+        {
+            var lineDelta = 120 / SystemParameters.WheelScrollLines;
+            this.accumulatedDelta += delta;
+
+            if (this.accumulatedDelta < lineDelta && this.accumulatedDelta > -lineDelta)
+            {
+                return;
+            }
+
+            this.Dispatcher.InvokeAsync(() =>
+            {
+                var lines = -this.accumulatedDelta / lineDelta;
+                this.scrollbar.Value += lines;
+                this.accumulatedDelta = 0;
+
+                this.termContainer.UserScroll((int)this.scrollbar.Value);
+            });
         }
 
         private void TermControl_TerminalScrolled(object sender, (int viewTop, int viewHeight, int bufferSize) e)
         {
-            Dispatcher.InvokeAsync(() =>
+            this.Dispatcher.InvokeAsync(() =>
             {
-
                 this.scrollbar.Minimum = 0;
                 this.scrollbar.Maximum = e.bufferSize - e.viewHeight;
                 this.scrollbar.Value = e.viewTop;

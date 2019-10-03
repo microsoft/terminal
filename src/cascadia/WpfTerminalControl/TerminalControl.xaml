@@ -7,7 +7,11 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <local:TerminalContainer x:Name="termContainer" Margin="0,0,17,0"/>
-        <ScrollBar x:Name="scrollbar" Width="17" HorizontalAlignment="Right" Scroll="Scrollbar_Scroll" />
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <local:TerminalContainer x:Name="termContainer"/>
+        <ScrollBar x:Name="scrollbar" Scroll="Scrollbar_Scroll" Grid.Column="1" />
     </Grid>
 </UserControl>

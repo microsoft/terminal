@@ -12,13 +12,28 @@
     <IntermediateOutputPath>$(RepoBinPath)..\obj\$(Platform)\$(Configuration)\$(MSBuildProjectName)</IntermediateOutputPath>
     <OutputPath>$(RepoBinPath)$(Platform)\$(Configuration)\$(MSBuildProjectName)</OutputPath>
     <BeforePack>CollectNativePackContents</BeforePack>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <Version>0.5</Version>
   </PropertyGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\PublicTerminalCore\PublicTerminalCore.vcxproj" PrivateAssets="all"/>
+    <ProjectReference Include="..\PublicTerminalCore\PublicTerminalCore.vcxproj" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json">
+      <Visible>true</Visible>
+      <Link>stylecop.json</Link>
+    </AdditionalFiles>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+  
   <ItemGroup>
     <Page Include="**\*.xaml" Exclude="App.xaml">
       <SubType>Designer</SubType>

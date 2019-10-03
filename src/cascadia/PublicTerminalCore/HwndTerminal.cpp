@@ -360,7 +360,7 @@ void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
     publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
 }
 
-void _stdcall SendCharEvent(void* terminal, char16_t ch)
+void _stdcall SendCharEvent(void* terminal, wchar_t ch)
 {
     auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
     publicTerminal->_terminal->SendCharEvent(ch);
