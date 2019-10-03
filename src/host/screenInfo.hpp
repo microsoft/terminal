@@ -131,7 +131,8 @@ public:
     OutputCellIterator Write(const OutputCellIterator it);
 
     OutputCellIterator Write(const OutputCellIterator it,
-                             const COORD target);
+                             const COORD target,
+                             const std::optional<bool> wrap = true);
 
     OutputCellIterator WriteRect(const OutputCellIterator it,
                                  const Microsoft::Console::Types::Viewport viewport);

@@ -149,6 +149,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
+        void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

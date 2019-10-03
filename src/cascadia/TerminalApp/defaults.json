@@ -45,8 +45,7 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": true,
-            "acrylicOpacity": 0.75
+            "useAcrylic": false
         }
     ],
     "schemes":
@@ -232,6 +231,8 @@
         { "command": "switchToTab5", "keys": ["ctrl+alt+6"] },
         { "command": "switchToTab6", "keys": ["ctrl+alt+7"] },
         { "command": "switchToTab7", "keys": ["ctrl+alt+8"] },
-        { "command": "switchToTab8", "keys": ["ctrl+alt+9"] }
+        { "command": "switchToTab8", "keys": ["ctrl+alt+9"] },
+        { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
+        { "command": "increaseFontSize", "keys": ["ctrl+="] }
     ]
 }
