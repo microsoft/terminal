@@ -41,10 +41,10 @@ namespace Microsoft::Console::Render
     private:
         [[nodiscard]] HRESULT _UpdateExtendedAttrs(const ExtendedAttributes extendedAttrs) noexcept;
 
-        bool _usingItalics{ false };
-        bool _usingBlinking{ false };
-        bool _usingInvisible{ false };
-        bool _usingCrossedOut{ false };
+        bool _usingItalics;
+        bool _usingBlinking;
+        bool _usingInvisible;
+        bool _usingCrossedOut;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

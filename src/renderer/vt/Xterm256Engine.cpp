@@ -14,7 +14,11 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                const Viewport initialViewport,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                const WORD cColorTable) :
-    XtermEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport, ColorTable, cColorTable, false)
+    XtermEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport, ColorTable, cColorTable, false),
+    _usingItalics{ false },
+    _usingBlinking{ false },
+    _usingInvisible{ false },
+    _usingCrossedOut{ false }
 {
 }
 
@@ -72,9 +76,6 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                                     bool& lastState,
                                                     std::function<HRESULT(Xterm256Engine*)> beginFn,
                                                     std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
-        // Unfortunately, we can't use WI_IsFlagSet here, since that requires a
-        // compile-time check that the flag (attr) is a _single_ flag, and that
-        // won't work in this case.
         const bool flagSet = WI_AreAllFlagsSet(extendedAttrs, attr);
         if (flagSet != lastState)
         {

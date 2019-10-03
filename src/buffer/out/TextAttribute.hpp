@@ -55,7 +55,6 @@ public:
         _wAttrLegacy{ 0 },
         _foreground{ rgbForeground },
         _background{ rgbBackground },
-        // _isBold{ false }
         _extendedAttrs{ ExtendedAttributes::Normal }
     {
     }
