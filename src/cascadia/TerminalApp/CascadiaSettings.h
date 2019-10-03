@@ -48,7 +48,6 @@ public:
 
     static std::unique_ptr<CascadiaSettings> LoadDefaults();
     static std::unique_ptr<CascadiaSettings> LoadAll();
-    void SaveAll() const;
 
     winrt::Microsoft::Terminal::Settings::TerminalSettings MakeSettings(std::optional<GUID> profileGuid) const;
 
@@ -58,7 +57,6 @@ public:
 
     winrt::TerminalApp::AppKeyBindings GetKeybindings() const noexcept;
 
-    Json::Value ToJson() const;
     static std::unique_ptr<CascadiaSettings> FromJson(const Json::Value& json);
     void LayerJson(const Json::Value& json);
 

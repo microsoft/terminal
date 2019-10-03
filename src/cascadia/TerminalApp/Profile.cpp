@@ -141,27 +141,6 @@ void Profile::SetSource(std::wstring_view sourceNamespace) noexcept
     _source = sourceNamespace;
 }
 
-// Function Description:
-// - Searches a list of color schemes to find one matching the given name. Will
-//return the first match in the list, if the list has multiple schemes with the same name.
-// Arguments:
-// - schemes: a list of schemes to search
-// - schemeName: the name of the sceme to look for
-// Return Value:
-// - a non-ownership pointer to the matching scheme if we found one, else nullptr
-const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
-                               const std::wstring& schemeName)
-{
-    for (auto& scheme : schemes)
-    {
-        if (scheme.GetName() == schemeName)
-        {
-            return &scheme;
-        }
-    }
-    return nullptr;
-}
-
 // Method Description:
 // - Create a TerminalSettings from this object. Apply our settings, as well as
 //      any colors from our color scheme, if we have one.
@@ -169,7 +148,7 @@ const ColorScheme* _FindScheme(const std::vector<ColorScheme>& schemes,
 // - schemes: a list of schemes to look for our color scheme in, if we have one.
 // Return Value:
 // - a new TerminalSettings object with our settings in it.
-TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>& schemes) const
+TerminalSettings Profile::CreateTerminalSettings(const std::unordered_map<std::wstring, ColorScheme>& schemes) const
 {
     TerminalSettings terminalSettings{};
 
@@ -208,10 +187,10 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
 
     if (_schemeName)
     {
-        const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
-        if (matchingScheme)
+        const auto found = schemes.find(_schemeName.value());
+        if (found != schemes.end())
         {
-            matchingScheme->ApplyScheme(terminalSettings);
+            found->second.ApplyScheme(terminalSettings);
         }
     }
     if (_defaultForeground)
@@ -714,6 +693,11 @@ void Profile::SetColorScheme(std::optional<std::wstring> schemeName) noexcept
     _schemeName = std::move(schemeName);
 }
 
+std::optional<std::wstring>& Profile::GetSchemeName() noexcept
+{
+    return _schemeName;
+}
+
 void Profile::SetAcrylicOpacity(double opacity) noexcept
 {
     _acrylicTransparency = opacity;
@@ -1187,32 +1171,4 @@ GUID Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     JsonUtils::GetOptionalString(json, SourceKey, source);
 
     return Profile::_GenerateGuidForProfile(name, source);
-}
-
-// Method Description:
-// - Validates that the `colorScheme` set for this Profile exists. If it does
-//   exist, returns true. Otherwise, we'll initialize our color table to the
-//   default color scheme, the Campbell scheme, and returns false.
-// - This is done
-//   for microsoft/terminal#2547. In the case where the scheme was invalid, we'd
-//   leave the table un-initialized, resulting in all the colors being RGB(0, 0,
-//   0,) _black_.
-// Arguments:
-// - schemes: a list of color schemes to check and ensure that our colorScheme exitsts in.
-// Return Value:
-// - true if the color scheme existed, false otherwise.
-bool Profile::ValidateColorScheme(const std::vector<::TerminalApp::ColorScheme>& schemes) noexcept
-{
-    const ColorScheme* const matchingScheme = _FindScheme(schemes, _schemeName.value());
-    // If we couldn't find a match, initialize the table to the campbell colors
-    if (matchingScheme == nullptr)
-    {
-        gsl::span<uint32_t> tableView{ &_colorTable[0], COLOR_TABLE_SIZE };
-        // Then use fill the first 16 values with the Campbell scheme
-        Utils::InitializeCampbellColorTable(tableView);
-
-        return false;
-    }
-
-    return true;
 }

@@ -49,12 +49,12 @@ GlobalAppSettings::~GlobalAppSettings()
 {
 }
 
-const std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
+std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
 {
     return _colorSchemes;
 }
 
-std::vector<ColorScheme>& GlobalAppSettings::GetColorSchemes() noexcept
+const std::unordered_map<std::wstring, ColorScheme>& GlobalAppSettings::GetColorSchemes() const noexcept
 {
     return _colorSchemes;
 }
@@ -279,4 +279,10 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
     default:
         return SystemThemeValue;
     }
+}
+
+void GlobalAppSettings::AddScheme(ColorScheme scheme)
+{
+    std::wstring name{ scheme.GetName() };
+    _colorSchemes[name] = std::move(scheme);
 }

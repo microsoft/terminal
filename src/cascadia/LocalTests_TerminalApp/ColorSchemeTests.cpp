@@ -169,7 +169,7 @@ namespace TerminalAppLocalTests
             "background": "#050505"
         })" };
         const std::string scheme3String{ R"({
-            // "name": "scheme3",
+            // by not providing a name, the scheme will have the name ""
             "foreground": "#060606",
             "background": "#070707"
         })" };
@@ -188,47 +188,85 @@ namespace TerminalAppLocalTests
         VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
 
         settings._LayerOrCreateColorScheme(scheme0Json);
-        VERIFY_ARE_EQUAL(1u, settings._globals.GetColorSchemes().size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
-        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
-        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), settings._globals.GetColorSchemes().at(0)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), settings._globals.GetColorSchemes().at(0)._defaultBackground);
+        {
+            for (auto& kv : settings._globals._colorSchemes)
+            {
+                Log::Comment(NoThrowString().Format(
+                    L"kv:%s->%s", kv.first.data(), kv.second.GetName().data()));
+            }
+            VERIFY_ARE_EQUAL(1u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme0") != settings._globals._colorSchemes.end());
+            auto scheme0 = settings._globals._colorSchemes.find(L"scheme0")->second;
+
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+            VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme1Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+            VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
+        }
 
         settings._LayerOrCreateColorScheme(scheme1Json);
-        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
-        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), settings._globals.GetColorSchemes().at(0)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), settings._globals.GetColorSchemes().at(0)._defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
+        {
+            VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme0") != settings._globals._colorSchemes.end());
+            auto scheme0 = settings._globals._colorSchemes.find(L"scheme0")->second;
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme1") != settings._globals._colorSchemes.end());
+            auto scheme1 = settings._globals._colorSchemes.find(L"scheme1")->second;
+
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+            VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+        }
         settings._LayerOrCreateColorScheme(scheme2Json);
-        VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
-        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), settings._globals.GetColorSchemes().at(0)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), settings._globals.GetColorSchemes().at(0)._defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
 
+        {
+            VERIFY_ARE_EQUAL(2u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme0") != settings._globals._colorSchemes.end());
+            auto scheme0 = settings._globals._colorSchemes.find(L"scheme0")->second;
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme1") != settings._globals._colorSchemes.end());
+            auto scheme1 = settings._globals._colorSchemes.find(L"scheme1")->second;
+
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+            VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+        }
         settings._LayerOrCreateColorScheme(scheme3Json);
-        VERIFY_ARE_EQUAL(3u, settings._globals.GetColorSchemes().size());
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
-        VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
-        VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), settings._globals.GetColorSchemes().at(0)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), settings._globals.GetColorSchemes().at(0)._defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), settings._globals.GetColorSchemes().at(1)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), settings._globals.GetColorSchemes().at(1)._defaultBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), settings._globals.GetColorSchemes().at(2)._defaultForeground);
-        VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), settings._globals.GetColorSchemes().at(2)._defaultBackground);
+
+        {
+            VERIFY_ARE_EQUAL(3u, settings._globals.GetColorSchemes().size());
+
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme0") != settings._globals._colorSchemes.end());
+            auto scheme0 = settings._globals._colorSchemes.find(L"scheme0")->second;
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"scheme1") != settings._globals._colorSchemes.end());
+            auto scheme1 = settings._globals._colorSchemes.find(L"scheme1")->second;
+            VERIFY_IS_TRUE(settings._globals._colorSchemes.find(L"") != settings._globals._colorSchemes.end());
+            auto scheme2 = settings._globals._colorSchemes.find(L"")->second;
+
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme0Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme1Json));
+            VERIFY_IS_NOT_NULL(settings._FindMatchingColorScheme(scheme2Json));
+            VERIFY_IS_NULL(settings._FindMatchingColorScheme(scheme3Json));
+            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1._defaultBackground);
+            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2._defaultForeground);
+            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2._defaultBackground);
+        }
     }
 }

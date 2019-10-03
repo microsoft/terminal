@@ -383,9 +383,15 @@ void CascadiaSettings::_ValidateAllSchemesExist()
     bool foundInvalidScheme = false;
     for (auto& profile : _profiles)
     {
-        if (!profile.ValidateColorScheme(_globals.GetColorSchemes()))
+        auto schemeName = profile.GetSchemeName();
+        if (schemeName.has_value())
         {
-            foundInvalidScheme = true;
+            const auto found = _globals.GetColorSchemes().find(schemeName.value());
+            if (found == _globals.GetColorSchemes().end())
+            {
+                profile.SetColorScheme({ L"Campbell" });
+                foundInvalidScheme = true;
+            }
         }
     }
 
