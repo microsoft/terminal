@@ -11,7 +11,8 @@ using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::TerminalControl;
 using namespace winrt::TerminalApp;
 
-static const int PaneSeparatorSize = 4;
+static const int PaneSeparatorSize = 0;
+static const int PaneMargin = 2;
 static const float Half = 0.50f;
 
 Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
@@ -527,6 +528,10 @@ void Pane::_CloseChild(const bool closeFirst)
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
 
+    // TODO: Update borders for closing.
+    // This will work when the remaining child is a leaf, but not when it's a parent.
+    // _borders = _firstChild->_borders & _secondChild->_borders;
+
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
@@ -753,6 +758,31 @@ void Pane::_CreateSplitContent()
     }
 }
 
+void Pane::_UpdateBorders()
+{
+    double top = 0, bottom = 0, left = 0, right = 0;
+
+    Thickness newBorders{ 0 };
+    if (WI_IsFlagSet(_borders, Borders::Top))
+    {
+        top = PaneMargin;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Bottom))
+    {
+        bottom = PaneMargin;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Left))
+    {
+        left = PaneMargin;
+    }
+    if (WI_IsFlagSet(_borders, Borders::Right))
+    {
+        right = PaneMargin;
+    }
+
+    _root.Margin(ThicknessHelper::FromLengths(left, top, right, bottom));
+}
+
 // Method Description:
 // - Sets the row/column of our child UI elements, to match our current split type.
 // Arguments:
@@ -766,12 +796,28 @@ void Pane::_ApplySplitDefinitions()
         Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
         Controls::Grid::SetColumn(_separatorRoot, 1);
         Controls::Grid::SetColumn(_secondChild->GetRootElement(), 2);
+
+        _firstChild->_borders = _borders | Borders::Right;
+        _secondChild->_borders = _borders | Borders::Left;
+        _borders = Borders::None;
+
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
     }
     else if (_splitState == SplitState::Horizontal)
     {
         Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
         Controls::Grid::SetRow(_separatorRoot, 1);
         Controls::Grid::SetRow(_secondChild->GetRootElement(), 2);
+
+        _firstChild->_borders = _borders | Borders::Bottom;
+        _secondChild->_borders = _borders | Borders::Top;
+        _borders = Borders::None;
+
+        _UpdateBorders();
+        _firstChild->_UpdateBorders();
+        _secondChild->_UpdateBorders();
     }
 }
 
