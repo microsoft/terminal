@@ -51,27 +51,15 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
         if (res.HasKey(accentColorKey))
         {
             const auto thing = res.Lookup(accentColorKey);
-            auto c = winrt::unbox_value_or<Color>(thing, winrt::Windows::UI::Colors::Transparent());
-            // if (c)
-            // {
-            auto r = c.R, g = c.G, b = c.B;
-            // auto r = c->R, g = c->G, b = c->B;
-            auto rgb = RGB(r, g, b);
-            rgb;
-            // }
-            // auto r = c.R, g = c.G, b = c.B;
-            // auto rgb = RGB(r, g, b);
-            // rgb;
-            // s_focusedBorderBrush = SolidColorBrush(c.get());
+            // If SystemAccentColor is _not_ a Color for some reason, use
+            // Transparent as the color, so we don't do this process again on
+            // the next pane (by leaving s_focusedBorderBrush nullptr)
+            auto c = winrt::unbox_value_or<Color>(thing, Colors::Transparent());
             s_focusedBorderBrush = SolidColorBrush(c);
-            // s_focusedBorderBrush = SolidColorBrush{ ColorHelper::FromArgb(255, c->R, c->G, c->B) };
-            // try_as fails by returning nullptr
-            // auto c = s_focusedBorderBrush.Color();
         }
         else
         {
-            // Debugging purposes TODO: remove me
-            s_focusedBorderBrush = SolidColorBrush{ ColorHelper::FromArgb(255, 255, 0, 255) };
+            s_focusedBorderBrush = SolidColorBrush{ Colors::Transparent() };
         }
     }
 }
