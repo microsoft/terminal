@@ -198,6 +198,11 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         // key that does not correspond to any mnemonic or accelerator key,
         return MAKELRESULT(0, MNC_CLOSE);
     }
+    case WM_CLOSE:
+    {
+        _windowCloseButtonClickedHandler();
+        return 0;
+    }
     }
 
     // TODO: handle messages here...
@@ -285,3 +290,4 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

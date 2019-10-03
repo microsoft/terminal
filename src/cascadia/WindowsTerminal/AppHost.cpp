@@ -74,6 +74,8 @@ void AppHost::Initialize()
     // application layer.
     _window->DragRegionClicked([this]() { _app.TitlebarClicked(); });
 
+    _window->WindowCloseButtonClicked([this]() { _app.WindowCloseButtonClicked(); });
+
     _app.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
 
     _app.Create();
