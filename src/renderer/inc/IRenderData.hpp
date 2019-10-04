@@ -67,7 +67,6 @@ namespace Microsoft::Console::Render
 
     protected:
         IRenderData() = default;
-
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.

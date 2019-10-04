@@ -121,7 +121,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
 
 void HwndTerminal::RegisterWriteCallback(void _stdcall callback(wchar_t*))
 {
-    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept {
+    _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept {
         const wchar_t* text = input.c_str();
         const size_t textChars = wcslen(text) + 1;
         const size_t textBytes = textChars * sizeof(wchar_t);
@@ -393,8 +393,7 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
             // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
-            [[gsl::suppress(bounds.3)]] 
-            publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
+            [[gsl::suppress(bounds .3)]] publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
     }
 
