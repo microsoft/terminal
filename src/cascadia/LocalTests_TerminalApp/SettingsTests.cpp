@@ -49,6 +49,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestExplodingNameOnlyProfiles);
         TEST_METHOD(TestHideAllProfiles);
 
+        TEST_METHOD(TestLayerGlobalsOnRoot);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             InitializeJsonReader();
@@ -1191,4 +1193,114 @@ namespace TerminalAppLocalTests
             VERIFY_IS_TRUE(caughtExpectedException);
         }
     }
+
+    void SettingsTests::TestLayerGlobalsOnRoot()
+    {
+        // Test for microsoft/terminal#2906. We added the ability for the root
+        // to be used as the globals object in #2515. However, if you have a
+        // globals object, then the settings in the root would get ignored.
+        // This test ensures that settings from a child "globals" element
+        // _layer_ on top of root properties, and they don't cause the root
+        // properties to be totally ignored.
+
+        const std::string settings0String{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                "initialRows": 123
+            }
+        })" };
+        const std::string settings1String{ R"(
+        {
+            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+            "initialRows": 234
+        })" };
+        const std::string settings2String{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "initialRows": 345,
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                // initialRows should not be cleared here
+            }
+        })" };
+        const std::string settings3String{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "globals": {
+                "initialRows": 456
+                // defaultProfile should not be cleared here
+            }
+        })" };
+        const std::string settings4String{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+            },
+            "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string settings5String{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+            },
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "globals": {
+                "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+            }
+        })" };
+
+        VerifyParseSucceeded(settings0String);
+        VerifyParseSucceeded(settings1String);
+        VerifyParseSucceeded(settings2String);
+        VerifyParseSucceeded(settings3String);
+        VerifyParseSucceeded(settings4String);
+        VerifyParseSucceeded(settings5String);
+        const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
+        const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings0String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(123, settings._globals._initialRows);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings1String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(234, settings._globals._initialRows);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings2String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(345, settings._globals._initialRows);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings3String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid2, settings._globals._defaultProfile);
+            VERIFY_ARE_EQUAL(456, settings._globals._initialRows);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings4String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings5String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid3, settings._globals._defaultProfile);
+        }
+    }
+
 }
