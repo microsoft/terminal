@@ -23,7 +23,7 @@ Therefore, if you do file issues, or create PRs, please keep an eye on your GitH
 ---
 ## Reporting Security Issues
 
-**Please do not report security vulnerabilities through public GitHub issues.** Instead, please report them to the MSRC. See [Security.md](../SECURITY.md) for more information.
+**Please do not report security vulnerabilities through public GitHub issues.** Instead, please report them to the Microsoft Security Response Center (MSRC). See [Security.md](../SECURITY.md) for more information.
 
 ## Before you start, file an issue
 
