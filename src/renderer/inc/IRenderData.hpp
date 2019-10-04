@@ -40,7 +40,7 @@ namespace Microsoft::Console::Render
     class IRenderData : public Microsoft::Console::Types::IBaseData
     {
     public:
-        virtual ~IRenderData() = 0;
+        ~IRenderData() = 0;
         virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
         virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;

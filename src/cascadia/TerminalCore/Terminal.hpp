@@ -37,7 +37,7 @@ class Microsoft::Terminal::Core::Terminal final :
 {
 public:
     Terminal();
-    virtual ~Terminal(){};
+    ~Terminal(){};
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,

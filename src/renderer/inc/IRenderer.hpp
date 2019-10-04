@@ -24,7 +24,7 @@ namespace Microsoft::Console::Render
     class IRenderer : public IRenderTarget
     {
     public:
-        virtual ~IRenderer() = 0;
+        ~IRenderer() = 0;
 
         [[nodiscard]] virtual HRESULT PaintFrame() = 0;
 

@@ -59,12 +59,12 @@ namespace Microsoft::Console::VirtualTerminal
 
             static const size_t s_cchMaxSequenceLength;
 
-            _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, _In_ PCWSTR const pwszSequence) noexcept :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(0){};
 
-            _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) :
+            _TermKeyMap(const WORD wVirtualKey, const DWORD dwModifiers, _In_ PCWSTR const pwszSequence) noexcept :
                 wVirtualKey(wVirtualKey),
                 pwszSequence(pwszSequence),
                 dwModifiers(dwModifiers){};
