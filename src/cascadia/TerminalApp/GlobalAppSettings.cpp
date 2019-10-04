@@ -281,6 +281,12 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
     }
 }
 
+// Method Description:
+// - Adds the given colorscheme to our map of schemes, using its name as the key.
+// Arguments:
+// - scheme: the color scheme to add
+// Return Value:
+// - <none>
 void GlobalAppSettings::AddScheme(ColorScheme scheme)
 {
     std::wstring name{ scheme.GetName() };

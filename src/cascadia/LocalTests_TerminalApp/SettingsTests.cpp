@@ -394,9 +394,10 @@ namespace TerminalAppLocalTests
 
         settings->_ValidateSettings();
 
-        VERIFY_ARE_EQUAL(2u, settings->_warnings.size());
+        VERIFY_ARE_EQUAL(3u, settings->_warnings.size());
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::DuplicateProfile, settings->_warnings.at(0));
         VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::MissingDefaultProfile, settings->_warnings.at(1));
+        VERIFY_ARE_EQUAL(::TerminalApp::SettingsLoadWarnings::UnknownColorScheme, settings->_warnings.at(2));
 
         VERIFY_ARE_EQUAL(3u, settings->_profiles.size());
         VERIFY_ARE_EQUAL(settings->_globals.GetDefaultProfile(), settings->_profiles.at(0).GetGuid());
@@ -794,6 +795,9 @@ namespace TerminalAppLocalTests
                 {
                     "name" : "profile1"
                 }
+            ],
+            "schemes": [
+                { "name": "Campbell" }
             ]
         })" };
 
@@ -1235,6 +1239,10 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings._profiles.size());
         VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
 
+        VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings._profiles.at(1)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(2)._schemeName.value());
+
         settings._ValidateAllSchemesExist();
 
         VERIFY_ARE_EQUAL(1u, settings._warnings.size());
@@ -1243,13 +1251,8 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(3u, settings._profiles.size());
         VERIFY_ARE_EQUAL(2u, settings._globals._colorSchemes.size());
 
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), settings._profiles.at(0)._colorTable[0]);
-        VERIFY_ARE_EQUAL(ARGB(0, 12, 12, 12), settings._profiles.at(1)._colorTable[0]);
-        // In this set of schemes, Campbell doesn't exist, so the table will get written
-        VERIFY_ARE_EQUAL(ARGB(0, 12, 12, 12), settings._profiles.at(2)._colorTable[0]);
-
         VERIFY_ARE_EQUAL(L"schemeOne", settings._profiles.at(0)._schemeName.value());
-        VERIFY_ARE_EQUAL(L"InvalidSchemeName", settings._profiles.at(1)._schemeName.value());
+        VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(1)._schemeName.value());
         VERIFY_ARE_EQUAL(L"Campbell", settings._profiles.at(2)._schemeName.value());
     }
 }
