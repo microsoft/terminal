@@ -38,6 +38,10 @@ class Microsoft::Terminal::Core::Terminal final :
 public:
     Terminal();
     ~Terminal(){};
+    Terminal(const Terminal&) = default;
+    Terminal(Terminal&&) = default;
+    Terminal& operator=(const Terminal&) = default;
+    Terminal& operator=(Terminal&&) = default;
 
     void Create(COORD viewportSize,
                 SHORT scrollbackLines,

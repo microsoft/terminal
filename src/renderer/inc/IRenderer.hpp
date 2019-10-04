@@ -25,6 +25,10 @@ namespace Microsoft::Console::Render
     {
     public:
         ~IRenderer() = 0;
+        IRenderer(const IRenderer&) = default;
+        IRenderer(IRenderer&&) = default;
+        IRenderer& operator=(const IRenderer&) = default;
+        IRenderer& operator=(IRenderer&&) = default;
 
         [[nodiscard]] virtual HRESULT PaintFrame() = 0;
 
@@ -56,6 +60,9 @@ namespace Microsoft::Console::Render
         virtual void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) = 0;
 
         virtual void AddRenderEngine(_In_ IRenderEngine* const pEngine) = 0;
+
+    protected:
+        IRenderer() = default;
     };
 
     inline Microsoft::Console::Render::IRenderer::~IRenderer() {}

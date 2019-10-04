@@ -41,6 +41,11 @@ namespace Microsoft::Console::Render
     {
     public:
         ~IRenderData() = 0;
+        IRenderData(const IRenderData&) = default;
+        IRenderData(IRenderData&&) = default;
+        IRenderData& operator=(const IRenderData&) = default;
+        IRenderData& operator=(IRenderData&&) = default;
+
         virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
 
         virtual const COLORREF GetForegroundColor(const TextAttribute& attr) const noexcept = 0;
@@ -59,6 +64,10 @@ namespace Microsoft::Console::Render
 
         virtual const bool IsGridLineDrawingAllowed() noexcept = 0;
         virtual const std::wstring GetConsoleTitle() const noexcept = 0;
+
+    protected:
+        IRenderData() = default;
+
     };
 
     // See docs/virtual-dtors.md for an explanation of why this is weird.
