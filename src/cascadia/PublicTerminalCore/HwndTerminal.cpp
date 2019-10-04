@@ -18,12 +18,12 @@ LRESULT CALLBACK HwndTerminalWndProc(
     HWND hwnd,
     UINT uMsg,
     WPARAM wParam,
-    LPARAM lParam)
+    LPARAM lParam) noexcept
 {
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-bool RegisterTermClass(HINSTANCE hInstance)
+bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
     WNDCLASSW wc;
     if (GetClassInfo(hInstance, term_window_class, &wc))
@@ -78,7 +78,7 @@ HRESULT HwndTerminal::Initialize()
     auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
     auto* const localPointerToThread = renderThread.get();
     _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
-
+    RETURN_HR_IF_NULL(E_POINTER, localPointerToThread);
     RETURN_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
 
     auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
@@ -86,14 +86,14 @@ HRESULT HwndTerminal::Initialize()
     RETURN_IF_FAILED(dxEngine->Enable());
     _renderer->AddRenderEngine(dxEngine.get());
 
-    auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
+    const auto pfn = std::bind(&::Microsoft::Console::Render::Renderer::IsGlyphWideByFont, _renderer.get(), std::placeholders::_1);
     SetGlyphWidthFallback(pfn);
 
     _UpdateFont(USER_DEFAULT_SCREEN_DPI);
     RECT windowRect;
     GetWindowRect(_hwnd.get(), &windowRect);
 
-    const COORD windowSize{ static_cast<short>(windowRect.right - windowRect.left), static_cast<short>(windowRect.bottom - windowRect.top) };
+    const COORD windowSize{ gsl::narrow<short>(windowRect.right - windowRect.left), gsl::narrow<short>(windowRect.bottom - windowRect.top) };
 
     // Fist set up the dx engine with the window size in pixels.
     // Then, using the font, get the number of characters that can fit.
@@ -121,22 +121,24 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
 
 void HwndTerminal::RegisterWriteCallback(void _stdcall callback(wchar_t*))
 {
-    _terminal->SetWriteInputCallback([=](std::wstring& input) {
+    _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept {
         const wchar_t* text = input.c_str();
-        size_t textChars = wcslen(text) + 1;
-        size_t textBytes = textChars * sizeof(wchar_t);
-        wchar_t* callingText = NULL;
+        const size_t textChars = wcslen(text) + 1;
+        const size_t textBytes = textChars * sizeof(wchar_t);
+        wchar_t* callingText = nullptr;
 
-        callingText = (wchar_t*)::CoTaskMemAlloc(textBytes);
+        callingText = static_cast<wchar_t*>(::CoTaskMemAlloc(textBytes));
 
         if (callingText == nullptr)
         {
             callback(nullptr);
         }
+        else
+        {
+            wcscpy_s(callingText, textChars, text);
 
-        wcscpy_s(callingText, textChars, text);
-
-        callback(callingText);
+            callback(callingText);
+        }
     });
 }
 
@@ -151,6 +153,9 @@ void HwndTerminal::_UpdateFont(int newDpi)
 
 HRESULT HwndTerminal::Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, charColumns);
+    RETURN_HR_IF_NULL(E_INVALIDARG, charRows);
+
     auto lock = _terminal->LockForWriting();
     const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
     RETURN_IF_FAILED(_renderEngine->SetWindowSize(windowSize));
@@ -160,7 +165,7 @@ HRESULT HwndTerminal::Refresh(double width, double height, _Out_ int* charColumn
 
     // Convert our new dimensions to characters
     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                       { static_cast<short>(windowSize.cx), static_cast<short>(windowSize.cy) });
+                                                       { gsl::narrow<short>(windowSize.cx), gsl::narrow<short>(windowSize.cy) });
     const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
     // If this function succeeds with S_FALSE, then the terminal didn't
@@ -183,48 +188,48 @@ void HwndTerminal::SendOutput(std::wstring_view data)
 
 HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal)
 {
-    auto _terminal = new HwndTerminal(parentHwnd);
+    auto _terminal = std::make_unique<HwndTerminal>(parentHwnd);
     RETURN_IF_FAILED(_terminal->Initialize());
 
-    *terminal = _terminal;
     *hwnd = _terminal->_hwnd.get();
+    *terminal = _terminal.release();
 
     return S_OK;
 }
 
 void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int))
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterScrollCallback(callback);
 }
 
 void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*))
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterWriteCallback(callback);
 }
 
 void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->SendOutput(data);
 }
 
 HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     return publicTerminal->Refresh(width, height, charColumns, charRows);
 }
 
 void _stdcall DpiChanged(void* terminal, int newDpi)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_UpdateFont(newDpi);
 }
 
 void _stdcall UserScroll(void* terminal, int viewTop)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->UserScrollViewport(viewTop);
 }
 
@@ -235,7 +240,7 @@ HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPr
         cursorPosition.Y
     };
 
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto fontSize = publicTerminal->_actualFont.GetSize();
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
@@ -259,7 +264,7 @@ HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition)
         cursorPosition.Y
     };
 
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto fontSize = publicTerminal->_actualFont.GetSize();
 
     RETURN_HR_IF(E_NOT_VALID_STATE, fontSize.X == 0);
@@ -276,20 +281,20 @@ HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition)
 
 void _stdcall ClearSelection(void* terminal)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->ClearSelection();
 }
 bool _stdcall IsSelectionActive(void* terminal)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
-    bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+    const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
     return selectionActive;
 }
 
 // Copies the selected text into the clipboard.
 const wchar_t* _stdcall GetSelection(void* terminal)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
     const auto bufferData = publicTerminal->_terminal->RetrieveSelectedTextFromBuffer(false);
 
@@ -301,9 +306,9 @@ const wchar_t* _stdcall GetSelection(void* terminal)
     }
 
     const wchar_t* text = selectedText.c_str();
-    size_t textChars = wcslen(text) + 1;
-    size_t textBytes = textChars * sizeof(wchar_t);
-    wchar_t* returnText = NULL;
+    const size_t textChars = wcslen(text) + 1;
+    const size_t textBytes = textChars * sizeof(wchar_t);
+    wchar_t* returnText = nullptr;
 
     returnText = (wchar_t*)::CoTaskMemAlloc(textBytes);
 
@@ -311,16 +316,18 @@ const wchar_t* _stdcall GetSelection(void* terminal)
     {
         return nullptr;
     }
-
-    try
+    else
     {
-        wcscpy_s(returnText, textChars, text);
-        ClearSelection(terminal);
-    }
-    catch (...)
-    {
-        ::CoTaskMemFree(returnText);
-        return nullptr;
+        try
+        {
+            wcscpy_s(returnText, textChars, text);
+            ClearSelection(terminal);
+        }
+        catch (...)
+        {
+            ::CoTaskMemFree(returnText);
+            return nullptr;
+        }
     }
 
     return returnText;
@@ -328,7 +335,7 @@ const wchar_t* _stdcall GetSelection(void* terminal)
 
 void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
     struct KeyModifier
     {
@@ -362,20 +369,20 @@ void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
 
 void _stdcall SendCharEvent(void* terminal, wchar_t ch)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SendCharEvent(ch);
 }
 
 void _stdcall DestroyTerminal(void* terminal)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     delete publicTerminal;
 }
 
 // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
 void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
@@ -385,7 +392,9 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
         // Set the font colors
         for (size_t tableIndex = 0; tableIndex < 16; tableIndex++)
         {
-            publicTerminal->_terminal->SetColorTableEntry(tableIndex, theme.ColorTable[tableIndex]);
+            // It's using gsl::at to check the index is in bounds, but the analyzer still calls this array-to-pointer-decay
+            [[gsl::suppress(bounds.3)]] 
+            publicTerminal->_terminal->SetColorTableEntry(tableIndex, gsl::at(theme.ColorTable, tableIndex));
         }
     }
 
@@ -398,7 +407,7 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
 // Resizes the terminal to the specified rows and columns.
 HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns)
 {
-    auto publicTerminal = reinterpret_cast<HwndTerminal*>(terminal);
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     COORD newSize = { (short)rows, (short)columns };
 
     return publicTerminal->_terminal->UserResize(newSize);

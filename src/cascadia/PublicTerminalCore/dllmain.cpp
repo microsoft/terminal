@@ -3,12 +3,12 @@
 
 #include "pch.h"
 
-HINSTANCE g_hInstance = NULL;
-HMODULE g_hModule = NULL;
+HINSTANCE g_hInstance = nullptr;
+HMODULE g_hModule = nullptr;
 
 BOOL APIENTRY DllMain(HMODULE hInstance,
                       DWORD,
-                      LPVOID)
+                      LPVOID) noexcept
 {
     g_hModule = g_hInstance = hInstance;
     return TRUE;
