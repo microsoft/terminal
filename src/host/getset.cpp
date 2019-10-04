@@ -649,31 +649,42 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         LOG_IF_FAILED(ConsoleImeResizeCompStrView());
 
-        COORD WindowOrigin;
-        WindowOrigin.X = 0;
-        WindowOrigin.Y = 0;
+        // Attempt to "snap" the viewport to the cursor position. If the cursor
+        // is not in the current viewport, we'll try and move the viewport so
+        // that the cursor is visible.
+        // microsoft/terminal#1222 - Use the "virtual" viewport here, so that
+        // when the console is in terminal-scrolling mode, the viewport snaps
+        // back to the virtual viewport's location.
+        const SMALL_RECT currentViewport = gci.IsTerminalScrolling() ?
+                                               buffer.GetVirtualViewport().ToInclusive() :
+                                               buffer.GetViewport().ToInclusive();
+        COORD delta{ 0 };
         {
-            const SMALL_RECT currentViewport = buffer.GetViewport().ToInclusive();
             if (currentViewport.Left > position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Left;
+                delta.X = position.X - currentViewport.Left;
             }
             else if (currentViewport.Right < position.X)
             {
-                WindowOrigin.X = position.X - currentViewport.Right;
+                delta.X = position.X - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Top;
+                delta.Y = position.Y - currentViewport.Top;
             }
             else if (currentViewport.Bottom < position.Y)
             {
-                WindowOrigin.Y = position.Y - currentViewport.Bottom;
+                delta.Y = position.Y - currentViewport.Bottom;
             }
         }
 
-        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(false, WindowOrigin, true));
+        COORD newWindowOrigin{ 0 };
+        newWindowOrigin.X = currentViewport.Left + delta.X;
+        newWindowOrigin.Y = currentViewport.Top + delta.Y;
+        // SetViewportOrigin will worry about clamping these values to the
+        // buffer for us.
+        RETURN_IF_NTSTATUS_FAILED(buffer.SetViewportOrigin(true, newWindowOrigin, true));
 
         return S_OK;
     }
@@ -1368,17 +1379,35 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
             srScroll.Right = SHORT_MAX;
             srScroll.Top = viewport.Top;
             srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
             // Paste coordinate for cut text above
             COORD coordDestination;
             coordDestination.X = 0;
             coordDestination.Y = viewport.Top + 1;
 
-            Status = NTSTATUS_FROM_HRESULT(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(screenInfo,
-                                                                                                              srScroll,
-                                                                                                              coordDestination,
-                                                                                                              srScroll,
-                                                                                                              UNICODE_SPACE,
-                                                                                                              screenInfo.GetAttributes().GetLegacyAttributes()));
+            // Here we previously called to ScrollConsoleScreenBufferWImpl to
+            // perform the scrolling operation. However, that function only
+            // accepts a WORD for the fill attributes. That means we'd lose
+            // 256/RGB fidelity for fill attributes. So instead, we'll just call
+            // ScrollRegion ourselves, with the same params that
+            // ScrollConsoleScreenBufferWImpl would have.
+            // See microsoft/terminal#832, #2702 for more context.
+            try
+            {
+                LockConsole();
+                auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+                ScrollRegion(screenInfo,
+                             srScroll,
+                             srScroll,
+                             coordDestination,
+                             UNICODE_SPACE,
+                             screenInfo.GetAttributes());
+            }
+            CATCH_LOG();
         }
     }
     return Status;
@@ -1401,18 +1430,44 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     // Make sure the cursor doesn't move outside the viewport.
     screenInfo.GetViewport().Clamp(clampedPos);
 
-    // Make sure the cursor stays inside the margins, but only if it started there
-    if (screenInfo.AreMarginsSet() && screenInfo.IsCursorInMargins(cursor.GetPosition()))
+    // Make sure the cursor stays inside the margins
+    if (screenInfo.AreMarginsSet())
     {
-        try
+        const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
+
+        const auto cursorY = cursor.GetPosition().Y;
+
+        const auto lo = margins.Top;
+        const auto hi = margins.Bottom;
+
+        // See microsoft/terminal#2929 - If the cursor is _below_ the top
+        // margin, it should stay below the top margin. If it's _above_ the
+        // bottom, it should stay above the bottom. Cursor movements that stay
+        // outside the margins shouldn't necessarily be affected. For example,
+        // moving up while below the bottom margin shouldn't just jump straight
+        // to the bottom margin. See
+        // ScreenBufferTests::CursorUpDownOutsideMargins for a test of that
+        // behavior.
+        const bool cursorBelowTop = cursorY >= lo;
+        const bool cursorAboveBottom = cursorY <= hi;
+
+        if (cursorBelowTop)
         {
-            const auto margins = screenInfo.GetAbsoluteScrollMargins().ToInclusive();
-            const auto v = clampedPos.Y;
-            const auto lo = margins.Top;
-            const auto hi = margins.Bottom;
-            clampedPos.Y = std::clamp(v, lo, hi);
+            try
+            {
+                clampedPos.Y = std::max(clampedPos.Y, lo);
+            }
+            CATCH_RETURN();
         }
-        CATCH_RETURN();
+
+        if (cursorAboveBottom)
+        {
+            try
+            {
+                clampedPos.Y = std::min(clampedPos.Y, hi);
+            }
+            CATCH_RETURN();
+        }
     }
     cursor.SetPosition(clampedPos);
 
@@ -2044,6 +2099,11 @@ void DoSrvPrivateModifyLinesImpl(const unsigned int count, const bool insert)
         srScroll.Right = SHORT_MAX;
         srScroll.Top = cursorPosition.Y;
         srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
         // Paste coordinate for cut text above
         COORD coordDestination;
         coordDestination.X = 0;

@@ -46,5 +46,7 @@ namespace Microsoft.Terminal.TerminalControl
         Int32 GetScrollOffset();
         Int32 GetViewHeight();
         event ScrollPositionChangedEventArgs ScrollPositionChanged;
+
+        void AdjustFontSize(Int32 fontSizeDelta);
     }
 }

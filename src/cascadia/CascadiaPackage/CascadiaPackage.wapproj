@@ -5,7 +5,7 @@
   <PropertyGroup Label="Version">
     <!-- These fields are picked up by PackageES -->
     <VersionMajor>0</VersionMajor>
-    <VersionMinor>4</VersionMinor>
+    <VersionMinor>5</VersionMinor>
   </PropertyGroup>
   <PropertyGroup Label="Configuration">
     <TargetPlatformVersion>10.0.18362.0</TargetPlatformVersion>
@@ -248,6 +248,10 @@
     </Content>
     <Content Include="$(OpenConsoleDir)res\terminal\Wide310x150Logo.scale-400.png">
       <Link>Images\Wide310x150Logo.scale-400.png</Link>
+    </Content>
+    <!-- Fonts -->
+    <Content Include="$(OpenConsoleDir)res\Cascadia.ttf" Condition="'$(WindowsTerminalReleaseBuild)'=='true'">
+      <Link>Cascadia.ttf</Link>
     </Content>
     <!-- Profile Icons -->
     <Content Include="ProfileIcons\{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.scale-100.png" />

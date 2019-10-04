@@ -11,6 +11,7 @@
 #include "SwitchToTabArgs.g.h"
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
+#include "AdjustFontSizeArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
@@ -61,6 +62,11 @@ namespace winrt::TerminalApp::implementation
         GETSET_PROPERTY(TerminalApp::Direction, Direction, TerminalApp::Direction::Left);
     };
 
+    struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
+    {
+        AdjustFontSizeArgs() = default;
+        GETSET_PROPERTY(int32_t, Delta, 0);
+    };
 }
 
 namespace winrt::TerminalApp::factory_implementation

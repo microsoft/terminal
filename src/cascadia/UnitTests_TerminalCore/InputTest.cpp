@@ -48,12 +48,12 @@ namespace TerminalCoreUnitTests
         // Verify that Alt+a generates a lowercase a on the input
         expectedinput = L"\x1b"
                         "a";
-        VERIFY_IS_TRUE(term.SendKeyEvent(L'A', ControlKeyStates::LeftAltPressed));
+        VERIFY_IS_TRUE(term.SendKeyEvent(L'A', 0, ControlKeyStates::LeftAltPressed));
 
         // Verify that Alt+shift+a generates a uppercase a on the input
         expectedinput = L"\x1b"
                         "A";
-        VERIFY_IS_TRUE(term.SendKeyEvent(L'A', ControlKeyStates::LeftAltPressed | ControlKeyStates::ShiftPressed));
+        VERIFY_IS_TRUE(term.SendKeyEvent(L'A', 0, ControlKeyStates::LeftAltPressed | ControlKeyStates::ShiftPressed));
     }
 
     void InputTest::AltSpace()
@@ -61,6 +61,6 @@ namespace TerminalCoreUnitTests
         // Make sure we don't handle Alt+Space. The system will use this to
         // bring up the system menu for restore, min/maximimize, size, move,
         // close
-        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', ControlKeyStates::LeftAltPressed));
+        VERIFY_IS_FALSE(term.SendKeyEvent(L' ', 0, ControlKeyStates::LeftAltPressed));
     }
 }
