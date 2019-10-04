@@ -172,6 +172,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 // - colorBackground: The RGB Color to use to paint the background of the text.
 // - legacyColorAttribute: A console attributes bit field specifying the brush
 //      colors we should use.
+// - extendedAttrs - extended text attributes (italic, underline, etc.) to use.
 // - isSettingDefaultBrushes: indicates if we should change the background color of
 //      the window. Unused for VT
 // Return Value:
@@ -179,7 +180,7 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
 [[nodiscard]] HRESULT XtermEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                         const COLORREF colorBackground,
                                                         const WORD legacyColorAttribute,
-                                                        const bool isBold,
+                                                        const ExtendedAttributes extendedAttrs,
                                                         const bool /*isSettingDefaultBrushes*/) noexcept
 {
     //When we update the brushes, check the wAttrs to see if the LVB_UNDERSCORE
@@ -188,10 +189,14 @@ XtermEngine::XtermEngine(_In_ wil::unique_hfile hPipe,
     // We have to do this here, instead of in PaintBufferGridLines, because
     //      we'll have already painted the text by the time PaintBufferGridLines
     //      is called.
-
+    // TODO:GH#2915 Treat underline separately from LVB_UNDERSCORE
     RETURN_IF_FAILED(_UpdateUnderline(legacyColorAttribute));
     // The base xterm mode only knows about 16 colors
-    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground, colorBackground, isBold, _ColorTable, _cColorTable);
+    return VtEngine::_16ColorUpdateDrawingBrushes(colorForeground,
+                                                  colorBackground,
+                                                  WI_IsFlagSet(extendedAttrs, ExtendedAttributes::Bold),
+                                                  _ColorTable,
+                                                  _cColorTable);
 }
 
 // Routine Description:

@@ -981,6 +981,39 @@ void DoSrvPrivateBoldText(SCREEN_INFORMATION& screenInfo, const bool bolded)
     buffer.SetAttributes(attrs);
 }
 
+// Method Description:
+// - Retrieves the active ExtendedAttributes (italic, underline, etc.) of the
+//   given screen buffer. Text written to this buffer will be written with these
+//   attributes.
+// Arguments:
+// - screenInfo: The buffer to get the extended attrs from.
+// Return Value:
+// - the currently active ExtendedAttributes.
+ExtendedAttributes DoSrvPrivateGetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo)
+{
+    auto& buffer = screenInfo.GetActiveBuffer();
+    auto attrs = buffer.GetAttributes();
+    return attrs.GetExtendedAttributes();
+}
+
+// Method Description:
+// - Sets the active ExtendedAttributes (italic, underline, etc.) of the given
+//   screen buffer. Text written to this buffer will be written with these
+//   attributes.
+// Arguments:
+// - screenInfo: The buffer to set the extended attrs for.
+// - extendedAttrs: The new ExtendedAttributes to use
+// Return Value:
+// - <none>
+void DoSrvPrivateSetExtendedTextAttributes(SCREEN_INFORMATION& screenInfo,
+                                           const ExtendedAttributes extendedAttrs)
+{
+    auto& buffer = screenInfo.GetActiveBuffer();
+    auto attrs = buffer.GetAttributes();
+    attrs.SetExtendedAttributes(extendedAttrs);
+    buffer.SetAttributes(attrs);
+}
+
 // Routine Description:
 // - Sets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
