@@ -1399,6 +1399,25 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
     }
     else if (s_fProcessIndividually)
     {
+        // One of the "weird things" in VT input is the case of something like
+        // <kbd>alt+[</kbd>. In VT, that's encoded as `\x1b[`. However, that's
+        // also the start of a CSI, and could be the start of a longer sequence,
+        // there's no way to know for sure. For an <kbd>alt+[</kbd> keypress,
+        // the parser originally would just sit in the `CsiEntry` state after
+        // processing it, which would pollute the following keypress (e.g.
+        // <kbd>alt+[</kbd>, <kbd>A</kbd> would be processed like `\x1b[A`,
+        // which is _wrong_).
+        //
+        // Fortunately, for VT input, each keystroke comes in as an individual
+        // write operation. So, if at the end of processing a string for the
+        // InputEngine, we find that we're not in the Ground state, that implies
+        // that we've processed some input, but not dispatched it yet. This
+        // block at the end of `ProcessString` will then re-process the
+        // undispatched string, but it will ensure that it dispatches on the
+        // last character of the string. For our previous `\x1b[` scenario, that
+        // means we'll make sure to call `_ActionEscDispatch('[')`., which will
+        // properly decode the string as <kbd>alt+[</kbd>.
+
         if (_pEngine->FlushAtEndOfString())
         {
             // Reset our state, and put all but the last char in again.
@@ -1413,25 +1432,31 @@ void StateMachine::ProcessString(const wchar_t* const rgwch, const size_t cch)
             switch (_state)
             {
             case VTStates::Ground:
-                return _ActionExecute(*pwch);
+                _ActionExecute(*pwch);
+                break;
             case VTStates::Escape:
             case VTStates::EscapeIntermediate:
-                return _ActionEscDispatch(*pwch);
+                _ActionEscDispatch(*pwch);
+                break;
             case VTStates::CsiEntry:
             case VTStates::CsiIntermediate:
             case VTStates::CsiIgnore:
             case VTStates::CsiParam:
-                return _ActionCsiDispatch(*pwch);
+                _ActionCsiDispatch(*pwch);
+                break;
             case VTStates::OscParam:
             case VTStates::OscString:
             case VTStates::OscTermination:
-                return _ActionOscDispatch(*pwch);
+                _ActionOscDispatch(*pwch);
+                break;
             case VTStates::Ss3Entry:
             case VTStates::Ss3Param:
-                return _ActionSs3Dispatch(*pwch);
-            default:
-                return;
+                _ActionSs3Dispatch(*pwch);
+                break;
             }
+            // microsoft/terminal#2746: Make sure to return to the ground state
+            // after dispatching the characters
+            _EnterGround();
         }
     }
 }
