@@ -50,8 +50,12 @@ Abstract:
 // Additional headers for various xaml features. We need:
 //  * Controls for grid
 //  * Media for ScaleTransform
+//  * ApplicationModel for activation things
 #include <winrt/Windows.UI.Xaml.Controls.h>
 #include <winrt/Windows.ui.xaml.media.h>
+
+#include <winrt/windows.applicationmodel.activation.h>
+#include <winrt/windows.applicationmodel.h>
 
 #include <wil/resource.h>
 #include <wil/win32_helpers.h>

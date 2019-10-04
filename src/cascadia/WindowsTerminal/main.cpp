@@ -10,6 +10,7 @@ using namespace Windows::UI;
 using namespace Windows::UI::Composition;
 using namespace Windows::UI::Xaml::Hosting;
 using namespace Windows::Foundation::Numerics;
+using namespace Windows::ApplicationModel;
 
 // Note: Generate GUID using TlgGuid.exe tool - seriously, it won't work if you
 // just generate an arbitrary GUID
@@ -101,7 +102,7 @@ static void EnsureNativeArchitecture()
     }
 }
 
-int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
+int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR /*cmdline*/, int /*nShowCmd*/)
 {
     TraceLoggingRegister(g_hWindowsTerminalProvider);
     TraceLoggingWrite(
@@ -118,6 +119,53 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);
+
+    std::wstring fullCommandline{ GetCommandLineW() };
+    fullCommandline;
+
+    // TODO: MAX_PATH is bad, don't do this.
+    // We might not need this at all - if we just suppress the first launch's
+    // `startingDirectory`, then we _should_ just silently inherit the previous
+    // CWD...
+    wchar_t workingDir[MAX_PATH * 4];
+    GetCurrentDirectory(ARRAYSIZE(workingDir), workingDir);
+    std::wstring cwdStr{ workingDir };
+    cwdStr;
+
+    // For our commandline launches,
+    auto args = AppInstance::GetActivatedEventArgs();
+    bool wasCommandlineLaunch = true;
+    if (args)
+    {
+        auto kind = args.Kind();
+        switch (kind)
+        {
+        case Activation::ActivationKind::CommandLineLaunch:
+        {
+            auto cmdlineArgs = args.try_as<Activation::CommandLineActivatedEventArgs>();
+            cmdlineArgs;
+            // TODO: I haven't found a case where this works for us.
+            wasCommandlineLaunch = true;
+            break;
+        }
+        case Activation::ActivationKind::Launch:
+        {
+            wasCommandlineLaunch = false;
+            break;
+        }
+        default:
+        {
+            break;
+        }
+        }
+    }
+
+    if (wasCommandlineLaunch)
+    {
+        // TODO: tell the AppHost (initialized below) that it should ignore the
+        // `startingDirectory` setting for the first terminal it launches. This
+        // will allow us to inherit the path from our parent.
+    }
 
     // Create the AppHost object, which will create both the window and the
     // Terminal App. This MUST BE constructed before the Xaml manager as TermApp
