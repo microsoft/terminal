@@ -1232,13 +1232,34 @@ namespace TerminalAppLocalTests
                 // defaultProfile should not be cleared here
             }
         })" };
+        const std::string settings4String{ R"(
+        {
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+            },
+            "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+        })" };
+        const std::string settings5String{ R"(
+        {
+            "globals": {
+                "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+            },
+            "defaultProfile": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+            "globals": {
+                "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}"
+            }
+        })" };
 
         VerifyParseSucceeded(settings0String);
         VerifyParseSucceeded(settings1String);
         VerifyParseSucceeded(settings2String);
         VerifyParseSucceeded(settings3String);
+        VerifyParseSucceeded(settings4String);
+        VerifyParseSucceeded(settings5String);
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
+        const auto guid3 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
 
         {
             CascadiaSettings settings;
@@ -1267,6 +1288,18 @@ namespace TerminalAppLocalTests
             settings.LayerJson(settings._userSettings);
             VERIFY_ARE_EQUAL(guid2, settings._globals._defaultProfile);
             VERIFY_ARE_EQUAL(456, settings._globals._initialRows);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings4String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid1, settings._globals._defaultProfile);
+        }
+        {
+            CascadiaSettings settings;
+            settings._ParseJsonString(settings5String, false);
+            settings.LayerJson(settings._userSettings);
+            VERIFY_ARE_EQUAL(guid3, settings._globals._defaultProfile);
         }
     }
 
