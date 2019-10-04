@@ -3,6 +3,7 @@
 
 #include "precomp.h"
 #include <windows.h>
+#include <iostream>
 #include "terminalInput.hpp"
 
 #include "strsafe.h"
@@ -548,17 +549,17 @@ void TerminalInput::_SendNullInputSequence(const DWORD dwControlKeyState) const
     }
 }
 
-void TerminalInput::_SendInputSequence(_In_ const std::wstring_view pwszSequence) const
+void TerminalInput::_SendInputSequence(_In_ const std::wstring_view sequence) const
 {
-    const auto length = pwszSequence.length();
-    if (length <= _TermKeyMap::s_cchMaxSequenceLength)
+    const auto length = sequence.length();
+    if (length <= _TermKeyMap::s_cchMaxSequenceLength && length > 0)
     {
         try
         {
             std::deque<std::unique_ptr<IInputEvent>> inputEvents;
             for (size_t i = 0; i < length; i++)
             {
-                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, pwszSequence[i], 0));
+                inputEvents.push_back(std::make_unique<KeyEvent>(true, 1ui16, 0ui16, 0ui16, sequence[i], 0));
             }
             _pfnWriteEvents(inputEvents);
         }

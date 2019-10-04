@@ -48,7 +48,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool _fCursorApplicationMode = false;
 
         void _SendNullInputSequence(const DWORD dwControlKeyState) const;
-        void _SendInputSequence(_In_ const std::wstring_view pwszSequence) const;
+        void _SendInputSequence(_In_ const std::wstring_view sequence) const;
         void _SendEscapedInputSequence(const wchar_t wch) const;
 
         struct _TermKeyMap
