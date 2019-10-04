@@ -15,10 +15,7 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
                                _In_reads_(cColorTable) const COLORREF* const ColorTable,
                                const WORD cColorTable) :
     XtermEngine(std::move(hPipe), shutdownEvent, colorProvider, initialViewport, ColorTable, cColorTable, false),
-    _usingItalics{ false },
-    _usingBlinking{ false },
-    _usingInvisible{ false },
-    _usingCrossedOut{ false }
+    _lastExtendedAttrsState{ ExtendedAttributes::Normal }
 {
 }
 
@@ -73,10 +70,10 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
     // value (lastState), and appropriately start/end that state with the given
     // begin/end functions.
     auto updateFlagAndState = [extendedAttrs, this](const ExtendedAttributes attr,
-                                                    bool& lastState,
                                                     std::function<HRESULT(Xterm256Engine*)> beginFn,
                                                     std::function<HRESULT(Xterm256Engine*)> endFn) -> HRESULT {
         const bool flagSet = WI_AreAllFlagsSet(extendedAttrs, attr);
+        const bool lastState = WI_AreAllFlagsSet(_lastExtendedAttrsState, attr);
         if (flagSet != lastState)
         {
             if (flagSet)
@@ -87,31 +84,27 @@ Xterm256Engine::Xterm256Engine(_In_ wil::unique_hfile hPipe,
             {
                 RETURN_IF_FAILED(endFn(this));
             }
-            lastState = flagSet;
+            WI_SetAllFlags(_lastExtendedAttrsState, attr);
         }
         return S_OK;
     };
 
     auto hr = updateFlagAndState(ExtendedAttributes::Italics,
-                                 _usingItalics,
                                  &Xterm256Engine::_BeginItalics,
                                  &Xterm256Engine::_EndItalics);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::Blinking,
-                            _usingBlinking,
                             &Xterm256Engine::_BeginBlink,
                             &Xterm256Engine::_EndBlink);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::Invisible,
-                            _usingInvisible,
                             &Xterm256Engine::_BeginInvisible,
                             &Xterm256Engine::_EndInvisible);
     RETURN_IF_FAILED(hr);
 
     hr = updateFlagAndState(ExtendedAttributes::CrossedOut,
-                            _usingCrossedOut,
                             &Xterm256Engine::_BeginCrossedOut,
                             &Xterm256Engine::_EndCrossedOut);
     RETURN_IF_FAILED(hr);

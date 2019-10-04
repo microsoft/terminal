@@ -185,7 +185,7 @@ private:
 #pragma pack(pop)
 // 2 for _wAttrLegacy
 // 4 for _foreground
-// 4 for _foreground
+// 4 for _background
 // 1 for _extendedAttrs
 static_assert(sizeof(TextAttribute) <= 11 * sizeof(BYTE), "We should only need 11B for an entire TextColor. Any more than that is just waste");
 

@@ -5,25 +5,13 @@
 
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
+#include "../../types/inc/utils.hpp"
 
 #define ENABLE_INTSAFE_SIGNED_FUNCTIONS
 #include <intsafe.h>
 
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
-
-// Inspired from RETURN_IF_WIN32_BOOL_FALSE
-// WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
-//  will actually return the value of GLE.
-#define RETURN_IF_FALSE(b)                    \
-    do                                        \
-    {                                         \
-        BOOL __boolRet = wil::verify_bool(b); \
-        if (!__boolRet)                       \
-        {                                     \
-            return b;                         \
-        }                                     \
-    } while (0, 0)
 
 // Routine Description:
 // - Small helper to disable all color flags within a given font attributes field
@@ -444,7 +432,7 @@ bool AdaptDispatch::_SetExtendedTextAttributeHelper(const DispatchTypes::Graphic
 {
     ExtendedAttributes attrs{ ExtendedAttributes::Normal };
 
-    RETURN_IF_FALSE(_conApi->PrivateGetExtendedTextAttributes(&attrs));
+    RETURN_BOOL_IF_FALSE(_conApi->PrivateGetExtendedTextAttributes(&attrs));
 
     switch (opt)
     {

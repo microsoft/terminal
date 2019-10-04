@@ -6,19 +6,7 @@
 #include "adaptDispatch.hpp"
 #include "conGetSet.hpp"
 #include "../../types/inc/Viewport.hpp"
-
-// Inspired from RETURN_IF_WIN32_BOOL_FALSE
-// WIL doesn't include a RETURN_IF_FALSE, and RETURN_IF_WIN32_BOOL_FALSE
-//  will actually return the value of GLE.
-#define RETURN_IF_FALSE(b)                    \
-    do                                        \
-    {                                         \
-        BOOL __boolRet = wil::verify_bool(b); \
-        if (!__boolRet)                       \
-        {                                     \
-            return b;                         \
-        }                                     \
-    } while (0, 0)
+#include "../../types/inc/utils.hpp"
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
@@ -504,15 +492,15 @@ bool AdaptDispatch::_InsertDeleteHelper(_In_ unsigned int const uiCount, const b
 {
     // We'll be doing short math on the distance since all console APIs use shorts. So check that we can successfully convert the uint into a short first.
     SHORT sDistance;
-    RETURN_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
+    RETURN_BOOL_IF_FALSE(SUCCEEDED(UIntToShort(uiCount, &sDistance)));
 
     // get current cursor, attributes
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
     // Make sure to reset the viewport (with MoveToBottom )to where it was
     //      before the user scrolled the console output
-    RETURN_IF_FALSE(_conApi->MoveToBottom());
-    RETURN_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
+    RETURN_BOOL_IF_FALSE(_conApi->MoveToBottom());
+    RETURN_BOOL_IF_FALSE(_conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
