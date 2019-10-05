@@ -159,7 +159,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
 
 ## Build Prerequisites
 
-* You must be running Windows 1903 (build >= 10.0.18362.0) or later in order to run Windows Terminal
+* You must be running Windows 1903 (build >= 10.0.18362.0) or later in order to run Windows Terminal.
 * You must [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run Windows Terminal
 * You must have the [Windows 10 1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) installed.
 * You must have at least [VS 2019](https://visualstudio.microsoft.com/downloads/) installed
