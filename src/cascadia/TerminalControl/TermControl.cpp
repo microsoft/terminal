@@ -53,6 +53,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _swapChainPanel{ nullptr },
         _settings{ settings },
         _closing{ false },
+        _padding{ 0 },
+        _scrollBarWidth{ std::nullopt },
         _lastScrollOffset{ std::nullopt },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -207,20 +209,20 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         _BackgroundColorChanged(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = _ParseThicknessFromPadding(_settings.Padding());
-        auto existingMargin = _swapChainPanel.Margin();
-        _swapChainPanel.Margin(newMargin);
+        _padding = _ParseThicknessFromPadding(_settings.Padding());
+        auto existingPadding = _padding;
+        _swapChainPanel.Margin(_padding);
 
-        if (newMargin != existingMargin && newMargin != Thickness{ 0 })
+        if (_padding != existingPadding && _padding != Thickness{ 0 })
         {
             TraceLoggingWrite(g_hTerminalControlProvider,
                               "NonzeroPaddingApplied",
                               TraceLoggingDescription("An event emitted when a control has padding applied to it"),
                               TraceLoggingStruct(4, "Padding"),
-                              TraceLoggingFloat64(newMargin.Left, "Left"),
-                              TraceLoggingFloat64(newMargin.Top, "Top"),
-                              TraceLoggingFloat64(newMargin.Right, "Right"),
-                              TraceLoggingFloat64(newMargin.Bottom, "Bottom"),
+                              TraceLoggingFloat64(_padding.Left, "Left"),
+                              TraceLoggingFloat64(_padding.Top, "Top"),
+                              TraceLoggingFloat64(_padding.Right, "Right"),
+                              TraceLoggingFloat64(_padding.Bottom, "Bottom"),
                               TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                               TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
@@ -392,7 +394,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
     const Windows::UI::Xaml::Thickness TermControl::GetPadding() const
     {
-        return _swapChainPanel.Margin();
+        return _padding;
     }
 
     void TermControl::SwapChainChanged()
@@ -526,6 +528,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
             // Default behavior
             _scrollBar.IndicatorMode(Controls::Primitives::ScrollingIndicatorMode::MouseIndicator);
         }
+
+        _scrollBarWidth = gsl::narrow_cast<float>(_scrollBar.ActualWidth());
 
         _root.PointerWheelChanged({ this, &TermControl::_MouseWheelHandler });
 
@@ -800,8 +804,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
                 const auto cursorPosition = point.Position();
                 _SetEndSelectionPointAtCursor(cursorPosition);
 
-                const double cursorBelowBottomDist = cursorPosition.Y - _swapChainPanel.Margin().Top - _swapChainPanel.ActualHeight();
-                const double cursorAboveTopDist = -1 * cursorPosition.Y + _swapChainPanel.Margin().Top;
+                const double cursorBelowBottomDist = cursorPosition.Y - _padding.Top - _swapChainPanel.ActualHeight();
+                const double cursorAboveTopDist = -1 * cursorPosition.Y + _padding.Top;
 
                 constexpr double MinAutoScrollDist = 2.0; // Arbitrary value
                 double newAutoScrollVelocity = 0.0;
@@ -1632,15 +1636,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // Reserve additional space if scrollbar is intended to be visible
         if (_settings.ScrollState() == ScrollbarState::Visible)
         {
-            width += _scrollBar.ActualWidth();
+            width += _scrollBarWidth.value_or(0);
         }
 
         // Account for the size of any padding
-        /*auto thickness = _ParseThicknessFromPadding(_settings.Padding());
-        width += thickness.Left + thickness.Right;
-        height += thickness.Top + thickness.Bottom;*/
-        width += _swapChainPanel.Margin().Left + _swapChainPanel.Margin().Right;
-        height += _swapChainPanel.Margin().Top + _swapChainPanel.Margin().Bottom;
+        width += _padding.Left + _padding.Right;
+        height += _padding.Top + _padding.Bottom;
 
         return { gsl::narrow_cast<float>(width), gsl::narrow_cast<float>(height) };
     }
@@ -1651,12 +1652,12 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         const auto fontDimension = widthOrHeight ? fontSize.X : fontSize.Y;
 
         auto nonTerminalArea = gsl::narrow_cast<float>(widthOrHeight ?
-            _swapChainPanel.Margin().Left + _swapChainPanel.Margin().Right :
-            _swapChainPanel.Margin().Top + _swapChainPanel.Margin().Bottom);
+                                                           _padding.Left + _padding.Right :
+                                                           _padding.Top + _padding.Bottom);
 
         if (widthOrHeight && _settings.ScrollState() == ScrollbarState::Visible)
         {
-            nonTerminalArea += gsl::narrow_cast<float>(_scrollBar.ActualWidth());
+            nonTerminalArea += _scrollBarWidth.value_or(0);
         }
 
         const auto gridSize = dimension - nonTerminalArea;
@@ -1792,8 +1793,8 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
         // Exclude padding from cursor position calculation
         COORD terminalPosition = {
-            static_cast<SHORT>(cursorPosition.X - _swapChainPanel.Margin().Left),
-            static_cast<SHORT>(cursorPosition.Y - _swapChainPanel.Margin().Top)
+            static_cast<SHORT>(cursorPosition.X - _padding.Left),
+            static_cast<SHORT>(cursorPosition.Y - _padding.Top)
         };
 
         const auto fontSize = _actualFont.GetSize();

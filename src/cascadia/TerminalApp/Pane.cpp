@@ -934,7 +934,7 @@ std::pair<float, float> Pane::_GetPaneSizes(const float fullSize)
 
     const auto widthOrHeight = _splitState == SplitState::Vertical;
     const auto snappedSizes = _CalcSnappedPaneDimensions(widthOrHeight, fullSize);
-    return { snappedSizes.first, fullSize - snappedSizes.first };
+    return { snappedSizes.first, fullSize - PaneSeparatorSize - snappedSizes.first };
 }
 
 // Method Description:
@@ -1036,7 +1036,7 @@ float Pane::_SnapDimension(const bool widthOrHeight, const bool toLargerOrSmalle
     {
         const auto sizes = _CalcSnappedPaneDimensions(widthOrHeight, dimension);
 
-        if (toLargerOrSmaller || sizes.first + PaneSeparatorSize + sizes.second == dimension)
+        if (!toLargerOrSmaller || sizes.first + PaneSeparatorSize + sizes.second == dimension)
         {
             return sizes.first + PaneSeparatorSize + sizes.second;
         }

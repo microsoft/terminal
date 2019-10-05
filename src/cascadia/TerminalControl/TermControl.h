@@ -112,6 +112,10 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
+        Windows::UI::Xaml::Thickness _padding;
+
+        // Cached since _scrollBar.ActualWidth() became bottle-neck when resizing
+        std::optional<float> _scrollBarWidth; 
 
         std::optional<int> _lastScrollOffset;
 
