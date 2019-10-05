@@ -125,8 +125,6 @@ namespace Microsoft::Console::VirtualTerminal
         bool _CursorMovePosition(_In_opt_ const unsigned int* const puiRow, _In_opt_ const unsigned int* const puiCol) const;
         bool _EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX* const pcsbiex, const DispatchTypes::EraseType eraseType, const SHORT sLineId) const;
         void _SetGraphicsOptionHelper(const DispatchTypes::GraphicsOptions opt, _Inout_ WORD* const pAttr);
-        bool _EraseAreaHelper(const COORD coordStartPosition, const COORD coordLastPosition, const WORD wFillColor);
-        bool _EraseSingleLineDistanceHelper(const COORD coordStartPosition, const DWORD dwLength, const WORD wFillColor) const;
         bool _EraseScrollback();
         bool _EraseAll();
         void _SetGraphicsOptionHelper(const DispatchTypes::GraphicsOptions opt, _Inout_ WORD* const pAttr) const;
