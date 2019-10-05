@@ -44,7 +44,7 @@ To upgrade Windows Terminal using Chocolatey, run the following:
 choco upgrade microsoft-windows-terminal
 ```
 
-> If you have any issues when installing/upgrading the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
+> If you have any issues when installing/upgrading the package, please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process).
 
 ---
 
