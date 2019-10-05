@@ -146,7 +146,7 @@ We are excited to work alongside you, our amazing community, to build and enhanc
 
 The easiest way to communicate with the team is via GitHub issues.
 
-Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before creating a new issue.
+Please file new issues, feature requests and suggestions, but **DO search for similar open/closed pre-existing issues before creating a new issue.**
 
 If you would like to ask a question that you feel doesn't warrant an issue (yet), please reach out to us via Twitter:
 
