@@ -202,7 +202,7 @@ You should then be able to build & debug the Terminal project by hitting <kbd>F5
 
 ### Coding Guidance
 
-Please review these brief docs below relating to our coding standards etc.
+Please review these brief docs below about our coding practices.
 
 > 👉 If you find something missing from these docs, feel free to contribute to any of our documentation files anywhere in the repository (or write some new ones!)
 
