@@ -99,7 +99,7 @@ This overhaul resulted in several of Console's key components being available fo
 
 When we started building the new Windows Terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by sticking with C++ and reusing several of the aforementioned modernized components. Further, we realized that this would allow us to build much of the Terminal's core itself as a reusable Windows UI control that others can incorporate into their applications.
 
-The result of this work is contained within this repo and delivered as the Windwos Terminal application you can dowload from the Microsoft Store, or directly from this repo.
+The result of this work is contained within this repo and delivered as the Windows Terminal application you can download from the Microsoft Store, or directly from this repo.
 
 ---
 
