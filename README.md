@@ -117,7 +117,7 @@ For more information about Windows Terminal, you may find some of these resource
 
 ## I built and ran the new Terminal, but I just see a blank window app
 
-Make sure your Terminal us built for your PC's processor architecture:
+Make sure your Terminal is built for your PC's processor architecture:
 
 For example, if your PC runs 64-bit Windows, set your Solution Platform to x64: In Visual Studio, go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
 
