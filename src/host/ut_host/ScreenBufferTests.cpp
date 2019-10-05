@@ -168,6 +168,9 @@ class ScreenBufferTests
     TEST_METHOD(InsertChars);
     TEST_METHOD(DeleteChars);
 
+    TEST_METHOD(EraseScrollbackTests);
+    TEST_METHOD(EraseTests);
+
     TEST_METHOD(ScrollUpInMargins);
     TEST_METHOD(ScrollDownInMargins);
     TEST_METHOD(InsertLinesInMargins);
@@ -3223,13 +3226,13 @@ void _FillLines(int startLine, int endLine, T fillContent, TextAttribute fillAtt
     }
 }
 
-template<class T>
-bool _ValidateLineContains(COORD position, T expectedContent, TextAttribute expectedAttr)
+template<class... T>
+bool _ValidateLineContains(COORD position, T&&... expectedContent)
 {
     auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
     auto actual = si.GetCellLineDataAt(position);
-    auto expected = OutputCellIterator{ expectedContent, expectedAttr };
+    auto expected = OutputCellIterator{ std::forward<T>(expectedContent)... };
     while (actual && expected)
     {
         if (actual->Chars() != expected->Chars() || actual->TextAttr() != expected->TextAttr())
@@ -3733,6 +3736,212 @@ void ScreenBufferTests::DeleteChars()
     // Verify the updated structure of the line.
     VERIFY_IS_TRUE(_ValidateLineContains(deleteLine, L' ', expectedFillAttr),
                    L"A whole line of spaces was inserted from the right, erasing the line.");
+}
+
+void ScreenBufferTests::EraseScrollbackTests()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    const auto& cursor = si.GetTextBuffer().GetCursor();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 10 }), true);
+    const auto viewport = si.GetViewport();
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferChar = L'Z';
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Fill the viewport with a range of letters to see if they move. Red on Blue.
+    const auto viewportAttr = TextAttribute{ FOREGROUND_RED | BACKGROUND_BLUE };
+    auto viewportChar = L'A';
+    auto viewportLine = viewport.Top();
+    while (viewportLine < viewport.BottomExclusive())
+    {
+        _FillLine(viewportLine++, viewportChar++, viewportAttr);
+    }
+
+    // Set the colors to Green on Red. This should have no effect on the results.
+    si.SetAttributes({ FOREGROUND_GREEN | BACKGROUND_RED });
+
+    // Place the cursor in the center.
+    const short centerX = bufferWidth / 2;
+    const short centerY = (si.GetViewport().Top() + si.GetViewport().BottomExclusive()) / 2;
+    const auto cursorPos = COORD{ centerX, centerY };
+
+    Log::Comment(L"Set the cursor position and erase the scrollback.");
+    VERIFY_SUCCEEDED(si.SetCursorPosition(cursorPos, true));
+    stateMachine.ProcessString(L"\x1b[3J");
+
+    // The viewport should move to the top of the buffer, while the cursor
+    // maintains the same relative position.
+    const auto expectedOffset = COORD{ 0, -viewport.Top() };
+    const auto expectedViewport = Viewport::Offset(viewport, expectedOffset);
+    const auto expectedCursorPos = COORD{ cursorPos.X, cursorPos.Y + expectedOffset.Y };
+
+    Log::Comment(L"Verify expected viewport.");
+    VERIFY_ARE_EQUAL(expectedViewport, si.GetViewport());
+
+    Log::Comment(L"Verify expected cursor position.");
+    VERIFY_ARE_EQUAL(expectedCursorPos, cursor.GetPosition());
+
+    Log::Comment(L"Viewport contents should have moved to the new location.");
+    viewportChar = L'A';
+    viewportLine = expectedViewport.Top();
+    while (viewportLine < expectedViewport.BottomExclusive())
+    {
+        VERIFY_IS_TRUE(_ValidateLineContains(viewportLine++, viewportChar++, viewportAttr));
+    }
+
+    Log::Comment(L"The rest of the buffer should be cleared with default attributes.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportLine, bufferHeight, L' ', TextAttribute{}));
+}
+
+void ScreenBufferTests::EraseTests()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:eraseType", L"{0, 1, 2}") // corresponds to options in DispatchTypes::EraseType
+        TEST_METHOD_PROPERTY(L"Data:eraseScreen", L"{false, true}") // corresponds to Line (false) or Screen (true)
+    END_TEST_METHOD_PROPERTIES()
+
+    DispatchTypes::EraseType eraseType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseType", (int&)eraseType));
+    bool eraseScreen;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"eraseScreen", eraseScreen));
+
+    std::wstringstream escapeSequence;
+    escapeSequence << "\x1b[";
+
+    switch (eraseType)
+    {
+    case DispatchTypes::EraseType::ToEnd:
+        Log::Comment(L"Erasing line from cursor to end.");
+        escapeSequence << "0";
+        break;
+    case DispatchTypes::EraseType::FromBeginning:
+        Log::Comment(L"Erasing line from beginning to cursor.");
+        escapeSequence << "1";
+        break;
+    case DispatchTypes::EraseType::All:
+        Log::Comment(L"Erasing all.");
+        escapeSequence << "2";
+        break;
+    default:
+        VERIFY_FAIL(L"Unsupported erase type.");
+    }
+
+    if (!eraseScreen)
+    {
+        Log::Comment(L"Erasing just one line (the cursor's line).");
+        escapeSequence << "K";
+    }
+    else
+    {
+        Log::Comment(L"Erasing entire display (viewport). May be bounded by the cursor.");
+        escapeSequence << "J";
+    }
+
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer().GetActiveBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    WI_SetFlag(si.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+
+    const auto bufferWidth = si.GetBufferSize().Width();
+    const auto bufferHeight = si.GetBufferSize().Height();
+
+    // Move the viewport down a few lines, and only cover part of the buffer width.
+    si.SetViewport(Viewport::FromDimensions({ 5, 10 }, { bufferWidth - 10, 10 }), true);
+
+    // Fill the entire buffer with Zs. Blue on Green.
+    const auto bufferChar = L'Z';
+    const auto bufferAttr = TextAttribute{ FOREGROUND_BLUE | BACKGROUND_GREEN };
+    _FillLines(0, bufferHeight, bufferChar, bufferAttr);
+
+    // Set the attributes that will be used to fill the erased area.
+    auto fillAttr = TextAttribute{ RGB(12, 34, 56), RGB(78, 90, 12) };
+    fillAttr.SetMetaAttributes(COMMON_LVB_REVERSE_VIDEO | COMMON_LVB_UNDERSCORE);
+    si.SetAttributes(fillAttr);
+    // But note that the meta attributes are expected to be cleared.
+    auto expectedFillAttr = fillAttr;
+    expectedFillAttr.SetMetaAttributes(0);
+
+    // Place the cursor in the center.
+    const short centerX = bufferWidth / 2;
+    const short centerY = (si.GetViewport().Top() + si.GetViewport().BottomExclusive()) / 2;
+
+    Log::Comment(L"Set the cursor position and perform the operation.");
+    VERIFY_SUCCEEDED(si.SetCursorPosition({ centerX, centerY }, true));
+    stateMachine.ProcessString(escapeSequence.str());
+
+    // Get cursor position and viewport range.
+    const auto cursorPos = si.GetTextBuffer().GetCursor().GetPosition();
+    const auto viewportStart = si.GetViewport().Top();
+    const auto viewportEnd = si.GetViewport().BottomExclusive();
+
+    Log::Comment(L"Lines outside the viewport should remain unchanged.");
+    VERIFY_IS_TRUE(_ValidateLinesContain(0, viewportStart, bufferChar, bufferAttr));
+    VERIFY_IS_TRUE(_ValidateLinesContain(viewportEnd, bufferHeight, bufferChar, bufferAttr));
+
+    // 1. Lines before cursor line
+    if (eraseScreen && eraseType != DispatchTypes::EraseType::ToEnd)
+    {
+        // For eraseScreen, if we're not erasing to the end, these rows will be cleared.
+        Log::Comment(L"Lines before the cursor line should be erased.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, cursorPos.Y, L' ', expectedFillAttr));
+    }
+    else
+    {
+        // Otherwise we'll be left with the original buffer content.
+        Log::Comment(L"Lines before the cursor line should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(viewportStart, cursorPos.Y, bufferChar, bufferAttr));
+    }
+
+    // 2. Cursor Line
+    auto prefixPos = COORD{ 0, cursorPos.Y };
+    auto suffixPos = cursorPos;
+    // When erasing from the beginning, the cursor column is included in the range.
+    suffixPos.X += (eraseType == DispatchTypes::EraseType::FromBeginning);
+    size_t prefixWidth = suffixPos.X;
+    size_t suffixWidth = bufferWidth - prefixWidth;
+    if (eraseType == DispatchTypes::EraseType::ToEnd)
+    {
+        Log::Comment(L"The start of the cursor line should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains(prefixPos, bufferChar, bufferAttr, prefixWidth));
+        Log::Comment(L"The end of the cursor line should be erased.");
+        VERIFY_IS_TRUE(_ValidateLineContains(suffixPos, L' ', expectedFillAttr, suffixWidth));
+    }
+    if (eraseType == DispatchTypes::EraseType::FromBeginning)
+    {
+        Log::Comment(L"The start of the cursor line should be erased.");
+        VERIFY_IS_TRUE(_ValidateLineContains(prefixPos, L' ', expectedFillAttr, prefixWidth));
+        Log::Comment(L"The end of the cursor line should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLineContains(suffixPos, bufferChar, bufferAttr, suffixWidth));
+    }
+    if (eraseType == DispatchTypes::EraseType::All)
+    {
+        Log::Comment(L"The entire cursor line should be erased.");
+        VERIFY_IS_TRUE(_ValidateLineContains(cursorPos.Y, L' ', expectedFillAttr));
+    }
+
+    // 3. Lines after cursor line
+    if (eraseScreen && eraseType != DispatchTypes::EraseType::FromBeginning)
+    {
+        // For eraseScreen, if we're not erasing from the beginning, these rows will be cleared.
+        Log::Comment(L"Lines after the cursor line should be erased.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(cursorPos.Y + 1, viewportEnd, L' ', expectedFillAttr));
+    }
+    else
+    {
+        // Otherwise we'll be left with the original buffer content.
+        Log::Comment(L"Lines after the cursor line should remain unchanged.");
+        VERIFY_IS_TRUE(_ValidateLinesContain(cursorPos.Y + 1, viewportEnd, bufferChar, bufferAttr));
+    }
 }
 
 void _CommonScrollingSetup()
@@ -4383,6 +4592,7 @@ void ScreenBufferTests::HardResetBuffer()
     VERIFY_IS_TRUE(isBufferClear());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), viewport.Origin());
     VERIFY_ARE_EQUAL(COORD({ 0, 0 }), cursor.GetPosition());
+    VERIFY_ARE_EQUAL(TextAttribute{}, si.GetAttributes());
 }
 
 void ScreenBufferTests::RestoreDownAltBufferWithTerminalScrolling()
