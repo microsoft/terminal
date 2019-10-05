@@ -28,7 +28,7 @@ Install the Microsoft Terminal free from the Microsoft Store and it'll be contin
 
 Every public release of Windows Terminal is avaiable for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
 
-> ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) Terminal will not auto-update when newer builds are published, so be sure to regularly check & install the latest Terminal release to receive all the latest fixes and improvements!
+> ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases), Terminal will not auto-update when newer builds are published. Be sure to regularly check & install the latest Terminal release to receive all the latest fixes and improvements!
 
 ### Via Chocolatey (unofficial)
 
