@@ -93,11 +93,13 @@ private:
     void _FocusFirstChild();
     void _ControlClosedHandler();
 
-    std::pair<float, float> _GetPaneSizes(const bool widthOrHeight, float fullSize);
-    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
+    std::pair<float, float> _GetPaneSizes(const float fullSize);
+    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize);
     float _SnapDimension(const bool widthOrHeight, const bool toLargerOrSmaller, const float dimension);
+    bool _WhichChildToExtend(const float firstSize, const float secondSize, const float nextFirstSize, const float nextSecondSize);
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
+    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
