@@ -93,7 +93,7 @@ These limitations led us to create the new Windows Terminal.
 
 While overhauling Windows Console, we modernized its codebase considerably: We've cleanly separated logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [WIL](https://github.com/Microsoft/wil).
 
-This overhaul resulted in several of Console's key components being available for re-use in any terminal implementation on Windows. These components include a new DirectWrite-based text layout and rendering engine, a text buffer capable of storing both UTF-16 and UTF-8, and a VT parser/emitter, and more.
+This overhaul resulted in several of Console's key components being available for re-use in any terminal implementation on Windows. These components include a new DirectWrite-based text layout and rendering engine, a text buffer capable of storing both UTF-16 and UTF-8, a VT parser/emitter, and more.
 
 ## Building the new terminal
 
