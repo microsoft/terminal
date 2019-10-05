@@ -77,7 +77,7 @@ The Terminal will also need to meet our goals and measures to ensure it remains 
 
 The Windows Console host, `conhost.exe`, is Windows' original command-line user experience.
 
-The Console is the app you see and interact with when you run Cmd, PowerShell, wsl, or any other command-line application on Windows.
+The Console is the app you see and interact with when you run Cmd, PowerShell, WSL, or any other command-line application on Windows.
 
 Console also implements Windows' command-line infrastructure, hosting the Windows Console API, input engine, rendering engine, and user preferences. 
 
