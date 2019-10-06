@@ -10,7 +10,69 @@
 #include "Utils.h"
 #include "DefaultProfileUtils.h"
 
+namespace
+{
+    struct PowerShellInstance
+    {
+        int majorVersion;
+        bool preview;
+        bool nativeArchitecture;
+        std::filesystem::path rootPath;
+
+        // Total sort order:
+        // 6-preview (wow) < 6-preview (native) < 7-preview (native) < 6 (wow) < 6 (native) < 7 (native)
+        bool operator<(const PowerShellInstance& second) const
+        {
+            if (preview != second.preview)
+            {
+                return preview; // preview is less than GA
+            }
+            if (majorVersion != second.majorVersion)
+            {
+                return majorVersion < second.majorVersion;
+            }
+            if (nativeArchitecture != second.nativeArchitecture)
+            {
+                return !nativeArchitecture; // non-native architecture is less than native architecture.
+            }
+            return rootPath < second.rootPath; // fall back to path sorting
+        }
+    };
+}
+
 using namespace ::TerminalApp;
+
+static void _collectPowerShellInstancesInDirectory(std::wstring_view directory, std::vector<PowerShellInstance>& out)
+{
+    std::filesystem::path root{ wil::ExpandEnvironmentStringsW<std::wstring>(directory.data()) };
+    if (std::filesystem::exists(root))
+    {
+        for (auto& versionedDir : std::filesystem::directory_iterator(root))
+        {
+            auto versionedPath = versionedDir.path();
+            auto executable = versionedPath / L"pwsh.exe";
+            if (std::filesystem::exists(executable))
+            {
+                auto preview = versionedPath.filename().wstring().find(L"-preview") != std::wstring::npos;
+                out.emplace_back(PowerShellInstance{ std::stoi(versionedPath.filename()), preview, true, versionedPath });
+            }
+        }
+    }
+}
+
+static std::vector<PowerShellInstance> _enumeratePowerShellInstances()
+{
+    std::vector<PowerShellInstance> versions;
+    _collectPowerShellInstancesInDirectory(L"%ProgramFiles(x86)%\\PowerShell", versions);
+    for (auto& v : versions)
+    {
+        // If they came from ProgramFiles(x86), they're not the native architecture.
+        v.nativeArchitecture = false;
+    }
+    _collectPowerShellInstancesInDirectory(L"%ProgramFiles%\\PowerShell", versions);
+    std::sort(versions.rbegin(), versions.rend()); // sort in reverse (best first)
+    return versions;
+}
 
 // Legacy GUIDs:
 //   - PowerShell Core       574e775e-4f2a-5b96-ac1e-a2962a402336
@@ -31,60 +93,40 @@ std::vector<TerminalApp::Profile> PowershellCoreProfileGenerator::GenerateProfil
     std::vector<TerminalApp::Profile> profiles;
 
     std::filesystem::path psCoreCmdline;
-    if (_isPowerShellCoreInstalled(psCoreCmdline))
+    auto psInstances = _enumeratePowerShellInstances();
+    for (const auto& psI : psInstances)
     {
-        auto pwshProfile{ CreateDefaultProfile(L"PowerShell Core") };
+        std::wstring name = L"PowerShell";
+        if (psI.majorVersion < 7)
+        {
+            name += L" Core";
+        }
+        name += L" " + std::to_wstring(psI.majorVersion);
+        if (psI.preview)
+        {
+            name += L"-preview";
+        }
+        if (!psI.nativeArchitecture)
+        {
+            name += L" (x86)";
+        }
 
-        pwshProfile.SetCommandline(std::move(psCoreCmdline));
-        pwshProfile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        pwshProfile.SetColorScheme({ L"Campbell" });
+        auto profile{ CreateDefaultProfile(name) };
+        profile.SetCommandline((psI.rootPath / L"pwsh.exe").wstring());
+        profile.SetStartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        profile.SetColorScheme({ L"Campbell" });
+        profile.SetIconPath((psI.rootPath / L"assets" / (psI.preview ? L"Powershell_av_colors.ico" : L"Powershell_black.ico")).wstring());
+        profiles.emplace_back(std::move(profile));
+    }
 
-        // If powershell core is installed, we'll use that as the default.
-        // Otherwise, we'll use normal Windows Powershell as the default.
-        profiles.emplace_back(pwshProfile);
+    if (profiles.size() > 0)
+    {
+        // Give the first ("best") profile the official "PowerShell Core" GUID.
+        // This will turn the anchored default profile into "PowerShell Core Latest Non-Preview for Native Architecture"
+        // (or the closest approximation thereof).
+        auto firstProfile = profiles.begin();
+        firstProfile->SetGuid(Microsoft::Console::Utils::GuidFromString(L"{574e775e-4f2a-5b96-ac1e-a2962a402336}"));
     }
 
     return profiles;
-}
-
-// Function Description:
-// - Returns true if the user has installed PowerShell Core. This will check
-//   both %ProgramFiles% and %ProgramFiles(x86)%, and will return true if
-//   powershell core was installed in either location.
-// Arguments:
-// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
-// Return Value:
-// - true iff powershell core (pwsh.exe) is present.
-bool PowershellCoreProfileGenerator::_isPowerShellCoreInstalled(std::filesystem::path& cmdline)
-{
-    return _isPowerShellCoreInstalledInPath(L"%ProgramFiles%", cmdline) ||
-           _isPowerShellCoreInstalledInPath(L"%ProgramFiles(x86)%", cmdline);
-}
-
-// Function Description:
-// - Returns true if the user has installed PowerShell Core.
-// Arguments:
-// - A string that contains an environment-variable string in the form: %variableName%.
-// - A ref of a path that receives the result of PowerShell Core pwsh.exe full path.
-// Return Value:
-// - true iff powershell core (pwsh.exe) is present in the given path
-bool PowershellCoreProfileGenerator::_isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline)
-{
-    std::wstring programFileEnvNulTerm{ programFileEnv };
-    std::filesystem::path psCorePath{ wil::ExpandEnvironmentStringsW<std::wstring>(programFileEnvNulTerm.data()) };
-    psCorePath /= L"PowerShell";
-    if (std::filesystem::exists(psCorePath))
-    {
-        for (auto& p : std::filesystem::directory_iterator(psCorePath))
-        {
-            psCorePath = p.path();
-            psCorePath /= L"pwsh.exe";
-            if (std::filesystem::exists(psCorePath))
-            {
-                cmdline = psCorePath;
-                return true;
-            }
-        }
-    }
-    return false;
 }

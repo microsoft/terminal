@@ -30,7 +30,7 @@ namespace TerminalApp
         std::vector<TerminalApp::Profile> GenerateProfiles() override;
 
     private:
-        static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
-        static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
+        //static bool _isPowerShellCoreInstalled(std::filesystem::path& cmdline);
+        //static bool _isPowerShellCoreInstalledInPath(const std::wstring_view programFileEnv, std::filesystem::path& cmdline);
     };
 };
