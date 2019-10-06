@@ -158,42 +158,6 @@ BOOL ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* cons
 }
 
 // Routine Description:
-// - Connects the FillConsoleOutputCharacter API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - wch - Character to use for filling the buffer
-// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
-// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - numberOfCharsWritten - Pointer to memory location to hold the total number of characters written into the buffer
-// Return Value:
-// - TRUE if successful (see FillConsoleOutputCharacterWImpl). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputCharacterWImpl(_io.GetActiveOutputBuffer(),
-                                                                                         wch,
-                                                                                         nLength,
-                                                                                         dwWriteCoord,
-                                                                                         numberOfCharsWritten));
-}
-
-// Routine Description:
-// - Connects the FillConsoleOutputAttribute API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - wAttribute - Text attribute (colors/font style) for filling the buffer
-// - nLength - The length of the fill run in characters (depending on mode, will wrap at the window edge so multiple lines are the sum of the total length)
-// - dwWriteCoord - The first fill character's coordinate position in the buffer (writes continue rightward and possibly down from there)
-// - numberOfCharsWritten - Pointer to memory location to hold the total number of text attributes written into the buffer
-// Return Value:
-// - TRUE if successful (see FillConsoleOutputAttributeImpl). FALSE otherwise.
-BOOL ConhostInternalGetSet::FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.FillConsoleOutputAttributeImpl(_io.GetActiveOutputBuffer(),
-                                                                                        wAttribute,
-                                                                                        nLength,
-                                                                                        dwWriteCoord,
-                                                                                        numberOfAttrsWritten));
-}
-
-// Routine Description:
 // - Connects the SetConsoleTextAttribute API call directly into our Driver Message servicing call inside Conhost.exe
 //     Sets BOTH the FG and the BG component of the attributes.
 // Arguments:
@@ -316,28 +280,6 @@ BOOL ConhostInternalGetSet::PrivateWriteConsoleInputW(_Inout_ std::deque<std::un
                                                     events,
                                                     eventsWritten,
                                                     true)); // append
-}
-
-// Routine Description:
-// - Connects the ScrollConsoleScreenBuffer API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - pScrollRectangle - The region to "cut" from the existing buffer text
-// - pClipRectangle - The bounding rectangle within which all modifications should happen. Any modification outside this RECT should be clipped.
-// - coordDestinationOrigin - The top left corner of the "paste" from pScrollREctangle
-// - pFill - The text/attribute pair to fill all remaining space behind after the "cut" operation (bounded by clip, of course.)
-// Return Value:
-// - TRUE if successful (see DoSrvScrollConsoleScreenBuffer). FALSE otherwise.
-BOOL ConhostInternalGetSet::ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
-                                                       _In_opt_ const SMALL_RECT* pClipRectangle,
-                                                       _In_ COORD coordDestinationOrigin,
-                                                       const CHAR_INFO* pFill)
-{
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.ScrollConsoleScreenBufferWImpl(_io.GetActiveOutputBuffer(),
-                                                                                        *pScrollRectangle,
-                                                                                        coordDestinationOrigin,
-                                                                                        pClipRectangle != nullptr ? std::optional<SMALL_RECT>(*pClipRectangle) : std::nullopt,
-                                                                                        pFill->Char.UnicodeChar,
-                                                                                        pFill->Attributes));
 }
 
 // Routine Description:

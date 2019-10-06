@@ -186,62 +186,6 @@ public:
         return _fPrivateAllowCursorBlinkingResult;
     }
 
-    BOOL FillConsoleOutputCharacterW(const WCHAR wch, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfCharsWritten) noexcept override
-    {
-        Log::Comment(L"FillConsoleOutputCharacterW MOCK called...");
-
-        DWORD dwCharsWritten = 0;
-
-        if (_fFillConsoleOutputCharacterWResult)
-        {
-            Log::Comment(NoThrowString().Format(L"Filling (X: %d, Y:%d) for %d characters with '%c'...", dwWriteCoord.X, dwWriteCoord.Y, nLength, wch));
-
-            COORD dwCurrentPos = dwWriteCoord;
-
-            while (dwCharsWritten < nLength)
-            {
-                CHAR_INFO* pchar = _GetCharAt(dwCurrentPos.Y, dwCurrentPos.X);
-                pchar->Char.UnicodeChar = wch;
-                dwCharsWritten++;
-                _IncrementCoordPos(&dwCurrentPos);
-            }
-        }
-
-        numberOfCharsWritten = dwCharsWritten;
-
-        Log::Comment(NoThrowString().Format(L"Fill wrote %d characters.", dwCharsWritten));
-
-        return _fFillConsoleOutputCharacterWResult;
-    }
-
-    BOOL FillConsoleOutputAttribute(const WORD wAttribute, const DWORD nLength, const COORD dwWriteCoord, size_t& numberOfAttrsWritten) noexcept override
-    {
-        Log::Comment(L"FillConsoleOutputAttribute MOCK called...");
-
-        DWORD dwCharsWritten = 0;
-
-        if (_fFillConsoleOutputAttributeResult)
-        {
-            Log::Comment(NoThrowString().Format(L"Filling (X: %d, Y:%d) for %d characters with 0x%x attribute...", dwWriteCoord.X, dwWriteCoord.Y, nLength, wAttribute));
-
-            COORD dwCurrentPos = dwWriteCoord;
-
-            while (dwCharsWritten < nLength)
-            {
-                CHAR_INFO* pchar = _GetCharAt(dwCurrentPos.Y, dwCurrentPos.X);
-                pchar->Attributes = wAttribute;
-                dwCharsWritten++;
-                _IncrementCoordPos(&dwCurrentPos);
-            }
-        }
-
-        numberOfAttrsWritten = dwCharsWritten;
-
-        Log::Comment(NoThrowString().Format(L"Fill modified %d characters.", dwCharsWritten));
-
-        return _fFillConsoleOutputAttributeResult;
-    }
-
     BOOL SetConsoleTextAttribute(const WORD wAttr) override
     {
         Log::Comment(L"SetConsoleTextAttribute MOCK called...");
@@ -399,13 +343,6 @@ public:
         }
 
         return _fPrivateWriteConsoleControlInputResult;
-    }
-
-    BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* /*pScrollRectangle*/, _In_opt_ const SMALL_RECT* /*pClipRectangle*/, _In_ COORD /*dwDestinationOrigin*/, const CHAR_INFO* /*pFill*/) override
-    {
-        Log::Comment(L"ScrollConsoleScreenBufferW MOCK called...");
-
-        return _fScrollConsoleScreenBufferWResult;
     }
 
     BOOL PrivateSetScrollingRegion(const SMALL_RECT* const psrScrollMargins) override
@@ -731,22 +668,6 @@ public:
         return TRUE;
     }
 
-    void _IncrementCoordPos(_Inout_ COORD* pcoord)
-    {
-        pcoord->X++;
-
-        if (pcoord->X >= _coordBufferSize.X)
-        {
-            pcoord->X = 0;
-            pcoord->Y++;
-
-            if (pcoord->Y >= _coordBufferSize.Y)
-            {
-                pcoord->Y = _coordBufferSize.Y - 1;
-            }
-        }
-    }
-
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
@@ -773,11 +694,6 @@ public:
 
     void PrepData(CursorX xact, CursorY yact)
     {
-        PrepData(xact, yact, s_wchDefault, s_wDefaultAttribute);
-    }
-
-    void PrepData(CursorX xact, CursorY yact, WCHAR wch, WORD wAttr)
-    {
         Log::Comment(L"Resetting mock data state.");
 
         // APIs succeed by default
@@ -785,18 +701,16 @@ public:
         _fGetConsoleScreenBufferInfoExResult = TRUE;
         _fGetConsoleCursorInfoResult = TRUE;
         _fSetConsoleCursorInfoResult = TRUE;
-        _fFillConsoleOutputCharacterWResult = TRUE;
-        _fFillConsoleOutputAttributeResult = TRUE;
         _fSetConsoleTextAttributeResult = TRUE;
         _fPrivateWriteConsoleInputWResult = TRUE;
         _fPrivatePrependConsoleInputResult = TRUE;
         _fPrivateWriteConsoleControlInputResult = TRUE;
-        _fScrollConsoleScreenBufferWResult = TRUE;
         _fSetConsoleWindowInfoResult = TRUE;
         _fPrivateGetConsoleScreenBufferAttributesResult = TRUE;
         _fMoveToBottomResult = true;
 
-        _PrepCharsBuffer(wch, wAttr);
+        _coordBufferSize.X = 100;
+        _coordBufferSize.Y = 600;
 
         // Viewport sitting in the "middle" of the buffer somewhere (so all sides have excess buffer around them)
         _srViewport.Top = 20;
@@ -859,47 +773,6 @@ public:
         _coordExpectedCursorPos = _coordCursorPos;
     }
 
-    void _PrepCharsBuffer()
-    {
-        _PrepCharsBuffer(s_wchDefault, s_wDefaultAttribute);
-    }
-
-    void _PrepCharsBuffer(WCHAR const wch, WORD const wAttr)
-    {
-        // Buffer large
-        _coordBufferSize.X = 100;
-        _coordBufferSize.Y = 600;
-
-        // Buffer data
-        _FreeCharsBuffer();
-
-        DWORD const cchTotalBufferSize = _coordBufferSize.Y * _coordBufferSize.X;
-
-        _rgchars = new CHAR_INFO[cchTotalBufferSize];
-
-        COORD coordStart = { 0 };
-        size_t written = 0;
-
-        // Fill buffer with Zs.
-        Log::Comment(L"Filling buffer with characters so we can tell what's deleted.");
-        FillConsoleOutputCharacterW(wch, cchTotalBufferSize, coordStart, written);
-
-        // Fill attributes with 0s
-        Log::Comment(L"Filling buffer with attributes so we can tell what happened.");
-        FillConsoleOutputAttribute(wAttr, cchTotalBufferSize, coordStart, written);
-
-        VERIFY_ARE_EQUAL(((DWORD)cchTotalBufferSize), ((DWORD)written), L"Ensure the writer says all characters in the buffer were filled.");
-    }
-
-    void _FreeCharsBuffer()
-    {
-        if (_rgchars != nullptr)
-        {
-            delete[] _rgchars;
-            _rgchars = nullptr;
-        }
-    }
-
     void ValidateInputEvent(_In_ PCWSTR pwszExpectedResponse)
     {
         size_t const cchResponse = wcslen(pwszExpectedResponse);
@@ -926,23 +799,6 @@ public:
         }
     }
 
-    CHAR_INFO* _GetCharAt(size_t const iRow, size_t const iCol)
-    {
-        CHAR_INFO* pchar = nullptr;
-
-        if (_rgchars != nullptr)
-        {
-            pchar = &(_rgchars[(iRow * _coordBufferSize.X) + iCol]);
-        }
-
-        if (pchar == nullptr)
-        {
-            VERIFY_FAIL(L"Failed to retrieve character position from buffer.");
-        }
-
-        return pchar;
-    }
-
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
     {
         rect->Top = top;
@@ -954,7 +810,6 @@ public:
 
     ~TestGetSet()
     {
-        _FreeCharsBuffer();
     }
 
     static const WCHAR s_wchErase = (WCHAR)0x20;
@@ -963,7 +818,6 @@ public:
     static const WORD s_wDefaultAttribute = 0;
     static const WORD s_wDefaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
-    CHAR_INFO* _rgchars = nullptr;
     std::deque<std::unique_ptr<IInputEvent>> _events;
 
     COORD _coordBufferSize = { 0, 0 };
@@ -1005,13 +859,10 @@ public:
     BOOL _fSetConsoleCursorPositionResult = false;
     BOOL _fGetConsoleCursorInfoResult = false;
     BOOL _fSetConsoleCursorInfoResult = false;
-    BOOL _fFillConsoleOutputCharacterWResult = false;
-    BOOL _fFillConsoleOutputAttributeResult = false;
     BOOL _fSetConsoleTextAttributeResult = false;
     BOOL _fPrivateWriteConsoleInputWResult = false;
     BOOL _fPrivatePrependConsoleInputResult = false;
     BOOL _fPrivateWriteConsoleControlInputResult = false;
-    BOOL _fScrollConsoleScreenBufferWResult = false;
 
     BOOL _fSetConsoleWindowInfoResult = false;
     BOOL _fExpectedWindowAbsolute = false;

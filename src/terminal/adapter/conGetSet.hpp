@@ -31,14 +31,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual BOOL SetConsoleScreenBufferInfoEx(const CONSOLE_SCREEN_BUFFER_INFOEX* const pConsoleScreenBufferInfoEx) = 0;
         virtual BOOL SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO* const pConsoleCursorInfo) = 0;
         virtual BOOL SetConsoleCursorPosition(const COORD coordCursorPosition) = 0;
-        virtual BOOL FillConsoleOutputCharacterW(const WCHAR wch,
-                                                 const DWORD nLength,
-                                                 const COORD dwWriteCoord,
-                                                 size_t& numberOfCharsWritten) noexcept = 0;
-        virtual BOOL FillConsoleOutputAttribute(const WORD wAttribute,
-                                                const DWORD nLength,
-                                                const COORD dwWriteCoord,
-                                                size_t& numberOfAttrsWritten) noexcept = 0;
         virtual BOOL SetConsoleTextAttribute(const WORD wAttr) = 0;
 
         virtual BOOL PrivateSetLegacyAttributes(const WORD wAttr,
@@ -57,10 +49,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                                _Out_ size_t& eventsWritten) = 0;
-        virtual BOOL ScrollConsoleScreenBufferW(const SMALL_RECT* pScrollRectangle,
-                                                _In_opt_ const SMALL_RECT* pClipRectangle,
-                                                _In_ COORD dwDestinationOrigin,
-                                                const CHAR_INFO* pFill) = 0;
         virtual BOOL SetConsoleWindowInfo(const BOOL bAbsolute,
                                           const SMALL_RECT* const lpConsoleWindow) = 0;
         virtual BOOL PrivateSetCursorKeysMode(const bool fApplicationMode) = 0;
