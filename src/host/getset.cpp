@@ -836,32 +836,6 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         auto& buffer = context.GetActiveBuffer();
 
         TextAttribute useThisAttr(fillAttribute);
-
-        // Here we're being a little clever - similar to FillConsoleOutputAttributeImpl
-        // Because RGB/default color can't roundtrip the API, certain VT
-        //      sequences will forget the RGB color because their first call to
-        //      GetScreenBufferInfo returned a legacy attr.
-        // If they're calling this with the legacy attrs version of our current
-        //      attributes, they likely wanted to use the full version of
-        //      our current attributes, whether that be RGB or _default_ colored.
-        // This could create a scenario where someone emitted RGB with VT,
-        //      THEN used the API to ScrollConsoleOutput with the legacy attrs,
-        //      and DIDN'T want the RGB color. As in FillConsoleOutputAttribute,
-        //      this scenario is highly unlikely, and we can reasonably do this
-        //      on their behalf.
-        // see MSFT:19853701
-
-        if (buffer.InVTMode())
-        {
-            const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-            const auto currentAttributes = buffer.GetAttributes();
-            const auto bufferLegacy = gci.GenerateLegacyAttributes(currentAttributes);
-            if (bufferLegacy == fillAttribute)
-            {
-                useThisAttr = currentAttributes;
-            }
-        }
-
         ScrollRegion(buffer, source, clip, target, fillCharacter, useThisAttr);
 
         return S_OK;
