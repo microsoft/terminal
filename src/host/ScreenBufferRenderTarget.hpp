@@ -29,6 +29,8 @@ class ScreenBufferRenderTarget final : public Microsoft::Console::Render::IRende
 public:
     ScreenBufferRenderTarget(SCREEN_INFORMATION& owner);
 
+    void StartDeferRedrawing();
+    void EndDeferRedrawing();
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
     void TriggerRedraw(const COORD* const pcoord) override;
     void TriggerRedrawCursor(const COORD* const pcoord) override;

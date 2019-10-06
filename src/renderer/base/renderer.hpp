@@ -47,6 +47,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT PaintFrame();
 
+        void StartDeferRedrawing();
+        void EndDeferRedrawing();
         void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
         void TriggerRedraw(const COORD* const pcoord) override;
@@ -125,5 +127,7 @@ namespace Microsoft::Console::Render
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
         bool _fDebug = false;
+
+        bool _redrawingDefered = false;
     };
 }

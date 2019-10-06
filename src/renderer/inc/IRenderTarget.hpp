@@ -33,6 +33,8 @@ namespace Microsoft::Console::Render
         IRenderTarget& operator=(IRenderTarget&&) = default;
 
     public:
+        virtual void StartDeferRedrawing() = 0;
+        virtual void EndDeferRedrawing() = 0;
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;
         virtual void TriggerRedraw(const COORD* const pcoord) = 0;
         virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;

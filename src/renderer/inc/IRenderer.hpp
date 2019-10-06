@@ -28,6 +28,9 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PaintFrame() = 0;
 
+        virtual void StartDeferRedrawing() = 0;
+        virtual void EndDeferRedrawing() = 0;
+
         virtual void TriggerSystemRedraw(const RECT* const prcDirtyClient) = 0;
 
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;

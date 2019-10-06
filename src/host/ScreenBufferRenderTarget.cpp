@@ -11,6 +11,25 @@ ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
 {
 }
 
+void ScreenBufferRenderTarget::StartDeferRedrawing()
+{
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == &_owner)
+    {
+        pRenderer->StartDeferRedrawing();
+    }
+}
+void ScreenBufferRenderTarget::EndDeferRedrawing()
+{
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == &_owner)
+    {
+        pRenderer->EndDeferRedrawing();
+    }
+}
+
 void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;

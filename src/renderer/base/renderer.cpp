@@ -86,6 +86,11 @@ Renderer::~Renderer()
 
 [[nodiscard]] HRESULT Renderer::_PaintFrameForEngine(_In_ IRenderEngine* const pEngine)
 {
+    if (_redrawingDefered)
+    {
+        return S_OK;
+    }
+
     FAIL_FAST_IF_NULL(pEngine); // This is a programming error. Fail fast.
 
     _pData->LockConsole();
@@ -151,8 +156,22 @@ Renderer::~Renderer()
 
 void Renderer::_NotifyPaintFrame()
 {
+    if (_redrawingDefered)
+    {
+        return;
+    }
     // The thread will provide throttling for us.
     _pThread->NotifyPaint();
+}
+
+void Renderer::StartDeferRedrawing()
+{
+    _redrawingDefered = true;
+}
+
+void Renderer::EndDeferRedrawing()
+{
+    _redrawingDefered = false;
 }
 
 // Routine Description:

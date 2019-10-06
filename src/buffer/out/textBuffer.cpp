@@ -334,6 +334,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
     // Get size of the text buffer so we can stay in bounds.
     const auto size = GetSize();
 
+    _renderTarget.StartDeferRedrawing();
+
     // While there's still data in the iterator and we're still targeting in bounds...
     while (it && size.IsInBounds(lineTarget))
     {
@@ -345,6 +347,8 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
         lineTarget.X = 0;
         ++lineTarget.Y;
     }
+
+    _renderTarget.EndDeferRedrawing();
 
     return it;
 }
