@@ -339,6 +339,18 @@ public:
         return !!_fPrivateBoldTextResult;
     }
 
+    BOOL PrivateGetExtendedTextAttributes(ExtendedAttributes* const /*pAttrs*/)
+    {
+        Log::Comment(L"PrivateGetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
+    BOOL PrivateSetExtendedTextAttributes(const ExtendedAttributes /*attrs*/)
+    {
+        Log::Comment(L"PrivateSetExtendedTextAttributes MOCK called...");
+        return true;
+    }
+
     BOOL PrivateWriteConsoleInputW(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
                                    _Out_ size_t& eventsWritten) override
     {
@@ -2630,7 +2642,7 @@ public:
 
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN;
         _testGetSet->_iExpectedXtermTableEntry = 2;
@@ -2640,7 +2652,7 @@ public:
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_GREEN | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;
@@ -2650,7 +2662,7 @@ public:
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)42; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 42;
         _testGetSet->_fExpectedIsForeground = true;
@@ -2659,7 +2671,7 @@ public:
 
         Log::Comment(L"Test 4: Change Background to RGB color");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)142; // Arbitrary Color
         _testGetSet->_iExpectedXtermTableEntry = 142;
         _testGetSet->_fExpectedIsForeground = false;
@@ -2671,7 +2683,7 @@ public:
         //   to have its own color table and translate the pre-existing RGB BG into a legacy BG.
         // Fortunately, the ft_api:RgbColorTests IS smart enough to test that.
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
-        rgOptions[1] = DispatchTypes::GraphicsOptions::Xterm256Index;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
         _testGetSet->_wExpectedAttribute = FOREGROUND_RED | FOREGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_INTENSITY;
         _testGetSet->_iExpectedXtermTableEntry = 9;

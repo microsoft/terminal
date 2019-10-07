@@ -105,6 +105,8 @@ class ScreenBufferTests
 
     TEST_METHOD(EraseAllTests);
 
+    TEST_METHOD(OutputNULTest);
+
     TEST_METHOD(VtResize);
     TEST_METHOD(VtResizeComprehensive);
     TEST_METHOD(VtResizeDECCOLM);
@@ -184,6 +186,9 @@ class ScreenBufferTests
     TEST_METHOD(ClearAlternateBuffer);
 
     TEST_METHOD(InitializeTabStopsInVTMode);
+
+    TEST_METHOD(TestExtendedTextAttributes);
+    TEST_METHOD(TestExtendedTextAttributesWithColors);
 
     TEST_METHOD(CursorUpDownAcrossMargins);
     TEST_METHOD(CursorUpDownOutsideMargins);
@@ -373,14 +378,14 @@ void ScreenBufferTests::TestReverseLineFeed()
 
     cursor.SetPosition({ 0, 5 });
     VERIFY_SUCCEEDED(screenInfo.SetViewportOrigin(true, { 0, 5 }, true));
-    stateMachine.ProcessString(L"ABCDEFGH", 9);
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    stateMachine.ProcessString(L"ABCDEFGH");
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     VERIFY_ARE_EQUAL(screenInfo.GetViewport().Top(), 5);
 
     LOG_IF_FAILED(DoSrvPrivateReverseLineFeed(screenInfo));
 
-    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 9);
+    VERIFY_ARE_EQUAL(cursor.GetPosition().X, 8);
     VERIFY_ARE_EQUAL(cursor.GetPosition().Y, 5);
     viewport = screenInfo.GetViewport();
     VERIFY_ARE_EQUAL(viewport.Top(), 5);
@@ -814,6 +819,45 @@ void ScreenBufferTests::EraseAllTests()
         viewport.Top(),
         viewport.RightInclusive(),
         viewport.BottomInclusive()));
+}
+
+void ScreenBufferTests::OutputNULTest()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = si._textBuffer->GetCursor();
+
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing a single NUL"));
+    stateMachine.ProcessString(L"\0", 1);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing many NULs"));
+    stateMachine.ProcessString(L"\0\0\0\0\0\0\0\0", 8);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Testing a single NUL followed by real text"));
+    stateMachine.ProcessString(L"\0foo", 4);
+    VERIFY_ARE_EQUAL(3, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().Y);
+
+    stateMachine.ProcessString(L"\n");
+    VERIFY_ARE_EQUAL(0, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
+
+    Log::Comment(NoThrowString().Format(
+        L"Writing NULs in between other strings"));
+    stateMachine.ProcessString(L"\0foo\0bar\0", 9);
+    VERIFY_ARE_EQUAL(6, cursor.GetPosition().X);
+    VERIFY_ARE_EQUAL(1, cursor.GetPosition().Y);
 }
 
 void ScreenBufferTests::VtResize()
@@ -4503,6 +4547,336 @@ void ScreenBufferTests::InitializeTabStopsInVTMode()
     m_state->PrepareGlobalScreenBuffer();
 
     VERIFY_IS_TRUE(gci.GetActiveOutputBuffer().AreTabsSet());
+}
+
+void ScreenBufferTests::TestExtendedTextAttributes()
+{
+    // This is a test for microsoft/terminal#2554. Refer to that issue for more
+    // context.
+
+    // We're going to set every possible combination of extended attributes via
+    // VT, then disable them, and make sure that they are all always represented
+    // internally correctly.
+
+    // Run this test for each and every possible combination of states.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
+    END_TEST_METHOD_PROPERTIES()
+
+    bool bold, italics, blink, invisible, crossedOut;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"crossedOut", crossedOut));
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+
+    ExtendedAttributes expectedAttrs{ ExtendedAttributes::Normal };
+    std::wstring vtSeq = L"";
+
+    // Collect up a VT sequence to set the state given the method properties
+    if (bold)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Bold);
+        vtSeq += L"\x1b[1m";
+    }
+    if (italics)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Italics);
+        vtSeq += L"\x1b[3m";
+    }
+    if (blink)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        vtSeq += L"\x1b[5m";
+    }
+    if (invisible)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        vtSeq += L"\x1b[8m";
+    }
+    if (crossedOut)
+    {
+        WI_SetFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        vtSeq += L"\x1b[9m";
+    }
+
+    // Helper lambda to write a VT sequence, then an "X", then check that the
+    // attributes of the "X" match what we think they should be.
+    auto validate = [&](const ExtendedAttributes expectedAttrs,
+                        const std::wstring& vtSequence) {
+        auto cursorPos = cursor.GetPosition();
+
+        // Convert the vtSequence to something printable. Lets not set these
+        // attrs on the test console
+        std::wstring debugString = vtSequence;
+        {
+            size_t start_pos = 0;
+            while ((start_pos = debugString.find(L"\x1b", start_pos)) != std::string::npos)
+            {
+                debugString.replace(start_pos, 1, L"\\x1b");
+                start_pos += 4;
+            }
+        }
+
+        Log::Comment(NoThrowString().Format(
+            L"Testing string:\"%s\"", debugString.c_str()));
+        Log::Comment(NoThrowString().Format(
+            L"Expecting attrs:0x%02x", expectedAttrs));
+
+        stateMachine.ProcessString(vtSequence);
+        stateMachine.ProcessString(L"X");
+
+        auto iter = tbi.GetCellDataAt(cursorPos);
+        auto currentExtendedAttrs = iter->TextAttr().GetExtendedAttributes();
+        VERIFY_ARE_EQUAL(expectedAttrs, currentExtendedAttrs);
+    };
+
+    // Check setting all the states collected above
+    validate(expectedAttrs, vtSeq);
+
+    // One-by-one, turn off each of these states with VT, then check that the
+    // state matched.
+    if (bold)
+    {
+        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Bold);
+        vtSeq = L"\x1b[22m";
+        validate(expectedAttrs, vtSeq);
+    }
+    if (italics)
+    {
+        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Italics);
+        vtSeq = L"\x1b[23m";
+        validate(expectedAttrs, vtSeq);
+    }
+    if (blink)
+    {
+        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Blinking);
+        vtSeq = L"\x1b[25m";
+        validate(expectedAttrs, vtSeq);
+    }
+    if (invisible)
+    {
+        WI_ClearFlag(expectedAttrs, ExtendedAttributes::Invisible);
+        vtSeq = L"\x1b[28m";
+        validate(expectedAttrs, vtSeq);
+    }
+    if (crossedOut)
+    {
+        WI_ClearFlag(expectedAttrs, ExtendedAttributes::CrossedOut);
+        vtSeq = L"\x1b[29m";
+        validate(expectedAttrs, vtSeq);
+    }
+
+    stateMachine.ProcessString(L"\x1b[0m");
+}
+
+void ScreenBufferTests::TestExtendedTextAttributesWithColors()
+{
+    // This is a test for microsoft/terminal#2554. Refer to that issue for more
+    // context.
+
+    // We're going to set every possible combination of extended attributes via
+    // VT, then set assorted colors, then disable extended attrs, then reset
+    // colors, in various ways, and make sure that they are all always
+    // represented internally correctly.
+
+    // Run this test for each and every possible combination of states.
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:bold", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:italics", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:blink", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:invisible", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:crossedOut", L"{false, true}")
+        TEST_METHOD_PROPERTY(L"Data:setForegroundType", L"{0, 1, 2, 3}")
+        TEST_METHOD_PROPERTY(L"Data:setBackgroundType", L"{0, 1, 2, 3}")
+    END_TEST_METHOD_PROPERTIES()
+
+    // colorStyle will be used to control whether we use a color from the 16
+    // color table, a color from the 256 color table, or a pure RGB color.
+    const int UseDefault = 0;
+    const int Use16Color = 1;
+    const int Use256Color = 2;
+    const int UseRGBColor = 3;
+
+    bool bold, italics, blink, invisible, crossedOut;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"bold", bold));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"italics", italics));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"blink", blink));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"invisible", invisible));
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"crossedOut", crossedOut));
+
+    int setForegroundType, setBackgroundType;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setForegroundType", setForegroundType), L"controls whether to use the 16 color table, 256 table, or RGB colors");
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"setBackgroundType", setBackgroundType), L"controls whether to use the 16 color table, 256 table, or RGB colors");
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+    auto& si = gci.GetActiveOutputBuffer();
+    auto& tbi = si.GetTextBuffer();
+    auto& stateMachine = si.GetStateMachine();
+    auto& cursor = tbi.GetCursor();
+
+    TextAttribute expectedAttr{ si.GetAttributes() };
+    ExtendedAttributes expectedExtendedAttrs{ ExtendedAttributes::Normal };
+    std::wstring vtSeq = L"";
+
+    // Collect up a VT sequence to set the state given the method properties
+    if (bold)
+    {
+        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Bold);
+        vtSeq += L"\x1b[1m";
+    }
+    if (italics)
+    {
+        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Italics);
+        vtSeq += L"\x1b[3m";
+    }
+    if (blink)
+    {
+        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Blinking);
+        vtSeq += L"\x1b[5m";
+    }
+    if (invisible)
+    {
+        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::Invisible);
+        vtSeq += L"\x1b[8m";
+    }
+    if (crossedOut)
+    {
+        WI_SetFlag(expectedExtendedAttrs, ExtendedAttributes::CrossedOut);
+        vtSeq += L"\x1b[9m";
+    }
+
+    // Prepare the foreground attributes
+    if (setForegroundType == UseDefault)
+    {
+        expectedAttr.SetDefaultForeground();
+        vtSeq += L"\x1b[39m";
+    }
+    else if (setForegroundType == Use16Color)
+    {
+        expectedAttr.SetIndexedAttributes({ static_cast<BYTE>(2) }, std::nullopt);
+        vtSeq += L"\x1b[32m";
+    }
+    else if (setForegroundType == Use256Color)
+    {
+        expectedAttr.SetForeground(gci.GetColorTableEntry(20));
+        vtSeq += L"\x1b[38;5;20m";
+    }
+    else if (setForegroundType == UseRGBColor)
+    {
+        expectedAttr.SetForeground(RGB(1, 2, 3));
+        vtSeq += L"\x1b[38;2;1;2;3m";
+    }
+
+    // Prepare the background attributes
+    if (setBackgroundType == UseDefault)
+    {
+        expectedAttr.SetDefaultBackground();
+        vtSeq += L"\x1b[49m";
+    }
+    else if (setBackgroundType == Use16Color)
+    {
+        expectedAttr.SetIndexedAttributes(std::nullopt, { static_cast<BYTE>(2) });
+        vtSeq += L"\x1b[42m";
+    }
+    else if (setBackgroundType == Use256Color)
+    {
+        expectedAttr.SetBackground(gci.GetColorTableEntry(20));
+        vtSeq += L"\x1b[48;5;20m";
+    }
+    else if (setBackgroundType == UseRGBColor)
+    {
+        expectedAttr.SetBackground(RGB(1, 2, 3));
+        vtSeq += L"\x1b[48;2;1;2;3m";
+    }
+
+    expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+
+    // Helper lambda to write a VT sequence, then an "X", then check that the
+    // attributes of the "X" match what we think they should be.
+    auto validate = [&](const TextAttribute attr,
+                        const std::wstring& vtSequence) {
+        auto cursorPos = cursor.GetPosition();
+
+        // Convert the vtSequence to something printable. Lets not set these
+        // attrs on the test console
+        std::wstring debugString = vtSequence;
+        {
+            size_t start_pos = 0;
+            while ((start_pos = debugString.find(L"\x1b", start_pos)) != std::string::npos)
+            {
+                debugString.replace(start_pos, 1, L"\\x1b");
+                start_pos += 4;
+            }
+        }
+
+        Log::Comment(NoThrowString().Format(
+            L"Testing string:\"%s\"", debugString.c_str()));
+        Log::Comment(NoThrowString().Format(
+            L"Expecting attrs:0x%02x", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer()));
+
+        stateMachine.ProcessString(vtSequence);
+        stateMachine.ProcessString(L"X");
+
+        auto iter = tbi.GetCellDataAt(cursorPos);
+        const TextAttribute currentAttrs = iter->TextAttr();
+        VERIFY_ARE_EQUAL(attr, currentAttrs);
+    };
+
+    // Check setting all the states collected above
+    validate(expectedAttr, vtSeq);
+
+    // One-by-one, turn off each of these states with VT, then check that the
+    // state matched.
+    if (bold)
+    {
+        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Bold);
+        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        vtSeq = L"\x1b[22m";
+        validate(expectedAttr, vtSeq);
+    }
+    if (italics)
+    {
+        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Italics);
+        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        vtSeq = L"\x1b[23m";
+        validate(expectedAttr, vtSeq);
+    }
+    if (blink)
+    {
+        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Blinking);
+        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        vtSeq = L"\x1b[25m";
+        validate(expectedAttr, vtSeq);
+    }
+    if (invisible)
+    {
+        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::Invisible);
+        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        vtSeq = L"\x1b[28m";
+        validate(expectedAttr, vtSeq);
+    }
+    if (crossedOut)
+    {
+        WI_ClearFlag(expectedExtendedAttrs, ExtendedAttributes::CrossedOut);
+        expectedAttr.SetExtendedAttributes(expectedExtendedAttrs);
+        vtSeq = L"\x1b[29m";
+        validate(expectedAttr, vtSeq);
+    }
+
+    stateMachine.ProcessString(L"\x1b[0m");
 }
 
 void ScreenBufferTests::CursorUpDownAcrossMargins()

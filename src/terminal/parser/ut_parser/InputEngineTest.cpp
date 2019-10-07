@@ -230,6 +230,7 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(AltBackspaceTest);
     TEST_METHOD(AltCtrlDTest);
     TEST_METHOD(AltIntermediateTest);
+    TEST_METHOD(AltBackspaceEnterTest);
 
     friend class TestInteractDispatch;
 };
@@ -825,4 +826,55 @@ void InputEngineTest::AltIntermediateTest()
     expectedTranslation = seq;
     Log::Comment(NoThrowString().Format(L"Processing \"\\x05\""));
     stateMachine->ProcessString(seq);
+}
+
+void InputEngineTest::AltBackspaceEnterTest()
+{
+    // Created as a test for microsoft/terminal#2746. See that issue for mode
+    // details. We're going to send an Alt+Backspace to conpty, followed by an
+    // enter. The enter should be processed as just a single VK_ENTER, not a
+    // alt+enter.
+
+    TestState testState;
+    auto pfn = std::bind(&TestState::TestInputCallback, &testState, std::placeholders::_1);
+
+    auto inputEngine = std::make_unique<InputStateMachineEngine>(new TestInteractDispatch(pfn, &testState));
+    auto _stateMachine = std::make_unique<StateMachine>(inputEngine.release());
+    VERIFY_IS_NOT_NULL(_stateMachine);
+    testState._stateMachine = _stateMachine.get();
+
+    INPUT_RECORD inputRec;
+
+    inputRec.EventType = KEY_EVENT;
+    inputRec.Event.KeyEvent.bKeyDown = TRUE;
+    inputRec.Event.KeyEvent.dwControlKeyState = LEFT_ALT_PRESSED;
+    inputRec.Event.KeyEvent.wRepeatCount = 1;
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_BACK;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_BACK, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x08';
+
+    // First, expect a alt+backspace.
+    testState.vExpectedInput.push_back(inputRec);
+
+    std::wstring seq = L"\x1b\x7f";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x1b\\x7f\""));
+    _stateMachine->ProcessString(seq);
+
+    // Ensure the state machine has correctly returned to the ground state
+    VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
+
+    inputRec.Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+    inputRec.Event.KeyEvent.dwControlKeyState = 0;
+    inputRec.Event.KeyEvent.wVirtualScanCode = static_cast<WORD>(MapVirtualKeyW(VK_RETURN, MAPVK_VK_TO_VSC));
+    inputRec.Event.KeyEvent.uChar.UnicodeChar = L'\x0d'; //maybe \xa
+
+    // Then, expect a enter
+    testState.vExpectedInput.push_back(inputRec);
+
+    seq = L"\x0d";
+    Log::Comment(NoThrowString().Format(L"Processing \"\\x0d\""));
+    _stateMachine->ProcessString(seq);
+
+    // Ensure the state machine has correctly returned to the ground state
+    VERIFY_ARE_EQUAL(StateMachine::VTStates::Ground, _stateMachine->_state);
 }
