@@ -22,12 +22,12 @@ COORD FontInfoDesired::GetEngineSize() const
     return coordSize;
 }
 
-FontInfoDesired::FontInfoDesired(_In_ PCWSTR const pwszFaceName,
-                                 const BYTE bFamily,
-                                 const LONG lWeight,
+FontInfoDesired::FontInfoDesired(const std::wstring_view faceName,
+                                 const BYTE family,
+                                 const unsigned int weight,
                                  const COORD coordSizeDesired,
-                                 const UINT uiCodePage) :
-    FontInfoBase(pwszFaceName, bFamily, lWeight, false, uiCodePage),
+                                 const unsigned int codePage) :
+    FontInfoBase(faceName, family, weight, false, codePage),
     _coordSizeDesired(coordSizeDesired)
 {
 }
@@ -45,7 +45,7 @@ bool FontInfoDesired::IsDefaultRasterFont() const
 {
     // Either the raster was set from the engine...
     // OR the face name is empty with a size of 0x0 or 8x12.
-    return WasDefaultRasterSetFromEngine() || (wcsnlen_s(GetFaceName(), LF_FACESIZE) == 0 &&
+    return WasDefaultRasterSetFromEngine() || (GetFaceName().empty() &&
                                                ((_coordSizeDesired.X == 0 && _coordSizeDesired.Y == 0) ||
                                                 (_coordSizeDesired.X == 8 && _coordSizeDesired.Y == 12)));
 }

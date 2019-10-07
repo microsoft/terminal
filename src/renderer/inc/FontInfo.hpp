@@ -28,11 +28,11 @@ Author(s):
 class FontInfo : public FontInfoBase
 {
 public:
-    FontInfo(_In_ PCWSTR const pwszFaceName,
-             const BYTE bFamily,
-             const LONG lWeight,
+    FontInfo(const std::wstring_view faceName,
+             const BYTE family,
+             const unsigned int weight,
              const COORD coordSize,
-             const UINT uiCodePage,
+             const unsigned int codePage,
              const bool fSetDefaultRasterFont = false);
 
     FontInfo(const FontInfo& fiFont);
@@ -40,16 +40,14 @@ public:
     COORD GetSize() const;
     COORD GetUnscaledSize() const;
 
-    void SetFromEngine(_In_ PCWSTR const pwszFaceName,
-                       const BYTE bFamily,
-                       const LONG lWeight,
+    void SetFromEngine(const std::wstring_view faceName,
+                       const BYTE family,
+                       const unsigned int weight,
                        const bool fSetDefaultRasterFont,
                        const COORD coordSize,
                        const COORD coordSizeUnscaled);
 
     void ValidateFont();
-
-    static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
 
     friend bool operator==(const FontInfo& a, const FontInfo& b);
 

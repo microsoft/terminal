@@ -17,10 +17,13 @@ RenderFontDefaults::~RenderFontDefaults()
     LOG_IF_FAILED(TrueTypeFontList::s_Destroy());
 }
 
-[[nodiscard]] HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(const UINT uiCodePage,
-                                                                             _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                                             const size_t cchFaceName)
+[[nodiscard]] HRESULT RenderFontDefaults::RetrieveDefaultFontNameForCodepage(const unsigned int uiCodePage,
+                                                                             _Out_ std::wstring& outFaceName)
+try
 {
-    NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(uiCodePage, pwszFaceName, cchFaceName);
+    wchar_t faceName[LF_FACESIZE]{};
+    NTSTATUS status = TrueTypeFontList::s_SearchByCodePage(uiCodePage, faceName, ARRAYSIZE(faceName));
+    outFaceName.assign(faceName);
     return HRESULT_FROM_NT(status);
 }
+CATCH_RETURN();

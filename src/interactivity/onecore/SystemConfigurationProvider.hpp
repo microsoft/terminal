@@ -18,10 +18,6 @@ Author(s):
 
 #pragma hdrstop
 
-#ifndef DEFAULT_TT_FONT_FACENAME
-#define DEFAULT_TT_FONT_FACENAME L"__DefaultTTFont__"
-#endif
-
 class InputTests;
 
 namespace Microsoft::Console::Interactivity::OneCore

@@ -1760,8 +1760,6 @@ float DxEngine::GetScaling() const noexcept
         coordSize.X = gsl::narrow<SHORT>(widthExact);
         coordSize.Y = gsl::narrow<SHORT>(lineSpacing.height);
 
-        const DWORD weightDword = static_cast<DWORD>(textFormat->GetFontWeight());
-
         // Unscaled is for the purposes of re-communicating this font back to the renderer again later.
         // As such, we need to give the same original size parameter back here without padding
         // or rounding or scaling manipulation.
@@ -1769,9 +1767,9 @@ float DxEngine::GetScaling() const noexcept
 
         const COORD scaled = coordSize;
 
-        actual.SetFromEngine(fontName.data(),
+        actual.SetFromEngine(fontName,
                              desired.GetFamily(),
-                             weightDword,
+                             textFormat->GetFontWeight(),
                              false,
                              scaled,
                              unscaled);

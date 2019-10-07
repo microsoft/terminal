@@ -630,9 +630,10 @@ const WCHAR* const Settings::GetFaceName() const
 {
     return _FaceName;
 }
-void Settings::SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength)
+void Settings::SetFaceName(const std::wstring_view faceName)
 {
-    StringCchCopyW(_FaceName, cchLength, pcszFaceName);
+    auto extent = std::min<size_t>(faceName.size(), ARRAYSIZE(_FaceName));
+    StringCchCopyW(_FaceName, extent, faceName.data());
 }
 
 UINT Settings::GetCursorSize() const

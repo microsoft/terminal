@@ -46,7 +46,7 @@ const UINT CONSOLE_LPC_PORT_FAILURE_ID = 21791;
 
         Globals.pFontDefaultList = new RenderFontDefaults();
 
-        FontInfo::s_SetFontDefaultList(Globals.pFontDefaultList);
+        FontInfoBase::s_SetFontDefaultList(Globals.pFontDefaultList);
     }
     CATCH_RETURN();
 

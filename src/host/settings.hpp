@@ -130,7 +130,7 @@ public:
 
     const WCHAR* const GetFaceName() const;
     bool IsFaceNameSet() const;
-    void SetFaceName(_In_ PCWSTR const pcszFaceName, const size_t cchLength);
+    void SetFaceName(const std::wstring_view faceName);
 
     UINT GetCursorSize() const;
     void SetCursorSize(const UINT uCursorSize);
