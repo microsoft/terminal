@@ -1,33 +1,40 @@
 # Welcome
 
-This repository contains the source code for:
+This repository contains the source code & documentation for:
 
 * [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 * The Windows console host (`conhost.exe`)
 * Components shared between the two projects
 * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
 * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
-  
+
 Other related repositories include:
 
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 
 ## Installing & running Windows Terminal
 
-> 👉 Note: To run the Windows Terminal you'll need to be running Windows 10 1903 (build 18362) or later
+### Operating System Support
 
-### From the Microsoft Store
+Windows Terminal can be installed on:
 
-Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
+* Windows 10 1903 (build 18362) or later
+* [Windows Server 1903](https://docs.microsoft.com/en-us/windows-server/get-started-19/whats-new-in-windows-server-1903) or later (install manually - see "From this repository" below)
+
+### Install via the Microsoft Store
+
+On Windows 10, we recommend downloading the Windows Terminal from the Microsoft Store and it'll be continuously updated:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
-### From this repository
-Every public release of Windows Terminal is avaiable for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
+### Manually install builds from this repository
+For users who're unable to install Terminal from the Microsoft Store (e.g. on [Windows Server 1903](https://docs.microsoft.com/en-us/windows-server/get-started-19/whats-new-in-windows-server-1903) or later), Terminal builds can be manually downloaded from [this repo's Releases page](https://github.com/microsoft/terminal/releases).
 
-> ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
+> ⚠ Note:
+> 1. If you install Terminal manually, be sure to install [the Desktop Bridge VC++ v14 Redist Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
+> 1. If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
-### Via Chocolatey (unofficial)
+### Install via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
 
@@ -41,7 +48,7 @@ To upgrade Windows Terminal using Chocolatey, run the following:
 choco upgrade microsoft-windows-terminal
 ```
 
-If you have any issues when installing/upgrading the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
+If you have any issues when installing/upgrading the package please go to the [Windows Terminal package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ---
 
@@ -98,7 +105,7 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## I built and ran the new Terminal, but I just get a blank window app!
 
-Make sure you are building for your computer's architecture. If your box has a 64-bit Windows, change your Solution Platform to x64.  
+Make sure you are building for your computer's architecture. If your box has a 64-bit Windows, change your Solution Platform to x64.
 To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
 
 ## I built and ran the new Terminal, but it looks just like the old console
@@ -139,7 +146,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   * Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
   * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-  
+
   * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
   * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)
