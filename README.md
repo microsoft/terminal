@@ -77,7 +77,7 @@ Windows Terminal is a new, modern, feature-rich, productive terminal application
 
 The Terminal will also need to meet our goals and measures to ensure it remains fast, and efficient, and doesn't consume vast amounts of memory or power.
 
-### The Windows Console host
+### The Windows Console Host
 
 The Windows Console host, `conhost.exe`, is Windows' original command-line user experience. It implements Windows' command-line infrastructure, and is responsible for hosting the Windows Console API, input engine, rendering engine, and user preferences. The console host code in this repository is the actual source from which the `conhost.exe` in Windows itself is built.
 
@@ -103,21 +103,32 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## FAQ
 
-## I built and ran the new Terminal, but I just get a blank window app!
+## I built and ran the new Terminal, but I just get a blank window
 
-Make sure you are building for your computer's architecture. If your box has a 64-bit Windows, change your Solution Platform to x64.
-To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
+Cause: Your locally built Terminal does not match the architecture of your computer.
+
+Solution: Set Visual Studio's "Solution Platform" to match your computer's architecture, then build and run the CascadiaPackage solution.
+
+![Visual Studio's Solution Platform](/doc/images/solution-platform.png)
+
+> 👉 Tip: To check your computer's architecture, open Windows 10's Settings app and go to System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
 
 ## I built and ran the new Terminal, but it looks just like the old console
+Cause: You're launching the incorrect solution in Visual Studio.
 
-Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
+Solution: Make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`.
 
-Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
+> Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect-to and communicate-with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
 
 ## I tried running WindowsTerminal.exe and it crashes
 
-* Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-* Make sure you're on the right version of Windows. You'll need to be on Insider's builds, or wait for the 1903 release, as the Windows Terminal **REQUIRES** features from the latest Windows release.
+Cause 1: You tried to launch "Windows Terminal" solution which will fail.
+
+Solution 1: Build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
+
+Cause 2: You're running an earlier build of Windows 10 than version 1903
+
+Solution 2: Upgrade to Windows 10 release 1903 or later.
 
 ---
 
