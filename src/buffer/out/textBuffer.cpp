@@ -542,17 +542,20 @@ bool TextBuffer::NewlineCursor()
 // - <none>
 //Return Value:
 // - true if we successfully incremented the buffer.
-bool TextBuffer::IncrementCircularBuffer()
+bool TextBuffer::IncrementCircularBuffer(const bool inVtMode)
 {
     // FirstRow is at any given point in time the array index in the circular buffer that corresponds
     // to the logical position 0 in the window (cursor coordinates and all other coordinates).
     _renderTarget.TriggerCircling();
 
     // First, clean out the old "first row" as it will become the "last row" of the buffer after the circle is performed.
-    // The VT standard requires that the new row is initialized with
-    // the current background color, but with no meta attributes set.
     auto fillAttributes = _currentAttributes;
-    fillAttributes.SetMetaAttributes(0);
+    if (inVtMode)
+    {
+        // The VT standard requires that the new row is initialized with
+        // the current background color, but with no meta attributes set.
+        fillAttributes.SetMetaAttributes(0);
+    }
     const bool fSuccess = _storage.at(_firstRow).Reset(fillAttributes);
     if (fSuccess)
     {

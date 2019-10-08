@@ -103,7 +103,7 @@ public:
     bool NewlineCursor();
 
     // Scroll needs access to this to quickly rotate around the buffer.
-    bool IncrementCircularBuffer();
+    bool IncrementCircularBuffer(const bool inVtMode = false);
 
     COORD GetLastNonSpaceCharacter() const;
     COORD GetLastNonSpaceCharacter(const Microsoft::Console::Types::Viewport viewport) const;
