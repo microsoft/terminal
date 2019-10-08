@@ -29,7 +29,7 @@ class FontInfo : public FontInfoBase
 {
 public:
     FontInfo(const std::wstring_view faceName,
-             const BYTE family,
+             const unsigned char family,
              const unsigned int weight,
              const COORD coordSize,
              const unsigned int codePage,
@@ -41,7 +41,7 @@ public:
     COORD GetUnscaledSize() const;
 
     void SetFromEngine(const std::wstring_view faceName,
-                       const BYTE family,
+                       const unsigned char family,
                        const unsigned int weight,
                        const bool fSetDefaultRasterFont,
                        const COORD coordSize,

@@ -13,7 +13,7 @@ bool operator==(const FontInfo& a, const FontInfo& b)
 }
 
 FontInfo::FontInfo(const std::wstring_view faceName,
-                   const BYTE family,
+                   const unsigned char family,
                    const unsigned int weight,
                    const COORD coordSize,
                    const unsigned int codePage,
@@ -43,7 +43,7 @@ COORD FontInfo::GetSize() const
 }
 
 void FontInfo::SetFromEngine(const std::wstring_view faceName,
-                             const BYTE family,
+                             const unsigned char family,
                              const unsigned int weight,
                              const bool fSetDefaultRasterFont,
                              const COORD coordSize,

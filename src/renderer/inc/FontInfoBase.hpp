@@ -27,7 +27,7 @@ class FontInfoBase
 {
 public:
     FontInfoBase(const std::wstring_view faceName,
-                 const BYTE family,
+                 const unsigned char family,
                  const unsigned int weight,
                  const bool fSetDefaultRasterFont,
                  const unsigned int uiCodePage);
@@ -36,15 +36,15 @@ public:
 
     ~FontInfoBase();
 
-    BYTE GetFamily() const;
+    unsigned char GetFamily() const;
     unsigned int GetWeight() const;
-    std::wstring GetFaceName() const;
+    const std::wstring& GetFaceName() const;
     unsigned int GetCodePage() const;
 
     bool IsTrueTypeFont() const;
 
     void SetFromEngine(const std::wstring_view faceName,
-                       const BYTE family,
+                       const unsigned char family,
                        const unsigned int weight,
                        const bool fSetDefaultRasterFont);
 
@@ -62,7 +62,7 @@ protected:
 private:
     std::wstring _faceName;
     unsigned int _weight;
-    BYTE _family; // BYTE for compatibility with GDI
+    unsigned char _family;
     unsigned int _codePage;
     bool _fDefaultRasterSetFromEngine;
 };

@@ -23,7 +23,7 @@ COORD FontInfoDesired::GetEngineSize() const
 }
 
 FontInfoDesired::FontInfoDesired(const std::wstring_view faceName,
-                                 const BYTE family,
+                                 const unsigned char family,
                                  const unsigned int weight,
                                  const COORD coordSizeDesired,
                                  const unsigned int codePage) :

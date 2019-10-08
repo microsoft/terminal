@@ -22,6 +22,6 @@ public:
     RenderFontDefaults();
     ~RenderFontDefaults();
 
-    [[nodiscard]] HRESULT RetrieveDefaultFontNameForCodepage(const unsigned int uiCodePage,
-                                                             _Out_ std::wstring& outFaceName);
+    [[nodiscard]] HRESULT RetrieveDefaultFontNameForCodepage(const unsigned int codePage,
+                                                             std::wstring& outFaceName);
 };

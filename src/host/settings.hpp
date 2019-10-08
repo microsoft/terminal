@@ -55,8 +55,8 @@ public:
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
-    const WCHAR* const GetLaunchFaceName() const;
-    void SetLaunchFaceName(_In_ PCWSTR const LaunchFaceName, const size_t cchLength);
+    const std::wstring& GetLaunchFaceName() const;
+    void SetLaunchFaceName(const std::wstring_view launchFaceName);
 
     UINT GetCodePage() const;
     void SetCodePage(const UINT uCodePage);
@@ -226,7 +226,7 @@ private:
     BYTE _bWindowAlpha; // describes the opacity of the window
 
     bool _fFilterOnPaste; // should we filter text when the user pastes? (e.g. remove <tab>)
-    WCHAR _LaunchFaceName[LF_FACESIZE];
+    std::wstring _LaunchFaceName;
     bool _fAllowAltF4Close;
     DWORD _dwVirtTermLevel;
     bool _fAutoReturnOnNewline;

@@ -18,7 +18,7 @@ namespace Microsoft::Console::Render
     class IFontDefaultList
     {
     public:
-        [[nodiscard]] virtual HRESULT RetrieveDefaultFontNameForCodepage(const unsigned int uiCodePage,
-                                                                         _Out_ std::wstring& outFaceName) = 0;
+        [[nodiscard]] virtual HRESULT RetrieveDefaultFontNameForCodepage(const unsigned int codepage,
+                                                                         std::wstring& outFaceName) = 0;
     };
 }

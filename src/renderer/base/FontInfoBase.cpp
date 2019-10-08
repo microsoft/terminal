@@ -17,7 +17,7 @@ bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 }
 
 FontInfoBase::FontInfoBase(const std::wstring_view faceName,
-                           const BYTE family,
+                           const unsigned char family,
                            const unsigned int weight,
                            const bool fSetDefaultRasterFont,
                            const unsigned int codePage) :
@@ -43,7 +43,7 @@ FontInfoBase::~FontInfoBase()
 {
 }
 
-BYTE FontInfoBase::GetFamily() const
+unsigned char FontInfoBase::GetFamily() const
 {
     return _family;
 }
@@ -61,7 +61,7 @@ unsigned int FontInfoBase::GetWeight() const
     return _weight;
 }
 
-std::wstring FontInfoBase::GetFaceName() const
+const std::wstring& FontInfoBase::GetFaceName() const
 {
     return _faceName;
 }
@@ -73,7 +73,7 @@ unsigned int FontInfoBase::GetCodePage() const
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
 void FontInfoBase::SetFromEngine(const std::wstring_view faceName,
-                                 const BYTE family,
+                                 const unsigned char family,
                                  const unsigned int weight,
                                  const bool fSetDefaultRasterFont)
 {
@@ -117,10 +117,7 @@ bool FontInfoBase::IsTrueTypeFont() const
     return WI_IsFlagSet(_family, TMPF_TRUETYPE);
 }
 
-#pragma warning(push)
-#pragma warning(suppress : 4356)
 Microsoft::Console::Render::IFontDefaultList* FontInfoBase::s_pFontDefaultList;
-#pragma warning(pop)
 
 void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
 {

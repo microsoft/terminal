@@ -269,7 +269,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
         consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
 
-        // NOTE: THIS TRUNCATES THE FONT NAME
+        // GH#3123: We will fail to service the API if the font name is longer than 32 characters.
         RETURN_IF_FAILED(StringCchCopyW(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName), fontInfo.GetFaceName().data()));
 
         return S_OK;
@@ -301,7 +301,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
 
         FontInfo fi(FaceName,
-                    static_cast<BYTE>(consoleFontInfoEx.FontFamily),
+                    gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
                     consoleFontInfoEx.FontWeight,
                     consoleFontInfoEx.dwFontSize,
                     gci.OutputCP);
