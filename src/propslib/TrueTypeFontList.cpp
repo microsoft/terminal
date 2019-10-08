@@ -11,187 +11,125 @@
 
 #define DEFAULT_NON_DBCS_FONTFACE L"Consolas"
 
-SINGLE_LIST_ENTRY TrueTypeFontList::s_ttFontList;
+std::vector<TrueTypeFontList::Entry> TrueTypeFontList::s_ttFontList;
 
-WORD ConvertStringToDec(
-    __in LPTSTR lpch)
+[[nodiscard]] HRESULT TrueTypeFontList::s_Initialize()
+try
 {
-    TCHAR ch;
-    WORD val = 0;
-
-    while ((ch = *lpch) != TEXT('\0'))
-    {
-        if (TEXT('0') <= ch && ch <= TEXT('9'))
-            val = (val * 10) + (ch - TEXT('0'));
-        else
-            break;
-
-        lpch++;
-    }
-
-    return val;
-}
-
-[[nodiscard]] NTSTATUS TrueTypeFontList::s_Initialize()
-{
-    HKEY hkRegistry;
-    WCHAR awchValue[512];
-    WCHAR awchData[512];
-    DWORD dwIndex;
-    LPWSTR pwsz;
+    wil::unique_hkey hkRegistry;
 
     // Prevent memory leak. Delete if it's already allocated before refilling it.
     LOG_IF_FAILED(s_Destroy());
 
-    NTSTATUS Status = RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
-                                                       MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
-                                                       &hkRegistry);
-    if (NT_SUCCESS(Status))
+    RETURN_IF_NTSTATUS_FAILED(RegistrySerialization::s_OpenKey(HKEY_LOCAL_MACHINE,
+                                                               MACHINE_REGISTRY_CONSOLE_TTFONT_WIN32_PATH,
+                                                               &hkRegistry));
+    for (DWORD dwIndex = 0;; dwIndex++)
     {
-        LPTTFONTLIST pTTFontList;
+        wchar_t awchValue[512];
+        wchar_t awchData[512];
+        NTSTATUS Status = RegistrySerialization::s_EnumValue(hkRegistry.get(),
+                                                             dwIndex,
+                                                             sizeof(awchValue),
+                                                             (LPWSTR)awchValue,
+                                                             sizeof(awchData),
+                                                             (PBYTE)awchData);
 
-        for (dwIndex = 0;; dwIndex++)
+        if (Status == ERROR_NO_MORE_ITEMS)
         {
-            Status = RegistrySerialization::s_EnumValue(hkRegistry,
-                                                        dwIndex,
-                                                        sizeof(awchValue),
-                                                        (LPWSTR)awchValue,
-                                                        sizeof(awchData),
-                                                        (PBYTE)awchData);
+            // This is fine.
+            break;
+        }
 
-            if (Status == ERROR_NO_MORE_ITEMS)
+        RETURN_IF_NTSTATUS_FAILED(Status);
+
+        const wchar_t* pwsz{ awchData };
+
+        Entry fontEntry;
+        fontEntry.CodePage = std::stoi(awchValue);
+        if (*pwsz == BOLD_MARK)
+        {
+            fontEntry.DisableBold = TRUE;
+            pwsz++;
+        }
+        else
+        {
+            fontEntry.DisableBold = FALSE;
+        }
+
+        fontEntry.FontNames.first = pwsz;
+
+        // wcslen is only valid on non-null pointers.
+        if (pwsz != nullptr)
+        {
+            pwsz += wcslen(pwsz) + 1;
+
+            // Validate that pwsz must be pointing to a position in awchData array after the movement.
+            if (pwsz >= awchData && pwsz < (awchData + ARRAYSIZE(awchData)))
             {
-                Status = STATUS_SUCCESS;
-                break;
-            }
-
-            if (!NT_SUCCESS(Status))
-            {
-                break;
-            }
-
-            pTTFontList = (TTFONTLIST*)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(TTFONTLIST));
-            if (pTTFontList == nullptr)
-            {
-                break;
-            }
-
-            pTTFontList->List.Next = nullptr;
-            pTTFontList->CodePage = ConvertStringToDec(awchValue);
-            pwsz = awchData;
-            if (*pwsz == BOLD_MARK)
-            {
-                pTTFontList->fDisableBold = TRUE;
-                pwsz++;
-            }
-            else
-            {
-                pTTFontList->fDisableBold = FALSE;
-            }
-
-            StringCchCopyW(pTTFontList->FaceName1,
-                           ARRAYSIZE(pTTFontList->FaceName1),
-                           pwsz);
-
-            // wcslen is only valid on non-null pointers.
-            if (pwsz != nullptr)
-            {
-                pwsz += wcslen(pwsz) + 1;
-
-                // Validate that pwsz must be pointing to a position in awchData array after the movement.
-                if (pwsz >= awchData && pwsz < (awchData + ARRAYSIZE(awchData)))
+                if (*pwsz == BOLD_MARK)
                 {
-                    if (*pwsz == BOLD_MARK)
-                    {
-                        pTTFontList->fDisableBold = TRUE;
-                        pwsz++;
-                    }
-                    StringCchCopyW(pTTFontList->FaceName2,
-                                   ARRAYSIZE(pTTFontList->FaceName2),
-                                   pwsz);
+                    fontEntry.DisableBold = TRUE;
+                    pwsz++;
                 }
+
+                fontEntry.FontNames.second = pwsz;
             }
-
-            PushEntryList(&s_ttFontList, &(pTTFontList->List));
         }
 
-        RegCloseKey(hkRegistry);
+        s_ttFontList.emplace_back(std::move(fontEntry));
     }
 
-    return STATUS_SUCCESS;
+    return S_OK;
 }
+CATCH_RETURN();
 
-[[nodiscard]] NTSTATUS TrueTypeFontList::s_Destroy()
+[[nodiscard]] HRESULT TrueTypeFontList::s_Destroy()
+try
 {
-    while (s_ttFontList.Next != nullptr)
-    {
-        LPTTFONTLIST pTTFontList = (LPTTFONTLIST)PopEntryList(&s_ttFontList);
-
-        if (pTTFontList != nullptr)
-        {
-            HeapFree(GetProcessHeap(), 0, pTTFontList);
-        }
-    }
-
-    s_ttFontList.Next = nullptr;
-
-    return STATUS_SUCCESS;
+    s_ttFontList.clear();
+    return S_OK;
 }
+CATCH_RETURN();
 
-LPTTFONTLIST TrueTypeFontList::s_SearchByName(_In_opt_ LPCWSTR pwszFace,
-                                              _In_ BOOL fCodePage,
-                                              _In_ UINT CodePage)
+const TrueTypeFontList::Entry* TrueTypeFontList::s_SearchByName(const std::wstring_view name,
+                                                                const std::optional<unsigned int> CodePage)
 {
-    PSINGLE_LIST_ENTRY pTemp = s_ttFontList.Next;
-
-    if (pwszFace)
+    if (!name.empty())
     {
-        while (pTemp != nullptr)
+        for (const auto& entry : s_ttFontList)
         {
-            LPTTFONTLIST pTTFontList = (LPTTFONTLIST)pTemp;
-
-            if (wcscmp(pwszFace, pTTFontList->FaceName1) == 0 ||
-                wcscmp(pwszFace, pTTFontList->FaceName2) == 0)
+            if (name != entry.FontNames.first &&
+                name != entry.FontNames.second)
             {
-                if (fCodePage)
-                    if (pTTFontList->CodePage == CodePage)
-                        return pTTFontList;
-                    else
-                        return nullptr;
-                else
-                    return pTTFontList;
+                continue;
             }
 
-            pTemp = pTemp->Next;
+            if (CodePage.has_value() && entry.CodePage != CodePage.value())
+            {
+                continue;
+            }
+
+            return &entry;
         }
     }
 
     return nullptr;
 }
 
-[[nodiscard]] NTSTATUS TrueTypeFontList::s_SearchByCodePage(const UINT uiCodePage,
-                                                            _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                            const size_t cchFaceName)
+[[nodiscard]] HRESULT TrueTypeFontList::s_SearchByCodePage(const unsigned int codePage,
+                                                           std::wstring& outFaceName)
 {
-    NTSTATUS status = STATUS_SUCCESS;
-    BOOL fFontFound = FALSE;
-
-    // Look through our list entries to see if we can find a corresponding truetype font for this codepage
-    for (PSINGLE_LIST_ENTRY pListEntry = s_ttFontList.Next; pListEntry != nullptr && !fFontFound; pListEntry = pListEntry->Next)
+    for (const auto& entry : s_ttFontList)
     {
-        LPTTFONTLIST pTTFontEntry = (LPTTFONTLIST)pListEntry;
-        if (pTTFontEntry->CodePage == uiCodePage)
+        if (entry.CodePage == codePage)
         {
-            // found a match, use this font's primary facename
-            status = StringCchCopyW(pwszFaceName, cchFaceName, pTTFontEntry->FaceName1);
-            fFontFound = TRUE;
+            outFaceName = entry.FontNames.first;
+            return S_OK;
         }
     }
 
-    if (!fFontFound)
-    {
-        status = StringCchCopyW(pwszFaceName, cchFaceName, DEFAULT_NON_DBCS_FONTFACE);
-    }
-
-    return status;
+    // Fallthrough: we didn't find a font; presume it's non-DBCS.
+    outFaceName = DEFAULT_NON_DBCS_FONTFACE;
+    return S_OK;
 }

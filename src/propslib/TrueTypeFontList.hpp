@@ -18,16 +18,21 @@ Author(s):
 class TrueTypeFontList
 {
 public:
-    static SINGLE_LIST_ENTRY s_ttFontList;
+    struct Entry
+    {
+        unsigned int CodePage;
+        bool DisableBold;
+        std::pair<std::wstring, std::wstring> FontNames;
+    };
 
-    [[nodiscard]] static NTSTATUS s_Initialize();
-    [[nodiscard]] static NTSTATUS s_Destroy();
+    static std::vector<Entry> s_ttFontList;
 
-    static LPTTFONTLIST s_SearchByName(_In_opt_ LPCWSTR pwszFace,
-                                       _In_ BOOL fCodePage,
-                                       _In_ UINT CodePage);
+    [[nodiscard]] static HRESULT s_Initialize();
+    [[nodiscard]] static HRESULT s_Destroy();
 
-    [[nodiscard]] static NTSTATUS s_SearchByCodePage(const UINT uiCodePage,
-                                                     _Out_writes_(cchFaceName) PWSTR pwszFaceName,
-                                                     const size_t cchFaceName);
+    static const Entry* s_SearchByName(const std::wstring_view name,
+                                       const std::optional<unsigned int> CodePage);
+
+    [[nodiscard]] static HRESULT s_SearchByCodePage(const unsigned int codePage,
+                                                    std::wstring& outFaceName);
 };

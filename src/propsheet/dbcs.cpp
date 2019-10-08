@@ -82,79 +82,38 @@ BYTE CodePageToCharSet(
     return (BYTE)csi.ciCharset;
 }
 
-LPTTFONTLIST
-SearchTTFont(
-    __in_opt LPCTSTR ptszFace,
-    BOOL fCodePage,
-    UINT CodePage)
+bool IsAvailableTTFont(const std::wstring_view name)
 {
-    return TrueTypeFontList::s_SearchByName(ptszFace, fCodePage, CodePage);
+    return nullptr != TrueTypeFontList::s_SearchByName(name, std::nullopt);
 }
 
-BOOL IsAvailableTTFont(
-    LPCTSTR ptszFace)
+bool IsAvailableTTFontCP(const std::wstring_view name, unsigned int codePage)
 {
-    if (SearchTTFont(ptszFace, FALSE, 0))
-    {
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
+    return nullptr != TrueTypeFontList::s_SearchByName(name, codePage);
 }
 
-BOOL IsAvailableTTFontCP(
-    LPCTSTR ptszFace,
-    UINT CodePage)
+bool IsDisableBoldTTFont(const std::wstring_view name)
 {
-    if (SearchTTFont(ptszFace, TRUE, CodePage))
-    {
-        return TRUE;
-    }
-    else
-    {
-        return FALSE;
-    }
+    auto entry = TrueTypeFontList::s_SearchByName(name, std::nullopt);
+    return entry && entry->DisableBold;
 }
 
-BOOL IsDisableBoldTTFont(
-    LPCTSTR ptszFace)
+std::optional<std::wstring> GetAltFaceName(const std::wstring_view name)
 {
-    LPTTFONTLIST pTTFontList;
-
-    pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL)
+    auto entry = TrueTypeFontList::s_SearchByName(name, std::nullopt);
+    if (entry)
     {
-        return pTTFontList->fDisableBold;
-    }
-    else
-    {
-        return FALSE;
-    }
-}
-
-LPTSTR
-GetAltFaceName(
-    LPCTSTR ptszFace)
-{
-    LPTTFONTLIST pTTFontList;
-
-    pTTFontList = SearchTTFont(ptszFace, FALSE, 0);
-    if (pTTFontList != NULL)
-    {
-        if (wcscmp(ptszFace, pTTFontList->FaceName1) == 0)
+        if (entry->FontNames.first == name)
         {
-            return pTTFontList->FaceName2;
+            return entry->FontNames.second;
         }
-
-        if (wcscmp(ptszFace, pTTFontList->FaceName2) == 0)
+        else if (entry->FontNames.second == name)
         {
-            return pTTFontList->FaceName1;
+            return entry->FontNames.first;
         }
     }
 
-    return NULL;
+    return std::nullopt;
 }
 
 [[nodiscard]] NTSTATUS
@@ -243,9 +202,7 @@ int LanguageDisplay(HWND hDlg, UINT CodePage)
 }
 
 // For a given codepage, determine what the default truetype font should be
-[[nodiscard]] NTSTATUS GetTTFontFaceForCodePage(const UINT uiCodePage, // the codepage to examine (note: not charset)
-                                                _Out_writes_(cchFaceName) PWSTR pszFaceName, // where to write the facename we find
-                                                const size_t cchFaceName) // space available in pszFaceName
+[[nodiscard]] HRESULT GetTTFontFaceForCodePage(const unsigned int codePage, std::wstring& outFaceName)
 {
-    return TrueTypeFontList::s_SearchByCodePage(uiCodePage, pszFaceName, cchFaceName);
+    return TrueTypeFontList::s_SearchByCodePage(codePage, outFaceName);
 }

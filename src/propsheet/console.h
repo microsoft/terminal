@@ -74,25 +74,13 @@ BYTE CodePageToCharSet(
 
 BOOL ShouldAllowAllMonoTTFonts();
 
-LPTTFONTLIST
-SearchTTFont(
-    __in_opt LPCTSTR ptszFace,
-    BOOL fCodePage,
-    UINT CodePage);
+bool IsAvailableTTFont(const std::wstring_view name);
 
-BOOL IsAvailableTTFont(
-    LPCTSTR ptszFace);
+bool IsAvailableTTFontCP(const std::wstring_view name, unsigned int codePage);
 
-BOOL IsAvailableTTFontCP(
-    LPCTSTR ptszFace,
-    UINT CodePage);
+bool IsDisableBoldTTFont(const std::wstring_view name);
 
-BOOL IsDisableBoldTTFont(
-    LPCTSTR ptszFace);
-
-LPTSTR
-GetAltFaceName(
-    LPCTSTR ptszFace);
+std::optional<std::wstring> GetAltFaceName(const std::wstring_view name);
 
 [[nodiscard]] NTSTATUS DestroyDbcsMisc(VOID);
 
