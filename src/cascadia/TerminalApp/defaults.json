@@ -15,10 +15,10 @@
             "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
             "name": "Windows PowerShell",
             "commandline": "powershell.exe",
+            "hidden": false,
             "startingDirectory": "%USERPROFILE%",
-            "background": "#012456",
             "closeOnExit": true,
-            "colorScheme": "Campbell",
+            "colorScheme": "Campbell Powershell",
             "cursorColor": "#FFFFFF",
             "cursorShape": "bar",
             "fontFace": "Consolas",
@@ -33,6 +33,7 @@
             "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
             "name": "cmd",
             "commandline": "cmd.exe",
+            "hidden": false,
             "startingDirectory": "%USERPROFILE%",
             "closeOnExit": true,
             "colorScheme": "Campbell",
@@ -44,8 +45,7 @@
             "icon": "ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png",
             "padding": "8, 8, 8, 8",
             "snapOnInput": true,
-            "useAcrylic": true,
-            "acrylicOpacity": 0.75
+            "useAcrylic": false
         }
     ],
     "schemes":
@@ -54,6 +54,27 @@
             "name": "Campbell",
             "foreground": "#CCCCCC",
             "background": "#0C0C0C",
+            "black": "#0C0C0C",
+            "red": "#C50F1F",
+            "green": "#13A10E",
+            "yellow": "#C19C00",
+            "blue": "#0037DA",
+            "purple": "#881798",
+            "cyan": "#3A96DD",
+            "white": "#CCCCCC",
+            "brightBlack": "#767676",
+            "brightRed": "#E74856",
+            "brightGreen": "#16C60C",
+            "brightYellow": "#F9F1A5",
+            "brightBlue": "#3B78FF",
+            "brightPurple": "#B4009E",
+            "brightCyan": "#61D6D6",
+            "brightWhite": "#F2F2F2"
+        },
+        {
+            "name": "Campbell Powershell",
+            "foreground": "#CCCCCC",
+            "background": "#012456",
             "black": "#0C0C0C",
             "red": "#C50F1F",
             "green": "#13A10E",
@@ -180,6 +201,7 @@
     "keybindings":
     [
         { "command": "closePane", "keys": ["ctrl+shift+w"] },
+        { "command": "closeWindow", "keys": ["alt+f4"] },
         { "command": "copy", "keys": ["ctrl+shift+c"] },
         { "command": "duplicateTab", "keys": ["ctrl+shift+d"] },
         { "command": "newTab", "keys": ["ctrl+shift+t"] },
@@ -209,6 +231,8 @@
         { "command": "switchToTab5", "keys": ["ctrl+alt+6"] },
         { "command": "switchToTab6", "keys": ["ctrl+alt+7"] },
         { "command": "switchToTab7", "keys": ["ctrl+alt+8"] },
-        { "command": "switchToTab8", "keys": ["ctrl+alt+9"] }
+        { "command": "switchToTab8", "keys": ["ctrl+alt+9"] },
+        { "command": "decreaseFontSize", "keys": ["ctrl+-"] },
+        { "command": "increaseFontSize", "keys": ["ctrl+="] }
     ]
 }

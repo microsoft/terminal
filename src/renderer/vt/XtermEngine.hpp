@@ -28,6 +28,7 @@ namespace Microsoft::Console::Render
     {
     public:
         XtermEngine(_In_ wil::unique_hfile hPipe,
+                    wil::shared_event shutdownEvent,
                     const Microsoft::Console::IDefaultColorProvider& colorProvider,
                     const Microsoft::Console::Types::Viewport initialViewport,
                     _In_reads_(cColorTable) const COLORREF* const ColorTable,
@@ -38,6 +39,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
+
+        [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const COLORREF colorForeground,
                                                            const COLORREF colorBackground,
@@ -60,6 +63,8 @@ namespace Microsoft::Console::Render
         bool _previousLineWrapped;
         bool _usingUnderLine;
         bool _needToDisableCursor;
+        bool _lastCursorIsVisible;
+        bool _nextCursorIsVisible;
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 

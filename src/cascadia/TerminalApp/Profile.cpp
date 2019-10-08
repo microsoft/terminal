@@ -268,7 +268,9 @@ Json::Value Profile::ToJson() const
     Json::Value root = GenerateStub();
 
     ///// Profile-specific settings /////
-    root[JsonKey(HiddenKey)] = _hidden;
+    // As of #2795, all profile-specific settings were moved to GenerateStub. If
+    // any new profiles-specific settings are added, they should probably be
+    // added here instead of in that method.
 
     ///// Core Settings /////
     if (_defaultForeground)
@@ -449,6 +451,8 @@ Json::Value Profile::GenerateStub() const
     {
         stub[JsonKey(SourceKey)] = winrt::to_string(_source.value());
     }
+
+    stub[JsonKey(HiddenKey)] = _hidden;
 
     return stub;
 }

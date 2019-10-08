@@ -47,6 +47,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestReorderingWithoutGuid);
         TEST_METHOD(TestLayeringNameOnlyProfiles);
         TEST_METHOD(TestExplodingNameOnlyProfiles);
+        TEST_METHOD(TestHideAllProfiles);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -1124,5 +1125,70 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(L"NeitherShouldThisOne", settings._profiles.at(2)._name);
         VERIFY_ARE_EQUAL(L"Windows PowerShell", settings._profiles.at(3)._name);
         VERIFY_ARE_EQUAL(L"cmd", settings._profiles.at(4)._name);
+    }
+
+    void SettingsTests::TestHideAllProfiles()
+    {
+        const std::string settingsWithProfiles{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "hidden": false
+                },
+                {
+                    "name" : "profile1",
+                    "hidden": true
+                }
+            ]
+        })" };
+
+        const std::string settingsWithoutProfiles{ R"(
+        {
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "hidden": true
+                },
+                {
+                    "name" : "profile1",
+                    "hidden": true
+                }
+            ]
+        })" };
+
+        VerifyParseSucceeded(settingsWithProfiles);
+        VerifyParseSucceeded(settingsWithoutProfiles);
+
+        {
+            // Case 1: Good settings
+            CascadiaSettings settings;
+            settings._ParseJsonString(settingsWithProfiles, false);
+            settings.LayerJson(settings._userSettings);
+
+            settings._RemoveHiddenProfiles();
+            Log::Comment(NoThrowString().Format(
+                L"settingsWithProfiles successfully parsed and validated"));
+            VERIFY_ARE_EQUAL(1u, settings._profiles.size());
+        }
+        {
+            // Case 2: Bad settings
+
+            CascadiaSettings settings;
+            settings._ParseJsonString(settingsWithoutProfiles, false);
+            settings.LayerJson(settings._userSettings);
+
+            bool caughtExpectedException = false;
+            try
+            {
+                settings._RemoveHiddenProfiles();
+            }
+            catch (const ::TerminalApp::SettingsException& ex)
+            {
+                VERIFY_IS_TRUE(ex.Error() == ::TerminalApp::SettingsLoadErrors::AllProfilesHidden);
+                caughtExpectedException = true;
+            }
+            VERIFY_IS_TRUE(caughtExpectedException);
+        }
     }
 }

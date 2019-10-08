@@ -355,4 +355,14 @@ void CascadiaSettings::_RemoveHiddenProfiles()
                                    _profiles.end(),
                                    [](auto&& profile) { return profile.IsHidden(); }),
                     _profiles.end());
+
+    // Ensure that we still have some profiles here. If we don't, then throw an
+    // exception, so the app can use the defaults.
+    const bool hasProfiles = !_profiles.empty();
+    if (!hasProfiles)
+    {
+        // Throw an exception. This is an invalid state, and we want the app to
+        // be able to gracefully use the default settings.
+        throw ::TerminalApp::SettingsException(::TerminalApp::SettingsLoadErrors::AllProfilesHidden);
+    }
 }

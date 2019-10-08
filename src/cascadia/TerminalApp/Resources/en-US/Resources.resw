@@ -133,6 +133,10 @@
     <value>No profiles were found in your settings.
 </value>
   </data>
+  <data name="AllProfilesHiddenText" xml:space="preserve">
+    <value>All profiles were hidden in your settings. You must have at least one non-hidden profile.
+</value>
+  </data>
   <data name="ReloadJsonParseErrorText" xml:space="preserve">
     <value>Settings could not be reloaded from file. Check for syntax errors, including trailing commas.
 </value>

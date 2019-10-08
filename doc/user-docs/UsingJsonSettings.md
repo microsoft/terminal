@@ -4,7 +4,7 @@ One way (currently the only way) to configure Windows Terminal is by editing the
 `profiles.json` settings file. At the time of writing you can open the settings
 file in your default editor by selecting `Settings` from the WT pull down menu.
 
-The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\profiles.json`.
+The settings are stored in the file `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\profiles.json`.
 
 As of [#2515](https://github.com/microsoft/terminal/pull/2515), the settings are
 split into _two_ files: a hardcoded `defaults.json`, and `profiles.json`, which
@@ -183,6 +183,11 @@ When dynamic profiles are created at runtime, they'll be added to the
 a linux distro, then the profile will remain in your `profiles.json` file, but
 the profile will be hidden.
 
+The Windows Terminal uses the `guid` property of these dynamically-generated
+profiles to uniquely identify them. If you try to change the `guid` of a
+dynamically-generated profile, the Terminal will automatically recreate a new
+entry for that profile.
+
 If you'd like to disable a particular dynamic profile source, you can add that
 `source` to the global `"disabledProfileSources"` array. For example, if you'd
 like to hide all the WSL profiles, you could add the following setting:
@@ -200,14 +205,14 @@ like to hide all the WSL profiles, you could add the following setting:
 
 1. Download the Debian JPG logo https://www.debian.org/logos/openlogo-100.jpg
 2. Put the image in the
- `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\RoamingState\`
+ `$env:LocalAppData\Packages\Microsoft.WindowsTerminal_<randomString>\LocalState\`
  directory (same directory as your `profiles.json` file).
 
     __NOTE__:  You can put the image anywhere you like, the above suggestion happens to be convenient.
 3. Open your WT json properties file.
 4. Under the Debian Linux profile, add the following fields:
 ```json
-    "backgroundImage": "ms-appdata:///Roaming/openlogo-100.jpg",
+    "backgroundImage": "ms-appdata:///Local/openlogo-100.jpg",
     "backgroundImageOpacity": 1,
     "backgroundImageStretchMode" : "none",
     "backgroundImageAlignment" : "topRight",
@@ -241,6 +246,8 @@ following objects into your `globals.keybindings` array:
 { "command": "paste", "keys": ["ctrl+shift+v"] }
 ```
 
+> 👉 **Note**: you can also add a keybinding for the `copyTextWithoutNewlines` command. This removes newlines as the text is copied to your clipboard.
+
 This will add copy and paste on <kbd>ctrl+shift+c</kbd>
 and <kbd>ctrl+shift+v</kbd> respectively.
 
@@ -270,7 +277,7 @@ You can even set multiple keybindings for a single action if you'd like. For exa
 will bind both <kbd>ctrl+shift+v</kbd> and
 <kbd>shift+Insert</kbd> to `paste`.
 
-Note: If you set your copy keybinding to `"ctrl+c"`, you'll only be able to send
+> 👉 **Note**: If you set your copy keybinding to `"ctrl+c"`, you'll only be able to send
 an interrupt to the commandline application using <kbd>Ctrl+C</kbd> when there's
 no text selection. Additionally, if you set `paste` to `"ctrl+v"`, commandline
 applications won't be able to read a ctrl+v from the input. For these reasons,

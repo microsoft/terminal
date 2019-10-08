@@ -77,6 +77,8 @@ class TextBufferTests
 
     TEST_METHOD(TestWrapFlag);
 
+    TEST_METHOD(TestWrapThroughWriteLine);
+
     TEST_METHOD(TestDoubleBytePadFlag);
 
     void DoBoundaryTest(PWCHAR const pwszInputString,
@@ -195,6 +197,78 @@ void TextBufferTests::TestWrapFlag()
     // try unset wrap and check
     Row.GetCharRow().SetWrapForced(false);
     VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+}
+
+void TextBufferTests::TestWrapThroughWriteLine()
+{
+    TextBuffer& textBuffer = GetTbi();
+
+    auto VerifyWrap = [&](bool expected) {
+        ROW& Row = textBuffer._GetFirstRow();
+
+        if (expected)
+        {
+            VERIFY_IS_TRUE(Row.GetCharRow().WasWrapForced());
+        }
+        else
+        {
+            VERIFY_IS_FALSE(Row.GetCharRow().WasWrapForced());
+        }
+    };
+
+    // Construct string for testing
+    const auto width = textBuffer.GetSize().Width();
+    std::wstring chars = L"";
+    for (auto i = 0; i < width; i++)
+    {
+        chars.append(L"a");
+    }
+    const auto lineOfText = std::move(chars);
+
+    Log::Comment(L"Case 1 : Implicit wrap (false)");
+    {
+        TextAttribute expectedAttr(FOREGROUND_RED);
+        OutputCellIterator it(lineOfText, expectedAttr);
+
+        textBuffer.WriteLine(it, { 0, 0 });
+        VerifyWrap(false);
+    }
+
+    Log::Comment(L"Case 2 : wrap = true");
+    {
+        TextAttribute expectedAttr(FOREGROUND_RED);
+        OutputCellIterator it(lineOfText, expectedAttr);
+
+        textBuffer.WriteLine(it, { 0, 0 }, true);
+        VerifyWrap(true);
+    }
+
+    Log::Comment(L"Case 3: wrap = nullopt (remain as TRUE)");
+    {
+        TextAttribute expectedAttr(FOREGROUND_RED);
+        OutputCellIterator it(lineOfText, expectedAttr);
+
+        textBuffer.WriteLine(it, { 0, 0 }, std::nullopt);
+        VerifyWrap(true);
+    }
+
+    Log::Comment(L"Case 4: wrap = false");
+    {
+        TextAttribute expectedAttr(FOREGROUND_RED);
+        OutputCellIterator it(lineOfText, expectedAttr);
+
+        textBuffer.WriteLine(it, { 0, 0 }, false);
+        VerifyWrap(false);
+    }
+
+    Log::Comment(L"Case 5: wrap = nullopt (remain as false)");
+    {
+        TextAttribute expectedAttr(FOREGROUND_RED);
+        OutputCellIterator it(lineOfText, expectedAttr);
+
+        textBuffer.WriteLine(it, { 0, 0 }, std::nullopt);
+        VerifyWrap(false);
+    }
 }
 
 void TextBufferTests::TestDoubleBytePadFlag()
