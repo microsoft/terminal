@@ -31,7 +31,7 @@ On Windows 10, we recommend downloading the Windows Terminal from the Microsoft 
 For users who are unable to install Terminal from the Microsoft Store (e.g. on [Windows Server 1903](https://docs.microsoft.com/en-us/windows-server/get-started-19/whats-new-in-windows-server-1903) or later), Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
 > ⚠ Note:
-> 1. If you install Terminal manually, be sure to install [the Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
+> 1. If you install Terminal manually, be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
 > 1. If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
 ### Install via Chocolatey (unofficial)
