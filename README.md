@@ -118,7 +118,7 @@ Cause: You're launching the incorrect solution in Visual Studio.
 
 Solution: Make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`.
 
-> Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect-to and communicate-with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
+> ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect to and communicate with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
 
 ## I tried running WindowsTerminal.exe and it crashes
 
