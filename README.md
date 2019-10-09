@@ -16,23 +16,20 @@ Other related repositories include:
 
 ### Operating System Support
 
-Windows Terminal can be installed on:
-
-* Windows 10 1903 (build 18362) or later
-* [Windows Server 1903](https://docs.microsoft.com/en-us/windows-server/get-started-19/whats-new-in-windows-server-1903) or later (install manually - see "From this repository" below)
+Windows Terminal can be installed on Windows 10 1903 (build 18362) or later.
 
 ### Install via the Microsoft Store
 
-On Windows 10, we recommend downloading the Windows Terminal from the Microsoft Store and it'll be continuously updated:
+We recommend downloading the Windows Terminal from the Microsoft Store and automatically receive upgrades when we release new builds:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
 ### Manually install builds from this repository
-For users who are unable to install Terminal from the Microsoft Store (e.g. on [Windows Server 1903](https://docs.microsoft.com/en-us/windows-server/get-started-19/whats-new-in-windows-server-1903) or later), Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
+For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
-> ⚠ Note:
-> 1. If you install Terminal manually, be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
-> 1. If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
+> ⚠ Note: If you install Terminal manually:
+> * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
+> * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
 ### Install via Chocolatey (unofficial)
 
