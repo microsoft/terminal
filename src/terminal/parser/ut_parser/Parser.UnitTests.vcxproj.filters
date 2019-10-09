@@ -15,7 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stateMachineTest.cpp">
+    <ClCompile Include="InputEngineTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OutputEngineTest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StateMachineTest.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\precomp.cpp">
