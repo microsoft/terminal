@@ -69,12 +69,10 @@ void AppHost::Initialize()
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
     }
-    else
-    {
-        // Register the 'X' button of the window for a warning experience of multiple
-        // tabs opened, this is consistent with Alt+F4 closing
-        _window->WindowCloseButtonClicked([this]() { _app.WindowCloseButtonClicked(); });
-    }
+
+    // Register the 'X' button of the window for a warning experience of multiple
+    // tabs opened, this is consistent with Alt+F4 closing
+    _window->WindowCloseButtonClicked([this]() { _app.WindowCloseButtonClicked(); });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.

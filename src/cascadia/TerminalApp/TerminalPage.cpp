@@ -823,7 +823,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app with keys. If there is more
+    // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
     void TerminalPage::CloseWindow()
     {
