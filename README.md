@@ -122,7 +122,7 @@ Solution: Make sure you're building & deploying `CascadiaPackage` in Visual Stud
 
 ## I tried running WindowsTerminal.exe and it crashes
 
-Cause 1: You tried to launch "Windows Terminal" solution which will fail.
+Cause 1: You tried to launch the "WindowsTerminal" project outside of its package.
 
 Solution 1: Build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
 
