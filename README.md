@@ -126,7 +126,7 @@ Cause 1: You tried to launch the "WindowsTerminal" project outside of its packag
 
 Solution 1: Build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
 
-Cause 2: You're running an earlier build of Windows 10 than version 1903
+Cause 2: You're running an build of Windows 10 earlier than version 1903
 
 Solution 2: Upgrade to Windows 10 release 1903 or later.
 
