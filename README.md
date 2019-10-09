@@ -100,20 +100,10 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## FAQ
 
-## I built and ran the new Terminal, but I just get a blank window
-
-Cause: Your locally built Terminal does not match the architecture of your computer.
-
-Solution: Set Visual Studio's "Solution Platform" to match your computer's architecture, then build and run the CascadiaPackage solution.
-
-![Visual Studio's Solution Platform](/doc/images/solution-platform.png)
-
-> 👉 Tip: To check your computer's architecture, open Windows 10's Settings app and go to System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
-
 ## I built and ran the new Terminal, but it looks just like the old console
 Cause: You're launching the incorrect solution in Visual Studio.
 
-Solution: Make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`.
+Solution: Make sure you're building & deploying the `CascadiaPackage` project in Visual Studio.
 
 > ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect to and communicate with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
 
