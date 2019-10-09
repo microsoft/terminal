@@ -120,6 +120,14 @@ namespace Microsoft::Console::VirtualTerminal
             Up,
             Down
         };
+        struct CursorState
+        {
+            unsigned int Row = 1;
+            unsigned int Column = 1;
+            bool IsOriginModeRelative = false;
+            TextAttribute Attributes = {};
+            TerminalOutput TermOutput = {};
+        };
 
         bool _CursorMovement(const CursorDirection dir, _In_ unsigned int const uiDistance) const;
         bool _CursorMovePosition(_In_opt_ const unsigned int* const puiRow, _In_opt_ const unsigned int* const puiCol) const;
@@ -148,11 +156,10 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
-        COORD _coordSavedCursor;
+        CursorState _savedCursorState;
         SMALL_RECT _srScrollMargins;
 
         bool _fIsOriginModeRelative;
-        bool _fIsSavedOriginModeRelative;
 
         bool _fIsSetColumnsEnabled;
 

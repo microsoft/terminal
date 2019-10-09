@@ -28,16 +28,12 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
     _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
-    _fIsSavedOriginModeRelative(false), // as is the origin mode of the saved cursor position.
     _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
     _fChangedForeground(false),
     _fChangedMetaAttrs(false),
     _TermOutput()
 {
-    // The top-left corner in VT-speak is 1,1. Our internal array uses 0 indexes, but VT uses 1,1 for top left corner.
-    _coordSavedCursor.X = 1;
-    _coordSavedCursor.Y = 1;
     _srScrollMargins = { 0 }; // initially, there are no scroll margins.
 }
 
@@ -429,6 +425,9 @@ bool AdaptDispatch::CursorSavePosition()
     //      before the user scrolled the console output
     bool fSuccess = !!(_conApi->MoveToBottom() && _conApi->GetConsoleScreenBufferInfoEx(&csbiex));
 
+    TextAttribute attributes;
+    fSuccess = fSuccess && !!(_conApi->PrivateGetTextAttributes(&attributes));
+
     if (fSuccess)
     {
         // The cursor is given to us by the API as relative to the whole buffer.
@@ -438,9 +437,11 @@ bool AdaptDispatch::CursorSavePosition()
         SMALL_RECT const srViewport = csbiex.srWindow;
 
         // VT is also 1 based, not 0 based, so correct by 1.
-        _coordSavedCursor.X = coordCursor.X - srViewport.Left + 1;
-        _coordSavedCursor.Y = coordCursor.Y - srViewport.Top + 1;
-        _fIsSavedOriginModeRelative = _fIsOriginModeRelative;
+        _savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
+        _savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        _savedCursorState.IsOriginModeRelative = _fIsOriginModeRelative;
+        _savedCursorState.Attributes = attributes;
+        _savedCursorState.TermOutput = _TermOutput;
     }
 
     return fSuccess;
@@ -455,15 +456,19 @@ bool AdaptDispatch::CursorSavePosition()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorRestorePosition()
 {
-    unsigned int const uiRow = _coordSavedCursor.Y;
-    unsigned int const uiCol = _coordSavedCursor.X;
-
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _fIsOriginModeRelative = false;
-    bool const fSuccess = _CursorMovePosition(&uiRow, &uiCol);
+    bool fSuccess = _CursorMovePosition(&_savedCursorState.Row, &_savedCursorState.Column);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _fIsOriginModeRelative = _fIsSavedOriginModeRelative;
+    _fIsOriginModeRelative = _savedCursorState.IsOriginModeRelative;
+
+    // Restore text attributes.
+    fSuccess = !!(_conApi->PrivateSetTextAttributes(_savedCursorState.Attributes)) && fSuccess;
+
+    // Restore designated character set.
+    _TermOutput = _savedCursorState.TermOutput;
+
     return fSuccess;
 }
 
@@ -1501,9 +1506,8 @@ bool AdaptDispatch::SoftReset()
     }
     if (fSuccess)
     {
-        // Save cursor state: Home position; Absolute addressing.
-        _coordSavedCursor = { 1, 1 };
-        _fIsSavedOriginModeRelative = false;
+        // Reset the saved cursor state.
+        _savedCursorState = {};
     }
 
     return fSuccess;
