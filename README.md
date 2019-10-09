@@ -18,7 +18,7 @@ Other related repositories include:
 
 ### From the Microsoft Store
 
-Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
+Download Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
@@ -47,7 +47,7 @@ If you have any issues when installing/upgrading the package please go to the [p
 
 ## Project Build Status
 
-Project|Build Status
+Project|Build Status:
 ---|---
 Terminal|[![Build Status](https://dev.azure.com/ms/Terminal/_apis/build/status/Terminal%20CI?branchName=master)](https://dev.azure.com/ms/Terminal/_build?definitionId=136)
 ColorTool|![](https://microsoft.visualstudio.com/_apis/public/build/definitions/c93e867a-8815-43c1-92c4-e7dd5404f1e1/17023/badge)
@@ -62,7 +62,7 @@ The plan for delivering Windows Terminal v1.0 [is described here](/doc/terminal-
 
 ## Terminal & Console Overview
 
-Please take a few minutes to review the overview below before diving into the code:
+Please take a few minutes to review the overview before diving into the code:
 
 ### Windows Terminal
 
