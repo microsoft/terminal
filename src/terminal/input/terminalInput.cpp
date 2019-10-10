@@ -3,7 +3,6 @@
 
 #include "precomp.h"
 #include <windows.h>
-#include <iostream>
 #include "terminalInput.hpp"
 
 #include "strsafe.h"

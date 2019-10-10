@@ -109,13 +109,13 @@ namespace Microsoft.Terminal.Wpf
         /// <returns>Tuple with rows and columns.</returns>
         internal (int rows, int columns) TriggerResize(Size renderSize)
         {
-            int columns, rows;
-            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out columns, out rows);
+            NativeMethods.COORD dimensions;
+            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out dimensions);
 
-            this.Rows = rows;
-            this.Columns = columns;
+            this.Rows = dimensions.Y;
+            this.Columns = dimensions.X;
 
-            return (rows, columns);
+            return (dimensions.Y, dimensions.X);
         }
 
         /// <summary>
@@ -125,7 +125,13 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="columns">Number of columns to show.</param>
         internal void Resize(uint rows, uint columns)
         {
-            NativeMethods.Resize(this.terminal, rows, columns);
+            NativeMethods.COORD dimensions = new NativeMethods.COORD
+            {
+                X = (short)columns,
+                Y = (short)rows,
+            };
+
+            NativeMethods.Resize(this.terminal, dimensions);
         }
 
         /// <inheritdoc/>
@@ -215,11 +221,11 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
-                        NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out int columns, out int rows);
+                        NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
 
-                        this.connection?.Resize((uint)rows, (uint)columns);
-                        this.Columns = columns;
-                        this.Rows = rows;
+                        this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
+                        this.Columns = dimensions.X;
+                        this.Rows = dimensions.Y;
 
                         break;
                     case NativeMethods.WindowMessage.WM_MOUSEWHEEL:

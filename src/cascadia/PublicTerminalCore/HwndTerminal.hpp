@@ -21,8 +21,8 @@ extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
-__declspec(dllexport) HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns);
+__declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall Resize(void* terminal, COORD dimensions);
 __declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
 __declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
@@ -32,7 +32,7 @@ __declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
 __declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
 __declspec(dllexport) void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
-__declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*));
+__declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
 __declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
 __declspec(dllexport) void _stdcall SendCharEvent(void* terminal, wchar_t ch);
 };
@@ -43,9 +43,9 @@ public:
     HwndTerminal(HWND hwnd);
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
-    HRESULT Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows);
+    HRESULT Refresh(double width, double height, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
-    void RegisterWriteCallback(void _stdcall callback(wchar_t*));
+    void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
 
 private:
     wil::unique_hwnd _hwnd;
@@ -58,7 +58,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    friend HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns);
+    friend HRESULT _stdcall Resize(void* terminal, COORD dimensions);
     friend void _stdcall DpiChanged(void* terminal, int newDpi);
     friend void _stdcall UserScroll(void* terminal, int viewTop);
     friend HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);

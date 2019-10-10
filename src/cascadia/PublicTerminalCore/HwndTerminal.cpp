@@ -14,7 +14,7 @@ using namespace ::Microsoft::Terminal::Core;
 
 static LPCWSTR term_window_class = L"HwndTerminalClass";
 
-LRESULT CALLBACK HwndTerminalWndProc(
+static LRESULT CALLBACK HwndTerminalWndProc(
     HWND hwnd,
     UINT uMsg,
     WPARAM wParam,
@@ -23,7 +23,7 @@ LRESULT CALLBACK HwndTerminalWndProc(
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-bool RegisterTermClass(HINSTANCE hInstance) noexcept
+static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
     WNDCLASSW wc;
     if (GetClassInfo(hInstance, term_window_class, &wc))
@@ -97,7 +97,6 @@ HRESULT HwndTerminal::Initialize()
 
     // Fist set up the dx engine with the window size in pixels.
     // Then, using the font, get the number of characters that can fit.
-    // Resize our terminal connection to match that size, and initialize the terminal with that size.
     const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
     RETURN_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
@@ -119,7 +118,7 @@ void HwndTerminal::RegisterScrollCallback(std::function<void(int, int, int)> cal
     _terminal->SetScrollPositionChangedCallback(callback);
 }
 
-void HwndTerminal::RegisterWriteCallback(void _stdcall callback(wchar_t*))
+void HwndTerminal::RegisterWriteCallback(const void _stdcall callback(wchar_t*))
 {
     _terminal->SetWriteInputCallback([=](std::wstring & input) noexcept {
         const wchar_t* text = input.c_str();
@@ -151,10 +150,9 @@ void HwndTerminal::_UpdateFont(int newDpi)
     _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 }
 
-HRESULT HwndTerminal::Refresh(double width, double height, _Out_ int* charColumns, _Out_ int* charRows)
+HRESULT HwndTerminal::Refresh(double width, double height, _Out_ COORD* dimensions)
 {
-    RETURN_HR_IF_NULL(E_INVALIDARG, charColumns);
-    RETURN_HR_IF_NULL(E_INVALIDARG, charRows);
+    RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
     auto lock = _terminal->LockForWriting();
     const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
@@ -175,8 +173,8 @@ HRESULT HwndTerminal::Refresh(double width, double height, _Out_ int* charColumn
     // I believe we'll need support for CSI 2J, and additionally I think
     //      we're resetting the viewport to the top
     RETURN_IF_FAILED(_terminal->UserResize({ vp.Width(), vp.Height() }));
-    *charColumns = vp.Width();
-    *charRows = vp.Height();
+    dimensions->X = vp.Width();
+    dimensions->Y = vp.Height();
 
     return S_OK;
 }
@@ -203,7 +201,7 @@ void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int
     publicTerminal->RegisterScrollCallback(callback);
 }
 
-void _stdcall RegisterWriteCallback(void* terminal, void __stdcall callback(wchar_t*))
+void _stdcall RegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*))
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterWriteCallback(callback);
@@ -215,10 +213,10 @@ void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ int* charColumns, _Out_ int* charRows)
+HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    return publicTerminal->Refresh(width, height, charColumns, charRows);
+    return publicTerminal->Refresh(width, height, dimensions);
 }
 
 void _stdcall DpiChanged(void* terminal, int newDpi)
@@ -235,10 +233,7 @@ void _stdcall UserScroll(void* terminal, int viewTop)
 
 HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed)
 {
-    COORD terminalPosition = {
-        cursorPosition.X,
-        cursorPosition.Y
-    };
+    COORD terminalPosition = { cursorPosition };
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto fontSize = publicTerminal->_actualFont.GetSize();
@@ -259,10 +254,7 @@ HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPr
 
 HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition)
 {
-    COORD terminalPosition = {
-        cursorPosition.X,
-        cursorPosition.Y
-    };
+    COORD terminalPosition = { cursorPosition };
 
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto fontSize = publicTerminal->_actualFont.GetSize();
@@ -291,7 +283,7 @@ bool _stdcall IsSelectionActive(void* terminal)
     return selectionActive;
 }
 
-// Copies the selected text into the clipboard.
+// Returns the selected text in the terminal.
 const wchar_t* _stdcall GetSelection(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
@@ -305,32 +297,10 @@ const wchar_t* _stdcall GetSelection(void* terminal)
         selectedText += text;
     }
 
-    const wchar_t* text = selectedText.c_str();
-    const size_t textChars = wcslen(text) + 1;
-    const size_t textBytes = textChars * sizeof(wchar_t);
-    wchar_t* returnText = nullptr;
+    auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
+    ClearSelection(terminal);
 
-    returnText = (wchar_t*)::CoTaskMemAlloc(textBytes);
-
-    if (returnText == nullptr)
-    {
-        return nullptr;
-    }
-    else
-    {
-        try
-        {
-            wcscpy_s(returnText, textChars, text);
-            ClearSelection(terminal);
-        }
-        catch (...)
-        {
-            ::CoTaskMemFree(returnText);
-            return nullptr;
-        }
-    }
-
-    return returnText;
+    return returnText.release();
 }
 
 void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
@@ -404,10 +374,9 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
 }
 
 // Resizes the terminal to the specified rows and columns.
-HRESULT _stdcall Resize(void* terminal, unsigned int rows, unsigned int columns)
+HRESULT _stdcall Resize(void* terminal, COORD dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-    COORD newSize = { (short)rows, (short)columns };
 
-    return publicTerminal->_terminal->UserResize(newSize);
+    return publicTerminal->_terminal->UserResize(dimensions);
 }
