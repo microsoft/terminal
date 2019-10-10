@@ -58,13 +58,13 @@ public:
     bool GetCopyOnSelect() const noexcept;
     void SetCopyOnSelect(const bool copyOnSelect) noexcept;
 
-    int32_t GetInitialX() const noexcept;
+    std::optional<int32_t> GetInitialX() const noexcept;
     void SetInitialX(const int32_t initialX) noexcept;
-    bool GetIsInitialXSet() const noexcept;
+    bool IsInitialXSet() const noexcept;
 
-    int32_t GetInitialY() const noexcept;
+    std::optional<int32_t> GetInitialY() const noexcept;
     void SetInitialY(const int32_t initialY) noexcept;
-    bool GetIsInitialYSet() const noexcept;
+    bool IsInitialYSet() const noexcept;
 
     winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
     void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
@@ -86,8 +86,8 @@ private:
     int32_t _initialRows;
     int32_t _initialCols;
 
-    int32_t _initialX;
-    int32_t _initialY;
+    std::optional<int32_t> _initialX;
+    std::optional<int32_t> _initialY;
     bool _isInitialXSet;
     bool _isInitialYSet;
 

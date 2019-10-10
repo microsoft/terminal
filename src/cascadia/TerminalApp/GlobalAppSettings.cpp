@@ -154,7 +154,7 @@ void GlobalAppSettings::SetShowTabsInTitlebar(const bool showTabsInTitlebar) noe
     _showTabsInTitlebar = showTabsInTitlebar;
 }
 
-int32_t GlobalAppSettings::GetInitialX() const noexcept
+std::optional<int32_t> GlobalAppSettings::GetInitialX() const noexcept
 {
     return _initialX;
 }
@@ -164,12 +164,12 @@ void GlobalAppSettings::SetInitialX(const int32_t initialX) noexcept
     _initialX = initialX;
 }
 
-bool GlobalAppSettings::GetIsInitialXSet() const noexcept
+bool GlobalAppSettings::IsInitialXSet() const noexcept
 {
     return _isInitialXSet;
 }
 
-int32_t GlobalAppSettings::GetInitialY() const noexcept
+std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
 {
     return _initialY;
 }
@@ -179,7 +179,7 @@ void GlobalAppSettings::SetInitialY(const int32_t initialY) noexcept
     _initialY = initialY;
 }
 
-bool GlobalAppSettings::GetIsInitialYSet() const noexcept
+bool GlobalAppSettings::IsInitialYSet() const noexcept
 {
     return _isInitialYSet;
 }
@@ -217,11 +217,11 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
     if (_isInitialXSet)
     {
-        jsonObject[JsonKey(InitialXKey)] = _initialX;
+        jsonObject[JsonKey(InitialXKey)] = _initialX.value();
     }
     if (_isInitialYSet)
     {
-        jsonObject[JsonKey(InitialYKey)] = _initialY;
+        jsonObject[JsonKey(InitialYKey)] = _initialY.value();
     }
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
@@ -383,9 +383,9 @@ std::wstring_view GlobalAppSettings::_SerializeLaunchMode(const LaunchMode launc
 {
     switch (launchMode)
     {
-        case LaunchMode::MaximizedMode:
-            return MaximizedLaunchModeValue;
-        default:
-            return DefaultLaunchModeValue;
+    case LaunchMode::MaximizedMode:
+        return MaximizedLaunchModeValue;
+    default:
+        return DefaultLaunchModeValue;
     }
 }

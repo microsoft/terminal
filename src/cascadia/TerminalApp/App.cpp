@@ -382,13 +382,13 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Windows::Foundation::Point point((float)defaultInitialX, (float)defaultInitialY);
 
-        if (_settings->GlobalSettings().GetIsInitialXSet())
+        if (_settings->GlobalSettings().IsInitialXSet())
         {
-            point.X = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialX());
+            point.X = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialX().value());
         }
-        if (_settings->GlobalSettings().GetIsInitialYSet())
+        if (_settings->GlobalSettings().IsInitialYSet())
         {
-            point.Y = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialY());
+            point.Y = gsl::narrow_cast<float>(_settings->GlobalSettings().GetInitialY().value());
         }
 
         return point;
