@@ -437,11 +437,12 @@ bool AdaptDispatch::CursorSavePosition()
         SMALL_RECT const srViewport = csbiex.srWindow;
 
         // VT is also 1 based, not 0 based, so correct by 1.
-        _savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
-        _savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
-        _savedCursorState.IsOriginModeRelative = _fIsOriginModeRelative;
-        _savedCursorState.Attributes = attributes;
-        _savedCursorState.TermOutput = _TermOutput;
+        auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+        savedCursorState.Column = coordCursor.X - srViewport.Left + 1;
+        savedCursorState.Row = coordCursor.Y - srViewport.Top + 1;
+        savedCursorState.IsOriginModeRelative = _fIsOriginModeRelative;
+        savedCursorState.Attributes = attributes;
+        savedCursorState.TermOutput = _TermOutput;
     }
 
     return fSuccess;
@@ -456,18 +457,20 @@ bool AdaptDispatch::CursorSavePosition()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::CursorRestorePosition()
 {
+    auto& savedCursorState = _savedCursorState[_usingAltBuffer];
+
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _fIsOriginModeRelative = false;
-    bool fSuccess = _CursorMovePosition(&_savedCursorState.Row, &_savedCursorState.Column);
+    bool fSuccess = _CursorMovePosition(&savedCursorState.Row, &savedCursorState.Column);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
-    _fIsOriginModeRelative = _savedCursorState.IsOriginModeRelative;
+    _fIsOriginModeRelative = savedCursorState.IsOriginModeRelative;
 
     // Restore text attributes.
-    fSuccess = !!(_conApi->PrivateSetTextAttributes(_savedCursorState.Attributes)) && fSuccess;
+    fSuccess = !!(_conApi->PrivateSetTextAttributes(savedCursorState.Attributes)) && fSuccess;
 
     // Restore designated character set.
-    _TermOutput = _savedCursorState.TermOutput;
+    _TermOutput = savedCursorState.TermOutput;
 
     return fSuccess;
 }
@@ -1354,7 +1357,16 @@ bool AdaptDispatch::SetWindowTitle(std::wstring_view title)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseAlternateScreenBuffer()
 {
-    return !!_conApi->PrivateUseAlternateScreenBuffer();
+    bool fSuccess = CursorSavePosition();
+    if (fSuccess)
+    {
+        fSuccess = !!_conApi->PrivateUseAlternateScreenBuffer();
+        if (fSuccess)
+        {
+            _usingAltBuffer = true;
+        }
+    }
+    return fSuccess;
 }
 
 // Routine Description:
@@ -1366,7 +1378,16 @@ bool AdaptDispatch::UseAlternateScreenBuffer()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::UseMainScreenBuffer()
 {
-    return !!_conApi->PrivateUseMainScreenBuffer();
+    bool fSuccess = !!_conApi->PrivateUseMainScreenBuffer();
+    if (fSuccess)
+    {
+        _usingAltBuffer = false;
+        if (fSuccess)
+        {
+            fSuccess = CursorRestorePosition();
+        }
+    }
+    return fSuccess;
 }
 
 //Routine Description:
@@ -1507,7 +1528,10 @@ bool AdaptDispatch::SoftReset()
     if (fSuccess)
     {
         // Reset the saved cursor state.
-        _savedCursorState = {};
+        // Note that XTerm only resets the main buffer state, but that
+        // seems likely to be a bug. Most other terminals reset both.
+        _savedCursorState[0] = {}; // Main buffer
+        _savedCursorState[1] = {}; // Alt buffer
     }
 
     return fSuccess;

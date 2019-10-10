@@ -156,7 +156,9 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _TermOutput;
 
-        CursorState _savedCursorState;
+        CursorState _savedCursorState[2];
+        bool _usingAltBuffer;
+
         SMALL_RECT _srScrollMargins;
 
         bool _fIsOriginModeRelative;
