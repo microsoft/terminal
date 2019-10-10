@@ -2035,10 +2035,15 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
 
     const FontInfo& existingFont = GetCurrentFont();
 
+    // The buffer needs to be initialized with the standard erase attributes,
+    // i.e. the current background color, but with no meta attributes set.
+    auto initAttributes = GetAttributes();
+    initAttributes.SetMetaAttributes(0);
+
     NTSTATUS Status = SCREEN_INFORMATION::CreateInstance(WindowSize,
                                                          existingFont,
                                                          WindowSize,
-                                                         GetAttributes(),
+                                                         initAttributes,
                                                          *GetPopupAttributes(),
                                                          CURSOR_SMALL_SIZE,
                                                          ppsiNewScreenBuffer);
