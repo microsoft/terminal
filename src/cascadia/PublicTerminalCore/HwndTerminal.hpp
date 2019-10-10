@@ -43,7 +43,7 @@ public:
     HwndTerminal(HWND hwnd);
     HRESULT Initialize();
     void SendOutput(std::wstring_view data);
-    HRESULT Refresh(double width, double height, _Out_ COORD* dimensions);
+    HRESULT Refresh(const SIZE windowSize, _Out_ COORD* dimensions);
     void RegisterScrollCallback(std::function<void(int, int, int)> callback);
     void RegisterWriteCallback(const void _stdcall callback(wchar_t*));
 

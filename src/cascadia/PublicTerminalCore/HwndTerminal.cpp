@@ -150,12 +150,12 @@ void HwndTerminal::_UpdateFont(int newDpi)
     _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
 }
 
-HRESULT HwndTerminal::Refresh(double width, double height, _Out_ COORD* dimensions)
+HRESULT HwndTerminal::Refresh(const SIZE windowSize, _Out_ COORD* dimensions)
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, dimensions);
 
     auto lock = _terminal->LockForWriting();
-    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+
     RETURN_IF_FAILED(_renderEngine->SetWindowSize(windowSize));
 
     // Invalidate everything
@@ -216,7 +216,9 @@ void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data)
 HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
-    return publicTerminal->Refresh(width, height, dimensions);
+
+    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+    return publicTerminal->Refresh(windowSize, dimensions);
 }
 
 void _stdcall DpiChanged(void* terminal, int newDpi)
@@ -371,6 +373,15 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
 
     publicTerminal->_desiredFont = { fontFamily, 0, 10, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
+
+    // When the font changes the terminal dimensions need to be recalculated since the available row and column
+    // space will have changed.
+    RECT windowRect;
+    GetWindowRect(publicTerminal->_hwnd.get(), &windowRect);
+
+    COORD dimensions;
+    const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
+    publicTerminal->Refresh(windowSize, &dimensions);
 }
 
 // Resizes the terminal to the specified rows and columns.
