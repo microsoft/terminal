@@ -263,8 +263,6 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // - Hit test the frame for resizing and moving.
 // Arguments:
 // - ptMouse: the mouse point being tested, in absolute (NOT WINDOW) coordinates.
-// - titlebarIsCaption: If true, we want to treat the titlebar area as
-//   HTCAPTION, otherwise we'll return HTNOWHERE for the titlebar.
 // Return Value:
 // - one of the values from
 //  https://docs.microsoft.com/en-us/windows/desktop/inputdev/wm-nchittest#return-value
@@ -272,13 +270,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
 // NOTE:
 // - Largely taken from code on:
 // https://docs.microsoft.com/en-us/windows/desktop/dwm/customframe
-// NOTE[2]: Concerning `titlebarIsCaption`
-// - We want HTNOWHERE as the return value for WM_NCHITTEST, so that we can get
-//   mouse presses in the titlebar area. If we return HTCAPTION there, we won't
-//   get any mouse WMs. However, when we're handling the mouse events, we need
-//   to know if the mouse was in that are or not, so we'll return HTCAPTION in
-//   that handler, to differentiate from the rest of the window.
-[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse, const bool titlebarIsCaption) const noexcept
+[[nodiscard]] LRESULT NonClientIslandWindow::HitTestNCA(POINT ptMouse) const noexcept
 {
     // Get the window rectangle.
     RECT rcWindow = BaseWindow::GetWindowRect();
@@ -319,7 +311,7 @@ void NonClientIslandWindow::_UpdateDragRegion()
 
     // clang-format off
     // Hit test (HTTOPLEFT, ... HTBOTTOMRIGHT)
-    const auto topHt = fOnResizeBorder ? HTTOP : (titlebarIsCaption ? HTCAPTION : HTNOWHERE);
+    const auto topHt = fOnResizeBorder ? HTTOP : HTCAPTION;
     LRESULT hitTests[3][3] = {
         { HTTOPLEFT,    topHt,      HTTOPRIGHT },
         { HTLEFT,       HTNOWHERE,  HTRIGHT },
@@ -520,7 +512,7 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         // Handle hit testing in the NCA if not handled by DwmDefWindowProc.
         if (lRet == 0)
         {
-            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) }, false);
+            lRet = HitTestNCA({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
             if (lRet != HTNOWHERE)
             {
                 return lRet;
@@ -598,22 +590,18 @@ RECT NonClientIslandWindow::GetMaxWindowRectInPixels(const RECT* const prcSugges
         return 0;
     }
 
-    case WM_LBUTTONDOWN:
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONUP:
+    case WM_NCMBUTTONDOWN:
+    case WM_NCMBUTTONUP:
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONUP:
+    case WM_NCXBUTTONDOWN:
+    case WM_NCXBUTTONUP:
     {
-        POINT point1 = {};
-        ::GetCursorPos(&point1);
-
-        const auto region = HitTestNCA(point1, true);
-        if (region == HTCAPTION)
-        {
-            // If we clicked in the titlebar, raise an event so the app host can
-            // dispatch an appropriate event.
-            _DragRegionClickedHandlers();
-
-            const auto longParam = MAKELPARAM(point1.x, point1.y);
-            ::SetActiveWindow(_window.get());
-            ::PostMessage(_window.get(), WM_SYSCOMMAND, SC_MOVE | HTCAPTION, longParam);
-        }
+        // If we clicked in the titlebar, raise an event so the app host can
+        // dispatch an appropriate event.
+        _DragRegionClickedHandlers();
         break;
     }
 
@@ -679,6 +667,17 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
         return false;
     }
 
+    const auto windowStyle = GetWindowStyle(_window.get());
+    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
+    const auto isIconified = WI_IsFlagSet(windowStyle, WS_ICONIC);
+
+    if (_titlebar)
+    {
+        _titlebar.SetWindowVisualState(isMaximized ? winrt::TerminalApp::WindowVisualState::WindowVisualStateMaximized :
+                                                     isIconified ? winrt::TerminalApp::WindowVisualState::WindowVisualStateIconified :
+                                                                   winrt::TerminalApp::WindowVisualState::WindowVisualStateNormal);
+    }
+
     // Figure out the suggested dimensions
     RECT rcSuggested;
     rcSuggested.left = windowPos->x;
@@ -725,9 +724,6 @@ bool NonClientIslandWindow::_HandleWindowPosChanging(WINDOWPOS* const windowPos)
             }
         }
     }
-
-    const auto windowStyle = GetWindowStyle(_window.get());
-    const auto isMaximized = WI_IsFlagSet(windowStyle, WS_MAXIMIZE);
 
     // If we're about to maximize the window, determine how much we're about to
     // overhang by, and adjust for that.

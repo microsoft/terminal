@@ -25,6 +25,7 @@ We recommend downloading the Windows Terminal from the Microsoft Store and autom
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
 ### Manually install builds from this repository
+
 For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
 > ⚠ Note: If you install Terminal manually:
@@ -106,18 +107,6 @@ Cause: You're launching the incorrect solution in Visual Studio.
 Solution: Make sure you're building & deploying the `CascadiaPackage` project in Visual Studio.
 
 > ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect to and communicate with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
-
-## I tried running WindowsTerminal.exe and it crashes
-
-Cause 1: You tried to launch the "WindowsTerminal" project outside of its package.
-
-Solution 1: Build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-
-Cause 2: You're running an build of Windows 10 earlier than version 1903
-
-Solution 2: Upgrade to Windows 10 release 1903 or later.
-
----
 
 ## Contributing
 
