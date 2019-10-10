@@ -185,7 +185,6 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, const RECT proposedRect)
 
     const COORD origin{ gsl::narrow<short>(proposedRect.left),
                         gsl::narrow<short>(proposedRect.top) };
-
     const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
                             Utils::ClampToShortMax(adjustedHeight, 1) };
 
