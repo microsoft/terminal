@@ -58,6 +58,8 @@ public:
     DECLARE_EVENT(Closed, _closedHandlers, winrt::Microsoft::Terminal::TerminalControl::ConnectionClosedEventArgs);
 
 private:
+    struct LayoutSizeNode;
+
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
@@ -94,11 +96,12 @@ private:
     void _ControlClosedHandler();
 
     std::pair<float, float> _GetPaneSizes(const float fullSize);
-    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize);
-    float _SnapDimension(const bool widthOrHeight, const bool toLargerOrSmaller, const float dimension);
-    bool _WhichChildToExtend(const float firstSize, const float secondSize, const float nextFirstSize, const float nextSecondSize);
+    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next);
+    std::pair<float, float> _SnapDimension(const bool widthOrHeight, const float dimension);
+    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode);
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
+    LayoutSizeNode _GetMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
 
     // Function Description:
@@ -135,4 +138,20 @@ private:
         return false;
     }
 
+    struct LayoutSizeNode
+    {
+        float size;
+        bool isMinimumSize;
+        std::unique_ptr<LayoutSizeNode> firstChild;
+        std::unique_ptr<LayoutSizeNode> secondChild;
+        std::unique_ptr<LayoutSizeNode> nextFirstChild;
+        std::unique_ptr<LayoutSizeNode> nextSecondChild;
+
+        LayoutSizeNode(const float minSize);
+        LayoutSizeNode(const LayoutSizeNode& other);
+
+        LayoutSizeNode& operator=(const LayoutSizeNode& other);
+    private:
+        void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
+    };
 };
