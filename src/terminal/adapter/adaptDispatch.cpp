@@ -459,9 +459,20 @@ bool AdaptDispatch::CursorRestorePosition()
 {
     auto& savedCursorState = _savedCursorState[_usingAltBuffer];
 
+    auto uiRow = savedCursorState.Row;
+    auto uiCol = savedCursorState.Column;
+
+    // If the origin mode is relative, and the scrolling region is set (the bottom is non-zero),
+    // we need to make sure the restored position is clamped within the margins.
+    if (savedCursorState.IsOriginModeRelative && _srScrollMargins.Bottom != 0)
+    {
+        // VT origin is at 1,1 so we need to add 1 to these margins.
+        uiRow = std::clamp(uiRow, _srScrollMargins.Top + 1u, _srScrollMargins.Bottom + 1u);
+    }
+
     // The saved coordinates are always absolute, so we need reset the origin mode temporarily.
     _fIsOriginModeRelative = false;
-    bool fSuccess = _CursorMovePosition(&savedCursorState.Row, &savedCursorState.Column);
+    bool fSuccess = _CursorMovePosition(&uiRow, &uiCol);
 
     // Once the cursor position is restored, we can then restore the actual origin mode.
     _fIsOriginModeRelative = savedCursorState.IsOriginModeRelative;
