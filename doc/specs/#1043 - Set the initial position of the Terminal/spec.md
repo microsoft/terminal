@@ -19,7 +19,7 @@ The idea is to allow users to set the initial position of the Terminal when they
 
 For now, the Terminal window is put on a default initial position. The program uses CW_USEDEFAULT in the screen coordinates for top-left corner. We have two different types of window – client window and non-client window. However, code path for window creation (WM_CREATE message is shared by the two types of windows) are almost the same for the two types of windows, except that there are some differences in calculation of the width and height of the window.
 
-Four new properties should be added in the json settings file:
+Three new properties should be added in the json settings file:
 
 **initialX**: int. This set the initial horizontal position of the top-left corner of the window. This property is optional. If not provided, system default position will be used. 
 
@@ -45,8 +45,10 @@ In step 4, we may need to consider the dpi of the current monitor and multi-moni
 Edge cases:
 
 1. Multiple monitors. The user should be able to set the initial position to any monitors attached. For the monitors on the left side of the major monitor, the initial position values are negative. 
-2. If the initial position is larger than the screen resolution and the window left corner is off-screen, we should at least let user be able to see and drag the window back on screen. One solution is to set the initial position to the top left corner of the nearest monitor if the top left is off-screen.
-3. If the user wants to launch maximized and provides an initial position, we should launch the maximized window on the top left corner of the monitor where the position is located. 
+2. If the initial position is larger than the screen resolution and the window top left corner is off-screen, we should let user be able to see and drag the window back on screen. One solution is to set the initial position to the top left corner of the nearest monitor if the top left is off-screen.
+3. If the user wants to launch maximized and provides an initial position, we should launch the maximized window on the top left corner of the monitor where the position is located.
+4. Launch the Terminal on a monitor with custom dpi. Changing the dpi of the monitor will not affect the initial position of the top left corner. So we do not need to handle this case. 
+5. Launch the Terminal on a monitor with custom resolution. Changing the resolution will change the available point for the initial position. (2) already covers this case. 
 
 ## UI/UX Design
 

@@ -338,23 +338,6 @@ namespace winrt::TerminalApp::implementation
         return TermControl::GetProposedDimensions(settings, dpi);
     }
 
-    winrt::Windows::Foundation::Point App::GetLaunchInitialPositions()
-    {
-        if (!_loadedInitialSettings)
-        {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
-
-        TerminalSettings settings = _settings->MakeSettings(std::nullopt);
-
-        winrt::Windows::Foundation::Point point;
-        point.X = 1000;
-        point.Y = 800;
-
-        return point;
-    }
-
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
