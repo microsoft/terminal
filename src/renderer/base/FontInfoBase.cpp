@@ -77,12 +77,12 @@ unsigned int FontInfoBase::GetCodePage() const
 // Arguments:
 // - buffer: the buffer into which to copy characters
 // - size: the size of buffer
-HRESULT FontInfoBase::FillLegacyNameBuffer(wchar_t* buffer, size_t size) const
+HRESULT FontInfoBase::FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const
 try
 {
-    auto toCopy = std::min<size_t>(size - 1, _faceName.size());
-    auto last = std::copy(_faceName.cbegin(), _faceName.cbegin() + toCopy, buffer);
-    std::fill(last, buffer + size, L'\0');
+    auto toCopy = std::min<size_t>(buffer.size() - 1, _faceName.size());
+    auto last = std::copy(_faceName.cbegin(), _faceName.cbegin() + toCopy, buffer.begin());
+    std::fill(last, buffer.end(), L'\0');
     return S_OK;
 }
 CATCH_RETURN();

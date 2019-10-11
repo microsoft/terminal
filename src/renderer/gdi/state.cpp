@@ -396,8 +396,7 @@ GdiEngine::~GdiEngine()
         // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-        // NOTE: GDI cannot support font faces > 32 characters in length.
-        RETURN_IF_FAILED(FontDesired.FillLegacyNameBuffer(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName)));
+        RETURN_IF_FAILED(FontDesired.FillLegacyNameBuffer(gsl::make_span(lf.lfFaceName)));
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));

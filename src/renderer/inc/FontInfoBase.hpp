@@ -41,7 +41,7 @@ public:
     const std::wstring_view GetFaceName() const;
     unsigned int GetCodePage() const;
 
-    HRESULT FillLegacyNameBuffer(wchar_t* buffer, size_t size) const;
+    HRESULT FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const;
 
     bool IsTrueTypeFont() const;
 
