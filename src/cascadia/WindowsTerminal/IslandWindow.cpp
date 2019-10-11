@@ -88,7 +88,7 @@ void IslandWindow::Close()
 //        window.
 // Return Value:
 // - <none>
-void IslandWindow::SetCreateCallback(std::function<winrt::TerminalApp::LaunchMode(const HWND, const RECT)> pfn) noexcept
+void IslandWindow::SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept
 {
     _pfnCreateCallback = pfn;
 }
@@ -113,7 +113,7 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     winrt::TerminalApp::LaunchMode launchMode = winrt::TerminalApp::LaunchMode::DefaultMode;
     if (_pfnCreateCallback)
     {
-        launchMode = _pfnCreateCallback(_window.get(), rc);
+        _pfnCreateCallback(_window.get(), rc, launchMode);
     }
 
     int nCmdShow = SW_SHOW;

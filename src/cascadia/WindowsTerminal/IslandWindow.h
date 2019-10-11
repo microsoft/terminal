@@ -8,7 +8,6 @@
 #include <winrt/Microsoft.Terminal.TerminalControl.h>
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
-#include <windowsx.h>
 
 class IslandWindow :
     public BaseWindow<IslandWindow>,
@@ -33,7 +32,7 @@ public:
 
     virtual void Initialize();
 
-    void SetCreateCallback(std::function<winrt::TerminalApp::LaunchMode(const HWND, const RECT)> pfn) noexcept;
+    void SetCreateCallback(std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> pfn) noexcept;
 
     void UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
 
@@ -86,7 +85,7 @@ protected:
 
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
 
-    std::function<winrt::TerminalApp::LaunchMode(const HWND, const RECT)> _pfnCreateCallback;
+    std::function<void(const HWND, const RECT, winrt::TerminalApp::LaunchMode& launchMode)> _pfnCreateCallback;
 
     void _HandleCreateWindow(const WPARAM wParam, const LPARAM lParam) noexcept;
 };

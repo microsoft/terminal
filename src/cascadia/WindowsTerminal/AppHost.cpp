@@ -33,7 +33,8 @@ AppHost::AppHost() noexcept :
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
                          std::placeholders::_1,
-                         std::placeholders::_2);
+                         std::placeholders::_2,
+                         std::placeholders::_3);
     _window->SetCreateCallback(pfn);
 
     _window->MakeWindow();
@@ -125,11 +126,12 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - proposedRect: The location and size of the window that we're about to
 //   create. We'll use this rect to determine which monitor the window is about
 //   to appear on.
+// - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
-// - A LaunchMode enum that indicates the launch mode
-winrt::TerminalApp::LaunchMode AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect)
+// - None
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
 {
-    winrt::TerminalApp::LaunchMode launchMode = _app.GetLaunchMode();
+    launchMode = _app.GetLaunchMode();
 
     // Acquire the actual intial position
     winrt::Windows::Foundation::Point initialPosition = _app.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
@@ -260,8 +262,6 @@ winrt::TerminalApp::LaunchMode AppHost::_HandleCreateWindow(const HWND hwnd, REC
         TraceLoggingDescription("Event emitted upon creating the application window"),
         TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
         TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
-
-    return launchMode;
 }
 
 // Method Description:
