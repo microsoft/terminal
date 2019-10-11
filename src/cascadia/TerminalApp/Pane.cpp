@@ -1124,9 +1124,15 @@ Size Pane::_GetMinSize() const
 
     const auto firstSize = _firstChild->_GetMinSize();
     const auto secondSize = _secondChild->_GetMinSize();
-    const auto newWidth = firstSize.Width + secondSize.Width + (_splitState == SplitState::Vertical ? PaneSeparatorSize : 0);
-    const auto newHeight = firstSize.Height + secondSize.Height + (_splitState == SplitState::Horizontal ? PaneSeparatorSize : 0);
-    return { newWidth, newHeight };
+
+    const auto minWidth = _splitState == SplitState::Vertical ?
+        firstSize.Width + PaneSeparatorSize + secondSize.Width :
+        std::max(firstSize.Width, secondSize.Width);
+    const auto minHeight = _splitState == SplitState::Horizontal ?
+        firstSize.Height + PaneSeparatorSize + secondSize.Height :
+        std::max(firstSize.Height, secondSize.Height);
+
+    return { minWidth, minHeight };
 }
 
 Pane::LayoutSizeNode Pane::_GetMinSizeTree(const bool widthOrHeight) const
