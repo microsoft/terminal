@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
 #include "JsonUtils.h"
+#include <sstream>
 
 using namespace TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -20,8 +21,7 @@ static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
 static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
-static constexpr std::string_view InitialXKey{ "initialX" };
-static constexpr std::string_view InitialYKey{ "initialY" };
+static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
 static constexpr std::string_view RequestedThemeKey{ "requestedTheme" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
@@ -215,14 +215,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-    if (_isInitialXSet)
-    {
-        jsonObject[JsonKey(InitialXKey)] = _initialX.value();
-    }
-    if (_isInitialYSet)
-    {
-        jsonObject[JsonKey(InitialYKey)] = _initialY.value();
-    }
+    jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX.value(), _isInitialXSet, _initialY.value(), _isInitialYSet);
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
@@ -268,15 +261,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     {
         _initialCols = initialCols.asInt();
     }
-    if (auto initialX{ json[JsonKey(InitialXKey)] })
+    if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
-        _isInitialXSet = true;
-        _initialX = initialX.asInt();
-    }
-    if (auto initialY{ json[JsonKey(InitialYKey)] })
-    {
-        _isInitialYSet = true;
-        _initialY = initialY.asInt();
+        _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX.value(), _isInitialXSet, _initialY.value(), _isInitialYSet);
     }
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
@@ -353,6 +340,93 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
     default:
         return SystemThemeValue;
     }
+}
+
+// Method Description:
+// - Helper function for converting the initial position string into
+//   2 coordinate values. We allow users to only provide one coordinate,
+//   thus, we use comma as the separater:
+//   (100, 100): standard input string
+//   (, 100), (100, ): if a value is missing, we set this value as a default
+//   (,): both x and y are set to default
+//   (abc, 100): if a value is not valid, we treat it as default
+//   (100, 100, 100): we only read the first two values, this is equivalent to (100, 100)
+// Arguments:
+// - initialPosition: the initial position string from json
+//   initialX: reference to the _initialX member
+//   isInitialXSet: reference to the _isInitialXSet member
+//   initialY: reference to the _initialY member
+//   isInitialYSet: reference to the _isInitialYSet member
+// Return Value:
+// - None
+void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPosition,
+                                              int32_t& initialX,
+                                              bool& isInitialXSet,
+                                              int32_t& initialY,
+                                              bool& isInitialYSet) noexcept
+{
+    const wchar_t singleCharDelim = L',';
+    std::wstringstream tokenStream(initialPosition.c_str());
+    std::wstring token;
+    uint8_t initialPosIndex = 0;
+    size_t* idx = nullptr;
+
+    // Get initial position values till we run out of delimiter separated values in the stream
+    // or we hit max number of allowable values (= 2)
+    // Non-numeral values or empty string will be caught as exception and we do not assign them
+    for (; std::getline(tokenStream, token, singleCharDelim) && (initialPosIndex < 2); initialPosIndex++)
+    {
+        try
+        {
+            int32_t position = std::stoi(token, idx);
+            if (initialPosIndex == 0)
+            {
+                initialX = position;
+                isInitialXSet = true;
+            }
+
+            if (initialPosIndex == 1)
+            {
+                initialY = position;
+                isInitialYSet = true;
+            }
+        }
+        catch (...)
+        {
+            // Do nothing
+        }
+    }
+}
+
+// Method Description:
+// - Helper function for converting X/Y initial positions to a string
+//   value.
+// Arguments:
+// - initialX: reference to the _initialX member
+//   isInitialXSet: reference to the _isInitialXSet member
+//   initialY: reference to the _initialY member
+//   isInitialYSet: reference to the _isInitialYSet member
+// Return Value:
+// - The concatenated string for the the current initialX and initialY
+std::string GlobalAppSettings::_SerializeInitialPosition(const int32_t& initialX,
+                                                         const bool& isInitialXSet,
+                                                         const int32_t& initialY,
+                                                         const bool& isInitialYSet) noexcept
+{
+    std::string serializedInitialPos = "(";
+    if (isInitialXSet)
+    {
+        serializedInitialPos += initialX;
+    }
+
+    serializedInitialPos += ", ";
+
+    if (isInitialYSet)
+    {
+        serializedInitialPos += initialY;
+    }
+
+    return serializedInitialPos;
 }
 
 // Method Description:

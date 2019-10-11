@@ -105,6 +105,17 @@ private:
     static winrt::Windows::UI::Xaml::ElementTheme _ParseTheme(const std::wstring& themeString) noexcept;
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
+    static void _ParseInitialPosition(const std::wstring& initialPosition,
+                                      int32_t& initialX,
+                                      bool& isInitialXSet,
+                                      int32_t& initialY,
+                                      bool& isInitialYSet) noexcept;
+
+    static std::string _SerializeInitialPosition(const int32_t& initialX,
+                                                 const bool& isInitialXSet,
+                                                 const int32_t& initialY,
+                                                 const bool& isInitialYSet) noexcept;
+
     static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
 
