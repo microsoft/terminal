@@ -379,7 +379,7 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
     RECT windowRect;
     GetWindowRect(publicTerminal->_hwnd.get(), &windowRect);
 
-    COORD dimensions;
+    COORD dimensions = {};
     const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
 }

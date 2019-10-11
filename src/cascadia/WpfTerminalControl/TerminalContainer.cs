@@ -177,6 +177,7 @@ namespace Microsoft.Terminal.Wpf
 
         private void TerminalContainer_GotFocus(object sender, RoutedEventArgs e)
         {
+            e.Handled = true;
             NativeMethods.SetFocus(this.hwnd);
         }
 

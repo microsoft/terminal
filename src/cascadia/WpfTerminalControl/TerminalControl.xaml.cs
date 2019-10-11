@@ -27,6 +27,8 @@ namespace Microsoft.Terminal.Wpf
             this.termContainer.TerminalScrolled += this.TermControl_TerminalScrolled;
             this.termContainer.UserScrolled += this.TermControl_UserScrolled;
             this.scrollbar.MouseWheel += this.Scrollbar_MouseWheel;
+
+            this.GotFocus += this.TerminalControl_GotFocus;
         }
 
         /// <summary>
@@ -89,6 +91,12 @@ namespace Microsoft.Terminal.Wpf
         public (int rows, int columns) TriggerResize(Size rendersize)
         {
             return this.termContainer.TriggerResize(rendersize);
+        }
+
+        private void TerminalControl_GotFocus(object sender, RoutedEventArgs e)
+        {
+            e.Handled = true;
+            this.termContainer.Focus();
         }
 
         private void Scrollbar_MouseWheel(object sender, MouseWheelEventArgs e)
