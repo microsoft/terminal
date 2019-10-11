@@ -20,7 +20,7 @@ Windows Terminal can be installed on Windows 10 1903 (build 18362) or later.
 
 ### Install via the Microsoft Store
 
-We recommend downloading the Windows Terminal from the Microsoft Store so it will automatically receive upgrades when we release new builds:
+We recommend downloading the Windows Terminal from the Microsoft Store so that it will be automatically upgraded when we release new builds:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
