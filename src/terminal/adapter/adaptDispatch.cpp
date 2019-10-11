@@ -27,6 +27,7 @@ AdaptDispatch::AdaptDispatch(ConGetSet* const pConApi,
                              AdaptDefaults* const pDefaults) :
     _conApi{ THROW_IF_NULL_ALLOC(pConApi) },
     _pDefaults{ THROW_IF_NULL_ALLOC(pDefaults) },
+    _usingAltBuffer(false),
     _fIsOriginModeRelative(false), // by default, the DECOM origin mode is absolute.
     _fIsDECCOLMAllowed(false), // by default, DECCOLM is not allowed.
     _fChangedBackground(false),
