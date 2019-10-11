@@ -269,8 +269,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
         consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
 
-        // GH#3123: We will fail to service the API if the font name is longer than 32 characters.
-        RETURN_IF_FAILED(StringCchCopyW(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName), fontInfo.GetFaceName().data()));
+        RETURN_IF_FAILED(fontInfo.FillLegacyNameBuffer(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName)));
 
         return S_OK;
     }

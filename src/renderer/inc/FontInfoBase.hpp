@@ -38,8 +38,10 @@ public:
 
     unsigned char GetFamily() const;
     unsigned int GetWeight() const;
-    const std::wstring& GetFaceName() const;
+    const std::wstring_view GetFaceName() const;
     unsigned int GetCodePage() const;
+
+    HRESULT FillLegacyNameBuffer(wchar_t* buffer, size_t size) const;
 
     bool IsTrueTypeFont() const;
 

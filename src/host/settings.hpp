@@ -55,7 +55,7 @@ public:
     bool GetFilterOnPaste() const;
     void SetFilterOnPaste(const bool fFilterOnPaste);
 
-    const std::wstring& GetLaunchFaceName() const;
+    const std::wstring_view GetLaunchFaceName() const;
     void SetLaunchFaceName(const std::wstring_view launchFaceName);
 
     UINT GetCodePage() const;

@@ -61,7 +61,7 @@ unsigned int FontInfoBase::GetWeight() const
     return _weight;
 }
 
-const std::wstring& FontInfoBase::GetFaceName() const
+const std::wstring_view FontInfoBase::GetFaceName() const
 {
     return _faceName;
 }
@@ -70,6 +70,22 @@ unsigned int FontInfoBase::GetCodePage() const
 {
     return _codePage;
 }
+
+// Method Description:
+// - Populates a fixed-length **null-terminated** buffer with the name of this font, truncating it as necessary.
+//   Positions within the buffer that are not filled by the font name are zeroed.
+// Arguments:
+// - buffer: the buffer into which to copy characters
+// - size: the size of buffer
+HRESULT FontInfoBase::FillLegacyNameBuffer(wchar_t* buffer, size_t size) const
+try
+{
+    auto toCopy = std::min<size_t>(size - 1, _faceName.size());
+    auto last = std::copy(_faceName.cbegin(), _faceName.cbegin() + toCopy, buffer);
+    std::fill(last, buffer + size, L'\0');
+    return S_OK;
+}
+CATCH_RETURN();
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
 void FontInfoBase::SetFromEngine(const std::wstring_view faceName,

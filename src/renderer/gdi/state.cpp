@@ -374,7 +374,7 @@ GdiEngine::~GdiEngine()
         // Because the API is affected by the raster/TT status of the actively selected font, we can't have
         // GDI choosing a TT font for us when we ask for Raster. We have to settle for forcing the current system
         // Terminal font to load even if it doesn't have the glyphs necessary such that the APIs continue to work fine.
-        if (FontDesired.GetFaceName() == L"Terminal")
+        if (FontDesired.GetFaceName() == DEFAULT_RASTER_FONT_FACENAME)
         {
             lf.lfCharSet = OEM_CHARSET;
         }
@@ -396,8 +396,8 @@ GdiEngine::~GdiEngine()
         // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-        // NOTE: GDI cannot support font faces > 32 characters in length. THIS TRUNCATES THE FONT.
-        wcscpy_s(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName), FontDesired.GetFaceName().data());
+        // NOTE: GDI cannot support font faces > 32 characters in length.
+        RETURN_IF_FAILED(FontDesired.FillLegacyNameBuffer(lf.lfFaceName, ARRAYSIZE(lf.lfFaceName)));
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));

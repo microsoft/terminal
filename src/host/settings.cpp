@@ -403,7 +403,7 @@ void Settings::SetFilterOnPaste(const bool fFilterOnPaste)
     _fFilterOnPaste = fFilterOnPaste;
 }
 
-const std::wstring& Settings::GetLaunchFaceName() const
+const std::wstring_view Settings::GetLaunchFaceName() const
 {
     return _LaunchFaceName;
 }
