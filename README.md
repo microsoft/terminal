@@ -147,6 +147,8 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
 
 ## Developer Guidance
 
+Learn how to Build Prerequisties, Build the Code and Debug it.  
+
 ## Build Prerequisites
 
 * You must be running Windows 1903 (build >= 10.0.18362.0) or above in order to run Windows Terminal.
