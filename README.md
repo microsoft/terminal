@@ -1,4 +1,4 @@
-# Welcome
+# Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
 
@@ -11,6 +11,7 @@ This repository contains the source code for:
 Related repositories include:
 
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
+* [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
 
 ## Installing & running Windows Terminal
 
@@ -89,17 +90,19 @@ However, because Windows Console's primary goal is to maintain backward compatib
 
 These limitations led us to create the new Windows Terminal.
 
+> You can read more about the evolution of the command-line in general, and the Windows command-line specifically in [this accompanying series of blog posts](https://devblogs.microsoft.com/commandline/windows-command-line-backgrounder/) on the Command-Line team's blog.
+
 ### Shared Components
 
-While overhauling Windows Console, we modernized its codebase considerably: We've cleanly separated logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [WIL](https://github.com/Microsoft/wil).
+While overhauling Windows Console, we modernized its codebase considerably: We've cleanly separated logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [Windows Implementation Libraries - WIL](https://github.com/Microsoft/wil).
 
 This overhaul resulted in several of Console's key components being available for re-use in any terminal implementation on Windows. These components include a new DirectWrite-based text layout and rendering engine, a text buffer capable of storing both UTF-16 and UTF-8, a VT parser/emitter, and more.
 
-## Building the new terminal
+## Creating the new Windows Terminal
 
-When we started building the new Windows Terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by sticking with C++ and reusing several of the aforementioned modernized components. Further, we realized that this would allow us to build much of the Terminal's core itself as a reusable Windows UI control that others can incorporate into their applications.
+When we started planning the new Windows Terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by continuing our investment in our C++ codebase, which would allow us to reuse several of the aforementioned modernized components. Further, we realized that this would allow us to build much of the Terminal's core itself as a reusable UI control that others can incorporate into their applications.
 
-The result of this work is contained within this repo and delivered as the Windows Terminal application you can download from the Microsoft Store, or directly from this repo.
+The result of this work is contained within this repo and delivered as the Windows Terminal application you can download from the Microsoft Store, or [directly from this repo's releases](https://github.com/microsoft/terminal/releases).
 
 ---
 
@@ -114,12 +117,6 @@ For more information about Windows Terminal, you may find some of these resource
 ---
 
 ## FAQ
-
-## I built and ran the new Terminal, but I just see a blank window app
-
-Make sure your Terminal is built for your PC's processor architecture:
-
-For example, if your PC runs 64-bit Windows, set your Solution Platform to x64: In Visual Studio, go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
 
 ## I built and ran the new Terminal, but it looks just like the old console
 
@@ -154,14 +151,15 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
 * Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
 * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
+* Mike Griese, Developer: [@zadjii](https://twitter.com/zadjii)
 
 ## Developer Guidance
 
-## Build Prerequisites
+## Prerequisites
 
-* You must be running Windows 1903 (build >= 10.0.18362.0) or later in order to run Windows Terminal.
+* You must be running Windows 1903 (build >= 10.0.18362.0) or later to run Windows Terminal
 * You must [enable Developer Mode in the Windows Settings app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development) to locally install and run Windows Terminal
-* You must have the [Windows 10 1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) installed.
+* You must have the [Windows 10 1903 SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk) installed
 * You must have at least [VS 2019](https://visualstudio.microsoft.com/downloads/) installed
 * You must install the following Workloads via the VS Installer. Note: Opening the solution in VS 2019 will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
   * Desktop Development with C++
@@ -194,13 +192,13 @@ Invoke-OpenConsoleBuild
 bcz
 ```
 
-### Debugging Terminal
+## Debugging Terminal
 
 To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
 
 You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>
 
-### Coding Guidance
+## Coding Guidance
 
 Please review these brief docs below about our coding practices.
 
@@ -219,7 +217,7 @@ This is a work in progress as we learn what we'll need to provide people in orde
 
 Please help us keep this repository clean, inclusive, and fun!
 
-This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code].
+This project has adopted the [Microsoft Open Source Code of Co4nduct][conduct-code].
 For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.
 
 [conduct-code]: https://opensource.microsoft.com/codeofconduct/
