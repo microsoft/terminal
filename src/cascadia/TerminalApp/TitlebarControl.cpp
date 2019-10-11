@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
 
     void TitlebarControl::Close_Click(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::RoutedEventArgs const& e)
     {
-        ::PostQuitMessage(0);
+        ::PostMessage(_window, WM_SYSCOMMAND, SC_CLOSE, 0);
     }
 
     void TitlebarControl::SetWindowVisualState(WindowVisualState visualState)

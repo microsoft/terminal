@@ -198,6 +198,14 @@ void IslandWindow::OnSize(const UINT width, const UINT height)
         // key that does not correspond to any mnemonic or accelerator key,
         return MAKELRESULT(0, MNC_CLOSE);
     }
+    case WM_CLOSE:
+    {
+        // If the user wants to close the app by clicking 'X' button,
+        // we hand off the close experience to the app layer. If all the tabs
+        // are closed, the window will be closed as well.
+        _windowCloseButtonClickedHandler();
+        return 0;
+    }
     }
 
     // TODO: handle messages here...
@@ -285,3 +293,4 @@ void IslandWindow::UpdateTheme(const winrt::Windows::UI::Xaml::ElementTheme& req
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
