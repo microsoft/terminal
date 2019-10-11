@@ -20,13 +20,13 @@ static LRESULT CALLBACK HwndTerminalWndProc(
     WPARAM wParam,
     LPARAM lParam) noexcept
 {
-    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+    return DefWindowProcW(hwnd, uMsg, wParam, lParam);
 }
 
 static bool RegisterTermClass(HINSTANCE hInstance) noexcept
 {
     WNDCLASSW wc;
-    if (GetClassInfo(hInstance, term_window_class, &wc))
+    if (GetClassInfoW(hInstance, term_window_class, &wc))
     {
         return true;
     }
