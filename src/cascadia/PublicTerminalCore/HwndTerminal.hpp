@@ -19,22 +19,22 @@ typedef struct _TerminalTheme
 
 extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-__declspec(dllexport) void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data);
-__declspec(dllexport) void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions);
-__declspec(dllexport) HRESULT _stdcall Resize(void* terminal, COORD dimensions);
-__declspec(dllexport) void _stdcall DpiChanged(void* terminal, int newDpi);
-__declspec(dllexport) void _stdcall UserScroll(void* terminal, int viewTop);
-__declspec(dllexport) HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-__declspec(dllexport) HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
-__declspec(dllexport) void _stdcall ClearSelection(void* terminal);
-__declspec(dllexport) const wchar_t* _stdcall GetSelection(void* terminal);
-__declspec(dllexport) bool _stdcall IsSelectionActive(void* terminal);
+__declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
+__declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+__declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
+__declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
+__declspec(dllexport) HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
+__declspec(dllexport) HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
+__declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
+__declspec(dllexport) const wchar_t* _stdcall TerminalGetSelection(void* terminal);
+__declspec(dllexport) bool _stdcall TerminalIsSelectionActive(void* terminal);
 __declspec(dllexport) void _stdcall DestroyTerminal(void* terminal);
-__declspec(dllexport) void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
-__declspec(dllexport) void _stdcall RegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
-__declspec(dllexport) void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
-__declspec(dllexport) void _stdcall SendCharEvent(void* terminal, wchar_t ch);
+__declspec(dllexport) void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+__declspec(dllexport) void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*));
+__declspec(dllexport) void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam);
+__declspec(dllexport) void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch);
 };
 
 struct HwndTerminal
@@ -58,16 +58,16 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    friend HRESULT _stdcall Resize(void* terminal, COORD dimensions);
-    friend void _stdcall DpiChanged(void* terminal, int newDpi);
-    friend void _stdcall UserScroll(void* terminal, int viewTop);
-    friend HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed);
-    friend HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition);
-    friend void _stdcall ClearSelection(void* terminal);
-    friend const wchar_t* _stdcall GetSelection(void* terminal);
-    friend bool _stdcall IsSelectionActive(void* terminal);
-    friend void _stdcall SendKeyEvent(void* terminal, WPARAM wParam);
-    friend void _stdcall SendCharEvent(void* terminal, wchar_t ch);
-    friend void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
+    friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+    friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
+    friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
+    friend HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed);
+    friend HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition);
+    friend void _stdcall TerminalClearSelection(void* terminal);
+    friend const wchar_t* _stdcall TerminalGetSelection(void* terminal);
+    friend bool _stdcall TerminalIsSelectionActive(void* terminal);
+    friend void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam);
+    friend void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch);
+    friend void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi);
     void _UpdateFont(int newDpi);
 };

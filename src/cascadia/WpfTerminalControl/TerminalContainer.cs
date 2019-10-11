@@ -87,7 +87,7 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="viewTop">The top line to show in the terminal.</param>
         internal void UserScroll(int viewTop)
         {
-            NativeMethods.UserScroll(this.terminal, viewTop);
+            NativeMethods.TerminalUserScroll(this.terminal, viewTop);
         }
 
         /// <summary>
@@ -99,7 +99,7 @@ namespace Microsoft.Terminal.Wpf
         /// <param name="newDpi">The dpi that the terminal should be rendered at.</param>
         internal void SetTheme(TerminalTheme theme, string fontFamily, short fontSize, int newDpi)
         {
-            NativeMethods.SetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
+            NativeMethods.TerminalSetTheme(this.terminal, theme, fontFamily, fontSize, newDpi);
         }
 
         /// <summary>
@@ -110,7 +110,7 @@ namespace Microsoft.Terminal.Wpf
         internal (int rows, int columns) TriggerResize(Size renderSize)
         {
             NativeMethods.COORD dimensions;
-            NativeMethods.TriggerResize(this.terminal, renderSize.Width, renderSize.Height, out dimensions);
+            NativeMethods.TerminalTriggerResize(this.terminal, renderSize.Width, renderSize.Height, out dimensions);
 
             this.Rows = dimensions.Y;
             this.Columns = dimensions.X;
@@ -131,7 +131,7 @@ namespace Microsoft.Terminal.Wpf
                 Y = (short)rows,
             };
 
-            NativeMethods.Resize(this.terminal, dimensions);
+            NativeMethods.TerminalResize(this.terminal, dimensions);
         }
 
         /// <inheritdoc/>
@@ -144,7 +144,7 @@ namespace Microsoft.Terminal.Wpf
             }
             else
             {
-                NativeMethods.DpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
+                NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * newDpi.DpiScaleX));
             }
         }
 
@@ -156,13 +156,13 @@ namespace Microsoft.Terminal.Wpf
             this.scrollCallback = this.OnScroll;
             this.writeCallback = this.OnWrite;
 
-            NativeMethods.RegisterScrollCallback(this.terminal, this.scrollCallback);
-            NativeMethods.RegisterWriteCallback(this.terminal, this.writeCallback);
+            NativeMethods.TerminalRegisterScrollCallback(this.terminal, this.scrollCallback);
+            NativeMethods.TerminalRegisterWriteCallback(this.terminal, this.writeCallback);
 
             // If the saved DPI scale isn't the default scale, we push it to the terminal.
             if (this.dpiScale.DpiScaleX != NativeMethods.USER_DEFAULT_SCREEN_DPI)
             {
-                NativeMethods.DpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * this.dpiScale.DpiScaleX));
+                NativeMethods.TerminalDpiChanged(this.terminal, (int)(NativeMethods.USER_DEFAULT_SCREEN_DPI * this.dpiScale.DpiScaleX));
             }
 
             return new HandleRef(this, this.hwnd);
@@ -195,9 +195,9 @@ namespace Microsoft.Terminal.Wpf
                         this.LeftClickHandler((int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_RBUTTONDOWN:
-                        if (NativeMethods.IsSelectionActive(this.terminal))
+                        if (NativeMethods.TerminalIsSelectionActive(this.terminal))
                         {
-                            Clipboard.SetText(NativeMethods.GetSelection(this.terminal));
+                            Clipboard.SetText(NativeMethods.TerminalGetSelection(this.terminal));
                         }
                         else
                         {
@@ -209,11 +209,11 @@ namespace Microsoft.Terminal.Wpf
                         this.MouseMoveHandler((int)wParam, (int)lParam);
                         break;
                     case NativeMethods.WindowMessage.WM_KEYDOWN:
-                        NativeMethods.ClearSelection(this.terminal);
-                        NativeMethods.SendKeyEvent(this.terminal, wParam);
+                        NativeMethods.TerminalClearSelection(this.terminal);
+                        NativeMethods.TerminalSendKeyEvent(this.terminal, wParam);
                         break;
                     case NativeMethods.WindowMessage.WM_CHAR:
-                        NativeMethods.SendCharEvent(this.terminal, (char)wParam);
+                        NativeMethods.TerminalSendCharEvent(this.terminal, (char)wParam);
                         break;
                     case NativeMethods.WindowMessage.WM_WINDOWPOSCHANGED:
                         var windowpos = (NativeMethods.WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(NativeMethods.WINDOWPOS));
@@ -222,7 +222,7 @@ namespace Microsoft.Terminal.Wpf
                             break;
                         }
 
-                        NativeMethods.TriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
+                        NativeMethods.TerminalTriggerResize(this.terminal, windowpos.cx, windowpos.cy, out var dimensions);
 
                         this.connection?.Resize((uint)dimensions.Y, (uint)dimensions.X);
                         this.Columns = dimensions.X;
@@ -250,7 +250,7 @@ namespace Microsoft.Terminal.Wpf
                 Y = y,
             };
 
-            NativeMethods.StartSelection(this.terminal, cursorPosition, altPressed);
+            NativeMethods.TerminalStartSelection(this.terminal, cursorPosition, altPressed);
         }
 
         private void MouseMoveHandler(int wParam, int lParam)
@@ -264,7 +264,7 @@ namespace Microsoft.Terminal.Wpf
                     X = x,
                     Y = y,
                 };
-                NativeMethods.MoveSelection(this.terminal, cursorPosition);
+                NativeMethods.TerminalMoveSelection(this.terminal, cursorPosition);
             }
         }
 
@@ -272,7 +272,7 @@ namespace Microsoft.Terminal.Wpf
         {
             if (this.terminal != IntPtr.Zero)
             {
-                NativeMethods.SendTerminalOutput(this.terminal, e.Data);
+                NativeMethods.TerminalSendOutput(this.terminal, e.Data);
             }
         }
 

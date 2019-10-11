@@ -195,25 +195,25 @@ HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void**
     return S_OK;
 }
 
-void _stdcall RegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int))
+void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int))
 {
     auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterScrollCallback(callback);
 }
 
-void _stdcall RegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*))
+void _stdcall TerminalRegisterWriteCallback(void* terminal, const void __stdcall callback(wchar_t*))
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->RegisterWriteCallback(callback);
 }
 
-void _stdcall SendTerminalOutput(void* terminal, LPCWSTR data)
+void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -221,19 +221,19 @@ HRESULT _stdcall TriggerResize(void* terminal, double width, double height, _Out
     return publicTerminal->Refresh(windowSize, dimensions);
 }
 
-void _stdcall DpiChanged(void* terminal, int newDpi)
+void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     publicTerminal->_UpdateFont(newDpi);
 }
 
-void _stdcall UserScroll(void* terminal, int viewTop)
+void _stdcall TerminalUserScroll(void* terminal, int viewTop)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->UserScrollViewport(viewTop);
 }
 
-HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPressed)
+HRESULT _stdcall TerminalStartSelection(void* terminal, COORD cursorPosition, bool altPressed)
 {
     COORD terminalPosition = { cursorPosition };
 
@@ -254,7 +254,7 @@ HRESULT _stdcall StartSelection(void* terminal, COORD cursorPosition, bool altPr
     return S_OK;
 }
 
-HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition)
+HRESULT _stdcall TerminalMoveSelection(void* terminal, COORD cursorPosition)
 {
     COORD terminalPosition = { cursorPosition };
 
@@ -273,12 +273,12 @@ HRESULT _stdcall MoveSelection(void* terminal, COORD cursorPosition)
     return S_OK;
 }
 
-void _stdcall ClearSelection(void* terminal)
+void _stdcall TerminalClearSelection(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->ClearSelection();
 }
-bool _stdcall IsSelectionActive(void* terminal)
+bool _stdcall TerminalIsSelectionActive(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const bool selectionActive = publicTerminal->_terminal->IsSelectionActive();
@@ -286,7 +286,7 @@ bool _stdcall IsSelectionActive(void* terminal)
 }
 
 // Returns the selected text in the terminal.
-const wchar_t* _stdcall GetSelection(void* terminal)
+const wchar_t* _stdcall TerminalGetSelection(void* terminal)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 
@@ -300,12 +300,12 @@ const wchar_t* _stdcall GetSelection(void* terminal)
     }
 
     auto returnText = wil::make_cotaskmem_string_nothrow(selectedText.c_str());
-    ClearSelection(terminal);
+    TerminalClearSelection(terminal);
 
     return returnText.release();
 }
 
-void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
+void _stdcall TerminalSendKeyEvent(void* terminal, WPARAM wParam)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     const auto scanCode = MapVirtualKeyW((UINT)wParam, MAPVK_VK_TO_VSC);
@@ -339,7 +339,7 @@ void _stdcall SendKeyEvent(void* terminal, WPARAM wParam)
     publicTerminal->_terminal->SendKeyEvent((WORD)wParam, (WORD)scanCode, flags);
 }
 
-void _stdcall SendCharEvent(void* terminal, wchar_t ch)
+void _stdcall TerminalSendCharEvent(void* terminal, wchar_t ch)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
     publicTerminal->_terminal->SendCharEvent(ch);
@@ -352,7 +352,7 @@ void _stdcall DestroyTerminal(void* terminal)
 }
 
 // Updates the terminal font type, size, color, as well as the background/foreground colors to a specified theme.
-void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
+void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, short fontSize, int newDpi)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
     {
@@ -385,7 +385,7 @@ void _stdcall SetTheme(void* terminal, TerminalTheme theme, LPCWSTR fontFamily, 
 }
 
 // Resizes the terminal to the specified rows and columns.
-HRESULT _stdcall Resize(void* terminal, COORD dimensions)
+HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
 {
     const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
 

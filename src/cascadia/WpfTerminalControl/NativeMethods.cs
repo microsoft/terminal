@@ -153,54 +153,54 @@ namespace Microsoft.Terminal.Wpf
         public static extern uint CreateTerminal(IntPtr parent, out IntPtr hwnd, out IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void SendTerminalOutput(IntPtr terminal, string lpdata);
+        public static extern void TerminalSendOutput(IntPtr terminal, string lpdata);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TriggerResize(IntPtr terminal, double width, double height, out COORD dimensions);
+        public static extern uint TerminalTriggerResize(IntPtr terminal, double width, double height, out COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint Resize(IntPtr terminal, COORD dimensions);
+        public static extern uint TerminalResize(IntPtr terminal, COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void DpiChanged(IntPtr terminal, int newDpi);
+        public static extern void TerminalDpiChanged(IntPtr terminal, int newDpi);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void RegisterScrollCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]ScrollCallback callback);
+        public static extern void TerminalRegisterScrollCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]ScrollCallback callback);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void RegisterWriteCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]WriteCallback callback);
+        public static extern void TerminalRegisterWriteCallback(IntPtr terminal, [MarshalAs(UnmanagedType.FunctionPtr)]WriteCallback callback);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void UserScroll(IntPtr terminal, int viewTop);
+        public static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint StartSelection(IntPtr terminal, NativeMethods.COORD cursorPosition, bool altPressed);
+        public static extern uint TerminalStartSelection(IntPtr terminal, NativeMethods.COORD cursorPosition, bool altPressed);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint MoveSelection(IntPtr terminal, NativeMethods.COORD cursorPosition);
+        public static extern uint TerminalMoveSelection(IntPtr terminal, NativeMethods.COORD cursorPosition);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void ClearSelection(IntPtr terminal);
+        public static extern void TerminalClearSelection(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         [return: MarshalAs(UnmanagedType.LPWStr)]
-        public static extern string GetSelection(IntPtr terminal);
+        public static extern string TerminalGetSelection(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         [return: MarshalAs(UnmanagedType.I1)]
-        public static extern bool IsSelectionActive(IntPtr terminal);
+        public static extern bool TerminalIsSelectionActive(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void DestroyTerminal(IntPtr terminal);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void SendKeyEvent(IntPtr terminal, IntPtr wParam);
+        public static extern void TerminalSendKeyEvent(IntPtr terminal, IntPtr wParam);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void SendCharEvent(IntPtr terminal, char ch);
+        public static extern void TerminalSendCharEvent(IntPtr terminal, char ch);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern void SetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
+        public static extern void TerminalSetTheme(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] TerminalTheme theme, string fontFamily, short fontSize, int newDpi);
 
         [DllImport("user32.dll", SetLastError = true)]
         public static extern IntPtr SetFocus(IntPtr hWnd);
