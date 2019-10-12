@@ -14,13 +14,16 @@ using namespace winrt::TerminalApp;
 static const int PaneSeparatorSize = 4;
 static const float Half = 0.50f;
 
-Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
+Pane::Pane(const GUID& profile, const TermControl& control, Pane* const rootPane, const bool lastFocused) :
     _control{ control },
     _lastFocused{ lastFocused },
     _profile{ profile }
 {
+    _rootPane = rootPane ? rootPane : this;
+
     _root.Children().Append(_control);
     _connectionClosedToken = _control.ConnectionClosed({ this, &Pane::_ControlClosedHandler });
+    _fonstSizeChangedToken = _control.FontSizeChanged({ this, &Pane::_FontSizeChangedHandler });
 
     // Set the background of the pane to match that of the theme's default grid
     // background. This way, we'll match the small underline under the tabs, and
@@ -291,21 +294,12 @@ void Pane::_ControlClosedHandler()
     }
 }
 
-// Method Description:
-// - Adjusts given size dimension (width or height) so that all descendant terminals
-//   align with their character grids as close as possible. Snaps to closes match
-//   (either upward or downward). Also ensures it fits in minimal size of the pane.
-// Arguments:
-// - widthOrHeight: if true operates on width, otherwise on height
-// - dimension: a dimension (width or height) to snap
-// Return Value:
-// - calculated dimension
-float Pane::SnapDimension(const bool widthOrHeight, const float dimension)
+void Pane::_FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange)
 {
-    const auto snapPossibilites = _SnapDimension(widthOrHeight, dimension);
-    const auto lower = snapPossibilites.first;
-    const auto higher = snapPossibilites.second;
-    return dimension - lower < higher - dimension ? lower : higher;
+    if (isInitialChange)
+    {
+        _rootPane->ResizeContent(_rootPane->_root.ActualSize());
+    }
 }
 
 // Method Description:
@@ -316,6 +310,9 @@ float Pane::SnapDimension(const bool widthOrHeight, const float dimension)
 // - <none>
 void Pane::Close()
 {
+    _control.FontSizeChanged(_fonstSizeChangedToken);
+    _fonstSizeChangedToken.value = 0;
+
     // Fire our Closed event to tell our parent that we should be removed.
     _closedHandlers();
 }
@@ -881,6 +878,9 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     _control.ConnectionClosed(_connectionClosedToken);
     _connectionClosedToken.value = 0;
 
+    _control.FontSizeChanged(_fonstSizeChangedToken);
+    _fonstSizeChangedToken.value = 0;
+
     _splitState = splitType;
     _desiredSplitPosition = Half;
 
@@ -891,10 +891,10 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
     // Create two new Panes
     //   Move our control, guid into the first one.
     //   Move the new guid, control into the second.
-    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _firstChild = std::make_shared<Pane>(_profile.value(), _control, _rootPane);
     _profile = std::nullopt;
     _control = { nullptr };
-    _secondChild = std::make_shared<Pane>(profile, control);
+    _secondChild = std::make_shared<Pane>(profile, control, _rootPane);
 
     _CreateSplitContent();
 
@@ -921,17 +921,24 @@ void Pane::_Split(SplitState splitType, const GUID& profile, const TermControl& 
 // Return Value:
 // - a pair with the size of our first child and the size of our second child,
 //   respectively.
-std::pair<float, float> Pane::_GetPaneSizes(const float fullSize)
+std::pair<float, float> Pane::_GetPaneSizes(const float fullSize) const
 {
     const auto widthOrHeight = _splitState == SplitState::Vertical;
     const auto snappedSizes = _CalcSnappedPaneDimensions(widthOrHeight, fullSize, nullptr);
-    return { snappedSizes.first, fullSize - PaneSeparatorSize - snappedSizes.first };
+
+    // Keep the first pane snapped and give the second pane all remaining size
+    return {
+        snappedSizes.first,
+        fullSize - PaneSeparatorSize - snappedSizes.first
+    };
 }
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they should
 //   fill. Each is snapped to char grid. If called multiple times with fullSize
 //   argument growing, then both returned sizes are guaranteed to be non-decreasing.
+//   This is important so that user doesn't get any pane shrinked when they actually
+//   increase the window/parent pane size. That's also required by the layout algorithm.
 // Arguments:
 // - widthOrHeight: if true, operates on width, otherwise on height.
 // - fullSize: the amount of space in pixels that should be filled by our children and
@@ -943,7 +950,7 @@ std::pair<float, float> Pane::_GetPaneSizes(const float fullSize)
 // - a pair with the size of our first child and the size of our second child,
 //   respectively. Since they are snapped to grid, their sum might be (and usually is)
 //   lower than the specified full size.
-std::pair<float, float> Pane::_CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next)
+std::pair<float, float> Pane::_CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next) const
 {
     if (_IsLeaf())
     {
@@ -951,7 +958,7 @@ std::pair<float, float> Pane::_CalcSnappedPaneDimensions(const bool widthOrHeigh
     }
 
     auto sizeTree = _GetMinSizeTree(widthOrHeight);
-    std::optional<LayoutSizeNode> lastSizeTree{ sizeTree };
+    LayoutSizeNode lastSizeTree{ sizeTree };
 
     while (sizeTree.size < fullSize)
     {
@@ -974,20 +981,30 @@ std::pair<float, float> Pane::_CalcSnappedPaneDimensions(const bool widthOrHeigh
         *next = { sizeTree.firstChild->size, sizeTree.secondChild->size };
     }
 
-    if (lastSizeTree.has_value())
-    {
-        return { lastSizeTree.value().firstChild->size, lastSizeTree.value().secondChild->size };
-    }
-    else
-    {
-        return { sizeTree.firstChild->size, sizeTree.secondChild->size };
-    }
+    return { lastSizeTree.firstChild->size, lastSizeTree.secondChild->size };
 }
 
 // Method Description:
-// - Adjusts given size dimension (width or height) so that all descendant terminals
-//   align with their character grids as close as possible. Also ensures it fits in
-//   minimal size of the pane.
+// - Adjusts given dimension (width or height) so that all descendant terminals
+//   align with their character grids as close as possible. Snaps to closes match
+//   (either upward or downward). Also makes sure to fit in minimal sizes of the panes.
+// Arguments:
+// - widthOrHeight: if true operates on width, otherwise on height
+// - dimension: a dimension (width or height) to snap
+// Return Value:
+// - calculated dimension
+float Pane::SnapDimension(const bool widthOrHeight, const float dimension) const
+{
+    const auto snapPossibilites = _SnapDimension(widthOrHeight, dimension);
+    const auto lower = snapPossibilites.first;
+    const auto higher = snapPossibilites.second;
+    return dimension - lower < higher - dimension ? lower : higher;
+}
+
+// Method Description:
+// - Adjusts given dimension (width or height) so that all descendant terminals
+//   align with their character grids as close as possible. Also makes sure to
+//   fit in minimal sizes of the panes.
 // Arguments:
 // - widthOrHeight: if true operates on width, otherwise on height
 // - dimension: a dimension (width or height) to be snapped
@@ -995,10 +1012,12 @@ std::pair<float, float> Pane::_CalcSnappedPaneDimensions(const bool widthOrHeigh
 // - pair of floats, where first value is the size snapped downward (not greater then
 //   requested size) and second is the size snapped upward (not lower than requested size).
 //   If requested size is already snapped, then both returned values equal this value.
-std::pair<float, float> Pane::_SnapDimension(const bool widthOrHeight, const float dimension)
+std::pair<float, float> Pane::_SnapDimension(const bool widthOrHeight, const float dimension) const
 {
     if (_IsLeaf())
     {
+        // If we're a leaf pane, alight to the grid of controlling terminal
+
         const auto minSize = _GetMinSize();
         const auto minDimension = widthOrHeight ? minSize.Width : minSize.Height;
 
@@ -1008,17 +1027,22 @@ std::pair<float, float> Pane::_SnapDimension(const bool widthOrHeight, const flo
         }
 
         const float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
-        float higher = lower;
-        if (lower != dimension)
+        if (lower == dimension)
+        {
+            return { lower, lower };
+        }
+        else
         {
             const auto cellSize = _control.CharacterDimensions();
-            higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+            const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
+            return { lower, higher };
         }
-
-        return { lower, higher };
     }
     else if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
     {
+        // If we're resizes along separator axis, snap to the closes possibility
+        // given by our children panes.
+
         const auto firstSnapped = _firstChild->_SnapDimension(widthOrHeight, dimension);
         const auto secondSnapped = _secondChild->_SnapDimension(widthOrHeight, dimension);
         return {
@@ -1028,6 +1052,12 @@ std::pair<float, float> Pane::_SnapDimension(const bool widthOrHeight, const flo
     }
     else
     {
+        // If we're resizes perpendicularly to separator axis, calculate the sizes
+        // of child panes that would fit the given size. We use same algorithm that
+        // is used for real resize routine, but exclude the remaining empty space that
+        // would appear after the second pane. This will be the 'downward' snap possibility,
+        // while the 'upward' will be given as a side product of the layout function.
+
         std::pair<float, float> higher;
         const auto lower = _CalcSnappedPaneDimensions(widthOrHeight, dimension, &higher);
         return {
@@ -1037,12 +1067,25 @@ std::pair<float, float> Pane::_SnapDimension(const bool widthOrHeight, const flo
     }
 }
 
-void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode)
+// Method Description:
+// - Increases size of given LayoutSizeNode to match next possible 'snap'. In case of leaf
+//   pane this means the next cell of the terminal. Otherwise it means that one of its children
+//   advances (recursively). It expects the given node and its descendants to have either
+//   already snapped or minimum size.
+// Arguments:
+// - widthOrHeight: if true operates on width, otherwise on height.
+// - sizeNode: a layouting node that corresponds to this pane.
+// Return Value:
+// - <none>
+void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
 {
     if (_IsLeaf())
     {
         if (sizeNode.isMinimumSize)
         {
+            // If the node is of its minimum size, this size might not be snapped,
+            // so snap it upward. It might however be snapped, so add 1 to make
+            // sure it really increases (not really required but to avoid surprises).
             sizeNode.size = _SnapDimension(widthOrHeight, sizeNode.size + 1).second;
         }
         else
@@ -1053,12 +1096,14 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
     }
     else
     {
+        // The given node often has next possible (advanced) values already
+        // cached by the previous advance operation. If we're the first one,
+        // we need to calculate them now.
         if (sizeNode.nextFirstChild == nullptr)
         {
             sizeNode.nextFirstChild.reset(new LayoutSizeNode(*sizeNode.firstChild));
             _firstChild->_AdvanceSnappedDimension(widthOrHeight, *sizeNode.nextFirstChild);
         }
-
         if (sizeNode.nextSecondChild == nullptr)
         {
             sizeNode.nextSecondChild.reset(new LayoutSizeNode(*sizeNode.secondChild));
@@ -1068,15 +1113,25 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         const auto nextFirstSize = sizeNode.nextFirstChild->size;
         const auto nextSecondSize = sizeNode.nextSecondChild->size;
 
-        bool advanceFirst;
+        bool advanceFirst; // Whether to advance first or second child
         if (_splitState == (widthOrHeight ? SplitState::Horizontal : SplitState::Vertical))
         {
+            // If we're growing along separator axis, choose the child that
+            // wants to be smaller than the other.
             advanceFirst = nextFirstSize < nextSecondSize;
         }
         else
         {
+            // If we're growing perpendicularly to separator axis, choose
+            // the child so that their size ratio is closer to the currently
+            // maintained (so that the relative separator position is closer
+            // to the _desiredSplitPosition field).
+
             const auto firstSize = sizeNode.firstChild->size;
             const auto secondSize = sizeNode.secondChild->size;
+
+            // Because we relay on equality check these calculations have to be
+            // immune to floating point errors.
             const auto deviation1 = nextFirstSize - (nextFirstSize + secondSize) * _desiredSplitPosition;
             const auto deviation2 = -1 * (firstSize - (firstSize + nextSecondSize) * _desiredSplitPosition);
             advanceFirst = deviation1 <= deviation2;
@@ -1126,15 +1181,22 @@ Size Pane::_GetMinSize() const
     const auto secondSize = _secondChild->_GetMinSize();
 
     const auto minWidth = _splitState == SplitState::Vertical ?
-        firstSize.Width + PaneSeparatorSize + secondSize.Width :
-        std::max(firstSize.Width, secondSize.Width);
+                              firstSize.Width + PaneSeparatorSize + secondSize.Width :
+                              std::max(firstSize.Width, secondSize.Width);
     const auto minHeight = _splitState == SplitState::Horizontal ?
-        firstSize.Height + PaneSeparatorSize + secondSize.Height :
-        std::max(firstSize.Height, secondSize.Height);
+                               firstSize.Height + PaneSeparatorSize + secondSize.Height :
+                               std::max(firstSize.Height, secondSize.Height);
 
     return { minWidth, minHeight };
 }
 
+// Method Description:
+// - Builds a tree of LayoutSizeNode that matches the tree of panes. Each node
+//   has minimum size that the corresponding pane can have.
+// Arguments:
+// - widthOrHeight: if true operates on width, otherwise on height
+// Return Value:
+// - Root node of built tree that matches this pane.
 Pane::LayoutSizeNode Pane::_GetMinSizeTree(const bool widthOrHeight) const
 {
     const auto size = _GetMinSize();
@@ -1157,7 +1219,7 @@ Pane::LayoutSizeNode Pane::_GetMinSizeTree(const bool widthOrHeight) const
 // - totalSize: size (width or height) of the parent pane
 // Return Value:
 // - split position (value in range <0.0, 1.0>)
-float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize)
+float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const
 {
     const auto firstMinSize = _firstChild->_GetMinSize();
     const auto secondMinSize = _secondChild->_GetMinSize();
@@ -1170,6 +1232,8 @@ float Pane::_ClampSplitPosition(const bool widthOrHeight, const float requestedV
 
     return std::clamp(requestedValue, minSplitPosition, maxSplitPosition);
 }
+
+DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);
 
 Pane::LayoutSizeNode::LayoutSizeNode(const float minSize) :
     size{ minSize },
@@ -1191,6 +1255,14 @@ Pane::LayoutSizeNode::LayoutSizeNode(const LayoutSizeNode& other) :
 {
 }
 
+// Method Description:
+// - Makes sure that this node and all its descendants equal the supplied node.
+//   This may be more efficient that copy construction since it will reuse its
+//   allocated children.
+// Arguments:
+// - other: Node to take the values from.
+// Return Value:
+// - itself
 Pane::LayoutSizeNode& Pane::LayoutSizeNode::operator=(const LayoutSizeNode& other)
 {
     size = other.size;
@@ -1204,6 +1276,14 @@ Pane::LayoutSizeNode& Pane::LayoutSizeNode::operator=(const LayoutSizeNode& othe
     return *this;
 }
 
+// Method Description:
+// - Performs assignment operation on a single child node reusing
+// - current one if present.
+// Arguments:
+// - nodeField: Reference to our field holding concerned node.
+// - other: Node to take the values from.
+// Return Value:
+// - <none>
 void Pane::LayoutSizeNode::_AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode)
 {
     if (newNode)
@@ -1222,5 +1302,3 @@ void Pane::LayoutSizeNode::_AssignChildNode(std::unique_ptr<LayoutSizeNode>& nod
         nodeField.release();
     }
 }
-
-DEFINE_EVENT(Pane, Closed, _closedHandlers, ConnectionClosedEventArgs);

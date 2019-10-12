@@ -32,10 +32,10 @@ namespace TerminalApp
         Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
         Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
         LaunchMode GetLaunchMode();
+        Single SnapDimension(Boolean widthOrHeight, Single dimension);
         Boolean GetShowTabsInTitlebar();
         void TitlebarClicked();
         void WindowCloseButtonClicked();
-        Single SnapDimension(Boolean widthOrHeight, Single dimension);
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;

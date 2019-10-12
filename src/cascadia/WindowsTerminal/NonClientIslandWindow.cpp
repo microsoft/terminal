@@ -340,16 +340,22 @@ MARGINS NonClientIslandWindow::GetFrameMargins() const noexcept
     return margins;
 }
 
-SIZE NonClientIslandWindow::GetClientToWinSizeDelta(UINT /* dpix */) const noexcept
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpix: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE NonClientIslandWindow::GetNonClientSize(UINT /* dpix */) const noexcept
 {
-    SIZE offset;
+    SIZE result;
     // If we're in NC tabs mode, do the math ourselves. Get the margins
     // we're using for the window - this will include the size of the
     // titlebar content.
     const MARGINS margins = GetFrameMargins();
-    offset.cx = margins.cxLeftWidth + margins.cxRightWidth;
-    offset.cy = margins.cyTopHeight + margins.cyBottomHeight;
-    return offset;
+    result.cx = margins.cxLeftWidth + margins.cxRightWidth;
+    result.cy = margins.cyTopHeight + margins.cyBottomHeight;
+    return result;
 }
 
 // Method Description:

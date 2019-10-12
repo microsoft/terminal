@@ -38,9 +38,9 @@ AppHost::AppHost() noexcept :
     _window->SetCreateCallback(pfn);
 
     _window->SetSnapDimensionCallback(std::bind(&winrt::TerminalApp::App::SnapDimension,
-                                      _app,
-                                      std::placeholders::_1,
-                                      std::placeholders::_2));
+                                                _app,
+                                                std::placeholders::_1,
+                                                std::placeholders::_2));
 
     _window->MakeWindow();
 }
@@ -70,7 +70,7 @@ void AppHost::Initialize()
 
     if (_useNonClientArea)
     {
-        // Register our callbar for when the app's non-clientRect content changes.
+        // Register our callbar for when the app's non-client content changes.
         // This has to be done _before_ App::Create, as the app might set the
         // content in Create.
         _app.SetTitleBarContent({ this, &AppHost::_UpdateTitleBarContent });
@@ -198,10 +198,10 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
 		const short _currentHeight = Utils::ClampToShortMax(
 			static_cast<long>(ceil(initialSize.Y)), 1);
 
-		// Create a RECT from our requested clientRect size
+		// Create a RECT from our requested client size
 		const auto clientRect = Viewport::FromDimensions({ _currentWidth,
-													       _currentHeight })
-			.ToRect();
+														   _currentHeight })
+									.ToRect();
 
 		// Get the size of a window we'd need to host that client rect. This will
 		// add the titlebar space.

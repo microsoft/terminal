@@ -33,13 +33,13 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Point GetLaunchDimensions(uint32_t dpi);
         winrt::Windows::Foundation::Point GetLaunchInitialPositions(int32_t defaultInitialX, int32_t defaultInitialY);
         LaunchMode GetLaunchMode();
+        float SnapDimension(const bool widthOrHeight, const float dimension) const;
         bool GetShowTabsInTitlebar();
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 
         hstring Title();
         void TitlebarClicked();
-        float SnapDimension(bool widthOrHeight, float dimension);
 
         void WindowCloseButtonClicked();
 

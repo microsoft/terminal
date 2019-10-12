@@ -33,7 +33,7 @@ public:
         Horizontal = 2
     };
 
-    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, const bool lastFocused = false);
+    Pane(const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control, Pane* const rootPane, const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetFocusedPane();
     winrt::Microsoft::Terminal::TerminalControl::TermControl GetFocusedTerminalControl();
@@ -51,7 +51,7 @@ public:
 
     bool CanSplit(SplitState splitType);
     void Split(SplitState splitType, const GUID& profile, const winrt::Microsoft::Terminal::TerminalControl::TermControl& control);
-    float SnapDimension(const bool widthOrHeight, const float dimension);
+    float SnapDimension(const bool widthOrHeight, const float dimension) const;
 
     void Close();
 
@@ -64,6 +64,7 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _separatorRoot{ nullptr };
     winrt::Microsoft::Terminal::TerminalControl::TermControl _control{ nullptr };
 
+    Pane* _rootPane;
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
     SplitState _splitState{ SplitState::None };
@@ -74,6 +75,7 @@ private:
     winrt::event_token _connectionClosedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
+    winrt::event_token _fonstSizeChangedToken{ 0 };
 
     std::shared_mutex _createCloseLock{};
 
@@ -94,15 +96,16 @@ private:
 
     void _FocusFirstChild();
     void _ControlClosedHandler();
+    void _FontSizeChangedHandler(const int fontWidth, const int fontHeight, const bool isInitialChange);
 
-    std::pair<float, float> _GetPaneSizes(const float fullSize);
-    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next);
-    std::pair<float, float> _SnapDimension(const bool widthOrHeight, const float dimension);
-    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode);
+    std::pair<float, float> _GetPaneSizes(const float fullSize) const;
+    std::pair<float, float> _CalcSnappedPaneDimensions(const bool widthOrHeight, const float fullSize, std::pair<float, float>* next) const;
+    std::pair<float, float> _SnapDimension(const bool widthOrHeight, const float dimension) const;
+    void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
 
     winrt::Windows::Foundation::Size _GetMinSize() const;
     LayoutSizeNode _GetMinSizeTree(const bool widthOrHeight) const;
-    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize);
+    float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -138,6 +141,8 @@ private:
         return false;
     }
 
+    // Helper structure that builds a (roughly) binary tree corresponding
+    // to the pane tree. Used for layouting panes with snapped sizes.
     struct LayoutSizeNode
     {
         float size;
@@ -151,6 +156,7 @@ private:
         LayoutSizeNode(const LayoutSizeNode& other);
 
         LayoutSizeNode& operator=(const LayoutSizeNode& other);
+
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };

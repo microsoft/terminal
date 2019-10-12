@@ -397,6 +397,13 @@ namespace winrt::TerminalApp::implementation
         return point;
     }
 
+    // Method Description:
+    // - See Pane::SnapDimension
+    float App::SnapDimension(const bool widthOrHeight, const float dimension) const
+    {
+        return _root->SnapDimension(widthOrHeight, dimension);
+    }
+
     bool App::GetShowTabsInTitlebar()
     {
         if (!_loadedInitialSettings)
@@ -651,11 +658,6 @@ namespace winrt::TerminalApp::implementation
         {
             _root->CloseWindow();
         }
-    }
-
-    int App::SnapDimension(bool widthOrHeight, int value)
-    {
-        return _root->SnapDimension(widthOrHeight, dimension);
     }
 
     // Methods that proxy typed event handlers through TerminalPage

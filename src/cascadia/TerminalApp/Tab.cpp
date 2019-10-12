@@ -17,7 +17,7 @@ namespace winrt
 
 Tab::Tab(const GUID& profile, const TermControl& control)
 {
-    _rootPane = std::make_shared<Pane>(profile, control, true);
+    _rootPane = std::make_shared<Pane>(profile, control, nullptr, true);
 
     _rootPane->Closed([=]() {
         _closedHandlers();
@@ -230,7 +230,9 @@ void Tab::SplitPane(Pane::SplitState splitType, const GUID& profile, TermControl
     _rootPane->Split(splitType, profile, control);
 }
 
-float Tab::SnapDimension(bool widthOrHeight, float dimension)
+// Method Description:
+// - See Pane::SnapDimension
+float Tab::SnapDimension(const bool widthOrHeight, const float dimension) const
 {
     return _rootPane->SnapDimension(widthOrHeight, dimension);
 }
