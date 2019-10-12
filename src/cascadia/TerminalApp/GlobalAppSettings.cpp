@@ -41,10 +41,8 @@ GlobalAppSettings::GlobalAppSettings() :
     _alwaysShowTabs{ true },
     _initialRows{ DEFAULT_ROWS },
     _initialCols{ DEFAULT_COLS },
-    _initialX{ 0 },
-    _initialY{ 0 },
-    _isInitialXSet{ false },
-    _isInitialYSet{ false },
+    _initialX{},
+    _initialY{},
     _showTitleInTitlebar{ true },
     _showTabsInTitlebar{ true },
     _requestedTheme{ ElementTheme::Default },
@@ -161,12 +159,7 @@ std::optional<int32_t> GlobalAppSettings::GetInitialX() const noexcept
 
 void GlobalAppSettings::SetInitialX(const int32_t initialX) noexcept
 {
-    _initialX = initialX;
-}
-
-bool GlobalAppSettings::IsInitialXSet() const noexcept
-{
-    return _isInitialXSet;
+    _initialX.value() = initialX;
 }
 
 std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
@@ -176,12 +169,7 @@ std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
 
 void GlobalAppSettings::SetInitialY(const int32_t initialY) noexcept
 {
-    _initialY = initialY;
-}
-
-bool GlobalAppSettings::IsInitialYSet() const noexcept
-{
-    return _isInitialYSet;
+    _initialY.value() = initialY;
 }
 
 #pragma endregion
@@ -215,7 +203,7 @@ Json::Value GlobalAppSettings::ToJson() const
     jsonObject[JsonKey(DefaultProfileKey)] = winrt::to_string(Utils::GuidToString(_defaultProfile));
     jsonObject[JsonKey(InitialRowsKey)] = _initialRows;
     jsonObject[JsonKey(InitialColsKey)] = _initialCols;
-    jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX.value(), _isInitialXSet, _initialY.value(), _isInitialYSet);
+    jsonObject[JsonKey(InitialPositionKey)] = _SerializeInitialPosition(_initialX, _initialY);
     jsonObject[JsonKey(AlwaysShowTabsKey)] = _alwaysShowTabs;
     jsonObject[JsonKey(ShowTitleInTitlebarKey)] = _showTitleInTitlebar;
     jsonObject[JsonKey(ShowTabsInTitlebarKey)] = _showTabsInTitlebar;
@@ -263,7 +251,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     }
     if (auto initialPosition{ json[JsonKey(InitialPositionKey)] })
     {
-        _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX.value(), _isInitialXSet, _initialY.value(), _isInitialYSet);
+        _ParseInitialPosition(GetWstringFromJson(initialPosition), _initialX, _initialY);
     }
     if (auto showTitleInTitlebar{ json[JsonKey(ShowTitleInTitlebarKey)] })
     {
@@ -354,16 +342,12 @@ std::wstring_view GlobalAppSettings::_SerializeTheme(const ElementTheme theme) n
 // Arguments:
 // - initialPosition: the initial position string from json
 //   initialX: reference to the _initialX member
-//   isInitialXSet: reference to the _isInitialXSet member
 //   initialY: reference to the _initialY member
-//   isInitialYSet: reference to the _isInitialYSet member
 // Return Value:
 // - None
 void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPosition,
-                                              int32_t& initialX,
-                                              bool& isInitialXSet,
-                                              int32_t& initialY,
-                                              bool& isInitialYSet) noexcept
+                                              std::optional<int32_t>& initialX,
+                                              std::optional<int32_t>& initialY) noexcept
 {
     const wchar_t singleCharDelim = L',';
     std::wstringstream tokenStream(initialPosition.c_str());
@@ -381,14 +365,12 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
             int32_t position = std::stoi(token, idx);
             if (initialPosIndex == 0)
             {
-                initialX = position;
-                isInitialXSet = true;
+                initialX.emplace(position);
             }
 
             if (initialPosIndex == 1)
             {
-                initialY = position;
-                isInitialYSet = true;
+                initialY.emplace(position);
             }
         }
         catch (...)
@@ -403,27 +385,23 @@ void GlobalAppSettings::_ParseInitialPosition(const std::wstring& initialPositio
 //   value.
 // Arguments:
 // - initialX: reference to the _initialX member
-//   isInitialXSet: reference to the _isInitialXSet member
 //   initialY: reference to the _initialY member
-//   isInitialYSet: reference to the _isInitialYSet member
 // Return Value:
 // - The concatenated string for the the current initialX and initialY
-std::string GlobalAppSettings::_SerializeInitialPosition(const int32_t& initialX,
-                                                         const bool& isInitialXSet,
-                                                         const int32_t& initialY,
-                                                         const bool& isInitialYSet) noexcept
+std::string GlobalAppSettings::_SerializeInitialPosition(const std::optional<int32_t>& initialX,
+                                                         const std::optional<int32_t>& initialY) noexcept
 {
     std::string serializedInitialPos = "(";
-    if (isInitialXSet)
+    if (initialX.has_value())
     {
-        serializedInitialPos += initialX;
+        serializedInitialPos += initialX.value();
     }
 
     serializedInitialPos += ", ";
 
-    if (isInitialYSet)
+    if (initialY.has_value())
     {
-        serializedInitialPos += initialY;
+        serializedInitialPos += initialY.value();
     }
 
     return serializedInitialPos;

@@ -60,11 +60,9 @@ public:
 
     std::optional<int32_t> GetInitialX() const noexcept;
     void SetInitialX(const int32_t initialX) noexcept;
-    bool IsInitialXSet() const noexcept;
 
     std::optional<int32_t> GetInitialY() const noexcept;
     void SetInitialY(const int32_t initialY) noexcept;
-    bool IsInitialYSet() const noexcept;
 
     winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
     void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);
@@ -88,8 +86,6 @@ private:
 
     std::optional<int32_t> _initialX;
     std::optional<int32_t> _initialY;
-    bool _isInitialXSet;
-    bool _isInitialYSet;
 
     bool _showStatusline;
     bool _alwaysShowTabs;
@@ -106,15 +102,11 @@ private:
     static std::wstring_view _SerializeTheme(const winrt::Windows::UI::Xaml::ElementTheme theme) noexcept;
 
     static void _ParseInitialPosition(const std::wstring& initialPosition,
-                                      int32_t& initialX,
-                                      bool& isInitialXSet,
-                                      int32_t& initialY,
-                                      bool& isInitialYSet) noexcept;
+                                      std::optional<int32_t>& initialX,
+                                      std::optional<int32_t>& initialY) noexcept;
 
-    static std::string _SerializeInitialPosition(const int32_t& initialX,
-                                                 const bool& isInitialXSet,
-                                                 const int32_t& initialY,
-                                                 const bool& isInitialYSet) noexcept;
+    static std::string _SerializeInitialPosition(const std::optional<int32_t>& initialX,
+                                                 const std::optional<int32_t>& initialY) noexcept;
 
     static std::wstring_view _SerializeLaunchMode(const winrt::TerminalApp::LaunchMode launchMode) noexcept;
     static winrt::TerminalApp::LaunchMode _ParseLaunchMode(const std::wstring& launchModeString) noexcept;
