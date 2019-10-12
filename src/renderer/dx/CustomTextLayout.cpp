@@ -130,10 +130,10 @@ CustomTextLayout::CustomTextLayout(gsl::not_null<IDWriteFactory1*> const factory
         _breakpoints.resize(_text.size());
 
         BOOL isTextSimple = FALSE;
-        UINT32 uiReadLength = 0;
-        RETURN_IF_FAILED(_analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiReadLength, NULL));
+        UINT32 uiLengthRead = 0;
+        RETURN_IF_FAILED(_analyzer->GetTextComplexity(_text.c_str(), textLength, _font.Get(), &isTextSimple, &uiLengthRead, NULL));
 
-        if (!isTextSimple)
+        if (!(isTextSimple && uiLengthRead == _text.size()))
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_analyzer->AnalyzeLineBreakpoints(this, 0, textLength, this));
