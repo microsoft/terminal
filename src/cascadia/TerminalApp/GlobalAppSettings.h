@@ -59,10 +59,8 @@ public:
     void SetCopyOnSelect(const bool copyOnSelect) noexcept;
 
     std::optional<int32_t> GetInitialX() const noexcept;
-    void SetInitialX(const int32_t initialX) noexcept;
 
     std::optional<int32_t> GetInitialY() const noexcept;
-    void SetInitialY(const int32_t initialY) noexcept;
 
     winrt::TerminalApp::LaunchMode GetLaunchMode() const noexcept;
     void SetLaunchMode(const winrt::TerminalApp::LaunchMode launchMode);

@@ -157,19 +157,9 @@ std::optional<int32_t> GlobalAppSettings::GetInitialX() const noexcept
     return _initialX;
 }
 
-void GlobalAppSettings::SetInitialX(const int32_t initialX) noexcept
-{
-    _initialX.value() = initialX;
-}
-
 std::optional<int32_t> GlobalAppSettings::GetInitialY() const noexcept
 {
     return _initialY;
-}
-
-void GlobalAppSettings::SetInitialY(const int32_t initialY) noexcept
-{
-    _initialY.value() = initialY;
 }
 
 #pragma endregion
