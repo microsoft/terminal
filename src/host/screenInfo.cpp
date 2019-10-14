@@ -2219,12 +2219,7 @@ COORD SCREEN_INFORMATION::GetForwardTab(const COORD cCurrCursorPos) const noexce
 {
     COORD cNewCursorPos = cCurrCursorPos;
     SHORT sWidth = GetBufferSize().RightInclusive();
-    if (cCurrCursorPos.X == sWidth)
-    {
-        cNewCursorPos.X = 0;
-        cNewCursorPos.Y += 1;
-    }
-    else if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
+    if (_tabStops.empty() || cCurrCursorPos.X >= _tabStops.back())
     {
         cNewCursorPos.X = sWidth;
     }
