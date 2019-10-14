@@ -196,7 +196,7 @@ bcz
 
 To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
 
-You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>
+You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>.
 
 ## Coding Guidance
 
