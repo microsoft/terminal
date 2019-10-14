@@ -176,7 +176,7 @@ GdiEngine::~GdiEngine()
 // - colorForeground - Foreground Color
 // - colorBackground - Background colo
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
@@ -184,7 +184,7 @@ GdiEngine::~GdiEngine()
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const COLORREF colorForeground,
                                                       const COLORREF colorBackground,
                                                       const WORD /*legacyColorAttribute*/,
-                                                      const bool /*isBold*/,
+                                                      const ExtendedAttributes /*extendedAttrs*/,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());

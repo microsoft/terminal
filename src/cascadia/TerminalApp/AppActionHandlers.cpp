@@ -63,7 +63,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const TerminalApp::ActionEventArgs& args)
     {
-        _CloseWindow();
+        CloseWindow();
         args.Handled(true);
     }
 
@@ -188,4 +188,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleAdjustFontSize(const IInspectable& /*sender*/,
+                                             const TerminalApp::ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<TerminalApp::AdjustFontSizeArgs>())
+        {
+            const auto termControl = _GetFocusedControl();
+            termControl.AdjustFontSize(realArgs.Delta());
+            args.Handled(true);
+        }
+    }
 }

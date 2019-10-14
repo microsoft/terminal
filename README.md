@@ -15,23 +15,18 @@ Related repositories include:
 
 ## Installing & running Windows Terminal
 
-> 👉 Note: To run the Windows Terminal you'll need to be running Windows 10 1903 (build 18362) or later
+> 👉 Note: Windows Terminal requires Windows 10 1903 (build 18362) or later
 
-### From the Microsoft Store
+### Manually install builds from this repository
 
-Install the Windows Terminal free from the Microsoft Store and it'll be continuously updated:
+For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
-<a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'>
-<img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" />
-</a>
+> ⚠ Note: If you install Terminal manually:
+>
+> * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
+> * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
 
-### From this repository
-
-Every public release of Windows Terminal is avaiable for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
-
-> ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases), Terminal will not auto-update when newer builds are published. Be sure to regularly check & install the latest Terminal release to receive all the latest fixes and improvements!
-
-### Via Chocolatey (unofficial)
+### Install via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
 
@@ -45,7 +40,7 @@ To upgrade Windows Terminal using Chocolatey, run the following:
 choco upgrade microsoft-windows-terminal
 ```
 
-> If you have any issues when installing/upgrading the package, please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process).
+If you have any issues when installing/upgrading the package please go to the [Windows Terminal package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ---
 
@@ -74,19 +69,13 @@ Windows Terminal is a new, modern, feature-rich, productive terminal application
 
 The Terminal will also need to meet our goals and measures to ensure it remains fast and efficient, and doesn't consume vast amounts of memory or power.
 
-### The Windows Console host
+### The Windows Console Host
 
-The Windows Console host, `conhost.exe`, is Windows' original command-line user experience.
+The Windows Console host, `conhost.exe`, is Windows' original command-line user experience. It also hosts Windows' command-line infrastructure and the Windows Console API server, input engine, rendering engine, user preferences, etc. The console host code in this repository is the actual source from which the `conhost.exe` in Windows itself is built.
 
-The Console is the app you see and interact with when you run Cmd, PowerShell, WSL, or any other command-line application on Windows.
+Since taking ownership of the Windows command-line in 2014, the team added several new features to the Console, including background transparency, line-based selection, support for [ANSI / Virtual Terminal sequences](https://en.wikipedia.org/wiki/ANSI_escape_code), [24-bit color](https://devblogs.microsoft.com/commandline/24-bit-color-in-the-windows-console/), a [Pseudoconsole ("ConPTY")](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/), and more.
 
-Console also implements Windows' command-line infrastructure, hosting the Windows Console API, input engine, rendering engine, and user preferences. 
-
-> The Console's code in this repository is the actual source from which the `conhost.exe` in Windows itself is built.
-
-Since taking ownership of the Windows command-line in 2014, the team has added several new features to the Console, including window transparency, line-based selection, support for [ANSI / Virtual Terminal sequences](https://en.wikipedia.org/wiki/ANSI_escape_code), [24-bit color](https://devblogs.microsoft.com/commandline/24-bit-color-in-the-windows-console/), a [Pseudoconsole ("ConPTY")](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/), and more.
-
-However, because Windows Console's primary goal is to maintain backward compatibility, we've been unable to add many of the features the community has been asking for (and which we've been wanting to add) for the last several years including tabs, unicode text, and emoji.
+However, because Windows Console's primary goal is to maintain backward compatibility, we have been unable to add many of the features the community (and the team) have been asking for for the last several years including tabs, unicode text, emoji, etc.
 
 These limitations led us to create the new Windows Terminal.
 
@@ -94,44 +83,48 @@ These limitations led us to create the new Windows Terminal.
 
 ### Shared Components
 
-While overhauling Windows Console, we modernized its codebase considerably: We've cleanly separated logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [Windows Implementation Libraries - WIL](https://github.com/Microsoft/wil).
+While overhauling Windows Console, we modernized its codebase considerably, cleanly separating logical entities into modules and classes, introduced some key extensibility points, replaced several old, home-grown collections and containers with safer, more efficient [STL containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2019), and made the code simpler and safer by using Microsoft's [Windows Implementation Libraries - WIL](https://github.com/Microsoft/wil).
 
 This overhaul resulted in several of Console's key components being available for re-use in any terminal implementation on Windows. These components include a new DirectWrite-based text layout and rendering engine, a text buffer capable of storing both UTF-16 and UTF-8, a VT parser/emitter, and more.
 
-## Creating the new Windows Terminal
+### Creating the new Windows Terminal
 
-When we started planning the new Windows Terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by continuing our investment in our C++ codebase, which would allow us to reuse several of the aforementioned modernized components. Further, we realized that this would allow us to build much of the Terminal's core itself as a reusable UI control that others can incorporate into their applications.
+When we started planning the new Windows Terminal application, we explored and evaluated several approaches and technology stacks. We ultimately decided that our goals would be best met by continuing our investment in our C++ codebase, which would allow us to reuse several of the aforementioned modernized components in both the existing Console and the new Terminal. Further, we realized that this would allow us to build much of the Terminal's core itself as a reusable UI control that others can incorporate into their own applications.
 
 The result of this work is contained within this repo and delivered as the Windows Terminal application you can download from the Microsoft Store, or [directly from this repo's releases](https://github.com/microsoft/terminal/releases).
 
 ---
 
 ## Resources
+
 For more information about Windows Terminal, you may find some of these resources useful and interesting:
+
 * [Command-Line Blog](https://devblogs.microsoft.com/commandline)
-* [Command-Line Backgrounder Blog Series]()
+* [Command-Line Backgrounder Blog Series](https://devblogs.microsoft.com/commandline/windows-command-line-backgrounder/)
 * Windows Terminal Launch: [Terminal "Sizzle Video"](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)
 * Windows Terminal Launch: [Build 2019 Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
 * Run As Radio: [Show 645 - Windows Terminal with Richard Turner](http://www.runasradio.com/Shows/Show/645)
 * Azure Devops Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps on the Windows Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)
+
 ---
 
 ## FAQ
 
-## I built and ran the new Terminal, but it looks just like the old console
+### I built and ran the new Terminal, but it looks just like the old console
 
-Make sure you're building & running the `CascadiaPackage` project in Visual Studio.
+Cause: You're launching the incorrect solution in Visual Studio.
 
-## I tried running WindowsTerminal.exe and it crashes
+Solution: Make sure you're building & deploying the `CascadiaPackage` project in Visual Studio.
 
-* Make sure to build & deploy `CascadiaPackage` from Visual Studio; don't try to run `WindowsTerminal.exe` directly
-* Make sure you're running Windows 10 1903 or later - Windows Terminal **REQUIRES** features from the latest Windows release
+> ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. OpenConsole is used by Windows Terminal to connect to and communicate with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
 
 ---
 
 ## Documentation
 
 All project documentation is located in the `./doc` folder. If you would like to contribute to the documentation, please submit a pull request.
+
+---
 
 ## Contributing
 
@@ -199,7 +192,11 @@ To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explo
 
 You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>.
 
-## Coding Guidance
+### Debugging
+
+* To debug in VS, right click on CascadiaPackage (from VS Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
+
+### Coding Guidance
 
 Please review these brief docs below about our coding practices.
 
@@ -214,9 +211,7 @@ This is a work in progress as we learn what we'll need to provide people in orde
 
 ---
 
-## Code of Conduct
-
-Please help us keep this repository clean, inclusive, and fun!
+# Code of Conduct
 
 This project has adopted the [Microsoft Open Source Code of Conduct][conduct-code].
 For more information see the [Code of Conduct FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any additional questions or comments.

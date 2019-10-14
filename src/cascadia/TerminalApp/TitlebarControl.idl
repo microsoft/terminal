@@ -3,9 +3,17 @@
 
 namespace TerminalApp
 {
+    enum WindowVisualState
+    {
+        WindowVisualStateNormal = 0,
+        WindowVisualStateMaximized,
+        WindowVisualStateIconified
+    };
+
     [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
     {
         TitlebarControl(UInt64 parentWindowHandle);
+        void SetWindowVisualState(WindowVisualState visualState);
 
         Windows.UI.Xaml.UIElement Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

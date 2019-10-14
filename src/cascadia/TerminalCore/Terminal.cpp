@@ -205,7 +205,7 @@ void Terminal::Write(std::wstring_view stringView)
 // Return Value:
 // - true if we translated the key event, and it should not be processed any further.
 // - false if we did not translate the key, and it should be processed into a character.
-bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
+bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states)
 {
     if (_snapOnInput && _scrollOffset != 0)
     {
@@ -222,14 +222,7 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
     wchar_t ch = UNICODE_NULL;
     if (states.IsAltPressed() && vkey != VK_SPACE)
     {
-        ch = static_cast<wchar_t>(LOWORD(MapVirtualKey(vkey, MAPVK_VK_TO_CHAR)));
-        // MapVirtualKey will give us the capitalized version of the char.
-        // However, if shift isn't pressed, we want to send the lowercase version.
-        // (See GH#637)
-        if (!states.IsShiftPressed())
-        {
-            ch = towlower(ch);
-        }
+        ch = _CharacterFromKeyEvent(vkey, scanCode, states);
     }
 
     if (states.IsCtrlPressed())
@@ -260,10 +253,57 @@ bool Terminal::SendKeyEvent(const WORD vkey, const ControlKeyStates states)
 
     const bool manuallyHandled = ch != UNICODE_NULL;
 
-    KeyEvent keyEv{ true, 0, vkey, 0, ch, states.Value() };
+    KeyEvent keyEv{ true, 0, vkey, scanCode, ch, states.Value() };
     const bool translated = _terminalInput->HandleKey(&keyEv);
 
     return translated && manuallyHandled;
+}
+
+bool Terminal::SendCharEvent(const wchar_t ch)
+{
+    return _terminalInput->HandleChar(ch);
+}
+
+// Method Description:
+// - Returns the keyboard's scan code for the given virtual key code.
+// Arguments:
+// - vkey: The virtual key code.
+// Return Value:
+// - The keyboard's scan code.
+WORD Terminal::_ScanCodeFromVirtualKey(const WORD vkey) noexcept
+{
+    return LOWORD(MapVirtualKeyW(vkey, MAPVK_VK_TO_VSC));
+}
+
+// Method Description:
+// - Translates the specified virtual key code and keyboard state to the corresponding character.
+// Arguments:
+// - vkey: The virtual key code that initiated this keyboard event.
+// - scanCode: The scan code that initiated this keyboard event.
+// - states: The current keyboard state.
+// Return Value:
+// - The character that would result from this virtual key code and keyboard state.
+wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
+{
+    const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
+
+    // We might want to use GetKeyboardState() instead of building our own keyState.
+    // The question is whether that's necessary though. For now it seems to work fine as it is.
+    BYTE keyState[256] = {};
+    keyState[VK_SHIFT] = states.IsShiftPressed() ? 0x80 : 0;
+    keyState[VK_CONTROL] = states.IsCtrlPressed() ? 0x80 : 0;
+    keyState[VK_MENU] = states.IsAltPressed() ? 0x80 : 0;
+
+    // Technically ToUnicodeEx() can produce arbitrarily long sequences of diacritics etc.
+    // Since we only handle the case of a single UTF-16 code point, we can set the buffer size to 2 though.
+    constexpr size_t bufferSize = 2;
+    wchar_t buffer[bufferSize];
+
+    // wFlags: If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
+    const auto result = ToUnicodeEx(vkey, sc, keyState, buffer, bufferSize, 0b100, nullptr);
+
+    // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
+    return result == 1 || result == -1 ? buffer[0] : 0;
 }
 
 // Method Description:
@@ -379,6 +419,18 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
                 const auto cellDistance = end.GetCellDistance(it);
                 proposedCursorPosition.X += gsl::narrow<SHORT>(cellDistance);
             }
+        }
+
+        // If we're about to try to place the cursor past the right edge of the buffer, move it down a row
+        // This is another patch that GH#780 should supersede. This is really correcting for other bad situations
+        // like bisecting (writing only the leading half because there's no room for the trailing) a wide character
+        // into the buffer. However, it's not really all-up correctable without implementing a full WriteStream here.
+        // Also, this particular code RIGHT HERE shouldn't need to know anything about the cursor or the cells advanced
+        // which also will be solved by GH#780 (hopefully).
+        if (proposedCursorPosition.X > bufferSize.RightInclusive())
+        {
+            proposedCursorPosition.X = 0;
+            proposedCursorPosition.Y++;
         }
 
         // If we're about to scroll past the bottom of the buffer, instead cycle the buffer.

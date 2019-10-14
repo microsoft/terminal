@@ -36,6 +36,8 @@ namespace winrt::TerminalApp::implementation
 
         void TitlebarClicked();
 
+        void CloseWindow();
+
         // -------------------------------- WinRT Events ---------------------------------
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(TitleChanged, _titleChangeHandlers, winrt::Windows::Foundation::IInspectable, winrt::hstring);
         DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(LastTabClosed, _lastTabClosedHandlers, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs);
@@ -94,7 +96,6 @@ namespace winrt::TerminalApp::implementation
         void _SetFocusedTabIndex(int tabIndex);
         void _CloseFocusedTab();
         void _CloseFocusedPane();
-        void _CloseWindow();
         void _CloseAllTabs();
 
         // Todo: add more event implementations here
@@ -148,6 +149,7 @@ namespace winrt::TerminalApp::implementation
         void _HandleMoveFocus(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCopyText(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
         void _HandleCloseWindow(const IInspectable&, const TerminalApp::ActionEventArgs& args);
+        void _HandleAdjustFontSize(const IInspectable& sender, const TerminalApp::ActionEventArgs& args);
 #pragma endregion
     };
 }

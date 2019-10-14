@@ -18,6 +18,8 @@
 #undef GetCurrentTime
 #endif
 
+#include <wil/cppwinrt.h>
+
 #include <unknwn.h>
 
 #include <hstring.h>

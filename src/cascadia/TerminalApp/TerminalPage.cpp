@@ -552,6 +552,7 @@ namespace winrt::TerminalApp::implementation
         bindings.ResizePane({ this, &TerminalPage::_HandleResizePane });
         bindings.MoveFocus({ this, &TerminalPage::_HandleMoveFocus });
         bindings.CopyText({ this, &TerminalPage::_HandleCopyText });
+        bindings.AdjustFontSize({ this, &TerminalPage::_HandleAdjustFontSize });
     }
 
     // Method Description:
@@ -822,9 +823,9 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the terminal app with keys. If there is more
+    // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    void TerminalPage::_CloseWindow()
+    void TerminalPage::CloseWindow()
     {
         if (_tabs.size() > 1)
         {
