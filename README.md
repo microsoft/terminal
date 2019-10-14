@@ -19,7 +19,7 @@ Related repositories include:
 
 ### From the Microsoft Store
 
-Install the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
+Install the Windows Terminal free from the Microsoft Store and it'll be continuously updated:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'>
 <img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" />
@@ -175,7 +175,7 @@ This repository uses [git submodules](https://git-scm.com/book/en/v2/Git-Tools-S
 git submodule update --init --recursive
 ```
 
-OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory.:
+OpenConsole.sln may be built from within Visual Studio or from the command-line using a set of convenience scripts & tools in the **/tools** directory:
 
 ### Building in PowerShell
 
@@ -194,7 +194,7 @@ bcz
 
 ## Debugging Terminal
 
-To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties, in the Debug menu, change "Application process" and "Background task process" to "Native Only".
+To debug Terminal in VS, right click on `CascadiaPackage` (in the Solution Explorer) and go to properties. In the Debug menu, change "Application process" and "Background task process" to "Native Only".
 
 You should then be able to build & debug the Terminal project by hitting <kbd>F5</kbd>.
 
