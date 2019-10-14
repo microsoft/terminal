@@ -124,8 +124,8 @@ Make sure you're building & running the `CascadiaPackage` project in Visual Stud
 
 ## I tried running WindowsTerminal.exe and it crashes
 
-* Don't try to run `WindowsTerminal.exe` directly. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-* Make sure you're running Windows 10 1903 or later - the Windows Terminal **REQUIRES** features from the latest Windows release.
+* Make sure to build & deploy `CascadiaPackage` from Visual Studio; don't try to run `WindowsTerminal.exe` directly
+* Make sure you're running Windows 10 1903 or later - Windows Terminal **REQUIRES** features from the latest Windows release
 
 ---
 
