@@ -925,16 +925,21 @@ void DxEngine::_InvalidOr(RECT rc) noexcept
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::PaintBackground() noexcept
 {
-    /*_d2dRenderTarget->FillRectangle(D2D1::RectF((float)_invalidRect.left,
-                                                  (float)_invalidRect.top,
-                                                  (float)_invalidRect.right,
-                                                  (float)_invalidRect.bottom),
-                                                   _d2dBrushBackground.Get());
-*/
+    switch (_chainMode)
+    {
+    case SwapChainMode::ForHwnd:
+        _d2dRenderTarget->FillRectangle(D2D1::RectF(static_cast<float>(_invalidRect.left),
+                                                    static_cast<float>(_invalidRect.top),
+                                                    static_cast<float>(_invalidRect.right),
+                                                    static_cast<float>(_invalidRect.bottom)),
+                                        _d2dBrushBackground.Get());
+        break;
+    case SwapChainMode::ForComposition:
+        D2D1_COLOR_F nothing = { 0 };
 
-    D2D1_COLOR_F nothing = { 0 };
-
-    _d2dRenderTarget->Clear(nothing);
+        _d2dRenderTarget->Clear(nothing);
+        break;
+    }
 
     return S_OK;
 }
@@ -1218,14 +1223,14 @@ enum class CursorPaintType
 // - colorForeground - Foreground brush color
 // - colorBackground - Background brush color
 // - legacyColorAttribute - <unused>
-// - isBold - <unused>
+// - extendedAttrs - <unused>
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(COLORREF const colorForeground,
                                                      COLORREF const colorBackground,
                                                      const WORD /*legacyColorAttribute*/,
-                                                     const bool /*isBold*/,
+                                                     const ExtendedAttributes /*extendedAttrs*/,
                                                      bool const isSettingDefaultBrushes) noexcept
 {
     _foregroundColor = _ColorFFromColorRef(colorForeground);

@@ -68,6 +68,7 @@ public:
 #pragma endregion
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
+    DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
 
 protected:
     void ForceResize()

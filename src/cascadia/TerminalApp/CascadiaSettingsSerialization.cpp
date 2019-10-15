@@ -407,19 +407,17 @@ std::unique_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& 
 // <none>
 void CascadiaSettings::LayerJson(const Json::Value& json)
 {
+    // microsoft/terminal#2906: First layer the root object as our globals. If
+    // there is also a `globals` object, layer that one on top of the settings
+    // from the root.
+    _globals.LayerJson(json);
+
     if (auto globals{ json[GlobalsKey.data()] })
     {
         if (globals.isObject())
         {
             _globals.LayerJson(globals);
         }
-    }
-    else
-    {
-        // If there's no globals key in the root object, then try looking at the
-        // root object for those properties instead, to gracefully upgrade.
-        // This will attempt to do the legacy keybindings loading too
-        _globals.LayerJson(json);
     }
 
     if (auto schemes{ json[SchemesKey.data()] })

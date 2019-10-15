@@ -1,33 +1,38 @@
 # Welcome
 
-This repository contains the source code for:
+This repository contains the source code & documentation for:
 
 * [Windows Terminal](https://www.microsoft.com/en-us/p/windows-terminal-preview/9n0dx20hk701)
 * The Windows console host (`conhost.exe`)
 * Components shared between the two projects
 * [ColorTool](https://github.com/Microsoft/Terminal/tree/master/src/tools/ColorTool)
 * [Sample projects](https://github.com/Microsoft/Terminal/tree/master/samples) that show how to consume the Windows Console APIs
-  
+
 Other related repositories include:
 
 * [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
 
 ## Installing & running Windows Terminal
 
-> 👉 Note: To run the Windows Terminal you'll need to be running Windows 10 1903 (build 18362) or later
+### Operating System Support
 
-### From the Microsoft Store
+Windows Terminal can be installed on Windows 10 1903 (build 18362) or later.
 
-Download the Microsoft Terminal free from the Microsoft Store and it'll be continuously updated:
+### Install via the Microsoft Store
+
+We recommend downloading the Windows Terminal from the Microsoft Store so that it will be automatically upgraded when we release new builds:
 
 <a href='//www.microsoft.com/store/apps/9n0dx20hk701?cid=storebadge&ocid=badge'><img src='https://assets.windowsphone.com/85864462-9c82-451e-9355-a3d5f874397a/English_get-it-from-MS_InvariantCulture_Default.png' alt='English badge' width="284" height="104" style='width: 284px; height: 104px;'/></a>
 
-### From this repository
-Every public release of Windows Terminal is available for manual download from [this repo's Releases page](https://github.com/microsoft/terminal/releases)
+### Manually install builds from this repository
 
-> ⚠ Note: If you manually install Terminal from [releases](https://github.com/microsoft/terminal/releases) they won't auto-update so be sure to regularly install the latest Terminal release to receive all the latest fixes and improvements!
+For users who are unable to install Terminal from the Microsoft Store, Terminal builds can be manually downloaded from this repository's [Releases page](https://github.com/microsoft/terminal/releases).
 
-### Via Chocolatey (unofficial)
+> ⚠ Note: If you install Terminal manually:
+> * Be sure to install the [Desktop Bridge VC++ v14 Redistributable Package](https://www.microsoft.com/en-us/download/details.aspx?id=53175) otherwise Terminal may not install and/or run and may crash at startup
+> * Terminal will not auto-update when new builds are released so you will need to regularly install the latest Terminal release to receive all the latest fixes and improvements!
+
+### Install via Chocolatey (unofficial)
 
 [Chocolatey](https://chocolatey.org) users can download and install the latest Terminal release by installing the `microsoft-windows-terminal` package:
 
@@ -41,7 +46,7 @@ To upgrade Windows Terminal using Chocolatey, run the following:
 choco upgrade microsoft-windows-terminal
 ```
 
-If you have any issues when installing/upgrading the package please go to the [package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
+If you have any issues when installing/upgrading the package please go to the [Windows Terminal package page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the [Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
 
 ---
 
@@ -70,7 +75,7 @@ Windows Terminal is a new, modern, feature-rich, productive terminal application
 
 The Terminal will also need to meet our goals and measures to ensure it remains fast, and efficient, and doesn't consume vast amounts of memory or power.
 
-### The Windows Console host
+### The Windows Console Host
 
 The Windows Console host, `conhost.exe`, is Windows' original command-line user experience. It implements Windows' command-line infrastructure, and is responsible for hosting the Windows Console API, input engine, rendering engine, and user preferences. The console host code in this repository is the actual source from which the `conhost.exe` in Windows itself is built.
 
@@ -96,23 +101,12 @@ Further, we realized that this would allow us to build the terminal's renderer a
 
 ## FAQ
 
-## I built and ran the new Terminal, but I just get a blank window app!
-
-Make sure you are building for your computer's architecture. If your box has a 64-bit Windows, change your Solution Platform to x64.  
-To check your OS architecture go to Settings -> System -> About (or Win+X -> System) and under `Device specifications` check for the  `System type`.
-
 ## I built and ran the new Terminal, but it looks just like the old console
+Cause: You're launching the incorrect solution in Visual Studio.
 
-Firstly, make sure you're building & deploying `CascadiaPackage` in Visual Studio, _NOT_ `Host.EXE`. `OpenConsole.exe` is just `conhost.exe`, the same old console you know and love. `opencon.cmd` will launch `openconsole.exe`, and unfortunately, `openterm.cmd` is currently broken.
+Solution: Make sure you're building & deploying the `CascadiaPackage` project in Visual Studio.
 
-Secondly, try pressing <kbd>Ctrl</kbd> + <kbd>T</kbd>. The tabs are hidden when you only have one tab by default. In the future, the UI will be dramatically different, but for now, the defaults are _supposed_ to look like the console defaults.
-
-## I tried running WindowsTerminal.exe and it crashes
-
-* Don't try to run it unpackaged. Make sure to build & deploy `CascadiaPackage` from Visual Studio, and run the Windows Terminal (Dev Build) app.
-* Make sure you're on the right version of Windows. You'll need to be on Windows version 1903 or later, as the Windows Terminal **REQUIRES** features from the latest Windows release.
-
----
+> ⚠ Note: `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic Windows Console that hosts Windows' command-line infrastructure. It is used by Windows Terminal to connect to and communicate with command-line applications (via [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
 
 ## Contributing
 
@@ -139,7 +133,7 @@ If you would like to ask a question that you feel doesn't warrant an issue (yet)
   * Rich Turner, Program Manager: [@richturn\_ms](https://twitter.com/richturn_ms)
 
   * Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-  
+
   * Michael Niksa, Senior Developer: [@michaelniksa](https://twitter.com/MichaelNiksa)
 
   * Kayla Cinnamon, Program Manager (especially for UX issues): [@cinnamon\_msft](https://twitter.com/cinnamon_msft)

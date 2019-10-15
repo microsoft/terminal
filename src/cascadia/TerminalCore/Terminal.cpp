@@ -259,6 +259,11 @@ bool Terminal::SendKeyEvent(const WORD vkey, const WORD scanCode, const ControlK
     return translated && manuallyHandled;
 }
 
+bool Terminal::SendCharEvent(const wchar_t ch)
+{
+    return _terminalInput->HandleChar(ch);
+}
+
 // Method Description:
 // - Returns the keyboard's scan code for the given virtual key code.
 // Arguments:

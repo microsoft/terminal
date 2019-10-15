@@ -583,6 +583,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Used to tell the app that the 'X' button has been clicked and
+    //   the user wants to close the app. We kick off the close warning
+    //   experience.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void App::WindowCloseButtonClicked()
+    {
+        if (_root)
+        {
+            _root->CloseWindow();
+        }
+    }
+
     // Methods that proxy typed event handlers through TerminalPage
     winrt::event_token App::SetTitleBarContent(Windows::Foundation::TypedEventHandler<winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::UIElement> const& handler)
     {
