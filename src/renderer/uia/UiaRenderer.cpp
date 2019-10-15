@@ -16,11 +16,7 @@ using namespace Microsoft::Console::Types;
 UiaEngine::UiaEngine() noexcept :
     _isPainting{ false },
     _isEnabled{ false },
-    RenderEngineBase() {}
-
-// Routine Description:
-// - Destroys an instance of the UIA engine
-UiaEngine::~UiaEngine()
+    RenderEngineBase()
 {
 }
 
@@ -165,7 +161,6 @@ UiaEngine::~UiaEngine()
 
     if (_isEnabled)
     {
-        // TODO CARLOS: change value if necessary
         somethingToDo = false;
 
         if (somethingToDo)
@@ -191,7 +186,7 @@ UiaEngine::~UiaEngine()
     {
         _isPainting = false;
 
-        // TODO CARLOS: fire UIA events
+        // fire UIA events here
     }
 
     return S_OK;
@@ -240,7 +235,7 @@ UiaEngine::~UiaEngine()
 // - coord - Character coordinate position in the cell grid
 // - fTrimLeft - Whether or not to trim off the left half of a double wide character
 // Return Value:
-// - S_OK or relevant DirectX error
+// - E_NOTIMPL
 [[nodiscard]] HRESULT UiaEngine::PaintBufferLine(std::basic_string_view<Cluster> const /*clusters*/,
                                                  COORD const /*coord*/,
                                                  const bool /*trimLeft*/) noexcept
@@ -285,7 +280,7 @@ UiaEngine::~UiaEngine()
 // Arguments:
 // - options - Packed options relevant to how to draw the cursor
 // Return Value:
-// - S_OK or relevant DirectX error.
+// - S_FALSE
 [[nodiscard]] HRESULT UiaEngine::PaintCursor(const IRenderEngine::CursorOptions& /*options*/) noexcept
 {
     return S_FALSE;
@@ -320,7 +315,6 @@ UiaEngine::~UiaEngine()
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*fiFontInfo*/) noexcept
 {
-    // TODO CARLOS: changing the size may be useful
     return E_NOTIMPL;
 }
 
@@ -333,20 +327,17 @@ UiaEngine::~UiaEngine()
 // - S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateDpi(int const /*iDpi*/) noexcept
 {
-    // TODO CARLOS: changing the size may be useful
     return E_NOTIMPL;
 }
 
 // Method Description:
 // - This method will update our internal reference for how big the viewport is.
-//      Does nothing for DX.
 // Arguments:
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]] HRESULT UiaEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
 {
-    // TODO CARLOS: not sure how to handle resizing just yet
     return E_NOTIMPL;
 }
 
@@ -362,7 +353,6 @@ UiaEngine::~UiaEngine()
                                                  FontInfo& /*pfiFontInfo*/,
                                                  int const /*iDpi*/) noexcept
 {
-    // TODO CARLOS: changing the size may be useful
     return S_FALSE;
 }
 
@@ -375,7 +365,7 @@ UiaEngine::~UiaEngine()
 // - Rectangle describing dirty area in characters.
 [[nodiscard]] SMALL_RECT UiaEngine::GetDirtyRectInChars() noexcept
 {
-    return {};
+    return Viewport::Empty().ToInclusive();
 }
 
 // Routine Description:
@@ -395,7 +385,7 @@ UiaEngine::~UiaEngine()
 // - glyph - The glyph run to process for column width.
 // - pResult - True if it should take two columns. False if it should take one.
 // Return Value:
-// - S_OK or relevant DirectWrite error.
+// - E_NOTIMPL
 [[nodiscard]] HRESULT UiaEngine::IsGlyphWideByFont(const std::wstring_view /*glyph*/, _Out_ bool* const /*pResult*/) noexcept
 {
     return E_NOTIMPL;

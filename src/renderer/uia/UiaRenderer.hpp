@@ -25,13 +25,10 @@ namespace Microsoft::Console::Render
     {
     public:
         UiaEngine() noexcept;
-        ~UiaEngine();
-        UiaEngine(const UiaEngine&) = default;
-        UiaEngine(UiaEngine&&) = default;
-        UiaEngine& operator=(const UiaEngine&) = default;
-        UiaEngine& operator=(UiaEngine&&) = default;
 
         // Only one UiaEngine may present information at a time.
+        // This ensures that an automation client isn't overwhelmed
+        // by events when there are multiple TermControls
         [[nodiscard]] HRESULT Enable() noexcept;
         [[nodiscard]] HRESULT Disable() noexcept;
 
