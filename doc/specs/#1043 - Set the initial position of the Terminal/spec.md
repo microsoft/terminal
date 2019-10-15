@@ -19,11 +19,18 @@ The idea is to allow users to set the initial position of the Terminal when they
 
 For now, the Terminal window is put on a default initial position. The program uses CW_USEDEFAULT in the screen coordinates for top-left corner. We have two different types of window – client window and non-client window. However, code path for window creation (WM_CREATE message is shared by the two types of windows) are almost the same for the two types of windows, except that there are some differences in calculation of the width and height of the window.
 
-Three new properties should be added in the json settings file:
+Two new properties should be added in the json settings file:
 
-**initialX**: int. This set the initial horizontal position of the top-left corner of the window. This property is optional. If not provided, system default position will be used. 
+**initialPosition**: string. This set the initial horizontal and vertical position of the top-left corner of the window. This property follows a structure: "X value, Y value" and has following rules:
 
-**initialY**: int. This set the initial vertical position of the top-left corner of the window. This property is optional. If not provided, system default position will be used.
+1. All spaces will be ignored.
+
+2. Both X value and Y value are optional. If anyone of them is missing, or the value is invalid, system default value will be used. Examples:
+
+       ", 1000" equals to (default, 1000)
+       "1000, " equals to (1000, default)
+       "," equals to (default, default)
+       "abc, 1000" equals to (default, 1000)
 
 **launchMode**: string. Determine the launch mode. There are two modes for now
                          1. maximize: the window will be maximized when launch.
