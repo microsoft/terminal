@@ -110,10 +110,6 @@
         echo OutDir=$(OutDir)
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.manifest&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.manifest*&quot; )
         (xcopy /Y &quot;$(OpenConsoleDir)src\cascadia\ut_app\TerminalApp.Unit.Tests.AppxManifest.xml&quot; &quot;$(OutDir)\TerminalApp.Unit.Tests.AppxManifest.xml*&quot; )
-
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalConnection\TerminalConnection.dll &quot;$(OutDir)\TerminalConnection.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalSettings\TerminalSettings.dll &quot;$(OutDir)\TerminalSettings.dll*&quot; )
-        (xcopy /Y $(_CppWinrtBinRoot)TerminalControl\TerminalControl.dll &quot;$(OutDir)\TerminalControl.dll*&quot; )
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
