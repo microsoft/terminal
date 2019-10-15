@@ -269,7 +269,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
         consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
 
-        RETURN_IF_FAILED(StringCchCopyW(consoleFontInfoEx.FaceName, ARRAYSIZE(consoleFontInfoEx.FaceName), fontInfo.GetFaceName()));
+        RETURN_IF_FAILED(fontInfo.FillLegacyNameBuffer(gsl::make_span(consoleFontInfoEx.FaceName)));
 
         return S_OK;
     }
@@ -300,7 +300,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         RETURN_IF_FAILED(StringCchCopyW(FaceName, ARRAYSIZE(FaceName), consoleFontInfoEx.FaceName));
 
         FontInfo fi(FaceName,
-                    static_cast<BYTE>(consoleFontInfoEx.FontFamily),
+                    gsl::narrow_cast<unsigned char>(consoleFontInfoEx.FontFamily),
                     consoleFontInfoEx.FontWeight,
                     consoleFontInfoEx.dwFontSize,
                     gci.OutputCP);
