@@ -229,9 +229,9 @@ TerminalSettings Profile::CreateTerminalSettings(const std::vector<ColorScheme>&
         terminalSettings.ScrollState(result);
     }
 
-    if (_backgroundImage)
+    if (HasBackgroundImage())
     {
-        terminalSettings.BackgroundImage(_backgroundImage.value());
+        terminalSettings.BackgroundImage(GetExpandedBackgroundImagePath().c_str());
     }
 
     if (_backgroundImageOpacity)
@@ -806,13 +806,12 @@ winrt::hstring Profile::GetExpandedIconPath() const
 
 // Method Description:
 // - Returns this profile's background image path, if one is set, expanding
-//   any environment variables in the path, if there are any. Otherwise
-//   returns the empty string.
+//   any environment variables in the path, if there are any.
 // Return Value:
-// - this profile's icon path, if one is set. Otherwise returns the empty string.
+// - This profile's expanded background image path / the empty string.
 winrt::hstring Profile::GetExpandedBackgroundImagePath() const
 {
-    winrt::hstring result{ L"" };
+    winrt::hstring result{};
 
     if (HasBackgroundImage())
     {
@@ -820,16 +819,6 @@ winrt::hstring Profile::GetExpandedBackgroundImagePath() const
     }
 
     return result;
-}
-
-// Method Description:
-// - Sets this profile's background image path.
-// Arguments:
-// - path: the path
-void Profile::SetBackgroundImagePath(std::wstring_view path)
-{
-    static_assert(!noexcept(_backgroundImage.emplace(path)));
-    _backgroundImage.emplace(path);
 }
 
 // Method Description:
