@@ -26,6 +26,7 @@ Author(s):
 
 #include <deque>
 #include <tuple>
+#include <wrl/implements.h>
 
 #ifdef UNIT_TESTING
 class UiaTextRangeTests;
@@ -73,7 +74,7 @@ constexpr IdType InvalidId = 0;
 
 namespace Microsoft::Console::Types
 {
-    class UiaTextRangeBase : public ITextRangeProvider
+    class UiaTextRangeBase : public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, ITextRangeProvider>
     {
     private:
         static IdType id;
@@ -150,14 +151,6 @@ namespace Microsoft::Console::Types
         // TODO GitHub #605:
         // only used for UiaData::FindText. Remove after Search added properly
         void SetRangeValues(const Endpoint start, const Endpoint end, const bool isDegenerate) noexcept;
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef() override;
-        IFACEMETHODIMP_(ULONG)
-        Release() override;
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // ITextRangeProvider methods
         virtual IFACEMETHODIMP Clone(_Outptr_result_maybenull_ ITextRangeProvider** ppRetVal) = 0;

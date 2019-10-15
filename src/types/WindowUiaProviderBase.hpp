@@ -22,14 +22,14 @@ Author(s):
 
 #include "precomp.h"
 
+#include <wrl/implements.h>
+
 namespace Microsoft::Console::Types
 {
     class IUiaWindow;
 
     class WindowUiaProviderBase :
-        public IRawElementProviderSimple,
-        public IRawElementProviderFragment,
-        public IRawElementProviderFragmentRoot
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, IRawElementProviderFragmentRoot>
     {
     public:
         virtual ~WindowUiaProviderBase() = default;
@@ -44,14 +44,6 @@ namespace Microsoft::Console::Types
     public:
         [[nodiscard]] virtual HRESULT Signal(_In_ EVENTID id) = 0;
         [[nodiscard]] virtual HRESULT SetTextAreaFocus() = 0;
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef() override;
-        IFACEMETHODIMP_(ULONG)
-        Release() override;
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) override;

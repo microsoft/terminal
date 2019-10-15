@@ -26,15 +26,15 @@ Author(s):
 #include "UiaTextRangeBase.hpp"
 #include "IUiaData.h"
 
+#include <wrl/implements.h>
+
 namespace Microsoft::Console::Types
 {
     class WindowUiaProviderBase;
     class Viewport;
 
     class ScreenInfoUiaProviderBase :
-        public IRawElementProviderSimple,
-        public IRawElementProviderFragment,
-        public ITextProvider
+        public WRL::RuntimeClass<WRL::RuntimeClassFlags<WRL::ClassicCom | WRL::InhibitFtmBase>, IRawElementProviderSimple, IRawElementProviderFragment, ITextProvider>
     {
     public:
         ScreenInfoUiaProviderBase(_In_ IUiaData* pData);
@@ -45,14 +45,6 @@ namespace Microsoft::Console::Types
         virtual ~ScreenInfoUiaProviderBase() = default;
 
         [[nodiscard]] HRESULT Signal(_In_ EVENTID id);
-
-        // IUnknown methods
-        IFACEMETHODIMP_(ULONG)
-        AddRef() override;
-        IFACEMETHODIMP_(ULONG)
-        Release() override;
-        IFACEMETHODIMP QueryInterface(_In_ REFIID riid,
-                                      _COM_Outptr_result_maybenull_ void** ppInterface) override;
 
         // IRawElementProviderSimple methods
         IFACEMETHODIMP get_ProviderOptions(_Out_ ProviderOptions* pOptions) noexcept override;
@@ -105,9 +97,6 @@ namespace Microsoft::Console::Types
         IUiaData* _pData;
 
     private:
-        // Ref counter for COM object
-        ULONG _cRefs;
-
         // this is used to prevent the object from
         // signaling an event while it is already in the
         // process of signalling another event.
