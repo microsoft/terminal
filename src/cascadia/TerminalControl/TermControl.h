@@ -142,7 +142,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         // lest we get callbacks afterwards.
         winrt::Windows::UI::Xaml::Controls::Control::SizeChanged_revoker _sizeChangedRevoker;
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::CompositionScaleChanged_revoker _compositionScaleChangedRevoker;
-        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::Loaded_revoker _loadedRevoker;
+        winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
         winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
         winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
 
@@ -150,7 +150,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void _ApplyUISettings();
         void _InitializeBackgroundBrush();
         void _BackgroundColorChanged(const uint32_t color);
-        void _InitializeTerminal();
+        bool _InitializeTerminal();
         void _UpdateFont();
         void _KeyDownHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void _CharacterHandler(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::CharacterReceivedRoutedEventArgs const& e);

@@ -13,7 +13,7 @@ namespace winrt::TerminalApp::implementation
     {
         TabRowControl();
 
-        void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
+        void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Microsoft::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
     };
 }
 
