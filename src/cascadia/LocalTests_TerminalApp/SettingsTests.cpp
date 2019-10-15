@@ -1371,6 +1371,8 @@ namespace TerminalAppLocalTests
     }
     void SettingsTests::TestProfileIconWithEnvVar()
     {
+        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
+
         const std::string settingsJson{ R"(
         {
             "profiles": [
@@ -1384,9 +1386,12 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settingsJson);
         CascadiaSettings settings;
         settings._ParseJsonString(settingsJson, false);
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles.at(0)._icon.value());
     }
     void SettingsTests::TestProfileBackgroundImageWithEnvVar()
     {
+        const auto expectedPath = wil::ExpandEnvironmentStringsW<std::wstring>(L"%WINDIR%\\System32\\x_80.png");
+
         const std::string settingsJson{ R"(
         {
             "profiles": [
@@ -1400,6 +1405,7 @@ namespace TerminalAppLocalTests
         VerifyParseSucceeded(settingsJson);
         CascadiaSettings settings;
         settings._ParseJsonString(settingsJson, false);
+        VERIFY_ARE_EQUAL(expectedPath, settings._profiles.at(0)._backgroundImage.value());
     }
 
 }
