@@ -80,6 +80,10 @@ public:
     winrt::hstring GetExpandedIconPath() const;
     void SetIconPath(std::wstring_view path);
 
+    bool HasBackgroundImage() const noexcept;
+    winrt::hstring GetExpandedBackgroundImagePath() const;
+    void SetBackgroundImagePath(std::wstring_view path);
+
     bool GetCloseOnExit() const noexcept;
     bool IsHidden() const noexcept;
 

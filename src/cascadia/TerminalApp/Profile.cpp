@@ -764,6 +764,11 @@ bool Profile::HasIcon() const noexcept
     return _icon.has_value() && !_icon.value().empty();
 }
 
+bool Profile::HasBackgroundImage() const noexcept
+{
+    return _backgroundImage.has_value() && !_backgroundImage.value().empty();
+}
+
 // Method Description
 // - Sets this profile's tab title.
 // Arguments:
@@ -797,6 +802,34 @@ winrt::hstring Profile::GetExpandedIconPath() const
     }
     winrt::hstring envExpandedPath{ wil::ExpandEnvironmentStringsW<std::wstring>(_icon.value().data()) };
     return envExpandedPath;
+}
+
+// Method Description:
+// - Returns this profile's background image path, if one is set, expanding
+//   any environment variables in the path, if there are any. Otherwise
+//   returns the empty string.
+// Return Value:
+// - this profile's icon path, if one is set. Otherwise returns the empty string.
+winrt::hstring Profile::GetExpandedBackgroundImagePath() const
+{
+    winrt::hstring result{ L"" };
+
+    if (HasBackgroundImage())
+    {
+        result = wil::ExpandEnvironmentStringsW<std::wstring>(_backgroundImage.value().data());
+    }
+
+    return result;
+}
+
+// Method Description:
+// - Sets this profile's background image path.
+// Arguments:
+// - path: the path
+void Profile::SetBackgroundImagePath(std::wstring_view path)
+{
+    static_assert(!noexcept(_backgroundImage.emplace(path)));
+    _backgroundImage.emplace(path);
 }
 
 // Method Description:
